@@ -71,23 +71,12 @@ class SecurityScheme(Enum):
 class CustomApiEndpoint(BaseModel):
     apiName: str | None = Field(None, examples=["loyalty-info"], pattern="^[a-z0-9-]+$")
     apiVersion: str | None = Field(None, examples=["v1"], max_length=100)
-    cartridgeName: str | None = Field(
-        None, examples=["test_bc_wapi"], pattern="^[a-zA-Z][a-zA-Z0-9_]*$"
-    )
+    cartridgeName: str | None = Field(None, examples=["test_bc_wapi"], pattern="^[a-zA-Z][a-zA-Z0-9_]*$")
     endpointPath: str | None = Field(None, examples=["/customers"], max_length=4000)
-    errorReason: str | None = Field(
-        None, examples=["API schema not found."], max_length=4000
-    )
+    errorReason: str | None = Field(None, examples=["API schema not found."], max_length=4000)
     httpMethod: HttpMethod | None = Field(None, examples=["GET"])
-    id: str | None = Field(
-        None,
-        examples=["10bd7f2dc40ab7aede7f0d60e5c3a783"],
-        max_length=36,
-        min_length=36,
-    )
-    implementationScript: str | None = Field(
-        None, examples=["script.js"], max_length=100
-    )
+    id: str | None = Field(None, examples=["10bd7f2dc40ab7aede7f0d60e5c3a783"], max_length=36, min_length=36)
+    implementationScript: str | None = Field(None, examples=["script.js"], max_length=100)
     operationId: str | None = Field(None, examples=["getLoyaltyInfo"], max_length=100)
     securityScheme: SecurityScheme | None = Field(None, examples=["ShopperToken"])
     schemaFile: str | None = Field(None, examples=["schema.yaml"], max_length=100)
@@ -104,9 +93,7 @@ class CustomApiEndpoint(BaseModel):
 class CustomApiEndpointResult(ResultBase):
     filter: CustomApiEndpointFilter | None = None
     data: list[CustomApiEndpoint] | None = None
-    activeCodeVersion: str | None = Field(
-        None, examples=["version1"], max_length=100, min_length=1
-    )
+    activeCodeVersion: str | None = Field(None, examples=["version1"], max_length=100, min_length=1)
 
 
 class ErrorResponse(BaseModel):

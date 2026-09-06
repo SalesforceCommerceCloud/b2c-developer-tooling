@@ -5,7 +5,7 @@
 """Generated Pydantic v2 models for the B2C Commerce OpenAPI specs.
 
 This package is produced by ``scripts/generate_models.py`` and checked in.
-Do not edit by hand; regenerate from ``specs/`` instead."""
+Do not edit by hand; run ``scripts/generate_models.py`` to regenerate."""
 
 from __future__ import annotations
 

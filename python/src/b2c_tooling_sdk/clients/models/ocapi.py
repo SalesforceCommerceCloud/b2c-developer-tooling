@@ -42,8 +42,7 @@ class AbTestGroup(BaseModel):
 
     allocation: int | None = Field(None, description="Test Group percentage allocation")
     custom_experience: bool | None = Field(
-        None,
-        description="Flag to determine if this Test Group is a customer experience",
+        None, description="Flag to determine if this Test Group is a customer experience"
     )
     description: str | None = Field(None, description="Test Group description")
     id: str | None = Field(None, description="Test group id")
@@ -56,16 +55,11 @@ class AbTestSegmentStats(BaseModel):
     average_discount_amount: float | None = Field(None, description="")
     average_discount_amount_std_error: float | None = Field(None, description="")
     average_discount_amount_with_coupon: float | None = Field(None, description="")
-    average_discount_amount_with_coupon_std_error: float | None = Field(
-        None, description=""
-    )
+    average_discount_amount_with_coupon_std_error: float | None = Field(None, description="")
     average_discount_amount_without_coupon: float | None = Field(
-        None,
-        description="The standard error for the average amount discounted for orders without using a coupon",
+        None, description="The standard error for the average amount discounted for orders without using a coupon"
     )
-    average_discount_amount_without_coupon_std_error: float | None = Field(
-        None, description="Units sold per hour"
-    )
+    average_discount_amount_without_coupon_std_error: float | None = Field(None, description="Units sold per hour")
     average_order_value: float | None = Field(None, description="")
     average_order_value_std_error: float | None = Field(None, description="")
     average_revenue_per_visit: float | None = Field(None, description="")
@@ -120,8 +114,7 @@ class AbTestTrigger(BaseModel):
         description="The list of pipeline name and start node combinations (for example, Account-Show). This is a modifiable attribute when trigger type is 'pipeline_calls' only",
     )
     trigger_type: TriggerType | None = Field(
-        None,
-        description="The type of the trigger. Defaults to 'immediately' if not specified on create",
+        None, description="The type of the trigger. Defaults to 'immediately' if not specified on create"
     )
 
 
@@ -131,15 +124,10 @@ class AccessKeyDetails(BaseModel):
     """
 
     access_key: str | None = Field(
-        None,
-        description="The newly created access key (only available upon access key creation, missing otherwise).",
+        None, description="The newly created access key (only available upon access key creation, missing otherwise)."
     )
-    enabled: bool | None = Field(
-        None, description="True when the access key is enabled."
-    )
-    expiration_date: AwareDatetime | None = Field(
-        None, description="The date when the access key expires."
-    )
+    enabled: bool | None = Field(None, description="True when the access key is enabled.")
+    expiration_date: AwareDatetime | None = Field(None, description="The date when the access key expires.")
 
 
 class AccessKeyUpdateRequest(BaseModel):
@@ -147,9 +135,7 @@ class AccessKeyUpdateRequest(BaseModel):
     <p>Request body to enable / disable an access key.</p>
     """
 
-    enabled: bool | None = Field(
-        None, description="True when the access key should be enabled."
-    )
+    enabled: bool | None = Field(None, description="True when the access key should be enabled.")
 
 
 class TypeCode(Enum):
@@ -181,18 +167,10 @@ class AlertDescriptor(BaseModel):
     <p>Document describing a single alert descriptor.</p>
     """
 
-    application_context_path: str | None = Field(
-        None, description="The application context path.", min_length=1
-    )
-    application_id: str | None = Field(
-        None, description="The application ID.", min_length=1
-    )
-    context_object_type: str | None = Field(
-        None, description="The context object type."
-    )
-    default_priority: DefaultPriority | None = Field(
-        None, description="The default priority."
-    )
+    application_context_path: str | None = Field(None, description="The application context path.", min_length=1)
+    application_id: str | None = Field(None, description="The application ID.", min_length=1)
+    context_object_type: str | None = Field(None, description="The context object type.")
+    default_priority: DefaultPriority | None = Field(None, description="The default priority.")
     link: str | None = Field(None, description="URL for this resource.", min_length=1)
     message_id: str | None = Field(None, description="The message ID.", min_length=1)
 
@@ -213,9 +191,7 @@ class AlertDescriptorSettings(BaseModel):
     <p>Document describing settings for a single alert descriptor.</p>
     """
 
-    application_context_path: str = Field(
-        ..., description="The application context path.", min_length=1
-    )
+    application_context_path: str = Field(..., description="The application context path.", min_length=1)
     application_id: str = Field(..., description="The application ID.", min_length=1)
     is_user_override: bool = Field(
         ...,
@@ -224,16 +200,14 @@ class AlertDescriptorSettings(BaseModel):
     message_id: str = Field(..., description="The message ID.", min_length=1)
     priority: Priority = Field(..., description="The user priority.")
     show_in_header: bool = Field(
-        ...,
-        description="Flag that indicates whether the alert is shown in the Business Manager header.",
+        ..., description="Flag that indicates whether the alert is shown in the Business Manager header."
     )
     show_on_banner: bool | None = Field(
         None,
         description="Flag that indicates whether the alert is shown on the Business Manager banner (on every page).",
     )
     show_on_homepage: bool = Field(
-        ...,
-        description="Flag that indicates whether the alert is shown on the Business Manager homepage.",
+        ..., description="Flag that indicates whether the alert is shown on the Business Manager homepage."
     )
 
 
@@ -242,9 +216,7 @@ class AlertDescriptors(BaseModel):
     <p>Document containing a collection of alert descriptors.</p>
     """
 
-    data: list[AlertDescriptor] | None = Field(
-        None, description="Collection of alert descriptors"
-    )
+    data: list[AlertDescriptor] | None = Field(None, description="Collection of alert descriptors")
 
 
 class AlertDescriptorsRevalidationRequest(BaseModel):
@@ -253,8 +225,7 @@ class AlertDescriptorsRevalidationRequest(BaseModel):
     """
 
     context_object_id: str | None = Field(
-        None,
-        description="ID of the object in which context messages should be revalidated.",
+        None, description="ID of the object in which context messages should be revalidated."
     )
 
 
@@ -263,9 +234,7 @@ class AlertSettings(BaseModel):
     <p>Document containing the alert settings of a user.</p>
     """
 
-    settings: list[AlertDescriptorSettings] | None = Field(
-        None, description="Alert settings."
-    )
+    settings: list[AlertDescriptorSettings] | None = Field(None, description="Alert settings.")
 
 
 class Operator(Enum):
@@ -283,35 +252,19 @@ class Campaign(BaseModel):
     <p>Document representing a campaign.</p>
     """
 
-    campaign_id: str | None = Field(
-        None, description="The ID of the campaign.", max_length=256, min_length=1
-    )
-    coupons: list[str] | None = Field(
-        None, description="The array of assigned coupon IDs, not sorted"
-    )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    customer_groups: list[str] | None = Field(
-        None, description="The array of assigned customer groups, not sorted"
-    )
-    description: str | None = Field(
-        None, description="The description of the campaign.", max_length=4000
-    )
+    campaign_id: str | None = Field(None, description="The ID of the campaign.", max_length=256, min_length=1)
+    coupons: list[str] | None = Field(None, description="The array of assigned coupon IDs, not sorted")
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    customer_groups: list[str] | None = Field(None, description="The array of assigned customer groups, not sorted")
+    description: str | None = Field(None, description="The description of the campaign.", max_length=4000)
     enabled: bool | None = Field(None, description="The enabled flag for campaign.")
-    end_date: AwareDatetime | None = Field(
-        None, description="The date that the Scenario ends"
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
+    end_date: AwareDatetime | None = Field(None, description="The date that the Scenario ends")
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
     link: str | None = Field(None, description="link for convenience")
     source_code_groups: list[str] | None = Field(
         None, description="The array of assigned source code groups, not sorted"
     )
-    start_date: AwareDatetime | None = Field(
-        None, description="The date that the Scenario begins"
-    )
+    start_date: AwareDatetime | None = Field(None, description="The date that the Scenario begins")
 
 
 class Campaigns(BaseModel):
@@ -322,18 +275,13 @@ class Campaigns(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[Campaign] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -357,8 +305,7 @@ class CartridgePathAddRequest(BaseModel):
     name: str = Field(..., description="Name of the cartridge.")
     position: Position = Field(..., description="Position of the cartridge.")
     target: str | None = Field(
-        None,
-        description="When position is 'before' or 'after', need to specify the target cartridge",
+        None, description="When position is 'before' or 'after', need to specify the target cartridge"
     )
 
 
@@ -385,14 +332,9 @@ class CatalogCategoryId(BaseModel):
     """
 
     catalog_id: str | None = Field(
-        None,
-        description="The id of the catalog that owns the category.",
-        max_length=256,
-        min_length=1,
+        None, description="The id of the catalog that owns the category.", max_length=256, min_length=1
     )
-    category_id: str | None = Field(
-        None, description="The id of the category.", max_length=256, min_length=1
-    )
+    category_id: str | None = Field(None, description="The id of the category.", max_length=256, min_length=1)
 
 
 class CHeaderMenuOrientation(Enum):
@@ -421,39 +363,21 @@ class CategoryLink(BaseModel):
     <p>Document representing a category link</p>
     """
 
-    last_modified: AwareDatetime | None = Field(
-        None, description="The date the link was last modified"
-    )
+    last_modified: AwareDatetime | None = Field(None, description="The date the link was last modified")
     link: str | None = Field(None, description="URL that is used to get this instance")
     position: float | None = Field(
         None,
         description="The position in the source catalog / category for this link relative to the other links in the same category.",
         ge=0.0,
     )
-    source_catalog_id: str | None = Field(
-        None, description="The source catalog for the link"
-    )
-    source_catalog_name: dict[str, str] | None = Field(
-        None, description="The name of the source catalog"
-    )
-    source_category_id: str | None = Field(
-        None, description="The source category for the link"
-    )
-    source_category_name: dict[str, str] | None = Field(
-        None, description="The name of the source category"
-    )
-    target_catalog_id: str | None = Field(
-        None, description="The target category for the link"
-    )
-    target_catalog_name: dict[str, str] | None = Field(
-        None, description="The name of the target catalog"
-    )
-    target_category_id: str | None = Field(
-        None, description="The target category for the link"
-    )
-    target_category_name: dict[str, str] | None = Field(
-        None, description="The name of the target category"
-    )
+    source_catalog_id: str | None = Field(None, description="The source catalog for the link")
+    source_catalog_name: dict[str, str] | None = Field(None, description="The name of the source catalog")
+    source_category_id: str | None = Field(None, description="The source category for the link")
+    source_category_name: dict[str, str] | None = Field(None, description="The name of the source category")
+    target_catalog_id: str | None = Field(None, description="The target category for the link")
+    target_catalog_name: dict[str, str] | None = Field(None, description="The name of the target catalog")
+    target_category_id: str | None = Field(None, description="The target category for the link")
+    target_category_name: dict[str, str] | None = Field(None, description="The name of the target category")
     type: Type | None = Field(None, description="The link type")
 
 
@@ -465,18 +389,13 @@ class CategoryLinks(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[CategoryLink] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -486,35 +405,26 @@ class CodeVersion(BaseModel):
     <p>Document representing a code version</p>
     """
 
-    activation_time: AwareDatetime | None = Field(
-        None, description="The code version activation time."
-    )
+    activation_time: AwareDatetime | None = Field(None, description="The code version activation time.")
     active: bool | None = Field(
-        None,
-        description="Use this method to determine, if this code version is currently active.",
+        None, description="Use this method to determine, if this code version is currently active."
     )
     cartridges: list[str] | None = Field(
-        None,
-        description="A list containing the names of all cartridges participating in this code version.",
+        None, description="A list containing the names of all cartridges participating in this code version."
     )
-    compatibility_mode: str | None = Field(
-        None, description="The code version compatibility mode."
-    )
+    compatibility_mode: str | None = Field(None, description="The code version compatibility mode.")
     id: str | None = Field(None, description="The code version id.")
     last_modification_time: AwareDatetime | None = Field(
         None, description="The last time, when the code version was changed."
     )
     rollback: bool | None = Field(
-        None,
-        description="Use this method to determine, if this code version is the current rollback version.",
+        None, description="Use this method to determine, if this code version is the current rollback version."
     )
     total_size: int | None = Field(
-        None,
-        description="Returns the total size of the file system content of this code version in bytes.",
+        None, description="Returns the total size of the file system content of this code version in bytes."
     )
     web_dav_url: str | None = Field(
-        None,
-        description="Returns the HTTPS based WebDAV URL that can be used to access the code version resources.",
+        None, description="Returns the HTTPS based WebDAV URL that can be used to access the code version resources."
     )
 
 
@@ -524,18 +434,12 @@ class CodeVersionResult(BaseModel):
     """
 
     count: int | None = Field(None, description="The number of returned documents.")
-    data: list[CodeVersion] | None = Field(
-        None, description="The array of code versions"
-    )
+    data: list[CodeVersion] | None = Field(None, description="The array of code versions")
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -565,17 +469,13 @@ class ContentFolderAssignment(BaseModel):
     """
 
     field_200: bool | None = Field(
-        None,
-        alias="200",
-        description="A flag indicating whether the assignment is the default one.",
+        None, alias="200", description="A flag indicating whether the assignment is the default one."
     )
     content_id: str | None = Field(None, description="The content id.", max_length=256)
     content_link: str | None = Field(None, description="The content link.")
     folder_id: str | None = Field(None, description="The folder id.", max_length=256)
     folder_link: str | None = Field(None, description="The folder link.")
-    position: float | None = Field(
-        None, description="The position of the content asset in the folder.", ge=0.0
-    )
+    position: float | None = Field(None, description="The position of the content asset in the folder.", ge=0.0)
 
 
 class Type1(Enum):
@@ -594,12 +494,9 @@ class CouponCode(BaseModel):
     """
 
     code: str | None = Field(None, description="The code used to redeem the coupon")
-    issued: bool | None = Field(
-        None, description="Flag indicating if the coupon code has been issued"
-    )
+    issued: bool | None = Field(None, description="Flag indicating if the coupon code has been issued")
     redemption_count: int | None = Field(
-        None,
-        description="The count of the number of redemptions associated with the code",
+        None, description="The count of the number of redemptions associated with the code"
     )
 
 
@@ -609,22 +506,15 @@ class CouponCodes(BaseModel):
     """
 
     count: int | None = Field(None, description="The number of returned documents.")
-    data: list[CouponCode] | None = Field(
-        None, description="The collection of coupon codes"
-    )
+    data: list[CouponCode] | None = Field(None, description="The collection of coupon codes")
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -634,9 +524,7 @@ class CouponMultiCodesRequest(BaseModel):
     <p>A request object to add and remove coupon codes from a document</p>
     """
 
-    codes: list[str] = Field(
-        ..., description="The list of coupon codes to add or delete"
-    )
+    codes: list[str] = Field(..., description="The list of coupon codes to add or delete")
 
 
 class CouponRedemption(BaseModel):
@@ -647,25 +535,15 @@ class CouponRedemption(BaseModel):
     code: str | None = Field(None, description="The coupon code that was redeemed")
     coupon_id: str | None = Field(None, description="The coupon id that was redeemed")
     creation_date: AwareDatetime | None = None
-    customer_email: str | None = Field(
-        None, description="The customer email that was used to redeem it"
-    )
+    customer_email: str | None = Field(None, description="The customer email that was used to redeem it")
     last_modified: AwareDatetime | None = None
-    order_no: str | None = Field(
-        None, description="The order number where the redemption occurred"
-    )
-    view_order_url: str | None = Field(
-        None, description="A URL able to access the order"
-    )
+    order_no: str | None = Field(None, description="The order number where the redemption occurred")
+    view_order_url: str | None = Field(None, description="A URL able to access the order")
 
 
 class CouponSystemCodeConfig(BaseModel):
-    code_prefix: str | None = Field(
-        None, description="The code prefix for system-generated coupon codes."
-    )
-    number_of_codes: int | None = Field(
-        None, description="The number of system coupon codes that can be issued."
-    )
+    code_prefix: str | None = Field(None, description="The code prefix for system-generated coupon codes.")
+    number_of_codes: int | None = Field(None, description="The number of system coupon codes that can be issued.")
 
 
 class Credentials(BaseModel):
@@ -673,17 +551,10 @@ class Credentials(BaseModel):
     <p>Document representing the credentials of a customer.</p>
     """
 
-    enabled: bool | None = Field(
-        None,
-        description="A flag indicating whether the customer is enabled and can log.",
-    )
-    locked: bool | None = Field(
-        None, description="A flag indicating whether the customer account is locked."
-    )
+    enabled: bool | None = Field(None, description="A flag indicating whether the customer is enabled and can log.")
+    locked: bool | None = Field(None, description="A flag indicating whether the customer account is locked.")
     login: str = Field(..., description="The login of the customer.", max_length=256)
-    password_question: str | None = Field(
-        None, description="The password question.", max_length=256
-    )
+    password_question: str | None = Field(None, description="The password question.", max_length=256)
 
 
 class CustomObject(BaseModel):
@@ -692,8 +563,7 @@ class CustomObject(BaseModel):
     """
 
     key_property: str | None = Field(
-        None,
-        description="The name of the key property for the custom object. This is ignored in input documents.",
+        None, description="The name of the key property for the custom object. This is ignored in input documents."
     )
     key_value_integer: int | None = Field(
         None,
@@ -703,10 +573,7 @@ class CustomObject(BaseModel):
         None,
         description="The id of the custom object when the type of the key is String. This is ignored in input documents.",
     )
-    object_type: str | None = Field(
-        None,
-        description="The id of the object type. This is ignored in input documents.",
-    )
+    object_type: str | None = Field(None, description="The id of the object type. This is ignored in input documents.")
 
 
 class Gender(IntEnum):
@@ -736,60 +603,30 @@ class CustomerAddress(BaseModel):
     <p>Document representing a customer address.</p>
     """
 
-    address1: str | None = Field(
-        None, description="The customer's first address.", max_length=256
-    )
-    address2: str | None = Field(
-        None, description="The customer's second address value.", max_length=256
-    )
+    address1: str | None = Field(None, description="The customer's first address.", max_length=256)
+    address2: str | None = Field(None, description="The customer's second address value.", max_length=256)
     address_id: str = Field(..., description="The customer address id.", max_length=256)
     city: str | None = Field(None, description="The customer's city.", max_length=256)
-    company_name: str | None = Field(
-        None, description="The customer's company name.", max_length=256
-    )
+    company_name: str | None = Field(None, description="The customer's company name.", max_length=256)
     country_code: CountryCode = Field(
-        ...,
-        description="The customer's two-character country code per ISO 3166-1 alpha-2.",
+        ..., description="The customer's two-character country code per ISO 3166-1 alpha-2."
     )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
     etag: str | None = None
-    first_name: str | None = Field(
-        None, description="The customer's first name.", max_length=256
-    )
+    first_name: str | None = Field(None, description="The customer's first name.", max_length=256)
     full_name: str | None = Field(
-        None,
-        description="The concatenation of the customer's first, middle, and last names and its suffix.",
+        None, description="The concatenation of the customer's first, middle, and last names and its suffix."
     )
-    job_title: str | None = Field(
-        None, description="The customer's job title.", max_length=256
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
+    job_title: str | None = Field(None, description="The customer's job title.", max_length=256)
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
     last_name: str = Field(..., description="The customer's last name.", max_length=256)
-    phone: str | None = Field(
-        None, description="The customer's phone number.", max_length=32
-    )
-    post_box: str | None = Field(
-        None, description="The customer's post box.", max_length=256
-    )
-    postal_code: str | None = Field(
-        None, description="The customer's postal code.", max_length=256
-    )
-    salutation: str | None = Field(
-        None, description="The customer's salutation.", max_length=256
-    )
-    second_name: str | None = Field(
-        None, description="The customer's second name.", max_length=256
-    )
-    state_code: str | None = Field(
-        None, description="The customer's state.", max_length=256
-    )
-    suffix: str | None = Field(
-        None, description="The customer's suffix.", max_length=256
-    )
+    phone: str | None = Field(None, description="The customer's phone number.", max_length=32)
+    post_box: str | None = Field(None, description="The customer's post box.", max_length=256)
+    postal_code: str | None = Field(None, description="The customer's postal code.", max_length=256)
+    salutation: str | None = Field(None, description="The customer's salutation.", max_length=256)
+    second_name: str | None = Field(None, description="The customer's second name.", max_length=256)
+    state_code: str | None = Field(None, description="The customer's state.", max_length=256)
+    suffix: str | None = Field(None, description="The customer's suffix.", max_length=256)
     suite: str | None = Field(None, description="The customer's suite.", max_length=32)
     title: str | None = Field(None, description="The customer's title.", max_length=256)
 
@@ -800,18 +637,12 @@ class CustomerAddressResult(BaseModel):
     """
 
     count: int | None = Field(None, description="The number of returned documents.")
-    data: list[CustomerAddress] | None = Field(
-        None, description="The array of customer address documents."
-    )
+    data: list[CustomerAddress] | None = Field(None, description="The array of customer address documents.")
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -831,40 +662,17 @@ class CustomerGroupMember(BaseModel):
     <p>Document representing a customer group member</p>
     """
 
-    active: bool | None = Field(
-        None,
-        description="A flag indicating whether the customer is enabled and can log in.",
-    )
+    active: bool | None = Field(None, description="A flag indicating whether the customer is enabled and can log in.")
     c_familyStatus: str | None = None
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    customer_link: str | None = Field(
-        None, description="The link to the customer resource.", max_length=256
-    )
-    customer_no: str | None = Field(
-        None, description="The customers number (id).", max_length=100
-    )
-    email: EmailStr | None = Field(
-        None, description="The customer's email address.", max_length=256
-    )
-    first_name: str | None = Field(
-        None, description="The customer's first name.", max_length=256
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
-    last_name: str | None = Field(
-        None, description="The customer's last name.", max_length=256
-    )
-    link: str | None = Field(
-        None,
-        description="The link to the customer group member resource.",
-        max_length=256,
-    )
-    login: str | None = Field(
-        None, description="The login of the customer.", max_length=256
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    customer_link: str | None = Field(None, description="The link to the customer resource.", max_length=256)
+    customer_no: str | None = Field(None, description="The customers number (id).", max_length=100)
+    email: EmailStr | None = Field(None, description="The customer's email address.", max_length=256)
+    first_name: str | None = Field(None, description="The customer's first name.", max_length=256)
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
+    last_name: str | None = Field(None, description="The customer's last name.", max_length=256)
+    link: str | None = Field(None, description="The link to the customer group member resource.", max_length=256)
+    login: str | None = Field(None, description="The login of the customer.", max_length=256)
 
 
 class CustomerGroupMembers(BaseModel):
@@ -875,18 +683,13 @@ class CustomerGroupMembers(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[CustomerGroupMember] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -922,42 +725,31 @@ class CustomerListPreferences(BaseModel):
     """
 
     customer_no_sequence_enabled: bool = Field(
-        ...,
-        description="Used to determine if the customer number sequence is separated by customer list.",
+        ..., description="Used to determine if the customer number sequence is separated by customer list."
     )
     data_retention_age: int = Field(
-        ...,
-        description="The number days to retain customer data (null or 0 <= x <= 99999).",
+        ..., description="The number days to retain customer data (null or 0 <= x <= 99999)."
     )
     force_password_contains_alpha: bool = Field(
-        ...,
-        description="Used to determine if the password must contain an alphabetic character.",
+        ..., description="Used to determine if the password must contain an alphabetic character."
     )
     force_password_contains_numeric: bool = Field(
-        ...,
-        description="Used to determine if the password must contain a numeric character.",
+        ..., description="Used to determine if the password must contain a numeric character."
     )
-    force_password_mixed_case: bool = Field(
-        ..., description="Used to determine if the password must be mixed case."
-    )
+    force_password_mixed_case: bool = Field(..., description="Used to determine if the password must be mixed case.")
     lockout_effective_period: int = Field(
-        ...,
-        description="The customer lockout period in minutes (one of 1, 30, 60, 120, 1440, 14400).",
+        ..., description="The customer lockout period in minutes (one of 1, 30, 60, 120, 1440, 14400)."
     )
-    lockout_enabled: bool = Field(
-        ..., description="Used to determine if customers can be locked out."
-    )
+    lockout_enabled: bool = Field(..., description="Used to determine if customers can be locked out.")
     login_attempt_reset_time: int = Field(
         ...,
         description="The period after which the customer login attempt count resets in minutes (one of 0, 5, 30, 60, 120, 1440).\n\n         1440)",
     )
     max_failed_logins: int = Field(
-        ...,
-        description="The maximum number of failed logins before a customer lockout can occur (1 <= x <= 200).",
+        ..., description="The maximum number of failed logins before a customer lockout can occur (1 <= x <= 200)."
     )
     max_password_age: int = Field(
-        ...,
-        description="The maximum age of the customer password in days (one of 7, 10, 14, 30, 60, 90, 365000).",
+        ..., description="The maximum age of the customer password in days (one of 7, 10, 14, 30, 60, 90, 365000)."
     )
     max_password_reset_token_age: int = Field(
         ...,
@@ -987,12 +779,10 @@ class EcdnLogFetchRequest(BaseModel):
         description="Start time for log file entries, in Unix time stamp format. Must not be more than 7 days in the past",
     )
     zone_id: str | None = Field(
-        None,
-        description="zone id is optional but if it is provided then zone_name is not considered",
+        None, description="zone id is optional but if it is provided then zone_name is not considered"
     )
     zone_name: str = Field(
-        ...,
-        description="The internationalized domain name representation (from RFC 3490) of the zone name",
+        ..., description="The internationalized domain name representation (from RFC 3490) of the zone name"
     )
 
 
@@ -1017,9 +807,7 @@ class EcdnLogFetchResponse(BaseModel):
         description="HTTPS Download link to the fetched log file, which has a lifetime of 30 minutes. This link will only appear, if the current status of the log fetching is 'finished'.",
     )
     message: str | None = Field(None, description="message for the log fetch request")
-    status: Status1 | None = Field(
-        None, description="Current status of the log fetch request"
-    )
+    status: Status1 | None = Field(None, description="Current status of the log fetch request")
 
 
 class EmptyBody(RootModel[Any]):
@@ -1031,17 +819,12 @@ class FunctionalPermission(BaseModel):
     <p>Document representing a functional permission.</p>
     """
 
-    description: dict[str, str] | None = Field(
-        None, description="The description of the functional permission."
-    )
-    display_name: dict[str, str] | None = Field(
-        None, description="The display name of the functional permission."
-    )
+    description: dict[str, str] | None = Field(None, description="The description of the functional permission.")
+    display_name: dict[str, str] | None = Field(None, description="The display name of the functional permission.")
     name: str | None = Field(None, description="The name of the functional permission.")
     type: str | None = Field(None, description="The permission type.")
     values: list[str] | None = Field(
-        None,
-        description="The list of possible values for the functional permission, e.g. ACCESS or READONLY.",
+        None, description="The list of possible values for the functional permission, e.g. ACCESS or READONLY."
     )
 
 
@@ -1051,12 +834,10 @@ class FunctionalPermissions(BaseModel):
     """
 
     organization: list[FunctionalPermission] | None = Field(
-        None,
-        description="The collection of available organization functional permissions.",
+        None, description="The collection of available organization functional permissions."
     )
     scopes: list[str] | None = Field(
-        None,
-        description="The available functional permission scopes (e.g. organization, site).",
+        None, description="The available functional permission scopes (e.g. organization, site)."
     )
     site: list[FunctionalPermission] | None = Field(
         None, description="The list of available site functional permissions."
@@ -1085,30 +866,20 @@ class InventoryList(BaseModel):
         None,
         description="The list of sites this inventory list is assigned to. The assigned sites is a computed attribute, and cannot be\n directly modified.",
     )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
     default_in_stock: bool | None = Field(
         None,
         description="True if the default for the inventory list is to be in stock. THe default value is false if not specified.",
     )
-    description: str | None = Field(
-        None, description="The user supplied description of this instance."
-    )
-    id: str | None = Field(
-        None,
-        description="The id for the inventory list, which is required and must be unique.",
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
+    description: str | None = Field(None, description="The user supplied description of this instance.")
+    id: str | None = Field(None, description="The id for the inventory list, which is required and must be unique.")
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
     link: str | None = Field(
         None,
         description="URL that is used to get this instance. The URL is a computed attribute, and cannot be modified.",
     )
     on_order_inventory_enabled: bool | None = Field(
-        None,
-        description="True if the on order flag is enabled. The default value is false if not specified.",
+        None, description="True if the on order flag is enabled. The default value is false if not specified."
     )
     use_bundle_inventory_only: bool | None = Field(
         None,
@@ -1124,18 +895,13 @@ class InventoryLists(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[InventoryList] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -1190,8 +956,7 @@ class JobExecutionContinueInformation(BaseModel):
     """
 
     continue_status: ContinueStatus | None = Field(
-        None,
-        description="Returns the status, this job execution will get on continuation if continuation is pending.",
+        None, description="Returns the status, this job execution will get on continuation if continuation is pending."
     )
     is_pending: bool | None = Field(
         None,
@@ -1236,18 +1001,9 @@ class JobExecutionParameter(BaseModel):
     """
 
     name: str = Field(
-        ...,
-        description="The name of the parameter.",
-        max_length=256,
-        min_length=1,
-        pattern="\\S|(\\S(.*)\\S)",
+        ..., description="The name of the parameter.", max_length=256, min_length=1, pattern="\\S|(\\S(.*)\\S)"
     )
-    value: str = Field(
-        ...,
-        description="The value of the parameter.",
-        max_length=1000,
-        pattern="\\S|(\\S(.*)\\S)",
-    )
+    value: str = Field(..., description="The value of the parameter.", max_length=1000, pattern="\\S|(\\S(.*)\\S)")
 
 
 class JobExecutionRetryInformation(BaseModel):
@@ -1256,8 +1012,7 @@ class JobExecutionRetryInformation(BaseModel):
     """
 
     current_retry_attempt: int | None = Field(
-        None,
-        description="The current attempt to retry the previous <b>failed</b> job execution.",
+        None, description="The current attempt to retry the previous <b>failed</b> job execution."
     )
     max_retries: int | None = Field(None, description="The maximum number of retries.")
 
@@ -1307,10 +1062,7 @@ class Locale(BaseModel):
         alias="200",
         description="Flag that is true if the locale is the default one to use if an explicit locale is not specified.",
     )
-    active: bool | None = Field(
-        None,
-        description="Flag that is true if the locale is currently active in the system.",
-    )
+    active: bool | None = Field(None, description="Flag that is true if the locale is currently active in the system.")
     country: str | None = Field(
         None,
         description="The uppercase ISO 3166 2-letter country/region code for this Locale.\n If no country has been specified for this Locale, this value is an empty string.",
@@ -1344,8 +1096,7 @@ class Locale(BaseModel):
         description="The lowercase ISO 639 language code for this Locale.\n If no language has been specified for this Locale, this value is an empty string.",
     )
     name: str | None = Field(
-        None,
-        description="The display name of the Locale. Uses the current\n request locale to localize the value.",
+        None, description="The display name of the Locale. Uses the current\n request locale to localize the value."
     )
 
 
@@ -1354,14 +1105,11 @@ class LocalePermission(BaseModel):
     <p>Document representing a locale permission.</p>
     """
 
-    display_name: dict[str, str] | None = Field(
-        None, description="The display name of the locale."
-    )
+    display_name: dict[str, str] | None = Field(None, description="The display name of the locale.")
     locale_id: str | None = Field(None, description="The id of the locale.")
     type: str | None = Field(None, description="The permission type.")
     values: list[str] | None = Field(
-        None,
-        description="The list of possible values for the locale permission, e.g. ACCESS or READONLY.",
+        None, description="The list of possible values for the locale permission, e.g. ACCESS or READONLY."
     )
 
 
@@ -1370,9 +1118,7 @@ class LocalePermissions(BaseModel):
     <p>Document representing the available locale permissions.</p>
     """
 
-    scopes: list[str] | None = Field(
-        None, description="The available Locale permission scopes (e.g. unscoped)."
-    )
+    scopes: list[str] | None = Field(None, description="The available Locale permission scopes (e.g. unscoped).")
     unscoped: list[LocalePermission] | None = Field(
         None, description="The collection of available unscoped Locale permissions."
     )
@@ -1385,28 +1131,16 @@ class LocaleResult(BaseModel):
 
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[dict[str, Any]] | None = None
-    hits: list[Locale] | None = Field(
-        None, description="The locales found by the request"
-    )
-    id: str | None = Field(
-        None, description="The input locale (none specifies get all locales)"
-    )
+    hits: list[Locale] | None = Field(None, description="The locales found by the request")
+    id: str | None = Field(None, description="The input locale (none specifies get all locales)")
     include_all: bool | None = Field(
-        None,
-        description="True to get the all the hits for all the locales, not just the active allowed ones",
+        None, description="True to get the all the hits for all the locales, not just the active allowed ones"
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
-    select: str | None = Field(
-        None,
-        description="The string describing the set of fields to return in the result.",
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
+    select: str | None = Field(None, description="The string describing the set of fields to return in the result.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -1416,9 +1150,7 @@ class LogCategory(BaseModel):
     <p>Document representing log category settings.</p>
     """
 
-    enabled: bool | None = Field(
-        None, description="Returns true if the log category is enabled."
-    )
+    enabled: bool | None = Field(None, description="Returns true if the log category is enabled.")
     level: str | None = Field(None, description="Level of the log category.")
     name: str | None = Field(None, description="Log category name.")
 
@@ -1426,8 +1158,7 @@ class LogCategory(BaseModel):
 class MarkupText(BaseModel):
     markup: str | None = Field(None, description="The rendered HTML (read only)")
     source: str | None = Field(
-        None,
-        description="The raw markup text\n (only this needs to be provided in update request)",
+        None, description="The raw markup text\n (only this needs to be provided in update request)"
     )
 
 
@@ -1437,25 +1168,13 @@ class Master(BaseModel):
     """
 
     link: str | None = Field(None, description="The URL addressing the master product.")
-    master_id: str = Field(
-        ...,
-        description="The id (SKU) of the master product.",
-        max_length=100,
-        min_length=1,
-    )
+    master_id: str = Field(..., description="The id (SKU) of the master product.", max_length=100, min_length=1)
     orderable: bool | None = Field(
-        None,
-        description="A flag indicating whether at least one of the variants is orderable.",
+        None, description="A flag indicating whether at least one of the variants is orderable."
     )
-    price: float | None = Field(
-        None, description="The minimum sales price of the related variants."
-    )
-    price_max: float | None = Field(
-        None, description="The maximum sales of related variants."
-    )
-    price_per_unit: float | None = Field(
-        None, description="The minimum sales price per unit of the related variants."
-    )
+    price: float | None = Field(None, description="The minimum sales price of the related variants.")
+    price_max: float | None = Field(None, description="The maximum sales of related variants.")
+    price_per_unit: float | None = Field(None, description="The minimum sales price per unit of the related variants.")
     price_per_unit_max: float | None = Field(
         None, description="The maximum sales price per unit of the related variants."
     )
@@ -1470,16 +1189,11 @@ class MatchAllQuery(RootModel[Any]):
 
 
 class MediaFile(BaseModel):
-    abs_url: str | None = Field(
-        None, description="The absolute URL with request protocol (read only)"
-    )
+    abs_url: str | None = Field(None, description="The absolute URL with request protocol (read only)")
     alt: dict[str, str] | None = Field(None, description="The alternative image text")
-    dis_base_url: str | None = Field(
-        None, description="The DIS base URL only for product images"
-    )
+    dis_base_url: str | None = Field(None, description="The DIS base URL only for product images")
     path: str | None = Field(
-        None,
-        description="The raw media file path\n (only this needs to be provided in update request)",
+        None, description="The raw media file path\n (only this needs to be provided in update request)"
     )
     title: dict[str, str] | None = Field(None, description="The image title")
 
@@ -1489,21 +1203,14 @@ class MenuAction(BaseModel):
     <p>Document representing a menu action.</p>
     """
 
-    description: dict[str, str] | None = Field(
-        None, description="The description of the menu action."
-    )
-    display_name: dict[str, str] | None = Field(
-        None, description="The display name of the menu action."
-    )
-    module_type: str | None = Field(
-        None, description="The module type of the menu action (BM or CC)."
-    )
+    description: dict[str, str] | None = Field(None, description="The description of the menu action.")
+    display_name: dict[str, str] | None = Field(None, description="The display name of the menu action.")
+    module_type: str | None = Field(None, description="The module type of the menu action (BM or CC).")
     name: str | None = Field(None, description="The name of the menu action.")
     system: bool | None = Field(None, description="{\n action.")
     type: str | None = Field(None, description="The permission type.")
     values: list[str] | None = Field(
-        None,
-        description="The list of possible values for the menu action, e.g. ACCESS or READONLY.",
+        None, description="The list of possible values for the menu action, e.g. ACCESS or READONLY."
     )
 
 
@@ -1512,15 +1219,9 @@ class MenuItem(BaseModel):
     <p>Document representing a menu item.</p>
     """
 
-    display_name: dict[str, str] | None = Field(
-        None, description="The display name of the menu item."
-    )
-    menu_actions: list[MenuAction] | None = Field(
-        None, description="The collection of available menu actions."
-    )
-    module_type: str | None = Field(
-        None, description="The module type of the menu item (BM or CC)."
-    )
+    display_name: dict[str, str] | None = Field(None, description="The display name of the menu item.")
+    menu_actions: list[MenuAction] | None = Field(None, description="The collection of available menu actions.")
+    module_type: str | None = Field(None, description="The module type of the menu item (BM or CC).")
     name: str | None = Field(None, description="The name of the menu item.")
     type: str | None = Field(None, description="The permission type.")
 
@@ -1547,18 +1248,12 @@ class ModulePermissions(BaseModel):
     organization: list[MenuItem] | None = Field(
         None, description="The collection of available organization menu items."
     )
-    scopes: list[str] | None = Field(
-        None, description="The available menu item scopes (e.g. organization, site)."
-    )
-    site: list[MenuItem] | None = Field(
-        None, description="The list of available site menu items."
-    )
+    scopes: list[str] | None = Field(None, description="The available menu item scopes (e.g. organization, site).")
+    site: list[MenuItem] | None = Field(None, description="The list of available site menu items.")
 
 
 class Money(BaseModel):
-    currency_mnemonic: str | None = Field(
-        None, description="The mnemonic for the money."
-    )
+    currency_mnemonic: str | None = Field(None, description="The mnemonic for the money.")
     value: float | None = Field(None, description="The value for the money.")
 
 
@@ -1600,21 +1295,16 @@ class ObjectAttributeValueDefinition(BaseModel):
     <p>Document representing a attribute definition</p>
     """
 
-    description: dict[str, str] | None = Field(
-        None, description="A description of the attribute value."
-    )
+    description: dict[str, str] | None = Field(None, description="A description of the attribute value.")
     display_value: dict[str, str] | None = Field(
         None,
         description="A display name that can be used to present this value in\n the user interface. For example, the value might be '1' but the display\n name might be 'Order Exported'.",
     )
     id: str | None = Field(None, description="The ID of the attribute value.")
     position: float | None = Field(
-        None,
-        description="The position of the attribute value within the set of attribute values.",
+        None, description="The position of the attribute value within the set of attribute values."
     )
-    value: dict[str, Any] | None = Field(
-        None, description="The value of the attribute."
-    )
+    value: dict[str, Any] | None = Field(None, description="The value of the attribute.")
 
 
 class ObjectTypeDefinition(BaseModel):
@@ -1631,25 +1321,20 @@ class ObjectTypeDefinition(BaseModel):
         description="Returns the number of attribute groups contained by the type.  This is a computed attribute and cannot be changed.",
     )
     content_object: bool | None = Field(
-        None,
-        description="True if the object type definition is marked as a content object",
+        None, description="True if the object type definition is marked as a content object"
     )
     creation_date: AwareDatetime | None = None
     description: dict[str, str] | None = Field(
         None, description="The user entered description for the type (localizable)"
     )
-    display_name: dict[str, str] | None = Field(
-        None, description="The user entered display name (localizable)"
-    )
+    display_name: dict[str, str] | None = Field(None, description="The user entered display name (localizable)")
     last_modified: AwareDatetime | None = None
     link: str | None = Field(
-        None,
-        description="URL that is used to get this instance.  This is a computed attribute and cannot be changed.",
+        None, description="URL that is used to get this instance.  This is a computed attribute and cannot be changed."
     )
     object_type: str | None = Field(None, description="The object type identifier")
     queryable: bool | None = Field(
-        None,
-        description="True if the system object type is queryable, false otherwise.  Default is true.",
+        None, description="True if the system object type is queryable, false otherwise.  Default is true."
     )
     read_only: bool | None = Field(
         None,
@@ -1665,18 +1350,13 @@ class ObjectTypeDefinitions(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[ObjectTypeDefinition] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -1695,9 +1375,7 @@ class OrderConfirmationStatusUpdateRequest(BaseModel):
     <p>Request body to update the order confirmation status.</p>
     """
 
-    status: Status3 = Field(
-        ..., description="The new confirmation status for an order."
-    )
+    status: Status3 = Field(..., description="The new confirmation status for an order.")
 
 
 class Status4(Enum):
@@ -1724,12 +1402,7 @@ class OrderExternalStatusUpdateRequest(BaseModel):
     <p>Request body to update the order external status.</p>
     """
 
-    status: str = Field(
-        ...,
-        description="The new external status for an order.",
-        max_length=256,
-        min_length=1,
-    )
+    status: str = Field(..., description="The new external status for an order.", max_length=256, min_length=1)
 
 
 class Status5(Enum):
@@ -1795,9 +1468,7 @@ class OrderUpdateRequest(RootModel[Any]):
 
 
 class PasswordChangeRequest(BaseModel):
-    current_password: str = Field(
-        ..., description="The current user password", min_length=1
-    )
+    current_password: str = Field(..., description="The current user password", min_length=1)
     password: str = Field(..., description="The new user password", min_length=1)
 
 
@@ -1807,21 +1478,15 @@ class PathRecord(BaseModel):
     """
 
     id: str | None = Field(None, description="The id of the category path.")
-    name: dict[str, str] | None = Field(
-        None, description="The name of the category path."
-    )
+    name: dict[str, str] | None = Field(None, description="The name of the category path.")
 
 
 class PaymentInstrumentUpdateRequest(RootModel[Any]):
-    root: Any = Field(
-        ..., description="<p>Request body to update an order payment instrument.</p>"
-    )
+    root: Any = Field(..., description="<p>Request body to update an order payment instrument.</p>")
 
 
 class PaymentTransactionUpdateRequest(RootModel[Any]):
-    root: Any = Field(
-        ..., description="<p>Request body to update an order payment transaction.</p>"
-    )
+    root: Any = Field(..., description="<p>Request body to update an order payment transaction.</p>")
 
 
 class CBootTypeEnum(Enum):
@@ -2089,24 +1754,13 @@ class ProductOptionValue(BaseModel):
     """
 
     default_product_option_value: bool | None = Field(
-        None,
-        description="Flag indicating if the product option value is the default value for the product option.",
+        None, description="Flag indicating if the product option value is the default value for the product option."
     )
-    id: str | None = Field(
-        None, description="The id of the product option value.", min_length=1
-    )
-    link: str | None = Field(
-        None, description="The URL link to the product option value."
-    )
-    option_prices: list[Money] | None = Field(
-        None, description="The list of prices in the product option value."
-    )
-    sku_extension: str | None = Field(
-        None, description="The sku extension of the product option value."
-    )
-    value: dict[str, str] | None = Field(
-        None, description="The localized value of the product option."
-    )
+    id: str | None = Field(None, description="The id of the product option value.", min_length=1)
+    link: str | None = Field(None, description="The URL link to the product option value.")
+    option_prices: list[Money] | None = Field(None, description="The list of prices in the product option value.")
+    sku_extension: str | None = Field(None, description="The sku extension of the product option value.")
+    value: dict[str, str] | None = Field(None, description="The localized value of the product option.")
 
 
 class ProductOptionValues(BaseModel):
@@ -2117,18 +1771,13 @@ class ProductOptionValues(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[ProductOptionValue] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -2138,37 +1787,20 @@ class ProductType(BaseModel):
     <p>Document representing a product type.</p>
     """
 
-    bundle: bool | None = Field(
-        None, description="A flag indicating whether the product is a bundle."
-    )
-    bundled: bool | None = Field(
-        None, description="A flag indicating whether the product is bundled."
-    )
-    item: bool | None = Field(
-        None, description="A flag indicating whether the product is a standard item."
-    )
-    master: bool | None = Field(
-        None, description="A flag indicating whether the product is a master."
-    )
-    option: bool | None = Field(
-        None, description="A flag indicating whether the product is an option."
-    )
+    bundle: bool | None = Field(None, description="A flag indicating whether the product is a bundle.")
+    bundled: bool | None = Field(None, description="A flag indicating whether the product is bundled.")
+    item: bool | None = Field(None, description="A flag indicating whether the product is a standard item.")
+    master: bool | None = Field(None, description="A flag indicating whether the product is a master.")
+    option: bool | None = Field(None, description="A flag indicating whether the product is an option.")
     part_of_product_set: bool | None = Field(
-        None,
-        description="A flag indicating whether the product is part of product set.",
+        None, description="A flag indicating whether the product is part of product set."
     )
     part_of_retail_set: bool | None = Field(
         None, description="A flag indicating whether the product is part of retail set."
     )
-    retail_set: bool | None = Field(
-        None, description="A flag indicating whether the product is a retail set."
-    )
-    set: bool | None = Field(
-        None, description="A flag indicating whether the product is a set."
-    )
-    variant: bool | None = Field(
-        None, description="A flag indicating whether the product is a variant."
-    )
+    retail_set: bool | None = Field(None, description="A flag indicating whether the product is a retail set.")
+    set: bool | None = Field(None, description="A flag indicating whether the product is a set.")
+    variant: bool | None = Field(None, description="A flag indicating whether the product is a variant.")
     variation_group: bool | None = Field(
         None, description="A flag indicating whether the product is a variation group."
     )
@@ -2299,12 +1931,9 @@ class Range2Filter(BaseModel):
     """
 
     filter_mode: FilterMode | None = Field(
-        None,
-        description="Compare mode: overlap, containing, or contained. If not specified, the default is overlap.",
+        None, description="Compare mode: overlap, containing, or contained. If not specified, the default is overlap."
     )
-    from_field: str = Field(
-        ..., description="The field name of the field that starts the first range."
-    )
+    from_field: str = Field(..., description="The field name of the field that starts the first range.")
     from_inclusive: bool | None = Field(
         None,
         description="Indicates whether the lower bound of the second range is inclusive. If not specified, the default is true. Set to false to make the lower bound exclusive.",
@@ -2313,9 +1942,7 @@ class Range2Filter(BaseModel):
         None,
         description="The lower bound of the second range. If not specified, the range is  open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
     )
-    to_field: str = Field(
-        ..., description="The field name of the field that ends the first range."
-    )
+    to_field: str = Field(..., description="The field name of the field that ends the first range.")
     to_inclusive: bool | None = Field(
         None,
         description="Indicates whether the upper bound of the second range is inclusive. If not specified, the default is true. Set to false to make the lower bound exclusive.",
@@ -2383,9 +2010,7 @@ class Recommender(BaseModel):
     <p>The recommender object</p>
     """
 
-    description: str | None = Field(
-        None, description="The description of the recommender"
-    )
+    description: str | None = Field(None, description="The description of the recommender")
     name: str | None = Field(None, description="The name of the recommender")
 
 
@@ -2394,9 +2019,7 @@ class RecommendersResult(BaseModel):
     <p>A list of recommenders available for use in recommendation requests.</p>
     """
 
-    recommenders: list[Recommender] | None = Field(
-        None, description="The recommender objects"
-    )
+    recommenders: list[Recommender] | None = Field(None, description="The recommender objects")
 
 
 class DayOfWeekEnum(Enum):
@@ -2433,9 +2056,7 @@ class RedemptionLimitPerPeriod(BaseModel):
         description="The limit on the number of times a coupon can be redeemed for a specified redemption time period.",
         ge=0,
     )
-    redemption_time_frame: int | None = Field(
-        None, description="The redemption time period.", ge=0, le=999
-    )
+    redemption_time_frame: int | None = Field(None, description="The redemption time period.", ge=0, le=999)
 
 
 class RedemptionLimits(BaseModel):
@@ -2443,12 +2064,8 @@ class RedemptionLimits(BaseModel):
     <p>Document representing a coupon.</p>
     """
 
-    limit_per_code: int | None = Field(
-        None, description="The redemption limit per code", ge=0
-    )
-    limit_per_customer: int | None = Field(
-        None, description="The redemption limit per customer", ge=0
-    )
+    limit_per_code: int | None = Field(None, description="The redemption limit per code", ge=0)
+    limit_per_customer: int | None = Field(None, description="The redemption limit per customer", ge=0)
     limit_per_time_frame: RedemptionLimitPerPeriod | None = None
 
 
@@ -2472,8 +2089,7 @@ class ResultPage(BaseModel):
         description="The zero-based index of the record that we want to start with, used to optimize special handling",
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
+        None, description="The zero-based index of the first search hit to include in the result."
     )
 
 
@@ -2482,15 +2098,10 @@ class RoleFunctionalPermission(BaseModel):
     <p>Document representing a functional permission.</p>
     """
 
-    name: str = Field(
-        ..., description="The name of the functional permission.", min_length=1
-    )
-    type: str = Field(
-        ..., description='The permission type ("functional").', min_length=1
-    )
+    name: str = Field(..., description="The name of the functional permission.", min_length=1)
+    type: str = Field(..., description='The permission type ("functional").', min_length=1)
     value: str | None = Field(
-        None,
-        description="The non domain specific value for the functional permission, e.g. ACCESS or READONLY.",
+        None, description="The non domain specific value for the functional permission, e.g. ACCESS or READONLY."
     )
     values: dict[str, str] | None = Field(
         None,
@@ -2506,9 +2117,7 @@ class RoleFunctionalPermissions(BaseModel):
     organization: list[RoleFunctionalPermission] | None = Field(
         None, description="The list of organization functional permissions."
     )
-    site: list[RoleFunctionalPermission] | None = Field(
-        None, description="The list of site functional permissions."
-    )
+    site: list[RoleFunctionalPermission] | None = Field(None, description="The list of site functional permissions.")
 
 
 class RoleLocalePermission(BaseModel):
@@ -2516,13 +2125,10 @@ class RoleLocalePermission(BaseModel):
     <p>Document representing a locale permission.</p>
     """
 
-    locale_id: str = Field(
-        ..., description="The related locale id of the locale permission.", min_length=1
-    )
+    locale_id: str = Field(..., description="The related locale id of the locale permission.", min_length=1)
     type: str = Field(..., description='The permission type ("locale").', min_length=1)
     value: str | None = Field(
-        None,
-        description="The non domain specific value for the locale permission, e.g. ACCESS or READONLY.",
+        None, description="The non domain specific value for the locale permission, e.g. ACCESS or READONLY."
     )
     values: dict[str, str] | None = Field(
         None,
@@ -2535,9 +2141,7 @@ class RoleLocalePermissions(BaseModel):
     <p>Document listing the locale permissions assigned to a certain role.</p>
     """
 
-    unscoped: list[RoleLocalePermission] | None = Field(
-        None, description="The list of unscoped locale permissions."
-    )
+    unscoped: list[RoleLocalePermission] | None = Field(None, description="The list of unscoped locale permissions.")
 
 
 class RoleModulePermission(BaseModel):
@@ -2545,22 +2149,14 @@ class RoleModulePermission(BaseModel):
     <p>Document representing a module permission.</p>
     """
 
-    application: str = Field(
-        ..., description='The permission application (e.g. "bm", "csc").', min_length=1
-    )
-    name: str = Field(
-        ...,
-        description="The related menu action name of the module permission.",
-        min_length=1,
-    )
+    application: str = Field(..., description='The permission application (e.g. "bm", "csc").', min_length=1)
+    name: str = Field(..., description="The related menu action name of the module permission.", min_length=1)
     system: bool | None = Field(
-        None,
-        description="Flag to indicate a system menu action. This is <code>false</code> for custom menu actions.",
+        None, description="Flag to indicate a system menu action. This is <code>false</code> for custom menu actions."
     )
     type: str = Field(..., description='The permission type ("module").', min_length=1)
     value: str | None = Field(
-        None,
-        description="The non domain specific value for the module permission, e.g. ACCESS or READONLY.",
+        None, description="The non domain specific value for the module permission, e.g. ACCESS or READONLY."
     )
     values: dict[str, str] | None = Field(
         None,
@@ -2576,9 +2172,7 @@ class RoleModulePermissions(BaseModel):
     organization: list[RoleModulePermission] | None = Field(
         None, description="The list of organization module permissions."
     )
-    site: list[RoleModulePermission] | None = Field(
-        None, description="The list of site module permissions."
-    )
+    site: list[RoleModulePermission] | None = Field(None, description="The list of site module permissions.")
 
 
 class RoleWebdavPermission(BaseModel):
@@ -2586,13 +2180,10 @@ class RoleWebdavPermission(BaseModel):
     <p>Document representing a WebDAV permission.</p>
     """
 
-    folder: str = Field(
-        ..., description="The related folder of the WebDAV permission.", min_length=1
-    )
+    folder: str = Field(..., description="The related folder of the WebDAV permission.", min_length=1)
     type: str = Field(..., description='The permission type ("webdav").', min_length=1)
     value: str | None = Field(
-        None,
-        description="The non domain specific value for the WebDAV permission, e.g. ACCESS or READONLY.",
+        None, description="The non domain specific value for the WebDAV permission, e.g. ACCESS or READONLY."
     )
     values: dict[str, str] | None = Field(
         None,
@@ -2605,9 +2196,7 @@ class RoleWebdavPermissions(BaseModel):
     <p>Document listing the WebDAV permissions assigned to a certain role.</p>
     """
 
-    unscoped: list[RoleWebdavPermission] | None = Field(
-        None, description="The list of unscoped WebDAV permissions."
-    )
+    unscoped: list[RoleWebdavPermission] | None = Field(None, description="The list of unscoped WebDAV permissions.")
 
 
 class Rule(BaseModel):
@@ -2662,16 +2251,10 @@ class Site(BaseModel):
     cartridges: str | None = Field(None, description="The cartridge Path of the site")
     creation_date: AwareDatetime | None = None
     customer_list_link: CustomerListLink | None = None
-    description: dict[str, str] | None = Field(
-        None, description="The description of this site."
-    )
-    display_name: dict[str, str] | None = Field(
-        None, description="The display name entered by the user."
-    )
+    description: dict[str, str] | None = Field(None, description="The description of this site.")
+    display_name: dict[str, str] | None = Field(None, description="The display name entered by the user.")
     id: str = Field(..., description="The id of this site.", min_length=1)
-    in_deletion: bool | None = Field(
-        None, description="The deletion status of this site, true if in deletion"
-    )
+    in_deletion: bool | None = Field(None, description="The deletion status of this site, true if in deletion")
     last_modified: AwareDatetime | None = None
     link: str | None = Field(None, description="A link directly to the site")
     storefront_status: StorefrontStatus | None = None
@@ -2682,9 +2265,7 @@ class SitePreferences(BaseModel):
     <p>Represents a set of preferences attached at the organization level.</p>
     """
 
-    link: str | None = Field(
-        None, description="A URL that returns the full details for a custom preference"
-    )
+    link: str | None = Field(None, description="A URL that returns the full details for a custom preference")
     site: Site | None = None
 
 
@@ -2696,18 +2277,13 @@ class Sites(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[Site] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -2778,19 +2354,12 @@ class SlotContent(BaseModel):
     <p>Document representing the content type for a slot.</p>
     """
 
-    body: dict[str, MarkupText] | None = Field(
-        None, description="The HTML body (valid only for type 'html')."
-    )
-    category_ids: list[str] | None = Field(
-        None, description="The category ids (valid only for type 'categories')."
-    )
+    body: dict[str, MarkupText] | None = Field(None, description="The HTML body (valid only for type 'html').")
+    category_ids: list[str] | None = Field(None, description="The category ids (valid only for type 'categories').")
     content_asset_ids: list[str] | None = Field(
-        None,
-        description="The content asset ids (valid only for type 'content_assets').",
+        None, description="The content asset ids (valid only for type 'content_assets')."
     )
-    product_ids: list[str] | None = Field(
-        None, description="The product ids (valid only for type 'products')."
-    )
+    product_ids: list[str] | None = Field(None, description="The product ids (valid only for type 'products').")
     type: Type3 = Field(..., description="The type of content in the slot.")
 
 
@@ -2830,21 +2399,11 @@ class SortingRuleStep(BaseModel):
     """
 
     attribute_id: str | None = Field(None, description="the id for sorting attribute.")
-    direction: Direction | None = Field(
-        None, description="the direction of the sorting attribute"
-    )
-    is_system: bool | None = Field(
-        None, description="whether or not the attribute is a system attribute."
-    )
-    position: int | None = Field(
-        None, description="the position of product sorting rule step."
-    )
-    text_relevance_included: bool | None = Field(
-        None, description="The text relevance included."
-    )
-    type_id: str | None = Field(
-        None, description="the sorting type for sorting attribute."
-    )
+    direction: Direction | None = Field(None, description="the direction of the sorting attribute")
+    is_system: bool | None = Field(None, description="whether or not the attribute is a system attribute.")
+    position: int | None = Field(None, description="the position of product sorting rule step.")
+    text_relevance_included: bool | None = Field(None, description="The text relevance included.")
+    type_id: str | None = Field(None, description="the sorting type for sorting attribute.")
 
 
 class LocationType(Enum):
@@ -2898,19 +2457,13 @@ class Status8(Enum):
 class StatusModel(BaseModel):
     code: str | None = Field(None, description="Status code.")
     message: str | None = Field(None, description="Status message.")
-    status: Status8 | None = Field(
-        None, description="Status shows successful operation end."
-    )
+    status: Status8 | None = Field(None, description="Status shows successful operation end.")
 
 
 class StatusMetadata(BaseModel):
-    client_id: str | None = Field(
-        None, description="The client ID that is responsible for the status."
-    )
+    client_id: str | None = Field(None, description="The client ID that is responsible for the status.")
     reason: str | None = Field(None, description="The reason of the status.")
-    user_login: str | None = Field(
-        None, description="The user login that is responsible for the status."
-    )
+    user_login: str | None = Field(None, description="The user login that is responsible for the status.")
 
 
 class CountryCode1(Enum):
@@ -2928,66 +2481,33 @@ class Store(BaseModel):
     <p>Document representing a store</p>
     """
 
-    address1: str | None = Field(
-        None, description="Returns the first address.", max_length=256
-    )
-    address2: str | None = Field(
-        None, description="Returns the second address value.", max_length=256
-    )
-    c_countryCodeValue: str | None = Field(
-        None, description="Country Code Value - for the form values"
-    )
+    address1: str | None = Field(None, description="Returns the first address.", max_length=256)
+    address2: str | None = Field(None, description="Returns the second address value.", max_length=256)
+    c_countryCodeValue: str | None = Field(None, description="Country Code Value - for the form values")
     c_inventoryListId: str | None = Field(None, description="Store Inventory List ID")
     city: str | None = Field(None, description="Returns the city.", max_length=256)
     country_code: CountryCode1 | None = Field(
         None, description="The two-character country code per ISO 3166-1 alpha-2."
     )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    email: str | None = Field(
-        None, description="Email address to contact the store", max_length=256
-    )
-    fax: str | None = Field(
-        None, description="Returns the fax number .", max_length=256
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    email: str | None = Field(None, description="Email address to contact the store", max_length=256)
+    fax: str | None = Field(None, description="Returns the fax number .", max_length=256)
     id: str | None = Field(None, description="The id for the store", max_length=256)
     image: MediaFile | None = None
-    inventory_id: str | None = Field(
-        None, description="The inventory list associated with the store", max_length=256
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
-    latitude: float | None = Field(
-        None, description="The latitude of the store", ge=-90.0, le=90.0
-    )
+    inventory_id: str | None = Field(None, description="The inventory list associated with the store", max_length=256)
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
+    latitude: float | None = Field(None, description="The latitude of the store", ge=-90.0, le=90.0)
     link: str | None = Field(
-        None,
-        description="a URL that is used to get this instance.  The property is computed and cannot be changed.",
+        None, description="a URL that is used to get this instance.  The property is computed and cannot be changed."
     )
-    longitude: float | None = Field(
-        None, description="The longitude of the store", ge=-180.0, le=180.0
-    )
+    longitude: float | None = Field(None, description="The longitude of the store", ge=-180.0, le=180.0)
     name: str | None = Field(None, description="The name of the store")
-    phone: str | None = Field(
-        None, description="Returns the phone number.", max_length=256
-    )
-    pos_enabled: bool | None = Field(
-        None, description="Whether this store uses our Store product for Point-of-Sale"
-    )
-    postal_code: str | None = Field(
-        None, description="The postal code for the store", max_length=10
-    )
-    state_code: str | None = Field(
-        None, description="Returns the customer's state.", max_length=256
-    )
-    store_events: dict[str, MarkupText] | None = Field(
-        None, description="The store events (localized)"
-    )
-    store_hours: dict[str, MarkupText] | None = Field(
-        None, description="The store opening hours (localized)"
-    )
+    phone: str | None = Field(None, description="Returns the phone number.", max_length=256)
+    pos_enabled: bool | None = Field(None, description="Whether this store uses our Store product for Point-of-Sale")
+    postal_code: str | None = Field(None, description="The postal code for the store", max_length=10)
+    state_code: str | None = Field(None, description="Returns the customer's state.", max_length=256)
+    store_events: dict[str, MarkupText] | None = Field(None, description="The store events (localized)")
+    store_hours: dict[str, MarkupText] | None = Field(None, description="The store opening hours (localized)")
     store_locator_enabled: bool | None = Field(
         None, description="Whether this store should appear in store locator searches"
     )
@@ -3006,12 +2526,9 @@ class StoreSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Store] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Store] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -3020,13 +2537,10 @@ class StoreSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -3039,18 +2553,13 @@ class Stores(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[Store] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -3136,10 +2645,7 @@ class TermFilter(BaseModel):
     """
 
     field: str = Field(..., description="The filter field.")
-    operator: Operator1 = Field(
-        ...,
-        description="The operator to compare the field's values with the given ones.",
-    )
+    operator: Operator1 = Field(..., description="The operator to compare the field's values with the given ones.")
     values: list[dict[str, Any]] | None = Field(None, description="The filter values.")
 
 
@@ -3220,12 +2726,9 @@ class TermQuery(BaseModel):
         description="The document field(s) the value(s) are matched against, combined with the operator.",
         min_length=1,
     )
-    operator: Operator2 = Field(
-        ..., description="Returns the operator to use for the term query."
-    )
+    operator: Operator2 = Field(..., description="Returns the operator to use for the term query.")
     values: list[dict[str, Any]] | None = Field(
-        None,
-        description="The values the field(s) are compared against, combined with the operator.",
+        None, description="The values the field(s) are compared against, combined with the operator."
     )
 
 
@@ -3267,14 +2770,8 @@ class TextQuery(BaseModel):
       </pre></p>
     """
 
-    fields: list[str] = Field(
-        ...,
-        description="The document fields the search phrase has to match.",
-        min_length=1,
-    )
-    search_phrase: str = Field(
-        ..., description="A search phrase which may consist of multiple terms."
-    )
+    fields: list[str] = Field(..., description="The document fields the search phrase has to match.", min_length=1)
+    search_phrase: str = Field(..., description="A search phrase which may consist of multiple terms.")
 
 
 class TimeOfDay(BaseModel):
@@ -3283,12 +2780,10 @@ class TimeOfDay(BaseModel):
     """
 
     time_from: time_aliased | None = Field(
-        None,
-        description="The time to start from. Time format: HH:mm:ss. Seconds\n are ignored and set to 0.",
+        None, description="The time to start from. Time format: HH:mm:ss. Seconds\n are ignored and set to 0."
     )
     time_to: time_aliased | None = Field(
-        None,
-        description="The time to end on. Time format: HH:mm:ss. Seconds\n are ignored and set to 0.",
+        None, description="The time to end on. Time format: HH:mm:ss. Seconds\n are ignored and set to 0."
     )
 
 
@@ -3298,9 +2793,7 @@ class User(BaseModel):
     """
 
     creation_date: AwareDatetime | None = None
-    disabled: bool | None = Field(
-        None, description="Flag whether the user is disabled."
-    )
+    disabled: bool | None = Field(None, description="Flag whether the user is disabled.")
     email: str = Field(..., description="The email address.", max_length=256)
     external_id: str | None = Field(
         None,
@@ -3308,14 +2801,11 @@ class User(BaseModel):
         max_length=256,
     )
     first_name: str | None = Field(None, description="The first name.", max_length=256)
-    last_login_date: date_aliased | None = Field(
-        None, description="Last login of the user."
-    )
+    last_login_date: date_aliased | None = Field(None, description="Last login of the user.")
     last_modified: AwareDatetime | None = None
     last_name: str = Field(..., description="The last name.", max_length=256)
     link: str | None = Field(
-        None,
-        description="URL that is used to get this instance.  This property is computed and cannot be modified.",
+        None, description="URL that is used to get this instance.  This property is computed and cannot be modified."
     )
     locked: bool | None = Field(None, description="Flag whether the user is locked.")
     login: str | None = Field(None, description="The user login.", max_length=256)
@@ -3323,9 +2813,7 @@ class User(BaseModel):
         None,
         description="The password. This attribute is only used to set the password upon user creation.\n This attribute is only valid when the user does not use centralized authentication.",
     )
-    password_expiration_date: AwareDatetime | None = Field(
-        None, description="The user password expiration time"
-    )
+    password_expiration_date: AwareDatetime | None = Field(None, description="The user password expiration time")
     password_modification_date: AwareDatetime | None = Field(
         None, description="The time, where the password was last modified"
     )
@@ -3333,12 +2821,8 @@ class User(BaseModel):
         None,
         description="The effective preferred data locale of the user. A locale is only considered if the user has at least read\n permission on the locale.",
     )
-    preferred_ui_locale: str | None = Field(
-        None, description="The preferred UI locale of the user."
-    )
-    roles: list[str] | None = Field(
-        None, description="List of role ids the user is assigned to."
-    )
+    preferred_ui_locale: str | None = Field(None, description="The preferred UI locale of the user.")
+    roles: list[str] | None = Field(None, description="List of role ids the user is assigned to.")
 
 
 class UserSearchResult(BaseModel):
@@ -3354,12 +2838,9 @@ class UserSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[User] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[User] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -3368,13 +2849,10 @@ class UserSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -3387,18 +2865,13 @@ class Users(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[User] | None = Field(None, description="The list of users.")
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -3418,22 +2891,17 @@ class VariationAttributeValue(BaseModel):
     <p>Document representing a variation attribute value.</p>
     """
 
-    description: dict[str, str] | None = Field(
-        None, description="The localized description of the variation value."
-    )
+    description: dict[str, str] | None = Field(None, description="The localized description of the variation value.")
     image: MediaFile | None = None
     image_swatch: MediaFile | None = None
     link: str | None = None
-    name: dict[str, str] | None = Field(
-        None, description="The localized display name of the variation value."
-    )
+    name: dict[str, str] | None = Field(None, description="The localized display name of the variation value.")
     orderable: bool | None = Field(
         None,
         description="A flag indicating whether at least one variant with this variation attribute value is available to sell.",
     )
     position: float | None = Field(
-        None,
-        description="The position of the value among all values of a variation attribute.",
+        None, description="The position of the value among all values of a variation attribute."
     )
     value: str = Field(..., description="The actual variation value.", min_length=1)
 
@@ -3446,18 +2914,13 @@ class VariationAttributeValues(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[VariationAttributeValue] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -3468,20 +2931,11 @@ class VariationGroup(BaseModel):
     """
 
     link: str | None = Field(None, description="The URL addressing the product.")
-    orderable: bool | None = Field(
-        None, description="A flag indicating whether the variation group is orderable."
-    )
-    price: float | None = Field(
-        None, description="The sales price of the variation group."
-    )
-    price_per_unit: float | None = Field(
-        None, description="The sales price per unit of the variation group."
-    )
+    orderable: bool | None = Field(None, description="A flag indicating whether the variation group is orderable.")
+    price: float | None = Field(None, description="The sales price of the variation group.")
+    price_per_unit: float | None = Field(None, description="The sales price per unit of the variation group.")
     product_id: str | None = Field(
-        None,
-        description="The id (SKU) of the variation group.",
-        max_length=100,
-        min_length=1,
+        None, description="The id (SKU) of the variation group.", max_length=100, min_length=1
     )
     variation_values: dict[str, str] | None = Field(
         None, description="The actual variation attribute id - value pairs."
@@ -3496,18 +2950,13 @@ class VariationGroups(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[VariationGroup] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -3526,14 +2975,11 @@ class WebdavPermission(BaseModel):
     <p>Document representing a WebDAV permission.</p>
     """
 
-    description: dict[str, str] | None = Field(
-        None, description="The description of the WebDAV permission."
-    )
+    description: dict[str, str] | None = Field(None, description="The description of the WebDAV permission.")
     folder: str | None = Field(None, description="The folder of the WebDAV permission.")
     type: str | None = Field(None, description="The permission type.")
     values: list[str] | None = Field(
-        None,
-        description="The list of possible values for the WebDAV permission, e.g. ACCESS or READONLY.",
+        None, description="The list of possible values for the WebDAV permission, e.g. ACCESS or READONLY."
     )
 
 
@@ -3542,9 +2988,7 @@ class WebdavPermissions(BaseModel):
     <p>Document representing the available WebDAV permissions.</p>
     """
 
-    scopes: list[str] | None = Field(
-        None, description="The available WebDAV permission scopes (e.g. unscoped)."
-    )
+    scopes: list[str] | None = Field(None, description="The available WebDAV permission scopes (e.g. unscoped).")
     unscoped: list[WebdavPermission] | None = Field(
         None, description="The collection of available unscoped WebDAV permissions."
     )
@@ -3567,8 +3011,7 @@ class Arguments(BaseModel):
 
 class Fault1(BaseModel):
     type: str = Field(
-        ...,
-        description="Error type identifier (e.g., NotFoundException, CodeVersionIdNotFoundException)",
+        ..., description="Error type identifier (e.g., NotFoundException, CodeVersionIdNotFoundException)"
     )
     message: str = Field(..., description="Human-readable error message")
     arguments: dict[str, Arguments] | None = Field(
@@ -3592,15 +3035,10 @@ class AbTestSegment(BaseModel):
 
     allocation: int | None = Field(None, description="Test Group percentage allocation")
     custom_experience: bool | None = Field(
-        None,
-        description="Flag to determine if this Test Group is a customer experience",
+        None, description="Flag to determine if this Test Group is a customer experience"
     )
-    description: str | None = Field(
-        None, description="Test Group description", max_length=4000
-    )
-    id: str | None = Field(
-        None, description="Test group id", max_length=40, min_length=1
-    )
+    description: str | None = Field(None, description="Test Group description", max_length=4000)
+    id: str | None = Field(None, description="Test group id", max_length=40, min_length=1)
     link: str | None = Field(None, description="")
     promotions: list[dict[str, Any]] | None = Field(
         None, description="Promotions which this segment has as experiences"
@@ -3620,15 +3058,11 @@ class AccountTransaction(BaseModel):
     """
 
     amount: Money | None = None
-    order_no: str | None = Field(
-        None, description="The order number of the gift certificate"
-    )
+    order_no: str | None = Field(None, description="The order number of the gift certificate")
     timestamp: AwareDatetime | None = Field(
         None, description="The timestamp of the transaction of the gift certificate"
     )
-    type_code: TypeCode | None = Field(
-        None, description="The type code of the gift certificate"
-    )
+    type_code: TypeCode | None = Field(None, description="The type code of the gift certificate")
 
 
 class Bmpermissions(BaseModel):
@@ -3705,12 +3139,9 @@ class BoolFilter(BaseModel):
     """
 
     filters: list[Any] | None = Field(
-        None,
-        description="A list of filters, which are logically combined by an operator.",
+        None, description="A list of filters, which are logically combined by an operator."
     )
-    operator: Operator = Field(
-        ..., description="The logical operator the filters are combined with."
-    )
+    operator: Operator = Field(..., description="The logical operator the filters are combined with.")
 
 
 class BoolQuery(BaseModel):
@@ -3773,12 +3204,9 @@ class BoolQuery(BaseModel):
     """
 
     must: list[Any] | None = Field(None, description="List of queries that must match.")
-    must_not: list[Any] | None = Field(
-        None, description="List of queries that must not match."
-    )
+    must_not: list[Any] | None = Field(None, description="List of queries that must not match.")
     should: list[Any] | None = Field(
-        None,
-        description="List of queries that should match (i.e., at least one query must match).",
+        None, description="List of queries that should match (i.e., at least one query must match)."
     )
 
 
@@ -3795,12 +3223,9 @@ class CampaignSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Campaign] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Campaign] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -3809,13 +3234,10 @@ class CampaignSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -3826,28 +3248,15 @@ class Catalog(BaseModel):
     """
 
     assigned_product_count: int | None = Field(
-        None,
-        description="The count of products assigned to the catalog. It is read only.",
+        None, description="The count of products assigned to the catalog. It is read only."
     )
-    assigned_sites: list[Site] | None = Field(
-        None, description="The sites assigned to the catalog. It is read only."
-    )
-    category_count: int | None = Field(
-        None, description="The category count of catalog. It is read only."
-    )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    description: dict[str, str] | None = Field(
-        None, description="The description of catalog"
-    )
+    assigned_sites: list[Site] | None = Field(None, description="The sites assigned to the catalog. It is read only.")
+    category_count: int | None = Field(None, description="The category count of catalog. It is read only.")
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    description: dict[str, str] | None = Field(None, description="The description of catalog")
     id: str | None = Field(None, description="The catalog Id")
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
-    link: str | None = Field(
-        None, description="URL that is used to get this instance. It is read only."
-    )
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
+    link: str | None = Field(None, description="URL that is used to get this instance. It is read only.")
     name: dict[str, str] | None = Field(None, description="The catalog name")
     online: bool | None = Field(None, description="The online status of catalog")
     owned_product_count: int | None = Field(
@@ -3856,9 +3265,7 @@ class Catalog(BaseModel):
     recommendation_count: int | None = Field(
         None, description="The recommendation count of the catalog. It is read only."
     )
-    root_category: str | None = Field(
-        None, description="The root category of the catalog.  It is read only"
-    )
+    root_category: str | None = Field(None, description="The root category of the catalog.  It is read only")
 
 
 class CatalogSearchResult(BaseModel):
@@ -3874,12 +3281,9 @@ class CatalogSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Catalog] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Catalog] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -3888,13 +3292,10 @@ class CatalogSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -3907,18 +3308,13 @@ class Catalogs(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[Catalog] | None = Field(None, description="The collection of catalogs.")
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -3928,9 +3324,7 @@ class CategoryProductAssignmentSearchRequest(BaseModel):
     <p>Document representing product_search_request</p>
     """
 
-    count: int | None = Field(
-        None, description="The number of returned documents", ge=1, le=200
-    )
+    count: int | None = Field(None, description="The number of returned documents", ge=1, le=200)
     db_start_record_: int | None = Field(
         None,
         description="The zero-based index of the record that we want to start with, used to optimize special handling",
@@ -3946,13 +3340,10 @@ class CategoryProductAssignmentSearchRequest(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
 
 
@@ -3972,51 +3363,27 @@ class ContentAsset(BaseModel):
         None,
         description="The link to the classification folder. It is only part of the response, if the assignment from  this content asset to the folder is marked as 'default'. The property is read-only. To  set the classification folder just create/update an assignment between this content asset and  a folder and mark it as 'default'. See details in  /libraries/{library_id}/folder_assignments/{content_id}/{folder_id} resource.",
     )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    description: dict[str, str] | None = Field(
-        None, description="The localized content asset description."
-    )
-    id: str | None = Field(
-        None, description="The id of the content asset.", max_length=256, min_length=1
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
-    link: str | None = Field(
-        None, description="The link to the content asset resource."
-    )
-    name: dict[str, str] | None = Field(
-        None, description="The localized content asset name."
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    description: dict[str, str] | None = Field(None, description="The localized content asset description.")
+    id: str | None = Field(None, description="The id of the content asset.", max_length=256, min_length=1)
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
+    link: str | None = Field(None, description="The link to the content asset resource.")
+    name: dict[str, str] | None = Field(None, description="The localized content asset name.")
     online: dict[str, bool] | None = Field(None, description="Is the asset online?")
-    page_description: dict[str, str] | None = Field(
-        None, description="The localized content asset page description."
-    )
-    page_keywords: dict[str, str] | None = Field(
-        None, description="The localized content asset page keywords."
-    )
-    page_title: dict[str, str] | None = Field(
-        None, description="The localized content asset page title."
-    )
-    page_url: dict[str, str] | None = Field(
-        None, description="The localized content asset page url."
-    )
-    searchable: dict[str, bool] | None = Field(
-        None, description="Is the asset searchable?"
-    )
+    page_description: dict[str, str] | None = Field(None, description="The localized content asset page description.")
+    page_keywords: dict[str, str] | None = Field(None, description="The localized content asset page keywords.")
+    page_title: dict[str, str] | None = Field(None, description="The localized content asset page title.")
+    page_url: dict[str, str] | None = Field(None, description="The localized content asset page url.")
+    searchable: dict[str, bool] | None = Field(None, description="Is the asset searchable?")
     site_map_change_frequency: dict[str, SiteMapChangeFrequency] | None = Field(
         None,
         description="The content assets change frequency needed for the sitemap creation  (always, hourly, daily, weekly, monthly, yearly, never).",
     )
     site_map_included: dict[str, SiteMapIncluded] | None = Field(
-        None,
-        description="The status if the content asset is included into the sitemap (either 0 or  1).",
+        None, description="The status if the content asset is included into the sitemap (either 0 or  1)."
     )
     site_map_priority: dict[str, SiteMapPriority] | None = Field(
-        None,
-        description="The content assets priority needed for the sitemap creation (0.0 for no  priority defined).",
+        None, description="The content assets priority needed for the sitemap creation (0.0 for no  priority defined)."
     )
     template: str | None = Field(None, description="The rendering template.")
 
@@ -4026,22 +3393,16 @@ class ContentAssetResult(BaseModel):
     <p>Result document containing an array of content assets.</p>
     """
 
-    count: int | None = Field(
-        None, description="The number of search results in the current page."
-    )
+    count: int | None = Field(None, description="The number of search results in the current page.")
     data: list[dict[str, Any]] | None = Field(None, description="The returned objects.")
     hits: list[ContentAsset] | None = Field(
         None, description="The sorted array of search hits. This array can be empty."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search result to include in the document.",
-        ge=0,
+        None, description="The zero-based index of the first search result to include in the document.", ge=0
     )
     total: int | None = Field(None, description="The total number of search results.")
 
@@ -4052,49 +3413,20 @@ class ContentFolder(BaseModel):
     """
 
     c_customCSSFile: MediaFile | None = None
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    description: dict[str, str] | None = Field(
-        None, description="The localized content folder description."
-    )
-    id: str | None = Field(
-        None, description="The id of the content folder.", max_length=256
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
-    link: str | None = Field(
-        None, description="The link to the content folder resource."
-    )
-    name: dict[str, str] | None = Field(
-        None, description="The localized content folder name."
-    )
-    online: bool | None = Field(
-        None,
-        description="A flag indicating whether the folder in online (default is false).",
-    )
-    page_description: dict[str, str] | None = Field(
-        None, description="The localized content folder page description."
-    )
-    page_keywords: dict[str, str] | None = Field(
-        None, description="The localized content folder page keywords."
-    )
-    page_title: dict[str, str] | None = Field(
-        None, description="The localized content folder page title."
-    )
-    page_url: dict[str, str] | None = Field(
-        None, description="The localized content folder page URL."
-    )
-    parent_folder_id: str | None = Field(
-        None, description="The id of the parent content folder."
-    )
-    parent_link: str | None = Field(
-        None, description="The URL to the parent content folder."
-    )
-    sub_folders_link: str | None = Field(
-        None, description="The URL to list the content sub-folders."
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    description: dict[str, str] | None = Field(None, description="The localized content folder description.")
+    id: str | None = Field(None, description="The id of the content folder.", max_length=256)
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
+    link: str | None = Field(None, description="The link to the content folder resource.")
+    name: dict[str, str] | None = Field(None, description="The localized content folder name.")
+    online: bool | None = Field(None, description="A flag indicating whether the folder in online (default is false).")
+    page_description: dict[str, str] | None = Field(None, description="The localized content folder page description.")
+    page_keywords: dict[str, str] | None = Field(None, description="The localized content folder page keywords.")
+    page_title: dict[str, str] | None = Field(None, description="The localized content folder page title.")
+    page_url: dict[str, str] | None = Field(None, description="The localized content folder page URL.")
+    parent_folder_id: str | None = Field(None, description="The id of the parent content folder.")
+    parent_link: str | None = Field(None, description="The URL to the parent content folder.")
+    sub_folders_link: str | None = Field(None, description="The URL to list the content sub-folders.")
     template: str | None = Field(None, description="The rendering template.")
 
 
@@ -4103,22 +3435,16 @@ class ContentFolderResult(BaseModel):
     <p>Result document containing an array of content folders.</p>
     """
 
-    count: int | None = Field(
-        None, description="The number of search results in the current page."
-    )
+    count: int | None = Field(None, description="The number of search results in the current page.")
     data: list[dict[str, Any]] | None = Field(None, description="The returned objects.")
     hits: list[ContentFolder] | None = Field(
         None, description="The sorted array of search hits. This array can be empty."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search result to include in the document.",
-        ge=0,
+        None, description="The zero-based index of the first search result to include in the document.", ge=0
     )
     total: int | None = Field(None, description="The total number of search results.")
 
@@ -4128,22 +3454,16 @@ class ContentSubFolderResult(BaseModel):
     <p>Result document containing an array of content subfolders.</p>
     """
 
-    count: int | None = Field(
-        None, description="The number of search results in the current page."
-    )
+    count: int | None = Field(None, description="The number of search results in the current page.")
     data: list[dict[str, Any]] | None = Field(None, description="The returned objects.")
     hits: list[ContentFolder] | None = Field(
         None, description="The sorted array of search hits. This array can be empty."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search result to include in the document.",
-        ge=0,
+        None, description="The zero-based index of the first search result to include in the document.", ge=0
     )
     total: int | None = Field(None, description="The total number of search results.")
 
@@ -4157,40 +3477,26 @@ class Coupon(BaseModel):
         None,
         description="<code>True</code> if a coupon is case insensitive; <code>false</code> otherwise. This attribute on the coupon can not be\n modified after the coupon has been created. If an attempt was made to modify this the system would return\n CouponUpdateForbiddenException",
     )
-    coupon_id: str | None = Field(
-        None, description="The id of the coupon.", max_length=256, min_length=1
-    )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    description: str | None = Field(
-        None, description="The description of the coupon.", max_length=4000
-    )
-    enabled: bool | None = Field(
-        None, description="A flag indicating whether the coupon is enabled."
-    )
+    coupon_id: str | None = Field(None, description="The id of the coupon.", max_length=256, min_length=1)
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    description: str | None = Field(None, description="The description of the coupon.", max_length=4000)
+    enabled: bool | None = Field(None, description="A flag indicating whether the coupon is enabled.")
     exported_code_count: int | None = Field(
         None,
         description="The number of coupon codes attached to the coupon that have been issued (request search only).",
     )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
     link: str | None = Field(None, description="A link to the coupon.")
     multiple_codes_per_basket: bool | None = Field(
         None,
         description="<code>True</code> if a coupon with multiple codes can have different codes used on the same basket or order. If the coupon\n type does not support this configuration, this will return <code>false</code>.",
     )
     redemption_count: int | None = Field(
-        None,
-        description="The number of times the coupon has been redeemed (request search only).",
+        None, description="The number of times the coupon has been redeemed (request search only)."
     )
     redemption_limits: RedemptionLimits | None = None
     single_code: str | None = Field(
-        None,
-        description="Single coupon code, only valid for Single Code type",
-        max_length=256,
-        min_length=1,
+        None, description="Single coupon code, only valid for Single Code type", max_length=256, min_length=1
     )
     system_codes_config: CouponSystemCodeConfig | None = None
     total_codes_count: int | None = Field(
@@ -4212,12 +3518,9 @@ class CouponRedemptionSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[CouponRedemption] | None = Field(
-        None, description="The hits from the search"
-    )
+    hits: list[CouponRedemption] | None = Field(None, description="The hits from the search")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -4226,13 +3529,10 @@ class CouponRedemptionSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -4250,12 +3550,9 @@ class CouponSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Coupon] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Coupon] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -4264,13 +3561,10 @@ class CouponSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -4283,18 +3577,13 @@ class Coupons(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[Coupon] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -4310,33 +3599,19 @@ class CustomLogSettings(BaseModel):
     <p>Document representing custom logging settings.</p>
     """
 
-    debug_permitted: bool | None = Field(
-        None, description="False if the current instance is production."
-    )
-    debug_to_file: bool | None = Field(
-        None, description="Indicates if custom debug logs are written to file."
-    )
+    debug_permitted: bool | None = Field(None, description="False if the current instance is production.")
+    debug_to_file: bool | None = Field(None, description="Indicates if custom debug logs are written to file.")
     email_to: str | None = Field(
         None,
         description="Email addresses for fatal log messages with a maximum length of 1000 characters.",
         max_length=1000,
     )
-    error_to_file: bool | None = Field(
-        None, description="Indicates if custom error logs are written to file."
-    )
-    fatal_to_file: bool | None = Field(
-        None, description="Indicates if custom fatal logs are written to file."
-    )
-    info_to_file: bool | None = Field(
-        None, description="Indicates if custom info logs are written to file."
-    )
-    log_categories: list[LogCategory] | None = Field(
-        None, description="Defined custom log categories."
-    )
+    error_to_file: bool | None = Field(None, description="Indicates if custom error logs are written to file.")
+    fatal_to_file: bool | None = Field(None, description="Indicates if custom fatal logs are written to file.")
+    info_to_file: bool | None = Field(None, description="Indicates if custom info logs are written to file.")
+    log_categories: list[LogCategory] | None = Field(None, description="Defined custom log categories.")
     root_level: str | None = Field(None, description="Custom root category log level.")
-    warn_to_file: bool | None = Field(
-        None, description="Indicates if custom warn logs are written to file."
-    )
+    warn_to_file: bool | None = Field(None, description="Indicates if custom warn logs are written to file.")
 
 
 class CustomObjectSearchResult(BaseModel):
@@ -4352,12 +3627,9 @@ class CustomObjectSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[CustomObject] | None = Field(
-        None, description="The sorted array of search hits. May be empty."
-    )
+    hits: list[CustomObject] | None = Field(None, description="The sorted array of search hits. May be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -4366,13 +3638,10 @@ class CustomObjectSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -4384,61 +3653,32 @@ class Customer(BaseModel):
 
     birthday: date_aliased | None = Field(None, description="The customer's birthday.")
     c_familyStatus: str | None = None
-    company_name: str | None = Field(
-        None, description="The customer's company name.", max_length=256
-    )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
+    company_name: str | None = Field(None, description="The customer's company name.", max_length=256)
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
     credentials: Credentials | None = None
     customer_id: str | None = Field(
-        None,
-        description="The customer's id. Both registered and guest customers have a\n customer id.",
-        max_length=28,
+        None, description="The customer's id. Both registered and guest customers have a\n customer id.", max_length=28
     )
-    customer_no: str | None = Field(
-        None, description="The customer's number.", max_length=100
-    )
-    email: EmailStr | None = Field(
-        None, description="The customer's email address.", max_length=256
-    )
+    customer_no: str | None = Field(None, description="The customer's number.", max_length=100)
+    email: EmailStr | None = Field(None, description="The customer's email address.", max_length=256)
     fax: str | None = Field(
         None,
         description="The fax number to use for the customer.\n The length is restricted to 32 characters.",
         max_length=32,
     )
-    first_name: str | None = Field(
-        None, description="The customer's first name.", max_length=256
-    )
+    first_name: str | None = Field(None, description="The customer's first name.", max_length=256)
     gender: Gender | None = Field(None, description="The customer's gender.")
     global_party_id: str | None = Field(
-        None,
-        description="The Global Party ID is set by Customer 360 and identifies a person across multiple systems.",
+        None, description="The Global Party ID is set by Customer 360 and identifies a person across multiple systems."
     )
-    job_title: str | None = Field(
-        None, description="The customer's job title.", max_length=256
-    )
-    last_login_time: AwareDatetime | None = Field(
-        None, description="The last login time of the customer."
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
-    last_name: str | None = Field(
-        None, description="The customer's last name.", max_length=256
-    )
-    last_visit_time: AwareDatetime | None = Field(
-        None, description="The last visit time of the customer."
-    )
-    phone_business: str | None = Field(
-        None, description="The customer's business phone number.", max_length=32
-    )
-    phone_home: str | None = Field(
-        None, description="The customer's home phone number.", max_length=32
-    )
-    phone_mobile: str | None = Field(
-        None, description="The customer's mobile phone number.", max_length=32
-    )
+    job_title: str | None = Field(None, description="The customer's job title.", max_length=256)
+    last_login_time: AwareDatetime | None = Field(None, description="The last login time of the customer.")
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
+    last_name: str | None = Field(None, description="The customer's last name.", max_length=256)
+    last_visit_time: AwareDatetime | None = Field(None, description="The last visit time of the customer.")
+    phone_business: str | None = Field(None, description="The customer's business phone number.", max_length=32)
+    phone_home: str | None = Field(None, description="The customer's home phone number.", max_length=32)
+    phone_mobile: str | None = Field(None, description="The customer's mobile phone number.", max_length=32)
     preferred_locale: str | None = Field(
         None,
         description="The customer's preferred locale, formatted with a hyphen. (For example: en-US)\n If the request uses an underscore, as with the Java locale format, the stored value is converted to a hyphen.\n (For example: en_US is stored as en-US)",
@@ -4450,22 +3690,12 @@ class Customer(BaseModel):
         None, description="The time when the customer previously visited the store."
     )
     primary_address: CustomerAddress | None = None
-    salutation: str | None = Field(
-        None, description="The customer's salutation.", max_length=256
-    )
-    second_name: str | None = Field(
-        None, description="The customer's second name.", max_length=256
-    )
+    salutation: str | None = Field(None, description="The customer's salutation.", max_length=256)
+    second_name: str | None = Field(None, description="The customer's second name.", max_length=256)
     suffix: str | None = Field(
-        None,
-        description='The customer\'s suffix (for example, "Jr." or "Sr.").',
-        max_length=256,
+        None, description='The customer\'s suffix (for example, "Jr." or "Sr.").', max_length=256
     )
-    title: str | None = Field(
-        None,
-        description='The customer\'s title (for example, "Mrs" or "Mr").',
-        max_length=256,
-    )
+    title: str | None = Field(None, description='The customer\'s title (for example, "Mrs" or "Mr").', max_length=256)
 
 
 class CustomerGroup(BaseModel):
@@ -4473,12 +3703,9 @@ class CustomerGroup(BaseModel):
     <p>Document representing a customer group</p>
     """
 
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
     description: str | None = Field(
-        None,
-        description="The description for the customer group.  This property is read-only for system groups.",
+        None, description="The description for the customer group.  This property is read-only for system groups."
     )
     id: str | None = Field(
         None,
@@ -4486,23 +3713,14 @@ class CustomerGroup(BaseModel):
         max_length=256,
         min_length=1,
     )
-    in_deletion: bool | None = Field(
-        None, description="The deletion status of this customer group."
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
+    in_deletion: bool | None = Field(None, description="The deletion status of this customer group.")
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
     link: str | None = Field(
-        None,
-        description="URL that is used to get this instance.  This property is computed and cannot be modified.",
+        None, description="URL that is used to get this instance.  This property is computed and cannot be modified."
     )
-    member_count: int | None = Field(
-        None, description="The number of members in this customer group."
-    )
+    member_count: int | None = Field(None, description="The number of members in this customer group.")
     rule: Rule | None = None
-    type: Type2 | None = Field(
-        None, description="The type of the customer group.  This property is read-only."
-    )
+    type: Type2 | None = Field(None, description="The type of the customer group.  This property is read-only.")
 
 
 class CustomerGroupMemberSearchResult(BaseModel):
@@ -4518,12 +3736,9 @@ class CustomerGroupMemberSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[CustomerGroupMember] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[CustomerGroupMember] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -4532,13 +3747,10 @@ class CustomerGroupMemberSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -4556,12 +3768,9 @@ class CustomerGroupSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[CustomerGroup] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[CustomerGroup] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -4570,13 +3779,10 @@ class CustomerGroupSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -4589,18 +3795,13 @@ class CustomerGroups(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[CustomerGroup] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -4631,12 +3832,8 @@ class CustomerSearchResult(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[dict[str, Any]] | None = None
     db_start_record_: int | None = Field(None, ge=0)
-    expand: list[str] | None = Field(
-        None, description="The list of expands set. Can be empty."
-    )
-    hits: list[CustomerSearchHit] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    expand: list[str] | None = Field(None, description="The list of expands set. Can be empty.")
+    hits: list[CustomerSearchHit] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -4646,9 +3843,7 @@ class CustomerSearchResult(BaseModel):
     select: str | None = Field(None, description="The fields that you want to select.")
     sorts: list[Sort] | None = None
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -4691,21 +3886,12 @@ class GiftCertificate(BaseModel):
 
     amount: Money | None = None
     balance: Money | None = None
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    description: str | None = Field(
-        None, description="The description of the gift certificate.", max_length=4000
-    )
-    enabled: bool | None = Field(
-        None, description="The enabled flag of the gift certificate."
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    description: str | None = Field(None, description="The description of the gift certificate.", max_length=4000)
+    enabled: bool | None = Field(None, description="The enabled flag of the gift certificate.")
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
     link: str | None = Field(
-        None,
-        description="The URL to get the gift certificate.\n This is a computed attribute and cannot be modified.",
+        None, description="The URL to get the gift certificate.\n This is a computed attribute and cannot be modified."
     )
     masked_gift_certificate_code: str | None = Field(
         None,
@@ -4716,22 +3902,12 @@ class GiftCertificate(BaseModel):
         description="The merchant ID of the gift certificate.\n This is a unique attribute.\n This is a computed attribute and cannot be modified.\n This is used to get, update and the delete gift certificates.",
     )
     message: str | None = Field(
-        None,
-        description="The message to the recipient of the gift certificate.",
-        max_length=4000,
+        None, description="The message to the recipient of the gift certificate.", max_length=4000
     )
-    order_no: str | None = Field(
-        None, description="The order number of the gift certificate."
-    )
-    recipient_email: str | None = Field(
-        None, description="The email address of the recipient of the gift certificate."
-    )
-    recipient_name: str | None = Field(
-        None, description="The recipient of the gift certificate.", max_length=256
-    )
-    sender_name: str | None = Field(
-        None, description="The sender of the gift certificate.", max_length=256
-    )
+    order_no: str | None = Field(None, description="The order number of the gift certificate.")
+    recipient_email: str | None = Field(None, description="The email address of the recipient of the gift certificate.")
+    recipient_name: str | None = Field(None, description="The recipient of the gift certificate.", max_length=256)
+    sender_name: str | None = Field(None, description="The sender of the gift certificate.", max_length=256)
     status: Status2 | None = Field(
         None,
         description='The status of the gift certificate.\n While creating a gift certificate, user can set the status\n to either "pending" or "issued" only.',
@@ -4755,12 +3931,9 @@ class GiftCertificateSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[GiftCertificate] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[GiftCertificate] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -4769,13 +3942,10 @@ class GiftCertificateSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -4788,18 +3958,13 @@ class GiftCertificates(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[GiftCertificate] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -4817,12 +3982,9 @@ class InventoryListSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[InventoryList] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[InventoryList] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -4831,31 +3993,21 @@ class InventoryListSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
 
 class JobStepExecution(BaseModel):
     chunk_size: int | None = Field(
-        None,
-        description="The chunk size for a chunk oriented step execution, otherwise null.",
+        None, description="The chunk size for a chunk oriented step execution, otherwise null."
     )
-    duration: int | None = Field(
-        None, description="Time in milliseconds, the execution was or is running."
-    )
-    end_time: AwareDatetime | None = Field(
-        None, description="Timestamp, when execution was finished."
-    )
-    execution_scope: str | None = Field(
-        None, description="The ID of the scope this step is or was executed for."
-    )
+    duration: int | None = Field(None, description="Time in milliseconds, the execution was or is running.")
+    end_time: AwareDatetime | None = Field(None, description="Timestamp, when execution was finished.")
+    execution_scope: str | None = Field(None, description="The ID of the scope this step is or was executed for.")
     execution_status: ExecutionStatus1 | None = Field(
         None,
         description="Current execution status of the step.\n <ul>\n <li>'pending': Execution of the step been initiated but the step is not executing yet. Possible next status:\n 'running'.</li>\n <li>'running': The step is currently actively executed. Possible next status: 'finished', 'pausing' or\n 'aborted'.</li>\n <li>'finished': The step execution is finished and is not actively executed currently. Possible next status:\n none.</li>\n <li>'pausing': Pausing of a running step execution has been initiated but the step is not paused yet. Possible\n next status: 'paused' or 'aborted'.</li>\n <li>'paused': The step execution is paused and is not actively executed currently. Possible next status:\n 'pending'.</li>\n <li>'aborted': A running step execution has been aborted and is not actively executed currently. Possible next\n status: none.</li>\n </ul>",
@@ -4867,8 +4019,7 @@ class JobStepExecution(BaseModel):
         description="ID of the job the step of this step execution was included from, if the step was included from another job.",
     )
     is_chunk_oriented: bool | None = Field(
-        None,
-        description="True if this execution represents a chunk oriented step execution.",
+        None, description="True if this execution represents a chunk oriented step execution."
     )
     item_filter_count: int | None = Field(
         None,
@@ -4881,24 +4032,17 @@ class JobStepExecution(BaseModel):
     modification_time: AwareDatetime | None = Field(
         None, description="Timestamp of the last modification time for the execution."
     )
-    start_time: AwareDatetime | None = Field(
-        None, description="Timestamp, when execution was started."
-    )
+    start_time: AwareDatetime | None = Field(None, description="Timestamp, when execution was started.")
     status: str | None = Field(
         None,
         description="The current status. If the step execution is currently executed (execution status is one of 'pending', 'running',\n 'pausing') the execution status is returned. If the step execution is not executed currently anymore (execution\n status is one one 'finished', 'paused' or 'aborted') the exit status code of the step execution is returned.",
     )
     status_metadata: StatusMetadata | None = None
     step_description: str | None = Field(
-        None,
-        description="Description of the step, this execution belongs to.ID of the step",
+        None, description="Description of the step, this execution belongs to.ID of the step"
     )
-    step_id: str | None = Field(
-        None, description="ID of the step, this execution belongs to.ID of the step"
-    )
-    step_type_id: str | None = Field(
-        None, description="ID of the step's type at the time it is or was executed."
-    )
+    step_id: str | None = Field(None, description="ID of the step, this execution belongs to.ID of the step")
+    step_type_id: str | None = Field(None, description="ID of the step's type at the time it is or was executed.")
     step_type_info: str | None = Field(
         None,
         description="Additional information regarding the step's type at the time it is or was executed (e.g. name of a script module\n and function).",
@@ -4981,12 +4125,8 @@ class ObjectAttributeDefinition(BaseModel):
 
     creation_date: AwareDatetime | None = None
     default_value: ObjectAttributeValueDefinition | None = None
-    description: dict[str, str] | None = Field(
-        None, description="The localized description of the attribute."
-    )
-    display_name: dict[str, str] | None = Field(
-        None, description="The localized name presented to the user in forms."
-    )
+    description: dict[str, str] | None = Field(None, description="The localized description of the attribute.")
+    display_name: dict[str, str] | None = Field(None, description="The localized name presented to the user in forms.")
     effective_id: str | None = Field(
         None,
         description="The effective ID, which is c_id if the attribute is custom, and just the id otherwise. It is read only.",
@@ -4997,36 +4137,19 @@ class ObjectAttributeDefinition(BaseModel):
     externally_managed: bool | None = Field(
         None, description="Flag indicating if this attribute is externally managed."
     )
-    field_height: int | None = Field(
-        None, description="The height of the field for this attribute in the editor."
-    )
-    field_length: int | None = Field(
-        None, description="The length of the field for this attribute in the editor."
-    )
+    field_height: int | None = Field(None, description="The height of the field for this attribute in the editor.")
+    field_length: int | None = Field(None, description="The length of the field for this attribute in the editor.")
     id: str | None = Field(None, description="The user supplied ID of the attribute.")
-    key: bool | None = Field(
-        None, description="Flag indicating if this is a key attribute."
-    )
+    key: bool | None = Field(None, description="Flag indicating if this is a key attribute.")
     last_modified: AwareDatetime | None = None
     link: str | None = Field(
-        None,
-        description="The URL that is used to get this instance.  Value is computed and read-only.",
+        None, description="The URL that is used to get this instance.  Value is computed and read-only."
     )
-    localizable: bool | None = Field(
-        None, description="Flag indicating if this attribute can be localized."
-    )
-    mandatory: bool | None = Field(
-        None, description="Flag indicating if a value is mandatory for the attribute."
-    )
-    max_value: float | None = Field(
-        None, description="The maximum possible value for this attribute."
-    )
-    min_length: int | None = Field(
-        None, description="The minimum length of the field for this attribute."
-    )
-    min_value: float | None = Field(
-        None, description="The minimum possible value for this attribute."
-    )
+    localizable: bool | None = Field(None, description="Flag indicating if this attribute can be localized.")
+    mandatory: bool | None = Field(None, description="Flag indicating if a value is mandatory for the attribute.")
+    max_value: float | None = Field(None, description="The maximum possible value for this attribute.")
+    min_length: int | None = Field(None, description="The minimum length of the field for this attribute.")
+    min_value: float | None = Field(None, description="The minimum possible value for this attribute.")
     multi_value_type: bool | None = Field(
         None,
         description="<p>True if the attribute can have multiple values.</p>\n <p>Attributes of the following types are multi-value capable:</p>\n <ul>\n <li>set_of_int</li>\n <li>set_of_number</li>\n <li>set_of_string</li>\n </ul>\n <p>Additionally, attributes of the following types can be multi-value\n enabled:</p>\n <ul>\n <li>enum_of_int</li>\n <li>enum_of_string</li>\n </ul>",
@@ -5039,48 +4162,27 @@ class ObjectAttributeDefinition(BaseModel):
         None,
         description="Returns true if the attribute definition is explicitly marked queryable. If no explicit queryable is found\n and the attribute value type belongs to a queryable type, true is returned too. In all other cases false is returned.\n Value is computed and read-only.",
     )
-    read_only: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is read-only. It is read only.",
-    )
+    read_only: bool | None = Field(None, description="Flag indicating if this attribute is read-only. It is read only.")
     regular_expression: str | None = Field(
-        None,
-        description="A regular expression that defines the legal values for this attribute.",
+        None, description="A regular expression that defines the legal values for this attribute."
     )
     requires_encoding: bool | None = Field(
         None,
         description='Flag indicating if this attribute can be encoded using the encoding="off" flag in ISML templates. It is read only.',
     )
-    scale: int | None = Field(
-        None,
-        description="The minimum number of fraction digits for a value of this attribute.",
-    )
-    searchable: bool | None = Field(
-        None, description="Flag indicating if this attribute is searchable."
-    )
+    scale: int | None = Field(None, description="The minimum number of fraction digits for a value of this attribute.")
+    searchable: bool | None = Field(None, description="Flag indicating if this attribute is searchable.")
     set_value_type: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is of type 'Set of'. It is read only.",
+        None, description="Flag indicating if this attribute is of type 'Set of'. It is read only."
     )
-    site_specific: bool | None = Field(
-        None, description="Flag indicating if this attribute is site-specific."
-    )
-    system: bool | None = Field(
-        None, description="Flag indicating if this attribute is a system attribute."
-    )
-    unit: dict[str, str] | None = Field(
-        None, description="The unit of measure for this attribute."
-    )
+    site_specific: bool | None = Field(None, description="Flag indicating if this attribute is site-specific.")
+    system: bool | None = Field(None, description="Flag indicating if this attribute is a system attribute.")
+    unit: dict[str, str] | None = Field(None, description="The unit of measure for this attribute.")
     value_definitions: list[ObjectAttributeValueDefinition] | None = Field(
-        None,
-        description="A set of values that are possible for this attribute. It is read only.",
+        None, description="A set of values that are possible for this attribute. It is read only."
     )
-    value_type: ValueType | None = Field(
-        None, description="The type of this attribute."
-    )
-    visible: bool | None = Field(
-        None, description="Flag indicating if this attribute is visible."
-    )
+    value_type: ValueType | None = Field(None, description="The type of this attribute.")
+    visible: bool | None = Field(None, description="Flag indicating if this attribute is visible.")
 
 
 class ObjectAttributeDefinitionSearchResult(BaseModel):
@@ -5096,8 +4198,7 @@ class ObjectAttributeDefinitionSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
     hits: list[ObjectAttributeDefinition] | None = Field(
         None, description="The sorted array of search hits. Can be empty."
@@ -5110,13 +4211,10 @@ class ObjectAttributeDefinitionSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -5129,18 +4227,13 @@ class ObjectAttributeDefinitions(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[ObjectAttributeDefinition] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -5154,32 +4247,23 @@ class ObjectAttributeGroup(BaseModel):
         None, description="Attributes with the group displayed when expand=definition"
     )
     attribute_definitions_count: int | None = Field(
-        None,
-        description="The count of the attributes within the group.  This is a computed attribute and is read-only",
+        None, description="The count of the attributes within the group.  This is a computed attribute and is read-only"
     )
     creation_date: AwareDatetime | None = None
     description: dict[str, str] | None = Field(
         None, description="The free-form text description of the group by locale"
     )
-    display_name: dict[str, str] | None = Field(
-        None, description="The name used to display the group by locale."
-    )
-    id: str | None = Field(
-        None,
-        description="The group's user specified identifier, used to retrieve the group",
-    )
+    display_name: dict[str, str] | None = Field(None, description="The name used to display the group by locale.")
+    id: str | None = Field(None, description="The group's user specified identifier, used to retrieve the group")
     internal: bool | None = Field(
         None,
         description="True if the group is meant only for internal use, false otherwise.  This property is read-only.",
     )
     last_modified: AwareDatetime | None = None
     link: str | None = Field(
-        None,
-        description="URL that is used to get this instance.  This is a computed attribute and is read-only",
+        None, description="URL that is used to get this instance.  This is a computed attribute and is read-only"
     )
-    position: float | None = Field(
-        None, description="The position of the group relative to other groups.", ge=0.0
-    )
+    position: float | None = Field(None, description="The position of the group relative to other groups.", ge=0.0)
 
 
 class ObjectAttributeGroupSearchResult(BaseModel):
@@ -5195,12 +4279,9 @@ class ObjectAttributeGroupSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[ObjectAttributeGroup] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[ObjectAttributeGroup] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -5209,13 +4290,10 @@ class ObjectAttributeGroupSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -5228,18 +4306,13 @@ class ObjectAttributeGroups(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[ObjectAttributeGroup] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -5257,12 +4330,9 @@ class ObjectTypeDefinitionSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[ObjectTypeDefinition] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[ObjectTypeDefinition] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -5271,13 +4341,10 @@ class ObjectTypeDefinitionSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -5287,9 +4354,7 @@ class OrganizationPreferences(BaseModel):
     <p>Represents a set of preferences attached at the organization level.</p>
     """
 
-    link: str | None = Field(
-        None, description="A URL that returns the full details for a custom preference"
-    )
+    link: str | None = Field(None, description="A URL that returns the full details for a custom preference")
     site_preferences: list[SitePreferences] | None = Field(
         None, description="The list of site preferences, returned with expand=sites"
     )
@@ -5301,19 +4366,11 @@ class PreferenceValue(BaseModel):
     """
 
     attribute_definition: ObjectAttributeDefinition | None = None
-    description: dict[str, str] | None = Field(
-        None, description="Description of the attribute"
-    )
-    display_name: dict[str, str] | None = Field(
-        None, description="Display name for the attribute"
-    )
+    description: dict[str, str] | None = Field(None, description="Description of the attribute")
+    display_name: dict[str, str] | None = Field(None, description="Display name for the attribute")
     id: str | None = Field(None, description="The id of the attribute")
-    site_values: dict[str, dict[str, Any]] | None = Field(
-        None, description="The value of this attribute"
-    )
-    value_type: ValueType | None = Field(
-        None, description="The type of this attribute."
-    )
+    site_values: dict[str, dict[str, Any]] | None = Field(None, description="The value of this attribute")
+    value_type: ValueType | None = Field(None, description="The type of this attribute.")
 
 
 class PreferenceValueSearchResult(BaseModel):
@@ -5329,12 +4386,9 @@ class PreferenceValueSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[PreferenceValue] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[PreferenceValue] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -5343,13 +4397,10 @@ class PreferenceValueSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -5364,42 +4415,27 @@ class ProductInventoryRecord(BaseModel):
         None,
         description="The quantity of items available to sell (ATS). This is calculated as the allocation plus the\n preorderBackorderAllocation minus the turnover.",
     )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    in_stock_date: AwareDatetime | None = Field(
-        None, description="The date that the item is expected to be in stock."
-    )
-    inventory_list_id: str | None = Field(
-        None, description="The user supplied ID of the inventory list."
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    in_stock_date: AwareDatetime | None = Field(None, description="The date that the item is expected to be in stock.")
+    inventory_list_id: str | None = Field(None, description="The user supplied ID of the inventory list.")
     inventory_turnover: float | None = Field(
         None,
         description="The sum of all inventory transactions (decrements and increments) that have been recorded subsequent to the\n allocation was reset date. The quantity value can be negative due to higher quantity of inventory decrements than\n increments.",
     )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
-    link: str | None = Field(
-        None, description="The URL that is used to get this instance."
-    )
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
+    link: str | None = Field(None, description="The URL that is used to get this instance.")
     perpetual_flag: bool | None = Field(
-        None,
-        description="The flag that determines if the product is perpetually in stock.",
+        None, description="The flag that determines if the product is perpetually in stock."
     )
     pre_order_back_order_allocation: float | None = Field(
-        None,
-        description="The quantity of items that are allocated for sale, beyond the initial stock allocation.",
+        None, description="The quantity of items that are allocated for sale, beyond the initial stock allocation."
     )
     pre_order_back_order_handling: PreOrderBackOrderHandling | None = Field(
         None,
         description="The enum holding the records pre-backorder-handling configuration. Possible values are NONE, PREORDER and\n BACKORDER. Method returns NONE in case the record pre-backorder-handling-code is null or unknown.",
     )
     product_id: str | None = Field(
-        None,
-        description="The user supplied ID of the product.",
-        max_length=256,
-        min_length=1,
+        None, description="The user supplied ID of the product.", max_length=256, min_length=1
     )
     product_name: str | None = Field(None, description="The name of the product.")
     quantity_on_order: float | None = Field(
@@ -5407,8 +4443,7 @@ class ProductInventoryRecord(BaseModel):
         description="The on order quantity, the quantity of all transactions for this record since the allocation reset date.",
     )
     stock_level: float | None = Field(
-        None,
-        description="The current stock level. This is calculated as the allocation minus the turnover.",
+        None, description="The current stock level. This is calculated as the allocation minus the turnover."
     )
 
 
@@ -5418,22 +4453,15 @@ class ProductInventoryRecords(BaseModel):
     """
 
     count: int | None = Field(None, description="The number of returned documents.")
-    data: list[ProductInventoryRecord] | None = Field(
-        None, description="The collection of product inventory records."
-    )
+    data: list[ProductInventoryRecord] | None = Field(None, description="The collection of product inventory records.")
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -5443,15 +4471,9 @@ class ProductOption(BaseModel):
     <p>Document representing a product option</p>
     """
 
-    custom_name: dict[str, str] | None = Field(
-        None, description="The localized custom name of the product option."
-    )
-    default_product_option_value: str | None = Field(
-        None, description="The default product option value."
-    )
-    description: dict[str, str] | None = Field(
-        None, description="The localized description of the product option."
-    )
+    custom_name: dict[str, str] | None = Field(None, description="The localized custom name of the product option.")
+    default_product_option_value: str | None = Field(None, description="The default product option value.")
+    description: dict[str, str] | None = Field(None, description="The localized description of the product option.")
     id: str | None = Field(
         None,
         description="The object attribute definition id which is also the identifier for the product option.",
@@ -5459,19 +4481,10 @@ class ProductOption(BaseModel):
     )
     image: MediaFile | None = None
     link: str | None = Field(None, description="The URL link to the product option.")
-    name: str | None = Field(
-        None, description="The name of the object attribute definition."
-    )
-    selected_option_value: str | None = Field(
-        None, description="The selected option value of the product option."
-    )
-    shared: bool | None = Field(
-        None,
-        description="The flag that indicates if the product option is shared or local.",
-    )
-    sorting_mode: SortingMode | None = Field(
-        None, description="The sorting mode for the product option values."
-    )
+    name: str | None = Field(None, description="The name of the object attribute definition.")
+    selected_option_value: str | None = Field(None, description="The selected option value of the product option.")
+    shared: bool | None = Field(None, description="The flag that indicates if the product option is shared or local.")
+    sorting_mode: SortingMode | None = Field(None, description="The sorting mode for the product option values.")
     values: list[ProductOptionValue] | None = Field(
         None, description="The sorted array of values of the product option."
     )
@@ -5485,18 +4498,13 @@ class ProductOptions(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[ProductOption] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -5506,9 +4514,7 @@ class Recurrence(BaseModel):
     <p>Document representing a schedule recurrence.</p>
     """
 
-    day_of_week: list[DayOfWeekEnum] | DayOfWeek | None = Field(
-        None, description="The days of week for recurrence."
-    )
+    day_of_week: list[DayOfWeekEnum] | DayOfWeek | None = Field(None, description="The days of week for recurrence.")
     time_of_day: TimeOfDay | None = None
 
 
@@ -5518,24 +4524,15 @@ class ResourceObject(BaseModel):
     """
 
     cache_time: int | None = Field(None, description="Resource Cache time")
-    config: dict[str, str] | None = Field(
-        None, description="Configuration of the resource"
-    )
-    methods: list[str] = Field(
-        ..., description="Allowed methods of the resource", min_length=1
-    )
+    config: dict[str, str] | None = Field(None, description="Configuration of the resource")
+    methods: list[str] = Field(..., description="Allowed methods of the resource", min_length=1)
     personalized_caching_enabled: bool | None = Field(
-        None,
-        description="Indicate if the personalized caching is enabled for the resource",
+        None, description="Indicate if the personalized caching is enabled for the resource"
     )
-    read_attributes: str | None = Field(
-        None, description="Read attributes of the resource"
-    )
+    read_attributes: str | None = Field(None, description="Read attributes of the resource")
     resource_id: str = Field(..., description="Resource ID", min_length=1)
     version_range: VersionRangeObject | None = None
-    write_attributes: str | None = Field(
-        None, description="Write attributes of the resource"
-    )
+    write_attributes: str | None = Field(None, description="Write attributes of the resource")
 
 
 class RolePermissions(BaseModel):
@@ -5562,17 +4559,14 @@ class RoleSearchRequest(BaseModel):
      permission to site-specific BM modules without providing a site, and the search will return all roles having that permission for any site).</p>
     """
 
-    count: int | None = Field(
-        None, description="The number of returned documents", ge=1, le=200
-    )
+    count: int | None = Field(None, description="The number of returned documents", ge=1, le=200)
     db_start_record_: int | None = Field(
         None,
         description="The zero-based index of the record that we want to start with, used to optimize special handling",
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
     permissions: RolePermissions | None = None
     query: Any = Field(
@@ -5581,17 +4575,12 @@ class RoleSearchRequest(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
-    user_id: str | None = Field(
-        None, description="The id of the user whose roles are to be searched."
-    )
+    user_id: str | None = Field(None, description="The id of the user whose roles are to be searched.")
 
 
 class Schedule(BaseModel):
@@ -5600,13 +4589,11 @@ class Schedule(BaseModel):
     """
 
     end_date: AwareDatetime | None = Field(
-        None,
-        description="The date to end of validity. ISO8601 date time format: yyyy-MM-dd'T'HH:mm:ssZ.",
+        None, description="The date to end of validity. ISO8601 date time format: yyyy-MM-dd'T'HH:mm:ssZ."
     )
     recurrence: Recurrence | None = None
     start_date: AwareDatetime | None = Field(
-        None,
-        description="The date to start validity. ISO8601 date time format: yyyy-MM-dd'T'HH:mm:ssZ.",
+        None, description="The date to start validity. ISO8601 date time format: yyyy-MM-dd'T'HH:mm:ssZ."
     )
 
 
@@ -5615,17 +4602,14 @@ class SearchRequest(BaseModel):
     <p>Document representing a search request for retrieving items within the Data API. The query is a potentially complex set of expressions. The fields that each query supports are defined within the search resource.</p>
     """
 
-    count: int | None = Field(
-        None, description="The number of returned documents", ge=1, le=200
-    )
+    count: int | None = Field(None, description="The number of returned documents", ge=1, le=200)
     db_start_record_: int | None = Field(
         None,
         description="The zero-based index of the record that we want to start with, used to optimize special handling",
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
     query: Any = Field(
         ...,
@@ -5633,13 +4617,10 @@ class SearchRequest(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
 
 
@@ -5656,12 +4637,9 @@ class SiteSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Site] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Site] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -5670,13 +4648,10 @@ class SiteSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -5696,19 +4671,13 @@ class SortingRule(BaseModel):
     """
 
     creation_date: AwareDatetime | None = None
-    description: str | None = Field(
-        None,
-        description="The description of the product sorting rule.",
-        max_length=4000,
-    )
+    description: str | None = Field(None, description="The description of the product sorting rule.", max_length=4000)
     id: str | None = Field(None, description="the id of product sorting rule.")
     last_modified: AwareDatetime | None = None
     product_sorting_rule_steps: list[SortingRuleStep] | None = Field(
         None, description="the steps involved in sorting by this rule."
     )
-    rule_context: str | None = Field(
-        None, description="The context of the rule, either site or global"
-    )
+    rule_context: str | None = Field(None, description="The context of the rule, either site or global")
     site: str | None = None
 
 
@@ -5725,12 +4694,9 @@ class SortingRuleSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[SortingRule] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[SortingRule] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -5739,13 +4705,10 @@ class SortingRuleSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -5755,36 +4718,20 @@ class SourceCodeGroup(BaseModel):
     <p>Document representing a source code group</p>
     """
 
-    active: bool | None = Field(
-        None,
-        description="The active flag, a computed value based on start and end time",
-    )
+    active: bool | None = Field(None, description="The active flag, a computed value based on start and end time")
     active_redirect: SourceCodeRedirectInfo | None = None
-    cookie_duration: int | None = Field(
-        None, description="The cookie duration in days", ge=0, le=999
-    )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
+    cookie_duration: int | None = Field(None, description="The cookie duration in days", ge=0, le=999)
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
     description: str | None = Field(None, description="The description")
     enabled: bool | None = Field(
-        None,
-        description="The enabled flag for storefront to consider the source code group, default to false.",
+        None, description="The enabled flag for storefront to consider the source code group, default to false."
     )
     end_time: AwareDatetime | None = Field(None, description="The end time")
-    id: str | None = Field(
-        None, description="The id of source code group", max_length=28, min_length=1
-    )
+    id: str | None = Field(None, description="The id of source code group", max_length=28, min_length=1)
     inactive_redirect: SourceCodeRedirectInfo | None = None
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
-    link: str | None = Field(
-        None, description="URL that is used to get this instance, read only"
-    )
-    specifications: list[SourceCodeSpecification] | None = Field(
-        None, description="Source Code specifications"
-    )
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
+    link: str | None = Field(None, description="URL that is used to get this instance, read only")
+    specifications: list[SourceCodeSpecification] | None = Field(None, description="Source Code specifications")
     start_time: AwareDatetime | None = Field(None, description="The start time")
 
 
@@ -5801,12 +4748,9 @@ class SourceCodeGroupSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[SourceCodeGroup] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[SourceCodeGroup] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -5815,13 +4759,10 @@ class SourceCodeGroupSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -5834,18 +4775,13 @@ class SourceCodeGroups(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[SourceCodeGroup] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -5855,37 +4791,22 @@ class VariationAttribute(BaseModel):
     <p>Document representing a variation attribute.</p>
     """
 
-    attribute_definition_id: str = Field(
-        ..., description="The id of the requested attribute definition."
-    )
+    attribute_definition_id: str = Field(..., description="The id of the requested attribute definition.")
     attribute_definition_name: dict[str, str] | None = Field(
-        None,
-        description="The localized display name of the variation attribute definition.",
+        None, description="The localized display name of the variation attribute definition."
     )
-    default_value: str | None = Field(
-        None, description="default variation attribute value"
-    )
-    id: str | None = Field(
-        None, description="The id of the variation attribute.", min_length=1
-    )
+    default_value: str | None = Field(None, description="default variation attribute value")
+    id: str | None = Field(None, description="The id of the variation attribute.", min_length=1)
     link: str | None = Field(None, description="URL that is used to get this instance")
-    name: dict[str, str] | None = Field(
-        None, description="The localized display name of the variation attribute."
-    )
+    name: dict[str, str] | None = Field(None, description="The localized display name of the variation attribute.")
     shared: bool | None = Field(
-        None,
-        description="Returns the value of attribute 'shared' if attribute is local or shared",
+        None, description="Returns the value of attribute 'shared' if attribute is local or shared"
     )
-    slicing: bool | None = Field(
-        None, description="Returns the value of attribute 'slicing'."
-    )
+    slicing: bool | None = Field(None, description="Returns the value of attribute 'slicing'.")
     values: list[VariationAttributeValue] | None = Field(
-        None,
-        description="The sorted array of variation values. This array can be empty.",
+        None, description="The sorted array of variation values. This array can be empty."
     )
-    variation_attribute_type: VariationAttributeType | None = Field(
-        None, description="variation attribute type"
-    )
+    variation_attribute_type: VariationAttributeType | None = Field(None, description="variation attribute type")
 
 
 class VariationAttributes(BaseModel):
@@ -5896,18 +4817,13 @@ class VariationAttributes(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[VariationAttribute] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -5921,12 +4837,9 @@ class AbTest(BaseModel):
         None,
         description="The list of customer group ids assigned to the A/B Test. Defaults to 'Everyone' if not specified on create",
     )
-    description: str | None = Field(
-        None, description="The optional description of the A/B Test", max_length=4000
-    )
+    description: str | None = Field(None, description="The optional description of the A/B Test", max_length=4000)
     email_addresses: list[str] | None = Field(
-        None,
-        description="The optional list of email addresses to send A/B Test results",
+        None, description="The optional list of email addresses to send A/B Test results"
     )
     enabled: bool | None = Field(
         None,
@@ -5940,45 +4853,37 @@ class AbTest(BaseModel):
         None,
         description="The participant expiration type of the A/B Test. Defaults to 'never' if not specified on create",
     )
-    id: str | None = Field(
-        None, description="The id of the A/B Test", max_length=40, min_length=1
-    )
+    id: str | None = Field(None, description="The id of the A/B Test", max_length=40, min_length=1)
     key_metric_id: str | None = Field(
         None,
         description="The key metric that is most important to the A/B Test, among the metrics collected. Defaults to 'Revenue' if not specified from test participant activity",
         max_length=256,
     )
     link: str | None = Field(
-        None,
-        description="The URL to get the A/B test. This is a computed attribute and cannot be modified",
+        None, description="The URL to get the A/B test. This is a computed attribute and cannot be modified"
     )
     paused: bool | None = Field(
         None,
         description="The flag representing the paused state of the A/B Test. Defaults to false if not specified on create",
     )
     segment_count: int | None = Field(
-        None,
-        description="Segment count of A/B test. This is a computed attribute and cannot be modified",
+        None, description="Segment count of A/B test. This is a computed attribute and cannot be modified"
     )
     start_date: AwareDatetime | None = Field(
         None,
         description="The date that the A/B Test begins. Defaults to a week from creation date if both start and end dates are not specified on create",
     )
     status: Status | None = Field(
-        None,
-        description="Status of A/B test. This is a computed attribute and cannot be modified",
+        None, description="Status of A/B test. This is a computed attribute and cannot be modified"
     )
     tags: list[str] | None = Field(
-        None,
-        description="The optional list of tags to group similar A/B Tests so that they can be searched easily.",
+        None, description="The optional list of tags to group similar A/B Tests so that they can be searched easily."
     )
     test_groups: list[AbTestGroup] | None = Field(
-        None,
-        description="Test Groups created for an A/B Test. This is a read only attribute for now.",
+        None, description="Test Groups created for an A/B Test. This is a read only attribute for now."
     )
     test_segments: list[AbTestSegment] | None = Field(
-        None,
-        description="Test Segments created for an A/B Test. This is a read only attribute for now",
+        None, description="Test Segments created for an A/B Test. This is a read only attribute for now"
     )
     trigger: AbTestTrigger | None = None
 
@@ -5992,9 +4897,7 @@ class AbTestSearchResult(BaseModel):
     data: list[dict[str, Any]] | None = None
     db_start_record_: int | None = Field(None, ge=0)
     expand: list[str] | None = None
-    hits: list[AbTest] | None = Field(
-        None, description="The search hits returned as an ordered list"
-    )
+    hits: list[AbTest] | None = Field(None, description="The search hits returned as an ordered list")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -6004,9 +4907,7 @@ class AbTestSearchResult(BaseModel):
     select: str | None = Field(None, description="The fields that you want to select.")
     sorts: list[Sort] | None = None
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -6068,50 +4969,29 @@ class Category(BaseModel):
     )
     c_slotBannerHtml: dict[str, MarkupText] | None = None
     c_slotBannerImage: MediaFile | None = None
-    catalog_id: str | None = Field(
-        None, description="The id of the catalog that contains it."
-    )
-    categories: list[Category] | None = Field(
-        None, description="The array of sub categories for the category."
-    )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    description: dict[str, str] | None = Field(
-        None, description="The localized description of the category."
-    )
-    id: str | None = Field(
-        None, description="The id of the category.", max_length=256, min_length=1
-    )
+    catalog_id: str | None = Field(None, description="The id of the catalog that contains it.")
+    categories: list[Category] | None = Field(None, description="The array of sub categories for the category.")
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    description: dict[str, str] | None = Field(None, description="The localized description of the category.")
+    id: str | None = Field(None, description="The id of the category.", max_length=256, min_length=1)
     image: str | None = Field(
         None,
         description="The name of the category image. The URL to the image is computed.",
         max_length=256,
         min_length=1,
     )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
     link: str | None = Field(
-        None,
-        description="The URL to get the category. This is a computed attribute and cannot be modified.",
+        None, description="The URL to get the category. This is a computed attribute and cannot be modified."
     )
-    name: dict[str, str] | None = Field(
-        None, description="The localized name of the category."
-    )
+    name: dict[str, str] | None = Field(None, description="The localized name of the category.")
     online: bool | None = Field(
         None,
         description="The online status of the category determines if it is visible in the storefront. Defaults to false if not specified on create.",
     )
-    page_description: dict[str, str] | None = Field(
-        None, description="The localized page description of the category."
-    )
-    page_keywords: dict[str, str] | None = Field(
-        None, description="The localized page keywords for the category."
-    )
-    page_title: dict[str, str] | None = Field(
-        None, description="The localized page title of the category."
-    )
+    page_description: dict[str, str] | None = Field(None, description="The localized page description of the category.")
+    page_keywords: dict[str, str] | None = Field(None, description="The localized page keywords for the category.")
+    page_title: dict[str, str] | None = Field(None, description="The localized page title of the category.")
     parent_category_id: str | None = Field(
         None,
         description="The id of the parent category. Defaults to root if not specified on create.",
@@ -6120,8 +5000,7 @@ class Category(BaseModel):
     )
     paths: list[PathRecord] | None = None
     position: float | None = Field(
-        None,
-        description="The position of the category determines the display order in the storefront.",
+        None, description="The position of the category determines the display order in the storefront."
     )
     sorting_rules: list[SortingRule] | None = None
     thumbnail: str | None = Field(
@@ -6145,12 +5024,9 @@ class CategorySearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Category] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Category] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -6159,13 +5035,10 @@ class CategorySearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -6175,71 +5048,43 @@ class ImageGroup(BaseModel):
     <p>Document representing an image group containing a list of images for a particular view type and an optional variation value.</p>
     """
 
-    images: list[MediaFile] | None = Field(
-        None, description="The images of the image group."
-    )
+    images: list[MediaFile] | None = Field(None, description="The images of the image group.")
     variation_attributes: list[VariationAttribute] | None = Field(
-        None,
-        description="Returns a list of variation attributes applying to this image group.",
+        None, description="Returns a list of variation attributes applying to this image group."
     )
     view_type: str | None = Field(None, description="The image view type.")
 
 
 class JobExecution(BaseModel):
     client_id: str | None = Field(
-        None,
-        description="When the execution was started by a client, this represents the client's id.",
+        None, description="When the execution was started by a client, this represents the client's id."
     )
     continue_information: JobExecutionContinueInformation | None = None
     creation_date: AwareDatetime | None = None
-    duration: int | None = Field(
-        None, description="Time in milliseconds, the execution was or is running."
-    )
+    duration: int | None = Field(None, description="Time in milliseconds, the execution was or is running.")
     effective_duration: int | None = Field(
-        None,
-        description="Time in milliseconds, the job has done work. Paused times are evicted.",
+        None, description="Time in milliseconds, the job has done work. Paused times are evicted."
     )
-    end_time: AwareDatetime | None = Field(
-        None, description="Timestamp, when execution was finished."
-    )
-    executed_server_id: str | None = Field(
-        None, description="The ID of the server that executed the job."
-    )
+    end_time: AwareDatetime | None = Field(None, description="Timestamp, when execution was finished.")
+    executed_server_id: str | None = Field(None, description="The ID of the server that executed the job.")
     execution_scopes: list[str] | None = Field(
-        None,
-        description="Sorted set of all execution scopes, used by individual steps.",
+        None, description="Sorted set of all execution scopes, used by individual steps."
     )
-    execution_status: ExecutionStatus | None = Field(
-        None, description="The current execution status."
-    )
+    execution_status: ExecutionStatus | None = Field(None, description="The current execution status.")
     exit_status: StatusModel | None = None
     id: str | None = Field(None, description="ID of the execution object.")
-    is_log_file_existing: bool | None = Field(
-        None, description="True if the log file exists, otherwise false."
-    )
-    is_restart: bool | None = Field(
-        None, description="True if this execution represents a job restart."
-    )
-    job_description: str | None = Field(
-        None, description="Description of the job, this execution belongs to."
-    )
-    job_id: str | None = Field(
-        None, description="ID of the job, this execution belongs to."
-    )
+    is_log_file_existing: bool | None = Field(None, description="True if the log file exists, otherwise false.")
+    is_restart: bool | None = Field(None, description="True if this execution represents a job restart.")
+    job_description: str | None = Field(None, description="Description of the job, this execution belongs to.")
+    job_id: str | None = Field(None, description="ID of the job, this execution belongs to.")
     last_modified: AwareDatetime | None = None
-    log_file_path: str | None = Field(
-        None, description="Full WebDAV path of the log file, containing execution log."
-    )
+    log_file_path: str | None = Field(None, description="Full WebDAV path of the log file, containing execution log.")
     modification_time: AwareDatetime | None = Field(
         None, description="Timestamp of the last modification time for the execution."
     )
-    parameters: list[JobExecutionParameter] | None = Field(
-        None, description="List of all job execution parameters."
-    )
+    parameters: list[JobExecutionParameter] | None = Field(None, description="List of all job execution parameters.")
     retry_information: JobExecutionRetryInformation | None = None
-    start_time: AwareDatetime | None = Field(
-        None, description="Timestamp, when execution was started."
-    )
+    start_time: AwareDatetime | None = Field(None, description="Timestamp, when execution was started.")
     status: str | None = Field(
         None,
         description="The current status. If the execution is currently executed the execution status is returned. If the execution is\n not executed currently anymore the exit status code of the execution.",
@@ -6249,8 +5094,7 @@ class JobExecution(BaseModel):
         None, description="List of all steps, called for job execution."
     )
     user_login: str | None = Field(
-        None,
-        description="When the execution was started by a registered user, this represents the user's login.",
+        None, description="When the execution was started by a registered user, this represents the user's login."
     )
 
 
@@ -6267,12 +5111,9 @@ class JobExecutionSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[JobExecution] | None = Field(
-        None, description="The sorted array of search hits. May be empty."
-    )
+    hits: list[JobExecution] | None = Field(None, description="The sorted array of search hits. May be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -6281,13 +5122,10 @@ class JobExecutionSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -6304,9 +5142,7 @@ class PromotionAbtestGroupAssignment(BaseModel):
 class ResourceInfo(BaseModel):
     allowed_origins: list[str] | None = Field(None, description="Allowed Origins")
     api_type: ApiType = Field(..., description="API Type")
-    resources: list[ResourceObject] = Field(
-        ..., description="An array of resources", min_length=1
-    )
+    resources: list[ResourceObject] = Field(..., description="An array of resources", min_length=1)
     response_headers: dict[str, str] | None = Field(None, description="Response Header")
 
 
@@ -6320,20 +5156,15 @@ class Role(BaseModel):
     id: str | None = Field(None, description="The role ID.")
     last_modified: AwareDatetime | None = None
     link: str | None = Field(
-        None,
-        description="URL that is used to get this instance.  This property is computed and cannot be modified.",
+        None, description="URL that is used to get this instance.  This property is computed and cannot be modified."
     )
     permissions: RolePermissions | None = None
-    user_count: int | None = Field(
-        None, description="Number of users assigned to the role."
-    )
+    user_count: int | None = Field(None, description="Number of users assigned to the role.")
     user_manager: bool | None = Field(
-        None,
-        description="Flag whether this role is allowed to manage users or other access roles.",
+        None, description="Flag whether this role is allowed to manage users or other access roles."
     )
     users: list[User] | None = Field(
-        None,
-        description="The users assigned to the access role. Available through expands.",
+        None, description="The users assigned to the access role. Available through expands."
     )
 
 
@@ -6350,12 +5181,9 @@ class RoleSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Role] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Role] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -6364,13 +5192,10 @@ class RoleSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -6404,37 +5229,24 @@ class Variant(BaseModel):
     <p>Document representing a product variation.</p>
     """
 
-    ats: float | None = Field(
-        None, description='Inventory "Available to Sell" of the product.'
-    )
+    ats: float | None = Field(None, description='Inventory "Available to Sell" of the product.')
     default_product_variation: bool | None = Field(None, description="")
     image: MediaFile | None = None
     in_stock: bool | None = Field(
-        None,
-        description="<code>true</code> if the product is in stock, or <code>false</code> if not.",
+        None, description="<code>true</code> if the product is in stock, or <code>false</code> if not."
     )
     link: str | None = Field(None, description="The URL addressing the product.")
     online: bool | None = Field(
         None,
         description="If the product is currently online.\n <code>true</code> if online\n <code>false</code> if not",
     )
-    orderable: bool | None = Field(
-        None, description="A flag indicating whether the variant is orderable."
-    )
+    orderable: bool | None = Field(None, description="A flag indicating whether the variant is orderable.")
     price: float | None = Field(None, description="The sales price of the variant.")
-    price_currency: str | None = Field(
-        None, description="Currency code for the price of the product."
-    )
-    price_per_unit: float | None = Field(
-        None, description="The sales price of the variant."
-    )
-    product_id: str = Field(
-        ..., description="The id (SKU) of the variant.", max_length=100, min_length=1
-    )
+    price_currency: str | None = Field(None, description="Currency code for the price of the product.")
+    price_per_unit: float | None = Field(None, description="The sales price of the variant.")
+    product_id: str = Field(..., description="The id (SKU) of the variant.", max_length=100, min_length=1)
     searchable: dict[str, bool] | None = Field(None, description="")
-    variation_attributes: list[VariationAttribute] | None = Field(
-        None, description="variation attributes"
-    )
+    variation_attributes: list[VariationAttribute] | None = Field(None, description="variation attributes")
     variation_values: dict[str, str] | None = Field(
         None, description="The actual variation attribute id - value pairs."
     )
@@ -6453,8 +5265,7 @@ class VariantSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
     hits: list[Variant] | None = Field(None, description="The hits from the search")
     next: ResultPage | None = None
@@ -6465,13 +5276,10 @@ class VariantSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -6484,18 +5292,13 @@ class Variants(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[Variant] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -6508,18 +5311,13 @@ class Categories(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[Category] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -6538,12 +5336,8 @@ class OcapiConfigsApiResponse(BaseModel):
     <p>OCAPI configuration APIs response. It contains all available resources for a client</p>
     """
 
-    global_: list[SiteResourceInfo] | None = Field(
-        None, alias="global", description="Global configuration"
-    )
-    sites: list[SiteResourceInfo] | None = Field(
-        None, description="Site configurations"
-    )
+    global_: list[SiteResourceInfo] | None = Field(None, alias="global", description="Global configuration")
+    sites: list[SiteResourceInfo] | None = Field(None, description="Site configurations")
 
 
 class Product(BaseModel):
@@ -6555,8 +5349,7 @@ class Product(BaseModel):
         None, description="The catalog categories that the product is assigned to"
     )
     ats: float | None = Field(
-        None,
-        description="The ATS(Available To Sell) inventory value of the product. This is a calculated value.",
+        None, description="The ATS(Available To Sell) inventory value of the product. This is a calculated value."
     )
     brand: str | None = Field(None, description="The brand of the product.")
     bundled_products: list[Product] | None = Field(
@@ -6568,15 +5361,9 @@ class Product(BaseModel):
     )
     c_batteryLife: str | None = None
     c_batteryType: str | None = None
-    c_bootType: list[CBootTypeEnum] | None = Field(
-        None, description="Type of Boot for search refinement."
-    )
-    c_bottomType: list[CBottomTypeEnum] | None = Field(
-        None, description="Bottom type for search refinement"
-    )
-    c_color: str | None = Field(
-        None, description="Product color used for variation attribute"
-    )
+    c_bootType: list[CBootTypeEnum] | None = Field(None, description="Type of Boot for search refinement.")
+    c_bottomType: list[CBottomTypeEnum] | None = Field(None, description="Bottom type for search refinement")
+    c_color: str | None = Field(None, description="Product color used for variation attribute")
     c_consoleWarranty: str | None = None
     c_customCSSFile: MediaFile | None = None
     c_digitalCameraFeatures: list[CDigitalCameraFeature] | None = None
@@ -6596,40 +5383,24 @@ class Product(BaseModel):
     c_gpsWarranty: str | None = None
     c_imageAspectRatio: str | None = None
     c_isNew: bool | None = None
-    c_isNewtest: bool | None = Field(
-        None, description="This indiciates if the product is a new arrival."
-    )
-    c_isSale: bool | None = Field(
-        None, description="This is the help text. It is used for sorting rules."
-    )
-    c_kidsAge: CKidsAge | None = Field(
-        None, description="Kids Age used for search refinements"
-    )
-    c_length: str | None = Field(
-        None, description="This attribute is used for mens and womens pants lengths."
-    )
+    c_isNewtest: bool | None = Field(None, description="This indiciates if the product is a new arrival.")
+    c_isSale: bool | None = Field(None, description="This is the help text. It is used for sorting rules.")
+    c_kidsAge: CKidsAge | None = Field(None, description="Kids Age used for search refinements")
+    c_length: str | None = Field(None, description="This attribute is used for mens and womens pants lengths.")
     c_lensAperture: str | None = None
     c_materialTest: list[CMaterialTestEnum] | None = None
-    c_mediaFormat: list[CMediaFormatEnum] | None = Field(
-        None, description="Media Format"
-    )
+    c_mediaFormat: list[CMediaFormatEnum] | None = Field(None, description="Media Format")
     c_memorySize: str | None = Field(None, description="Memory Size")
     c_memoryType: list[CMemoryTypeEnum] | None = None
     c_musicStorage: str | None = None
     c_opticalZoom: str | None = None
-    c_outerwearType: COuterwearType | None = Field(
-        None, description="Type of Outerwear for search refinement"
-    )
+    c_outerwearType: COuterwearType | None = Field(None, description="Type of Outerwear for search refinement")
     c_portableAudioType: list[CPortableAudioTypeEnum] | None = None
     c_refinementColor: CRefinementColor | None = None
     c_resolution: str | None = None
-    c_sandalType: CSandalType | None = Field(
-        None, description="Type of Sandal for search refinement"
-    )
+    c_sandalType: CSandalType | None = Field(None, description="Type of Sandal for search refinement")
     c_sheets: list[CSheet] | None = Field(None, description="test attribute")
-    c_shoeType: CShoeType | None = Field(
-        None, description="Type of Shoe for search refinements"
-    )
+    c_shoeType: CShoeType | None = Field(None, description="Type of Shoe for search refinements")
     c_size: str | None = Field(
         None,
         description="This attribute is used for all footwear, apparel and accessory sizing for men, women and kids products.",
@@ -6644,126 +5415,70 @@ class Product(BaseModel):
     c_tvType: CTvType | None = None
     c_tvWarranty: str | None = None
     c_videoStorage: str | None = None
-    c_waist: str | None = Field(
-        None, description="Attribute used for apparel waist sizing."
-    )
-    c_width: str | None = Field(
-        None,
-        description="This attribute is used for shoe widths for mens, womens and kids.",
-    )
+    c_waist: str | None = Field(None, description="Attribute used for apparel waist sizing.")
+    c_width: str | None = Field(None, description="This attribute is used for shoe widths for mens, womens and kids.")
     classification_category: CatalogCategoryId | None = None
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    default_variant_id: str | None = Field(
-        None, description="The ID of the product's default variant."
-    )
-    ean: str | None = Field(
-        None, description="The European Article Number of the product."
-    )
-    id: str | None = Field(
-        None, description="The ID (SKU) of the product.", max_length=100, min_length=1
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    default_variant_id: str | None = Field(None, description="The ID of the product's default variant.")
+    ean: str | None = Field(None, description="The European Article Number of the product.")
+    id: str | None = Field(None, description="The ID (SKU) of the product.", max_length=100, min_length=1)
     image: MediaFile | None = None
-    image_groups: list[ImageGroup] | None = Field(
-        None, description="The array of product image groups."
-    )
+    image_groups: list[ImageGroup] | None = Field(None, description="The array of product image groups.")
     in_stock: bool | None = Field(
-        None,
-        description="The flag that indicates if the product is in stock, or not. This is a calculated value.",
+        None, description="The flag that indicates if the product is in stock, or not. This is a calculated value."
     )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
     link: str | None = Field(None, description="A link to the product.")
     localized_tax_class_id: dict[str, str] | None = None
     long_description: dict[str, MarkupText] | None = Field(
         None, description="The localized long description of the product."
     )
-    manufacturer_name: str | None = Field(
-        None, description="The name of the product's manufacturer."
-    )
-    manufacturer_sku: str | None = Field(
-        None, description="The SKU of the product's manufacturer."
-    )
+    manufacturer_name: str | None = Field(None, description="The name of the product's manufacturer.")
+    manufacturer_sku: str | None = Field(None, description="The SKU of the product's manufacturer.")
     master: Master | None = None
-    name: dict[str, str] | None = Field(
-        None, description="The localized name of the product."
-    )
+    name: dict[str, str] | None = Field(None, description="The localized name of the product.")
     online: bool | None = Field(
-        None,
-        description="The flag that indicates if the product is online, or not. This is a calculated value.",
+        None, description="The flag that indicates if the product is online, or not. This is a calculated value."
     )
-    online_flag: dict[str, bool] | None = Field(
-        None, description="The site specific online status of the product."
-    )
-    owning_catalog_id: str | None = Field(
-        None, description="The ID of the catalog that owns the product."
-    )
+    online_flag: dict[str, bool] | None = Field(None, description="The site specific online status of the product.")
+    owning_catalog_id: str | None = Field(None, description="The ID of the catalog that owns the product.")
     owning_catalog_name: dict[str, str] | None = Field(
         None, description="The localized name of the catalog that owns the product."
     )
-    page_description: dict[str, str] | None = Field(
-        None, description="The localized page description of the product."
-    )
-    page_keywords: dict[str, str] | None = Field(
-        None, description="The localized page keywords of the product."
-    )
-    page_title: dict[str, str] | None = Field(
-        None, description="The localized page title of the product."
-    )
+    page_description: dict[str, str] | None = Field(None, description="The localized page description of the product.")
+    page_keywords: dict[str, str] | None = Field(None, description="The localized page keywords of the product.")
+    page_title: dict[str, str] | None = Field(None, description="The localized page title of the product.")
     price: float | None = Field(None, description="The price of the product.")
-    price_currency: str | None = Field(
-        None, description="The currency code for product's price."
-    )
-    price_per_unit: float | None = Field(
-        None, description="The price per unit of the product"
-    )
+    price_currency: str | None = Field(None, description="The currency code for product's price.")
+    price_per_unit: float | None = Field(None, description="The price per unit of the product")
     primary_categories: list[CatalogCategoryId] | None = Field(
         None, description="The catalog categories that are primary for the product"
     )
-    primary_category_id: str | None = Field(
-        None, description="The id of the products primary category."
-    )
+    primary_category_id: str | None = Field(None, description="The id of the products primary category.")
     product_bundles: list[Product] | None = Field(
         None, description="The array of product bundles which the product belongs to."
     )
     product_options: list[ProductOption] | None = Field(
-        None,
-        description='The array of product options. This is applicable for products of type "option".',
+        None, description='The array of product options. This is applicable for products of type "option".'
     )
     product_sets: list[Product] | None = Field(
         None, description="The array of product sets which the product belongs to."
     )
-    searchable: dict[str, bool] | None = Field(
-        None, description="The site specific searchable status of the product."
-    )
+    searchable: dict[str, bool] | None = Field(None, description="The site specific searchable status of the product.")
     set_products: list[Product] | None = Field(
         None, description="The array of set products which the product includes."
     )
     short_description: dict[str, MarkupText] | None = Field(
         None, description="The localized short description of the product."
     )
-    tax_class_id: str | None = Field(
-        None, description="The catalog categories that the product is assigned to"
-    )
+    tax_class_id: str | None = Field(None, description="The catalog categories that the product is assigned to")
     type: ProductType | None = None
     unit: str | None = Field(None, description="The sales unit of the product.")
-    unit_measure: str | None = Field(
-        None, description="The unitMeasure of the product."
-    )
-    unit_quantity: float | None = Field(
-        None, description="The unitQuantity of the product."
-    )
-    upc: str | None = Field(
-        None, description="The Universal Product Code of the product."
-    )
-    valid_from: dict[str, AwareDatetime] | None = Field(
-        None, description="The time when product is valid from."
-    )
-    valid_to: dict[str, AwareDatetime] | None = Field(
-        None, description="The time when product is valid to."
-    )
+    unit_measure: str | None = Field(None, description="The unitMeasure of the product.")
+    unit_quantity: float | None = Field(None, description="The unitQuantity of the product.")
+    upc: str | None = Field(None, description="The Universal Product Code of the product.")
+    valid_from: dict[str, AwareDatetime] | None = Field(None, description="The time when product is valid from.")
+    valid_to: dict[str, AwareDatetime] | None = Field(None, description="The time when product is valid to.")
     variants: list[Variant] | None = Field(
         None,
         description='The array of variants of the product. This is applicable for product types "master" and "variation_group" only.',
@@ -6795,12 +5510,9 @@ class ProductSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Product] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Product] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -6809,13 +5521,10 @@ class ProductSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -6825,30 +5534,18 @@ class CategoryProductAssignment(BaseModel):
     <p>Document representing a category product assignment.</p>
     """
 
-    catalog_id: str | None = Field(
-        None, description="The id of the catalog.", max_length=256, min_length=1
-    )
-    category_id: str | None = Field(
-        None, description="The id of the category.", max_length=256, min_length=1
-    )
+    catalog_id: str | None = Field(None, description="The id of the catalog.", max_length=256, min_length=1)
+    category_id: str | None = Field(None, description="The id of the category.", max_length=256, min_length=1)
     creation_date: AwareDatetime | None = None
     last_modified: AwareDatetime | None = None
-    link: str | None = Field(
-        None, description="The URL used to get the product category assignment."
-    )
+    link: str | None = Field(None, description="The URL used to get the product category assignment.")
     owning_catalog_name: dict[str, str] | None = Field(
         None, description="The name of the catalog that owns the product."
     )
-    position: float | None = Field(
-        None, description="The position of product category assignment."
-    )
+    position: float | None = Field(None, description="The position of product category assignment.")
     product: Product | None = None
-    product_id: str | None = Field(
-        None, description="The id of the Product.", max_length=256, min_length=1
-    )
-    product_name: dict[str, str] | None = Field(
-        None, description="The name of the product."
-    )
+    product_id: str | None = Field(None, description="The id of the Product.", max_length=256, min_length=1)
+    product_name: dict[str, str] | None = Field(None, description="The name of the product.")
 
 
 class CategoryProductAssignmentSearchResult(BaseModel):
@@ -6864,8 +5561,7 @@ class CategoryProductAssignmentSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
     hits: list[CategoryProductAssignment] | None = Field(
         None, description="The sorted array of search hits. This array can be empty."
@@ -6878,13 +5574,10 @@ class CategoryProductAssignmentSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -6903,9 +5596,7 @@ class Promotion(BaseModel):
     callout_msg: dict[str, MarkupText] | None = Field(
         None, description="The localized callout message of the promotion."
     )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
     currency_code: str | None = Field(
         None,
         description="The ISO 4217 mnemonic code of the currency this promotion is restricted to. If not populated, then there is no\n currency restriction on the promotion.",
@@ -6924,15 +5615,10 @@ class Promotion(BaseModel):
         description="Determines if the promotion can be combined with other promotions of the same promotion class or if it cannot be\n combined with any other promotions. This attribute is allowed to be updated when using the Open Commerce API to\n update multiple promotions at once.",
     )
     id: str | None = Field(None, description="The id for the promotion.")
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
-    link: str | None = Field(
-        None, description="A URL that is used to get the details of this promotion."
-    )
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
+    link: str | None = Field(None, description="A URL that is used to get the details of this promotion.")
     name: dict[str, str] | None = Field(
-        None,
-        description="The user supplied name of this promotion, which can be localized",
+        None, description="The user supplied name of this promotion, which can be localized"
     )
     promotion_class: PromotionClass | None = Field(
         None,
@@ -6995,41 +5681,27 @@ class PromotionCampaignAssignment(BaseModel):
     """
 
     campaign: Campaign | None = None
-    campaign_id: str | None = Field(
-        None, description="The id of the campaign.", max_length=256, min_length=1
-    )
-    coupons: list[str] | None = Field(
-        None, description="The sorted array of assigned coupon ids."
-    )
+    campaign_id: str | None = Field(None, description="The id of the campaign.", max_length=256, min_length=1)
+    coupons: list[str] | None = Field(None, description="The sorted array of assigned coupon ids.")
     coupons_based: bool | None = Field(
         None,
         description="True if the assigned promotion is coupon based. When set to false, Coupons in the campaign and on the\n PromotionCampaignAssignment are ignored. The default value is true.",
     )
     creation_date: AwareDatetime | None = None
-    customer_groups: list[str] | None = Field(
-        None, description="The sorted array of assigned customer groups."
-    )
+    customer_groups: list[str] | None = Field(None, description="The sorted array of assigned customer groups.")
     customer_groups_based: bool | None = Field(
         None,
         description="True if the assigned promotion is customer group based. When set to false, Customer Groups in the campaign and on\n the PromotionCampaignAssignment are ignored. The default value is true.",
     )
     description: str | None = Field(
-        None,
-        description="The description of the promotion campaign assignment.",
-        max_length=4000,
+        None, description="The description of the promotion campaign assignment.", max_length=4000
     )
-    enabled: bool | None = Field(
-        None, description="True if the assignment resource is enabled"
-    )
+    enabled: bool | None = Field(None, description="True if the assignment resource is enabled")
     last_modified: AwareDatetime | None = None
     link: str | None = Field(None, description="link for convenience")
     promotion: Promotion | None = None
-    promotion_id: str | None = Field(
-        None, description="The id of the Promotion.", max_length=256, min_length=1
-    )
-    rank: int | None = Field(
-        None, description="The rank of promotion campaign assignment"
-    )
+    promotion_id: str | None = Field(None, description="The id of the Promotion.", max_length=256, min_length=1)
+    rank: int | None = Field(None, description="The rank of promotion campaign assignment")
     required_qualifier: RequiredQualifier | None = Field(
         None,
         description='A constant indicating that one or all qualifier conditions must be\n met in order for the promotion to apply for a given customer.\n Valid values are "any" and "all".',
@@ -7039,9 +5711,7 @@ class PromotionCampaignAssignment(BaseModel):
         None,
         description="True if the assigned promotion is source code group based. When set to false, Source Code Groups in the campaign and on\n the PromotionCampaignAssignment are ignored. The default value is true.",
     )
-    source_code_groups: list[str] | None = Field(
-        None, description="The sorted array of assigned source code groups."
-    )
+    source_code_groups: list[str] | None = Field(None, description="The sorted array of assigned source code groups.")
 
 
 class PromotionCampaignAssignmentSearchResult(BaseModel):
@@ -7057,8 +5727,7 @@ class PromotionCampaignAssignmentSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
     hits: list[PromotionCampaignAssignment] | None = Field(
         None, description="The sorted array of search hits. Can be empty."
@@ -7071,13 +5740,10 @@ class PromotionCampaignAssignmentSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -7095,12 +5761,9 @@ class PromotionSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Promotion] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Promotion] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -7109,13 +5772,10 @@ class PromotionSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -7142,18 +5802,14 @@ class Slot(BaseModel):
 
     context_type: ContextType | None = Field(None, description="A slot context")
     creation_date: AwareDatetime | None = None
-    description: str | None = Field(
-        None, description="The user supplied description of the slot", max_length=4000
-    )
+    description: str | None = Field(None, description="The user supplied description of the slot", max_length=4000)
     last_modified: AwareDatetime | None = None
     link: str | None = Field(None, description="A link to the slot")
     preview_url: str | None = Field(None, description="A preview URL the slot")
     slot_configurations: list[SlotConfiguration] | None = Field(
         None, description="A list of slotconfigurations this slot has"
     )
-    slot_id: str = Field(
-        ..., description="The id for the slot", max_length=256, min_length=1
-    )
+    slot_id: str = Field(..., description="The id for the slot", max_length=256, min_length=1)
 
 
 class SlotConfiguration(BaseModel):
@@ -7162,39 +5818,23 @@ class SlotConfiguration(BaseModel):
     """
 
     field_200: bool | None = Field(
-        None,
-        alias="200",
-        description="A flag indicating whether the configuration is the default one for the slot.",
+        None, alias="200", description="A flag indicating whether the configuration is the default one for the slot."
     )
     assignment_information: SlotConfigurationAssignmentInformation | None = None
-    callout_msg: dict[str, MarkupText] | None = Field(
-        None, description="The call out message."
-    )
+    callout_msg: dict[str, MarkupText] | None = Field(None, description="The call out message.")
     configuration_id: str | None = Field(
         None, description="The id of this configuration.", max_length=256, min_length=1
     )
-    context: Context | None = Field(
-        None, description="The context of the slot. Ignored in input documents."
-    )
+    context: Context | None = Field(None, description="The context of the slot. Ignored in input documents.")
     context_id: str | None = Field(
         None,
         description="When the context is <i>category</i>, this is a <i>category_id</i>; when\n the context is <i>folder</i>, this is a <i>folder_id</i>; and when the\n context is <i>global</i>, this is obsolete. This is ignored in input documents.",
     )
-    creation_date: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'creationDate'."
-    )
-    customer_groups: list[str] | None = Field(
-        None, description="The customer groups ids."
-    )
-    description: str | None = Field(
-        None, description="The configuration description.", max_length=4000
-    )
-    enabled: bool | None = Field(
-        None, description="A flag indicating whether the slot is enabled."
-    )
-    last_modified: AwareDatetime | None = Field(
-        None, description="Returns the value of attribute 'lastModified'."
-    )
+    creation_date: AwareDatetime | None = Field(None, description="Returns the value of attribute 'creationDate'.")
+    customer_groups: list[str] | None = Field(None, description="The customer groups ids.")
+    description: str | None = Field(None, description="The configuration description.", max_length=4000)
+    enabled: bool | None = Field(None, description="A flag indicating whether the slot is enabled.")
+    last_modified: AwareDatetime | None = Field(None, description="Returns the value of attribute 'lastModified'.")
     link: str | None = Field(None, description="The link.")
     rank: Rank | None = Field(
         None,
@@ -7203,10 +5843,7 @@ class SlotConfiguration(BaseModel):
     schedule: Schedule | None = None
     slot_content: SlotContent
     slot_id: str | None = Field(
-        None,
-        description="The ID of the slot. Ignored in input documents.",
-        max_length=256,
-        min_length=1,
+        None, description="The ID of the slot. Ignored in input documents.", max_length=256, min_length=1
     )
     template: str | None = Field(None, description="The template.", max_length=256)
     uuid: str | None = Field(
@@ -7230,17 +5867,11 @@ class SlotConfigurationAssignmentInformation(BaseModel):
         None,
         description="true if the individual assignment or the multiple assignments are currently active (applicable only for non default schedule assignments i.e. either campaign or A/B test schedule).",
     )
-    active_abtest_assignments: list[SlotConfigurationAbtestGroupAssignment] | None = (
-        Field(
-            None,
-            description="A list of currently active A/B tests this is assigned to.",
-        )
+    active_abtest_assignments: list[SlotConfigurationAbtestGroupAssignment] | None = Field(
+        None, description="A list of currently active A/B tests this is assigned to."
     )
-    active_campaign_assignments: list[SlotConfigurationCampaignAssignment] | None = (
-        Field(
-            None,
-            description="A list of currently active campaigns this is assigned to.",
-        )
+    active_campaign_assignments: list[SlotConfigurationCampaignAssignment] | None = Field(
+        None, description="A list of currently active campaigns this is assigned to."
     )
     campaign_id: str | None = Field(
         None,
@@ -7260,11 +5891,11 @@ class SlotConfigurationAssignmentInformation(BaseModel):
         None,
         description='The start date of the container of the assignment (a Campaign or ABTest). If schedule_type is\n schedule_type : "multiple" or schedule_type : "none", then then result will be null. Also, a null\n date will also return null.',
     )
-    upcoming_abtest_assignments: list[SlotConfigurationAbtestGroupAssignment] | None = (
-        Field(None, description="A list of upcoming A/B tests this is assigned to.")
+    upcoming_abtest_assignments: list[SlotConfigurationAbtestGroupAssignment] | None = Field(
+        None, description="A list of upcoming A/B tests this is assigned to."
     )
-    upcoming_campaign_assignments: list[SlotConfigurationCampaignAssignment] | None = (
-        Field(None, description="A list of upcoming campaigns this is assigned to.")
+    upcoming_campaign_assignments: list[SlotConfigurationCampaignAssignment] | None = Field(
+        None, description="A list of upcoming campaigns this is assigned to."
     )
 
 
@@ -7282,19 +5913,11 @@ class SlotConfigurationCampaignAssignment(BaseModel):
     )
     context: Context1 = Field(..., description="The slot context.")
     creation_date: AwareDatetime | None = None
-    customer_groups: list[str] | None = Field(
-        None, description="The list of customer groups."
-    )
-    description: str | None = Field(
-        None, description="The description of the slot configuration.", max_length=4000
-    )
-    enabled: bool | None = Field(
-        None, description="True if the assignment resource is enabled"
-    )
+    customer_groups: list[str] | None = Field(None, description="The list of customer groups.")
+    description: str | None = Field(None, description="The description of the slot configuration.", max_length=4000)
+    enabled: bool | None = Field(None, description="True if the assignment resource is enabled")
     last_modified: AwareDatetime | None = None
-    link: str | None = Field(
-        None, description="The URL to the slot configuration-campaign assignment."
-    )
+    link: str | None = Field(None, description="The URL to the slot configuration-campaign assignment.")
     rank: int | None = Field(
         None,
         description="The rank of the slot confiuration-campaign assignment.\n This is different than the rank of the slot configuration.",
@@ -7303,22 +5926,15 @@ class SlotConfigurationCampaignAssignment(BaseModel):
     schedule: Schedule | None = None
     slot_configuration: SlotConfiguration | None = None
     slot_configuration_id: str = Field(
-        ...,
-        description="The ID of the slot configuration.",
-        max_length=256,
-        min_length=1,
+        ..., description="The ID of the slot configuration.", max_length=256, min_length=1
     )
-    slot_configuration_uuid: str | None = Field(
-        None, description="The UUID of the slot configuration.", max_length=28
-    )
+    slot_configuration_uuid: str | None = Field(None, description="The UUID of the slot configuration.", max_length=28)
     slot_context_id: str | None = Field(
         None,
         description="The ID of the slot's context, for example, the category ID for a slot with category context.",
         max_length=256,
     )
-    slot_id: str = Field(
-        ..., description="The ID of the slot.", max_length=256, min_length=1
-    )
+    slot_id: str = Field(..., description="The ID of the slot.", max_length=256, min_length=1)
 
 
 class SlotConfigurationCampaignAssignmentSearchResult(BaseModel):
@@ -7330,8 +5946,7 @@ class SlotConfigurationCampaignAssignmentSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
     hits: list[SlotConfigurationCampaignAssignment] | None = Field(
         None, description="The sorted array of search hits. Can be empty."
@@ -7344,13 +5959,10 @@ class SlotConfigurationCampaignAssignmentSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -7368,8 +5980,7 @@ class SlotConfigurationSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
     hits: list[SlotConfiguration] | None = Field(
         None, description="The sorted array of search hits. This array can be empty."
@@ -7382,13 +5993,10 @@ class SlotConfigurationSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -7401,18 +6009,13 @@ class SlotConfigurations(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[SlotConfiguration] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 
@@ -7430,12 +6033,9 @@ class SlotSearchResult(BaseModel):
         ge=0,
     )
     expand: list[str] | None = Field(
-        None,
-        description="List of expansions to be applied to each search results. Expands are optional",
+        None, description="List of expansions to be applied to each search results. Expands are optional"
     )
-    hits: list[Slot] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[Slot] | None = Field(None, description="The sorted array of search hits. Can be empty.")
     next: ResultPage | None = None
     previous: ResultPage | None = None
     query: Any | None = Field(
@@ -7444,13 +6044,10 @@ class SlotSearchResult(BaseModel):
     )
     select: str | None = Field(None, description="The field to be selected.")
     sorts: list[Sort] | None = Field(
-        None,
-        description="The list of sort clauses configured for the search request. Sort clauses are optional.",
+        None, description="The list of sort clauses configured for the search request. Sort clauses are optional."
     )
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The number of returned documents")
 
@@ -7463,18 +6060,13 @@ class Slots(BaseModel):
     count: int | None = Field(None, description="The number of returned documents.")
     data: list[Slot] | None = None
     expand: list[str] | None = Field(
-        None,
-        description="The list of expands set for the search request. Expands are optional.",
+        None, description="The list of expands set for the search request. Expands are optional."
     )
     next: str | None = Field(None, description="The URL of the next result page.")
-    previous: str | None = Field(
-        None, description="The URL of the previous result page."
-    )
+    previous: str | None = Field(None, description="The URL of the previous result page.")
     select: str | None = Field(None, description="The fields that you want to select.")
     start: int | None = Field(
-        None,
-        description="The zero-based index of the first search hit to include in the result.",
-        ge=0,
+        None, description="The zero-based index of the first search hit to include in the result.", ge=0
     )
     total: int | None = Field(None, description="The total number of documents.")
 

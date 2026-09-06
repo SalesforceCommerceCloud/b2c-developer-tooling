@@ -39,11 +39,7 @@ class ProductItem(BaseModel):
     """
 
     productId: str = Field(
-        ...,
-        description="The id (SKU) of the product.",
-        examples=["apple-ipod-classic"],
-        max_length=100,
-        min_length=1,
+        ..., description="The id (SKU) of the product.", examples=["apple-ipod-classic"], max_length=100, min_length=1
     )
 
 
@@ -52,12 +48,7 @@ class PriceTableItem(BaseModel):
     Details of the published price table (only available if a price table was published)
     """
 
-    priceTableId: str = Field(
-        ...,
-        description="ID of the price table",
-        examples=["usd-list-prices"],
-        max_length=256,
-    )
+    priceTableId: str = Field(..., description="ID of the price table", examples=["usd-list-prices"], max_length=256)
 
 
 class Type(Enum):
@@ -77,19 +68,12 @@ class ContentAssetItemPrivate(BaseModel):
         extra="forbid",
     )
     contentId: str = Field(
-        ...,
-        description="ID of the content asset",
-        examples=["homepage-hero-banner"],
-        max_length=256,
+        ..., description="ID of the content asset", examples=["homepage-hero-banner"], max_length=256
     )
     type: Type = Field(
-        ...,
-        description="The type of library (private) from which the content asset originates.",
-        examples=["private"],
+        ..., description="The type of library (private) from which the content asset originates.", examples=["private"]
     )
-    siteId: str = Field(
-        ..., description="The site ID", examples=["RefArch"], max_length=256
-    )
+    siteId: str = Field(..., description="The site ID", examples=["RefArch"], max_length=256)
 
 
 class Type1(Enum):
@@ -109,22 +93,12 @@ class ContentAssetItemShared(BaseModel):
         extra="forbid",
     )
     contentId: str = Field(
-        ...,
-        description="ID of the content asset",
-        examples=["homepage-hero-banner"],
-        max_length=256,
+        ..., description="ID of the content asset", examples=["homepage-hero-banner"], max_length=256
     )
     type: Type1 = Field(
-        ...,
-        description="The type of library (shared) from which the content asset originates.",
-        examples=["shared"],
+        ..., description="The type of library (shared) from which the content asset originates.", examples=["shared"]
     )
-    libraryId: str = Field(
-        ...,
-        description="ID of the shared library",
-        examples=["sharedLibrary"],
-        max_length=256,
-    )
+    libraryId: str = Field(..., description="ID of the shared library", examples=["sharedLibrary"], max_length=256)
 
 
 class Status(Enum):
@@ -156,11 +130,7 @@ class ContentAssetPublishRequest(BaseModel):
     contentAsset: ContentAssetItemPrivate | ContentAssetItemShared
 
 
-class PublishItemRequest(
-    RootModel[
-        ProductPublishRequest | PriceTablePublishRequest | ContentAssetPublishRequest
-    ]
-):
+class PublishItemRequest(RootModel[ProductPublishRequest | PriceTablePublishRequest | ContentAssetPublishRequest]):
     root: ProductPublishRequest | PriceTablePublishRequest | ContentAssetPublishRequest
 
 
@@ -185,15 +155,11 @@ class ErrorResponse(BaseModel):
     type: str = Field(
         ...,
         description="A URI reference that identifies the problem type",
-        examples=[
-            "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-request-body"
-        ],
+        examples=["https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-request-body"],
         max_length=2048,
     )
     title: str = Field(
-        ...,
-        description="A short, human-readable summary of the problem type",
-        examples=["NotEnoughMoney"],
+        ..., description="A short, human-readable summary of the problem type", examples=["NotEnoughMoney"]
     )
     detail: str | None = Field(
         None,
@@ -219,9 +185,7 @@ class PublishProcessResponse(BaseModel):
         examples=["xmRhi7394HymoeRkfwAAAZeg3WiM"],
         max_length=28,
     )
-    status: Status = Field(
-        ..., description="Status of the publish process", examples=["completed"]
-    )
+    status: Status = Field(..., description="Status of the publish process", examples=["completed"])
     startTime: AwareDatetime = Field(
         ...,
         description="Timestamp at which the publish process was started",
@@ -251,9 +215,4 @@ class PublishProcessListResponse(ResultBase):
     """
 
     data: list[PublishProcessResponse]
-    offset: int = Field(
-        ...,
-        description="The offset for the search results (pagination).",
-        examples=[0],
-        ge=0,
-    )
+    offset: int = Field(..., description="The offset for the search results (pagination).", examples=[0], ge=0)

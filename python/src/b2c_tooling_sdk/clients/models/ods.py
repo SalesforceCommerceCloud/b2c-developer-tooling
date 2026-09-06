@@ -52,32 +52,23 @@ class Status(Enum):
 
 
 class StatusResponse(Response):
-    status: Status = Field(
-        ...,
-        description="String with value 'Success' or 'Failure' to indicate request outcome.",
-    )
+    status: Status = Field(..., description="String with value 'Success' or 'Failure' to indicate request outcome.")
 
 
 class PagingLinks(BaseModel):
     self: str | None = Field(None, description="Relative link to this page.")
     first: str | None = Field(None, description="Relative link to the first page.")
     previous: str | None = Field(
-        None,
-        description="Relative link to the previous page. 'null' if the current page is the first page.",
+        None, description="Relative link to the previous page. 'null' if the current page is the first page."
     )
     next: str | None = Field(
-        None,
-        description="Relative link to the next page. 'null' if the current page is the last page.",
+        None, description="Relative link to the next page. 'null' if the current page is the last page."
     )
     last: str | None = Field(None, description="Relative link to the last page.")
 
 
 class RealmUsageSummaryModel(BaseModel):
-    activeSandboxes: int = Field(
-        ...,
-        description="Number of currently active sandboxes for a realm.",
-        examples=[42],
-    )
+    activeSandboxes: int = Field(..., description="Number of currently active sandboxes for a realm.", examples=[42])
 
 
 class ConfigurationIntegerValue(BaseModel):
@@ -90,9 +81,7 @@ class ConfigurationIntegerValue(BaseModel):
         description="Fixed value for this configuration property. You can't use this along with a maximum or default value.",
     )
     maximum: int | None = Field(None, description="Maximum value for this property.")
-    defaultValue: int | None = Field(
-        None, description="Default value for this property."
-    )
+    defaultValue: int | None = Field(None, description="Default value for this property.")
 
 
 class Weekday(Enum):
@@ -110,9 +99,7 @@ class WeekdaySchedule(BaseModel):
     A schedule definition for a dedicated time on specific weekdays.
     """
 
-    weekdays: list[Weekday] | None = Field(
-        None, description="List of weekdays, where the action should take place"
-    )
+    weekdays: list[Weekday] | None = Field(None, description="List of weekdays, where the action should take place")
     time: str | None = Field(
         None,
         description="Time (with timezone) where the action should take place on the specified weekdays. Time format is [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601#Times). If no time zone is given, the timezone defaults to GMT.",
@@ -126,17 +113,14 @@ class RealmSandboxConfigurationModel(BaseModel):
     """
 
     limitsEnabled: bool = Field(
-        ...,
-        description="Flag indicating whether sandbox specific limits are enforced for the realm.",
+        ..., description="Flag indicating whether sandbox specific limits are enforced for the realm."
     )
     totalNumberOfSandboxes: int = Field(
-        ...,
-        description="Total number of sandboxes (regardless of state) that the realm can hold.",
+        ..., description="Total number of sandboxes (regardless of state) that the realm can hold."
     )
     sandboxTTL: ConfigurationIntegerValue
     localUsersAllowed: bool = Field(
-        ...,
-        description="Flag indicating whether users outside the Account Manager are allowed.",
+        ..., description="Flag indicating whether users outside the Account Manager are allowed."
     )
 
 
@@ -156,12 +140,8 @@ class RealmRequestConfigurationModel(BaseModel):
     """
 
     enforced: bool = Field(..., description="If enabled, rate limiting is active.")
-    maxRate: int | None = Field(
-        None, description="Maximum requests allowed per time period."
-    )
-    timePeriod: int | None = Field(
-        None, description="Number of seconds during which to count requests."
-    )
+    maxRate: int | None = Field(None, description="Maximum requests allowed per time period.")
+    timePeriod: int | None = Field(None, description="Number of seconds during which to count requests.")
 
 
 class Email(RootModel[str]):
@@ -169,9 +149,7 @@ class Email(RootModel[str]):
 
 
 class RealmConfigurationModel(BaseModel):
-    emails: list[Email] | None = Field(
-        None, examples=[["email1@example.com", "email2@example.com"]]
-    )
+    emails: list[Email] | None = Field(None, examples=[["email1@example.com", "email2@example.com"]])
     sandbox: RealmSandboxConfigurationModel | None = None
     requests: RealmRequestConfigurationModel | None = None
     startScheduler: WeekdaySchedule | None = None
@@ -179,19 +157,13 @@ class RealmConfigurationModel(BaseModel):
 
 
 class RealmConfigurationUpdateRequestModel(BaseModel):
-    emails: list[Email] | None = Field(
-        None, examples=[["email1@example.com", "email2@example.com"]]
-    )
+    emails: list[Email] | None = Field(None, examples=[["email1@example.com", "email2@example.com"]])
     sandbox: RealmSandboxConfigurationUpdateModel | None = None
 
 
 class AccountDetailsModel(BaseModel):
-    accountName: str | None = Field(
-        None, description="Account name.", examples=["Disney"]
-    )
-    creditBalance: float | None = Field(
-        None, description="Total Credit Balance left.", examples=[93.234]
-    )
+    accountName: str | None = Field(None, description="Account name.", examples=["Disney"])
+    creditBalance: float | None = Field(None, description="Total Credit Balance left.", examples=[93.234])
 
 
 class DetailedReport(Enum):
@@ -204,9 +176,7 @@ class DetailedReport(Enum):
 
 
 class MultiRealmUsageRequest(BaseModel):
-    from_: date | None = Field(
-        None, alias="from", description="Time the sandbox was started."
-    )
+    from_: date | None = Field(None, alias="from", description="Time the sandbox was started.")
     to: date | None = Field(
         None,
         description="Time the sandbox was stopped. If the sandbox is still running, this value will not exist for the last block.",
@@ -225,8 +195,7 @@ class SandboxCloneCreateModel(BaseModel):
         description="Shared batch identifier when this create fanned out to multiple clones (1 to many). Absent for single (1:1) clones.",
     )
     siblingCloneIds: list[str] | None = Field(
-        None,
-        description="cloneIds of all clones created by this 1 to many request. Absent for single (1:1) clones.",
+        None, description="cloneIds of all clones created by this 1 to many request. Absent for single (1:1) clones."
     )
 
 
@@ -244,9 +213,7 @@ class StorageUsageModel(BaseModel):
 
     spaceTotal: int | None = Field(None, description="Total available space in MB.")
     spaceUsed: int | None = Field(None, description="Used space in MB.")
-    percentageUsed: int | None = Field(
-        None, description="Used space in percent, compared to total space."
-    )
+    percentageUsed: int | None = Field(None, description="Used space in percent, compared to total space.")
 
 
 class Versions(BaseModel):
@@ -254,12 +221,8 @@ class Versions(BaseModel):
     Versions of the components that make up the sandbox.
     """
 
-    app: str | None = Field(
-        None, description="Version of the commerce application.", pattern="\\d(\\.\\d)*"
-    )
-    web: str | None = Field(
-        None, description="Version of the web proxy.", pattern="\\d(\\.\\d)*"
-    )
+    app: str | None = Field(None, description="Version of the commerce application.", pattern="\\d(\\.\\d)*")
+    web: str | None = Field(None, description="Version of the web proxy.", pattern="\\d(\\.\\d)*")
 
 
 class Links(BaseModel):
@@ -267,31 +230,17 @@ class Links(BaseModel):
     Set of named links for accessing the sandbox.
     """
 
-    bm: str | None = Field(
-        None, description="Fully qualified URL of the sandbox Business Manager web app."
-    )
-    ocapi: str | None = Field(
-        None,
-        description="Fully qualified URL of OCAPI data API (excluding version selector).",
-    )
-    impex: str | None = Field(
-        None,
-        description="Fully qualified WebDAV URL for accessing import and export files.",
-    )
-    code: str | None = Field(
-        None, description="Fully qualified WebDAV URL for accessing code."
-    )
-    logs: str | None = Field(
-        None, description="Fully qualified WebDAV URL for accessing log files."
-    )
+    bm: str | None = Field(None, description="Fully qualified URL of the sandbox Business Manager web app.")
+    ocapi: str | None = Field(None, description="Fully qualified URL of OCAPI data API (excluding version selector).")
+    impex: str | None = Field(None, description="Fully qualified WebDAV URL for accessing import and export files.")
+    code: str | None = Field(None, description="Fully qualified WebDAV URL for accessing code.")
+    logs: str | None = Field(None, description="Fully qualified WebDAV URL for accessing log files.")
 
 
 class GranularUsage(BaseModel):
     usageDate: str | None = Field(None, description="start of the usage being returned")
     creditsUp: float | None = Field(
-        None,
-        description="Credits consumed when sandboxes were up during the requested timeframe.",
-        examples=[3600.001],
+        None, description="Credits consumed when sandboxes were up during the requested timeframe.", examples=[3600.001]
     )
     creditsDown: float | None = Field(
         None,
@@ -299,14 +248,10 @@ class GranularUsage(BaseModel):
         examples=[1440.001],
     )
     minutesUp: int | None = Field(
-        None,
-        description="Minutes sandboxes were up during the requested timeframe.",
-        examples=[360000],
+        None, description="Minutes sandboxes were up during the requested timeframe.", examples=[360000]
     )
     minutesDown: int | None = Field(
-        None,
-        description="Minutes sandboxes were down during the requested timeframe.",
-        examples=[180000],
+        None, description="Minutes sandboxes were down during the requested timeframe.", examples=[180000]
     )
 
 
@@ -370,51 +315,38 @@ class Status1(Enum):
 class SandboxAliasModel(BaseModel):
     id: UUID | None = Field(None, description="The sandbox alias UUID.")
     name: str = Field(..., description="The alias name.", examples=["www.example.com"])
-    unique: bool | None = Field(
-        None, description="Define if it's a unique configuration", examples=[False]
-    )
+    unique: bool | None = Field(None, description="Define if it's a unique configuration", examples=[False])
     requestLetsEncryptCertificate: bool | None = Field(
         None,
         description="Request a valid certificate to be generated on the fly through Lets Encrypt. This action consumes certificate requests from the domain quota imposed by Let's Encrypt, please read the Alias documentation carefully.",
         examples=[False],
     )
-    sandboxId: UUID | None = Field(
-        None, description="The UUID of the sandbox the sandbox alias is pointing to."
-    )
-    cookie: Cookie | None = Field(
-        None, description="The cookie required for each request to this alias."
-    )
+    sandboxId: UUID | None = Field(None, description="The UUID of the sandbox the sandbox alias is pointing to.")
+    cookie: Cookie | None = Field(None, description="The cookie required for each request to this alias.")
     registration: str | None = Field(
-        None,
-        description="The link that can be used to save the required cookie for this alias in the browser.",
+        None, description="The link that can be used to save the required cookie for this alias in the browser."
     )
     domainVerificationRecord: str | None = Field(
         None, description="The verification code to be added as TXT record in the DNS"
     )
-    status: Status1 | None = Field(
-        None, description="The status of the alias creation process"
-    )
+    status: Status1 | None = Field(None, description="The status of the alias creation process")
 
 
 class MinutesUpByProfileItem(BaseModel):
     profile: SandboxResourceProfile | None = None
     minutes: int | None = Field(
-        None,
-        description="How many minutes sandboxes of this profile type were running during the report timeframe.",
+        None, description="How many minutes sandboxes of this profile type were running during the report timeframe."
     )
 
 
 class HistoryItem(BaseModel):
-    from_: AwareDatetime = Field(
-        ..., alias="from", description="Time the sandbox was started."
-    )
+    from_: AwareDatetime = Field(..., alias="from", description="Time the sandbox was started.")
     to: AwareDatetime | None = Field(
         None,
         description="Time the sandbox was stopped. If the sandbox is still running, this value will not exist for the last block.",
     )
     sandboxSeconds: int | None = Field(
-        None,
-        description="Number of seconds that the sandbox was running for this block.",
+        None, description="Number of seconds that the sandbox was running for this block."
     )
     resourceProfile: SandboxResourceProfile | None = None
     exceedsTimeframe: bool | None = Field(
@@ -426,9 +358,7 @@ class HistoryItem(BaseModel):
 
 class SandboxUsageModel(BaseModel):
     id: str
-    sandboxSeconds: int | None = Field(
-        None, description="Total number of seconds during which the sandbox ran."
-    )
+    sandboxSeconds: int | None = Field(None, description="Total number of seconds during which the sandbox ran.")
     minutesUpByProfile: list[MinutesUpByProfileItem] | None = None
     minutesUp: int | None = Field(
         None,
@@ -442,8 +372,7 @@ class SandboxUsageModel(BaseModel):
     )
     granularUsage: list[GranularUsage] | None = None
     history: list[HistoryItem] | None = Field(
-        None,
-        description="List of blocks, which describe the separate uptimes of a sandbox",
+        None, description="List of blocks, which describe the separate uptimes of a sandbox"
     )
 
 
@@ -480,8 +409,7 @@ class SandboxOperationModel(BaseModel):
     operationState: OperationState
     sandboxState: SandboxState | None = None
     status: Status2 | None = Field(
-        None,
-        description="Indicates whether the operation finished successfully ('Success') or not ('Failure').",
+        None, description="Indicates whether the operation finished successfully ('Success') or not ('Failure')."
     )
 
 
@@ -493,8 +421,7 @@ class SandboxUpdateRequestModel(BaseModel):
     )
     resourceProfile: SandboxResourceProfile | None = None
     autoScheduled: bool | None = Field(
-        None,
-        description="If set to true, this sandbox will be captured by automated start-/stop -management.",
+        None, description="If set to true, this sandbox will be captured by automated start-/stop -management."
     )
     tags: list[str] | None = None
     startScheduler: Any | None = None
@@ -548,8 +475,7 @@ class Resource(BaseModel):
         description="OCAPI resource identifier. For example: /products/*/images or /products/specific_id/images. This property supports Ant path style to describe resource IDs. You can specify wildcards or specific product IDs; you can also specify the pattern /products/** to access to all available sub-resources. You can list all resource identifiers for the Shop API, version 18.1, with the following meta data call: http://{your-domain}/dw/meta/rest/shop/v18_1?client_id={your-client-id}\n",
     )
     version_range: list[VersionRangeItem] | None = Field(
-        None,
-        description="Version range documents granting permissions only to a subset of OCAPI versions.",
+        None, description="Version range documents granting permissions only to a subset of OCAPI versions."
     )
 
 
@@ -559,9 +485,7 @@ class OcapiSetting(BaseModel):
     """
 
     client_id: UUID = Field(..., description="Client application ID.")
-    resources: list[Resource] | None = Field(
-        None, description="Array of resource-specific permission documents."
-    )
+    resources: list[Resource] | None = Field(None, description="Array of resource-specific permission documents.")
 
 
 class Operation2(Enum):
@@ -591,8 +515,7 @@ class WebDavSetting(BaseModel):
     """
 
     client_id: UUID = Field(
-        ...,
-        description="Client ID indicating the API client for which the permissions are configured.",
+        ..., description="Client ID indicating the API client for which the permissions are configured."
     )
     permissions: list[Permission] = Field(
         ...,
@@ -627,42 +550,25 @@ class User(BaseModel):
 
 
 class Client(BaseModel):
-    id: str | None = Field(
-        None, description="OAuth client ID used to retrieve the access token."
-    )
+    id: str | None = Field(None, description="OAuth client ID used to retrieve the access token.")
 
 
 class UserInfoSpec(BaseModel):
     user: User | None = None
     client: Client | None = None
-    roles: list[str] | None = Field(
-        None, description="User's roles as returned by Account Manager."
-    )
+    roles: list[str] | None = Field(None, description="User's roles as returned by Account Manager.")
     realms: list[str] | None = Field(
-        None,
-        description="Realms that the user is allowed to access. All sandboxes within these realms are accessible.",
+        None, description="Realms that the user is allowed to access. All sandboxes within these realms are accessible."
     )
-    sandboxes: list[str] | None = Field(
-        None, description="Sandboxes that the user is allowed to access."
-    )
+    sandboxes: list[str] | None = Field(None, description="Sandboxes that the user is allowed to access.")
 
 
 class SystemInfoSpec(BaseModel):
-    region: str | None = Field(
-        None, description="The region, the system is deployed on."
-    )
-    systemIps: list[str] | None = Field(
-        None, description="Public IP addresses of internal services like API server"
-    )
-    sandboxIps: list[str] | None = Field(
-        None, description="Public IP addresses of all sandboxes"
-    )
-    inboundIps: list[str] | None = Field(
-        None, description="IP addresses for incoming traffic."
-    )
-    outboundIps: list[str] | None = Field(
-        None, description="IP addresses for outgoing traffic."
-    )
+    region: str | None = Field(None, description="The region, the system is deployed on.")
+    systemIps: list[str] | None = Field(None, description="Public IP addresses of internal services like API server")
+    sandboxIps: list[str] | None = Field(None, description="Public IP addresses of all sandboxes")
+    inboundIps: list[str] | None = Field(None, description="IP addresses for incoming traffic.")
+    outboundIps: list[str] | None = Field(None, description="IP addresses for outgoing traffic.")
 
 
 class Status3(Enum):
@@ -675,13 +581,8 @@ class Status3(Enum):
 
 
 class ErrorModel(BaseModel):
-    status: Status3 = Field(
-        ...,
-        description="String with value 'Success' or 'Failure' to indicate request outcome.",
-    )
-    message: str | None = Field(
-        None, description="Human-readable description of the error."
-    )
+    status: Status3 = Field(..., description="String with value 'Success' or 'Failure' to indicate request outcome.")
+    message: str | None = Field(None, description="Human-readable description of the error.")
     reason: str | None = Field(
         None,
         description="Machine-readable, one-word, CamelCase description of why the operation failed. If this value is empty, there is no information available. The reason clarifies an HTTP status code but does not override it.",
@@ -702,13 +603,8 @@ class PagingMetadata(BaseModel):
 
 class RealmModel(BaseModel):
     id: str = Field(..., description="GUID of the realm in the system.")
-    name: str | None = Field(
-        None, description="Human-readable four-letter ID of the realm."
-    )
-    enabled: bool | None = Field(
-        None,
-        description="Flag indicating whether the realm is enabled for any operations.",
-    )
+    name: str | None = Field(None, description="Human-readable four-letter ID of the realm.")
+    enabled: bool | None = Field(None, description="Flag indicating whether the realm is enabled for any operations.")
     usage: RealmUsageSummaryModel | None = None
     configuration: RealmConfigurationModel | None = None
     accountdetails: AccountDetailsModel | None = None
@@ -737,8 +633,7 @@ class SandboxCloneGetModel(BaseModel):
     elapsedTimeInSec: int | None = None
     progressPercentage: int | None = None
     lastKnownState: str | None = Field(
-        None,
-        description="The last known clone processing state before completion or failure",
+        None, description="The last known clone processing state before completion or failure"
     )
     customCodeVersion: str | None = None
     storefrontCount: int | None = None
@@ -762,9 +657,7 @@ class SandboxCloneProvisioningRequestModel(BaseModel):
         ge=1,
         le=5,
     )
-    emails: list[Email] | None = Field(
-        None, examples=[["email1@example.com", "email2@example.com"]]
-    )
+    emails: list[Email] | None = Field(None, examples=[["email1@example.com", "email2@example.com"]])
     ttl: int | None = Field(
         24,
         description="Number of hours for the sandbox clone lifetime. Valid values are: 0 or negative (infinite lifetime), or 24 hours and above. Values between 1 and 23 are not allowed. The TTL must also adhere to the maximum TTL configuration for the realm.",
@@ -775,49 +668,35 @@ class SandboxModel(BaseModel):
     id: str | None = None
     realm: str | None = None
     emails: list[Email] | None = None
-    enabled: bool | None = Field(
-        None,
-        description="Flag indicating whether the sandbox is enabled for any operations.",
-    )
+    enabled: bool | None = Field(None, description="Flag indicating whether the sandbox is enabled for any operations.")
     instance: str | None = None
     versions: Versions | None = Field(
-        None,
-        description="Versions of the components that make up the sandbox.",
-        title="SandboxModelVersions",
+        None, description="Versions of the components that make up the sandbox.", title="SandboxModelVersions"
     )
     autoScheduled: bool | None = Field(
         None,
         description="Defaults to false. If set to true, the sandbox is covered by automatic start/stop actions, which can be set to a dedicated time via realm- configuration API.",
     )
     analyticsEnabled: bool | None = Field(
-        None,
-        description="Defaults to false. If set to true, analytics will be enabled in ODS.",
+        None, description="Defaults to false. If set to true, analytics will be enabled in ODS."
     )
     resourceProfile: SandboxResourceProfile | None = None
     state: SandboxState | None = None
     createdAt: AwareDatetime | None = None
     createdBy: str | None = None
-    deletedAt: AwareDatetime | None = Field(
-        None, description="Time when the delete operation was created."
-    )
-    deletedBy: str | None = Field(
-        None, description="User who requested the sandbox deletion."
-    )
+    deletedAt: AwareDatetime | None = Field(None, description="Time when the delete operation was created.")
+    deletedBy: str | None = Field(None, description="User who requested the sandbox deletion.")
     eol: AwareDatetime | None = None
     tags: list[str] | None = None
     hostName: str | None = None
-    links: Links | None = Field(
-        None, description="Set of named links for accessing the sandbox."
-    )
+    links: Links | None = Field(None, description="Set of named links for accessing the sandbox.")
     startScheduler: WeekdaySchedule | None = None
     stopScheduler: WeekdaySchedule | None = None
     clonedFrom: str | None = Field(
-        None,
-        description="The realm-instance identifier of the source sandbox from which this sandbox was cloned.",
+        None, description="The realm-instance identifier of the source sandbox from which this sandbox was cloned."
     )
     sourceInstanceIdentifier: str | None = Field(
-        None,
-        description="The UUID of the source sandbox from which this sandbox was cloned.",
+        None, description="The UUID of the source sandbox from which this sandbox was cloned."
     )
     cloneDetails: SandboxCloneGetModel | None = Field(
         None,
@@ -829,9 +708,7 @@ class SandboxInfo(BaseModel):
     realm: str | None = None
     resourceProfile: SandboxResourceProfile | None = None
     createdAt: AwareDatetime | None = None
-    deletedAt: AwareDatetime | None = Field(
-        None, description="Time when the delete operation was created."
-    )
+    deletedAt: AwareDatetime | None = Field(None, description="Time when the delete operation was created.")
     name: str | None = Field(None, description="Name of the sandbox")
     instanceId: str | None = Field(None, description="instanceId of the sandbox")
     minutesUpByProfile: list[MinutesUpByProfileItem] | None = None
@@ -918,8 +795,7 @@ class RealmResponse(StatusResponse):
 class RealmUsageModel(BaseModel):
     id: str = Field(..., description="GUID of the realm in the system.")
     accountId: str | None = Field(
-        None,
-        description="account/SFID of the realm in clusterstate table or org62 Tenant table",
+        None, description="account/SFID of the realm in clusterstate table or org62 Tenant table"
     )
     createdSandboxes: int | None = Field(
         None,
@@ -992,8 +868,7 @@ class SandboxProvisioningRequestModel(BaseModel):
         description="Defaults to false. If set to true, the sandbox is covered by automatic start/stop actions, which can be set to a dedicated time via realm- configuration API.",
     )
     analyticsEnabled: bool | None = Field(
-        False,
-        description="Defaults to false. If set to true, analytics will be enabled in ODS.",
+        False, description="Defaults to false. If set to true, analytics will be enabled in ODS."
     )
     tags: list[str] | None = None
     startScheduler: Any | None = None

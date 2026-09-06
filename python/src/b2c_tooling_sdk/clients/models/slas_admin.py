@@ -88,36 +88,19 @@ class TenantDto(BaseModel):
     """
 
     tenantId: str = Field(..., examples=["aaaa_prd"], max_length=8)
-    merchantName: str = Field(
-        ...,
-        description="Name of the merchant.",
-        examples=["Merchant Name"],
-        max_length=256,
-    )
-    description: str = Field(
-        ..., examples=["Additional information about the tenant."], max_length=256
-    )
-    contact: str = Field(
-        ..., examples=["Name of the merchant's designated contact."], max_length=256
-    )
+    merchantName: str = Field(..., description="Name of the merchant.", examples=["Merchant Name"], max_length=256)
+    description: str = Field(..., examples=["Additional information about the tenant."], max_length=256)
+    contact: str = Field(..., examples=["Name of the merchant's designated contact."], max_length=256)
     emailAddress: str = Field(
-        ...,
-        description="Email address of the designated contact.",
-        examples=["joe.shopper@foo.org"],
-        max_length=200,
+        ..., description="Email address of the designated contact.", examples=["joe.shopper@foo.org"], max_length=200
     )
     phoneNo: str = Field(
-        ...,
-        description="Phone number of the designated contact.",
-        examples=["+1 000-000-0000"],
-        max_length=50,
+        ..., description="Phone number of the designated contact.", examples=["+1 000-000-0000"], max_length=50
     )
 
 
 class Scope(RootModel[str]):
-    root: str = Field(
-        ..., examples=["sfcc.products sfcc.catalogs sfcc.customers:ro"], max_length=100
-    )
+    root: str = Field(..., examples=["sfcc.products sfcc.catalogs sfcc.customers:ro"], max_length=100)
 
 
 class Channel(RootModel[str]):
@@ -126,14 +109,9 @@ class Channel(RootModel[str]):
 
 class Client(BaseModel):
     clientId: str = Field(
-        ...,
-        description="Client ID",
-        examples=["fd0d4ab9-bb85-4c04-bebd-589bd74bdd75"],
-        max_length=100,
+        ..., description="Client ID", examples=["fd0d4ab9-bb85-4c04-bebd-589bd74bdd75"], max_length=100
     )
-    name: str = Field(
-        ..., description="Client Name", examples=["Client Name"], max_length=100
-    )
+    name: str = Field(..., description="Client Name", examples=["Client Name"], max_length=100)
     secret: str = Field(
         ...,
         description="Client Secret. The secret will only display on create and if the secret was updated when updating the client.",
@@ -157,12 +135,8 @@ class Client(BaseModel):
         examples=["https://www.salesforce.com"],
         max_length=2048,
     )
-    channels: list[Channel] = Field(
-        ..., description="Client Channels", examples=[["RefArch", "SiteGenensis"]]
-    )
-    isPrivateClient: bool | None = Field(
-        None, description="Private or Public Client", examples=[True]
-    )
+    channels: list[Channel] = Field(..., description="Client Channels", examples=[["RefArch", "SiteGenensis"]])
+    isPrivateClient: bool | None = Field(None, description="Private or Public Client", examples=[True])
     loginEpRestrict: bool | None = Field(
         None,
         description="When enabling (true) this will restrict all calls to the `\\login` endpoint for the Client Id. When calling the `\\login` endpoint and `loginEpRestrict` is enabled a HTTP Status code of 403 will be returned.",
@@ -176,9 +150,7 @@ class ClientListResponse(BaseModel):
 
 
 class Scope1(RootModel[str]):
-    root: str = Field(
-        ..., examples=["sfcc.products sfcc.catalogs sfcc.customers:ro"], max_length=4096
-    )
+    root: str = Field(..., examples=["sfcc.products sfcc.catalogs sfcc.customers:ro"], max_length=4096)
 
 
 class RedirectUriItem(RootModel[str]):
@@ -186,9 +158,7 @@ class RedirectUriItem(RootModel[str]):
 
 
 class CallbackUriItem(RootModel[str]):
-    root: str = Field(
-        ..., examples=["localhost:3000/passwordless-login-callback"], max_length=2048
-    )
+    root: str = Field(..., examples=["localhost:3000/passwordless-login-callback"], max_length=2048)
 
 
 class ClientRequest(BaseModel):
@@ -196,9 +166,7 @@ class ClientRequest(BaseModel):
     Used to create and update a SLAS Client
     """
 
-    name: str = Field(
-        ..., description="Client Name", examples=["High Adventure Wear"], max_length=100
-    )
+    name: str = Field(..., description="Client Name", examples=["High Adventure Wear"], max_length=100)
     clientId: str = Field(
         ...,
         description="SLAS client id. Must match the query parameter.",
@@ -225,19 +193,12 @@ class ClientRequest(BaseModel):
         None,
         description="Array of SLAS callback URLs that will be used for passworless login and password reset when mode=callback. Include protocol and domain name in each URL. Wildcards are NOT supported.",
         examples=[
-            [
-                "http://localhost:3000/password-reset-callback",
-                "http://localhost:3000/passwordless-login-callback",
-            ]
+            ["http://localhost:3000/password-reset-callback", "http://localhost:3000/passwordless-login-callback"]
         ],
     )
-    channels: list[Channel] = Field(
-        ..., description="Client Channels", examples=[["RefArch", "SiteGenensis"]]
-    )
+    channels: list[Channel] = Field(..., description="Client Channels", examples=[["RefArch", "SiteGenensis"]])
     isPrivateClient: bool = Field(
-        ...,
-        description="Private or Public Client. If left blank the client will default to private.",
-        examples=[True],
+        ..., description="Private or Public Client. If left blank the client will default to private.", examples=[True]
     )
     loginEpRestrict: bool | None = Field(
         None,
@@ -272,12 +233,8 @@ class PasswordTemplateType(Enum):
 class PasswordActionTemplate(BaseModel):
     channelId: str = Field(..., examples=["SiteGenesis"], max_length=36)
     name: str = Field(..., examples=["Password Action Email Template"], max_length=128)
-    subject: str = Field(
-        ..., examples=["Password Action Token Request"], max_length=128
-    )
-    link: str = Field(
-        ..., examples=["This is your password action token: ${token}"], max_length=2048
-    )
+    subject: str = Field(..., examples=["Password Action Token Request"], max_length=128)
+    link: str = Field(..., examples=["This is your password action token: ${token}"], max_length=2048)
     locale: str = Field(
         ...,
         description="Identifies the locale of the template. Must be one of the [language tag strings supported by JDK 11](https://www.oracle.com/java/technologies/javase/jdk11-suported-locales.html). The string is stored in all lowercase.",
@@ -318,32 +275,18 @@ class IdentityProviderResponse(BaseModel):
     Identity provider Response
     """
 
-    name: str = Field(
-        ..., description="Identity Provider Name", examples=["google"], max_length=200
-    )
+    name: str = Field(..., description="Identity Provider Name", examples=["google"], max_length=200)
     authUrl: str = Field(
-        ...,
-        description="IDP authorization URL",
-        examples=["https://www.salesforce.com/authorize"],
-        max_length=256,
+        ..., description="IDP authorization URL", examples=["https://www.salesforce.com/authorize"], max_length=256
     )
     tokenUrl: str = Field(
-        ...,
-        description="IDP token URL",
-        examples=["https://www.salesforce.com/token"],
-        max_length=256,
+        ..., description="IDP token URL", examples=["https://www.salesforce.com/token"], max_length=256
     )
     tokenInfoUrl: str = Field(
-        ...,
-        description="IDP token info URL",
-        examples=["https://www.salesforce.com/inspect"],
-        max_length=256,
+        ..., description="IDP token info URL", examples=["https://www.salesforce.com/inspect"], max_length=256
     )
     userInfoUrl: str = Field(
-        ...,
-        description="IDP user info URL",
-        examples=["https://www.salesforce.com/userinfo"],
-        max_length=256,
+        ..., description="IDP user info URL", examples=["https://www.salesforce.com/userinfo"], max_length=256
     )
     redirectUrl: str = Field(
         ...,
@@ -360,9 +303,7 @@ class IdentityProviderResponse(BaseModel):
     clientId: str = Field(
         ...,
         description="Client Id of the third party IDP.",
-        examples=[
-            "934277749308-02dg4398n3s31ofge8cot46jirn3kpkf.apps.googleusercontent.com"
-        ],
+        examples=["934277749308-02dg4398n3s31ofge8cot46jirn3kpkf.apps.googleusercontent.com"],
         max_length=128,
     )
     clientSecret: str = Field(
@@ -383,11 +324,7 @@ class IdentityProviderResponse(BaseModel):
         examples=[False],
         max_length=1,
     )
-    scopes: list[Scope2] = Field(
-        ...,
-        description="Scopes needed by the IDP.",
-        examples=[["oidc", "email", "profile"]],
-    )
+    scopes: list[Scope2] = Field(..., description="Scopes needed by the IDP.", examples=[["oidc", "email", "profile"]])
     teamId: str | None = Field(
         None,
         description="Apple Team ID. Used primarily for Sign with Apple in generating the client secret.",
@@ -426,9 +363,7 @@ class IdentityProviderResponse(BaseModel):
 
 
 class IdpListResponse(BaseModel):
-    data: list[IdentityProviderResponse] = Field(
-        ..., description="An array of identity providers."
-    )
+    data: list[IdentityProviderResponse] = Field(..., description="An array of identity providers.")
 
 
 class Name(Enum):
@@ -468,28 +403,16 @@ class IdentityProvider(BaseModel):
 
     name: Name = Field(..., description="Identity Provider Name", examples=["google"])
     authUrl: str = Field(
-        ...,
-        description="IDP authorize URL",
-        examples=["https://www.salesforce.com/authorize"],
-        max_length=256,
+        ..., description="IDP authorize URL", examples=["https://www.salesforce.com/authorize"], max_length=256
     )
     tokenUrl: str = Field(
-        ...,
-        description="IDP token URL",
-        examples=["https://www.salesforce.com/token"],
-        max_length=256,
+        ..., description="IDP token URL", examples=["https://www.salesforce.com/token"], max_length=256
     )
     tokenInfoUrl: str = Field(
-        ...,
-        description="IDP token info URL",
-        examples=["https://www.salesforce.com/introspect"],
-        max_length=256,
+        ..., description="IDP token info URL", examples=["https://www.salesforce.com/introspect"], max_length=256
     )
     userInfoUrl: str = Field(
-        ...,
-        description="IDP user info URL",
-        examples=["https://www.salesforce.com/userinfo"],
-        max_length=256,
+        ..., description="IDP user info URL", examples=["https://www.salesforce.com/userinfo"], max_length=256
     )
     redirectUrl: str = Field(
         ...,
@@ -506,9 +429,7 @@ class IdentityProvider(BaseModel):
     clientId: str = Field(
         ...,
         description="Client Id of the third party IDP.",
-        examples=[
-            "934277749308-02dg4398n3s31ofge8cot46jirn3kpkf.apps.googleusercontent.com"
-        ],
+        examples=["934277749308-02dg4398n3s31ofge8cot46jirn3kpkf.apps.googleusercontent.com"],
         max_length=128,
     )
     clientSecret: str = Field(
@@ -535,9 +456,7 @@ class IdentityProvider(BaseModel):
         examples=[False],
         max_length=1,
     )
-    scopes: list[Scope2] = Field(
-        ..., description="IDP Scopes", examples=[["oidc", "email", "profile"]]
-    )
+    scopes: list[Scope2] = Field(..., description="IDP Scopes", examples=[["oidc", "email", "profile"]])
     teamId: str | None = Field(
         None,
         description="Apple Team Id. Used primarily for Sign with Apple in generating the client secret.",

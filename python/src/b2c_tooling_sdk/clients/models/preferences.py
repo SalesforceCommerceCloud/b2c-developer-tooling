@@ -45,10 +45,7 @@ class PaginatedResultBase(ResultBase):
     """
 
     offset: int = Field(
-        ...,
-        description="The zero-based index of the first hit/data to include in the result.",
-        examples=[0],
-        ge=0,
+        ..., description="The zero-based index of the first hit/data to include in the result.", examples=[0], ge=0
     )
     limit: int = Field(
         ...,
@@ -78,19 +75,14 @@ class CustomPreferenceList(PaginatedResultBase):
     Document representing a Custom Preference result.
     """
 
-    data: list[CustomPreference] = Field(
-        ..., description="The list of custom preferences in the search result."
-    )
+    data: list[CustomPreference] = Field(..., description="The list of custom preferences in the search result.")
     limit: int = Field(
         ...,
         description="Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
         examples=[10],
     )
     offset: int = Field(
-        ...,
-        description="The zero-based index of the first hit/data to include in the result.",
-        examples=[0],
-        ge=0,
+        ..., description="The zero-based index of the first hit/data to include in the result.", examples=[0], ge=0
     )
     total: int = Field(
         ...,
@@ -135,36 +127,19 @@ class CustomerListLink(BaseModel):
     """
 
     customerListId: str | None = Field(
-        None,
-        description="The customer list identifier",
-        examples=["customer-list-1"],
-        max_length=256,
-        min_length=1,
+        None, description="The customer list identifier", examples=["customer-list-1"], max_length=256, min_length=1
     )
     title: str | None = Field(
-        None,
-        description="The title of the customer list link",
-        examples=["Default Customer List"],
-        max_length=256,
+        None, description="The title of the customer list link", examples=["Default Customer List"], max_length=256
     )
 
 
 class DisplayName(RootModel[str]):
-    root: str = Field(
-        ...,
-        description="Localized string",
-        examples=["Site Display Name"],
-        max_length=4000,
-    )
+    root: str = Field(..., description="Localized string", examples=["Site Display Name"], max_length=4000)
 
 
 class Description(RootModel[str]):
-    root: str = Field(
-        ...,
-        description="Localized string",
-        examples=["Site Description"],
-        max_length=4000,
-    )
+    root: str = Field(..., description="Localized string", examples=["Site Description"], max_length=4000)
 
 
 class StorefrontStatus(Enum):
@@ -180,26 +155,15 @@ class StorefrontStatus(Enum):
 
 class Site(BaseModel):
     id: str = Field(
-        ...,
-        description="The ID of the site.",
-        examples=["RefArch"],
-        max_length=32,
-        min_length=1,
-        title="ID",
+        ..., description="The ID of the site.", examples=["RefArch"], max_length=32, min_length=1, title="ID"
     )
     displayName: dict[str, DisplayName] | None = None
     description: dict[str, Description] | None = None
-    customerListLink: CustomerListLink | None = Field(
-        None, description="The link to the customer list"
-    )
+    customerListLink: CustomerListLink | None = Field(None, description="The link to the customer list")
     inDeletion: bool | None = Field(
-        None,
-        description="Specifies whether the site status is in deletion (true) or not (false)",
-        examples=[False],
+        None, description="Specifies whether the site status is in deletion (true) or not (false)", examples=[False]
     )
-    storefrontStatus: StorefrontStatus | None = Field(
-        None, description="Status of the storefront", examples=["online"]
-    )
+    storefrontStatus: StorefrontStatus | None = Field(None, description="Status of the storefront", examples=["online"])
     siteCatalogId: str | None = Field(
         None,
         description="The catalog bound to the given site.",
@@ -214,14 +178,10 @@ class Site(BaseModel):
         max_length=4000,
     )
     creationDate: AwareDatetime | None = Field(
-        None,
-        description="The timestamp when the site was created.",
-        examples=["2024-01-15T10:00:00.000Z"],
+        None, description="The timestamp when the site was created.", examples=["2024-01-15T10:00:00.000Z"]
     )
     lastModified: AwareDatetime | None = Field(
-        None,
-        description="The timestamp when the site was last modified.",
-        examples=["2024-10-14T15:30:00.000Z"],
+        None, description="The timestamp when the site was last modified.", examples=["2024-10-14T15:30:00.000Z"]
     )
 
 
@@ -247,8 +207,7 @@ class OrganizationPreferences(BaseModel):
         extra="allow",
     )
     sitePreferences: list[SitePreferences] | None = Field(
-        None,
-        description="The list of site-specific preferences, returned when expand=sites.",
+        None, description="The list of site-specific preferences, returned when expand=sites."
     )
 
 
@@ -304,9 +263,7 @@ class Range2Filter(BaseModel):
         extra="forbid",
     )
     filterMode: FilterMode | None = Field(
-        "overlap",
-        description="Compare mode: overlap, containing, or contained.",
-        examples=["overlap"],
+        "overlap", description="Compare mode: overlap, containing, or contained.", examples=["overlap"]
     )
     fromField: str = Field(
         ...,
@@ -325,10 +282,7 @@ class Range2Filter(BaseModel):
         examples=["2007-01-01T00:00:00.000Z"],
     )
     toField: str = Field(
-        ...,
-        description="The field name of the field that ends the first range.",
-        examples=["validTo"],
-        max_length=260,
+        ..., description="The field name of the field that ends the first range.", examples=["validTo"], max_length=260
     )
     toInclusive: bool | None = Field(
         True,
@@ -349,9 +303,7 @@ class RangeFilter(BaseModel):
     A range filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.
     """
 
-    field: str = Field(
-        ..., description="The search field.", examples=["validFrom"], max_length=260
-    )
+    field: str = Field(..., description="The search field.", examples=["validFrom"], max_length=260)
     from_: AwareDatetime | int | float | None = Field(
         None,
         alias="from",
@@ -396,13 +348,9 @@ class TermFilter(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    field: str = Field(
-        ..., description="The filter field.", examples=["couponId"], max_length=260
-    )
+    field: str = Field(..., description="The filter field.", examples=["couponId"], max_length=260)
     operator: Operator1 = Field(
-        ...,
-        description="The operator used to compare the field's values with the given values.",
-        examples=["is"],
+        ..., description="The operator used to compare the field's values with the given values.", examples=["is"]
     )
     values: list[str] | None = Field(None, description="The filter values.")
 
@@ -454,14 +402,9 @@ class TermQuery(BaseModel):
         description="The document fields that the values are matched against, combined with the operator.",
         min_length=1,
     )
-    operator: Operator2 = Field(
-        ...,
-        description="Returns the operator to use for the term query.",
-        examples=["is"],
-    )
+    operator: Operator2 = Field(..., description="Returns the operator to use for the term query.", examples=["is"])
     values: list[str | float | bool | int] | None = Field(
-        None,
-        description="The values that the fields are compared against, combined with the operator.",
+        None, description="The values that the fields are compared against, combined with the operator."
     )
 
 
@@ -474,9 +417,7 @@ class TextQuery(BaseModel):
         extra="forbid",
     )
     fields: list[FieldModel] = Field(
-        ...,
-        description="The document fields that the search phrase matches against.",
-        min_length=1,
+        ..., description="The document fields that the search phrase matches against.", min_length=1
     )
     searchPhrase: str = Field(
         ...,
@@ -502,12 +443,7 @@ class Sort(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    field: str = Field(
-        ...,
-        description="The name of the field to sort on.",
-        examples=["couponId"],
-        max_length=256,
-    )
+    field: str = Field(..., description="The name of the field to sort on.", examples=["couponId"], max_length=256)
     sortOrder: SortOrder | None = Field(
         "asc",
         description="The sort order to be applied when sorting. When omitted, the default sort order (asc) is used.",
@@ -541,21 +477,11 @@ class ValueType(Enum):
 
 
 class DisplayValue(RootModel[str]):
-    root: str = Field(
-        ...,
-        description="Localized string",
-        examples=["Localized value"],
-        max_length=4000,
-    )
+    root: str = Field(..., description="Localized string", examples=["Localized value"], max_length=4000)
 
 
 class Description1(RootModel[str]):
-    root: str = Field(
-        ...,
-        description="Localized string",
-        examples=["Localized value"],
-        max_length=4000,
-    )
+    root: str = Field(..., description="Localized string", examples=["Localized value"], max_length=4000)
 
 
 class ObjectAttributeValueDefinition(BaseModel):
@@ -563,18 +489,9 @@ class ObjectAttributeValueDefinition(BaseModel):
     An attribute definition value
     """
 
-    id: str | None = Field(
-        None,
-        description="The ID of the attribute value",
-        examples=["value-1"],
-        max_length=256,
-    )
-    value: str | None = Field(
-        None, description="The value of the attribute", examples=["1"], max_length=4000
-    )
-    displayValue: dict[str, DisplayValue] | None = Field(
-        None, examples=[{"default": "One", "de": "Eins", "en": "One"}]
-    )
+    id: str | None = Field(None, description="The ID of the attribute value", examples=["value-1"], max_length=256)
+    value: str | None = Field(None, description="The value of the attribute", examples=["1"], max_length=4000)
+    displayValue: dict[str, DisplayValue] | None = Field(None, examples=[{"default": "One", "de": "Eins", "en": "One"}])
     description: dict[str, Description1] | None = Field(
         None,
         examples=[
@@ -586,28 +503,16 @@ class ObjectAttributeValueDefinition(BaseModel):
         ],
     )
     position: float | None = Field(
-        None,
-        description="The position of the attribute value within the set of attribute values",
-        examples=[1],
+        None, description="The position of the attribute value within the set of attribute values", examples=[1]
     )
 
 
 class DisplayName1(RootModel[str]):
-    root: str = Field(
-        ...,
-        description="Localized string",
-        examples=["Localized value"],
-        max_length=4000,
-    )
+    root: str = Field(..., description="Localized string", examples=["Localized value"], max_length=4000)
 
 
 class Unit(RootModel[str]):
-    root: str = Field(
-        ...,
-        description="Localized string",
-        examples=["Localized value"],
-        max_length=4000,
-    )
+    root: str = Field(..., description="Localized string", examples=["Localized value"], max_length=4000)
 
 
 class ObjectAttributeDefinition(BaseModel):
@@ -616,11 +521,7 @@ class ObjectAttributeDefinition(BaseModel):
     """
 
     id: str = Field(
-        ...,
-        description="The user supplied ID of the attribute",
-        examples=["color"],
-        max_length=256,
-        min_length=1,
+        ..., description="The user supplied ID of the attribute", examples=["color"], max_length=256, min_length=1
     )
     effectiveId: str | None = Field(
         None,
@@ -641,28 +542,18 @@ class ObjectAttributeDefinition(BaseModel):
             }
         ],
     )
-    key: bool | None = Field(
-        None, description="Flag indicating if this is a key attribute", examples=[False]
-    )
+    key: bool | None = Field(None, description="Flag indicating if this is a key attribute", examples=[False])
     mandatory: bool | None = Field(
-        None,
-        description="Flag indicating if a value is mandatory for the attribute",
-        examples=[False],
+        None, description="Flag indicating if a value is mandatory for the attribute", examples=[False]
     )
     localizable: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute can be localized",
-        examples=[False],
+        None, description="Flag indicating if this attribute can be localized", examples=[False]
     )
     siteSpecific: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is site-specific",
-        examples=[False],
+        None, description="Flag indicating if this attribute is site-specific", examples=[False]
     )
     searchable: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is searchable",
-        examples=[True],
+        None, description="Flag indicating if this attribute is searchable", examples=[True]
     )
     queryable: bool | None = Field(
         None,
@@ -670,25 +561,12 @@ class ObjectAttributeDefinition(BaseModel):
         examples=[True],
     )
     valueType: ValueType | None = None
-    visible: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is visible",
-        examples=[True],
-    )
+    visible: bool | None = Field(None, description="Flag indicating if this attribute is visible", examples=[True])
     system: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is a system attribute",
-        examples=[False],
+        None, description="Flag indicating if this attribute is a system attribute", examples=[False]
     )
     unit: dict[str, Unit] | None = Field(
-        None,
-        examples=[
-            {
-                "default": "General unit",
-                "de": "Allgemeine Einheit",
-                "en": "General unit",
-            }
-        ],
+        None, examples=[{"default": "General unit", "de": "Allgemeine Einheit", "en": "General unit"}]
     )
     requiresEncoding: bool | None = Field(
         None,
@@ -701,19 +579,13 @@ class ObjectAttributeDefinition(BaseModel):
         examples=[False],
     )
     setValueType: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is of type 'Set of'",
-        examples=[False],
+        None, description="Flag indicating if this attribute is of type 'Set of'", examples=[False]
     )
     externallyManaged: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is externally managed",
-        examples=[False],
+        None, description="Flag indicating if this attribute is externally managed", examples=[False]
     )
     externallyDefined: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is externally defined",
-        examples=[False],
+        None, description="Flag indicating if this attribute is externally defined", examples=[False]
     )
     orderRequired: bool | None = Field(
         None,
@@ -727,49 +599,26 @@ class ObjectAttributeDefinition(BaseModel):
         max_length=4000,
     )
     fieldLength: int | None = Field(
-        None,
-        description="The length of the field for this attribute in the editor",
-        examples=[50],
+        None, description="The length of the field for this attribute in the editor", examples=[50]
     )
     fieldHeight: int | None = Field(
-        None,
-        description="The height of the field for this attribute in the editor",
-        examples=[1],
+        None, description="The height of the field for this attribute in the editor", examples=[1]
     )
-    minLength: int | None = Field(
-        None,
-        description="The minimum length of the field for this attribute",
-        examples=[1],
-    )
-    readOnly: bool | None = Field(
-        None,
-        description="Flag indicating if this attribute is read-only",
-        examples=[False],
-    )
-    minValue: float | None = Field(
-        None, description="The minimum possible value for this attribute", examples=[0]
-    )
-    maxValue: float | None = Field(
-        None,
-        description="The maximum possible value for this attribute",
-        examples=[100],
-    )
+    minLength: int | None = Field(None, description="The minimum length of the field for this attribute", examples=[1])
+    readOnly: bool | None = Field(None, description="Flag indicating if this attribute is read-only", examples=[False])
+    minValue: float | None = Field(None, description="The minimum possible value for this attribute", examples=[0])
+    maxValue: float | None = Field(None, description="The maximum possible value for this attribute", examples=[100])
     scale: int | None = Field(
-        None,
-        description="The minimum number of fraction digits for a value of this attribute",
-        examples=[2],
+        None, description="The minimum number of fraction digits for a value of this attribute", examples=[2]
     )
     defaultValue: ObjectAttributeValueDefinition | None = Field(
-        None,
-        description="The default value of this attribute. It can be updated, but not created.",
+        None, description="The default value of this attribute. It can be updated, but not created."
     )
     valueDefinitions: list[ObjectAttributeValueDefinition] | None = Field(
         None, description="A set of values that are possible for this attribute"
     )
     creationDate: AwareDatetime | None = Field(
-        None,
-        description="The date/time when the attribute definition was created",
-        examples=["2024-01-15T10:30:00Z"],
+        None, description="The date/time when the attribute definition was created", examples=["2024-01-15T10:30:00Z"]
     )
     lastModified: AwareDatetime | None = Field(
         None,
@@ -779,21 +628,11 @@ class ObjectAttributeDefinition(BaseModel):
 
 
 class Description3(RootModel[str]):
-    root: str = Field(
-        ...,
-        description="Localized string",
-        examples=["Preference Description"],
-        max_length=4000,
-    )
+    root: str = Field(..., description="Localized string", examples=["Preference Description"], max_length=4000)
 
 
 class DisplayName2(RootModel[str]):
-    root: str = Field(
-        ...,
-        description="Localized string",
-        examples=["Preference Display Name"],
-        max_length=4000,
-    )
+    root: str = Field(..., description="Localized string", examples=["Preference Display Name"], max_length=4000)
 
 
 class PreferenceValue(BaseModel):
@@ -802,18 +641,12 @@ class PreferenceValue(BaseModel):
     """
 
     id: str = Field(
-        ...,
-        description="The preference attribute ID",
-        examples=["WapiStringAttr"],
-        max_length=256,
-        min_length=1,
+        ..., description="The preference attribute ID", examples=["WapiStringAttr"], max_length=256, min_length=1
     )
     description: dict[str, Description3] | None = None
     displayName: dict[str, DisplayName2] | None = None
     attributeDefinition: ObjectAttributeDefinition | None = None
-    siteValues: dict[str, Any] | None = Field(
-        None, description="A mapping of site IDs to their preference values."
-    )
+    siteValues: dict[str, Any] | None = Field(None, description="A mapping of site IDs to their preference values.")
     valueType: ValueType | None = None
 
 
@@ -865,15 +698,9 @@ class BoolQuery(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    must: list[Query] | None = Field(
-        None, description="List of queries to be evaluated as an `AND` operator."
-    )
-    mustNot: list[Query] | None = Field(
-        None, description="List of queries to be evaluated as a `NOT` operator."
-    )
-    should: list[Query] | None = Field(
-        None, description="List of queries to be evaluated as an `OR` operator."
-    )
+    must: list[Query] | None = Field(None, description="List of queries to be evaluated as an `AND` operator.")
+    mustNot: list[Query] | None = Field(None, description="List of queries to be evaluated as a `NOT` operator.")
+    should: list[Query] | None = Field(None, description="List of queries to be evaluated as an `OR` operator.")
 
 
 class Filter(BaseModel):
@@ -910,13 +737,10 @@ class BoolFilter(BaseModel):
         extra="forbid",
     )
     filters: list[Filter] | None = Field(
-        None,
-        description="A list of filters that are logically combined by an operator.",
+        None, description="A list of filters that are logically combined by an operator."
     )
     operator: Operator = Field(
-        ...,
-        description="The logical operator that is used to combine the filters.",
-        examples=["and"],
+        ..., description="The logical operator that is used to combine the filters.", examples=["and"]
     )
 
 
@@ -952,10 +776,7 @@ class NestedQuery(BaseModel):
         extra="forbid",
     )
     path: str = Field(
-        ...,
-        description="The path to the nested document.",
-        examples=["order.shippingAddresses"],
-        max_length=2048,
+        ..., description="The path to the nested document.", examples=["order.shippingAddresses"], max_length=2048
     )
     query: Query
     scoreMode: ScoreMode | None = Field(
@@ -971,11 +792,7 @@ class SearchRequest(BaseModel):
     """
 
     limit: int | None = Field(
-        None,
-        description="Maximum records to retrieve per request, not to exceed 200.",
-        examples=[10],
-        ge=1,
-        le=200,
+        None, description="Maximum records to retrieve per request, not to exceed 200.", examples=[10], ge=1, le=200
     )
     query: Query
     sorts: list[Sort] | None = Field(
@@ -983,10 +800,7 @@ class SearchRequest(BaseModel):
         description="The list of sort clauses configured for the search request. Sort clauses are optional. See the description of the search endpoint for details on the default sorting behavior that is used when explicit sorts are not passed.",
     )
     offset: int | None = Field(
-        0,
-        description="The zero-based index of the first hit/data to include in the result.",
-        examples=[0],
-        ge=0,
+        0, description="The zero-based index of the first hit/data to include in the result.", examples=[0], ge=0
     )
 
 
@@ -999,12 +813,8 @@ class PaginatedSearchResult(PaginatedResultBase):
         extra="forbid",
     )
     query: Query
-    sorts: list[Sort] | None = Field(
-        None, description="The sorting that was applied to the result."
-    )
-    hits: list[dict[str, Any]] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    sorts: list[Sort] | None = Field(None, description="The sorting that was applied to the result.")
+    hits: list[dict[str, Any]] | None = Field(None, description="The sorted array of search hits. Can be empty.")
 
 
 class PreferenceValueSearchResult(PaginatedSearchResult):
@@ -1012,9 +822,7 @@ class PreferenceValueSearchResult(PaginatedSearchResult):
     Document representing a preference value search result.
     """
 
-    hits: list[PreferenceValue] | None = Field(
-        None, description="The sorted array of search hits. Can be empty."
-    )
+    hits: list[PreferenceValue] | None = Field(None, description="The sorted array of search hits. Can be empty.")
 
 
 Query.model_rebuild()

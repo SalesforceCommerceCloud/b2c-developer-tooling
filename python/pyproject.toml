@@ -50,7 +50,9 @@ dev = [
     "freezegun>=1.4",
     "ruff>=0.6",
     "mypy>=1.11",
-    "datamodel-code-generator>=0.25",
+    # Pinned exactly: datamodel-code-generator output is not stable across
+    # versions, so an exact pin keeps model regeneration deterministic.
+    "datamodel-code-generator==0.76.2",
     "unasync>=0.6",
 ]
 docs = [
@@ -68,10 +70,7 @@ Repository = "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling"
 packages = ["src/b2c_tooling_sdk"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/b2c_tooling_sdk", "specs", "README.md"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"specs" = "b2c_tooling_sdk/specs"
+include = ["src/b2c_tooling_sdk", "README.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -86,9 +85,10 @@ branch = true
 line-length = 120
 target-version = "py310"
 src = ["src", "tests"]
-# Generated Pydantic models are produced by datamodel-code-generator (black/isort
-# formatted) and checked in verbatim; exclude them from ruff lint + format so
-# regeneration stays diff-free and codegen output remains authoritative.
+# Generated Pydantic models are produced by scripts/generate_models.py (which
+# formats them with this same ruff) and checked in verbatim; exclude them from
+# the general ruff lint + format pass so generated-code lint noise never fails
+# the gate and codegen output remains authoritative.
 extend-exclude = ["src/b2c_tooling_sdk/clients/models/"]
 
 [tool.ruff.lint]

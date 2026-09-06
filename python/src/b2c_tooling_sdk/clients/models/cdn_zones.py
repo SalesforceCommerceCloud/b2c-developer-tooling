@@ -51,12 +51,7 @@ class StorefrontZoneCreateRequest(BaseModel):
     The storefront zone information to be created.
     """
 
-    domainName: str = Field(
-        ...,
-        description="Domain name for the site.",
-        examples=["cc-merchant.com"],
-        pattern="^.*$",
-    )
+    domainName: str = Field(..., description="Domain name for the site.", examples=["cc-merchant.com"], pattern="^.*$")
 
 
 class Status(Enum):
@@ -78,10 +73,7 @@ class StorefrontZoneCreateResponse(BaseModel):
     """
 
     zoneId: str = Field(
-        ...,
-        description="The zone id tag.",
-        examples=["023e105f4ecef8ad9ca31a8372d0c353"],
-        pattern="^.*$",
+        ..., description="The zone id tag.", examples=["023e105f4ecef8ad9ca31a8372d0c353"], pattern="^.*$"
     )
     zoneName: str = Field(
         ...,
@@ -89,13 +81,9 @@ class StorefrontZoneCreateResponse(BaseModel):
         examples=["stg-zzzz-cc-merchant-com.cc-ecdn.net"],
         pattern="^.*$",
     )
-    status: Status = Field(
-        ..., description="current status of the zone", examples=["active"]
-    )
+    status: Status = Field(..., description="current status of the zone", examples=["active"])
     createdOn: AwareDatetime = Field(
-        ...,
-        description="Date and time of zone creation.",
-        examples=["2014-01-01T05:20:00.12345Z"],
+        ..., description="Date and time of zone creation.", examples=["2014-01-01T05:20:00.12345Z"]
     )
 
 
@@ -118,9 +106,7 @@ class MtlsCertificateResponse(BaseModel):
         pattern="^.*$",
     )
     expiresOn: AwareDatetime | None = Field(
-        None,
-        description="Expiration date for the mTLS certificate.",
-        examples=["2022-01-12T04:15:57Z"],
+        None, description="Expiration date for the mTLS certificate.", examples=["2022-01-12T04:15:57Z"]
     )
     issuer: str | None = Field(
         None,
@@ -129,20 +115,13 @@ class MtlsCertificateResponse(BaseModel):
         pattern="^.*$",
     )
     signature: str | None = Field(
-        None,
-        description="The type of hash used for the mTLS certificate.",
-        examples=["SHA256WithRSA"],
-        pattern="^.*$",
+        None, description="The type of hash used for the mTLS certificate.", examples=["SHA256WithRSA"], pattern="^.*$"
     )
     uploadedOn: AwareDatetime | None = Field(
-        None,
-        description="Date the mTLS certificate was uploaded.",
-        examples=["2020-01-12T04:15:57Z"],
+        None, description="Date the mTLS certificate was uploaded.", examples=["2020-01-12T04:15:57Z"]
     )
     ca: bool | None = Field(
-        None,
-        description="Indicates whether the mTLS certificate is a CA or leaf certificate.",
-        examples=[True],
+        None, description="Indicates whether the mTLS certificate is a CA or leaf certificate.", examples=[True]
     )
     serialNumber: str | None = Field(
         None,
@@ -196,10 +175,7 @@ class MtlsCertificateRequest(BaseModel):
         pattern="^.*$",
     )
     name: str = Field(
-        ...,
-        description="Certificate name used for ease of understanding.",
-        examples=["mtls_cert_name"],
-        pattern="^.*$",
+        ..., description="Certificate name used for ease of understanding.", examples=["mtls_cert_name"], pattern="^.*$"
     )
 
 
@@ -222,45 +198,22 @@ class PageShieldNotificationWebhookResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    id: str = Field(
-        ...,
-        description="Webhook ID.",
-        examples=["webhook_1234567890abcdef"],
-        pattern="^.*$",
-    )
-    name: str = Field(
-        ...,
-        description="Webhook name.",
-        examples=["Security Alert Webhook"],
-        pattern="^.*$",
-    )
+    id: str = Field(..., description="Webhook ID.", examples=["webhook_1234567890abcdef"], pattern="^.*$")
+    name: str = Field(..., description="Webhook name.", examples=["Security Alert Webhook"], pattern="^.*$")
     webhookUrl: str = Field(
-        ...,
-        description="Webhook URL.",
-        examples=["https://example.com/webhook/security"],
-        pattern="^.*$",
+        ..., description="Webhook URL.", examples=["https://example.com/webhook/security"], pattern="^.*$"
     )
-    type: str = Field(
-        ..., description="Webhook type.", examples=["security_alert"], pattern="^.*$"
-    )
+    type: str = Field(..., description="Webhook type.", examples=["security_alert"], pattern="^.*$")
     createdAt: AwareDatetime = Field(
-        ...,
-        description="Timestamp of webhook creation.",
-        examples=["2023-01-01T00:00:00Z"],
+        ..., description="Timestamp of webhook creation.", examples=["2023-01-01T00:00:00Z"]
     )
     lastSuccess: AwareDatetime | None = Field(
-        None,
-        description="Timestamp of the last successful notification.",
-        examples=["2023-01-01T12:00:00Z"],
+        None, description="Timestamp of the last successful notification.", examples=["2023-01-01T12:00:00Z"]
     )
     lastFailure: AwareDatetime | None = Field(
-        None,
-        description="Timestamp of the last failed notification.",
-        examples=["2023-01-01T18:00:00Z"],
+        None, description="Timestamp of the last failed notification.", examples=["2023-01-01T18:00:00Z"]
     )
-    zones: list[Zone] | None = Field(
-        None, description="Zone IDs on which to filter notifications alerts."
-    )
+    zones: list[Zone] | None = Field(None, description="Zone IDs on which to filter notifications alerts.")
 
 
 class PageShieldNotificationWebhookListEnvelope(BaseModel):
@@ -279,20 +232,12 @@ class PageShieldNotificationWebhookRequest(BaseModel):
         extra="forbid",
     )
     webhookUrl: str = Field(
-        ...,
-        description="Webhook URL.",
-        examples=["https://example.com/webhook/security"],
-        pattern="^.*$",
+        ..., description="Webhook URL.", examples=["https://example.com/webhook/security"], pattern="^.*$"
     )
     secret: str | None = Field(
-        None,
-        description="Webhook optional secret.",
-        examples=["webhook_secret_123"],
-        pattern="^.*$",
+        None, description="Webhook optional secret.", examples=["webhook_secret_123"], pattern="^.*$"
     )
-    zones: list[Zone] | None = Field(
-        None, description="Zone names on which to filter notifications alerts."
-    )
+    zones: list[Zone] | None = Field(None, description="Zone names on which to filter notifications alerts.")
 
 
 class PageShieldNotificationWebhookEnvelope(BaseModel):
@@ -320,9 +265,7 @@ class PageShieldPolicyResponse(BaseModel):
         extra="forbid",
     )
     action: Action | None = Field(
-        None,
-        description="Action taken when expression matches allow or log.",
-        examples=["allow"],
+        None, description="Action taken when expression matches allow or log.", examples=["allow"]
     )
     description: str | None = Field(
         None,
@@ -330,27 +273,15 @@ class PageShieldPolicyResponse(BaseModel):
         examples=["Allow scripts from trusted CDN sources"],
         pattern="^.*$",
     )
-    enabled: bool | None = Field(
-        None, description="Enable/disable the policy.", examples=[True]
-    )
+    enabled: bool | None = Field(None, description="Enable/disable the policy.", examples=[True])
     expression: str | None = Field(
         None,
         description="Expression of the policy.",
         examples=['http.request.uri.path contains "/trusted-cdn/"'],
         pattern="^.*$",
     )
-    value: str | None = Field(
-        None,
-        description="Policy to be applied.",
-        examples=["script-src"],
-        pattern="^.*$",
-    )
-    id: str | None = Field(
-        None,
-        description="Policy ID",
-        examples=["policy_1234567890abcdef"],
-        pattern="^.*$",
-    )
+    value: str | None = Field(None, description="Policy to be applied.", examples=["script-src"], pattern="^.*$")
+    id: str | None = Field(None, description="Policy ID", examples=["policy_1234567890abcdef"], pattern="^.*$")
 
 
 class PageShieldPoliciesListEnvelope(BaseModel):
@@ -369,9 +300,7 @@ class PageShieldPolicyRequest(BaseModel):
         extra="forbid",
     )
     action: Action | None = Field(
-        None,
-        description="Action taken when expression matches allow or log.",
-        examples=["allow"],
+        None, description="Action taken when expression matches allow or log.", examples=["allow"]
     )
     description: str | None = Field(
         None,
@@ -379,21 +308,14 @@ class PageShieldPolicyRequest(BaseModel):
         examples=["Allow scripts from trusted CDN sources"],
         pattern="^.*$",
     )
-    enabled: bool | None = Field(
-        None, description="Enable/disable the policy.", examples=[True]
-    )
+    enabled: bool | None = Field(None, description="Enable/disable the policy.", examples=[True])
     expression: str | None = Field(
         None,
         description="Expression of the policy.",
         examples=['http.request.uri.path contains "/trusted-cdn/"'],
         pattern="^.*$",
     )
-    value: str | None = Field(
-        None,
-        description="Policy to be applied.",
-        examples=["script-src"],
-        pattern="^.*$",
-    )
+    value: str | None = Field(None, description="Policy to be applied.", examples=["script-src"], pattern="^.*$")
 
 
 class PageShieldPoliciesEnvelope(BaseModel):
@@ -412,42 +334,25 @@ class PageShieldScriptVersion(BaseModel):
         extra="forbid",
     )
     hash: str | None = Field(
-        None,
-        description="The computed hash of the analyzed script.",
-        examples=["1243453456abc"],
-        pattern="^.*$",
+        None, description="The computed hash of the analyzed script.", examples=["1243453456abc"], pattern="^.*$"
     )
     jsIntegrityScore: int | None = Field(
         None, description="The integrity score of the JavaScript content.", examples=[1]
     )
     obfuscationScore: int | None = Field(
-        None,
-        description="The obfuscation score of the JavaScript content.",
-        examples=[2],
+        None, description="The obfuscation score of the JavaScript content.", examples=[2]
     )
-    dataflowScore: int | None = Field(
-        None, description="The dataflow score of the JavaScript content.", examples=[1]
-    )
-    malwareScore: int | None = Field(
-        None, description="The malware score of the JavaScript content.", examples=[1]
-    )
+    dataflowScore: int | None = Field(None, description="The dataflow score of the JavaScript content.", examples=[1])
+    malwareScore: int | None = Field(None, description="The malware score of the JavaScript content.", examples=[1])
     cryptoMiningScore: int | None = Field(
-        None,
-        description="The crypto mining score of the JavaScript content.",
-        examples=[1],
+        None, description="The crypto mining score of the JavaScript content.", examples=[1]
     )
-    mageCartScore: int | None = Field(
-        None, description="The Magecart score of the JavaScript content.", examples=[2]
-    )
+    mageCartScore: int | None = Field(None, description="The Magecart score of the JavaScript content.", examples=[2])
     fetchedAt: AwareDatetime | None = Field(
-        None,
-        description="The timestamp of when the script was last fetched.",
-        examples=["2023-01-01T00:00:00Z"],
+        None, description="The timestamp of when the script was last fetched.", examples=["2023-01-01T00:00:00Z"]
     )
     isMaliciousCode: bool = Field(
-        ...,
-        description="Indicates whether the script has been reported as malicious.",
-        examples=[False],
+        ..., description="Indicates whether the script has been reported as malicious.", examples=[False]
     )
 
 
@@ -472,10 +377,7 @@ class PageShieldScriptResponse(BaseModel):
         extra="forbid",
     )
     id: str | None = Field(
-        None,
-        description="Page Shield script ID.",
-        examples=["12345678901234asdfasfasdf"],
-        pattern="^.*$",
+        None, description="Page Shield script ID.", examples=["12345678901234asdfasfasdf"], pattern="^.*$"
     )
     url: str | None = Field(
         None,
@@ -492,55 +394,32 @@ class PageShieldScriptResponse(BaseModel):
         pattern="^.*$",
     )
     addedAt: AwareDatetime | None = Field(
-        None,
-        description="Date the script was added to Page Shield.",
-        examples=["2022-01-01T05:20:00Z"],
+        None, description="Date the script was added to Page Shield.", examples=["2022-01-01T05:20:00Z"]
     )
     firstSeenAt: AwareDatetime | None = Field(
-        None,
-        description="Date the script was detected by Page Shield.",
-        examples=["2022-01-01T05:20:00Z"],
+        None, description="Date the script was detected by Page Shield.", examples=["2022-01-01T05:20:00Z"]
     )
     lastSeenAt: AwareDatetime | None = Field(
-        None,
-        description="Date the script was recently detected by Page Shield.",
-        examples=["2022-01-01T05:20:00Z"],
+        None, description="Date the script was recently detected by Page Shield.", examples=["2022-01-01T05:20:00Z"]
     )
     fetchedAt: AwareDatetime | None = Field(
-        None,
-        description="The timestamp when the script was last fetched.",
-        examples=["2022-01-01T05:20:00Z"],
+        None, description="The timestamp when the script was last fetched.", examples=["2022-01-01T05:20:00Z"]
     )
-    domainReportedMalicious: bool | None = Field(
-        None, description="Reported domain is malicious.", examples=[False]
-    )
+    domainReportedMalicious: bool | None = Field(None, description="Reported domain is malicious.", examples=[False])
     hash: str | None = Field(
-        None,
-        description="The computed hash of the analyzed script.",
-        examples=["1243453456abc"],
-        pattern="^.*$",
+        None, description="The computed hash of the analyzed script.", examples=["1243453456abc"], pattern="^.*$"
     )
     cryptoMiningScore: int | None = Field(
-        None,
-        description="The crypto mining score of the JavaScript content.",
-        examples=[1],
+        None, description="The crypto mining score of the JavaScript content.", examples=[1]
     )
-    dataflowScore: int | None = Field(
-        None, description="The dataflow score of the JavaScript content.", examples=[1]
-    )
+    dataflowScore: int | None = Field(None, description="The dataflow score of the JavaScript content.", examples=[1])
     jsIntegrityScore: int | None = Field(
         None, description="The integrity score of the JavaScript content.", examples=[1]
     )
-    mageCartScore: int | None = Field(
-        None, description="The Magecart score of the JavaScript content.", examples=[2]
-    )
-    malwareScore: int | None = Field(
-        None, description="The malware score of the JavaScript content.", examples=[1]
-    )
+    mageCartScore: int | None = Field(None, description="The Magecart score of the JavaScript content.", examples=[2])
+    malwareScore: int | None = Field(None, description="The malware score of the JavaScript content.", examples=[1])
     obfuscationScore: int | None = Field(
-        None,
-        description="The obfuscation score of the JavaScript content.",
-        examples=[2],
+        None, description="The obfuscation score of the JavaScript content.", examples=[2]
     )
     maliciousDomainCategories: list[MaliciousDomainCategory] | None = Field(
         None, description="Malicious domain category.", examples=[["Malware"]]
@@ -548,22 +427,13 @@ class PageShieldScriptResponse(BaseModel):
     maliciousUrlCategories: list[MaliciousUrlCategory] | None = Field(
         None, description="Malicious URL category.", examples=[["Malware"]]
     )
-    urlContainsCdnCgiPath: bool | None = Field(
-        None, description="URL contains CDN CGI path.", examples=[False]
-    )
-    urlReportedMalicious: bool | None = Field(
-        None, description="Reported URL is malicious.", examples=[False]
-    )
+    urlContainsCdnCgiPath: bool | None = Field(None, description="URL contains CDN CGI path.", examples=[False])
+    urlReportedMalicious: bool | None = Field(None, description="Reported URL is malicious.", examples=[False])
     pageUrls: list[PageUrl] | None = Field(
-        None,
-        description="Page URLs",
-        examples=[["blog.test.salesforce.com/page1", "blog.test.salesforce.com/page2"]],
+        None, description="Page URLs", examples=[["blog.test.salesforce.com/page1", "blog.test.salesforce.com/page2"]]
     )
     firstPageUrl: str | None = Field(
-        None,
-        description="First page URL for the JavaScript.",
-        examples=["blog.test.salesforce.com"],
-        pattern="^.*$",
+        None, description="First page URL for the JavaScript.", examples=["blog.test.salesforce.com"], pattern="^.*$"
     )
     status: str | None = Field(
         None,
@@ -571,9 +441,7 @@ class PageShieldScriptResponse(BaseModel):
         examples=["active"],
         pattern="^.*$",
     )
-    versions: list[PageShieldScriptVersion] | None = Field(
-        None, description="List of script versions."
-    )
+    versions: list[PageShieldScriptVersion] | None = Field(None, description="List of script versions.")
 
 
 class PageShieldScriptListEnvelope(BaseModel):
@@ -611,23 +479,14 @@ class Zone2(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    zoneId: str = Field(
-        ...,
-        description="Identity of the zone.",
-        examples=["example1-zone-Id"],
-        max_length=100,
-    )
+    zoneId: str = Field(..., description="Identity of the zone.", examples=["example1-zone-Id"], max_length=100)
     name: str = Field(
         ...,
         description="Name given to the zone. This needs to be a DNS domain name for eg example.com",
         examples=["example1.com"],
         max_length=100,
     )
-    status: Status1 = Field(
-        ...,
-        description='Status of the zone for eg "Pending" , "Active"',
-        examples=["pending"],
-    )
+    status: Status1 = Field(..., description='Status of the zone for eg "Pending" , "Active"', examples=["pending"])
 
 
 class ZonesEnvelope(BaseModel):
@@ -661,15 +520,9 @@ class WafGroup(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    groupId: str | None = Field(
-        None, examples=["372e67954025e0ba6aaa6d586b9e0b60"], max_length=100
-    )
-    action: Action2 | None = Field(
-        None, description="The action to apply to WAF group", examples=["block"]
-    )
-    mode: Mode = Field(
-        ..., description="Mode of the waf rule - on vs off", examples=["on"]
-    )
+    groupId: str | None = Field(None, examples=["372e67954025e0ba6aaa6d586b9e0b60"], max_length=100)
+    action: Action2 | None = Field(None, description="The action to apply to WAF group", examples=["block"])
+    mode: Mode = Field(..., description="Mode of the waf rule - on vs off", examples=["on"])
     description: str | None = Field(
         None,
         description="Description of the WAF Group.",
@@ -713,18 +566,10 @@ class WafRule(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    ruleId: str | None = Field(
-        None, examples=["892e67954025e0ba6atefd586b9e58b3"], pattern="^.*$"
-    )
-    groupId: str | None = Field(
-        None, examples=["372e67954025e0ba6aaa6d586b9e0b60"], max_length=100
-    )
-    action: Action3 = Field(
-        ..., description="The action to apply to WAF rule", examples=["block"]
-    )
-    defaultAction: DefaultAction | None = Field(
-        None, description="The action to apply to WAF rule", examples=["block"]
-    )
+    ruleId: str | None = Field(None, examples=["892e67954025e0ba6atefd586b9e58b3"], pattern="^.*$")
+    groupId: str | None = Field(None, examples=["372e67954025e0ba6aaa6d586b9e0b60"], max_length=100)
+    action: Action3 = Field(..., description="The action to apply to WAF rule", examples=["block"])
+    defaultAction: DefaultAction | None = Field(None, description="The action to apply to WAF rule", examples=["block"])
     description: str | None = Field(
         None,
         description="Description of the WAF Group.",
@@ -831,15 +676,9 @@ class SpeedSetting(BaseModel):
         description="The level of polish (image quality) used for image modification. The value `lossless` corresponds to **Polish Level Basic** in the UI, and the value `lossy` corresponds to **Polish Level Basic+JPEG.** To disable image modification, set this property to `off`. Setting this property to `off` will prevent you from setting the `webp` property to `on`.",
         examples=["off"],
     )
-    earlyHints: EarlyHints | None = Field(
-        "off", description="Early Hints for a zone.", examples=["off"]
-    )
-    http3: Http3 | None = Field(
-        "off", description="Http3 for a zone.", examples=["off"]
-    )
-    http2ToOrigin: Http2ToOrigin | None = Field(
-        "off", description="Http2 to Origin for a zone.", examples=["off"]
-    )
+    earlyHints: EarlyHints | None = Field("off", description="Early Hints for a zone.", examples=["off"])
+    http3: Http3 | None = Field("off", description="Http3 for a zone.", examples=["off"])
+    http2ToOrigin: Http2ToOrigin | None = Field("off", description="Http2 to Origin for a zone.", examples=["off"])
 
 
 class SpeedSettingsEnvelope(BaseModel):
@@ -854,23 +693,15 @@ class Hsts(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    enabled: bool | None = Field(
-        None, description="Enable strict transport security.", examples=[True]
-    )
+    enabled: bool | None = Field(None, description="Enable strict transport security.", examples=[True])
     includeSubdomains: bool | None = Field(
-        None,
-        description="Include all subdomains for strict transport security.",
-        examples=[True],
+        None, description="Include all subdomains for strict transport security.", examples=[True]
     )
     maxAge: float | None = Field(
-        None,
-        description="Max age in seconds of the strict transport security.",
-        examples=[31536000],
+        None, description="Max age in seconds of the strict transport security.", examples=[31536000]
     )
     preload: bool | None = Field(
-        None,
-        description="Preload any URLs that are included in the response headers.",
-        examples=[False],
+        None, description="Preload any URLs that are included in the response headers.", examples=[False]
     )
 
 
@@ -894,33 +725,20 @@ class SecuritySetting(BaseModel):
     hsts: Hsts | None = Field(
         None,
         description="The security header for a zone.",
-        examples=[
-            {
-                "enabled": True,
-                "includeSubdomains": True,
-                "maxAge": 31536000,
-                "preload": False,
-            }
-        ],
+        examples=[{"enabled": True, "includeSubdomains": True, "maxAge": 31536000, "preload": False}],
     )
     securityLevel: SecurityLevel | None = Field(
         None,
         description="Security profile for your zone, which will automatically adjust each of the security settings.",
         examples=["medium"],
     )
-    tls13Enabled: bool | None = Field(
-        None,
-        description="Enable Crypto TLS 1.3 feature for this zone.",
-        examples=[True],
-    )
+    tls13Enabled: bool | None = Field(None, description="Enable Crypto TLS 1.3 feature for this zone.", examples=[True])
     wafEnabled: bool | None = Field(
         None,
         description="Enable WAF (OWASP) protection for this zone. Not applicable for zones using WAFv2.",
         examples=[True],
     )
-    alwaysUseHttps: bool = Field(
-        ..., description="Redirect all http requests to https.", examples=[True]
-    )
+    alwaysUseHttps: bool = Field(..., description="Redirect all http requests to https.", examples=[True])
 
 
 class SecuritySettingsEnvelope(BaseModel):
@@ -963,14 +781,9 @@ class CachePurgeResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    cachePurged: bool = Field(
-        ..., description="The name of the list.", examples=[False]
-    )
+    cachePurged: bool = Field(..., description="The name of the list.", examples=[False])
     details: str = Field(
-        ...,
-        description="Details of errors if any.",
-        examples=["1084 : Unable to purge '<url>'."],
-        pattern="^.*$",
+        ..., description="Details of errors if any.", examples=["1084 : Unable to purge '<url>'."], pattern="^.*$"
     )
 
 
@@ -987,9 +800,7 @@ class OCAPICachingToggleRequest(BaseModel):
     """
 
     enableOCAPICachingPageRule: bool = Field(
-        ...,
-        description="True to enable API Caching Page rule, false to disable.",
-        examples=[True],
+        ..., description="True to enable API Caching Page rule, false to disable.", examples=[True]
     )
 
 
@@ -1130,19 +941,13 @@ class Certificate(BaseModel):
         pattern="^.*$",
     )
     hosts: list[Host] | None = Field(
-        None,
-        description="List of hosts the certificate applies to.",
-        examples=[["example.com", "www.example.com"]],
+        None, description="List of hosts the certificate applies to.", examples=[["example.com", "www.example.com"]]
     )
     expiresOn: AwareDatetime | None = Field(
-        None,
-        description="Date of expiration for the certificate.",
-        examples=["2025-12-31T23:59:59Z"],
+        None, description="Date of expiration for the certificate.", examples=["2025-12-31T23:59:59Z"]
     )
     uploadedOn: AwareDatetime | None = Field(
-        None,
-        description="Date the certificate was uploaded.",
-        examples=["2024-01-01T00:00:00Z"],
+        None, description="Date the certificate was uploaded.", examples=["2024-01-01T00:00:00Z"]
     )
     issuer: str | None = Field(
         None,
@@ -1151,14 +956,9 @@ class Certificate(BaseModel):
         pattern="^.*$",
     )
     signature: str | None = Field(
-        None,
-        description="The type of hash used for the certificate.",
-        examples=["SHA256"],
-        pattern="^.*$",
+        None, description="The type of hash used for the certificate.", examples=["SHA256"], pattern="^.*$"
     )
-    status: Status2 = Field(
-        ..., description="Current status of the certificate.", examples=["ACTIVE"]
-    )
+    status: Status2 = Field(..., description="Current status of the certificate.", examples=["ACTIVE"])
     minTlsVersion: str | None = Field(
         None,
         description="Minimum TLS Version only allows HTTPS connections from visitors that support the selected TLS protocol version or newer.",
@@ -1193,14 +993,10 @@ class Certificate(BaseModel):
         pattern="^.*$",
     )
     certificateVerificationStatus: CertificateVerificationStatus | None = Field(
-        None,
-        description="Current status of certificate verification.",
-        examples=["ACTIVE"],
+        None, description="Current status of certificate verification.", examples=["ACTIVE"]
     )
     wildcardHostname: bool | None = Field(
-        None,
-        description="Set to true for a wildcard custom hostname.",
-        examples=[False],
+        None, description="Set to true for a wildcard custom hostname.", examples=[False]
     )
     wildcardCertificateVerificationTXTName: str | None = Field(
         None,
@@ -1214,12 +1010,8 @@ class Certificate(BaseModel):
         examples=["wildcard_abc123def456"],
         pattern="^.*$",
     )
-    wildcardCertificateVerificationStatus: (
-        WildcardCertificateVerificationStatus | None
-    ) = Field(
-        None,
-        description="Current status of certificate verification.",
-        examples=["ACTIVE"],
+    wildcardCertificateVerificationStatus: WildcardCertificateVerificationStatus | None = Field(
+        None, description="Current status of certificate verification.", examples=["ACTIVE"]
     )
     customHostnameVerificationTXTName: str | None = Field(
         None,
@@ -1228,10 +1020,7 @@ class Certificate(BaseModel):
         pattern="^.*$",
     )
     customHostnameVerificationTXTValue: str | None = Field(
-        None,
-        description="Custom Hostname verification txt value.",
-        examples=["custom_abc123def456"],
-        pattern="^.*$",
+        None, description="Custom Hostname verification txt value.", examples=["custom_abc123def456"], pattern="^.*$"
     )
     customHostnameId: str | None = Field(
         None,
@@ -1240,15 +1029,10 @@ class Certificate(BaseModel):
         pattern="^.*$",
     )
     customHostname: str | None = Field(
-        None,
-        description="Custom hostname associated with the zone",
-        examples=["custom.example.com"],
-        pattern="^.*$",
+        None, description="Custom hostname associated with the zone", examples=["custom.example.com"], pattern="^.*$"
     )
     customHostnameStatus: CustomHostnameStatus | None = Field(
-        None,
-        description="Current status of custom hostname validation.",
-        examples=["ACTIVE"],
+        None, description="Current status of custom hostname validation.", examples=["ACTIVE"]
     )
     dcvDelegationRecords: list[DCVDelegationRecord] | None = Field(
         None, description="eCDN automatic renewal certificate DCV delegation records"
@@ -1271,10 +1055,7 @@ class CertificateRequest(BaseModel):
         extra="forbid",
     )
     hostname: str = Field(
-        ...,
-        description="Hostname that certificate needs to be applied to.",
-        examples=["example.com"],
-        pattern="^.*$",
+        ..., description="Hostname that certificate needs to be applied to.", examples=["example.com"], pattern="^.*$"
     )
     bundleMethod: str | None = Field(
         None,
@@ -1317,9 +1098,7 @@ class CertificateRequest(BaseModel):
         pattern="^.*$",
     )
     wildcardHostname: bool | None = Field(
-        None,
-        description="Set to true for a wildcard custom hostname.",
-        examples=[False],
+        None, description="Set to true for a wildcard custom hostname.", examples=[False]
     )
 
 
@@ -1356,10 +1135,7 @@ class CustomHostnameValidationResponse(BaseModel):
         pattern="^.*$",
     )
     customHostname: str = Field(
-        ...,
-        description="Name of the custom hostname",
-        examples=["test.example.com"],
-        pattern="^.*$",
+        ..., description="Name of the custom hostname", examples=["test.example.com"], pattern="^.*$"
     )
     customHostnameVerificationTXTName: str = Field(
         ...,
@@ -1393,12 +1169,7 @@ class MRTRules(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    id: str = Field(
-        ...,
-        description="The ID of the rule.",
-        examples=["12345678901234asdfasfasdf"],
-        pattern="^.*$",
-    )
+    id: str = Field(..., description="The ID of the rule.", examples=["12345678901234asdfasfasdf"], pattern="^.*$")
     expression: str = Field(
         ...,
         description="The expression that determines the rule's routing behavior.",
@@ -1414,19 +1185,12 @@ class MRTRules(BaseModel):
         pattern="^.*$",
     )
     lastUpdated: AwareDatetime = Field(
-        ...,
-        description="Date when the rule was last updated.",
-        examples=["2022-01-01T05:20:00Z"],
+        ..., description="Date when the rule was last updated.", examples=["2022-01-01T05:20:00Z"]
     )
     ref: str = Field(
-        ...,
-        description="The ref of the rule.",
-        examples=["12345678901234asdfasfasdf1234567"],
-        pattern="^.*$",
+        ..., description="The ref of the rule.", examples=["12345678901234asdfasfasdf1234567"], pattern="^.*$"
     )
-    enabled: bool = Field(
-        ..., description="Whether or not the rule is enabled.", examples=[True]
-    )
+    enabled: bool = Field(..., description="Whether or not the rule is enabled.", examples=[True])
     mrtHostname: str = Field(
         ...,
         description="Managed runtime hostname this rule targets.",
@@ -1443,22 +1207,10 @@ class MRTRuleset(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    id: str = Field(
-        ...,
-        description="The ID of the ruleset.",
-        examples=["12345678901234asdfasfasdf"],
-        pattern="^.*$",
-    )
-    name: str = Field(
-        ...,
-        description="The name of the ruleset.",
-        examples=["MRT Rules"],
-        pattern="^.*$",
-    )
+    id: str = Field(..., description="The ID of the ruleset.", examples=["12345678901234asdfasfasdf"], pattern="^.*$")
+    name: str = Field(..., description="The name of the ruleset.", examples=["MRT Rules"], pattern="^.*$")
     lastUpdated: AwareDatetime = Field(
-        ...,
-        description="Date when the ruleset was last updated.",
-        examples=["2022-01-01T05:20:00Z"],
+        ..., description="Date when the ruleset was last updated.", examples=["2022-01-01T05:20:00Z"]
     )
     rules: list[MRTRules] = Field(..., description="The rules defined by the ruleset.")
 
@@ -1492,11 +1244,7 @@ class Expression(RootModel[str]):
 
 
 class Description(RootModel[str]):
-    root: str = Field(
-        ...,
-        examples=["Phased rollout rule for dev-customer.salesforce.com"],
-        pattern="^.*$",
-    )
+    root: str = Field(..., examples=["Phased rollout rule for dev-customer.salesforce.com"], pattern="^.*$")
 
 
 class MRTRulesPostRequest(BaseModel):
@@ -1573,9 +1321,7 @@ class MRTRulePatchRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    enabled: bool | None = Field(
-        None, description="Whether or not the rule is enabled.", examples=[True]
-    )
+    enabled: bool | None = Field(None, description="Whether or not the rule is enabled.", examples=[True])
     expression: str | None = Field(
         None,
         description="The expression that determines the MRT rule's routing behavior.",
@@ -1660,9 +1406,7 @@ class LogpushResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    jobId: int | None = Field(
-        None, description="Unique ID of the job.", examples=[123456]
-    )
+    jobId: int | None = Field(None, description="Unique ID of the job.", examples=[123456])
     name: str | None = Field(
         None,
         description="Logpush job name; the name cannot be changed after the job is created.",
@@ -1677,9 +1421,7 @@ class LogpushResponse(BaseModel):
     filter: str | None = Field(
         None,
         description="Filter provides a way to customize which logs you want to receive. Filters are added as escaped JSON strings formatted. If the filter is not displayed, it indicates that all logs should be included.",
-        examples=[
-            '{"where":{"key":"ClientRequestPath","operator":"contains","value":"/example-path"}}'
-        ],
+        examples=['{"where":{"key":"ClientRequestPath","operator":"contains","value":"/example-path"}}'],
         pattern="^.*$",
     )
     logFields: list[LogField] | None = Field(
@@ -1694,9 +1436,7 @@ class LogpushResponse(BaseModel):
         pattern="^.*$",
     )
     enabled: bool | None = Field(
-        None,
-        description="Flag that indicates if the job is enabled or disabled.",
-        examples=[False],
+        None, description="Flag that indicates if the job is enabled or disabled.", examples=[False]
     )
     lastComplete: AwareDatetime | None = Field(
         None,
@@ -1714,9 +1454,7 @@ class LogpushResponse(BaseModel):
         examples=["No permissions to write to destination bucket"],
         pattern="^.*$",
     )
-    createdOn: AwareDatetime | None = Field(
-        None, description="Job creation time.", examples=["2023-01-01T00:00:27Z"]
-    )
+    createdOn: AwareDatetime | None = Field(None, description="Job creation time.", examples=["2023-01-01T00:00:27Z"])
 
 
 class LogpushJobsEnvelope(BaseModel):
@@ -1759,9 +1497,7 @@ class LogpushCreateRequest(BaseModel):
     filter: str | None = Field(
         None,
         description="Filter provides a way to customize which logs you want to receive. Filters are added as escaped JSON strings formatted. Default will include all logs.",
-        examples=[
-            '{"where":{"key":"ClientRequestPath","operator":"contains","value":"/example-path"}}'
-        ],
+        examples=['{"where":{"key":"ClientRequestPath","operator":"contains","value":"/example-path"}}'],
         pattern="^.*$",
     )
     logFields: list[LogField] = Field(
@@ -1798,16 +1534,12 @@ class LogpushUpdateRequest(BaseModel):
         extra="forbid",
     )
     enabled: bool | None = Field(
-        None,
-        description="Flag that indicates if the job is enabled or disabled.",
-        examples=[True],
+        None, description="Flag that indicates if the job is enabled or disabled.", examples=[True]
     )
     filter: str | None = Field(
         None,
         description="Provides customized selection for logs you want to receive. Filters are added as escaped, formatted JSON strings. By default, all logs are included.",
-        examples=[
-            '{"where":{"key":"ClientRequestPath","operator":"contains","value":"/example-path"}}'
-        ],
+        examples=['{"where":{"key":"ClientRequestPath","operator":"contains","value":"/example-path"}}'],
         pattern="^.*$",
     )
     logFields: list[LogField] | None = Field(
@@ -1841,10 +1573,7 @@ class ActionMode(Enum):
 class WAFRulePackage(BaseModel):
     id: str = Field(..., examples=["a25a9a7e9c00afc1fb2e0245519d725b"], max_length=32)
     name: str = Field(
-        ...,
-        description="Name of the firewall package",
-        examples=["OWASP Top 10 Protection"],
-        pattern="^.*$",
+        ..., description="Name of the firewall package", examples=["OWASP Top 10 Protection"], pattern="^.*$"
     )
     description: str = Field(
         ...,
@@ -1865,9 +1594,7 @@ class WAFRulePackage(BaseModel):
         pattern="^.*$",
     )
     sensitivity: Sensitivity = Field(
-        ...,
-        description="Sensitivity for traditional (owasp) rule package.",
-        examples=["medium"],
+        ..., description="Sensitivity for traditional (owasp) rule package.", examples=["medium"]
     )
     action_mode: ActionMode = Field(
         ...,
@@ -1888,9 +1615,7 @@ class WafPackagePatchRequest(BaseModel):
         extra="forbid",
     )
     sensitivity: Sensitivity = Field(
-        ...,
-        description="Sensitivity for traditional (owasp) rule package.",
-        examples=["medium"],
+        ..., description="Sensitivity for traditional (owasp) rule package.", examples=["medium"]
     )
     action_mode: ActionMode = Field(
         ...,
@@ -1909,10 +1634,7 @@ class CustomRule(BaseModel):
     """
 
     ruleId: str = Field(
-        ...,
-        description="The ID of the custom rule.",
-        examples=["2c0fc9fa937b11eaa1b71c4d701ab86e"],
-        pattern="^.*$",
+        ..., description="The ID of the custom rule.", examples=["2c0fc9fa937b11eaa1b71c4d701ab86e"], pattern="^.*$"
     )
     description: str = Field(
         ...,
@@ -1926,19 +1648,11 @@ class CustomRule(BaseModel):
         examples=['(http.request.uri.path matches \\"^/path1/.*\\")'],
         pattern="^.*$",
     )
-    actions: list[Action4] = Field(
-        ...,
-        description="The action(s) applied by the custom rule.",
-        examples=[["block"]],
-    )
+    actions: list[Action4] = Field(..., description="The action(s) applied by the custom rule.", examples=[["block"]])
     lastUpdated: AwareDatetime = Field(
-        ...,
-        description="Date when the custom rule was last updated.",
-        examples=["2022-01-01T05:20:00Z"],
+        ..., description="Date when the custom rule was last updated.", examples=["2022-01-01T05:20:00Z"]
     )
-    enabled: bool = Field(
-        ..., description="Whether or not the custom rule is enabled.", examples=[True]
-    )
+    enabled: bool = Field(..., description="Whether or not the custom rule is enabled.", examples=[True])
 
 
 class CustomRulesEnvelope(BaseModel):
@@ -1984,14 +1698,8 @@ class CustomRulesPostRequest(BaseModel):
         examples=['(http.request.uri.path matches \\"^/path1/.*\\")'],
         pattern="^.*$",
     )
-    actions: list[Action4] = Field(
-        ...,
-        description="The action(s) applied by the custom rule.",
-        examples=[["block"]],
-    )
-    enabled: bool | None = Field(
-        None, description="Whether or not the custom rule is enabled.", examples=[True]
-    )
+    actions: list[Action4] = Field(..., description="The action(s) applied by the custom rule.", examples=[["block"]])
+    enabled: bool | None = Field(None, description="Whether or not the custom rule is enabled.", examples=[True])
     position: RulePosition | None = None
 
 
@@ -2003,9 +1711,7 @@ class CustomRuleEnvelope(BaseModel):
 
 
 class RuleId(RootModel[str]):
-    root: str = Field(
-        ..., examples=["ffffe61cf25e4ec49c34b029ff3060f7"], pattern="^.*$"
-    )
+    root: str = Field(..., examples=["ffffe61cf25e4ec49c34b029ff3060f7"], pattern="^.*$")
 
 
 class CustomRulesPatchOrderRequest(BaseModel):
@@ -2016,9 +1722,7 @@ class CustomRulesPatchOrderRequest(BaseModel):
     ruleIds: list[RuleId] = Field(
         ...,
         description="An array of ruleIds representing the new order of custom rules.",
-        examples=[
-            ["ffffe61cf25e4ec49c34b029ff3060f7", "2c0fc9fa937b11eaa1b71c4d701ab86e"]
-        ],
+        examples=[["ffffe61cf25e4ec49c34b029ff3060f7", "2c0fc9fa937b11eaa1b71c4d701ab86e"]],
     )
 
 
@@ -2040,13 +1744,9 @@ class CustomRulesPatchRequest(BaseModel):
         pattern="^.*$",
     )
     actions: list[Action4] | None = Field(
-        None,
-        description="The action(s) applied by the custom rule.",
-        examples=[["block"]],
+        None, description="The action(s) applied by the custom rule.", examples=[["block"]]
     )
-    enabled: bool | None = Field(
-        None, description="Whether or not the custom rule is enabled.", examples=[True]
-    )
+    enabled: bool | None = Field(None, description="Whether or not the custom rule is enabled.", examples=[True])
     position: RulePosition | None = None
 
 
@@ -2066,10 +1766,7 @@ class RateLimitingRule(BaseModel):
         pattern="^.*$",
     )
     description: str = Field(
-        ...,
-        description="The description of the rate limiting rule.",
-        examples=["Rate limit /path1."],
-        pattern="^.*$",
+        ..., description="The description of the rate limiting rule.", examples=["Rate limit /path1."], pattern="^.*$"
     )
     expression: str = Field(
         ...,
@@ -2094,9 +1791,7 @@ class RateLimitingRule(BaseModel):
         examples=[60],
     )
     requestsPerPeriod: int = Field(
-        ...,
-        description="The limit for the number of requests in the specified period of time.",
-        examples=[50],
+        ..., description="The limit for the number of requests in the specified period of time.", examples=[50]
     )
     mitigationTimeout: int = Field(
         ...,
@@ -2106,21 +1801,13 @@ class RateLimitingRule(BaseModel):
     countingExpression: str | None = Field(
         None,
         description="The expression that defines what kind of requests we want to rate limit.",
-        examples=[
-            '(http.request.uri.path matches "^/path1/.*" and http.response.code eq 400)'
-        ],
+        examples=['(http.request.uri.path matches "^/path1/.*" and http.response.code eq 400)'],
         pattern="^.*$",
     )
     lastUpdated: AwareDatetime = Field(
-        ...,
-        description="Date when the rate limiting rule was last updated.",
-        examples=["2022-01-01T05:20:00Z"],
+        ..., description="Date when the rate limiting rule was last updated.", examples=["2022-01-01T05:20:00Z"]
     )
-    enabled: bool = Field(
-        ...,
-        description="Whether or not the rate limiting rule is enabled.",
-        examples=[True],
-    )
+    enabled: bool = Field(..., description="Whether or not the rate limiting rule is enabled.", examples=[True])
 
 
 class RateLimitingRulesEnvelope(BaseModel):
@@ -2133,10 +1820,7 @@ class RateLimitingRulesPostRequest(BaseModel):
     """
 
     description: str = Field(
-        ...,
-        description="The description of the rate limiting rule.",
-        examples=["Rate limit /path1."],
-        pattern="^.*$",
+        ..., description="The description of the rate limiting rule.", examples=["Rate limit /path1."], pattern="^.*$"
     )
     expression: str = Field(
         ...,
@@ -2161,9 +1845,7 @@ class RateLimitingRulesPostRequest(BaseModel):
         examples=[60],
     )
     requestsPerPeriod: int = Field(
-        ...,
-        description="The limit for the number of requests in the specified period of time.",
-        examples=[50],
+        ..., description="The limit for the number of requests in the specified period of time.", examples=[50]
     )
     mitigationTimeout: int = Field(
         ...,
@@ -2173,16 +1855,10 @@ class RateLimitingRulesPostRequest(BaseModel):
     countingExpression: str | None = Field(
         None,
         description="The expression that defines what kind of requests we want to rate limit.",
-        examples=[
-            '(http.request.uri.path matches "^/path1/.*" and http.response.code eq 400)'
-        ],
+        examples=['(http.request.uri.path matches "^/path1/.*" and http.response.code eq 400)'],
         pattern="^.*$",
     )
-    enabled: bool | None = Field(
-        None,
-        description="Whether or not the rate limiting rule is enabled.",
-        examples=[True],
-    )
+    enabled: bool | None = Field(None, description="Whether or not the rate limiting rule is enabled.", examples=[True])
     position: RulePosition | None = None
 
 
@@ -2196,10 +1872,7 @@ class RateLimitingRulesPatchRequest(BaseModel):
     """
 
     description: str | None = Field(
-        None,
-        description="The description of the rate limiting rule.",
-        examples=["Rate limit /path1."],
-        pattern="^.*$",
+        None, description="The description of the rate limiting rule.", examples=["Rate limit /path1."], pattern="^.*$"
     )
     expression: str | None = Field(
         None,
@@ -2224,9 +1897,7 @@ class RateLimitingRulesPatchRequest(BaseModel):
         examples=[60],
     )
     requestsPerPeriod: int | None = Field(
-        None,
-        description="The limit for the number of requests in the specified period of time.",
-        examples=[50],
+        None, description="The limit for the number of requests in the specified period of time.", examples=[50]
     )
     mitigationTimeout: int | None = Field(
         None,
@@ -2236,16 +1907,10 @@ class RateLimitingRulesPatchRequest(BaseModel):
     countingExpression: str | None = Field(
         None,
         description="The expression that defines what kind of requests we want to rate limit.",
-        examples=[
-            '(http.request.uri.path matches "^/path1/.*" and http.response.code eq 400)'
-        ],
+        examples=['(http.request.uri.path matches "^/path1/.*" and http.response.code eq 400)'],
         pattern="^.*$",
     )
-    enabled: bool | None = Field(
-        None,
-        description="Whether or not the rate limiting rule is enabled.",
-        examples=[True],
-    )
+    enabled: bool | None = Field(None, description="Whether or not the rate limiting rule is enabled.", examples=[True])
     position: RulePosition | None = None
 
 
@@ -2258,10 +1923,7 @@ class WAFManagedRuleset(BaseModel):
         extra="forbid",
     )
     name: str = Field(
-        ...,
-        description="The name of the WAF managed ruleset.",
-        examples=["OWASP Core Ruleset"],
-        pattern="^.*$",
+        ..., description="The name of the WAF managed ruleset.", examples=["OWASP Core Ruleset"], pattern="^.*$"
     )
     rulesetId: str = Field(
         ...,
@@ -2270,10 +1932,7 @@ class WAFManagedRuleset(BaseModel):
         pattern="^.*$",
     )
     action: str = Field(
-        ...,
-        description="The action applied by the WAF managed ruleset.",
-        examples=["default"],
-        pattern="^.*$",
+        ..., description="The action applied by the WAF managed ruleset.", examples=["default"], pattern="^.*$"
     )
     anomalyScore: str | None = Field(
         None,
@@ -2291,11 +1950,7 @@ class WAFManagedRuleset(BaseModel):
         description="The paranoia level of the WAF managed ruleset. Higher paranoia levels activate more aggressive rules. Only applicable for the OWASP Core Ruleset.",
         examples=[1],
     )
-    enabled: bool = Field(
-        ...,
-        description="Whether or not the WAF managed ruleset is enabled.",
-        examples=[True],
-    )
+    enabled: bool = Field(..., description="Whether or not the WAF managed ruleset is enabled.", examples=[True])
 
 
 class WAFManagedRulesetsEnvelope(BaseModel):
@@ -2314,10 +1969,7 @@ class WAFManagedRulesetRequest(BaseModel):
         extra="forbid",
     )
     action: str | None = Field(
-        None,
-        description="The action applied by the WAF managed ruleset.",
-        examples=["default"],
-        pattern="^.*$",
+        None, description="The action applied by the WAF managed ruleset.", examples=["default"], pattern="^.*$"
     )
     anomalyScore: str | None = Field(
         None,
@@ -2331,9 +1983,7 @@ class WAFManagedRulesetRequest(BaseModel):
         examples=[1],
     )
     enabled: bool | None = Field(
-        None,
-        description="Whether or not the WAF managed ruleset is enabled.",
-        examples=[True],
+        None, description="Whether or not the WAF managed ruleset is enabled.", examples=[True]
     )
 
 
@@ -2363,10 +2013,7 @@ class WAFManagedRule(BaseModel):
         pattern="^.*$",
     )
     action: str = Field(
-        ...,
-        description="The action applied by the WAF managed rule.",
-        examples=["block"],
-        pattern="^.*$",
+        ..., description="The action applied by the WAF managed rule.", examples=["block"], pattern="^.*$"
     )
     score: int | None = Field(
         None,
@@ -2385,15 +2032,9 @@ class WAFManagedRule(BaseModel):
         pattern="^.*$",
     )
     lastUpdated: AwareDatetime = Field(
-        ...,
-        description="Date when the WAF managed rule was last updated.",
-        examples=["2024-01-01T05:20:00Z"],
+        ..., description="Date when the WAF managed rule was last updated.", examples=["2024-01-01T05:20:00Z"]
     )
-    enabled: bool = Field(
-        ...,
-        description="Whether or not the WAF managed rule is enabled.",
-        examples=[True],
-    )
+    enabled: bool = Field(..., description="Whether or not the WAF managed rule is enabled.", examples=[True])
 
 
 class WAFManagedRulesEnvelope(BaseModel):
@@ -2412,16 +2053,9 @@ class WAFManagedRuleRequest(BaseModel):
         extra="forbid",
     )
     action: str | None = Field(
-        None,
-        description="The action applied by the WAF managed rule.",
-        examples=["block"],
-        pattern="^.*$",
+        None, description="The action applied by the WAF managed rule.", examples=["block"], pattern="^.*$"
     )
-    enabled: bool | None = Field(
-        None,
-        description="Whether or not the WAF managed rule is enabled.",
-        examples=[True],
-    )
+    enabled: bool | None = Field(None, description="Whether or not the WAF managed rule is enabled.", examples=[True])
 
 
 class WAFManagedRuleEnvelope(BaseModel):
@@ -2449,9 +2083,7 @@ class OriginHeaderModification(BaseModel):
         pattern="^.*$",
     )
     lastUpdated: AwareDatetime = Field(
-        ...,
-        description="Date when the rule was last updated.",
-        examples=["2022-01-01T05:20:00Z"],
+        ..., description="Date when the rule was last updated.", examples=["2022-01-01T05:20:00Z"]
     )
 
 
@@ -2465,10 +2097,7 @@ class OriginHeaderModificationPutRequest(BaseModel):
     """
 
     headerValue: str = Field(
-        ...,
-        description="The value of the header forwarded to the origin.",
-        examples=["123456789"],
-        pattern="^.*$",
+        ..., description="The value of the header forwarded to the origin.", examples=["123456789"], pattern="^.*$"
     )
     headerName: str | None = Field(
         None,
@@ -2507,9 +2136,7 @@ class CipherSuitesResponse(BaseModel):
         examples=[["ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-RSA-AES128-GCM-SHA256"]],
     )
     cipherSuiteType: CipherSuiteType = Field(
-        ...,
-        description="Classification of the ciphers in the suite.",
-        examples=["Modern"],
+        ..., description="Classification of the ciphers in the suite.", examples=["Modern"]
     )
 
 
@@ -2545,7 +2172,5 @@ class CipherSuitesRequest(BaseModel):
         examples=[["ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-RSA-AES128-GCM-SHA256"]],
     )
     cipherSuiteType: CipherSuiteType1 = Field(
-        ...,
-        description="Classification of all ciphers in the suite.",
-        examples=["Modern"],
+        ..., description="Classification of all ciphers in the suite.", examples=["Modern"]
     )

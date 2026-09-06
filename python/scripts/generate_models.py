@@ -1,20 +1,31 @@
 # Copyright (c) 2025, Salesforce, Inc.
 # SPDX-License-Identifier: Apache-2.0
 # For full license text, see the LICENSE file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
-"""Generate Pydantic v2 models from the vendored OpenAPI specs.
+"""Generate Pydantic v2 models from the JS SDK's OpenAPI specs.
 
 Python analog of the TypeScript SDK's ``generate:types`` npm script (which runs
 ``openapi-typescript`` per spec into ``src/clients/*.generated.ts``). Here we run
 ``datamodel-code-generator`` per spec into ``src/b2c_tooling_sdk/clients/models/*.py``.
+
+The specs are read from the sibling JS package (``packages/b2c-tooling-sdk/specs``)
+so there is a single source of truth -- the Python package does not vendor its own
+copy. Codegen is a monorepo-only dev activity, and the generated models are
+committed, so end users never need the specs.
 
 The spec -> module mapping mirrors the TS ``*.generated.ts`` base names so the two
 SDKs stay aligned (e.g. ``data-api.json`` -> ``ocapi``, ``operations-jobs-v1.yaml``
 -> ``scapi_jobs``).
 
 Wire field names are preserved verbatim; ``datamodel-code-generator`` adds field
-aliases automatically where a JSON key is not a valid Python identifier. Output is
-deterministic (timestamps disabled) so the checked-in models produce no diff after a
-clean regeneration.
+aliases automatically where a JSON key is not a valid Python identifier.
+
+Formatting is done by the project's own ``ruff`` (``ruff format`` + import sort),
+not by ``datamodel-code-generator``'s built-in black/isort integration. That
+integration silently no-ops on recent black/Python combinations, which made
+regeneration non-deterministic. Driving generation with the ``builtin`` formatter
+and finalizing with the pinned project ``ruff`` keeps output stable and identical
+to how every other file in the tree is formatted, so a clean regeneration produces
+no diff (timestamps are also disabled).
 
 Usage::
 
@@ -66,7 +77,12 @@ HEADER = (
 )
 
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
-SPECS_DIR = PACKAGE_ROOT / "specs"
+# Single source of truth for the OpenAPI specs: the JS SDK's checked-in copy.
+# Codegen is a monorepo-only dev activity, so the sibling package is always
+# present; we deliberately do NOT vendor a second copy under python/specs.
+# The generated models under MODELS_DIR are committed, so end users never need
+# the specs at install/runtime.
+SPECS_DIR = PACKAGE_ROOT.parent / "packages" / "b2c-tooling-sdk" / "specs"
 MODELS_DIR = PACKAGE_ROOT / "src" / "b2c_tooling_sdk" / "clients" / "models"
 
 
@@ -74,6 +90,12 @@ def _codegen_bin() -> str:
     """Prefer the venv-local datamodel-codegen; fall back to PATH."""
     candidate = PACKAGE_ROOT / ".venv" / "bin" / "datamodel-codegen"
     return str(candidate) if candidate.exists() else "datamodel-codegen"
+
+
+def _ruff_bin() -> str:
+    """Prefer the venv-local ruff; fall back to PATH."""
+    candidate = PACKAGE_ROOT / ".venv" / "bin" / "ruff"
+    return str(candidate) if candidate.exists() else "ruff"
 
 
 def generate_one(spec: Path, module: str) -> None:
@@ -90,10 +112,10 @@ def generate_one(spec: Path, module: str) -> None:
         "pydantic_v2.BaseModel",
         "--target-python-version",
         "3.10",
+        # Use the dependency-free builtin formatter here; the project's ruff does
+        # the real formatting in _fixup_generated (see module docstring).
         "--formatters",
-        "black",
-        "--formatters",
-        "isort",
+        "builtin",
         "--use-standard-collections",
         "--use-union-operator",
         "--field-constraints",
@@ -110,11 +132,22 @@ def generate_one(spec: Path, module: str) -> None:
 
 
 def _fixup_generated(output: Path) -> None:
-    """Apply post-generation fixups needed for pydantic v2 to build the models."""
+    """Apply post-generation fixups, then format with the project's own ruff.
+
+    The discriminator strip must happen before formatting so ruff sees valid,
+    pydantic-buildable source. Formatting with the pinned project ruff (rather
+    than datamodel-code-generator's built-in black/isort, which no-ops on recent
+    toolchains) keeps regeneration deterministic and diff-free.
+    """
     text = output.read_text()
     fixed = _DISCRIMINATOR_RE.sub("", text)
     if fixed != text:
         output.write_text(fixed)
+
+    ruff = _ruff_bin()
+    # Import sort first (ruff check --select I --fix), then format.
+    subprocess.run([ruff, "check", "--select", "I", "--fix", "--quiet", str(output)], check=True)
+    subprocess.run([ruff, "format", "--quiet", str(output)], check=True)
 
 
 def main() -> int:
@@ -143,7 +176,7 @@ def _write_package_init() -> None:
         HEADER,
         '"""Generated Pydantic v2 models for the B2C Commerce OpenAPI specs.\n\n'
         "This package is produced by ``scripts/generate_models.py`` and checked in.\n"
-        'Do not edit by hand; regenerate from ``specs/`` instead."""\n',
+        'Do not edit by hand; run ``scripts/generate_models.py`` to regenerate."""\n',
         "from __future__ import annotations\n",
     ]
     for module in modules:

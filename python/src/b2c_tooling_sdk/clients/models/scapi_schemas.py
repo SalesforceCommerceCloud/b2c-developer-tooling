@@ -53,19 +53,11 @@ class SchemaListFilter(BaseModel):
 
 class SchemaListItem(BaseModel):
     schemaVersion: str | None = Field(
-        None,
-        description='Semantic version of the schema (e.g., "1.0.0")',
-        examples=["1.0.0"],
+        None, description='Semantic version of the schema (e.g., "1.0.0")', examples=["1.0.0"]
     )
-    apiFamily: str | None = Field(
-        None, description="The API family (e.g., shopper, admin)", examples=["shopper"]
-    )
-    apiName: str | None = Field(
-        None, description="The API name (e.g., products, orders)", examples=["products"]
-    )
-    apiVersion: str | None = Field(
-        None, description="The API version (e.g., v1)", examples=["v1"]
-    )
+    apiFamily: str | None = Field(None, description="The API family (e.g., shopper, admin)", examples=["shopper"])
+    apiName: str | None = Field(None, description="The API name (e.g., products, orders)", examples=["products"])
+    apiVersion: str | None = Field(None, description="The API version (e.g., v1)", examples=["v1"])
     status: SchemaStatus | None = None
     link: str | None = Field(
         None,
@@ -115,9 +107,7 @@ class ErrorResponse(BaseModel):
     type: str = Field(
         ...,
         description="A URI reference that identifies the problem type.",
-        examples=[
-            "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request"
-        ],
+        examples=["https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request"],
         max_length=2048,
     )
     detail: str = Field(
@@ -126,7 +116,5 @@ class ErrorResponse(BaseModel):
         examples=["Invalid value for filter parameter."],
     )
     instance: str | None = Field(
-        None,
-        description="A URI reference that identifies the specific occurrence of the problem.",
-        max_length=2048,
+        None, description="A URI reference that identifies the specific occurrence of the problem.", max_length=2048
     )

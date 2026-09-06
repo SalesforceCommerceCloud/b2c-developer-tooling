@@ -20,26 +20,18 @@ class APIB2COrgInfo(BaseModel):
 
 
 class Site(RootModel[str]):
-    root: str = Field(
-        ...,
-        description="List of site IDs associated with the B2C Commerce instance",
-        max_length=32,
-    )
+    root: str = Field(..., description="List of site IDs associated with the B2C Commerce instance", max_length=32)
 
 
 class APIB2CTargetInfo(BaseModel):
     instance_id: str = Field(
-        ...,
-        description="ID of the B2C Commerce instance associated with the target",
-        max_length=8,
+        ..., description="ID of the B2C Commerce instance associated with the target", max_length=8
     )
     sites: list[Site] | None = None
 
 
 class PatchedAPIB2CTargetInfo(BaseModel):
     instance_id: str | None = Field(
-        None,
-        description="ID of the B2C Commerce instance associated with the target",
-        max_length=8,
+        None, description="ID of the B2C Commerce instance associated with the target", max_length=8
     )
     sites: list[Site] | None = None

@@ -54,22 +54,16 @@ class InvalidTimeRangeErrorResponse(ErrorResponse):
 
 class CategoryNotFoundErrorResponse(ErrorResponse):
     category: str | None = Field(None, max_length=50)
-    organizationId: str | None = Field(
-        None, pattern="^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
-    )
+    organizationId: str | None = Field(None, pattern="^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$")
 
 
 class MetricsNotAvailableErrorResponse(ErrorResponse):
-    organizationId: str | None = Field(
-        None, pattern="^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
-    )
+    organizationId: str | None = Field(None, pattern="^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$")
 
 
 class InvalidThirdPartyServiceErrorResponse(ErrorResponse):
     thirdPartyServiceId: str = Field(..., max_length=255, min_length=1)
-    organizationId: str = Field(
-        ..., pattern="^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
-    )
+    organizationId: str = Field(..., pattern="^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$")
 
 
 class InvalidApiFilterErrorResponse(ErrorResponse):

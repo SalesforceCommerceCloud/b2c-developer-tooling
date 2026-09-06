@@ -66,11 +66,7 @@ class APITargetV2Clone(BaseModel):
     Inherits from APITargetV2BaseSerializer to reuse validation helper methods.
     """
 
-    from_target_slug: str = Field(
-        ...,
-        description="The slug of the target to clone from.",
-        pattern="^[-a-zA-Z0-9_]+$",
-    )
+    from_target_slug: str = Field(..., description="The slug of the target to clone from.", pattern="^[-a-zA-Z0-9_]+$")
     ssr_external_hostname: str | None = Field(
         None,
         description="Full hostname to be used by the cloned environment. Required when using non-MRT managed certificate.",
@@ -86,12 +82,9 @@ class APITargetV2Clone(BaseModel):
         description="The ID of the certificate to associate with the cloned target's custom domain. Required for custom domains.",
         ge=0,
     )
-    clone_redirects: bool | None = Field(
-        False, description="Whether to clone redirects from the source target."
-    )
+    clone_redirects: bool | None = Field(False, description="Whether to clone redirects from the source target.")
     clone_environment_variables: bool | None = Field(
-        False,
-        description="Whether to clone environment variables from the source target.",
+        False, description="Whether to clone environment variables from the source target."
     )
     clone_b2c_target_info: bool | None = Field(
         False, description="Whether to clone B2C target info from the source target."
@@ -109,19 +102,13 @@ class APITargetV2CreateInvalidation(BaseModel):
     """
 
     pattern: str = Field(
-        ...,
-        description="Path pattern to invalidate on the CDN. This must start with a forward slash (`/`).",
+        ..., description="Path pattern to invalidate on the CDN. This must start with a forward slash (`/`)."
     )
     items: list[str] | None = Field(
-        [],
-        deprecated=True,
-        description="[Deprecated] Items to invalidate in the application cache.",
-        max_length=50000,
+        [], deprecated=True, description="[Deprecated] Items to invalidate in the application cache.", max_length=50000
     )
     namespace: str | None = Field(
-        None,
-        deprecated=True,
-        description="[Deprecated] Namespace of items to invalidate in the application cache.",
+        None, deprecated=True, description="[Deprecated] Namespace of items to invalidate in the application cache."
     )
 
 
@@ -130,9 +117,7 @@ class APIUserProfile(BaseModel):
     last_name: str | None = Field(None, max_length=255)
     email: EmailStr | None = Field(None, title="Email address")
     is_staff: bool | None = Field(
-        None,
-        description="Designates whether the user can log into this admin site.",
-        title="Staff status",
+        None, description="Designates whether the user can log into this admin site.", title="Staff status"
     )
     date_joined: AwareDatetime | None = None
     uuid: UUID | None = None
@@ -148,19 +133,13 @@ class BundleBulkDelete(BaseModel):
 
 
 class BundleBulkDeleteFailedRequest(BaseModel):
-    bundle_id: int = Field(
-        ..., description="The ID of the bundle that failed validation."
-    )
-    errors: str = Field(
-        ...,
-        description="Error message that explains why the bundle can't be queued for deletion.",
-    )
+    bundle_id: int = Field(..., description="The ID of the bundle that failed validation.")
+    errors: str = Field(..., description="Error message that explains why the bundle can't be queued for deletion.")
 
 
 class BundleBulkDeleteResponse(BaseModel):
     rejected_bundles: list[BundleBulkDeleteFailedRequest] | None = Field(
-        None,
-        description="Bundles that failed validation and couldn't be queued for deletion.",
+        None, description="Bundles that failed validation and couldn't be queued for deletion."
     )
     bundles_queued_for_cleanup: list[int] | None = Field(
         None, description="Bundle IDs for bundles that were queued for deletion."
@@ -251,24 +230,19 @@ class EmailNotification(BaseModel):
     targets: list[str]
     recipients: list[Recipient]
     deployment_start: bool | None = Field(
-        None,
-        description="Trigger this notification when a deployment starts for a target",
+        None, description="Trigger this notification when a deployment starts for a target"
     )
     deployment_success: bool | None = Field(
-        None,
-        description="Trigger this notification when a deployment succeeds for a target",
+        None, description="Trigger this notification when a deployment succeeds for a target"
     )
     deployment_failed: bool | None = Field(
-        None,
-        description="Trigger this notification when a deployment fails for a target",
+        None, description="Trigger this notification when a deployment fails for a target"
     )
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     updated_by: EmailStr | None = Field(None, title="Email address")
 
@@ -324,12 +298,8 @@ class OrganizationAutoDelete(BaseModel):
 
 class PaginatedAPIProjectMemberList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[APIProjectMember]
 
 
@@ -371,22 +341,16 @@ class PatchedAPIRedirectV2CreateUpdate(BaseModel):
         description="The status of the redeployment that happens after you call this API. Allowable values: Pending, Completed, Failed. If the request failed, you can [redeploy the environment](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/pushing-and-deploying-bundles.html) specified in your request.",
     )
     user_email: EmailStr | None = Field(
-        None,
-        description="Email of the user who created the redirect.",
-        title="Email address",
+        None, description="Email of the user who created the redirect.", title="Email address"
     )
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     updated_by: EmailStr | None = Field(
-        None,
-        description="Email of the user who last updated the redirect.",
-        title="Email address",
+        None, description="Email of the user who last updated the redirect.", title="Email address"
     )
 
 
@@ -395,24 +359,19 @@ class PatchedEmailNotification(BaseModel):
     targets: list[str] | None = None
     recipients: list[Recipient] | None = None
     deployment_start: bool | None = Field(
-        None,
-        description="Trigger this notification when a deployment starts for a target",
+        None, description="Trigger this notification when a deployment starts for a target"
     )
     deployment_success: bool | None = Field(
-        None,
-        description="Trigger this notification when a deployment succeeds for a target",
+        None, description="Trigger this notification when a deployment succeeds for a target"
     )
     deployment_failed: bool | None = Field(
-        None,
-        description="Trigger this notification when a deployment fails for a target",
+        None, description="Trigger this notification when a deployment fails for a target"
     )
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     updated_by: EmailStr | None = Field(None, title="Email address")
 
@@ -427,20 +386,16 @@ class PatchedPolymorphicNotification(RootModel[PatchedEmailNotificationTyped]):
 
 class PatchedUserEmailPreferences(BaseModel):
     node_deprecation_notifications: bool | None = Field(
-        None,
-        description="Receive email notifications about Node.js runtime deprecations",
+        None, description="Receive email notifications about Node.js runtime deprecations"
     )
     custom_domain_certificate_notifications: bool | None = Field(
-        None,
-        description="Receive email notifications about custom domain certificate changes",
+        None, description="Receive email notifications about custom domain certificate changes"
     )
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
 
 
@@ -603,20 +558,16 @@ class Status1d2Enum(IntEnum):
 
 class UserEmailPreferences(BaseModel):
     node_deprecation_notifications: bool | None = Field(
-        None,
-        description="Receive email notifications about Node.js runtime deprecations",
+        None, description="Receive email notifications about Node.js runtime deprecations"
     )
     custom_domain_certificate_notifications: bool | None = Field(
-        None,
-        description="Receive email notifications about custom domain certificate changes",
+        None, description="Receive email notifications about custom domain certificate changes"
     )
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
 
 
@@ -640,8 +591,7 @@ class APIAccessControlHeaderV2Create(BaseModel):
     )
     user_email: EmailStr | None = Field(None, title="Email address")
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     publishing_status: Status1d2Enum | None = None
     publishing_status_description: str | None = None
@@ -683,9 +633,7 @@ class APIOrganizationMemberUpdate(BaseModel):
 
 
 class APIProjectV2Create(BaseModel):
-    name: str = Field(
-        ..., description="User-friendly name for this project", max_length=64
-    )
+    name: str = Field(..., description="User-friendly name for this project", max_length=64)
     url: AnyUrl | None = None
     slug: str | None = Field(None, max_length=20, pattern="^[a-z0-9]+(?:-+[a-z0-9]+)*$")
     organization: str
@@ -702,12 +650,10 @@ class APIProjectV2Create(BaseModel):
         description="Default Server-Side Rendering architecture (x86 or arm64) for targets under this project.\n\n* `x86` - x86\n* `arm64` - ARM64",
     )
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     source: SourceEnum | NullEnum | None = Field(
         None,
@@ -716,14 +662,10 @@ class APIProjectV2Create(BaseModel):
 
 
 class APIProjectV2Update(BaseModel):
-    name: str = Field(
-        ..., description="User-friendly name for this project", max_length=64
-    )
+    name: str = Field(..., description="User-friendly name for this project", max_length=64)
     url: AnyUrl | None = None
     slug: str | None = Field(None, pattern="^[-a-zA-Z0-9_]+$")
-    organization: str | None = Field(
-        None, description="User-friendly identifier for this instance."
-    )
+    organization: str | None = Field(None, description="User-friendly identifier for this instance.")
     deletion_status: DeletionStatusEnum | None = None
     project_type: ProjectTypeEnum | None = None
     permissions: Permissions1 | None = None
@@ -737,12 +679,10 @@ class APIProjectV2Update(BaseModel):
         description="Default Server-Side Rendering architecture (x86 or arm64) for targets under this project.\n\n* `x86` - x86\n* `arm64` - ARM64",
     )
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     source: SourceEnum | NullEnum | None = Field(
         None,
@@ -778,22 +718,16 @@ class APIRedirectV2CreateUpdate(BaseModel):
         description="The status of the redeployment that happens after you call this API. Allowable values: Pending, Completed, Failed. If the request failed, you can [redeploy the environment](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/pushing-and-deploying-bundles.html) specified in your request.",
     )
     user_email: EmailStr | None = Field(
-        None,
-        description="Email of the user who created the redirect.",
-        title="Email address",
+        None, description="Email of the user who created the redirect.", title="Email address"
     )
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     updated_by: EmailStr | None = Field(
-        None,
-        description="Email of the user who last updated the redirect.",
-        title="Email address",
+        None, description="Email of the user who last updated the redirect.", title="Email address"
     )
 
 
@@ -803,9 +737,7 @@ class APITargetV2Create(BaseModel):
     """
 
     slug: str | None = Field(None, max_length=64, pattern="^[a-z0-9]+(?:-+[a-z0-9]+)*$")
-    name: str = Field(
-        ..., description="User-friendly name for this target", max_length=64
-    )
+    name: str = Field(..., description="User-friendly name for this target", max_length=64)
     state: StateEnum | None = Field(
         None,
         description="Target State\n\n* `CREATE_IN_PROGRESS` - Create in Progress\n* `PUBLISH_IN_PROGRESS` - Publish in Progress\n* `ACTIVE` - Active\n* `CREATE_FAILED` - Create Failed\n* `PUBLISH_FAILED` - Publish Failed",
@@ -818,14 +750,10 @@ class APITargetV2Create(BaseModel):
     )
     current_deploy: dict[str, Any] | None = None
     ssr_external_hostname: str | None = Field(
-        None,
-        description="Full hostname to be used by the environment eg. www.customer.com.",
-        max_length=128,
+        None, description="Full hostname to be used by the environment eg. www.customer.com.", max_length=128
     )
     ssr_external_domain: str | None = Field(
-        None,
-        description="The domain to be used for a Universal PWA SSR deployment (e.g. customer.com)",
-        max_length=128,
+        None, description="The domain to be used for a Universal PWA SSR deployment (e.g. customer.com)", max_length=128
     )
     ssr_region: SsrRegionEnum | BlankEnum | None = Field(
         None,
@@ -841,13 +769,9 @@ class APITargetV2Create(BaseModel):
         description="Optional space-separated list of IP addresses (CIDR blocks) that can access this target. Leave blank to allow all IPs.",
     )
     ssr_proxy_configs: list[SsrProxyConfig] | None = None
-    cdn_domain_name: str | None = Field(
-        None, description="The Managed Runtime CDN origin domain name."
-    )
+    cdn_domain_name: str | None = Field(None, description="The Managed Runtime CDN origin domain name.")
     is_production: bool | None = Field(
-        None,
-        description="Treat this target as a production environment.",
-        title="Production",
+        None, description="Treat this target as a production environment.", title="Production"
     )
     allow_cookies: bool | None = Field(
         None,
@@ -890,9 +814,7 @@ class APITargetV2Update(BaseModel):
     """
 
     slug: str | None = Field(None, pattern="^[-a-zA-Z0-9_]+$")
-    name: str = Field(
-        ..., description="User-friendly name for this target", max_length=64
-    )
+    name: str = Field(..., description="User-friendly name for this target", max_length=64)
     state: StateEnum | None = Field(
         None,
         description="Target State\n\n* `CREATE_IN_PROGRESS` - Create in Progress\n* `PUBLISH_IN_PROGRESS` - Publish in Progress\n* `ACTIVE` - Active\n* `CREATE_FAILED` - Create Failed\n* `PUBLISH_FAILED` - Publish Failed",
@@ -905,14 +827,10 @@ class APITargetV2Update(BaseModel):
     )
     current_deploy: dict[str, Any] | None = None
     ssr_external_hostname: str | None = Field(
-        None,
-        description="Full hostname to be used by the environment eg. www.customer.com.",
-        max_length=128,
+        None, description="Full hostname to be used by the environment eg. www.customer.com.", max_length=128
     )
     ssr_external_domain: str | None = Field(
-        None,
-        description="The domain to be used for a Universal PWA SSR deployment (e.g. customer.com)",
-        max_length=128,
+        None, description="The domain to be used for a Universal PWA SSR deployment (e.g. customer.com)", max_length=128
     )
     ssr_region: SsrRegionEnum | BlankEnum | None = Field(
         None,
@@ -928,13 +846,9 @@ class APITargetV2Update(BaseModel):
         description="Optional space-separated list of IP addresses (CIDR blocks) that can access this target. Leave blank to allow all IPs.",
     )
     ssr_proxy_configs: list[SsrProxyConfig] | None = None
-    cdn_domain_name: str | None = Field(
-        None, description="The Managed Runtime CDN origin domain name."
-    )
+    cdn_domain_name: str | None = Field(None, description="The Managed Runtime CDN origin domain name.")
     is_production: bool | None = Field(
-        None,
-        description="Treat this target as a production environment.",
-        title="Production",
+        None, description="Treat this target as a production environment.", title="Production"
     )
     allow_cookies: bool | None = Field(
         None,
@@ -986,20 +900,16 @@ class Bundle(BaseModel):
 
 
 class BundleList(BaseModel):
-    id: int = Field(
-        ..., description="A ID unique within a project.", ge=0, le=2147483647
-    )
+    id: int = Field(..., description="A ID unique within a project.", ge=0, le=2147483647)
     message: str = Field(..., max_length=2048)
     status: Status1d2Enum | None = None
     deletion_status: DeletionStatusEnum | None = None
     user: EmailStr | None = Field(None, title="Email address")
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
 
 
@@ -1022,9 +932,7 @@ class CertificateBase(BaseModel):
     )
     validation_record: str | None = None
     expires_at: AwareDatetime | None = Field(
-        None,
-        description="Expiry date of the certificate from ACM.",
-        title="Certificate Expiry Date",
+        None, description="Expiry date of the certificate from ACM.", title="Certificate Expiry Date"
     )
     renewal_status: RenewalStatusEnum | NullEnum | None = Field(
         None,
@@ -1037,8 +945,7 @@ class CertificateBase(BaseModel):
     targets: str | None = None
     created_by: str | None = None
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     is_mrt_managed: str | None = None
     deletion_status: DeletionStatusEnum | None = None
@@ -1050,11 +957,7 @@ class CertificateListCreate(BaseModel):
     """
 
     id: int | None = Field(None, description="An ID unique within a business.")
-    domain_name: str = Field(
-        ...,
-        description="The domain for the certificate (e.g. shop.example.com)",
-        max_length=255,
-    )
+    domain_name: str = Field(..., description="The domain for the certificate (e.g. shop.example.com)", max_length=255)
     validation_requested_at: str | None = None
     validation_status: ValidationStatusEnum | None = Field(
         None,
@@ -1062,9 +965,7 @@ class CertificateListCreate(BaseModel):
     )
     validation_record: str | None = None
     expires_at: AwareDatetime | None = Field(
-        None,
-        description="Expiry date of the certificate from ACM.",
-        title="Certificate Expiry Date",
+        None, description="Expiry date of the certificate from ACM.", title="Certificate Expiry Date"
     )
     renewal_status: RenewalStatusEnum | NullEnum | None = Field(
         None,
@@ -1077,8 +978,7 @@ class CertificateListCreate(BaseModel):
     targets: str | None = None
     created_by: str | None = None
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     is_mrt_managed: str | None = None
     deletion_status: DeletionStatusEnum | None = None
@@ -1088,12 +988,10 @@ class DeployList(BaseModel):
     user: EmailStr | None = Field(None, title="Email address")
     bundle: BundleList
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     status: DeployListStatusEnum | None = None
     deploy_type: DeployTypeEnum | None = None
@@ -1109,12 +1007,10 @@ class EnvironmentVariableList(BaseModel):
     value: str = Field(..., description="Value to be encrypted.")
     created_by: EmailStr | None = Field(None, title="Email address")
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     updated_by: EmailStr | None = Field(None, title="Email address")
     publishing_status: Status1d2Enum | None = None
@@ -1128,111 +1024,71 @@ class OrganizationLimits(BaseModel):
 
 class PaginatedAPIAccessControlHeaderV2CreateList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[APIAccessControlHeaderV2Create]
 
 
 class PaginatedAPIOrganizationMemberList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[APIOrganizationMember]
 
 
 class PaginatedAPIProjectV2CreateList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[APIProjectV2Create]
 
 
 class PaginatedAPIRedirectV2CreateUpdateList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[APIRedirectV2CreateUpdate]
 
 
 class PaginatedAPITargetV2CreateList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[APITargetV2Create]
 
 
 class PaginatedBundleListList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[BundleList]
 
 
 class PaginatedCertificateListCreateList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[CertificateListCreate]
 
 
 class PaginatedDeployListList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[DeployList]
 
 
 class PaginatedEnvironmentVariableListList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[EnvironmentVariableList]
 
 
 class PaginatedPolymorphicNotificationList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[PolymorphicNotification]
 
 
@@ -1251,14 +1107,10 @@ class PatchedAPIOrganizationMemberUpdate(BaseModel):
 
 
 class PatchedAPIProjectV2Update(BaseModel):
-    name: str | None = Field(
-        None, description="User-friendly name for this project", max_length=64
-    )
+    name: str | None = Field(None, description="User-friendly name for this project", max_length=64)
     url: AnyUrl | None = None
     slug: str | None = Field(None, pattern="^[-a-zA-Z0-9_]+$")
-    organization: str | None = Field(
-        None, description="User-friendly identifier for this instance."
-    )
+    organization: str | None = Field(None, description="User-friendly identifier for this instance.")
     deletion_status: DeletionStatusEnum | None = None
     project_type: ProjectTypeEnum | None = None
     permissions: Permissions1 | None = None
@@ -1272,12 +1124,10 @@ class PatchedAPIProjectV2Update(BaseModel):
         description="Default Server-Side Rendering architecture (x86 or arm64) for targets under this project.\n\n* `x86` - x86\n* `arm64` - ARM64",
     )
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     source: SourceEnum | NullEnum | None = Field(
         None,
@@ -1291,9 +1141,7 @@ class PatchedAPITargetV2Update(BaseModel):
     """
 
     slug: str | None = Field(None, pattern="^[-a-zA-Z0-9_]+$")
-    name: str | None = Field(
-        None, description="User-friendly name for this target", max_length=64
-    )
+    name: str | None = Field(None, description="User-friendly name for this target", max_length=64)
     state: StateEnum | None = Field(
         None,
         description="Target State\n\n* `CREATE_IN_PROGRESS` - Create in Progress\n* `PUBLISH_IN_PROGRESS` - Publish in Progress\n* `ACTIVE` - Active\n* `CREATE_FAILED` - Create Failed\n* `PUBLISH_FAILED` - Publish Failed",
@@ -1306,14 +1154,10 @@ class PatchedAPITargetV2Update(BaseModel):
     )
     current_deploy: dict[str, Any] | None = None
     ssr_external_hostname: str | None = Field(
-        None,
-        description="Full hostname to be used by the environment eg. www.customer.com.",
-        max_length=128,
+        None, description="Full hostname to be used by the environment eg. www.customer.com.", max_length=128
     )
     ssr_external_domain: str | None = Field(
-        None,
-        description="The domain to be used for a Universal PWA SSR deployment (e.g. customer.com)",
-        max_length=128,
+        None, description="The domain to be used for a Universal PWA SSR deployment (e.g. customer.com)", max_length=128
     )
     ssr_region: SsrRegionEnum | BlankEnum | None = Field(
         None,
@@ -1329,13 +1173,9 @@ class PatchedAPITargetV2Update(BaseModel):
         description="Optional space-separated list of IP addresses (CIDR blocks) that can access this target. Leave blank to allow all IPs.",
     )
     ssr_proxy_configs: list[SsrProxyConfig] | None = None
-    cdn_domain_name: str | None = Field(
-        None, description="The Managed Runtime CDN origin domain name."
-    )
+    cdn_domain_name: str | None = Field(None, description="The Managed Runtime CDN origin domain name.")
     is_production: bool | None = Field(
-        None,
-        description="Treat this target as a production environment.",
-        title="Production",
+        None, description="Treat this target as a production environment.", title="Production"
     )
     allow_cookies: bool | None = Field(
         None,
@@ -1391,9 +1231,7 @@ class PatchedCertificateBase(BaseModel):
     )
     validation_record: str | None = None
     expires_at: AwareDatetime | None = Field(
-        None,
-        description="Expiry date of the certificate from ACM.",
-        title="Certificate Expiry Date",
+        None, description="Expiry date of the certificate from ACM.", title="Certificate Expiry Date"
     )
     renewal_status: RenewalStatusEnum | NullEnum | None = Field(
         None,
@@ -1406,8 +1244,7 @@ class PatchedCertificateBase(BaseModel):
     targets: str | None = None
     created_by: str | None = None
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     is_mrt_managed: str | None = None
     deletion_status: DeletionStatusEnum | None = None
@@ -1419,29 +1256,22 @@ class APIOrganization(BaseModel):
     slug: str = Field(..., max_length=64, pattern="^[a-z0-9]+(?:-+[a-z0-9]+)*$")
     deletion_status: DeletionStatusEnum | None = None
     created_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was created.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was created."
     )
     updated_at: AwareDatetime | None = Field(
-        None,
-        description="Timestamp in the extended ISO 8601 format for when the object was last updated.",
+        None, description="Timestamp in the extended ISO 8601 format for when the object was last updated."
     )
     permissions: Permissions | None = None
     has_mobify_tag_project: bool | None = None
     limits: OrganizationLimits | None = None
     auto_delete: OrganizationAutoDelete | None = None
     can_configure_ssr_architecture: bool | None = Field(
-        None,
-        description="Enable SSR architecture selection (x86 or arm64) for this organization",
+        None, description="Enable SSR architecture selection (x86 or arm64) for this organization"
     )
 
 
 class PaginatedAPIOrganizationList(BaseModel):
     count: int = Field(..., examples=[123])
-    next: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=400&limit=100"]
-    )
-    previous: AnyUrl | None = Field(
-        None, examples=["http://api.example.org/accounts/?offset=200&limit=100"]
-    )
+    next: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=400&limit=100"])
+    previous: AnyUrl | None = Field(None, examples=["http://api.example.org/accounts/?offset=200&limit=100"])
     results: list[APIOrganization]
