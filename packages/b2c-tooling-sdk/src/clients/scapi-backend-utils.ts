@@ -209,6 +209,45 @@ export function scapiUnavailableMessage(domainName: string): string {
   );
 }
 
+/** Inputs to {@link resolvePreferredBackend}. */
+export interface ResolvePreferredBackendOptions<TPrimary extends string> {
+  /** User preference: `'auto'`, `'scapi'`, or the primary (non-SCAPI) backend. */
+  preference: 'auto' | 'scapi' | TPrimary;
+  /** The non-SCAPI backend this domain falls back to, e.g. `'ocapi'` or `'legacy'`. */
+  primary: TPrimary;
+  /** True iff shortCode + tenantId + auth are all available. */
+  hasScapiConfig: boolean;
+  /** Builds the error thrown when explicit `'scapi'` is requested without config. */
+  unavailableMessage: () => string;
+}
+
+/**
+ * Generic tri-state backend resolver shared by SCAPI-vs-OCAPI and SCAPI-vs-legacy
+ * domains — the single definition of the preference/availability precedence.
+ *
+ * - Explicit primary → primary.
+ * - Explicit `'scapi'` → `'scapi'`, throwing `unavailableMessage()` when the SCAPI
+ *   config is missing (fail loud; never silently downgrade).
+ * - `'auto'` → `'scapi'` when config is available, otherwise the primary backend.
+ */
+export function resolvePreferredBackend<TPrimary extends string>(
+  opts: ResolvePreferredBackendOptions<TPrimary>,
+): 'scapi' | TPrimary {
+  const {preference, primary, hasScapiConfig, unavailableMessage} = opts;
+
+  if (preference === primary) return primary;
+
+  if (preference === 'scapi') {
+    if (!hasScapiConfig) {
+      throw new Error(unavailableMessage());
+    }
+    return 'scapi';
+  }
+
+  // auto
+  return hasScapiConfig ? 'scapi' : primary;
+}
+
 /**
  * Resolves a user preference + config availability into a concrete backend choice.
  *
@@ -223,16 +262,10 @@ export function scapiUnavailableMessage(domainName: string): string {
  */
 export function resolveScapiOrOcapi(opts: ResolveBackendOptions): 'ocapi' | 'scapi' {
   const {preference, hasScapiConfig, domainName} = opts;
-
-  if (preference === 'ocapi') return 'ocapi';
-
-  if (preference === 'scapi') {
-    if (!hasScapiConfig) {
-      throw new Error(scapiUnavailableMessage(domainName));
-    }
-    return 'scapi';
-  }
-
-  // auto
-  return hasScapiConfig ? 'scapi' : 'ocapi';
+  return resolvePreferredBackend({
+    preference,
+    primary: 'ocapi',
+    hasScapiConfig,
+    unavailableMessage: () => scapiUnavailableMessage(domainName),
+  });
 }

@@ -44,13 +44,10 @@
  */
 import type {AuthConfig, AuthStrategy, AuthMethod, AuthCredentials} from '../auth/types.js';
 import {BasicAuthStrategy} from '../auth/basic.js';
-import {OAuthStrategy} from '../auth/oauth.js';
-import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
-import {resolveAuthStrategy} from '../auth/resolve.js';
+import {resolveAuthStrategy, resolveSystemOAuthStrategy} from '../auth/resolve.js';
 import {WebDavClient} from '../clients/webdav.js';
 import {createOcapiClient, type OcapiClient} from '../clients/ocapi.js';
 import {createTlsDispatcher, type TlsOptions} from '../clients/tls-dispatcher.js';
-import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 
 /**
  * SCAPI connection coordinates plus an auth strategy able to request the
@@ -346,49 +343,12 @@ export class B2CInstance {
    * basic-only configs.
    */
   private buildScapiAuthStrategy(): AuthStrategy | undefined {
-    if (!this.auth.oauth) {
-      return undefined;
-    }
-
-    const methods = this.auth.authMethods ?? (['client-credentials', 'jwt'] as AuthMethod[]);
-
-    for (const method of methods) {
-      if (method === 'client-credentials' || method === 'jwt') {
-        const strategy = this.buildSystemOAuthStrategy(method);
-        if (strategy) return strategy;
-      }
-    }
-
-    return undefined;
+    return this.auth.oauth ? resolveSystemOAuthStrategy(this.auth.oauth, this.auth.authMethods) : undefined;
   }
 
   /** Builds a configured non-interactive OAuth strategy for SCAPI or OCAPI. */
   private buildSystemOAuthStrategy(method: 'client-credentials' | 'jwt'): AuthStrategy | undefined {
-    const oauth = this.auth.oauth;
-    if (!oauth) return undefined;
-
-    const accountManagerHost = oauth.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
-    if (method === 'client-credentials' && oauth.clientSecret) {
-      return new OAuthStrategy({
-        clientId: oauth.clientId,
-        clientSecret: oauth.clientSecret,
-        scopes: oauth.scopes,
-        accountManagerHost,
-      });
-    }
-
-    if (method === 'jwt' && oauth.jwtCertPath && oauth.jwtKeyPath) {
-      return new JwtOAuthStrategy({
-        clientId: oauth.clientId,
-        certPath: oauth.jwtCertPath,
-        keyPath: oauth.jwtKeyPath,
-        passphrase: oauth.jwtPassphrase,
-        accountManagerHost,
-        scopes: oauth.scopes,
-      });
-    }
-
-    return undefined;
+    return this.auth.oauth ? resolveSystemOAuthStrategy(this.auth.oauth, [method]) : undefined;
   }
 }
 

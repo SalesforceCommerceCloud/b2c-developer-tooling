@@ -12,7 +12,7 @@ The SCAPI MRT API (Storefront Deployments v1) is shipping as a replacement for t
 
 This story introduces a dedicated **`--mrt-backend`** flag (`auto` | `legacy` | `scapi`, default `auto`) — separate from the existing `--api-backend` flag, because MRT is a distinct subsystem (`MrtCommand`, API-key auth) and a developer may want SCAPI for instance Data APIs while still needing legacy MRT auth (or vice versa). It mirrors the OCAPI↔SCAPI fallback pattern landed in PR #413.
 
-**Scope (first increment):** the full flag + config-resolution + auto/fallback framework, plus a **net-new SCAPI MRT client covering only bundle upload and bundle list**. Deployment operations and all other MRT operations stay legacy-only for now — the flag is still accepted on them, but explicit `scapi` fails with an actionable error and `auto` falls back to legacy. Proving the pattern on this narrow, low-risk surface first directly addresses the GUS risk note about validating auto-mode/fallback scope early.
+**Scope (first increment):** the full flag + config-resolution + auto/fallback framework, plus a **net-new SCAPI MRT client covering only deployment list and deployment create** (`getDeploymentsForEnvironment`, `createDeploymentForEnvironment`). Bundle upload, bundle list, get-single-deployment, and all other MRT operations stay legacy-only for now — the flag is still accepted on them, but explicit `scapi` fails with an actionable error and `auto` falls back to legacy. Deployment create is supported only when deploying an **existing bundle by ID** (`mrt bundle deploy <bundleId>`); the local-build path (which uploads a bundle first, then deploys) stays legacy-only in this increment, because bundle upload is out of scope and a single command must not mix backends. Proving the pattern on this narrow, low-risk surface first directly addresses the GUS risk note about validating auto-mode/fallback scope early.
 
 **Who benefits:** developers migrating to SCAPI MRT OAuth auth; the MRT team validating the migration path before broadening it to the rest of the MRT command surface. Because SCAPI MRT reuses the same shortCode + client-credentials setup as other SCAPI commands, a developer already configured for `jobs`/`sites`/SCAPI commands only needs to add the `sfcc.storefront.deployments[.rw]` scope to their API client.
 
@@ -22,7 +22,7 @@ This story introduces a dedicated **`--mrt-backend`** flag (`auto` | `legacy` | 
 
 ```gherkin
 Given the b2c CLI with MRT commands
-When I inspect an MRT command that calls the MRT API (e.g. `mrt bundle list`)
+When I inspect an MRT command that calls the MRT API (e.g. `mrt bundle history`)
 Then a `--mrt-backend` flag is present accepting only `auto`, `legacy`, or `scapi`
 And when the flag is omitted the effective backend preference is `auto`
 ```
@@ -42,7 +42,7 @@ And with no flag set the env var `MRT_BACKEND` wins over the dw.json `mrtBackend
 ```gherkin
 Given `--mrt-backend auto` (or unset)
 And a short code, client credentials, and obtainable `sfcc.storefront.deployments[.rw]` scopes are configured
-When I run `mrt bundle list` or `mrt bundle upload-v2`
+When I run `mrt bundle history` or `mrt bundle deploy <bundleId>`
 Then the CLI calls the SCAPI MRT Storefront Deployments API
 And no legacy MRT API request is made
 ```
@@ -50,7 +50,7 @@ And no legacy MRT API request is made
 ### Scenario: Auto mode warns when falling back to legacy for a supported operation
 
 ```gherkin
-Given `--mrt-backend auto` (or unset) and a supported operation (`mrt bundle list` / `mrt bundle upload-v2`)
+Given `--mrt-backend auto` (or unset) and a supported operation (`mrt bundle history` / `mrt bundle deploy <bundleId>`)
 And SCAPI MRT cannot be used (missing prerequisites, unobtainable scope, or a safe fallback status 400/401/403/404/405/406/415)
 When I run the command
 Then the CLI falls back to the legacy MRT API and the command still succeeds
@@ -71,7 +71,7 @@ And does NOT silently retry against the legacy MRT API
 
 ```gherkin
 Given `--mrt-backend scapi`
-And a supported operation (`mrt bundle list` / `mrt bundle upload-v2`)
+And a supported operation (`mrt bundle history` / `mrt bundle deploy <bundleId>`)
 And SCAPI MRT prerequisites are missing or the required scope cannot be obtained
 When I run the command
 Then it fails with a clear, actionable error explaining what is missing
@@ -82,7 +82,7 @@ And no legacy MRT API request is attempted
 
 ```gherkin
 Given `--mrt-backend scapi`
-When I run an MRT command outside the supported subset (e.g. a deployment, env, org, project, or user command)
+When I run an MRT command outside the supported subset (e.g. `mrt bundle list`, `mrt bundle download`, or an env, org, project, or user command)
 Then it fails with an actionable error stating the operation is not yet supported on the SCAPI MRT backend
 And no legacy MRT API request is attempted
 ```
@@ -110,7 +110,7 @@ And no SCAPI MRT detection or request occurs
 ### Scenario: A multi-request operation does not mix backends
 
 ```gherkin
-Given `--mrt-backend auto` and a paginated `mrt bundle list`
+Given `--mrt-backend auto` and a paginated `mrt bundle history`
 When the CLI resolves a backend for the first page
 Then the same backend is used for all subsequent pages in that invocation
 And legacy and SCAPI responses are never mixed within one command run
@@ -142,7 +142,7 @@ Then it explains `auto`, `legacy`, and `scapi`, the auto-detection criteria, and
 - **Dedicated flag, not `--api-backend`** (per the Slack decision with Charles Lavery) — the two represent independent concerns. Value is `legacy` (not `mrt`) for the old system.
 - **Reuse, don't reinvent.** Mirror the #413 fallback pattern — prefer `compat/dispatcher.ts` (`BackendDispatcher`) for per-operation backend pinning, and `clients/scapi-backend-utils.ts` (`resolveScapiOrOcapi`, `isFallbackTrigger`, `SAFE_SCAPI_FALLBACK_STATUSES`). Reuse the existing SCAPI auth stack (`OAuthStrategy` → Account Manager; the `scapiClientConfig` eligibility gate) — SCAPI MRT uses the same AmOAuth2 / client-credentials / `{shortCode}.api.commercecloud.salesforce.com` model, so no new auth mechanism.
 - **SCAPI MRT requires system auth.** Client-credentials or JWT Bearer + shortCode; browser PKCE/implicit/fixed-token/API-key sessions cannot reach SCAPI MRT.
-- **Fall back only on safe failures** (400/401/403/404/405/406/415), never on ambiguous 429/5xx/network errors. Explicit `scapi` never crosses into legacy.
+- **Fall back only on safe failures** (400/401/403/404/405/406/415), never on ambiguous 429/5xx/network errors. Explicit `scapi` never crosses into legacy. Deployment create's `409 Conflict` is *not* a fallback trigger either — a create must never be retried across backends, so a 409 is surfaced.
 - **Pin the backend per invocation** — a single multi-request command must not mix legacy and SCAPI responses.
 - **Fallback is a warning, not an error.** Auto-mode fallback surfaces a warning (with details at debug level), but the command still succeeds. Recommended behavior: warn only when SCAPI was plausibly intended (some SCAPI config present but incomplete, or an attempt failed); stay quiet for pure legacy-only setups. (Revisitable during implementation.)
 - **Config precedence follows existing MRT config:** `--mrt-backend` > `MRT_BACKEND` env > `mrtBackend` dw.json. Add `mrtBackend` alongside the existing `apiBackend` entries across the config layer.
@@ -151,8 +151,8 @@ Then it explains `auto`, `legacy`, and `scapi`, the auto-detection criteria, and
 
 ### Out of Scope
 
-- **SCAPI MRT coverage beyond bundle upload + bundle list.** All other MRT operations (env, org, project, user, tail-logs, and the rest of `bundle/`) stay legacy-only — the flag is accepted, `scapi` errors on them, `auto` warns and uses legacy.
-- **The deployment endpoints** from the deployments spec (`createDeploymentForEnvironment`, `getDeploymentsForEnvironment`, `getDeploymentById`).
+- **SCAPI MRT coverage beyond deployment list + deployment create.** Bundle upload, bundle list, and all other MRT operations (env, org, project, user, tail-logs, and the rest of `bundle/` — delete, download, save, plus the local-build path of `deploy`) stay legacy-only — the flag is accepted, `scapi` errors on them, `auto` warns and uses legacy.
+- **Bundle upload / bundle list** (`uploadBundleForStorefront`, `getBundlesForStorefront`) from the deployments spec — of the SCAPI MRT surface, only `getDeploymentsForEnvironment`, `createDeploymentForEnvironment`, and `getDeploymentById` are in scope this increment. (`getDeploymentById` is used solely to poll a known deployment for `--wait`; it reads within the same `sfcc.storefront.deployments` scope as the list, so it adds no scope surface — see the note under "`--wait`" below.)
 - **Removing `auto` mode** (a future release may require explicit selection, per the `--api-backend` precedent).
 - **Deprecating or removing the legacy MRT API / per-user API key.**
 - **Changing existing MRT config field names or behavior** (`mrtProject`, `mrtEnvironment`, `mrtOrigin`, `mrtApiKey`).
@@ -176,6 +176,7 @@ Then it explains `auto`, `legacy`, and `scapi`, the auto-detection criteria, and
 
 **SCAPI MRT client — net-new**
 - `packages/b2c-tooling-sdk/src/clients/scapi-mrt-deployments.ts` — built via `buildScapiClient` (`scapi-client-factory.ts`), `pathSegment: 'storefront/deployments/v1'`, scope cascade for `sfcc.storefront.deployments[.rw]`.
+- Covers `getDeploymentsForEnvironment` (`GET …/storefronts/{storefrontId}/environments/{environmentId}/deployments`, paginated — maxLimit 200, default 25) and `createDeploymentForEnvironment` (`POST …/deployments`, JSON `DeploymentCreateRequest` body referencing an existing bundle, returns `202` queued).
 - New generated types from the deployments OAS (add spec to `specs/` + generate, mirroring `specs/mrt-api-v1.json` → `mrt.generated.ts`).
 - Barrel export in `clients/index.ts`.
 
@@ -184,10 +185,10 @@ Then it explains `auto`, `legacy`, and `scapi`, the auto-detection criteria, and
 - Auto-eligibility gate mirroring `B2CInstance.scapiClientConfig` (`instance/index.ts:194`): shortCode + tenantId + client-credentials/JWT.
 
 **Operations layer — integration surface**
-- `packages/b2c-tooling-sdk/src/operations/mrt/push.ts` (`pushBundleV2`, ~`:294`) and the bundle-list operation — make backend-aware (they currently take a bare `auth` and instantiate `createMrtClient` inline).
+- `packages/b2c-tooling-sdk/src/operations/mrt/deployment.ts` (`listDeployments` ~`:109`, `createDeployment` ~`:227`) — make backend-aware (they currently take a bare `auth` and instantiate `createMrtClient` inline).
 
 **Commands**
-- `packages/b2c-cli/src/commands/mrt/bundle/upload-v2.ts` and `.../bundle/list.ts` — inherit the flag via `MrtCommand` and route through backend selection.
+- `packages/b2c-cli/src/commands/mrt/bundle/history.ts` (list deployments) and `.../bundle/deploy.ts` (create deployment) — inherit the flag via `MrtCommand` and route through backend selection. `mrt bundle deploy` routes to SCAPI only when given an explicit bundle ID; its local-build path (upload-then-deploy) stays legacy.
 
 **Docs**
 - `docs/guide/authentication.md` — add `sfcc.storefront.deployments[.rw]` scope row + MRT-command auth row.
@@ -207,15 +208,16 @@ Then it explains `auto`, `legacy`, and `scapi`, the auto-detection criteria, and
 - **Backend selection/fallback (SDK):** new tests modeled on `test/clients/scapi-fallback-backend.test.ts` + `test/compat/dispatcher.test.ts` — fake backends, invalid-scope trigger, safe-status fallback, ambiguous 429/5xx/network → no fallback, pin-per-invocation, warning-on-fallback.
 - **Config:** mirror `test/config/env-source.test.ts` for `MRT_BACKEND` + `ENUM_FIELDS`; dw.json mapping/precedence tests.
 - **`MrtCommand` base:** extend `test/cli/mrt-command.test.ts` + integration test for `mrtBackendPreference` resolution (flag > env > dw.json).
-- **Commands:** extend `packages/b2c-cli/test/commands/mrt/bundle/{upload-v2,list}.test.ts` with the `--mrt-backend` × {supported/unsupported} matrix; `isolateConfig`/`stubParse`, MSW for SCAPI-vs-legacy HTTP; assert debug-level prerequisite output under `-D`.
+- **Commands:** extend `packages/b2c-cli/test/commands/mrt/bundle/{deploy,history}.test.ts` with the `--mrt-backend` × {supported/unsupported} matrix; `isolateConfig`/`stubParse`, MSW for SCAPI-vs-legacy HTTP; assert debug-level prerequisite output under `-D`. For `deploy`, cover both paths: explicit bundle ID (SCAPI-eligible) and local build (legacy-pinned).
 - **E2E (optional):** `packages/b2c-cli/test/functional/e2e/mrt-lifecycle.test.ts`.
 
 ### Open Questions / Early-Exploration Items (the GUS risk note)
 1. **MRT commands don't have instance/OAuth config wired.** `MrtCommand extends BaseCommand` (not `InstanceCommand`), so shortCode/client-credentials aren't resolved on MRT commands today. Deciding how MRT commands obtain the SCAPI auth prerequisites (share `scapiClientConfig`/instance config, or add a targeted resolver) is a core design task.
-2. **`storefrontId` mapping.** `organizationId` is resolved — it's `f_ecom_<realm>_<instance_type>`, i.e. `f_ecom_` + the configured `tenantId`. Remaining: confirm the `mrtProject` → `storefrontId` mapping (and whether `mrtEnvironment` plays any role for the bundle endpoints, which are storefront-scoped, not environment-scoped).
+2. **`storefrontId` + `environmentId` mapping.** `organizationId` is resolved — it's `f_ecom_<realm>_<instance_type>`, i.e. `f_ecom_` + the configured `tenantId`. Remaining: the deployment endpoints are **environment-scoped** (`…/storefronts/{storefrontId}/environments/{environmentId}/deployments`), so confirm both the `mrtProject` → `storefrontId` mapping and the `mrtEnvironment` → `environmentId` mapping. Also confirm the `DeploymentCreateRequest` body shape (the field naming the existing bundle to deploy) against the OAS.
+3. **`--wait` and get-single-deployment. (Resolved.)** `mrt bundle deploy --wait` polls deployment status today via the legacy path (`waitForEnv`). On the SCAPI backend, `--wait` polls the just-created deployment **by ID** (`getDeploymentById` → `GET …/deployments/{deploymentId}`) until it reaches a terminal status (`finished`/`failed`) or the timeout elapses, honoring `--poll-interval`/`--timeout`. `getDeploymentById` reads within the same `sfcc.storefront.deployments` scope already required by the list, so it adds **no scope surface** over list-polling — and a direct by-ID read avoids the page-scanning ambiguity of matching a deployment out of a paginated list. The create response supplies the `deploymentId`; if a create ever returns without one, `--wait` warns and returns the raw create result (the non-waiting case) rather than failing.
 
 ### References
 - GUS **W-23941083**; Epic *SCAPI MRT API — Beta (API): Opt-in and Migration [26.10]*.
 - **PR #413** — `feat: complete SCAPI migration with OCAPI fallback` (the pattern to mirror).
-- **SCAPI MRT deployments OAS** — `git.soma.salesforce.com/cc-mercury-api/storefront-oas` → `deployments-oas/v1/api_spec/src/deployments.yaml`. In-scope: `getBundlesForStorefront`, `uploadBundleForStorefront`. Out: the three deployment operations.
+- **SCAPI MRT deployments OAS** — `git.soma.salesforce.com/cc-mercury-api/storefront-oas` → `deployments-oas/v1/api_spec/src/deployments.yaml` (`#L88-L191`). In-scope: `getDeploymentsForEnvironment`, `createDeploymentForEnvironment`, `getDeploymentById` (`--wait` status polling only). Out: `getBundlesForStorefront`, `uploadBundleForStorefront`.
 - `docs/guide/authentication.md`, `docs/guide/configuration.md`, `docs/cli/auth.md`, `docs/cli/setup.md`.
