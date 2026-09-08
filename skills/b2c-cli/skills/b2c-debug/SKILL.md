@@ -15,9 +15,9 @@ Debug server-side scripts on Salesforce B2C Commerce instances — set breakpoin
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
+The CLI resolves the target instance and debugger credentials from environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. It does not search parent directories. `package.json` supplies only non-sensitive defaults; `~/.mobify` supplies MRT credentials, not debugger credentials. **Flags like `--server`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; keep secrets masked unless the user explicitly requests their values). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 For MCP debugging, pass `projectDirectory` to `debug_start_session` whenever the MCP server may have been launched outside the project. The tool uses that root to load the project's `.env` and default `dw.json`; pass `configPath` to select a different primary `dw.json`-format file and `instanceName` to select a named instance from the primary or shared default file. Cartridge discovery and local/server source mapping default to `projectDirectory`; pass `cartridgeDirectory` only when the cartridges live under a different root. The start call captures this information in `resolution`, which `debug_list_sessions` returns without requiring the caller to repeat it. The MCP server controls its SDAPI client identity internally, so callers do not pass a debugger client ID.
 

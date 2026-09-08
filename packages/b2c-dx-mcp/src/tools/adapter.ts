@@ -133,6 +133,10 @@ export interface ToolExecutionContext {
  * @template TOutput - The output type from the execute function
  */
 export interface ToolAdapterOptions<TInput, TOutput> {
+  /** Registration metadata is preserved independently of result enrichment. */
+  title?: McpTool['title'];
+  annotations?: McpTool['annotations'];
+  outputSchema?: McpTool['outputSchema'];
   /** Tool name (used in MCP protocol) */
   name: string;
 
@@ -351,6 +355,9 @@ export function createToolAdapter<TInput, TOutput>(
     name,
     description,
     inputSchema: effectiveInputSchema,
+    title: options.title,
+    annotations: options.annotations,
+    outputSchema: options.outputSchema,
     toolsets,
     isGA,
 

@@ -213,6 +213,11 @@
       "development": "./src/ux/index.ts",
       "types": "./dist/esm/ux/index.d.ts",
       "default": "./dist/esm/ux/index.js"
+    },
+    "./guidance": {
+      "development": "./src/guidance/index.ts",
+      "types": "./dist/esm/guidance/index.d.ts",
+      "default": "./dist/esm/guidance/index.js"
     }
   },
   "main": "./dist/esm/index.js",

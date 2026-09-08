@@ -31,8 +31,7 @@ export function createDebugEvaluateTool(
     {
       name: 'debug_evaluate',
       description:
-        'Evaluate a JavaScript expression in the context of a halted thread and stack frame. ' +
-        'WARNING: Expressions may have side effects (modify variables, call functions). Use with care.',
+        'Evaluate JavaScript in a halted thread/frame. Expressions can call functions and change remote state.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),

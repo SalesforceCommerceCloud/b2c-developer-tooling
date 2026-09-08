@@ -6,11 +6,17 @@
 
 // eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
-import type {
-  CallToolResult,
-  Implementation,
-  ServerNotification,
-  ServerRequest,
+
+import {
+  type CallToolResult,
+  type Implementation,
+  type ServerNotification,
+  type ServerRequest,
+  ErrorCode,
+  McpError,
+  ReadResourceRequestSchema,
+  type ReadResourceResult,
+  // eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
 } from '@modelcontextprotocol/sdk/types.js';
 import type {ServerOptions} from '@modelcontextprotocol/sdk/server/index.js';
 import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
@@ -18,6 +24,7 @@ import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
 import {z, type ZodRawShape} from 'zod';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import type {McpToolConfig} from './utils/types.js';
 
 /**
  * Extended server options.
@@ -36,6 +43,7 @@ export interface B2CDxMcpServerOptions extends ServerOptions {
  * @augments {McpServer}
  */
 export class B2CDxMcpServer extends McpServer {
+  private readonly resourceReaders = new Map<string, (uri: string) => Promise<ReadResourceResult>>();
   private telemetry?: Telemetry;
 
   /**
@@ -60,6 +68,18 @@ export class B2CDxMcpServer extends McpServer {
     };
   }
 
+  /** Register after resource metadata. Resolve raw URIs before URL dot-segment normalization. */
+  public addResourceReader(prefix: string, read: (uri: string) => Promise<ReadResourceResult>): void {
+    this.resourceReaders.set(prefix, read);
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      const uri = request.params.uri;
+      for (const [registeredPrefix, reader] of this.resourceReaders) {
+        if (uri.startsWith(registeredPrefix)) return reader(uri);
+      }
+      throw new McpError(ErrorCode.InvalidParams, 'Resource URI is not available.');
+    });
+  }
+
   /**
    * Register a tool with the server.
    *
@@ -75,6 +95,7 @@ export class B2CDxMcpServer extends McpServer {
     description: string,
     inputSchema: ZodRawShape,
     handler: (args: Record<string, unknown>) => Promise<CallToolResult>,
+    metadata: Pick<McpToolConfig, 'annotations' | 'outputSchema' | 'title'> = {},
   ): void {
     const wrappedHandler = async (
       args: Record<string, unknown>,
@@ -120,7 +141,15 @@ export class B2CDxMcpServer extends McpServer {
     };
 
     // Use the new registerTool API (tool() is deprecated)
-    this.registerTool(name, {description, inputSchema: z.object(inputSchema).strict()}, wrappedHandler);
+    this.registerTool(
+      name,
+      {
+        description,
+        inputSchema: z.object(inputSchema).strict(),
+        ...metadata,
+      },
+      wrappedHandler,
+    );
   }
 
   /**

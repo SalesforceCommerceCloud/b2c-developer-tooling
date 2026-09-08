@@ -10,6 +10,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {ProjectContextInput} from '../project-context.js';
+import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.js';
 
 interface ConfigInspectInput extends ProjectContextInput {
   unmask?: boolean;
@@ -22,6 +23,7 @@ interface ConfigInspectOutput {
   sources: ConfigSourceInfo[];
   /** Resolution warnings, if any. */
   warnings?: string[];
+  skillReferences?: SkillReference[];
 }
 
 /**
@@ -38,8 +40,8 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
     {
       name: 'config_inspect',
       description:
-        'Inspect resolved B2C configuration, source provenance, warnings, and paths. Secrets are redacted unless unmask=true. ' +
-        'Use to diagnose configuration, authentication, or project-context issues.',
+        'Inspect resolved B2C configuration, sources, warnings, and paths; usually no need to read dw.json. ' +
+        'Secrets are masked by default.',
       toolsets: ['DIAGNOSTICS'],
       isGA: true,
       requiresInstance: false,
@@ -57,6 +59,7 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
           config: redactConfigValues(resolved.values, {unmask: args.unmask ?? false}),
           sources: resolved.sources,
           warnings: resolved.warnings.length > 0 ? resolved.warnings.map((w) => w.message) : undefined,
+          skillReferences: resolved.warnings.length > 0 ? [MCP_SKILL_REFERENCES.configSources] : undefined,
         };
       },
       formatOutput: (output) => jsonResult(output),

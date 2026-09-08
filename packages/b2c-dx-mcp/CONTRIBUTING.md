@@ -2,6 +2,13 @@
 
 For general contributing guidelines, see the [root CONTRIBUTING.md](../../CONTRIBUTING.md).
 
+For tool contracts, context efficiency, result guidance, and runbook patterns, see
+the [MCP development skill](../../.agents/skills/mcp-development/SKILL.md).
+
+For packaged skill validation and an isolated Codex test setup, see
+[skill testing](../../guidance/TESTING.md). Authoring conventions, protocol
+contracts, and implementation checkpoints are in [skill authoring](../../guidance/README.md).
+
 ## Quick Start
 
 ```bash

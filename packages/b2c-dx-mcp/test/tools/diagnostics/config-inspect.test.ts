@@ -11,12 +11,14 @@ import type {ServicesResolutionInputs} from '../../../src/services.js';
 import {createMockResolvedConfig, createMockLoadServices} from '../../test-helpers.js';
 import type {ToolResult} from '../../../src/utils/types.js';
 import type {NormalizedConfig, ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
+import type {SkillReference} from '../../../src/skill-references.js';
 
 interface ConfigInspectOutput {
   config: Record<string, unknown>;
   resolution: {projectDirectory: {path: string; source: 'argument' | 'config' | 'cwd'}};
   sources: ConfigSourceInfo[];
   warnings?: string[];
+  skillReferences?: SkillReference[];
 }
 
 function getResultJson<T>(result: ToolResult): T {
@@ -60,6 +62,26 @@ describe('config_inspect tool', () => {
     expect(result.config.clientId).to.equal('aaaa-bbbb');
     expect(result.config.clientSecret).to.equal('supe...REDACTED');
     expect(result.config.password).to.equal('my-w...REDACTED');
+    expect(result).not.to.have.property('skillReferences');
+  });
+
+  it('points source warnings to configuration guidance while preserving masked output and resolution', async () => {
+    const config = createMockResolvedConfig({clientSecret: 'super-secret-value-1234'});
+    config.warnings.push({
+      code: 'SOURCE_ERROR',
+      details: {source: 'dw.json'},
+      message: 'Unable to load selected source',
+    });
+    const services = new Services({resolvedConfig: config});
+    const response = await createConfigInspectTool(createMockLoadServices(services)).handler({});
+    const result = getResultJson<ConfigInspectOutput>(response);
+    expect(result.warnings).to.deep.equal(['Unable to load selected source']);
+    expect(result.skillReferences).to.deep.equal([
+      {uri: 'skill://mcp/b2c-config/SKILL.md', section: 'where-configuration-comes-from'},
+    ]);
+    expect(result.config.clientSecret).to.equal('supe...REDACTED');
+    expect(response.structuredContent).to.deep.equal(result);
+    expect(result).to.have.property('resolution');
   });
 
   it('shows secrets unmasked when unmask is true', async () => {

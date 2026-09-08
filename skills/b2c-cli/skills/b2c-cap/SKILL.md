@@ -11,9 +11,9 @@ Use the `b2c` CLI plugin to **validate, package, install, uninstall, list, and p
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected.
+The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 The remote commands (`cap install`, `cap uninstall`, `cap tasks`, `cap pull`, and `cap list` without `--local`) require OAuth for SCAPI-first system-job execution and **WebDAV** access for uploading/downloading archives. In `auto` mode, job execution temporarily falls back to OCAPI when SCAPI definitively rejects the start request. WebDAV authenticates via `SFCC_USERNAME`/`SFCC_PASSWORD` (BM username + WebDAV access key), `--user-auth` for interactive browser login, or an Account Manager OAuth client granted WebDAV permissions on the `/impex` path; SCAPI is not a substitute for the WebDAV upload. The local-only commands (`cap validate`, `cap package`, and `cap list --local`) need no credentials.
 

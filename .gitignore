@@ -43,3 +43,6 @@ skills/eval/project/.git
 skills/eval/results-*.json
 # Python bytecode
 __pycache__/
+
+# Generated offline guidance; rebuilt from authored skills and MCP guides.
+/packages/b2c-dx-mcp/content/guidance/

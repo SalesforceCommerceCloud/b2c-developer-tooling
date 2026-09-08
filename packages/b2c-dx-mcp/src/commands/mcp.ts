@@ -58,7 +58,6 @@
  *
  * **Note on `--project-directory`**: Many MCP clients (Cursor, Claude Code) spawn servers from the
  * user's home directory (`~`) rather than the project directory. This flag is used for:
- * - Auto-discovery (detecting project type when no `--toolsets` or `--tools` are provided)
  * - Scaffolding tools (creating files in the correct project location)
  * - Any tool that needs to operate on the project directory
  *
@@ -86,7 +85,7 @@
  * ## Toolset Validation
  *
  * - Invalid toolsets are ignored with a warning (server still starts)
- * - If all toolsets are invalid, auto-discovery kicks in
+ * - With no valid selection, all toolsets are enabled
  *
  * @example mcp.json - All toolsets
  * ```json
@@ -207,7 +206,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
 
     // MCP-specific toolset selection flags
     toolsets: Flags.string({
-      description: `Toolsets to enable (comma-separated). Options: all, ${TOOLSETS.join(', ')}`,
+      description: `Toolsets to enable (comma-separated; default: all). Options: all, ${TOOLSETS.join(', ')}`,
       env: 'SFCC_TOOLSETS',
       parse: async (input) => input.toUpperCase(),
     }),
@@ -402,7 +401,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
       allowNonGaTools: this.flags['allow-non-ga-tools'],
       configPath: this.flags.config,
-      // Project directory for auto-discovery. oclif handles flag with env fallback.
+      // Default project directory for tool calls. oclif handles the environment fallback.
       projectDirectory: this.flags['project-directory'],
       // Docs topic allowlist (bounds the docs corpus at startup). Flag first
       // (--docs-topics / SFCC_DOCS_TOPICS), else config `docsCategories`
@@ -427,6 +426,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
           tools: {},
         },
         telemetry: this.telemetry,
+        instructions:
+          'When needed, read: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
+          'setup/tool selection skill://mcp/server/SKILL.md. Catalog: skill://index. config_inspect needs no prior read.',
       },
     );
 

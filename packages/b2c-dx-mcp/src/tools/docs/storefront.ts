@@ -4,7 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
+import {isAbsolute} from 'node:path';
+import {z} from 'zod';
+import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 
 /**
  * Human-readable label for each detected workspace/project type, used in the
@@ -24,6 +26,37 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
  */
 export const WORKSPACE_VALUES = ['auto', 'all', 'cartridges', 'sfra', 'pwa-kit-v3', 'storefront-next'] as const;
 export type WorkspaceParam = (typeof WORKSPACE_VALUES)[number];
+
+/** Context supplied by the agent for this task, independent of server startup. */
+export interface WorkspaceContextInput {
+  workspace?: WorkspaceParam;
+  projectDirectory?: string;
+}
+
+/** Shared discovery inputs; reading documentation never needs instance credentials. */
+export const workspaceInputSchema = {
+  workspace: z
+    .enum(WORKSPACE_VALUES)
+    .optional()
+    .describe('Storefront preference; auto detects projectDirectory, all disables bias.'),
+  projectDirectory: z
+    .string()
+    .min(1)
+    .refine(isAbsolute, 'Use an absolute project directory.')
+    .optional()
+    .describe('Project to detect for this call; never defaults to the server directory.'),
+};
+
+/** Detect only a caller-supplied project, with no startup cwd fallback or cross-call cache. */
+export async function resolveProjectWorkspace(
+  input: WorkspaceContextInput,
+  fallback: readonly ProjectType[] = [],
+): Promise<ProjectType[] | undefined> {
+  if (input.workspace && input.workspace !== 'auto') return resolveWorkspace(input.workspace, []);
+  if (!input.projectDirectory) return resolveWorkspace(input.workspace, fallback);
+  const detected = await detectWorkspaceType(input.projectDirectory, {maxDepth: 5});
+  return detected.projectTypes.length > 0 ? detected.projectTypes : undefined;
+}
 
 /**
  * Resolves the `workspace` tool parameter into the concrete project type(s) to

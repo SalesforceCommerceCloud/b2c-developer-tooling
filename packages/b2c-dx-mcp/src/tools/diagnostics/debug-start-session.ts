@@ -43,8 +43,8 @@ export function createDebugStartSessionTool(
     {
       name: 'debug_start_session',
       description:
-        'Start a B2C script debugger session and discover cartridge mappings. Returns session_id for follow-up tools. ' +
-        'Debugging halts remote request threads; always call debug_end_session.',
+        'Start a script debugger session and map cartridges. Requires BM Basic Auth with WebDAV_Manage_Customization. ' +
+        'Use returned session_id; end with debug_end_session. Workflow: skill://mcp/debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         cartridgeDirectory: z

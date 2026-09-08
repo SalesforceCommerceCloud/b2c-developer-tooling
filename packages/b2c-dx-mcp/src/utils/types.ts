@@ -5,7 +5,7 @@
  */
 
 import type {z, ZodRawShape} from 'zod';
-import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
+import type {CallToolResult, ToolAnnotations} from '@modelcontextprotocol/sdk/types.js';
 import type {Toolset} from './constants.js';
 
 /**
@@ -22,6 +22,10 @@ export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> {
   name: string;
   /** Human-readable description */
   description: string;
+  /** Optional display title, effect hints, and object-root result schema. */
+  title?: string;
+  annotations?: ToolAnnotations;
+  outputSchema?: ZodRawShape;
   /** Zod schema for input validation */
   inputSchema: T;
   /** Toolsets this tool belongs to */
@@ -50,7 +54,7 @@ export interface StartupFlags {
   allowNonGaTools?: boolean;
   /** Path to config file (dw.json format) */
   configPath?: string;
-  /** Project project directory for tools (auto-discovery, scaffolding, etc.) */
+  /** Default project directory for configuration and project operations. */
   projectDirectory?: string;
   /**
    * Comma-separated allowlist of documentation categories the docs tools may

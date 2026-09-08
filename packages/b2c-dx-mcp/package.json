@@ -73,7 +73,7 @@
     }
   },
   "scripts": {
-    "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
+    "build": "pnpm run generate:guidance && shx rm -rf dist && tsc -p tsconfig.build.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
@@ -92,8 +92,10 @@
     "test:e2e:ci": "mocha --forbid-only --reporter json --reporter-option output=test-results-e2e.json \"test/e2e/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint",
-    "prepack": "oclif manifest",
-    "postpack": "shx rm -f oclif.manifest.json"
+    "prepack": "pnpm run generate:guidance && oclif manifest",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "generate:guidance": "tsx --conditions=development scripts/generate-guidance.ts",
+    "prepare:guidance-test": "node scripts/prepare-guidance-test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",

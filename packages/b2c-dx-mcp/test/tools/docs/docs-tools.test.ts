@@ -5,6 +5,9 @@
  */
 
 import {expect} from 'chai';
+import {mkdtempSync, mkdirSync, writeFileSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import {createDocsSearchTool} from '../../../src/tools/docs/docs-search.js';
@@ -34,6 +37,74 @@ function makeServices(): Services {
 
 describe('tools/docs', () => {
   const loadServices = () => makeServices();
+
+  describe('per-call project context', () => {
+    let root: string;
+    let next: string;
+    let pwa: string;
+
+    before(() => {
+      root = mkdtempSync(join(tmpdir(), 'b2c-docs-projects-'));
+      next = join(root, 'next');
+      pwa = join(root, 'pwa');
+      mkdirSync(next);
+      mkdirSync(pwa);
+      writeFileSync(
+        join(next, 'package.json'),
+        JSON.stringify({name: 'storefront-next-example', dependencies: {'@salesforce/storefront-next-dev': '1'}}),
+      );
+      writeFileSync(join(pwa, 'package.json'), JSON.stringify({dependencies: {'@salesforce/pwa-kit-react-sdk': '1'}}));
+    });
+
+    after(() => rmSync(root, {recursive: true, force: true}));
+
+    it('detects the supplied project independently for each search', async () => {
+      const search = createDocsSearchTool(loadServices);
+      const first = getResultJson<{workspace: string[]}>(
+        await search.handler({query: 'components', projectDirectory: next}),
+      );
+      const second = getResultJson<{workspace: string[]}>(
+        await search.handler({query: 'components', projectDirectory: pwa}),
+      );
+      const unscoped = getResultJson<{workspace?: string[]}>(await search.handler({query: 'components'}));
+      expect(first.workspace).to.deep.equal(['storefront-next']);
+      expect(second.workspace).to.deep.equal(['pwa-kit-v3']);
+      expect(unscoped.workspace).to.equal(undefined);
+    });
+
+    it('honors an explicit workspace preference and rejects relative project paths', async () => {
+      const search = createDocsSearchTool(loadServices);
+      const selected = getResultJson<{workspace: string[]}>(
+        await search.handler({query: 'components', projectDirectory: next, workspace: 'cartridges'}),
+      );
+      expect(selected.workspace).to.deep.equal(['cartridges']);
+      const unbiased = getResultJson<{workspace?: string[]}>(
+        await search.handler({query: 'components', projectDirectory: next, workspace: 'all'}),
+      );
+      expect(unbiased.workspace).to.equal(undefined);
+      expect((await search.handler({query: 'components', projectDirectory: './project'})).isError).to.equal(true);
+    });
+
+    it('keeps fuzzy reads aligned with search and preserves explicit category restrictions', async () => {
+      const search = createDocsSearchTool(loadServices);
+      const read = createDocsReadTool(loadServices);
+      const found = getResultJson<{results: {id: string}[]}>(
+        await search.handler({query: 'seo', projectDirectory: pwa, limit: 1}),
+      );
+      const content = getResultJson<{entry: {id: string}}>(
+        await read.handler({query: 'seo', projectDirectory: pwa, maxLength: 1}),
+      );
+      expect(content.entry.id).to.equal(found.results[0].id);
+      const list = createDocsListTool(loadServices, [], ['sfnext']);
+      const page = getResultJson<{entries: {category: string}[]}>(
+        await list.handler({projectDirectory: next, limit: 5}),
+      );
+      expect(page.entries.length).to.be.greaterThan(0);
+      expect(page.entries.every((entry) => entry.category === 'sfnext')).to.equal(true);
+      const restricted = getResultJson<{entries: unknown[]}>(await list.handler({projectDirectory: pwa, limit: 5}));
+      expect(restricted.entries).to.have.length(0);
+    });
+  });
 
   // Online-only guide entries (Developer Center corpus) are read via a live
   // fetch. Unit tests must never touch the network: an unbounded fetch to a

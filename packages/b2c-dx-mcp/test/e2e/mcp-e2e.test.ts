@@ -324,64 +324,70 @@ describe('MCP Server E2E', function () {
 
     it('returns proper error for invalid input when required param missing', async () => {
       const client = new McpE2EClient({
-        args: ['--tools', 'scapi_custom_api_generate_scaffold', '--allow-non-ga-tools'],
+        args: ['--tools', 'docs_read'],
       });
       await client.start();
       try {
-        await client.call('tools/call', {
-          name: 'scapi_custom_api_generate_scaffold',
-          arguments: {}, // missing required apiName
-        });
-        // May throw or return content with error
-      } catch (error) {
-        expect(error).to.be.an('Error');
+        const result = (await client.call('tools/call', {
+          name: 'docs_read',
+          arguments: {}, // missing required query
+        })) as {isError?: boolean};
+        expect(result.isError).to.equal(true);
+      } finally {
+        await client.stop();
       }
-      await client.stop();
     });
   });
 
-  describe('4. Workspace Auto-Discovery', () => {
-    it('detects PWA Kit v3 from package.json', async () => {
-      const cwd = join(FIXTURES_DIR, 'pwav3');
-      const client = new McpE2EClient({args: ['--allow-non-ga-tools'], cwd});
+  describe('4. Workspace-independent default catalog', () => {
+    let expectedNames: string[];
+
+    it('uses the task project for documentation and does not infer context from startup cwd', async () => {
+      const client = new McpE2EClient({args: ['--tools', 'docs_search'], cwd: join(FIXTURES_DIR, 'storefront-next')});
       await client.start();
-      const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
-      const names = result.tools.map((t) => t.name);
-      expect(names.some((n) => n.includes('pwa') || n.includes('mrt') || n.includes('scapi'))).to.be.true;
-      await client.stop();
+      try {
+        const withProject = (await client.call('tools/call', {
+          name: 'docs_search',
+          arguments: {query: 'components', projectDirectory: join(FIXTURES_DIR, 'pwav3')},
+        })) as {content: {text: string}[]};
+        expect(JSON.parse(withProject.content[0].text).workspace).to.deep.equal(['pwa-kit-v3']);
+        const withoutProject = (await client.call('tools/call', {
+          name: 'docs_search',
+          arguments: {query: 'components'},
+        })) as {content: {text: string}[]};
+        expect(JSON.parse(withoutProject.content[0].text).workspace).to.equal(undefined);
+      } finally {
+        await client.stop();
+      }
     });
 
-    it('detects Storefront Next from package.json', async () => {
-      const cwd = join(FIXTURES_DIR, 'storefront-next');
-      const client = new McpE2EClient({args: ['--allow-non-ga-tools'], cwd});
+    before(async () => {
+      const client = new McpE2EClient({args: ['--toolsets', 'all']});
       await client.start();
-      const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
-      const names = result.tools.map((t) => t.name);
-      // Storefront Next auto-discovery enables the shared tools.
-      expect(names).to.include('mrt_bundle_push');
-      expect(names.some((n) => n.startsWith('scapi_'))).to.be.true;
-      await client.stop();
+      try {
+        const result = (await client.call('tools/list')) as {tools: {name: string}[]};
+        expectedNames = result.tools.map((tool) => tool.name).sort();
+      } finally {
+        await client.stop();
+      }
     });
-
-    it('detects cartridge project from .project files', async () => {
-      const cwd = join(FIXTURES_DIR, 'cartridge');
-      const client = new McpE2EClient({args: ['--allow-non-ga-tools'], cwd});
-      await client.start();
-      const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
-      const names = result.tools.map((t) => t.name);
-      expect(names).to.include('cartridge_deploy');
-      await client.stop();
-    });
-
-    it('falls back to SCAPI toolset when no project detected', async () => {
-      const cwd = join(FIXTURES_DIR, 'empty');
-      const client = new McpE2EClient({args: ['--allow-non-ga-tools'], cwd});
-      await client.start();
-      const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
-      const names = result.tools.map((t) => t.name);
-      expect(names.some((n) => n.startsWith('scapi_'))).to.be.true;
-      await client.stop();
-    });
+    for (const workspace of ['pwav3', 'storefront-next', 'cartridge', 'empty']) {
+      it(`enables all GA tools in the ${workspace} workspace`, async () => {
+        const client = new McpE2EClient({cwd: join(FIXTURES_DIR, workspace)});
+        await client.start();
+        try {
+          const result = (await client.call('tools/list')) as {tools: {name: string}[]};
+          const names = result.tools.map((tool) => tool.name).sort();
+          expect(names).to.deep.equal(expectedNames);
+          expect(names).to.include.members(['cartridge_deploy', 'mrt_bundle_push', 'skills_read']);
+          expect(names).not.to.include('metrics_get');
+          expect(names).not.to.include('pwakit_get_guidelines');
+          expect(names).not.to.include('scapi_custom_api_generate_scaffold');
+        } finally {
+          await client.stop();
+        }
+      });
+    }
   });
 
   describe('5. Flag Inheritance', () => {

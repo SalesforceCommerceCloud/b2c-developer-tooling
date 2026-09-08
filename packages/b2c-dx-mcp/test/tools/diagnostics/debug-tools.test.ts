@@ -525,6 +525,7 @@ describe('tools/diagnostics', () => {
       const json = getResultJson<{breakpoints: Array<{id: number; verified: boolean; file: string}>}>(result);
       expect(json.breakpoints).to.have.lengthOf(1);
       expect(json.breakpoints[0].verified).to.be.true;
+      expect(json).not.to.have.property('skillReferences');
     });
 
     it('should warn when path cannot be round-trip mapped', async () => {
@@ -545,8 +546,13 @@ describe('tools/diagnostics', () => {
         breakpoints: [{file: '/unknown/cartridge/foo.js', line: 10}],
       });
 
-      const json = getResultJson<{breakpoints: Array<{verified: boolean}>; warnings?: string[]}>(result);
+      const json = getResultJson<{
+        breakpoints: Array<{verified: boolean}>;
+        warnings?: string[];
+        skillReferences: {uri: string; section: string}[];
+      }>(result);
       expect(json.breakpoints[0].verified).to.be.false;
+      expect(json.skillReferences).to.deep.equal([{uri: 'skill://mcp/debugger/SKILL.md', section: 'prerequisites'}]);
       expect(json.warnings).to.exist;
       expect(json.warnings![0]).to.include('could not be mapped back to a local file');
     });
@@ -761,6 +767,47 @@ describe('tools/diagnostics', () => {
   });
 
   describe('debug_capture_at_breakpoint', () => {
+    it('returns a halted capture while its HTTP trigger is still waiting for resume', async () => {
+      const manager = createMockManager({
+        getKnownThreads: sinon.stub().returns([{id: 5, status: 'halted', call_stack: []}]),
+      });
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
+      let finishRequest!: (response: Response) => void;
+      const fetchStub = sinon.stub(globalThis, 'fetch').returns(
+        new Promise<Response>((resolve) => {
+          finishRequest = resolve;
+        }),
+      );
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const result = await Promise.race([
+          createDebugCaptureAtBreakpointTool(loadServices, serverContext).handler({
+            session_id: entry.sessionId,
+            file: '/app_test/cartridge/x.js',
+            line: 1,
+            trigger_url: 'https://example.com/trigger',
+            auto_continue: false,
+          }),
+          new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(() => reject(new Error('Capture waited for the halted request')), 200);
+          }),
+        ]);
+        const json = getResultJson<{halted: boolean; auto_continued: boolean; trigger_pending: boolean}>(result);
+        expect(json).to.include({halted: true, auto_continued: false, trigger_pending: true});
+        expect((manager.resume as sinon.SinonStub).called).to.equal(false);
+      } finally {
+        clearTimeout(timer);
+        finishRequest(new Response('', {status: 200}));
+        fetchStub.restore();
+      }
+    });
+
     it('should set breakpoint, wait, capture, and optionally continue', async () => {
       const haltedThread = {
         id: 5,
@@ -810,6 +857,7 @@ describe('tools/diagnostics', () => {
       expect(json.variables).to.have.lengthOf(3);
       expect(json.evaluations).to.have.lengthOf(2);
       expect(json.auto_continued).to.be.true;
+      expect(json).not.to.have.property('skillReferences');
       expect((manager.resume as sinon.SinonStub).calledOnce).to.be.true;
     });
 
@@ -873,9 +921,16 @@ describe('tools/diagnostics', () => {
         timeout_ms: 50,
       });
 
-      const json = getResultJson<{halted: boolean; timed_out?: boolean}>(result);
+      const json = getResultJson<{
+        halted: boolean;
+        timed_out?: boolean;
+        warnings: string[];
+        skillReferences: {uri: string; section: string}[];
+      }>(result);
       expect(json.halted).to.be.false;
       expect(json.timed_out).to.be.true;
+      expect(json.warnings[0]).to.include('breakpoint remains armed');
+      expect(json.skillReferences).to.deep.equal([{uri: 'skill://mcp/debugger/SKILL.md', section: 'recovery'}]);
       expect(json).not.to.have.property('hint');
     });
 
