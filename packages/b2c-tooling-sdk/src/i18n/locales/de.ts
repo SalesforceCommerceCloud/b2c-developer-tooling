@@ -18,5 +18,11 @@ export const de = {
     webdavCredentialsRequiredShort:
       'WebDAV-Anmeldedaten erforderlich. Geben Sie --username/--password oder --client-id/--client-secret an, oder setzen Sie entsprechende SFCC_* Umgebungsvariablen.',
     mrtApiKeyRequired: 'MRT API-Schlüssel erforderlich. Geben Sie --api-key an oder setzen Sie MRT_API_KEY.',
+    mrtReadOnly:
+      'Managed Runtime befindet sich im Wartungsmodus. Dieser Befehl wurde nicht ausgeführt.\n\n{{command}} erfordert Schreibzugriff, der vorübergehend deaktiviert ist. Lesebefehle (list, get) funktionieren weiterhin.\n\nStatus und voraussichtliche Dauer prüfen: {{statusUrl}}',
+  },
+  warning: {
+    mrtReadOnly:
+      'Managed Runtime befindet sich im Wartungsmodus. Schreibvorgänge sind deaktiviert; Lesevorgänge (wie dieser) sind nicht betroffen.\nStatus: {{statusUrl}}',
   },
 };

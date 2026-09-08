@@ -6,7 +6,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {createMrtClient, DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
+import {createMrtClient, DEFAULT_MRT_ORIGIN, isMrtReadOnlyResponse} from '@salesforce/b2c-tooling-sdk/clients';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const DEFAULT_BASE_URL = DEFAULT_MRT_ORIGIN;
@@ -151,6 +151,27 @@ describe('clients/mrt', () => {
 
       expect(data).to.be.undefined;
       expect(error).to.deep.equal({detail: 'Project not found'});
+    });
+  });
+
+  describe('isMrtReadOnlyResponse', () => {
+    it('returns true when the read-only header is "true"', () => {
+      const response = new Response(null, {headers: {'X-MRT-Read-Only': 'true'}});
+      expect(isMrtReadOnlyResponse(response)).to.be.true;
+    });
+
+    it('is case- and whitespace-insensitive for the header value', () => {
+      const response = new Response(null, {headers: {'X-MRT-Read-Only': '  TRUE '}});
+      expect(isMrtReadOnlyResponse(response)).to.be.true;
+    });
+
+    it('returns false when the header is absent', () => {
+      expect(isMrtReadOnlyResponse(new Response(null))).to.be.false;
+    });
+
+    it('returns false when the header is "false"', () => {
+      const response = new Response(null, {headers: {'X-MRT-Read-Only': 'false'}});
+      expect(isMrtReadOnlyResponse(response)).to.be.false;
     });
   });
 });

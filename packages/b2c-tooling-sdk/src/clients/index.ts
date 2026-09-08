@@ -170,7 +170,7 @@ export type {
   components as OdsComponents,
 } from './ods.js';
 
-export {createMrtClient, DEFAULT_MRT_ORIGIN} from './mrt.js';
+export {createMrtClient, DEFAULT_MRT_ORIGIN, MRT_READ_ONLY_HEADER, isMrtReadOnlyResponse} from './mrt.js';
 export type {
   MrtClient,
   MrtClientConfig,

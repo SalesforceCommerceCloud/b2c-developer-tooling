@@ -110,6 +110,17 @@ export interface MrtClientConfig {
 export const DEFAULT_MRT_ORIGIN = 'https://cloud.mobify.com';
 
 /**
+ * Header MRT sets on every response while in read-only (maintenance) mode —
+ * including successful reads, so it detects read-only mode without a failed write.
+ */
+export const MRT_READ_ONLY_HEADER = 'X-MRT-Read-Only';
+
+/** True when a response indicates read-only mode, per {@link MRT_READ_ONLY_HEADER}. */
+export function isMrtReadOnlyResponse(response: Response): boolean {
+  return response.headers.get(MRT_READ_ONLY_HEADER)?.trim().toLowerCase() === 'true';
+}
+
+/**
  * Creates a typed Managed Runtime API client.
  *
  * Returns the openapi-fetch client directly, with authentication
