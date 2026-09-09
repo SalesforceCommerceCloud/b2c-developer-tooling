@@ -112,7 +112,7 @@ jobs:
           SFCC_MRT_API_KEY: ${{ secrets.SFCC_MRT_API_KEY }}
           # Test configuration
           NODE_ENV: test
-          SFCC_LOG_LEVEL: silent
+          SFCC_LOG_LEVEL: debug
         run: |
           echo "Running E2E tests with realm: ${TEST_REALM}"
           echo "Node version: $(node --version)"
@@ -222,7 +222,7 @@ jobs:
           SFCC_MRT_CLOUD_ORIGIN: ${{ vars.SFCC_MRT_CLOUD_ORIGIN }}
           SFCC_MRT_API_KEY: ${{ secrets.SFCC_MRT_API_KEY }}
           NODE_ENV: test
-          SFCC_LOG_LEVEL: silent
+          SFCC_LOG_LEVEL: debug
         run: |
           echo "Running Windows E2E tests with realm: $TEST_REALM"
           echo "Node version: $(node --version)"
