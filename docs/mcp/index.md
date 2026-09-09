@@ -6,6 +6,8 @@ description: Give your coding assistant B2C Commerce skills, documentation, depl
 
 Connect your coding assistant to Salesforce B2C Commerce. The B2C DX MCP Server
 supports Codex, Claude Code, Cursor, GitHub Copilot, and other MCP clients.
+It supports MCP 2026-07-28 and earlier clients over local stdio; your client
+selects the protocol automatically.
 
 Use it to:
 

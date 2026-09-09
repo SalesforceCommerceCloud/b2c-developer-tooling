@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-
+import type {CallToolResult} from '@modelcontextprotocol/server';
 import type {z, ZodRawShape} from 'zod';
-import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import type {Toolset} from './constants.js';
 
 /**

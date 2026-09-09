@@ -16,7 +16,7 @@ import {
   type ResolveConfigOptions,
 } from '@salesforce/b2c-tooling-sdk/config';
 import McpServerCommand from '../../src/commands/mcp.js';
-import {B2CDxMcpServer} from '../../src/server.js';
+import {StdioServerTransport} from '@modelcontextprotocol/server/stdio';
 import {Services} from '../../src/services.js';
 import {createMockResolvedConfig} from '../test-helpers.js';
 
@@ -112,7 +112,7 @@ describe('McpServerCommand', () => {
 
   describe('telemetry initialization', () => {
     let sandbox: SinonSandbox;
-    let serverConnectStub: SinonStub;
+    let transportStartStub: SinonStub;
     let addAttributesStub: SinonStub;
 
     beforeEach(() => {
@@ -126,15 +126,15 @@ describe('McpServerCommand', () => {
       sandbox.stub(Telemetry.prototype, 'sendException');
       addAttributesStub = sandbox.stub(Telemetry.prototype, 'addAttributes');
 
-      // Stub server.connect to prevent actual stdio transport
-      serverConnectStub = sandbox.stub(B2CDxMcpServer.prototype, 'connect').resolves();
+      // Stub transport.start to prevent actual stdio transport
+      transportStartStub = sandbox.stub(StdioServerTransport.prototype, 'start').resolves();
     });
 
     afterEach(() => {
       sandbox.restore();
     });
 
-    it('should pass telemetry to server when telemetry is initialized', async () => {
+    it('should start stdio when telemetry is initialized', async () => {
       // Create a real Telemetry instance (will use our stubbed prototype methods)
       const telemetryInstance = new Telemetry({
         project: 'test',
@@ -174,8 +174,8 @@ describe('McpServerCommand', () => {
       // Run the command
       await command.run();
 
-      // Verify server.connect was called (server started successfully)
-      expect(serverConnectStub.calledOnce).to.be.true;
+      // Verify transport.start was called (server started successfully)
+      expect(transportStartStub.calledOnce).to.be.true;
     });
 
     it('should start server without telemetry when telemetry is not configured', async () => {
@@ -211,8 +211,8 @@ describe('McpServerCommand', () => {
       // Run the command
       await command.run();
 
-      // Verify server.connect was called (server started successfully even without telemetry)
-      expect(serverConnectStub.calledOnce).to.be.true;
+      // Verify transport.start was called (server started successfully even without telemetry)
+      expect(transportStartStub.calledOnce).to.be.true;
     });
 
     it('should add toolsets to telemetry attributes when toolsets are specified', async () => {
@@ -1070,8 +1070,8 @@ describe('McpServerCommand', () => {
       // Stub logger
       sandbox.stub(command as unknown as Record<string, unknown>, 'logger').get(() => ({info: sandbox.stub()}));
 
-      // Stub server.connect
-      sandbox.stub(B2CDxMcpServer.prototype, 'connect').resolves();
+      // Stub transport.start
+      sandbox.stub(StdioServerTransport.prototype, 'start').resolves();
 
       // Stub telemetry
       const telemetryInstance = new Telemetry({

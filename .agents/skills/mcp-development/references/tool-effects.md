@@ -1,8 +1,8 @@
 # Tool Effects and MCP Annotations
 
-Use the spec supported by the installed SDK. SDK 1.30.0 supports
-`2025-11-25`; its [ToolAnnotations definition](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2025-11-25/schema.ts)
-is unchanged in `2026-07-28`. An SDK upgrade is unnecessary for these hints.
+Use the spec supported by the installed SDK. SDK v2 serves `2026-07-28` and
+earlier clients through `serveStdio`. The [ToolAnnotations definition](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2026-07-28/schema.ts)
+is unchanged from `2025-11-25`; hints work on both protocol paths.
 
 ## Classification
 

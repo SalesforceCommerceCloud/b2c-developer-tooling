@@ -145,9 +145,8 @@ import {
 } from '@salesforce/b2c-tooling-sdk/cli';
 import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {serveStdio} from '@modelcontextprotocol/server/stdio';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
-// eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
-import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services, type ServicesResolutionInputs} from '../services.js';
 import {ServerContext} from '../server-context.js';
@@ -231,9 +230,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       default: false,
     }),
   };
-
-  /** Server-scoped persistent state (debug sessions, log watches, etc.) */
-  private serverContext?: ServerContext;
 
   /** Signal that triggered shutdown (if any) - used to exit process after finally() */
   private shutdownSignal?: string;
@@ -414,42 +410,53 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       this.telemetry.addAttributes({toolsets: startupFlags.toolsets.join(', ')});
     }
 
-    // Create MCP server with telemetry from BaseCommand
-    const server = new B2CDxMcpServer(
-      {
-        name: this.config.name,
-        version: this.config.version,
-      },
-      {
-        capabilities: {
-          resources: {},
-          tools: {},
-        },
-        telemetry: this.telemetry,
-        instructions:
-          'Optional skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
-          'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index.',
-      },
-    );
-
-    // Create server context for persistent state (debug sessions, log watches)
-    this.serverContext = new ServerContext();
-
-    // Register toolsets with loader function that loads config and creates Services on each tool call
-    // This allows tools to pick up changes to config files (dw.json, ~/.mobify) between invocations
     const loadServices = this.loadServices.bind(this) as ServicesLoader;
-    await registerToolsets(startupFlags, server, loadServices, this.serverContext);
+    let activeServer: B2CDxMcpServer | undefined;
+    const handle = serveStdio(
+      async () => {
+        // A protocol probe may be discarded; each factory instance owns its state.
+        const context = new ServerContext();
+        const server = new B2CDxMcpServer(
+          {
+            name: this.config.name,
+            version: this.config.version,
+          },
+          {
+            capabilities: {
+              resources: {},
+              tools: {},
+            },
+            telemetry: this.telemetry,
+            cleanup: () => context.destroyAll(),
+            cacheHints: {
+              'tools/list': {ttlMs: 300_000, cacheScope: 'private'},
+              'resources/list': {ttlMs: 300_000, cacheScope: 'private'},
+              'resources/templates/list': {ttlMs: 300_000, cacheScope: 'private'},
+              'resources/read': {ttlMs: 300_000, cacheScope: 'private'},
+            },
+            instructions:
+              'Optional skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
+              'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index.',
+          },
+        );
 
-    // Connect to stdio transport
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
+        activeServer = server;
+        await registerToolsets(startupFlags, server, loadServices, context);
+        return server;
+      },
+      {onerror: (error) => this.logger.error({err: error}, 'MCP transport error')},
+    );
 
     // Create promise that resolves when server stops (stdin close or signal)
     // This allows finally() to wait for SERVER_STOPPED before stopping telemetry
     this.stdinClosePromise = new Promise((resolve) => {
+      let stopping = false;
       const sendStopAndResolve = (signal: string): void => {
+        if (stopping) return;
+        stopping = true;
         this.shutdownSignal = signal;
-        const cleanup = this.serverContext?.destroyAll() ?? Promise.resolve();
+        // EOF may already have started SDK teardown; await the same cleanup before telemetry stops.
+        const cleanup = handle.close().then(() => activeServer?.close());
         cleanup
           .catch(() => {})
           .then(() => {

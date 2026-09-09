@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import {z} from 'zod';
-import {createToolAdapter, textResult, jsonResult, errorResult} from '../../src/tools/adapter.js';
+import {createToolAdapter, textResult, jsonResult, errorResult, attachResolution} from '../../src/tools/adapter.js';
 import {Services} from '../../src/services.js';
 import type {ToolExecutionContext} from '../../src/tools/adapter.js';
 import type {ToolResult} from '../../src/utils/types.js';
@@ -41,6 +41,15 @@ function getResultText(result: ToolResult): string {
 }
 
 describe('tools/adapter', () => {
+  it('preserves non-object structured results when adding resolution', () => {
+    const resolution = {projectDirectory: {path: '/project', source: 'argument' as const}};
+    for (const value of [null, 42, 'result', [{id: 'one'}]]) {
+      const result = attachResolution({...jsonResult(value), structuredContent: value}, resolution);
+      expect(result.structuredContent).to.deep.equal({value, resolution});
+      expect(result.content).to.deep.equal(jsonResult(value).content);
+    }
+  });
+
   describe('textResult', () => {
     it('should create a text result with the provided message', () => {
       const result = textResult('Hello, world!');
@@ -407,10 +416,10 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      expect(tool.inputSchema.projectDirectory.description).to.include('server default');
-      expect(tool.inputSchema.projectDirectory.description).to.not.include('/server/project');
+      expect(z.globalRegistry.get(tool.inputSchema.projectDirectory)?.description).to.include('server default');
+      expect(z.globalRegistry.get(tool.inputSchema.projectDirectory)?.description).to.not.include('/server/project');
       for (const field of ['projectDirectory', 'configPath', 'instanceName']) {
-        const fieldDescription = tool.inputSchema[field].description ?? '';
+        const fieldDescription = z.globalRegistry.get(tool.inputSchema[field])?.description ?? '';
         expect(fieldDescription, `${field} description`).to.not.equal('');
         expect(fieldDescription.length, `${field} description length`).to.be.at.most(120);
       }
@@ -425,7 +434,7 @@ describe('tools/adapter', () => {
         },
         projectDirectory: {path: '/server/project', source: 'config'},
       });
-      expect(result.structuredContent?.resolution).to.deep.equal(output.resolution);
+      expect(result.structuredContent).to.have.property('resolution').that.deep.equals(output.resolution);
     });
 
     it('should support tools that do not require instance', async () => {

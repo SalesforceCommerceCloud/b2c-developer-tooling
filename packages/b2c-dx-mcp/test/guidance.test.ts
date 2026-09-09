@@ -7,9 +7,8 @@
 import {readFileSync, readdirSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {join, dirname, resolve} from 'node:path';
+import {Client, InMemoryTransport} from '@modelcontextprotocol/client';
 import {expect} from 'chai';
-import {Client} from '@modelcontextprotocol/sdk/client/index.js';
-import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
 import {GuidanceCatalog, type GuidanceManifest, type GuidanceRead} from '@salesforce/b2c-tooling-sdk/guidance';
 import {z} from 'zod';
 import {B2CDxMcpServer} from '../src/server.js';

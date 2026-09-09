@@ -3,12 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-
+import {ResourceTemplate, ProtocolError, ProtocolErrorCode} from '@modelcontextprotocol/server';
 import {fileURLToPath} from 'node:url';
-// eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
-import {ResourceTemplate} from '@modelcontextprotocol/sdk/server/mcp.js';
-// eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
-import {ErrorCode, McpError} from '@modelcontextprotocol/sdk/types.js';
 import {GuidanceCatalog, GuidanceError, GUIDANCE_INDEX_URI} from '@salesforce/b2c-tooling-sdk/guidance';
 import {z} from 'zod';
 import type {B2CDxMcpServer} from './server.js';
@@ -157,7 +153,7 @@ export function registerGuidanceResources(
         error instanceof GuidanceError
           ? error
           : new GuidanceError('SKILLS_UNAVAILABLE', 'Packaged skills are unavailable.');
-      throw new McpError(ErrorCode.InvalidParams, detail.message, {code: detail.code});
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, detail.message, {code: detail.code});
     }
   };
   server.registerResource(

@@ -13,12 +13,10 @@ import {spawn, type ChildProcess} from 'node:child_process';
 import {dirname, join, resolve} from 'node:path';
 import {createInterface} from 'node:readline';
 import {fileURLToPath} from 'node:url';
-import {LATEST_PROTOCOL_VERSION} from '@modelcontextprotocol/sdk/types.js';
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const DEFAULT_INIT_PARAMS = {
-  protocolVersion: LATEST_PROTOCOL_VERSION,
+  protocolVersion: '2025-11-25',
   capabilities: {},
   clientInfo: {name: 'e2e-test', version: '1.0.0'},
 };

@@ -7,9 +7,8 @@
 import {expect} from 'chai';
 import {z} from 'zod';
 import {B2CDxMcpServer} from '../src/server.js';
+import type {Transport, JSONRPCMessage} from '@modelcontextprotocol/server';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
-import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
-import type {JSONRPCMessage} from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * Mock telemetry for testing.
@@ -151,7 +150,7 @@ describe('B2CDxMcpServer', () => {
         }
       >();
       const original = srv.registerTool.bind(srv);
-      srv.registerTool = (name, config, handler) => {
+      srv.registerTool = (...[name, config, handler]: Parameters<B2CDxMcpServer['registerTool']>) => {
         captured.set(name, {
           config: config as {description?: string; inputSchema?: unknown},
           handler: handler as (args: Record<string, unknown>, extra: unknown) => Promise<unknown>,
@@ -205,7 +204,7 @@ describe('B2CDxMcpServer', () => {
       expect(schema).to.be.instanceOf(z.ZodObject);
       expect(schema.shape.name).to.equal(inputSchema.name);
       expect(schema.shape.count).to.equal(inputSchema.count);
-      expect(schema._def.unknownKeys).to.equal('strict');
+      expect(schema.safeParse({name: 'valid', unexpected: true}).success).to.equal(false);
     });
   });
 
@@ -292,7 +291,7 @@ describe('B2CDxMcpServer', () => {
 
       // Override registerTool to capture the wrapped handler
       const originalRegisterTool = server.registerTool.bind(server);
-      server.registerTool = (name, config, handler) => {
+      server.registerTool = (...[name, config, handler]: Parameters<B2CDxMcpServer['registerTool']>) => {
         capturedHandler = handler as (args: Record<string, unknown>, extra: unknown) => Promise<unknown>;
         return originalRegisterTool(name, config, handler);
       };
@@ -402,7 +401,7 @@ describe('B2CDxMcpServer', () => {
       // Override registerTool to capture handler
       let noTelemetryHandler: ((args: Record<string, unknown>, extra: unknown) => Promise<unknown>) | null = null;
       const originalRegisterTool = server.registerTool.bind(server);
-      server.registerTool = (name, config, h) => {
+      server.registerTool = (...[name, config, h]: Parameters<B2CDxMcpServer['registerTool']>) => {
         noTelemetryHandler = h as (args: Record<string, unknown>, extra: unknown) => Promise<unknown>;
         return originalRegisterTool(name, config, h);
       };
@@ -475,6 +474,54 @@ describe('B2CDxMcpServer', () => {
   });
 
   describe('connect', () => {
+    it('awaits instance cleanup once across concurrent close requests', async () => {
+      let release!: () => void;
+      const pending = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let cleanups = 0;
+      const server = new B2CDxMcpServer(
+        {name: 'cleanup-test', version: '1'},
+        {
+          async cleanup() {
+            cleanups++;
+            await pending;
+          },
+        },
+      );
+      const transport = new MockTransport();
+      await server.connect(transport);
+      const first = server.close();
+      const second = server.close();
+      expect(cleanups).to.equal(1);
+      expect(transport.closeCalled).to.equal(false);
+      release();
+      await Promise.all([first, second]);
+      expect(transport.closeCalled).to.equal(true);
+      expect(cleanups).to.equal(1);
+    });
+
+    it('closes the transport even when instance cleanup fails', async () => {
+      const server = new B2CDxMcpServer(
+        {name: 'cleanup-test', version: '1'},
+        {
+          async cleanup() {
+            throw new Error('cleanup failed');
+          },
+        },
+      );
+      const transport = new MockTransport();
+      await server.connect(transport);
+      let failure: unknown;
+      try {
+        await server.close();
+      } catch (error) {
+        failure = error;
+      }
+      expect(failure).to.be.instanceOf(Error);
+      expect(transport.closeCalled).to.equal(true);
+    });
+
     it('should successfully connect to transport', async () => {
       const mockTelemetry = new MockTelemetry();
       const server = new B2CDxMcpServer(
@@ -616,7 +663,7 @@ describe('B2CDxMcpServer', () => {
 
       // Override registerTool to capture handler
       const originalRegisterTool = server.registerTool.bind(server);
-      server.registerTool = (name, config, h) => {
+      server.registerTool = (...[name, config, h]: Parameters<B2CDxMcpServer['registerTool']>) => {
         capturedHandler = h as (args: Record<string, unknown>, extra: unknown) => Promise<unknown>;
         return originalRegisterTool(name, config, h);
       };
@@ -639,7 +686,7 @@ describe('B2CDxMcpServer', () => {
         | ((args: Record<string, unknown>, extra: unknown) => Promise<{content: Array<{text: string}>}>)
         | null = null;
       const originalRegisterTool = server.registerTool.bind(server);
-      server.registerTool = (name, config, h) => {
+      server.registerTool = (...[name, config, h]: Parameters<B2CDxMcpServer['registerTool']>) => {
         wrappedHandler = h as typeof wrappedHandler;
         return originalRegisterTool(name, config, h);
       };
@@ -666,7 +713,7 @@ describe('B2CDxMcpServer', () => {
 
       // Override registerTool to capture handler
       const originalRegisterTool = server.registerTool.bind(server);
-      server.registerTool = (name, config, h) => {
+      server.registerTool = (...[name, config, h]: Parameters<B2CDxMcpServer['registerTool']>) => {
         capturedHandler = h as (args: Record<string, unknown>, extra: unknown) => Promise<unknown>;
         return originalRegisterTool(name, config, h);
       };
@@ -704,8 +751,7 @@ describe('B2CDxMcpServer', () => {
       expect(firstStatusEvents).to.have.lengthOf(1);
       expect(firstStatusEvents[0].attributes.status).to.equal('started');
 
-      // The MCP SDK Protocol.connect throws "Already connected to a transport..."
-      // when a second transport is supplied — this is the deterministic branch.
+      // Each server instance owns one connection and its debugger/watch state.
       const transport2 = new MockTransport();
       let caught: Error | undefined;
       try {

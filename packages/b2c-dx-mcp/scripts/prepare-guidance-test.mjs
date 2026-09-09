@@ -123,6 +123,14 @@ proc.on('exit', (code) => {
   for (const waiter of pending.values()) waiter.reject(new Error(`MCP exited (${code}): ${stderr}`));
 });
 async function request(method, params = {}) {
+  params = {
+    ...params,
+    _meta: {
+      'io.modelcontextprotocol/protocolVersion': '2026-07-28',
+      'io.modelcontextprotocol/clientInfo': {name: 'offline-package-test', version: '1'},
+      'io.modelcontextprotocol/clientCapabilities': {},
+    },
+  };
   const id = ++requestId;
   let timer;
   try {
@@ -145,13 +153,11 @@ async function guidance(args) {
 
 let metrics;
 try {
-  const initialized = await request('initialize', {
-    protocolVersion: '2025-11-25',
-    capabilities: {},
-    clientInfo: {name: 'offline-package-test', version: '1'},
-  });
-  proc.stdin.write(`${JSON.stringify({jsonrpc: '2.0', method: 'notifications/initialized'})}\n`);
+  const discovered = await request('server/discover');
+  assert.ok(discovered.supportedVersions.includes('2026-07-28'));
   const catalog = await request('tools/list');
+  assert.equal(catalog.cacheScope, 'private');
+  assert.equal(catalog.ttlMs, 300_000);
   const guideTool = catalog.tools.find((tool) => tool.name === 'skills_read');
   assert.ok(guideTool?.outputSchema);
   assert.ok(catalog.tools.some((tool) => tool.name === 'cartridge_deploy'));
@@ -168,9 +174,11 @@ try {
     'skill-index',
   ]);
   for (const resource of resources.resources) {
-    assert.ok(initialized.instructions.includes(resource.uri));
+    assert.ok(discovered.instructions.includes(resource.uri));
   }
   const index = await request('resources/read', {uri: 'skill://index'});
+  assert.equal(index.cacheScope, 'private');
+  assert.equal(index.ttlMs, 300_000);
   const indexText = index.contents[0].text;
   assert.equal([...indexText.matchAll(/\]\(skill:\/\//g)].length, manifest.entries.length);
   const broaderSkill = await guidance({id: 'b2c-cli/b2c-code'});
@@ -205,7 +213,8 @@ try {
     tools: catalog.tools.length,
     catalogBytes: Buffer.byteLength(JSON.stringify(catalog)),
     guidanceToolBytes: Buffer.byteLength(JSON.stringify(guideTool)),
-    instructionBytes: Buffer.byteLength(initialized.instructions ?? ''),
+    instructionBytes: Buffer.byteLength(discovered.instructions ?? ''),
+    protocolVersion: '2026-07-28',
     resourceListBytes: Buffer.byteLength(JSON.stringify(resources)),
     skillIndexBytes: Buffer.byteLength(indexText),
     warmSearchP95Ms: Number(times[Math.ceil(times.length * 0.95) - 1].toFixed(2)),

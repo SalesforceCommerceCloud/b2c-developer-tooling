@@ -51,11 +51,13 @@ export function createDebugSetBreakpointsTool(
         session_id: z.string(),
         breakpoints: z
           .array(
-            z.object({
-              file: z.string().describe('Local, cartridge-prefixed, or absolute server script path.'),
-              line: z.number().int().positive().describe('1-based line number.'),
-              condition: z.string().optional().describe('Halt when this expression is true.'),
-            }),
+            z
+              .object({
+                file: z.string().describe('Local, cartridge-prefixed, or absolute server script path.'),
+                line: z.number().int().positive().describe('1-based line number.'),
+                condition: z.string().optional().describe('Halt when this expression is true.'),
+              })
+              .strict(),
           )
           .describe('Replacement set; empty clears all.'),
       },

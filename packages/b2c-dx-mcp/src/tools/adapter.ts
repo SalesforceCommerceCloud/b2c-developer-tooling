@@ -73,7 +73,7 @@
  * ```
  */
 
-import {z, type ZodRawShape, type ZodObject, type ZodType} from 'zod';
+import {z, type ZodRawShape} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {McpTool, ToolEffects, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
@@ -250,7 +250,14 @@ export function jsonResult(data: unknown, indent = 2): ToolResult {
 /** Attach compact resolution provenance while preserving existing tool output. */
 export function attachResolution(result: ToolResult, resolution: ToolResolution): ToolResult {
   let content = result.content;
-  let structuredContent: Record<string, unknown> = {...result.structuredContent, resolution};
+  const original = result.structuredContent;
+  const structured =
+    original !== null && typeof original === 'object' && !Array.isArray(original)
+      ? original
+      : original === undefined
+        ? {}
+        : {value: original};
+  let structuredContent: Record<string, unknown> = {...structured, resolution};
 
   if (content.length === 1 && content[0]?.type === 'text') {
     try {
@@ -258,7 +265,7 @@ export function attachResolution(result: ToolResult, resolution: ToolResolution)
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
         const output = {...(parsed as Record<string, unknown>), resolution};
         content = [{...content[0], text: JSON.stringify(output, null, 2)}];
-        structuredContent = {...output, ...result.structuredContent, resolution};
+        structuredContent = {...output, ...structured, resolution};
       }
     } catch {
       // Plain-text tools expose resolution through structuredContent only.
@@ -275,7 +282,7 @@ export function attachResolution(result: ToolResult, resolution: ToolResolution)
  * @returns Formatted error message
  */
 function formatZodErrors(error: z.ZodError): string {
-  return error.errors.map((e) => `${e.path.join('.') || 'input'}: ${e.message}`).join('; ');
+  return error.issues.map((e) => `${e.path.join('.') || 'input'}: ${e.message}`).join('; ');
 }
 
 /**
@@ -350,7 +357,7 @@ export function createToolAdapter<TInput, TOutput>(
     : inputSchema;
 
   // Create Zod schema from inputSchema definition
-  const zodSchema = z.object(effectiveInputSchema) as ZodObject<ZodRawShape, 'strip', ZodType, TInput>;
+  const zodSchema = z.object(effectiveInputSchema);
 
   return {
     name,

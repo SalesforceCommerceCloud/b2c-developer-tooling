@@ -5,6 +5,7 @@
  */
 
 import {expect} from 'chai';
+import {z} from 'zod';
 import fs from 'node:fs';
 import os from 'node:os';
 import {stub, restore} from 'sinon';
@@ -179,7 +180,10 @@ describe('registry', () => {
       for (const tool of tools) {
         expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(400);
         for (const [field, schema] of Object.entries(tool.inputSchema)) {
-          expect(schema.description?.length ?? 0, `${tool.name}.${field} description too long`).to.be.at.most(120);
+          expect(
+            z.globalRegistry.get(schema)?.description?.length ?? 0,
+            `${tool.name}.${field} description too long`,
+          ).to.be.at.most(120);
         }
       }
     });

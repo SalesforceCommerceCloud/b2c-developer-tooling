@@ -72,6 +72,13 @@ fields and preserve provenance. Do not embed entire skills in responses.
 
 ## Lifecycle and validation
 
+Use SDK v2 `serveStdio` with a fresh server/state factory. It serves current and
+earlier clients; direct `connect(new StdioServerTransport())` only serves the
+earlier protocol. Use Zod 4 schema objects at SDK registration, including output
+schemas. Await instance cleanup before shutdown. Cache only stable discovery and
+skill resources, privately; never cache live tool results. `input_required` is
+available for future workflows but is not currently used. Test both protocol paths.
+
 Bound waits and returned data. A tool must not await work that requires another
 tool call to release it: debugger capture returns while its trigger is halted.
 Explain pending work, retained breakpoints, cleanup, and resume behavior precisely.

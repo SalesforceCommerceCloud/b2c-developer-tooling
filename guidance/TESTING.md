@@ -68,6 +68,20 @@ source edits. After skill edits, run
 `pnpm --filter @salesforce/b2c-dx-mcp run generate:guidance` before restarting.
 Use the tarball preparation to assess release packaging.
 
+For connection diagnostics, add `--log-level debug` to the MCP command arguments
+and restart the test session. The server logs client identity and the protocol
+path once to stderr; modern requests also identify the protocol revision.
+To enable Codex's plaintext TUI log, launch with
+`-c 'log_dir="/absolute/path/to/test-codex-home/log"'`.
+The file is `codex-tui.log` in that directory. For additional MCP client logging,
+set `RUST_LOG=info,codex_rmcp_client=debug,rmcp=debug` on the Codex launch.
+
+Protocol checks use SDK v2 clients with legacy negotiation, automatic negotiation,
+and pinned `2026-07-28`. Run `pnpm --filter @salesforce/b2c-dx-mcp run test:e2e`
+after building. These checks cover tool/resource parity, errors, traversal rejection,
+and caching: modern clients reuse stable catalogs and skill reads, while tool calls
+remain fresh. The offline tarball smoke test uses the `2026-07-28` wire format.
+
 The isolation and configuration instructions follow the official OpenAI docs:
 [Codex configuration and state](https://developers.openai.com/codex/config-advanced/),
 [MCP configuration](https://developers.openai.com/codex/mcp/), and

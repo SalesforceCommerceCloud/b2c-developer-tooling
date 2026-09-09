@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-
+import type {ToolAnnotations} from '@modelcontextprotocol/server';
 import {expect} from 'chai';
-import type {ToolAnnotations} from '@modelcontextprotocol/sdk/types.js';
 import {McpE2EClient} from './stdio-client.js';
 
 // Reviewed effects, independent of factory metadata and annotation conversion.
