@@ -17,6 +17,11 @@ description: Develop B2C MCP tools, resources, workflow skills, and runbooks. Us
 For skill/runbook content, read [workflow authoring](references/workflows.md).
 For packaging and protocol details, read [the catalog contract](../../../guidance/README.md).
 
+Native skill changes use an agent-plugin changeset; the MCP's bundled
+`workspace:*` dependency automatically triggers an MCP patch release. Keep it in
+`dependencies` and `bundledDependencies`, not `devDependencies`. MCP-specific
+skills and collection changes need an MCP changeset.
+
 ## Tools and context
 
 Keep tool descriptions useful without a skill read: purpose, significant effects,

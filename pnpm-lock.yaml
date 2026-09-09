@@ -309,6 +309,9 @@ importers:
       '@oclif/core':
         specifier: 'catalog:'
         version: 4.8.0
+      '@salesforce/b2c-agent-plugins':
+        specifier: workspace:*
+        version: link:../../skills
       '@salesforce/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk

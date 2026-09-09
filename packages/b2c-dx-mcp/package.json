@@ -100,6 +100,7 @@
   "dependencies": {
     "@modelcontextprotocol/server": "2.0.0",
     "@oclif/core": "catalog:",
+    "@salesforce/b2c-agent-plugins": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "glob": "catalog:",
     "postcss": "8.5.15",
@@ -107,6 +108,9 @@
     "yaml": "2.9.0",
     "zod": "4.5.4"
   },
+  "bundledDependencies": [
+    "@salesforce/b2c-agent-plugins"
+  ],
   "devDependencies": {
     "@eslint/compat": "catalog:",
     "@eslint/js": "^9",

@@ -77,6 +77,9 @@ writeFileSync(
 pnpm(['install', '--prefer-offline', '--ignore-scripts'], testRoot);
 
 const installedMcp = join(testRoot, 'node_modules/@salesforce/b2c-dx-mcp');
+const pluginsPackage = JSON.parse(readFileSync(join(repoRoot, 'skills/package.json'), 'utf8'));
+const bundledPlugins = join(installedMcp, 'node_modules/@salesforce/b2c-agent-plugins');
+assert.deepEqual(JSON.parse(readFileSync(join(bundledPlugins, 'package.json'), 'utf8')), pluginsPackage);
 const runJs = join(installedMcp, 'bin/run.js');
 const manifest = JSON.parse(readFileSync(join(installedMcp, 'content/guidance/index.json'), 'utf8'));
 assert.deepEqual(manifest, JSON.parse(bundleManifest));
@@ -84,6 +87,12 @@ for (const entry of manifest.entries) {
   for (const file of entry.files) {
     const bytes = readFileSync(join(installedMcp, 'content/guidance', entry.id, file.path));
     assert.deepEqual(bytes, readFileSync(join(repoRoot, dirname(entry.source), file.path)));
+    if (entry.source.startsWith('skills/')) {
+      assert.deepEqual(
+        bytes,
+        readFileSync(join(bundledPlugins, dirname(entry.source.slice('skills/'.length)), file.path)),
+      );
+    }
   }
 }
 

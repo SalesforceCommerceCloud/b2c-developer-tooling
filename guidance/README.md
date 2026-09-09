@@ -87,10 +87,14 @@ The distribution test verifies every imported source against the bundle. New
 collections belong in the manifest, not the generator. Native installer APIs
 remain in the SDK `skills` module; runtime catalogs use `guidance`.
 
-A source-skill change that alters the shipped MCP bundle needs an MCP changeset
-as well as the applicable agent-plugin changeset. Changes to SDK APIs/search or
-the generated tooling documentation index need an SDK changeset. List directly
-changed packages only; dependency bumps cascade through Changesets.
+Source-skill changes need an agent-plugin changeset. The MCP depends on
+`@salesforce/b2c-agent-plugins` through `workspace:*`, so every plugin release
+automatically triggers at least an MCP patch release. The private package is
+included through `bundledDependencies`; installation needs no registry copy.
+MCP-specific skills and collection changes still need an MCP changeset. Changes
+to SDK APIs/search or the generated tooling documentation index need an SDK
+changeset. List directly changed packages only; dependency bumps cascade through
+Changesets.
 
 ## Protocol and budgets
 
