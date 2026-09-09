@@ -15,8 +15,8 @@ from b2c_tooling_sdk import resolve_config
 config = await resolve_config()
 
 if config.has_oauth_config():
-    instance = config.create_b2c_instance()   # typed, authenticated clients
-    strategy = config.create_oauth()          # just the auth strategy
+    instance = config.create_b2c_instance()  # typed, authenticated clients
+    strategy = config.create_oauth()  # just the auth strategy
 ```
 
 You can pass explicit overrides (a `NormalizedConfig`) and options
@@ -68,9 +68,9 @@ from b2c_tooling_sdk.config import (
     save_dw_json,
 )
 
-path = find_dw_json()                 # nearest dw.json, walking up
-single = load_dw_json(path)           # the active/only configuration
-full = load_full_dw_json(path)        # the whole multi-config document
+path = find_dw_json()  # nearest dw.json, walking up
+single = load_dw_json(path)  # the active/only configuration
+full = load_full_dw_json(path)  # the whole multi-config document
 ```
 
 `set_active_instance` selects which named alias resolution should use, and

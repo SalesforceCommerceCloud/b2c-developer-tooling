@@ -7,9 +7,9 @@ has a synchronous twin here with an **identical signature minus `await`**.
 
 ```python
 from b2c_tooling_sdk.sync import resolve_config, create_metrics_client
-from b2c_tooling_sdk.sync import get_guest_token   # SLAS twins are here too
+from b2c_tooling_sdk.sync import get_guest_token  # SLAS twins are here too
 
-config = resolve_config()                 # blocks — no await
+config = resolve_config()  # blocks — no await
 instance = config.create_b2c_instance()
 ```
 

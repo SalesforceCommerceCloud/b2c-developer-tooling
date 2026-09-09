@@ -39,9 +39,7 @@ async def main() -> None:
             scopes=["sfcc.products"],
         )
     )
-    response = await auth.fetch(
-        "https://your-instance.demandware.net/s/-/dw/data/v23_2/sites"
-    )
+    response = await auth.fetch("https://your-instance.demandware.net/s/-/dw/data/v23_2/sites")
     print(response.status_code)
 
 

@@ -35,7 +35,7 @@ token = await get_guest_token(
     )
 )
 
-print(token.access_token)   # shopper JWT
+print(token.access_token)  # shopper JWT
 print(token.usid, token.customer_id, token.expires_in)
 ```
 

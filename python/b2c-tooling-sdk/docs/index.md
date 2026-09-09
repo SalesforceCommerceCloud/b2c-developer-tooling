@@ -84,10 +84,10 @@ the `async`/`await`:
 ```python
 from b2c_tooling_sdk.sync import resolve_config, list_code_versions
 
-config = resolve_config()                # blocks
+config = resolve_config()  # blocks
 instance = config.create_b2c_instance()
 
-for version in list_code_versions(instance):   # blocks
+for version in list_code_versions(instance):  # blocks
     print(version.id, "active" if version.active else "")
 ```
 

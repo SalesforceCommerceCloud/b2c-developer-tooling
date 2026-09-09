@@ -60,7 +60,7 @@ from b2c_tooling_sdk.operations.code import list_code_versions
 
 
 async def main() -> None:
-    config = await resolve_config()          # reads dw.json / ~/.mobify / CLI session
+    config = await resolve_config()  # reads dw.json / ~/.mobify / CLI session
     instance = config.create_b2c_instance()
 
     for version in await list_code_versions(instance):
@@ -78,7 +78,7 @@ identical signature minus `await`:
 ```python
 from b2c_tooling_sdk.sync import resolve_config, list_code_versions
 
-config = resolve_config()                     # blocks
+config = resolve_config()  # blocks
 instance = config.create_b2c_instance()
 
 for version in list_code_versions(instance):  # blocks
