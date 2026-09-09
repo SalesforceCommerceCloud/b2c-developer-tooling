@@ -12,6 +12,7 @@
 # SFCC_SANDBOX_API_HOST     - Sandbox API hostname (default: admin.dx.commercecloud.salesforce.com)
 
 set -e
+export SFCC_LOG_LEVEL="${SFCC_LOG_LEVEL:-debug}"
 
 # Script directory for relative paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,6 +25,29 @@ SITE_ARCHIVE_PATH="$SCRIPT_DIR/fixtures/site_archive"
 # Test configuration
 SITE_ID="TestSite"
 TTL_HOURS=4  # 4 hours in case test fails and needs manual cleanup
+HTTP_DIAGNOSTICS_DIR=$(mktemp -d)
+
+# Keep response bodies on stdout for callers; log status and safe tracing headers on stderr.
+curl_with_diagnostics() {
+    local http_status curl_exit=0
+    : > "$HTTP_DIAGNOSTICS_DIR/headers"
+    : > "$HTTP_DIAGNOSTICS_DIR/body"
+    http_status=$(curl --silent --show-error \
+        --dump-header "$HTTP_DIAGNOSTICS_DIR/headers" \
+        --output "$HTTP_DIAGNOSTICS_DIR/body" \
+        --write-out '%{http_code}' "$@") || curl_exit=$?
+
+    echo "DEBUG: curl exit=$curl_exit HTTP status=$http_status" >&2
+    if [ -f "$HTTP_DIAGNOSTICS_DIR/headers" ]; then
+        # Allowlist diagnostic headers so Set-Cookie and other credentials stay private.
+        awk 'tolower($0) ~ /^(http\/|date:|server:|content-type:|www-authenticate:|[a-z0-9-]*request-id:|[a-z0-9-]*correlation-id:|sfdc_correlation_id:|x-dw-request-base-id:|traceparent:|tracestate:|x-amzn-trace-id:)/' \
+            "$HTTP_DIAGNOSTICS_DIR/headers" >&2
+    fi
+    if [ -f "$HTTP_DIAGNOSTICS_DIR/body" ]; then
+        cat "$HTTP_DIAGNOSTICS_DIR/body"
+    fi
+    return "$curl_exit"
+}
 
 # Cleanup function for error handling
 cleanup() {
@@ -45,6 +69,7 @@ cleanup() {
         $CLI ods delete "$ODS_ID" --force || true
     fi
 
+    rm -rf "$HTTP_DIAGNOSTICS_DIR"
     exit $exit_code
 }
 
@@ -116,7 +141,7 @@ echo "Step 3: Deploying code to sandbox..."
 
 $CLI code deploy "$CARTRIDGE_PATH" \
     --server "$SERVER" \
-    --code-version "e2e-test-version" --log-level trace --json
+    --code-version "e2e-test-version" --json
 
 echo "SUCCESS: Code deployed"
 echo ""
@@ -161,12 +186,11 @@ SLAS_CREATE_RESULT=$($CLI slas client create \
     --tenant-id "$TENANT_ID" \
     --channels "$SITE_ID" \
     --default-scopes \
-    --log-level trace \
     --redirect-uri "http://localhost:3000/callback" \
     --json)
 
 echo "DEBUG: SLAS create result:"
-echo "$SLAS_CREATE_RESULT" | jq .
+echo "$SLAS_CREATE_RESULT" | jq 'del(.secret)'
 
 # Extract client ID and secret from response
 SLAS_CLIENT_ID=$(echo "$SLAS_CREATE_RESULT" | jq -r '.clientId')
@@ -174,7 +198,7 @@ SLAS_SECRET=$(echo "$SLAS_CREATE_RESULT" | jq -r '.secret')
 
 if [ -z "$SLAS_SECRET" ] || [ "$SLAS_SECRET" == "null" ]; then
     echo "FAILED: Could not create SLAS client"
-    echo "$SLAS_CREATE_RESULT"
+    echo "$SLAS_CREATE_RESULT" | jq 'del(.secret)'
     exit 1
 fi
 
@@ -207,7 +231,7 @@ if [ -n "$CURL_EXTRA_HEADERS" ]; then
 fi
 
 # Get shopper token via client credentials (guest login)
-TOKEN_RESPONSE=$(curl -s "${SLAS_BASE}/shopper/auth/v1/organizations/${ORG_ID}/oauth2/token" \
+TOKEN_RESPONSE=$(curl_with_diagnostics "${SLAS_BASE}/shopper/auth/v1/organizations/${ORG_ID}/oauth2/token" \
     "${CURL_HEADER_ARGS[@]}" \
     -u "${SLAS_CLIENT_ID}:${SLAS_SECRET}" \
     -d "grant_type=client_credentials&channel_id=${SITE_ID}")
@@ -216,7 +240,7 @@ SHOPPER_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
 
 if [ -z "$SHOPPER_TOKEN" ] || [ "$SHOPPER_TOKEN" == "null" ]; then
     echo "FAILED: Could not obtain shopper token"
-    echo "$TOKEN_RESPONSE" | jq
+    echo "$TOKEN_RESPONSE" | jq 'del(.access_token, .refresh_token, .id_token)'
     exit 1
 fi
 
@@ -228,7 +252,7 @@ echo ""
 ################################################################################
 echo "Step 8: Testing shopper product search..."
 
-SEARCH_RESPONSE=$(curl -s "${SLAS_BASE}/search/shopper-search/v1/organizations/${ORG_ID}/product-search?siteId=${SITE_ID}&limit=5&q=sample" \
+SEARCH_RESPONSE=$(curl_with_diagnostics "${SLAS_BASE}/search/shopper-search/v1/organizations/${ORG_ID}/product-search?siteId=${SITE_ID}&limit=5&q=sample" \
     "${CURL_HEADER_ARGS[@]}" \
     -H "Authorization: Bearer ${SHOPPER_TOKEN}")
 

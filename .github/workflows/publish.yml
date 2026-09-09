@@ -2,7 +2,7 @@ name: Publish to npm
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ['CI']
     types: [completed]
     branches: ['release/**']
   schedule:
@@ -228,6 +228,7 @@ jobs:
 
       - name: Create snapshot versions
         if: steps.release-type.outputs.type == 'nightly'
+        id: snapshot-version
         run: |
           SNAPSHOT="0.0.0-nightly.$(date +%Y%m%d%H%M%S)"
           for pkg in packages/b2c-tooling-sdk packages/b2c-cli packages/b2c-dx-mcp packages/mrt-utilities; do
@@ -239,6 +240,7 @@ jobs:
               fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
             "
           done
+          echo "version=$SNAPSHOT" >> $GITHUB_OUTPUT
           echo "Set snapshot version: $SNAPSHOT"
 
       - name: Build packages
@@ -256,6 +258,28 @@ jobs:
         run: >-
           pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks
           --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_sdk }}
+
+      - name: Verify nightly workspace versions after SDK pack
+        if: steps.release-type.outputs.type == 'nightly'
+        env:
+          EXPECTED_SNAPSHOT: ${{ steps.snapshot-version.outputs.version }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const packages = [
+              'packages/b2c-tooling-sdk',
+              'packages/b2c-cli',
+              'packages/b2c-dx-mcp',
+              'packages/mrt-utilities',
+            ];
+            for (const dir of packages) {
+              const manifest = JSON.parse(fs.readFileSync(dir + '/package.json'));
+              if (manifest.version !== process.env.EXPECTED_SNAPSHOT) {
+                throw new Error(dir + ' version changed during packing: expected ' + process.env.EXPECTED_SNAPSHOT + ', got ' + manifest.version);
+              }
+            }
+            console.log('Nightly workspace versions remain aligned at ' + process.env.EXPECTED_SNAPSHOT);
+          "
 
       - name: Publish CLI to npm
         if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_cli == 'true'

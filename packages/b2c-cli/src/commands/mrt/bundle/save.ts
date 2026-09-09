@@ -96,6 +96,7 @@ export default class MrtBundleSave extends BaseCommand<typeof MrtBundleSave> {
     const bundle = await createBundle({
       projectSlug: project,
       buildDirectory: buildDir,
+      projectDirectory: this.flags['project-directory'],
       message,
       ssrOnly,
       ssrShared,
