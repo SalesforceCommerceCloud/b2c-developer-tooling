@@ -10,20 +10,10 @@ import type {LoadConfigOptions} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import type {AuthStrategy} from '../auth/types.js';
 import {t} from '../i18n/index.js';
-import {DEFAULT_MRT_ORIGIN, isMrtReadOnlyResponse} from '../clients/mrt.js';
-import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
-
-/**
- * Marker in the thrown error when a write is rejected in read-only mode. Writes
- * return `503` with body `{"detail":"Service is in READ_ONLY mode"}`.
- */
-const MRT_READ_ONLY_MARKER = 'read_only mode';
+import {DEFAULT_MRT_ORIGIN, MrtMaintenanceError, runWithMrtReadOnlyListener} from '../clients/mrt.js';
 
 /** Trust status page, surfaced so users can check status and ETA. */
 const MRT_STATUS_URL = 'https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN';
-
-/** Name of the middleware provider that emits the read-only warning on reads. */
-const MRT_READ_ONLY_WARNING_PROVIDER = 'mrt-read-only-warning';
 
 /**
  * Base command for Managed Runtime (MRT) operations.
@@ -80,17 +70,15 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
     }),
   };
 
-  /** Ensures the read-only maintenance warning is emitted at most once per command. */
+  /** Ensures the read-only warning prints at most once per command run. */
   private mrtReadOnlyWarned = false;
 
-  public override async init(): Promise<void> {
-    await super.init();
-    this.registerReadOnlyWarningMiddleware();
-  }
-
-  protected override async finally(err: Error | undefined): Promise<void> {
-    globalMiddlewareRegistry.unregister(MRT_READ_ONLY_WARNING_PROVIDER);
-    return super.finally(err);
+  /** Warn once if any read is served while Managed Runtime is in read-only mode. */
+  public async _run<R>(): Promise<R> {
+    return runWithMrtReadOnlyListener(
+      () => this.warnReadOnlyOnce(),
+      () => super._run<R>(),
+    );
   }
 
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
@@ -138,35 +126,8 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
     }
   }
 
-  /**
-   * Warn once when a read succeeds while Managed Runtime is in read-only mode.
-   * Reads don't fail, so they never reach {@link catch}; the read-only header is
-   * only visible here in the response pipeline. Writes are handled by {@link catch}.
-   */
-  private registerReadOnlyWarningMiddleware(): void {
-    globalMiddlewareRegistry.register({
-      name: MRT_READ_ONLY_WARNING_PROVIDER,
-      getMiddleware: (clientType) => {
-        // Only the MRT clients report read-only mode.
-        if (clientType !== 'mrt' && clientType !== 'mrt-b2c') {
-          return undefined;
-        }
-        return {
-          onResponse: ({request, response}) => {
-            // Warn on a read carrying the read-only header; writes are left to catch().
-            const isRead = request.method === 'GET' || request.method === 'HEAD';
-            if (isRead && isMrtReadOnlyResponse(response)) {
-              this.warnReadOnlyOnce();
-            }
-            return response;
-          },
-        };
-      },
-    });
-  }
-
-  /** Emit the read-only maintenance warning, at most once per command. */
-  private warnReadOnlyOnce(): void {
+  /** Warn once (to stderr) that reads are served from a read-only Managed Runtime. */
+  protected warnReadOnlyOnce(): void {
     if (this.mrtReadOnlyWarned) {
       return;
     }
@@ -174,23 +135,18 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
     this.warn(
       t(
         'warning.mrtReadOnly',
-        'Managed Runtime is in maintenance mode. Write operations are disabled; read operations (like this one) are unaffected.\nStatus: {{statusUrl}}',
+        'Managed Runtime is in maintenance mode. Reads still work, but write operations are temporarily disabled.\n\nCheck status and ETA: {{statusUrl}}',
         {statusUrl: MRT_STATUS_URL},
       ),
     );
   }
 
-  /**
-   * Turn a raw read-only write failure into clear, actionable guidance,
-   * keeping the original message on `err.cause`. Other errors pass through.
-   */
+  /** Replace a read-only write rejection with actionable guidance; other errors pass through. */
   protected async catch(err: Error & {exitCode?: number}): Promise<never> {
-    const message = err.message?.toLowerCase() ?? '';
-
-    if (message.includes(MRT_READ_ONLY_MARKER)) {
-      // Keep the raw detail for logs/--json, but not as the user-facing message.
-      if (!err.cause) {
-        err.cause = err.message;
+    if (err instanceof MrtMaintenanceError) {
+      // Keep the raw detail off the user-facing message.
+      if (!err.cause && err.detail) {
+        err.cause = err.detail;
       }
       // e.g. "mrt bundle deploy"
       const commandRef = this.id ? this.id.split(':').join(' ') : 'This mrt command';

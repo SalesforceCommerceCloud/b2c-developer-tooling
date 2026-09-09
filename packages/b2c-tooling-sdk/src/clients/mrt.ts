@@ -12,7 +12,8 @@
  *
  * @module clients/mrt
  */
-import createClient, {type Client} from 'openapi-fetch';
+import {AsyncLocalStorage} from 'node:async_hooks';
+import createClient, {type Client, type Middleware} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './mrt.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware} from './middleware.js';
@@ -109,15 +110,83 @@ export interface MrtClientConfig {
  */
 export const DEFAULT_MRT_ORIGIN = 'https://cloud.mobify.com';
 
-/**
- * Header MRT sets on every response while in read-only (maintenance) mode —
- * including successful reads, so it detects read-only mode without a failed write.
- */
+/** Header MRT sets on every response while in read-only (maintenance) mode. */
 export const MRT_READ_ONLY_HEADER = 'X-MRT-Read-Only';
 
-/** True when a response indicates read-only mode, per {@link MRT_READ_ONLY_HEADER}. */
+/** True when the response indicates read-only mode. */
 export function isMrtReadOnlyResponse(response: Response): boolean {
   return response.headers.get(MRT_READ_ONLY_HEADER)?.trim().toLowerCase() === 'true';
+}
+
+/** Thrown when a write is rejected because Managed Runtime is in read-only mode. */
+export class MrtMaintenanceError extends Error {
+  /** HTTP status of the rejected write (typically 503). */
+  readonly status: number;
+
+  /** Raw `detail` from the API response body, when present. */
+  readonly detail?: string;
+
+  constructor(status: number, detail?: string) {
+    super('Managed Runtime is in maintenance mode; write operations are temporarily disabled.');
+    this.name = 'MrtMaintenanceError';
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+/** Called when a read is served in read-only mode. */
+export type MrtReadOnlyListener = () => void;
+
+const readOnlyListenerStore = new AsyncLocalStorage<MrtReadOnlyListener>();
+
+/**
+ * Run `fn` with a `listener` for reads served in read-only mode. The middleware
+ * reads it from request-scoped context, so operations never thread it through —
+ * consumers (e.g. the CLI) set it once per unit of work.
+ */
+export function runWithMrtReadOnlyListener<T>(listener: MrtReadOnlyListener, fn: () => T): T {
+  return readOnlyListenerStore.run(listener, fn);
+}
+
+/**
+ * Read-only mode handling, installed by {@link createMrtClient} and {@link createMrtB2CClient}:
+ * rejected writes throw {@link MrtMaintenanceError}; reads notify the active
+ * {@link runWithMrtReadOnlyListener} listener; superuser writes (2xx) pass through.
+ */
+export function createMrtMaintenanceMiddleware(): Middleware {
+  return {
+    async onResponse({request, response}) {
+      if (!isMrtReadOnlyResponse(response)) {
+        return response;
+      }
+
+      // Reads still work; notify the listener.
+      if (request.method === 'GET' || request.method === 'HEAD') {
+        readOnlyListenerStore.getStore()?.();
+        return response;
+      }
+
+      // Only a 503 is a read-only rejection. During maintenance the header rides
+      // on every response, so let other failures (401/403/etc.) flow through to
+      // their own handling (e.g. the auth middleware's 401 retry).
+      if (response.status !== 503) {
+        return response;
+      }
+
+      // Rejected write: keep the raw detail for the error.
+      let detail: string | undefined;
+      try {
+        const body = (await response.clone().json()) as {detail?: unknown};
+        if (typeof body?.detail === 'string') {
+          detail = body.detail;
+        }
+      } catch {
+        // Non-JSON body; the error still carries the status.
+      }
+
+      throw new MrtMaintenanceError(response.status, detail);
+    },
+  };
 }
 
 /**
@@ -178,6 +247,9 @@ export function createMrtClient(config: MrtClientConfig, auth: AuthStrategy): Mr
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(auth));
+
+  // Read-only mode detection.
+  client.use(createMrtMaintenanceMiddleware());
 
   // Plugin middleware from registry
   for (const middleware of registry.getMiddleware('mrt')) {

@@ -6,7 +6,13 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {createMrtClient, DEFAULT_MRT_ORIGIN, isMrtReadOnlyResponse} from '@salesforce/b2c-tooling-sdk/clients';
+import {
+  createMrtClient,
+  DEFAULT_MRT_ORIGIN,
+  isMrtReadOnlyResponse,
+  MrtMaintenanceError,
+  runWithMrtReadOnlyListener,
+} from '@salesforce/b2c-tooling-sdk/clients';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const DEFAULT_BASE_URL = DEFAULT_MRT_ORIGIN;
@@ -151,6 +157,183 @@ describe('clients/mrt', () => {
 
       expect(data).to.be.undefined;
       expect(error).to.deep.equal({detail: 'Project not found'});
+    });
+
+    describe('maintenance (read-only) mode', () => {
+      const READ_ONLY_HEADERS = {'X-MRT-Read-Only': 'true'};
+
+      it('returns data normally for a read served in read-only mode', async () => {
+        server.use(
+          http.get(`${DEFAULT_BASE_URL}/api/projects/`, () => {
+            return HttpResponse.json({results: [{slug: 'p1'}]}, {headers: READ_ONLY_HEADERS});
+          }),
+        );
+
+        const client = createMrtClient({}, new MockAuthStrategy());
+
+        const {data, error} = await client.GET('/api/projects/', {});
+
+        expect(error).to.be.undefined;
+        expect(data?.results).to.have.length(1);
+      });
+
+      it('notifies the read-only listener for a read served in read-only mode', async () => {
+        server.use(
+          http.get(`${DEFAULT_BASE_URL}/api/projects/`, () => {
+            return HttpResponse.json({results: []}, {headers: READ_ONLY_HEADERS});
+          }),
+        );
+
+        const client = createMrtClient({}, new MockAuthStrategy());
+
+        let calls = 0;
+        await runWithMrtReadOnlyListener(
+          () => {
+            calls += 1;
+          },
+          async () => {
+            await client.GET('/api/projects/', {});
+            await client.GET('/api/projects/', {});
+          },
+        );
+
+        // Fires per read served in read-only mode; the CLI collapses these to one warning.
+        expect(calls).to.equal(2);
+      });
+
+      it('does not notify the read-only listener for a normal read', async () => {
+        server.use(
+          http.get(`${DEFAULT_BASE_URL}/api/projects/`, () => {
+            return HttpResponse.json({results: []});
+          }),
+        );
+
+        const client = createMrtClient({}, new MockAuthStrategy());
+
+        let called = false;
+        await runWithMrtReadOnlyListener(
+          () => {
+            called = true;
+          },
+          async () => {
+            await client.GET('/api/projects/', {});
+          },
+        );
+
+        expect(called).to.be.false;
+      });
+
+      it('throws MrtMaintenanceError for a rejected write in read-only mode', async () => {
+        server.use(
+          http.post(`${DEFAULT_BASE_URL}/api/projects/:project_slug/builds/`, () => {
+            return HttpResponse.json(
+              {detail: 'Service is in READ_ONLY mode'},
+              {status: 503, headers: READ_ONLY_HEADERS},
+            );
+          }),
+        );
+
+        const client = createMrtClient({}, new MockAuthStrategy());
+
+        try {
+          await client.POST('/api/projects/{project_slug}/builds/', {
+            params: {path: {project_slug: 'my-project'}},
+            body: {
+              message: 'Test bundle',
+              encoding: 'base64',
+              data: 'dGVzdA==',
+              ssr_parameters: {},
+              ssr_only: ['ssr.js'],
+              ssr_shared: ['shared.js'],
+            },
+          });
+          expect.fail('expected MrtMaintenanceError to be thrown');
+        } catch (err) {
+          expect(err).to.be.instanceOf(MrtMaintenanceError);
+          expect((err as MrtMaintenanceError).status).to.equal(503);
+          expect((err as MrtMaintenanceError).detail).to.equal('Service is in READ_ONLY mode');
+        }
+      });
+
+      it('does not throw for a successful write in read-only mode (superuser bypass)', async () => {
+        server.use(
+          http.post(`${DEFAULT_BASE_URL}/api/projects/:project_slug/builds/`, () => {
+            return HttpResponse.json(
+              {bundle_id: 7, message: 'ok', url: 'https://x', bundle_preview_url: null, warnings: []},
+              {headers: READ_ONLY_HEADERS},
+            );
+          }),
+        );
+
+        const client = createMrtClient({}, new MockAuthStrategy());
+
+        const {data, error} = await client.POST('/api/projects/{project_slug}/builds/', {
+          params: {path: {project_slug: 'my-project'}},
+          body: {
+            message: 'Test bundle',
+            encoding: 'base64',
+            data: 'dGVzdA==',
+            ssr_parameters: {},
+            ssr_only: ['ssr.js'],
+            ssr_shared: ['shared.js'],
+          },
+        });
+
+        expect(error).to.be.undefined;
+        expect(data).to.have.property('bundle_id', 7);
+      });
+
+      it('does not throw MrtMaintenanceError for a write failure without the read-only header', async () => {
+        server.use(
+          http.post(`${DEFAULT_BASE_URL}/api/projects/:project_slug/builds/`, () => {
+            return HttpResponse.json({detail: 'Service unavailable'}, {status: 503});
+          }),
+        );
+
+        const client = createMrtClient({}, new MockAuthStrategy());
+
+        const {error} = await client.POST('/api/projects/{project_slug}/builds/', {
+          params: {path: {project_slug: 'my-project'}},
+          body: {
+            message: 'Test bundle',
+            encoding: 'base64',
+            data: 'dGVzdA==',
+            ssr_parameters: {},
+            ssr_only: ['ssr.js'],
+            ssr_shared: ['shared.js'],
+          },
+        });
+
+        // Normal error path — no typed maintenance error thrown.
+        expect(error).to.deep.equal({detail: 'Service unavailable'});
+      });
+
+      it('does not throw MrtMaintenanceError for a non-503 write failure that carries the header', async () => {
+        // During maintenance the read-only header rides on every response, including
+        // unrelated failures. Only a 503 is a read-only rejection; a 403 must flow
+        // through as a normal error rather than being masked as maintenance.
+        server.use(
+          http.post(`${DEFAULT_BASE_URL}/api/projects/:project_slug/builds/`, () => {
+            return HttpResponse.json({detail: 'Forbidden'}, {status: 403, headers: READ_ONLY_HEADERS});
+          }),
+        );
+
+        const client = createMrtClient({}, new MockAuthStrategy());
+
+        const {error} = await client.POST('/api/projects/{project_slug}/builds/', {
+          params: {path: {project_slug: 'my-project'}},
+          body: {
+            message: 'Test bundle',
+            encoding: 'base64',
+            data: 'dGVzdA==',
+            ssr_parameters: {},
+            ssr_only: ['ssr.js'],
+            ssr_shared: ['shared.js'],
+          },
+        });
+
+        expect(error).to.deep.equal({detail: 'Forbidden'});
+      });
     });
   });
 

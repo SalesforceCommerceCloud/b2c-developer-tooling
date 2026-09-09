@@ -23,6 +23,6 @@ export const de = {
   },
   warning: {
     mrtReadOnly:
-      'Managed Runtime befindet sich im Wartungsmodus. Schreibvorgänge sind deaktiviert; Lesevorgänge (wie dieser) sind nicht betroffen.\nStatus: {{statusUrl}}',
+      'Managed Runtime befindet sich im Wartungsmodus. Lesevorgänge funktionieren weiterhin, aber Schreibvorgänge sind vorübergehend deaktiviert.\n\nStatus und voraussichtliche Dauer prüfen: {{statusUrl}}',
   },
 };

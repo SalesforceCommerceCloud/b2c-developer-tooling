@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import MrtBundleDeploy from '../../../../src/commands/mrt/bundle/deploy.js';
+import {MrtMaintenanceError} from '@salesforce/b2c-tooling-sdk/clients';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../helpers/stub-parse.js';
 
@@ -538,7 +539,8 @@ describe('mrt bundle deploy', () => {
       await command.init();
 
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-      const err = new Error('Failed to create deployment: {"detail":"Service is in READ_ONLY mode"}');
+      // The MRT client middleware throws this typed error for a rejected write.
+      const err = new MrtMaintenanceError(503, 'Service is in READ_ONLY mode');
 
       try {
         // The command's error path (inline or propagated) flows through the
