@@ -87,6 +87,12 @@ code, and tenant ID. See [authentication and scopes](../guide/authentication#con
 
 ### SCAPI code mode (preview)
 
+**Discover nearly 600 Salesforce Commerce API operations through two MCP tools.**
+
+Explore products, catalogs, orders, customers, inventory, pricing, and more.
+The bundled reference covers 594 Admin and Shopper operations across 57 versioned
+API schemas. Discovery works offline without Commerce credentials.
+
 Enable with `--allow-non-ga-tools`. Available in SCAPI, PWAV3, and STOREFRONTNEXT.
 
 | Tool | Capability |
@@ -96,10 +102,13 @@ Enable with `--allow-non-ga-tools`. Available in SCAPI, PWAV3, and STOREFRONTNEX
 
 Execution uses the selected project's OAuth credentials, short code, and tenant ID.
 Grant the scopes needed for your task; creating products requires `sfcc.products.rw`.
-This preview supports standard Admin JSON requests. Shopper and custom API
-contracts can be inspected, but their execution is not yet supported.
-Discovery identifies each operation's authentication and execution support.
+This preview executes standard Admin JSON requests; Shopper execution is not yet
+supported. Custom APIs are outside the bundled reference; inspect their live
+contracts with `scapi_schemas_list`. Custom API execution is not yet supported.
 See [code mode access](./security#scapi-code-mode).
+
+For example: "Create an offline test product in my catalog, check that its ID is
+unused, and verify the saved product."
 
 ### Observability metrics (closed beta) {#metrics}
 
