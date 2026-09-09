@@ -23,9 +23,11 @@ import type {MrtBackendPreference, ScapiMrtConnection} from '../operations/mrt/m
  * MRT has two backends:
  * - **legacy** — the MRT Cloud API (`cloud.mobify.com`), authenticated with a
  *   per-user API key (`--api-key` / `~/.mobify`).
- * - **scapi** — the SCAPI MRT Storefront Deployments API, authenticated with a
- *   stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager,
- *   reusing the same shortCode + tenant setup as other SCAPI commands.
+ * - **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow
+ *   (client-credentials or JWT Bearer) via Account Manager, reusing the same
+ *   shortCode + tenant setup as other SCAPI commands. Each supported command maps
+ *   to its own SCAPI API (bundle history/deploy use Storefront Deployments today;
+ *   more MRT surfaces will be added over time).
  *
  * Because SCAPI MRT reuses the SCAPI auth stack, this base extends
  * {@link OAuthCommand} to inherit `--client-id`/`--client-secret`/`--short-code`/

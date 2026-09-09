@@ -49,7 +49,7 @@ MRT commands resolve configuration in the following order of precedence:
 
 MRT commands use API key authentication against the legacy MRT Cloud API. The API key is configured in the Managed Runtime dashboard.
 
-Two commands — `mrt bundle history` and `mrt bundle deploy <bundleId>` — can also run over the SCAPI Storefront Deployments API with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
+Two commands — `mrt bundle history` and `mrt bundle deploy <bundleId>` — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
 
 ### Getting an API Key
 
@@ -74,7 +74,7 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 MRT is served by two backends:
 
 - **legacy** — the MRT Cloud API (`cloud.mobify.com`), authenticated with a per-user API key (`--api-key` / `~/.mobify`). This is the backend for every MRT command.
-- **scapi** — the SCAPI Storefront Deployments API, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. It requires the `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw` scopes.
+- **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. Each supported command requires the SCAPI scopes for the API it maps to — today the deployment commands (`bundle history` / `deploy`) need `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw`.
 
 Select the backend with `--mrt-backend` (or `MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
@@ -108,7 +108,7 @@ Otherwise `auto` uses legacy. Run a supported command with `-D` / `--debug` to s
 Under `--json`, the supported commands return the serving backend's **native** response verbatim:
 
 - **legacy** — the raw MRT Cloud API shape (e.g. `history` returns `{count, next, previous, deployments}`).
-- **scapi** — the native SCAPI Storefront Deployments shape (e.g. `history` returns `{limit, offset, total, data}`).
+- **scapi** — the serving SCAPI API's native shape (e.g. `history` returns `{limit, offset, total, data}` from Storefront Deployments).
 
 The human-readable table is normalized across both backends, but `--json` is not. Under `--mrt-backend auto` the `--json` shape therefore depends on which backend actually served the request — pin `--mrt-backend legacy` or `--mrt-backend scapi` if a script needs a stable shape.
 

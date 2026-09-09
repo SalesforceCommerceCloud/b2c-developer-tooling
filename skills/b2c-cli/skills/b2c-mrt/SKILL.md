@@ -17,7 +17,7 @@ Run `b2c setup inspect` to see the resolved configuration and which source provi
 
 ### MRT Backends (legacy vs SCAPI)
 
-Most MRT commands run against the legacy MRT Cloud API (API key). Two commands — `mrt bundle history` and `mrt bundle deploy <bundleId>` — can also run over the SCAPI Storefront Deployments API. Choose with `--mrt-backend` (`MRT_BACKEND`, or `mrtBackend` in `dw.json`):
+Most MRT commands run against the legacy MRT Cloud API (API key). Two commands — `mrt bundle history` and `mrt bundle deploy <bundleId>` — can also run over the SCAPI MRT backend. Choose with `--mrt-backend` (`MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
 - `auto` (default) — use SCAPI when it's configured (`--short-code` + `--tenant-id` + client-credentials or JWT Bearer auth; scopes `sfcc.storefront.deployments[.rw]`), otherwise legacy. Falls back to legacy on safe pre-execution errors.
 - `legacy` — always the MRT Cloud API.

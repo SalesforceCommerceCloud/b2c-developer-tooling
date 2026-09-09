@@ -189,10 +189,10 @@ export interface NormalizedConfig {
   // MRT backend
   /**
    * MRT backend preference for MRT operations that support both the legacy MRT
-   * Cloud API and the SCAPI MRT Storefront Deployments API. Independent of
-   * {@link apiBackend} (MRT is a distinct subsystem). `legacy` = the per-user
-   * API-key MRT Cloud API; `scapi` = the OAuth SCAPI deployments API; `auto`
-   * prefers SCAPI when prerequisites are present and falls back to legacy.
+   * Cloud API and the SCAPI MRT backend. Independent of {@link apiBackend} (MRT
+   * is a distinct subsystem). `legacy` = the per-user API-key MRT Cloud API;
+   * `scapi` = the OAuth SCAPI MRT backend; `auto` prefers SCAPI when
+   * prerequisites are present and falls back to legacy.
    */
   mrtBackend?: 'auto' | 'legacy' | 'scapi';
 

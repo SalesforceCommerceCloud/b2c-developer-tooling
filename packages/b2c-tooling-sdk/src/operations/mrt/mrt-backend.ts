@@ -37,8 +37,8 @@ export type MrtBackendPreference = 'auto' | 'legacy' | 'scapi';
 export type MrtBackend = 'legacy' | 'scapi';
 
 /**
- * SCAPI MRT connection bundle: everything the SCAPI deployment operations need
- * to build a client. The presence of one signals SCAPI eligibility to
+ * SCAPI MRT connection bundle: everything a SCAPI MRT operation needs to build a
+ * client. The presence of one signals SCAPI eligibility to
  * {@link resolveMrtBackend} / {@link runMrtWithFallback}.
  */
 export interface ScapiMrtConnection {
