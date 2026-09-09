@@ -103,7 +103,7 @@ export class B2CDxMcpServer extends McpServer {
     name: string,
     description: string,
     inputSchema: ZodRawShape,
-    handler: (args: Record<string, unknown>) => Promise<CallToolResult>,
+    handler: (args: Record<string, unknown>, context?: {signal?: AbortSignal}) => Promise<CallToolResult>,
     metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {annotations?: ToolAnnotations} = {},
   ): void {
     const wrappedHandler = async (args: Record<string, unknown>, context: ServerContext): Promise<CallToolResult> => {
@@ -111,7 +111,7 @@ export class B2CDxMcpServer extends McpServer {
       if (clientInfo) this.telemetry?.addAttributes({clientName: clientInfo.name, clientVersion: clientInfo.version});
       const startTime = Date.now();
       try {
-        const result = await handler(args);
+        const result = await handler(args, {signal: context.mcpReq?.signal});
         const runTimeMs = Date.now() - startTime;
 
         // Extract error message from CallToolResult content when isError is true

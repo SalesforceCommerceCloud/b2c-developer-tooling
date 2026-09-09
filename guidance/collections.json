@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "featuredResources": ["mcp/server", "mcp/debugger", "mcp/b2c-config"],
+  "featuredResources": ["mcp/server", "mcp/debugger", "mcp/b2c-config", "mcp/scapi"],
   "collections": [
     {"id": "b2c-cli", "title": "B2C CLI Workflows", "plugin": "b2c-cli", "isGA": true},
     {

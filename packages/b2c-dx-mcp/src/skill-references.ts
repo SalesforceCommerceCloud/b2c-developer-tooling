@@ -15,4 +15,5 @@ export const MCP_SKILL_REFERENCES = {
   configSources: {uri: 'skill://mcp/b2c-config/SKILL.md', section: 'where-configuration-comes-from'},
   debuggerPrerequisites: {uri: 'skill://mcp/debugger/SKILL.md', section: 'prerequisites'},
   debuggerRecovery: {uri: 'skill://mcp/debugger/SKILL.md', section: 'recovery'},
+  scapiAuthentication: {uri: 'skill://mcp/scapi/SKILL.md', section: 'authentication'},
 } satisfies Record<string, SkillReference>;

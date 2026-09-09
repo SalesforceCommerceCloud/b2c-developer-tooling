@@ -14,10 +14,10 @@ access them.
 
 The `skills_read` tool gives your assistant access to:
 
-- **B2C CLI workflows** for deployment, configuration, debugging, and other CLI tasks.
+- **B2C CLI workflows** for deployment, configuration, debugging, jobs, and site archive imports/exports.
 - **B2C Commerce development skills** for cartridges, platform APIs, and storefront implementation.
 - **Storefront Next skills** for building and extending your storefront.
-- **MCP skills** for server setup, tool selection, Commerce configuration, and debugging.
+- **MCP skills** for server setup, tool selection, Commerce configuration, debugging, and SCAPI code mode.
 
 Clients that support MCP resources can also browse the skill index and open
 skills directly. Both access methods include the same skill library.
@@ -32,7 +32,7 @@ references and product documentation.
 Follow the [MCP installation guide](./installation) for your client. Skills are
 enabled with every toolset and need no additional configuration.
 
-MCP setup, configuration, and debugger skills remain available as resources
+MCP setup, configuration, debugger, and SCAPI skills remain available as resources
 with any tool selection. If you select individual tools with `--tools`, include
 `skills_read` to access the broader B2C, CLI, and Storefront Next collections.
 To make only skills available:

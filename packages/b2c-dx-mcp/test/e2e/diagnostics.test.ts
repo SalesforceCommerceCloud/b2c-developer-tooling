@@ -13,7 +13,7 @@ describe('consolidated diagnostics over stdio', function () {
   let client: McpE2EClient;
 
   before(async () => {
-    client = new McpE2EClient();
+    client = new McpE2EClient({args: ['--allow-non-ga-tools']});
     await client.start();
   });
 
@@ -26,7 +26,7 @@ describe('consolidated diagnostics over stdio', function () {
     expect(names.filter((name) => /^(mrt_)?logs_/.test(name))).to.have.length(6);
     const reference = readFileSync(new URL('../../../../docs/mcp/toolsets.md', import.meta.url), 'utf8');
     const documented = [...reference.matchAll(/^\| `([a-z_]+)`\s+\|/gm)].map((match) => match[1]);
-    expect(names).to.have.members(documented);
+    expect(names).to.have.members([...documented, 'metrics_get']);
   });
 
   for (const name of ['logs_watch', 'mrt_logs_watch']) {

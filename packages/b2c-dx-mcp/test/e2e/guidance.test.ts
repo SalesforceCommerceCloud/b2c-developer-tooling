@@ -12,7 +12,7 @@ import {McpE2EClient} from './stdio-client.js';
 interface GuidanceToolResult {
   isError?: boolean;
   content: {type: string; text: string}[];
-  structuredContent: {result: GuidancePage | GuidanceRead; error?: {code: string}};
+  structuredContent: {result: GuidancePage | GuidanceRead; error?: {code: string; sections?: {id: string}[]}};
 }
 
 describe('guidance over real stdio', function () {
@@ -42,6 +42,7 @@ describe('guidance over real stdio', function () {
         'skill://mcp/server/SKILL.md',
         'skill://mcp/b2c-config/SKILL.md',
         'skill://mcp/debugger/SKILL.md',
+        'skill://mcp/scapi/SKILL.md',
       ]);
       for (const resource of resources) {
         const {contents} = (await restricted.call('resources/read', {uri: resource.uri})) as {
@@ -85,6 +86,20 @@ describe('guidance over real stdio', function () {
       expect(Buffer.byteLength(property.description)).to.be.at.most(80);
   });
 
+  it('recovers a missing section over stdio without reading the whole file', async () => {
+    const uri = 'skill://b2c-cli/b2c-job/references/EXPORT.md';
+    const failed = await call({uri, section: 'export-data-units'});
+    expect(failed.isError).to.equal(true);
+    const error = failed.structuredContent.error!;
+    expect(error.code).to.equal('SECTION_NOT_FOUND');
+    expect(error.sections!.map(({id}) => id)).to.include('available-data-units');
+    const retry = await call({uri, section: 'available-data-units'});
+    expect(retry.isError).not.to.equal(true);
+    const result = retry.structuredContent.result as GuidanceRead;
+    expect(result.content).to.include('campaigns_and_promotions');
+    expect(result.content).not.to.include('Compact Results');
+  });
+
   it('paginates the complete catalog without docs-topic restrictions or duplicate entries', async () => {
     const ids: string[] = [];
     let offset: number | undefined = 0;
@@ -108,7 +123,7 @@ describe('guidance over real stdio', function () {
   });
 
   it('reads published MCP skills identically through resources and tools', async () => {
-    for (const id of ['mcp/server', 'mcp/debugger', 'mcp/b2c-config', 'b2c-cli/b2c-code']) {
+    for (const id of ['mcp/server', 'mcp/debugger', 'mcp/b2c-config', 'mcp/scapi', 'b2c-cli/b2c-code']) {
       const response = await call({id});
       const initial = response.structuredContent.result as GuidanceRead;
       expect(initial.uri).to.equal(`skill://${id}/SKILL.md`);
@@ -166,6 +181,7 @@ describe('guidance over real stdio', function () {
     expect(listed.resources.map((resource) => resource.name).sort()).to.deep.equal([
       'mcp/b2c-config',
       'mcp/debugger',
+      'mcp/scapi',
       'mcp/server',
       'skill-index',
     ]);

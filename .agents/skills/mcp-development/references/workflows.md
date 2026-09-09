@@ -71,5 +71,11 @@ access instruction. Author shared facts once and check configuration/authenticat
 claims against the resolver and shared skills.
 
 Use ATX headings for section reads and verify exact IDs through the catalog.
+Missing-section errors should return available headings for an exact retry,
+without requiring a full file read. Keep examples selective: required and
+task-relevant schema fields, concise verification results, and file-backed CLI
+output when execution records are large. Preserve errors and diagnostics in
+projections. Move conditional procedures into linked references rather than
+making one workflow load an entire neighboring skill.
 Examples must use real tools and supported fields. Do not create scripts/assets
 as if the Markdown resource template executes or installs them.

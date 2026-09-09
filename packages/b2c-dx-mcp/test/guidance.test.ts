@@ -68,6 +68,21 @@ describe('guidance distribution and result contracts', () => {
     expect((await tool.handler({unexpected: true})).isError).to.equal(true);
   });
 
+  it('returns section choices on a failed read without requiring the full skill', async () => {
+    const tool = createGuidanceTool();
+    const uri = 'skill://mcp/server/SKILL.md';
+    const response = await tool.handler({uri, section: 'missing'});
+    expect(response.isError).to.equal(true);
+    const {error} = response.structuredContent as {error: {code: string; sections: {id: string}[]}};
+    expect(error.code).to.equal('SECTION_NOT_FOUND');
+    expect(error).not.to.have.any.keys('content', 'suggestions');
+    expect(error.sections.length).to.be.greaterThan(0);
+    expect(JSON.parse((response.content[0] as {text: string}).text)).to.deep.equal(response.structuredContent);
+    const retry = await tool.handler({uri, section: error.sections[0].id});
+    expect(retry.isError).not.to.equal(true);
+    expect(z.object(tool.outputSchema!).safeParse(retry.structuredContent).success).to.equal(true);
+  });
+
   it('keeps guidance directory-agnostic and filters the full catalog by collection', async () => {
     const tool = createGuidanceTool();
     expect(tool.inputSchema).not.to.have.property('projectDirectory');

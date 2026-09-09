@@ -2,6 +2,7 @@ packages:
   - packages/*
   - docs
   - skills
+  - schemas
 
 catalog:
   '@eslint/compat': ^1

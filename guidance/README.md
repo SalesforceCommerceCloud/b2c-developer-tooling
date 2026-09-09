@@ -52,13 +52,14 @@ resource entrypoints concise; link broader skills by exact ID.
 | MCP server                       | Optional resource: installation, toolset customization, tool choice, and discovery.                                |
 | B2C configuration                | Optional resource: shared sources, project/instance selection, masked inspection, and setup troubleshooting.       |
 | Debugger                         | Optional resource: bounded capture, external triggers, side effects, cleanup.                                      |
-| SCAPI code mode                  | Future resource when implemented: execution model, API discovery, result limits, mutation semantics.               |
+| SCAPI code mode                  | Required acknowledgment: discovery, authentication, execution limits, and mutation semantics.                      |
 | Log watches                      | Keep existing skills; add a resource only if real use exposes lifecycle mistakes not covered by tool descriptions. |
 | Configuration inspection         | Direct tool; no prerequisite skill or acknowledgment.                                                              |
 | Platform development, CLI skills | Discover through the index or tool search; read through the resource template or tool.                             |
 
-Resource featuring and required acknowledgment are independent. No gate is
-active at this checkpoint. A later gate belongs to a specific tool and names
+Resource featuring and required acknowledgment are independent. SCAPI code-mode
+tools require `skillRead: true` after a resource or tool read of `mcp/scapi`.
+Other tools remain ungated. A gate belongs to a specific tool and names
 one skill; resource and tool reads satisfy the same requirement. General skills
 linked for extra detail are not automatically prerequisites.
 
@@ -107,6 +108,8 @@ Changesets.
 - Results have an object root with a discriminated `result.kind`. Successful
   tool responses contain identical JSON in text and `structuredContent`.
   Errors use `isError` plus `error.code`, `message`, and recovery suggestions.
+  `SECTION_NOT_FOUND` instead supplies `error.sections` (IDs/titles from the
+  selected accessible file) for an exact retry without reading full content.
 - All skill resources retain the MCP resource shape and full-file semantics.
   Tool reads return the same complete file, or an explicitly selected section.
   Generation rejects files over 64 KiB; split oversized skills into references.
@@ -138,7 +141,7 @@ Changesets.
    retirement and record replacement workflows and compatibility/release impact.
 4. Selective acknowledgment: introduce a gate only when observed misuse or a
    complex execution contract warrants it. The debugger skill remains optional;
-   SCAPI code mode is a future candidate. Use fixed `skillAcknowledged: true`, with
+   SCAPI code mode now uses fixed `skillRead: true`, with
    the exact skill ID once in the tool description. Property description:
    `True after reading the referenced skill.` No rotating receipt or forced
    reread when the same skill has already been read.

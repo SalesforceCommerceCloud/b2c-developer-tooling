@@ -1,0 +1,2531 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Customers",
+    "version": "1.1.3",
+    "x-api-type": "Admin",
+    "x-api-family": "Customer"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/customer/customers/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/customer-lists/{customerListId}/customer-search": {
+      "post": {
+        "operationId": "searchCustomerInCustomerList",
+        "parameters": [
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists",
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/customer-lists/{customerListId}/customers": {
+      "post": {
+        "operationId": "createCustomerList",
+        "parameters": [
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Customer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/customer-lists/{customerListId}/customers/{customerNo}": {
+      "get": {
+        "operationId": "getCustomerFromCustomerList",
+        "parameters": [
+          {
+            "name": "customerNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists",
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "createCustomerInCustomerList",
+        "parameters": [
+          {
+            "name": "customerNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Customer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteCustomerFromCustomerList",
+        "parameters": [
+          {
+            "name": "customerNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateCustomerInCustomerList",
+        "parameters": [
+          {
+            "name": "customerNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Customer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/customer-lists/{customerListId}/customers/{customerNo}/addresses": {
+      "get": {
+        "operationId": "getAddressesForCustomerFromCustomerList",
+        "parameters": [
+          {
+            "name": "customerNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAddressResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists",
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createAddressForCustomerInCustomerList",
+        "parameters": [
+          {
+            "name": "customerNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerAddress"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAddress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/customer-lists/{customerListId}/customers/{customerNo}/addresses/{addressId}": {
+      "get": {
+        "operationId": "getAddressForCustomerFromCustomerList",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAddress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists",
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "removeAddressForCustomerInCustomerList",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateAddressForCustomerInCustomerList",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "customerListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerAddress"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAddress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is unknown.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. This error is thrown when the ID does not match any of the customer group sites or if the ID is ill-formed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customerlists.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/customer-group-search": {
+      "post": {
+        "operationId": "searchCustomerGroup",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerGroupSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown if the search term in term query does not match any of the customer group or if the query is ill-formed.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customergroups",
+              "sfcc.customergroups.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/customer-groups": {
+      "get": {
+        "operationId": "getCustomerGroups",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerGroupResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Thrown when a specified parameter value is invalid.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customergroups",
+              "sfcc.customergroups.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/customer-groups/{customerGroupId}/members": {
+      "put": {
+        "operationId": "assignCustomerGroupMembers",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "customerGroupId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/CustomerGroupId"
+            }
+          },
+          {
+            "name": "customerNos",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CustomerNo"
+              },
+              "maxItems": 50,
+              "minItems": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully returned the assigned customer group members.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerGroupMemberResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. The customer group is not a static group.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. The customer group does not exist or one or more customers were not found.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. The customer group is already in deletion state.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customergroups",
+              "sfcc.customergroups.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "unassignCustomerGroupMembers",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "customerGroupId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/CustomerGroupId"
+            }
+          },
+          {
+            "name": "customerNos",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CustomerNo"
+              },
+              "maxItems": 50,
+              "minItems": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The customers were successfully unassigned from the customer group."
+          },
+          "404": {
+            "description": "Not Found. The customer group does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. The customer group is already in deletion state.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.customergroups",
+              "sfcc.customergroups.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Query": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolQuery": {
+            "$ref": "#/components/schemas/BoolQuery"
+          },
+          "filteredQuery": {
+            "$ref": "#/components/schemas/FilteredQuery"
+          },
+          "matchAllQuery": {
+            "$ref": "#/components/schemas/MatchAllQuery"
+          },
+          "nestedQuery": {
+            "$ref": "#/components/schemas/NestedQuery"
+          },
+          "termQuery": {
+            "$ref": "#/components/schemas/TermQuery"
+          },
+          "textQuery": {
+            "$ref": "#/components/schemas/TextQuery"
+          }
+        }
+      },
+      "BoolQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "must": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "mustNot": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "should": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolFilter": {
+            "$ref": "#/components/schemas/BoolFilter"
+          },
+          "queryFilter": {
+            "$ref": "#/components/schemas/QueryFilter"
+          },
+          "range2Filter": {
+            "$ref": "#/components/schemas/Range2Filter"
+          },
+          "rangeFilter": {
+            "$ref": "#/components/schemas/RangeFilter"
+          },
+          "termFilter": {
+            "$ref": "#/components/schemas/TermFilter"
+          }
+        }
+      },
+      "BoolFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            }
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or",
+              "not"
+            ]
+          }
+        },
+        "required": [
+          "operator"
+        ]
+      },
+      "QueryFilter": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Field": {
+        "type": "string",
+        "maxLength": 260
+      },
+      "Range2Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filterMode": {
+            "type": "string",
+            "default": "overlap",
+            "enum": [
+              "overlap",
+              "containing",
+              "contained"
+            ]
+          },
+          "fromField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "fromValue": {},
+          "toField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "toValue": {}
+        },
+        "required": [
+          "fromField",
+          "toField"
+        ]
+      },
+      "RangeFilter": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "from": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "to": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "TermFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "field",
+          "operator"
+        ]
+      },
+      "FilteredQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/Filter"
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "filter",
+          "query"
+        ]
+      },
+      "MatchAllQuery": {
+        "type": "object"
+      },
+      "NestedQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "scoreMode": {
+            "type": "string",
+            "enum": [
+              "avg",
+              "total",
+              "max",
+              "none"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "query"
+        ]
+      },
+      "TermQuery": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "fields",
+          "operator"
+        ]
+      },
+      "TextQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "searchPhrase": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fields",
+          "searchPhrase"
+        ]
+      },
+      "String256": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "Sort": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/String256"
+              }
+            ]
+          },
+          "sortOrder": {
+            "type": "string",
+            "default": "asc",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "PaginatedSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "hits": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Credentials": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "login": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "passwordQuestion": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "login"
+        ]
+      },
+      "CustomerAddress": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "address1": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "address2": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "addressId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "companyName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "countryCode": {
+            "type": "string",
+            "maxLength": 2
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "etag": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "fullName": {
+            "type": "string",
+            "maxLength": 1027
+          },
+          "jobTitle": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "postBox": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "salutation": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "secondName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "stateCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "suffix": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "suite": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "addressId",
+          "countryCode",
+          "lastName"
+        ]
+      },
+      "Customer": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "birthday": {
+            "type": "string",
+            "format": "date"
+          },
+          "companyName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "credentials": {
+            "$ref": "#/components/schemas/Credentials"
+          },
+          "customerId": {
+            "type": "string",
+            "maxLength": 28
+          },
+          "customerNo": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "fax": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "firstName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "gender": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "jobTitle": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "lastLoginTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "lastVisitTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "phoneBusiness": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "phoneHome": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "phoneMobile": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "preferredLocale": {
+            "type": "string",
+            "maxLength": 5
+          },
+          "previousLoginTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "previousVisitTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "primaryAddress": {
+            "$ref": "#/components/schemas/CustomerAddress"
+          },
+          "salutation": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "secondName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "suffix": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "customerNo",
+          "lastName"
+        ]
+      },
+      "CustomerSearchHit": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Customer"
+              }
+            ]
+          },
+          "relevance": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "data",
+          "relevance"
+        ]
+      },
+      "CustomerSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerSearchHit"
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "CustomerAddressResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerAddress"
+            }
+          }
+        }
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "CustomerGroupRule": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "description"
+        ]
+      },
+      "CustomerGroup": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "inDeletion": {
+            "type": "boolean"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "memberCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rule": {
+            "$ref": "#/components/schemas/CustomerGroupRule"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "system",
+              "dynamic",
+              "static"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "CustomerGroupSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerGroup"
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      },
+      "Select": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[(].*[)]$"
+      },
+      "CustomerGroupResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerGroup"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CustomerGroupId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "CustomerNo": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "CustomerGroupMember": {
+        "type": "object",
+        "properties": {
+          "customerNo": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "login": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "firstName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "lastName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "customerNo"
+        ]
+      },
+      "CustomerGroupMemberResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerGroupMember"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      }
+    },
+    "parameters": {
+      "customerListId": {
+        "name": "customerListId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      },
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "customerNo": {
+        "name": "customerNo",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      },
+      "addressId": {
+        "name": "addressId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "select": {
+        "name": "select",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/Select"
+        }
+      },
+      "customerGroupId": {
+        "name": "customerGroupId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/CustomerGroupId"
+        }
+      },
+      "customerNos": {
+        "name": "customerNos",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/CustomerNo"
+          },
+          "maxItems": 50,
+          "minItems": 1
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.customerlists": "Customer Lists scope READONLY",
+              "sfcc.customerlists.rw": "Customer Lists scope",
+              "sfcc.customergroups": "Customer Groups scope READONLY",
+              "sfcc.customergroups.rw": "Customer Groups scope"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.customerlists": "Customer Lists scope READONLY",
+              "sfcc.customerlists.rw": "Customer Lists scope",
+              "sfcc.customergroups": "Customer Groups scope READONLY",
+              "sfcc.customergroups.rw": "Customer Groups scope"
+            }
+          }
+        }
+      }
+    }
+  }
+}

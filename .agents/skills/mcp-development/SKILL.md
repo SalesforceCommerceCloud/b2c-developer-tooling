@@ -87,9 +87,13 @@ available for future workflows but is not currently used. Test both protocol pat
 Bound waits and returned data. A tool must not await work that requires another
 tool call to release it: debugger capture returns while its trigger is halted.
 Explain pending work, retained breakpoints, cleanup, and resume behavior precisely.
-Skill acknowledgment is separate from mutation authorization; no gate is currently
-active. Add a gate only for a justified complex workflow, with equivalent resource
-and tool reads. Future code-mode permission enforcement belongs at execution time.
+Skill acknowledgment is separate from mutation authorization. Code-mode tools
+require `skillRead: true` after reading `skill://mcp/scapi/SKILL.md` by resource or
+`skills_read`. Check before configuration loading or execution. Put the URI once
+in each tool description; the flag refers to it. Use self-attestation, no dynamic
+receipt or tool-only read tracking. Keep simple inspection ungated. Add further
+gates only for justified complex workflows. Request permissions remain enforced
+at execution time.
 
 Test observable contracts: restricted tool selection with readable MCP resources,
 excluded collections rejecting direct reads, source/resource/tool parity, emitted
@@ -97,3 +101,28 @@ section destinations, clean output without unnecessary pointers, and lifecycle
 failures. Use the [testing guide](../../../guidance/TESTING.md) for build/packaged
 stdio checks. Regenerate skills before source-parity tests. Keep authoring checks
 focused; do not test prose by matching whole descriptions.
+
+## SCAPI code mode
+
+Follow Cloudflare's discovery/execution convention: JavaScript async functions,
+`spec.paths` for offline discovery, and an authenticated `scapi.request` helper.
+Use native Node execution; no custom language parser or evaluator. A disposable
+child bounds runtime and cleans up work, but is not a security sandbox. Keep
+credentials in the host and apply SDK safety rules for the resolved target at
+each helper request. Preserve cancellation and resolution. Never replay a whole
+program automatically after writes; let SCAPI validate request payloads.
+
+Classify authentication per operation from schema security, including mixed
+Admin/Shopper alternatives. Expose runtime support separately from configured
+access. Resolve credentials only after choosing a supported flow. Distinguish
+missing config, rejected credentials/scopes, and unsupported execution; never
+advertise configuring a SLAS client as enabling an unimplemented flow. Keep
+operation/tenant scopes in actionable auth failures; preserve upstream HTTP
+status/body and avoid treating every 403 as proof of missing scopes. Apply this
+in the code-mode request wrapper around existing SDK middleware.
+
+Standard OpenAPI JSON belongs in the private `schemas/` workspace, bundled by the
+SDK through a regular dependency. Builds/CI use checked-in contracts; live Schemas
+API access is optional enrichment. Refreshes need a schema-package changeset so
+native Changesets dependency propagation releases the SDK and MCP. Keep the
+manifest portable for consumers in other languages.

@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-09T00:59:32.221Z",
+  "generatedAt": "2026-09-09T03:10:33.366Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -476,7 +476,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security.md",
-      "headings": "Limit available tools • Protect credentials and data • Deployments {#deployments} • Debugger access {#debugger} • Safety settings • Telemetry {#telemetry}",
+      "headings": "Limit available tools • Protect credentials and data • Deployments {#deployments} • Debugger access {#debugger} • Safety settings • SCAPI code mode • Telemetry {#telemetry}",
       "preview": "Control MCP tool access, protect Commerce credentials, and understand deployment, debugging, and data access."
     },
     {
@@ -494,7 +494,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Skills and documentation {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
+      "headings": "Skills and documentation {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • SCAPI code mode (preview) • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
       "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {

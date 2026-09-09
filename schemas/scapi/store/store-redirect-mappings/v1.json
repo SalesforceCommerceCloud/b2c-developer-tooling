@@ -1,0 +1,607 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Store Redirect Mappings",
+    "version": "1.2.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Store"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/store/store-redirect-mappings/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/store-redirect-mappings": {
+      "get": {
+        "operationId": "getAllStoreRedirectMappings",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "sourceStoreId",
+              "enum": [
+                "sourceStoreId",
+                "targetStoreId"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "asc",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Store redirect mappings returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreRedirectMappingsResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.store-redirect-mappings",
+              "sfcc.store-redirect-mappings.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/store-redirect-mappings/actions/bulk": {
+      "post": {
+        "operationId": "upsertStoreRedirectMappings",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreRedirectMappingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "207": {
+            "description": "Multi-status response for non-atomic bulk operation. The response contains operation counts (total, success, failures). All items might succeed (failures = 0) or some might fail (failures > 0).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreRedirectMappingsBulkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.store-redirect-mappings.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/store-redirect-mappings/actions/bulk-delete": {
+      "post": {
+        "operationId": "deleteStoreRedirectMappings",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreRedirectMappingsDeleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "207": {
+            "description": "Multi-status response for non-atomic bulk operation. The response contains operation counts (total, success, failures). All items might succeed (failures = 0) or some might fail (failures > 0).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreRedirectMappingsBulkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.store-redirect-mappings.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/store-redirect-mappings/{sourceStoreId}": {
+      "get": {
+        "operationId": "getStoreRedirectMapping",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "sourceStoreId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SourceStoreId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specified store redirect mapping successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreRedirectMapping"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Store redirect mapping not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.store-redirect-mappings",
+              "sfcc.store-redirect-mappings.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Limit": {
+        "type": "integer",
+        "format": "int32",
+        "default": 10,
+        "minimum": 1
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Limit"
+              }
+            ],
+            "maximum": 200
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "SourceStoreId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "TargetStoreId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "StoreRedirectMapping": {
+        "type": "object",
+        "properties": {
+          "sourceStoreId": {
+            "$ref": "#/components/schemas/SourceStoreId"
+          },
+          "targetStoreId": {
+            "$ref": "#/components/schemas/TargetStoreId"
+          }
+        },
+        "required": [
+          "sourceStoreId",
+          "targetStoreId"
+        ]
+      },
+      "StoreRedirectMappingsResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreRedirectMapping"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "StoreRedirectMappingsRequest": {
+        "type": "object",
+        "properties": {
+          "storeRedirectMappings": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            },
+            "minProperties": 1
+          }
+        },
+        "required": [
+          "storeRedirectMappings"
+        ]
+      },
+      "StoreRedirectMappingsBulkResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failures": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "failures",
+          "success",
+          "total"
+        ]
+      },
+      "StoreRedirectMappingsDeleteRequest": {
+        "type": "object",
+        "properties": {
+          "sourceStoreIds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceStoreId"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "sourceStoreIds"
+        ]
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dw/oauth2/access_token",
+            "scopes": {
+              "sfcc.store-redirect-mappings": "Read access to store redirect mapping resources",
+              "sfcc.store-redirect-mappings.rw": "Read and write access to store redirect mapping resources"
+            }
+          }
+        }
+      }
+    }
+  }
+}

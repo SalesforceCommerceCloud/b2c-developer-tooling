@@ -435,8 +435,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
               'resources/read': {ttlMs: 300_000, cacheScope: 'private'},
             },
             instructions:
-              'Optional skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
-              'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index.',
+              'Skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
+              'setup/toolsets skill://mcp/server/SKILL.md; code mode (required) skill://mcp/scapi/SKILL.md; catalog skill://index.',
           },
         );
 

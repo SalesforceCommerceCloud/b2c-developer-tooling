@@ -40,7 +40,10 @@ idempotent=false, openWorld=true. Do not rely on those defaults.
   debugging. Possible application side effects do not justify a destructive hint.
   Explain evaluation/trigger effects and enforce authorization independently.
 - Cartridge deployment overwrites existing deployed files: destructive,
-  non-idempotent, open-world. This is the current catalog's only destructive tool.
+  non-idempotent, open-world.
+- `scapi_search` searches bundled contracts: read, idempotent, closed-world.
+  `scapi_execute` advertises create/update/delete API operations: destructive,
+  non-idempotent, open-world. These hints describe purpose, not a Node sandbox.
 - MRT push creates a new bundle and optionally activates it without deleting the
   previous bundle: write, non-idempotent, open-world. Activation is not deletion.
 - In this local stdio server, log watches are read-only observers. Start/stop
@@ -64,7 +67,7 @@ using DELETE is not automatically equivalent. Prefer a non-destructive write whe
 the primary operation changes state without deleting or overwriting user data.
 The spec describes destructive=false as additive updates; apply that distinction
 to user data/code, not ephemeral delivery state or ordinary debugger control.
-For future code mode, keep read and write execution separate and enforce permissions
+For code mode, separate offline discovery from API execution and enforce permissions
 at execution. Neither a non-destructive hint nor a benign example expression
 authorizes arbitrary code or establishes read-only behavior.
 

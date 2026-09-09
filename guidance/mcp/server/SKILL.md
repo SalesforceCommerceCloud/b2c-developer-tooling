@@ -46,6 +46,7 @@ Use launch arguments/environment for server settings, not project `.env` or `dw.
 - Deploy cartridges: `cartridge_deploy`; CLI scripts/extra flags: `b2c code deploy`.
   Confirm instance/version and preserve returned `resolution`.
 - Debug: [MCP debugger](skill://mcp/debugger/SKILL.md). CLI/IDE only when requested.
+- SCAPI code mode: read [the skill](skill://mcp/scapi/SKILL.md) before `scapi_search` or `scapi_execute`.
 - Custom API scaffold: `b2c scaffold generate custom-api`; no MCP equivalent.
 - API/product documentation: `docs_search` / `docs_read`.
 
@@ -63,6 +64,9 @@ detail for observed conditions: read the URI, or pass its URI and `section` to
 Tools needing a skill name it in their description; no universal read is
 required. Resource and tool reads are equivalent; do not read both.
 Acknowledgment does not approve mutations.
+
+When scripting tool calls, emit `structuredContent` when present, otherwise
+`content`; emitting both repeats the payload.
 
 ## Setup references
 

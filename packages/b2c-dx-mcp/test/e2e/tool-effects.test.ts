@@ -12,6 +12,7 @@ const groups = [
   {
     names: [
       'skills_read',
+      'scapi_search',
       'config_inspect',
       'debug_list_sessions',
       'docs_list',
@@ -48,7 +49,7 @@ const groups = [
     annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true},
   },
   {
-    names: ['cartridge_deploy'],
+    names: ['cartridge_deploy', 'scapi_execute'],
     annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true},
   },
 ];

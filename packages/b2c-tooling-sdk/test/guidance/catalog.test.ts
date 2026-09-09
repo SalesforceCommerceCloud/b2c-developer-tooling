@@ -10,6 +10,7 @@ import {join} from 'node:path';
 import {expect} from 'chai';
 import {
   GuidanceCatalog,
+  GuidanceError,
   guidanceHeadings,
   type GuidanceManifest,
   type GuidanceRead,
@@ -124,6 +125,33 @@ describe('offline guidance catalog', () => {
       '## Cleanup\n\nVerify deployment.\n',
     );
     expect(() => catalog.read({id: 'b2c/deploy', section: 'missing'})).to.throw('Unknown section');
+  });
+
+  it('recovers missing sections using only the selected accessible file headings', () => {
+    const catalog = new GuidanceCatalog(root);
+    for (const file of ['SKILL.md', 'references/cleanup.md']) {
+      let failure: unknown;
+      try {
+        catalog.read({id: 'b2c/deploy', file, section: 'missing'});
+      } catch (error) {
+        failure = error;
+      }
+      expect(failure).to.be.instanceOf(GuidanceError);
+      const error = failure as GuidanceError;
+      expect(error.code).to.equal('SECTION_NOT_FOUND');
+      expect(error.sections).to.deep.equal(
+        file === 'SKILL.md'
+          ? [
+              {id: 'deploy', title: 'Deploy'},
+              {id: 'cleanup', title: 'Cleanup'},
+            ]
+          : [{id: 'cleanup', title: 'Cleanup'}],
+      );
+      expect(error).not.to.have.property('content');
+      const retry = catalog.read({id: 'b2c/deploy', file, section: error.sections![0].id}) as GuidanceRead;
+      expect(retry.content).not.to.equal('');
+    }
+    expect(() => catalog.read({id: 'next/deploy', section: 'missing'})).to.throw('not available');
   });
 
   it('lists only featured entrypoints while allowing all catalog files through resources', () => {

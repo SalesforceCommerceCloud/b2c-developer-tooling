@@ -46,7 +46,7 @@ export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> extends Tool
  */
 export interface McpTool<T extends ZodRawShape = ZodRawShape> extends McpToolConfig<T> {
   /** Handler function that executes the tool */
-  handler: (args: z.infer<z.ZodObject<T>>) => Promise<ToolResult>;
+  handler: (args: z.infer<z.ZodObject<T>>, context?: {signal?: AbortSignal}) => Promise<ToolResult>;
 }
 
 /**

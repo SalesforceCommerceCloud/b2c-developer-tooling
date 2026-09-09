@@ -50,10 +50,10 @@ Try these prompts in fresh conversations:
 Look for short discovery calls, correct exact IDs, selective reference reads,
 and appropriate CLI/MCP preferences. The agent should not load the entire
 catalog's prose. Resource listings should contain `skill-index`, `mcp/server`,
-`mcp/b2c-config`, and `mcp/debugger`. Read `skill://index` to discover the full catalog, then read
+`mcp/b2c-config`, `mcp/debugger`, and `mcp/scapi`. Read `skill://index` to discover the full catalog, then read
 one relevant linked skill URI that is not individually listed. All skills remain
 available through `skills_read` by collection, query, or ID. Both readers should
-return identical skill text. No skill acknowledgment gate is active at this checkpoint.
+return identical skill text. Only SCAPI code mode requires a skill-read acknowledgment.
 
 With `--tools config_inspect`, verify the same top-level resources remain readable,
 the index lists only `mcp` entries, and shared collection URIs are unavailable.
@@ -67,6 +67,38 @@ test project; no separate package installation is needed. Restart MCP after
 source edits. After skill edits, run
 `pnpm --filter @salesforce/b2c-dx-mcp run generate:guidance` before restarting.
 Use the tarball preparation to assess release packaging.
+
+## SCAPI code mode checkpoint
+
+Add `--allow-non-ga-tools` to the MCP arguments and restart the session. If
+`--tools` limits selection, include `scapi_search`, `scapi_execute`, and
+`config_inspect`. The standard schema corpus ships inside the SDK tarball;
+normal builds and CI need no tenant or Schemas API connection. The packed smoke
+test checks product contract discovery outside the workspace.
+
+Use an existing test project with Account Manager Admin credentials, short code,
+tenant ID, and the relevant scopes (`sfcc.products.rw` for product creation,
+plus catalog read access if finding the catalog). Choose a disposable product ID
+and an actual master catalog. In a fresh conversation:
+
+> Use the B2C MCP to create an offline test product named "MCP code mode test"
+> with ID "mcp-code-mode-test-001" in this project's sandbox. Inspect the
+> configured target with secrets masked and discover the required product API
+> fields. Find the appropriate master catalog, asking me if there is ambiguity.
+> Check that the product ID is unused; stop if it exists. Create it, read it back,
+> and report the ID, catalog, name, and offline status. Do not deploy cartridges,
+> change existing products, or delete the test product.
+
+Look for targeted schema discovery, configured IDs, a GET/404 existence check,
+one create, and read-back. Before code-mode calls, the agent should read
+`skill://mcp/scapi/SKILL.md` through resources or `skills_read`, then pass
+`skillRead: true` on both tools. Missing/false acknowledgment must fail before
+configuration loading or code execution; `config_inspect` stays ungated.
+No live Schemas API access is needed for standard
+contracts. HTTP validation errors should remain visible; failed programs must
+not be replayed blindly. With `SFCC_SAFETY_LEVEL=READ_ONLY`, the write should
+stop unless an existing explicit allow rule permits it. This checkpoint does
+not implement interactive continuation of confirmation-required requests.
 
 For connection diagnostics, add `--log-level debug` to the MCP command arguments
 and restart the test session. The server logs client identity and the protocol

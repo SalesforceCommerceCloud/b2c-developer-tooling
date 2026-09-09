@@ -1,0 +1,2319 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Shopper Experience",
+    "version": "1.7.0",
+    "x-api-type": "Shopper",
+    "x-api-family": "Experience"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/experience/shopper-experience/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/pages": {
+      "get": {
+        "operationId": "getPages",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "aspectTypeId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "aspectAttributes",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "parameters",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Business Object ID Invalid\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested Aspect Type Not Found\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-experience",
+              "sfcc.shopper-experience.pages",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-experience",
+              "sfcc.shopper-experience.pages",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/pages/{pageId}": {
+      "get": {
+        "operationId": "getPage",
+        "parameters": [
+          {
+            "name": "pageId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "aspectAttributes",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "parameters",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Query Parameter\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized Access\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested Page Not Found\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-experience",
+              "sfcc.shopper-experience.pages",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-experience",
+              "sfcc.shopper-experience.pages",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/components/{componentId}": {
+      "get": {
+        "operationId": "getComponent",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "componentId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "parameters",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Component"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Parameter\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized Access\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Component Not Found\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-experience",
+              "sfcc.shopper-experience.pages"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-experience",
+              "sfcc.shopper-experience.pages"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/contents/{id}": {
+      "get": {
+        "operationId": "getContent",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ContentId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Content"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Content Asset Not Found\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-experience.contents"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-experience.contents"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/contents": {
+      "get": {
+        "operationId": "getMultipleContent",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ContentId"
+              },
+              "maxItems": 50,
+              "minItems": 1
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-experience.contents"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-experience.contents"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/content-search": {
+      "get": {
+        "operationId": "searchContent",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "refine",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-experience.contents"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-experience.contents"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/folders/{id}": {
+      "get": {
+        "operationId": "getContentFolder",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/FolderId"
+            }
+          },
+          {
+            "name": "levels",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "maximum": 2,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentFolder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Folder Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-experience.folders"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-experience.folders"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/folders": {
+      "get": {
+        "operationId": "getContentFolders",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/FolderId"
+                  }
+                ]
+              },
+              "maxItems": 50,
+              "minItems": 1
+            }
+          },
+          {
+            "name": "levels",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "maximum": 2,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentFolderResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-experience.folders"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-experience.folders"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/qualifiers/resolve": {
+      "post": {
+        "operationId": "resolveQualifiers",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualifierResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success. All qualifiers have been resolved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualifierResolveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-experience.qualifiers"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-experience.qualifiers"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "LanguageCountry": {
+        "type": "string",
+        "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
+      },
+      "LanguageCode": {
+        "type": "string",
+        "pattern": "^[a-z][a-z]$"
+      },
+      "DefaultFallback": {
+        "type": "string",
+        "default": "default",
+        "pattern": "^default$"
+      },
+      "LocaleCode": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/LanguageCountry"
+          },
+          {
+            "$ref": "#/components/schemas/LanguageCode"
+          },
+          {
+            "$ref": "#/components/schemas/DefaultFallback"
+          }
+        ]
+      },
+      "Region": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Component"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Component": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "typeId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "fragment": {
+            "type": "boolean"
+          },
+          "embedded": {
+            "type": "boolean"
+          },
+          "contentLinkUuid": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "localized": {
+            "type": "boolean"
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "custom": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "designMetadata": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Region"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "typeId"
+        ]
+      },
+      "Page": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "typeId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "aspectTypeId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "pageTitle": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "pageDescription": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "pageKeywords": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "custom": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "localized": {
+            "type": "boolean"
+          },
+          "designMetadata": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Region"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "typeId"
+        ]
+      },
+      "PageResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Page"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "ContentId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "Content": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContentId"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "pageDescription": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "pageKeywords": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "pageTitle": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "ContentResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Content"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "ContentSearchRefinementValue": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "hitCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "ContentSearchRefinement": {
+        "type": "object",
+        "properties": {
+          "attributeId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentSearchRefinementValue"
+            }
+          }
+        },
+        "required": [
+          "attributeId"
+        ]
+      },
+      "ContentSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Content"
+            }
+          },
+          "selectedRefinements": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          "refinements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentSearchRefinement"
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      },
+      "FolderId": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "ContentFolder": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "parentFolderId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "pageDescription": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "pageKeywords": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "pageTitle": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "folders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentFolder"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ContentFolderResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentFolder"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CampaignQualifier": {
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "campaignId"
+        ]
+      },
+      "DataBindingRequirement": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ]
+      },
+      "QualifierResolveRequest": {
+        "type": "object",
+        "properties": {
+          "customerGroups": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            },
+            "maxItems": 50
+          },
+          "campaignQualifiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampaignQualifier"
+            },
+            "maxItems": 50
+          },
+          "dataBindings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataBindingRequirement"
+            },
+            "maxItems": 50
+          }
+        }
+      },
+      "QualifierResolveResponse": {
+        "type": "object",
+        "properties": {
+          "customerGroups": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "campaignQualifiers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "boolean"
+              }
+            }
+          },
+          "campaigns": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "dataBindings": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "categoryId": {
+        "name": "categoryId",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "productId": {
+        "name": "productId",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 100
+        }
+      },
+      "aspectTypeId": {
+        "name": "aspectTypeId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "aspectAttributes": {
+        "name": "aspectAttributes",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "parameters": {
+        "name": "parameters",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "locale": {
+        "name": "locale",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/LocaleCode"
+        }
+      },
+      "pageId": {
+        "name": "pageId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "componentId": {
+        "name": "componentId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "contentId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ContentId"
+        }
+      },
+      "contentIds": {
+        "name": "ids",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ContentId"
+          },
+          "maxItems": 50,
+          "minItems": 1
+        }
+      },
+      "contentSearchQuery": {
+        "name": "q",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 1
+        }
+      },
+      "contentSearchRefine": {
+        "name": "refine",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "contentSearchSort": {
+        "name": "sort",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "folderId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/FolderId"
+        }
+      },
+      "levels": {
+        "name": "levels",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "integer",
+          "default": 1,
+          "maximum": 2,
+          "minimum": 0
+        }
+      },
+      "folderIds": {
+        "name": "ids",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FolderId"
+              }
+            ]
+          },
+          "maxItems": 50,
+          "minItems": 1
+        }
+      },
+      "sfdcUsid": {
+        "name": "sfdc_usid",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "sfdcDwDnt": {
+        "name": "sfdc_dw_dnt",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "0",
+            "1"
+          ]
+        }
+      },
+      "personalized": {
+        "name": "personalized",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "none"
+          ]
+        }
+      },
+      "sfdcShopperContext": {
+        "name": "sfdc_shopper_context",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "ShopperToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-experience": "Shopper Experience scope READONLY",
+              "sfcc.shopper-experience.pages": "Shopper Experience scope READONLY for pages",
+              "sfcc.shopper-experience.contents": "Shopper Experience scope READONLY for contents",
+              "sfcc.shopper-experience.folders": "Shopper Experience scope READONLY for folders",
+              "sfcc.shopper-experience.qualifiers": "Shopper Experience scope for resolving qualifiers"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/authorize",
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-experience": "Shopper Experience scope READONLY",
+              "sfcc.shopper-experience.pages": "Shopper Experience scope READONLY for pages",
+              "sfcc.shopper-experience.contents": "Shopper Experience scope READONLY for contents",
+              "sfcc.shopper-experience.folders": "Shopper Experience scope READONLY for folders",
+              "sfcc.shopper-experience.qualifiers": "Shopper Experience scope for resolving qualifiers"
+            }
+          }
+        }
+      },
+      "ShopperClientContextToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token?hint=client_context",
+            "scopes": {
+              "sfcc.shopper-experience": "Shopper Experience scope READONLY",
+              "sfcc.shopper-experience.pages": "Shopper Experience scope READONLY for pages",
+              "sfcc.shopper-experience.contents": "Shopper Experience scope READONLY for contents",
+              "sfcc.shopper-experience.folders": "Shopper Experience scope READONLY for folders",
+              "sfcc.shopper-experience.qualifiers": "Shopper Experience scope for resolving qualifiers"
+            }
+          }
+        }
+      }
+    }
+  }
+}

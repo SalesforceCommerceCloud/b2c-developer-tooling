@@ -105,11 +105,15 @@ writeFileSync(
 const env = Object.fromEntries(
   Object.entries(process.env).filter(([key]) => !/^(SFCC_|MRT_|DW_|NODE_OPTIONS$|CODEX_HOME$)/.test(key)),
 );
-const proc = spawn(process.execPath, ['--require', offlineModule, runJs, '--project-directory', workspace], {
-  cwd: workspace,
-  env: {...env, SFCC_DISABLE_TELEMETRY: 'true'},
-  stdio: ['pipe', 'pipe', 'pipe'],
-});
+const proc = spawn(
+  process.execPath,
+  ['--require', offlineModule, runJs, '--allow-non-ga-tools', '--project-directory', workspace],
+  {
+    cwd: workspace,
+    env: {...env, SFCC_DISABLE_TELEMETRY: 'true'},
+    stdio: ['pipe', 'pipe', 'pipe'],
+  },
+);
 let stderr = '';
 proc.stderr.on('data', (chunk) => {
   stderr += chunk;
@@ -175,10 +179,22 @@ try {
     !catalog.tools.some((tool) => ['pwakit_get_guidelines', 'scapi_custom_api_generate_scaffold'].includes(tool.name)),
   );
   assert.ok(!catalog.tools.some((tool) => /^(sfnext_|figma_)/.test(tool.name)));
+  await request('resources/read', {uri: 'skill://mcp/scapi/SKILL.md'});
+  const schemaSearch = await request('tools/call', {
+    name: 'scapi_search',
+    arguments: {
+      skillRead: true,
+      api: 'product/products/v1',
+      code: 'async () => spec.paths["/product/products/v1/organizations/{organizationId}/products/{productId}"].put.operationId',
+    },
+  });
+  assert.notEqual(schemaSearch.isError, true, JSON.stringify(schemaSearch));
+  assert.equal(schemaSearch.structuredContent.result, 'createProduct');
   const resources = await request('resources/list');
   assert.deepEqual(resources.resources.map((resource) => resource.name).sort(), [
     'mcp/b2c-config',
     'mcp/debugger',
+    'mcp/scapi',
     'mcp/server',
     'skill-index',
   ]);

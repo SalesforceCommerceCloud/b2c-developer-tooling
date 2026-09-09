@@ -94,6 +94,7 @@ export class GuidanceError extends Error {
   constructor(
     public readonly code: string,
     message: string,
+    public readonly sections?: {id: string; title: string}[],
   ) {
     super(message);
     this.name = 'GuidanceError';

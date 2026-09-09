@@ -85,6 +85,22 @@ code, and tenant ID. See [authentication and scopes](../guide/authentication#con
 | `scapi_schemas_list`           | Browse and read standard and custom API schemas. | `sfcc.scapi-schemas` |
 | `scapi_custom_apis_get_status` | Check custom endpoint registration.              | `sfcc.custom-apis`   |
 
+### SCAPI code mode (preview)
+
+Enable with `--allow-non-ga-tools`. Available in SCAPI, PWAV3, and STOREFRONTNEXT.
+
+| Tool | Capability |
+| --- | --- |
+| `scapi_search` | Search bundled Admin and Shopper contracts by authentication; no credentials required. |
+| `scapi_execute` | Compose Admin API requests, including creating, updating, and deleting records. |
+
+Execution uses the selected project's OAuth credentials, short code, and tenant ID.
+Grant the scopes needed for your task; creating products requires `sfcc.products.rw`.
+This preview supports standard Admin JSON requests. Shopper and custom API
+contracts can be inspected, but their execution is not yet supported.
+Discovery identifies each operation's authentication and execution support.
+See [code mode access](./security#scapi-code-mode).
+
 ### Observability metrics (closed beta) {#metrics}
 
 `metrics_get` reads Commerce metrics. Available in SCAPI with Metrics API access,

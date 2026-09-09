@@ -217,7 +217,11 @@ export class GuidanceCatalog {
     const section =
       selector.section === undefined ? undefined : headings.find((heading) => heading.id === selector.section);
     if (selector.section !== undefined && !section)
-      fail('SECTION_NOT_FOUND', 'Unknown section. Read the file to list section IDs.');
+      throw new GuidanceError(
+        'SECTION_NOT_FOUND',
+        'Unknown section. Retry with an available section ID.',
+        headings.map(({id, title}) => ({id, title})),
+      );
     const selected = section ? content.slice(section.start, section.end) : content;
     const totalLength = selected.length;
     const offset = Math.min(selector.offset ?? 0, totalLength);

@@ -98,7 +98,9 @@ function errorResult(error: unknown): ToolResult {
     error: {
       code: detail.code,
       message: detail.message,
-      suggestions: ['Use skills_read({}) to discover available IDs.'],
+      ...(detail.sections
+        ? {sections: detail.sections}
+        : {suggestions: ['Use skills_read({}) to discover available IDs.']}),
     },
   };
   return {isError: true, structuredContent, content: [{type: 'text', text: JSON.stringify(structuredContent)}]};

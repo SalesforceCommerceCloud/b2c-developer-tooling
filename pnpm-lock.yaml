@@ -479,6 +479,9 @@ importers:
 
   packages/b2c-tooling-sdk:
     dependencies:
+      '@salesforce/b2c-api-schemas':
+        specifier: workspace:*
+        version: link:../../schemas
       '@vscode/debugadapter':
         specifier: 1.68.0
         version: 1.68.0
@@ -1057,6 +1060,8 @@ importers:
       typescript-eslint:
         specifier: 'catalog:'
         version: 8.54.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
+
+  schemas: {}
 
   skills: {}
 

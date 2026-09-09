@@ -15,6 +15,7 @@ Use it to:
 - Deploy cartridges and publish Managed Runtime bundles.
 - Investigate server-side code with breakpoints, variables, and logs.
 - Discover SCAPI schemas and check custom API registration.
+- Create and manage Commerce records through SCAPI code mode (preview).
 
 [Browse capabilities](./toolsets) to see what is available and which operations
 need credentials or can change your environment.

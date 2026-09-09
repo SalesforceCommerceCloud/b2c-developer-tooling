@@ -23,6 +23,11 @@
     "registry": "https://registry.npmjs.org/"
   },
   "exports": {
+    "./scapi": {
+      "development": "./src/scapi/index.ts",
+      "types": "./dist/esm/scapi/index.d.ts",
+      "default": "./dist/esm/scapi/index.js"
+    },
     "./package.json": "./package.json",
     ".": {
       "development": "./src/index.ts",
@@ -260,6 +265,7 @@
     "generate:help-corpus": "tsx scripts/generate-help-corpus.ts",
     "enrich:docs": "tsx scripts/enrich-docs.ts"
   },
+  "bundledDependencies": ["@salesforce/b2c-api-schemas"],
   "devDependencies": {
     "@eslint/compat": "catalog:",
     "@oclif/core": "catalog:",
@@ -302,6 +308,7 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
+    "@salesforce/b2c-api-schemas": "workspace:*",
     "@vscode/debugadapter": "1.68.0",
     "chokidar": "5.0.0",
     "cliui": "catalog:",

@@ -83,6 +83,25 @@ explicitly. Do not treat `READ_ONLY` as a complete MCP sandbox. If an operation
 requires a confirmation flow that your MCP client cannot complete, it may remain
 blocked; changing the prompt is not authorization to bypass the restriction.
 
+## SCAPI code mode
+
+The preview `scapi_search` and `scapi_execute` tools run JavaScript locally with
+Node.js. Enable them for assistants you trust with local code execution; they
+are not sandboxed from your filesystem or network.
+
+SCAPI execution uses the selected project's Account Manager credentials and
+API scopes. It can create, update, or delete Commerce records. The configured
+[Safety Mode policy](../guide/safety) applies to requests made through the SCAPI
+helper; it does not restrict arbitrary local JavaScript. Confirmation-required
+requests stop in this preview. Review any completed changes before retrying a
+failed or interrupted operation.
+
+Admin and Shopper credentials serve different purposes. Admin operations use an
+Account Manager client and its granted scopes. Shopper flows use SLAS; configuring
+a SLAS client does not enable Shopper execution in this preview. Authentication
+errors identify the relevant credentials or grants to check. A 403 can also mean
+missing instance access, rather than a missing API scope.
+
 ## Telemetry {#telemetry}
 
 Telemetry is enabled by default. It records usage and diagnostic information,

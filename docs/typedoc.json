@@ -1,6 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
+    "../packages/b2c-tooling-sdk/src/scapi/index.ts",
     "../packages/b2c-tooling-sdk/src/config/index.ts",
     "../packages/b2c-tooling-sdk/src/auth/index.ts",
     "../packages/b2c-tooling-sdk/src/clients/index.ts",
