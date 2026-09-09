@@ -165,8 +165,8 @@ describe('Job Execution E2E Tests', function () {
       const response = JSON.parse(toString(result.stdout));
       expect(response).to.be.an('object');
       expect(
-        String(response.execution_status),
-        `--wait should leave the job in 'finished' state, but got '${response.execution_status}'`,
+        String(response.executionStatus),
+        `--wait should leave the job in 'finished' state, but got '${response.executionStatus}'`,
       ).to.equal('finished');
     });
   });
@@ -248,8 +248,8 @@ describe('Job Execution E2E Tests', function () {
       const response = JSON.parse(toString(result.stdout));
       expect(response.id).to.equal(executionId);
       expect(
-        String(response.execution_status),
-        `'job wait' should leave the job in 'finished' state, but got '${response.execution_status}'`,
+        String(response.executionStatus),
+        `'job wait' should leave the job in 'finished' state, but got '${response.executionStatus}'`,
       ).to.equal('finished');
     });
   });
