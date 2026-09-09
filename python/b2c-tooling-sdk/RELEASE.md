@@ -12,7 +12,7 @@
 
 ## Quick release (recommended)
 
-Just run the script from the `python/` directory:
+Just run the script from the `python/b2c-tooling-sdk/` directory:
 
 ```bash
 ./release.sh
@@ -41,16 +41,16 @@ if you need to deviate.
 
 ## How consumers install
 
-All installs build from source in the `python/` subdirectory (pure Python, no
+All installs build from source in the `python/b2c-tooling-sdk/` subdirectory (pure Python, no
 compilers needed).
 
 - **Latest (moves with the branch):**
   ```bash
-  pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python#subdirectory=python"
+  pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python#subdirectory=python/b2c-tooling-sdk"
   ```
 - **Pinned to a release (recommended for reproducibility):**
   ```bash
-  pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python-v0.1.0#subdirectory=python"
+  pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python-v0.1.0#subdirectory=python/b2c-tooling-sdk"
   ```
 
 The importable package is `b2c_tooling_sdk`; the distribution name is
@@ -58,7 +58,7 @@ The importable package is `b2c_tooling_sdk`; the distribution name is
 
 ## Manual release (what `release.sh` automates)
 
-All commands run from the `python/` package directory unless noted. `origin` is
+All commands run from the `python/b2c-tooling-sdk/` package directory unless noted. `origin` is
 the fork (`git@github.com:priandsf/b2c-developer-tooling.git`); we release from
 the `python` branch.
 
@@ -70,7 +70,7 @@ the `python` branch.
    ./.venv/bin/python -m pytest -q
    ```
 
-2. **Bump the version** in `python/pyproject.toml`:
+2. **Bump the version** in `python/b2c-tooling-sdk/pyproject.toml`:
    ```toml
    [project]
    version = "0.2.0"
@@ -82,7 +82,7 @@ the `python` branch.
 
 3. **Commit** the bump to the `python` branch:
    ```bash
-   git add python/pyproject.toml
+   git add python/b2c-tooling-sdk/pyproject.toml
    git commit -m "chore(python): release v0.2.0"
    git push origin python
    ```
@@ -103,7 +103,7 @@ Install the freshly tagged version into a throwaway environment and import it:
 
 ```bash
 python -m venv /tmp/verify
-/tmp/verify/bin/pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python-v0.2.0#subdirectory=python"
+/tmp/verify/bin/pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python-v0.2.0#subdirectory=python/b2c-tooling-sdk"
 /tmp/verify/bin/python -c "import b2c_tooling_sdk; print(b2c_tooling_sdk.SDK_VERSION)"
 ```
 

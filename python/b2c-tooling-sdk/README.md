@@ -38,13 +38,13 @@ Install the latest version straight from the `python` branch — pip builds it
 from source (pure Python, no compilers needed):
 
 ```bash
-pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python#subdirectory=python"
+pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python#subdirectory=python/b2c-tooling-sdk"
 ```
 
 Pin to a specific tag:
 
 ```bash
-pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python-v0.1.0#subdirectory=python"
+pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python-v0.1.0#subdirectory=python/b2c-tooling-sdk"
 ```
 
 The importable package is `b2c_tooling_sdk`; the distribution name is

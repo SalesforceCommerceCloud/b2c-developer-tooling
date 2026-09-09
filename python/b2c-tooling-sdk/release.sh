@@ -129,4 +129,4 @@ run "git push '${REMOTE}' '${TAG}'"
 echo
 info "Released v${VERSION} (tag ${TAG})."
 echo "Install with:"
-echo "    pip install \"git+https://github.com/priandsf/b2c-developer-tooling.git@${TAG}#subdirectory=python\""
+echo "    pip install \"git+https://github.com/priandsf/b2c-developer-tooling.git@${TAG}#subdirectory=python/b2c-tooling-sdk\""
