@@ -1,6 +1,6 @@
 # Salesforce B2C Tooling SDK (Python)
 
-[![Latest release](https://img.shields.io/github/v/tag/priandsf/b2c-developer-tooling?filter=python-v*&label=latest%20release&color=blue)](https://github.com/priandsf/b2c-developer-tooling/tags)
+[![Latest release](https://img.shields.io/github/v/tag/SalesforceCommerceCloud/b2c-developer-tooling?filter=python-v*&label=latest%20release&color=blue)](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tags)
 
 `salesforce-b2c-tooling-sdk` is a Python SDK for Salesforce B2C Commerce tooling —
 authentication, configuration resolution, typed OCAPI/SCAPI clients, WebDAV, and
@@ -34,17 +34,17 @@ CLI, then run non-interactive Python automation against the same session.
 > development**. The package is not yet published to PyPI; once it is, the
 > install will simply be `pip install salesforce-b2c-tooling-sdk`.
 
-Install the latest version straight from the `python` branch — pip builds it
+Install the latest version straight from `main` — pip builds it
 from source (pure Python, no compilers needed):
 
 ```bash
-pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python#subdirectory=python/b2c-tooling-sdk"
+pip install "git+https://github.com/SalesforceCommerceCloud/b2c-developer-tooling.git@main#subdirectory=python/b2c-tooling-sdk"
 ```
 
-Pin to a specific tag:
+Pin to a specific release tag:
 
 ```bash
-pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python-v0.1.0#subdirectory=python/b2c-tooling-sdk"
+pip install "git+https://github.com/SalesforceCommerceCloud/b2c-developer-tooling.git@<tag>#subdirectory=python/b2c-tooling-sdk"
 ```
 
 The importable package is `b2c_tooling_sdk`; the distribution name is

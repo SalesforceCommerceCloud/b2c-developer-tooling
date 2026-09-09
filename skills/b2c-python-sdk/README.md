@@ -1,6 +1,6 @@
 # b2c-python-sdk
 
-Agent skills for **consuming** the [`salesforce-b2c-tooling-sdk`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/python/python/b2c-tooling-sdk) Python SDK — authenticate to a Salesforce B2C Commerce instance, resolve config from `dw.json`, and call the OCAPI/SCAPI/WebDAV clients and higher-level operations from Python scripts and Jupyter notebooks.
+Agent skills for **consuming** the [`salesforce-b2c-tooling-sdk`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/python/b2c-tooling-sdk) Python SDK — authenticate to a Salesforce B2C Commerce instance, resolve config from `dw.json`, and call the OCAPI/SCAPI/WebDAV clients and higher-level operations from Python scripts and Jupyter notebooks.
 
 > This plugin is for developers **writing Python code against the SDK**. To *develop the SDK itself*, see the SDK's own `python/b2c-tooling-sdk/CLAUDE.md`. To drive the B2C **CLI**, use the `b2c-cli` plugin instead.
 

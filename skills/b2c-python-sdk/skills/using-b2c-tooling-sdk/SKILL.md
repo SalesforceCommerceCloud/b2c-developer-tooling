@@ -11,7 +11,7 @@ tooling. **Import name is `b2c_tooling_sdk`; distribution name is
 facade. Python 3.10+.
 
 This skill covers **consuming** the SDK. For developing the SDK itself, see
-`python/CLAUDE.md`. For the full symbol catalog, read
+`python/b2c-tooling-sdk/CLAUDE.md`. For the full symbol catalog, read
 [references/api-catalog.md](references/api-catalog.md).
 
 ## 1. Install
@@ -19,8 +19,8 @@ This skill covers **consuming** the SDK. For developing the SDK itself, see
 Not on PyPI yet — install from git during development:
 
 ```bash
-pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python#subdirectory=python/b2c-tooling-sdk"
-# or pin a tag: ...@python-v0.3.0#subdirectory=python/b2c-tooling-sdk
+pip install "git+https://github.com/SalesforceCommerceCloud/b2c-developer-tooling.git@main#subdirectory=python/b2c-tooling-sdk"
+# or pin a release tag: ...@<tag>#subdirectory=python/b2c-tooling-sdk
 ```
 
 For notebooks also install a kernel: `pip install ipykernel`. Once published this
