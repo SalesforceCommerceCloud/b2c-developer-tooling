@@ -19,8 +19,8 @@ import {
   createStorefrontDeploymentsClient,
   toOrganizationId,
   type StorefrontDeploymentsClient,
-  type Deployment as ScapiDeployment,
-  type DeploymentStatus as ScapiDeploymentStatus,
+  type Deployment as DeploymentScapi,
+  type DeploymentStatus as DeploymentStatusScapi,
 } from '../../clients/storefront-deployments.js';
 import {getLogger} from '../../logging/logger.js';
 import {
@@ -301,7 +301,7 @@ const LEGACY_AUTH_REQUIRED_MESSAGE =
   'Provide an API key (--api-key / MRT_API_KEY / ~/.mobify) or use the SCAPI MRT backend.';
 
 /** SCAPI deployment statuses that end the poll loop. */
-const SCAPI_TERMINAL_STATUSES = new Set<ScapiDeploymentStatus>(['finished', 'failed']);
+const SCAPI_TERMINAL_STATUSES = new Set<DeploymentStatusScapi>(['finished', 'failed']);
 
 /**
  * A single deployment history row, normalized across the legacy and SCAPI
@@ -310,7 +310,7 @@ const SCAPI_TERMINAL_STATUSES = new Set<ScapiDeploymentStatus>(['finished', 'fai
  * Status and type strings are kept **raw** per backend (legacy `"Finished"` /
  * `"Publish"`, SCAPI `"finished"` / `"publish"`) so display doesn't silently
  * change for existing legacy users; terminal-state logic for `--wait` lives in
- * {@link waitForScapiDeployment} and operates on the SCAPI enum directly.
+ * {@link waitForDeploymentScapi} and operates on the SCAPI enum directly.
  */
 export interface MrtDeploymentView {
   /** SCAPI deployment UUID. Undefined for legacy (its list has no per-deploy id). */
@@ -344,8 +344,8 @@ export function normalizeLegacyDeployment(deploy: MrtDeployment): MrtDeploymentV
   };
 }
 
-/** Normalizes a SCAPI MRT {@link ScapiDeployment} into an {@link MrtDeploymentView}. */
-export function normalizeScapiDeployment(deployment: ScapiDeployment): MrtDeploymentView {
+/** Normalizes a SCAPI MRT {@link DeploymentScapi} into an {@link MrtDeploymentView}. */
+export function normalizeDeploymentScapi(deployment: DeploymentScapi): MrtDeploymentView {
   return {
     deploymentId: deployment.deploymentId ?? undefined,
     bundleId: deployment.bundle?.bundleId ?? undefined,
@@ -372,7 +372,7 @@ function buildScapiDeploymentsClient(conn: ScapiMrtConnection): StorefrontDeploy
  *
  * @throws {ScapiRequestError} carrying the HTTP status on a non-2xx response.
  */
-export async function listScapiDeployments(
+export async function listDeploymentsScapi(
   conn: ScapiMrtConnection,
   params: {storefrontId: string; environmentId: string; limit?: number; offset?: number},
 ): Promise<{deployments: MrtDeploymentView[]; count: number; raw: unknown}> {
@@ -396,14 +396,14 @@ export async function listScapiDeployments(
   }
 
   return {
-    deployments: (data.data ?? []).map(normalizeScapiDeployment),
+    deployments: (data.data ?? []).map(normalizeDeploymentScapi),
     count: data.total ?? data.data?.length ?? 0,
     raw: data,
   };
 }
 
 /** Result of a SCAPI deployment create. */
-export interface ScapiCreateDeploymentResult {
+export interface CreateDeploymentScapiResult {
   /** Deployment UUID assigned by SCAPI (used by `--wait`). */
   deploymentId?: string;
   /** Initial deployment status (typically `queued`). */
@@ -420,10 +420,10 @@ export interface ScapiCreateDeploymentResult {
  * @throws {ScapiRequestError} carrying the HTTP status on a non-2xx response
  *   (including 409 Conflict — the caller decides whether that is fatal).
  */
-export async function createScapiDeployment(
+export async function createDeploymentScapi(
   conn: ScapiMrtConnection,
   params: {storefrontId: string; environmentId: string; bundleId: number},
-): Promise<ScapiCreateDeploymentResult> {
+): Promise<CreateDeploymentScapiResult> {
   const logger = getLogger();
   const {storefrontId, environmentId, bundleId} = params;
   const organizationId = toOrganizationId(conn.tenantId);
@@ -452,10 +452,10 @@ export async function createScapiDeployment(
  *
  * @throws {ScapiRequestError} carrying the HTTP status on a non-2xx response.
  */
-export async function getScapiDeployment(
+export async function getDeploymentScapi(
   conn: ScapiMrtConnection,
   params: {storefrontId: string; environmentId: string; deploymentId: string},
-): Promise<ScapiDeployment> {
+): Promise<DeploymentScapi> {
   const {storefrontId, environmentId, deploymentId} = params;
   const organizationId = toOrganizationId(conn.tenantId);
 
@@ -475,8 +475,8 @@ export async function getScapiDeployment(
   return data;
 }
 
-/** Progress info reported on each poll of {@link waitForScapiDeployment}. */
-export interface ScapiDeploymentPollInfo {
+/** Progress info reported on each poll of {@link waitForDeploymentScapi}. */
+export interface DeploymentScapiPollInfo {
   /** Seconds elapsed since waiting started. */
   elapsedSeconds: number;
   /** Current raw deployment status. */
@@ -487,11 +487,11 @@ export interface ScapiDeploymentPollInfo {
   percentage?: number | null;
 }
 
-/** Options for {@link waitForScapiDeployment}. */
-export interface WaitForScapiDeploymentOptions {
+/** Options for {@link waitForDeploymentScapi}. */
+export interface WaitForDeploymentScapiOptions {
   storefrontId: string;
   environmentId: string;
-  /** Deployment UUID returned by {@link createScapiDeployment}. */
+  /** Deployment UUID returned by {@link createDeploymentScapi}. */
   deploymentId: string;
   /**
    * Polling interval in seconds.
@@ -504,7 +504,7 @@ export interface WaitForScapiDeploymentOptions {
    */
   timeoutSeconds?: number;
   /** Optional callback invoked on each poll with current status. */
-  onPoll?: (info: ScapiDeploymentPollInfo) => void;
+  onPoll?: (info: DeploymentScapiPollInfo) => void;
   /** Custom sleep function for testing. */
   sleep?: (ms: number) => Promise<void>;
   /** Custom clock for testing. Defaults to Date.now. */
@@ -527,10 +527,10 @@ async function defaultSleep(ms: number): Promise<void> {
  *
  * @throws Error if the timeout is reached or the deployment fails.
  */
-export async function waitForScapiDeployment(
+export async function waitForDeploymentScapi(
   conn: ScapiMrtConnection,
-  options: WaitForScapiDeploymentOptions,
-): Promise<ScapiDeployment> {
+  options: WaitForDeploymentScapiOptions,
+): Promise<DeploymentScapi> {
   const logger = getLogger();
   const {storefrontId, environmentId, deploymentId, pollIntervalSeconds = 30, timeoutSeconds = 600, onPoll} = options;
 
@@ -552,7 +552,7 @@ export async function waitForScapiDeployment(
       throw new Error(`Timeout waiting for deployment "${deploymentId}" after ${timeoutSeconds}s`);
     }
 
-    const deployment = await getScapiDeployment(conn, {storefrontId, environmentId, deploymentId});
+    const deployment = await getDeploymentScapi(conn, {storefrontId, environmentId, deploymentId});
     const status = deployment.status ?? 'unknown';
 
     logger.trace({deploymentId, elapsedSeconds, status}, '[MRT-SCAPI] Deployment poll');
@@ -650,7 +650,7 @@ export async function listMrtDeployments(options: ListMrtDeploymentsBackendOptio
     },
     {
       scapi: () =>
-        listScapiDeployments(scapiConnection!, {
+        listDeploymentsScapi(scapiConnection!, {
           storefrontId: projectSlug,
           environmentId: targetSlug,
           limit,
@@ -732,7 +732,7 @@ export async function deployMrtBundle(options: DeployMrtBundleBackendOptions): P
     },
     {
       scapi: async () => {
-        const result = await createScapiDeployment(scapiConnection!, {
+        const result = await createDeploymentScapi(scapiConnection!, {
           storefrontId: projectSlug,
           environmentId: targetSlug,
           bundleId,

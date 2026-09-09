@@ -105,14 +105,14 @@ export type {
 export {
   listDeployments,
   createDeployment,
-  listScapiDeployments,
-  createScapiDeployment,
-  getScapiDeployment,
-  waitForScapiDeployment,
+  listDeploymentsScapi,
+  createDeploymentScapi,
+  getDeploymentScapi,
+  waitForDeploymentScapi,
   listMrtDeployments,
   deployMrtBundle,
   normalizeLegacyDeployment,
-  normalizeScapiDeployment,
+  normalizeDeploymentScapi,
 } from './deployment.js';
 export type {
   ListDeploymentsOptions,
@@ -124,9 +124,9 @@ export type {
   MrtDeploymentView,
   MrtDeploymentsView,
   MrtDeployResultView,
-  ScapiCreateDeploymentResult,
-  ScapiDeploymentPollInfo,
-  WaitForScapiDeploymentOptions,
+  CreateDeploymentScapiResult,
+  DeploymentScapiPollInfo,
+  WaitForDeploymentScapiOptions,
   ListMrtDeploymentsBackendOptions,
   DeployMrtBundleBackendOptions,
 } from './deployment.js';

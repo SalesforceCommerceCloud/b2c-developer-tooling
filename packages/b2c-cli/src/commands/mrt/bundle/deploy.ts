@@ -9,7 +9,7 @@ import {
   pushBundle,
   deployMrtBundle,
   waitForEnv,
-  waitForScapiDeployment,
+  waitForDeploymentScapi,
   DEFAULT_SSR_PARAMETERS,
   type PushResult,
   type MrtEnvironment,
@@ -57,7 +57,7 @@ function parseSsrParams(params: string[]): Record<string, string> {
 }
 
 /** A completed SCAPI deployment, as returned by the by-ID poll on `--wait`. */
-type ScapiDeploymentResult = Awaited<ReturnType<typeof waitForScapiDeployment>>;
+type ScapiDeploymentResult = Awaited<ReturnType<typeof waitForDeploymentScapi>>;
 
 /** Patterns that indicate a 403/authorization error, typically caused by an invalid project ID */
 const MRT_AUTH_ERROR_PATTERNS = [
@@ -162,7 +162,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     pushBundle,
     deployMrtBundle,
     waitForEnv,
-    waitForScapiDeployment,
+    waitForDeploymentScapi,
   };
 
   async run(): Promise<unknown> {
@@ -438,7 +438,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       );
     }
 
-    const deployment = await this.operations.waitForScapiDeployment(conn, {
+    const deployment = await this.operations.waitForDeploymentScapi(conn, {
       storefrontId,
       environmentId,
       deploymentId,

@@ -374,7 +374,7 @@ describe('mrt bundle deploy', () => {
         ...command.operations,
         deployMrtBundle: deployStub,
         waitForEnv: waitStub,
-        waitForScapiDeployment: scapiWaitStub,
+        waitForDeploymentScapi: scapiWaitStub,
       };
 
       const result = await command.run();
@@ -420,7 +420,7 @@ describe('mrt bundle deploy', () => {
         ...command.operations,
         deployMrtBundle: deployStub,
         waitForEnv: waitStub,
-        waitForScapiDeployment: scapiWaitStub,
+        waitForDeploymentScapi: scapiWaitStub,
       };
 
       const result = await command.run();
@@ -466,7 +466,7 @@ describe('mrt bundle deploy', () => {
         .stub()
         .resolves({backend: 'scapi', bundleId: 170, status: 'queued', raw: {bundleId: 170, status: 'queued'}} as any);
       const scapiWaitStub = sinon.stub().resolves({} as any);
-      command.operations = {...command.operations, deployMrtBundle: deployStub, waitForScapiDeployment: scapiWaitStub};
+      command.operations = {...command.operations, deployMrtBundle: deployStub, waitForDeploymentScapi: scapiWaitStub};
 
       const result = await command.run();
 

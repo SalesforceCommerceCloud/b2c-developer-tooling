@@ -10,14 +10,14 @@ import {DEFAULT_MRT_ORIGIN} from '../../../src/clients/mrt.js';
 import {ScapiRequestError} from '../../../src/clients/scapi-backend-utils.js';
 import {
   createDeployment,
-  listScapiDeployments,
-  createScapiDeployment,
-  getScapiDeployment,
-  waitForScapiDeployment,
+  listDeploymentsScapi,
+  createDeploymentScapi,
+  getDeploymentScapi,
+  waitForDeploymentScapi,
   listMrtDeployments,
   deployMrtBundle,
   normalizeLegacyDeployment,
-  normalizeScapiDeployment,
+  normalizeDeploymentScapi,
 } from '../../../src/operations/mrt/deployment.js';
 import type {ScapiMrtConnection} from '../../../src/operations/mrt/mrt-backend.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
@@ -143,7 +143,7 @@ describe('operations/mrt/deployment', () => {
     });
 
     it('normalizes a SCAPI deployment', () => {
-      const view = normalizeScapiDeployment({
+      const view = normalizeDeploymentScapi({
         deploymentId: 'b035a4d7-ec6b-4dcd-af8f-3a847b10fed8',
         status: 'finished',
         deploymentType: 'publish',
@@ -164,7 +164,7 @@ describe('operations/mrt/deployment', () => {
     });
   });
 
-  describe('listScapiDeployments', () => {
+  describe('listDeploymentsScapi', () => {
     it('lists and normalizes SCAPI deployments', async () => {
       server.use(
         http.get(SCAPI_DEPLOYMENTS, ({request, params}) => {
@@ -188,7 +188,7 @@ describe('operations/mrt/deployment', () => {
         }),
       );
 
-      const result = await listScapiDeployments(scapiConn(), {
+      const result = await listDeploymentsScapi(scapiConn(), {
         storefrontId: STOREFRONT_ID,
         environmentId: ENVIRONMENT_ID,
       });
@@ -207,7 +207,7 @@ describe('operations/mrt/deployment', () => {
         }),
       );
 
-      const result = await listScapiDeployments(scapiConn(), {
+      const result = await listDeploymentsScapi(scapiConn(), {
         storefrontId: STOREFRONT_ID,
         environmentId: ENVIRONMENT_ID,
         limit: 50,
@@ -231,7 +231,7 @@ describe('operations/mrt/deployment', () => {
 
       let threw: unknown;
       try {
-        await listScapiDeployments(scapiConn(), {storefrontId: STOREFRONT_ID, environmentId: ENVIRONMENT_ID});
+        await listDeploymentsScapi(scapiConn(), {storefrontId: STOREFRONT_ID, environmentId: ENVIRONMENT_ID});
       } catch (error) {
         threw = error;
       }
@@ -240,7 +240,7 @@ describe('operations/mrt/deployment', () => {
     });
   });
 
-  describe('createScapiDeployment', () => {
+  describe('createDeploymentScapi', () => {
     it('queues a deployment and returns the deploymentId', async () => {
       server.use(
         http.post(SCAPI_DEPLOYMENTS, async ({request}) => {
@@ -250,7 +250,7 @@ describe('operations/mrt/deployment', () => {
         }),
       );
 
-      const result = await createScapiDeployment(scapiConn(), {
+      const result = await createDeploymentScapi(scapiConn(), {
         storefrontId: STOREFRONT_ID,
         environmentId: ENVIRONMENT_ID,
         bundleId: 170,
@@ -273,7 +273,7 @@ describe('operations/mrt/deployment', () => {
 
       let threw: unknown;
       try {
-        await createScapiDeployment(scapiConn(), {
+        await createDeploymentScapi(scapiConn(), {
           storefrontId: STOREFRONT_ID,
           environmentId: ENVIRONMENT_ID,
           bundleId: 170,
@@ -286,7 +286,7 @@ describe('operations/mrt/deployment', () => {
     });
   });
 
-  describe('getScapiDeployment', () => {
+  describe('getDeploymentScapi', () => {
     it('fetches a single deployment by ID', async () => {
       server.use(
         http.get(SCAPI_DEPLOYMENT_BY_ID, ({params}) => {
@@ -295,7 +295,7 @@ describe('operations/mrt/deployment', () => {
         }),
       );
 
-      const deployment = await getScapiDeployment(scapiConn(), {
+      const deployment = await getDeploymentScapi(scapiConn(), {
         storefrontId: STOREFRONT_ID,
         environmentId: ENVIRONMENT_ID,
         deploymentId: 'dep-1',
@@ -306,7 +306,7 @@ describe('operations/mrt/deployment', () => {
     });
   });
 
-  describe('waitForScapiDeployment', () => {
+  describe('waitForDeploymentScapi', () => {
     it('polls by ID until the deployment finishes', async () => {
       let call = 0;
       server.use(
@@ -321,7 +321,7 @@ describe('operations/mrt/deployment', () => {
       );
 
       const polls: string[] = [];
-      const deployment = await waitForScapiDeployment(scapiConn(), {
+      const deployment = await waitForDeploymentScapi(scapiConn(), {
         storefrontId: STOREFRONT_ID,
         environmentId: ENVIRONMENT_ID,
         deploymentId: 'dep-1',
@@ -345,7 +345,7 @@ describe('operations/mrt/deployment', () => {
       );
 
       let sleepCalls = 0;
-      const deployment = await waitForScapiDeployment(scapiConn(), {
+      const deployment = await waitForDeploymentScapi(scapiConn(), {
         storefrontId: STOREFRONT_ID,
         environmentId: ENVIRONMENT_ID,
         deploymentId: 'dep-1',
@@ -372,7 +372,7 @@ describe('operations/mrt/deployment', () => {
 
       let threw: unknown;
       try {
-        await waitForScapiDeployment(scapiConn(), {
+        await waitForDeploymentScapi(scapiConn(), {
           storefrontId: STOREFRONT_ID,
           environmentId: ENVIRONMENT_ID,
           deploymentId: 'dep-1',
@@ -388,7 +388,7 @@ describe('operations/mrt/deployment', () => {
       let nowCalls = 0;
       let threw: unknown;
       try {
-        await waitForScapiDeployment(scapiConn(), {
+        await waitForDeploymentScapi(scapiConn(), {
           storefrontId: STOREFRONT_ID,
           environmentId: ENVIRONMENT_ID,
           deploymentId: 'dep-1',
