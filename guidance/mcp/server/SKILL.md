@@ -9,7 +9,7 @@ description: B2C MCP setup, toolset customization, available capabilities, tool 
 
 Use the client's tool discovery before concluding a tool is unavailable.
 Reuse discovered names; do not repeat searches for each call.
-All GA toolsets are enabled by default;
+All toolsets are enabled by default;
 project/storefront detection does not select tools. Installation settings or
 client filters can restrict availability. A skill's presence does not enable
 its tools. `config_inspect` reports B2C configuration, not enabled MCP toolsets.
@@ -24,9 +24,8 @@ When a task needs a tool outside the current selection:
    Add the required toolset to the existing selection, or the exact tool to
    `--tools`. Example: change `--toolsets MRT` to `--toolsets MRT,DIAGNOSTICS`
    for configuration inspection and debugging. Preserve intentional restrictions.
-3. To enable all GA tools, set `--toolsets all`, or remove both selections
-   from arguments and launch environment. Preview tools separately require
-   `--allow-non-ga-tools` / `SFCC_ALLOW_NON_GA_TOOLS`.
+3. To enable all tools, set `--toolsets all`, or remove both selections
+   from arguments and launch environment.
 4. Apply the requested change to the existing registration; restart/reconnect
    MCP and refresh the client tool catalog (a new session may be needed).
    Verify the expected tools appear. Check the installed version if still absent;
@@ -46,7 +45,9 @@ Use launch arguments/environment for server settings, not project `.env` or `dw.
 - Deploy cartridges: `cartridge_deploy`; CLI scripts/extra flags: `b2c code deploy`.
   Confirm instance/version and preserve returned `resolution`.
 - Debug: [MCP debugger](skill://mcp/debugger/SKILL.md). CLI/IDE only when requested.
-- SCAPI code mode: read [the skill](skill://mcp/scapi/SKILL.md) before `scapi_search` or `scapi_execute`.
+- Prefer dedicated tools for their workflows. For other Commerce API tasks,
+  use `scapi_search` / `scapi_execute`: products, campaigns, promotions, jobs,
+  and more. Read [the SCAPI skill](skill://mcp/scapi/SKILL.md) first.
 - Custom API scaffold: `b2c scaffold generate custom-api`; no MCP equivalent.
 - API/product documentation: `docs_search` / `docs_read`.
 

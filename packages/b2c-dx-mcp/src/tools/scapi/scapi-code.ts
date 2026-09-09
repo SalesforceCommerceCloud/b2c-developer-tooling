@@ -11,7 +11,7 @@ import {getB2CConfigDirectory} from '@salesforce/b2c-tooling-sdk/config';
 import {resolveEffectiveSafetyConfig, loadGlobalSafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
 import type {McpTool, ToolResult} from '../../utils/types.js';
 import type {ServicesLoader} from '../adapter.js';
-import {createProjectContextInputSchema, type ProjectContextInput} from '../project-context.js';
+import {createProjectContextInputSchema, type ProjectContextInput, type ToolResolution} from '../project-context.js';
 import {jsonResult, attachResolution} from '../adapter.js';
 import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.js';
 
@@ -23,23 +23,82 @@ function requireScapiSkill(read: boolean | undefined): void {
       'SCAPI_SKILL_REQUIRED: Read skill://mcp/scapi/SKILL.md through resources or skills_read, then retry with skillRead: true.',
     );
 }
-const outputSchema = {
-  result: z.unknown().optional(),
-  error: z.string().optional(),
-  skillReferences: z.array(z.object({uri: z.string(), section: z.string()})).optional(),
-};
-function codeResult(data: {result?: unknown; error?: string; skillReferences?: SkillReference[]}): ToolResult {
-  return {...jsonResult(data), structuredContent: data};
+const searchDescription = `Discover bundled SCAPI APIs offline: products, catalogs, orders, customers, inventory, pricing, campaigns, promotions, jobs, and Shopper APIs. Prefer dedicated tools; code mode covers other API tasks.
+Read skill://mcp/scapi/SKILL.md first.
+
+Schemas can be huge. Discover operation IDs/paths first; then select required and task-relevant fields. Avoid whole operations or request/response trees. Local refs are expanded; recursive/deep refs remain $ref.
+
+Code objects (execute JavaScript, not these types):
+interface Operation {
+  api: string; operationId: string; summary?: string; description?: string; tags?: string[];
+  parameters: Array<{name: string; in: string; required?: boolean; schema?: unknown}>;
+  requestBody?: {required?: boolean; content: Record<string, {schema: any}>};
+  responses?: Record<string, unknown>;
+  security: Array<Record<string, string[]>>;
+  auth: {types: string[]; schemes: string[]; executable: boolean}; // runtime support, not configured access
 }
-function failure(error: unknown): ToolResult {
+declare const spec: {
+  apis: Array<{id: string; apiFamily: string; apiName: string; apiVersion: string; authTypes: string[]}>;
+  paths: Record<string, Record<string, Operation>>; // full paths, lowercase HTTP methods
+};
+
+Examples:
+// Find product operations
+async () => Object.entries(spec.paths)
+  .filter(([path]) => path.startsWith('/product/products/'))
+  .flatMap(([path, methods]) => Object.entries(methods)
+    .map(([method, op]) => ({method, path, operationId: op.operationId})))
+
+// Inspect only fields needed for creation
+async () => {
+  const op = spec.paths['/product/products/v1/organizations/{organizationId}/products/{productId}'].put;
+  const body = op.requestBody.content['application/json'].schema;
+  const fields = [...new Set([...(body.required ?? []), 'name', 'owningCatalogId', 'onlineFlag'])];
+  return {parameters: op.parameters, required: body.required,
+    fields: Object.fromEntries(fields.map(k => [k, body.properties[k]])), auth: op.auth, security: op.security};
+}`;
+
+const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin APIs when no dedicated tool fits. Discover endpoints with scapi_search, then call scapi.request(). JSON requests; no Shopper/custom API execution or binary transfers.
+Read skill://mcp/scapi/SKILL.md first.
+
+Available in your code:
+declare const organizationId: string; // resolved tenant
+declare const siteId: string | undefined; // configured site
+declare const scapi: {
+  request(options: {method: string; path: string; query?: Record<string, unknown>; body?: unknown}):
+    Promise<{status: number; ok: boolean; data: any; diagnostic?: {code: string; message: string}}>;
+};
+
+Use a JavaScript async arrow function; await requests. Responses can be huge: filter/map/slice in code; return counts, selected rows, and verification fields. Preserve failures and diagnostics. HTTP failures return ok:false; transport/auth/safety failures throw. Local Node execution; SDK safety rules apply. Check writes before retrying.
+
+Example: inspect one product
+async () => {
+  const r = await scapi.request({method: 'GET',
+    path: '/product/products/v1/organizations/' + organizationId + '/products/' + encodeURIComponent('test-product')});
+  return r.ok ? {status: r.status, id: r.data.id, catalog: r.data.owningCatalogId, online: r.data.online} : r;
+}`;
+
+function codeResult(
+  data: {result?: unknown; error?: string; skillReferences?: SkillReference[]},
+  resolution?: ToolResolution,
+): ToolResult {
+  const result = resolution ? attachResolution(jsonResult(data, 0), resolution, 0) : jsonResult(data, 0);
+  // Code-mode payloads are arbitrary JSON: retain provenance without duplicating the result.
+  delete result.structuredContent;
+  return result;
+}
+function failure(error: unknown, resolution?: ToolResolution): ToolResult {
   const message = error instanceof Error ? error.message : String(error);
   return {
-    ...codeResult({
-      error: message,
-      ...(/^SCAPI_(ADMIN_|SHOPPER_|AUTH_|SCOPE_)/.test(message)
-        ? {skillReferences: [MCP_SKILL_REFERENCES.scapiAuthentication]}
-        : {}),
-    }),
+    ...codeResult(
+      {
+        error: message,
+        ...(/^SCAPI_(ADMIN_|SHOPPER_|AUTH_|SCOPE_)/.test(message)
+          ? {skillReferences: [MCP_SKILL_REFERENCES.scapiAuthentication]}
+          : {}),
+      },
+      resolution,
+    ),
     isError: true,
   };
 }
@@ -58,12 +117,11 @@ export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
   return [
     {
       name: 'scapi_search',
-      description:
-        'Search bundled Admin/Shopper SCAPI contracts offline. spec.apis lists APIs and authTypes; spec.paths maps full paths to lowercase methods. Operations include auth {types,schemes,executable}, security, parameters, requestBody, responses. spec.resolve(value, operation.api) expands refs. Return selected fields. Read skill://mcp/scapi/SKILL.md first.',
+      title: 'SCAPI Spec Search',
+      description: searchDescription,
       inputSchema: searchInput,
-      outputSchema,
       toolsets: ['SCAPI', 'PWAV3', 'STOREFRONTNEXT'],
-      isGA: false,
+
       effect: 'read',
       idempotent: true,
       openWorld: false,
@@ -89,12 +147,11 @@ export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
     },
     {
       name: 'scapi_execute',
-      description:
-        'Run JavaScript with SCAPI Admin requests (create/update/delete). Discover with scapi_search. scapi.request({method,path,query?,body?}) returns {status,ok,data}; organizationId/siteId come from config. Await requests; return selected fields. Local Node execution; SDK safety rules apply to helper calls. Check writes before retrying. Read skill://mcp/scapi/SKILL.md first.',
+      title: 'SCAPI Code Executor',
+      description: executeDescription,
       inputSchema: executeInput,
-      outputSchema,
       toolsets: ['SCAPI', 'PWAV3', 'STOREFRONTNEXT'],
-      isGA: false,
+
       effect: 'destructive',
       idempotent: false,
       openWorld: true,
@@ -112,13 +169,23 @@ export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
           const {shortCode, tenantId, siteId} = config.values;
           if (!shortCode || !tenantId)
             throw new Error('SCAPI requires configured shortCode and tenantId. Use config_inspect.');
+          const safetyEnvironment = Object.fromEntries(
+            ['SFCC_SAFETY_LEVEL', 'SFCC_SAFETY_CONFIRM', 'SFCC_SAFETY_CONFIG'].map((name) => [
+              name,
+              services.getEnvironmentVariable(name),
+            ]),
+          );
           const request = createScapiRequest({
             shortCode,
             tenantId,
             siteId,
             auth: () => config.createOAuth(),
             documents: loadScapiSchemas(),
-            safety: resolveEffectiveSafetyConfig(config.values.safety, loadGlobalSafetyConfig(getB2CConfigDirectory())),
+            safety: resolveEffectiveSafetyConfig(
+              config.values.safety,
+              loadGlobalSafetyConfig(getB2CConfigDirectory(), safetyEnvironment, resolution.projectDirectory?.path),
+              safetyEnvironment,
+            ),
           });
           const result = await runScapiCode({
             code: input.code,
@@ -128,10 +195,9 @@ export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
             cwd: resolution.projectDirectory?.path,
             signal: context?.signal,
           });
-          return attachResolution(codeResult({result}), resolution);
+          return codeResult({result}, resolution);
         } catch (error) {
-          const result = failure(error);
-          return resolution ? attachResolution(result, resolution) : result;
+          return failure(error, resolution);
         }
       },
     },

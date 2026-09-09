@@ -18,7 +18,6 @@
  * |------|--------------|-------------|
  * | `--toolsets` | `SFCC_TOOLSETS` | Comma-separated toolsets to enable (case-insensitive) |
  * | `--tools` | `SFCC_TOOLS` | Comma-separated individual tools to enable (case-insensitive) |
- * | `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Enable experimental/non-GA tools |
  *
  * ### Environment Variables for Telemetry
  * | Env Variable | Description |
@@ -89,36 +88,36 @@
  *
  * @example mcp.json - All toolsets
  * ```json
- * { "args": ["--toolsets", "all", "--allow-non-ga-tools"] }
+ * { "args": ["--toolsets", "all"] }
  * ```
  *
  * @example mcp.json - Specific toolsets
  * ```json
- * { "args": ["--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"] }
+ * { "args": ["--toolsets", "CARTRIDGES,MRT"] }
  * ```
  *
  * @example mcp.json - MRT tools with project, environment, and API key
  * ```json
  * {
- *   "args": ["--toolsets", "MRT", "--project", "my-project", "--environment", "staging", "--allow-non-ga-tools"],
+ *   "args": ["--toolsets", "MRT", "--project", "my-project", "--environment", "staging"],
  *   "env": { "MRT_API_KEY": "your-api-key" }
  * }
  * ```
  *
  * @example mcp.json - MRT tools with staging cloud origin (uses ~/.mobify--cloud-staging.mobify.com)
  * ```json
- * { "args": ["--toolsets", "MRT", "--project", "my-project", "--cloud-origin", "https://cloud-staging.mobify.com", "--allow-non-ga-tools"] }
+ * { "args": ["--toolsets", "MRT", "--project", "my-project", "--cloud-origin", "https://cloud-staging.mobify.com"] }
  * ```
  *
  * @example mcp.json - Cartridge tools with dw.json config
  * ```json
- * { "args": ["--toolsets", "CARTRIDGES", "--config", "/path/to/dw.json", "--allow-non-ga-tools"] }
+ * { "args": ["--toolsets", "CARTRIDGES", "--config", "/path/to/dw.json"] }
  * ```
  *
  * @example mcp.json - Cartridge tools with env vars
  * ```json
  * {
- *   "args": ["--toolsets", "CARTRIDGES", "--allow-non-ga-tools"],
+ *   "args": ["--toolsets", "CARTRIDGES"],
  *   "env": {
  *     "SFCC_HOSTNAME": "your-sandbox.demandware.net",
  *     "SFCC_CLIENT_ID": "your-client-id",
@@ -129,7 +128,7 @@
  *
  * @example mcp.json - Enable debug logging
  * ```json
- * { "args": ["--toolsets", "all", "--allow-non-ga-tools", "--debug"] }
+ * { "args": ["--toolsets", "all", "--debug"] }
  * ```
  */
 
@@ -173,24 +172,23 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
   static examples = [
     {
       description: 'All toolsets',
-      command: '<%= config.bin %> --toolsets all --allow-non-ga-tools',
+      command: '<%= config.bin %> --toolsets all',
     },
     {
       description: 'MRT tools with project and API key',
-      command: '<%= config.bin %> --toolsets MRT --project my-project --api-key your-api-key --allow-non-ga-tools',
+      command: '<%= config.bin %> --toolsets MRT --project my-project --api-key your-api-key',
     },
     {
       description: 'MRT tools with project, environment, and API key',
-      command:
-        '<%= config.bin %> --toolsets MRT --project my-project --environment staging --api-key your-api-key --allow-non-ga-tools',
+      command: '<%= config.bin %> --toolsets MRT --project my-project --environment staging --api-key your-api-key',
     },
     {
       description: 'Cartridge tools with explicit config',
-      command: '<%= config.bin %> --toolsets CARTRIDGES --config /path/to/dw.json --allow-non-ga-tools',
+      command: '<%= config.bin %> --toolsets CARTRIDGES --config /path/to/dw.json',
     },
     {
       description: 'Debug logging',
-      command: '<%= config.bin %> --toolsets all --allow-non-ga-tools --debug',
+      command: '<%= config.bin %> --toolsets all --debug',
     },
   ];
 
@@ -221,13 +219,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         'help-admin, help-merchant. ' +
         'Bounds the whole docs corpus; per-call category/storefront narrow within it. Unknown names are ignored.',
       env: 'SFCC_DOCS_TOPICS',
-    }),
-
-    // Feature flags
-    'allow-non-ga-tools': Flags.boolean({
-      description: 'Enable non-GA (experimental) tools',
-      env: 'SFCC_ALLOW_NON_GA_TOOLS',
-      default: false,
     }),
   };
 
@@ -395,7 +386,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     const startupFlags: StartupFlags = {
       toolsets: this.flags.toolsets ? this.flags.toolsets.split(',').map((s) => s.trim()) : undefined,
       tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
-      allowNonGaTools: this.flags['allow-non-ga-tools'],
       configPath: this.flags.config,
       // Default project directory for tool calls. oclif handles the environment fallback.
       projectDirectory: this.flags['project-directory'],
@@ -435,8 +425,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
               'resources/read': {ttlMs: 300_000, cacheScope: 'private'},
             },
             instructions:
+              'Prefer dedicated tools. Otherwise use scapi_search/scapi_execute for Commerce APIs; first read skill://mcp/scapi/SKILL.md. ' +
               'Skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
-              'setup/toolsets skill://mcp/server/SKILL.md; code mode (required) skill://mcp/scapi/SKILL.md; catalog skill://index.',
+              'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index.',
           },
         );
 

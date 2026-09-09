@@ -79,9 +79,33 @@ safety level. These settings do not provide a universal restriction on local
 file writes or every debugger action.
 
 For a skills-only or documentation-only assistant, select those tools
-explicitly. Do not treat `READ_ONLY` as a complete MCP sandbox. If an operation
-requires a confirmation flow that your MCP client cannot complete, it may remain
-blocked; changing the prompt is not authorization to bypass the restriction.
+explicitly. Do not treat `READ_ONLY` as a complete MCP sandbox. SCAPI code mode
+stops confirmation-required requests; interactive confirmation is not supported.
+Changing the prompt does not bypass the restriction.
+
+For SCAPI code mode, the selected project's `.env` can set `SFCC_SAFETY_LEVEL`, `SFCC_SAFETY_CONFIRM`,
+and `SFCC_SAFETY_CONFIG`. Launch environment values take precedence over `.env`.
+Relative safety-file paths resolve from the selected project. The effective level
+is the most restrictive of environment, global file, and instance settings;
+explicit rules still take precedence over the level.
+
+`READ_ONLY` uses HTTP methods, so it also blocks searches that use POST. To permit
+a specific search, add a narrow allow rule to your safety configuration. For example:
+
+```json
+{
+  "level": "READ_ONLY",
+  "rules": [
+    {
+      "method": "POST",
+      "path": "/operation/jobs/v1/organizations/*/job-execution-search",
+      "action": "allow"
+    }
+  ]
+}
+```
+
+This allows job execution searches while keeping other POST requests restricted.
 
 ## SCAPI code mode
 

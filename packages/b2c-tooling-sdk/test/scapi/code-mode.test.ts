@@ -75,13 +75,36 @@ describe('SCAPI code mode', function () {
       documents: loadScapiSchemas(),
       code: `async () => {
       const op = spec.paths['/product/products/v1/organizations/{organizationId}/products/{productId}'].put;
-      const body = spec.resolve(op.requestBody, op.api).content['application/json'].schema;
+      const body = op.requestBody.content['application/json'].schema;
       return {operation: op.operationId, required: body.required, scopes: op.security, fields: Object.keys(body.properties)};
     }`,
     });
     expect(result).to.have.property('operation', 'createProduct');
     expect(result).to.have.property('required').that.includes('id');
     expect(result).to.have.property('fields').that.includes('owningCatalogId');
+  });
+
+  it('expands discovery refs independently and preserves recursive refs and source schemas', async () => {
+    const document = {
+      entry: loadScapiSchemas()[0].entry,
+      schema: {
+        paths: {'/nodes': {get: {responses: {'200': {$ref: '#/components/schemas/Pair'}}}}},
+        components: {
+          schemas: {
+            Pair: {properties: {left: {$ref: '#/components/schemas/Node'}, right: {$ref: '#/components/schemas/Node'}}},
+            Node: {type: 'object', properties: {next: {$ref: '#/components/schemas/Node'}}},
+          },
+        },
+      },
+    };
+    const before = JSON.stringify(document);
+    const result = await runScapiCode({
+      documents: [document],
+      code: 'async () => Object.values(spec.paths)[0].get.responses["200"].properties',
+    });
+    const node = {type: 'object', properties: {next: {$ref: '#/components/schemas/Node'}}};
+    expect(result).to.deep.equal({left: node, right: node});
+    expect(JSON.stringify(document)).to.equal(before);
   });
 
   it('classifies mixed authentication per operation and distinguishes SLAS token/admin contracts', async () => {
@@ -289,6 +312,162 @@ describe('SCAPI code mode', function () {
     });
   });
 
+  it('evaluates ordered path and job rules before loading authentication', async () => {
+    const signal = new AbortController().signal;
+    let authLoads = 0;
+    const authentication = () => {
+      authLoads++;
+      return auth;
+    };
+    const input = {method: 'PUT', path: prefix + 'test', body: {id: 'test'}};
+    for (const confirm of [false, true]) {
+      await rejects(
+        () => request({level: 'READ_ONLY', confirm}, authentication)(input, signal),
+        confirm ? 'Confirmation required' : 'blocked',
+      );
+    }
+    expect(authLoads).to.equal(0);
+    server.use(http.put(endpoint, () => HttpResponse.json({id: 'test'})));
+    const rules: SafetyConfig['rules'] = [
+      {method: 'PUT', path: prefix + 'test', action: 'allow'},
+      {method: 'PUT', action: 'block'},
+    ];
+    expect(await request({level: 'READ_ONLY', rules}, authentication)(input, signal)).to.have.property('ok', true);
+    await rejects(() => request({level: 'NONE', rules: [...rules].reverse()}, authentication)(input, signal), 'block');
+    expect(authLoads).to.equal(1);
+
+    const path = '/operation/jobs/v1/organizations/f_ecom_test_001/jobs/export/executions';
+    server.use(http.post('https://test.api.commercecloud.salesforce.com' + path, () => HttpResponse.json({id: '1'})));
+    const jobRules: SafetyConfig['rules'] = [
+      {job: 'export', action: 'allow'},
+      {method: 'POST', action: 'block'},
+    ];
+    expect(
+      await request({level: 'READ_ONLY', rules: jobRules})({method: 'POST', path, body: {}}, signal),
+    ).to.have.property('ok', true);
+    await rejects(
+      () =>
+        request({level: 'NONE', rules: [{job: 'export', action: 'block'}]}, authentication)(
+          {method: 'POST', path, body: {}},
+          signal,
+        ),
+      'block',
+    );
+    expect(authLoads).to.equal(1);
+  });
+
+  it('marks binary downloads unsupported and rejects them before authentication', async () => {
+    const document = loadScapiSchemas().find(({entry}) => entry.id === 'inventory/impex/v1')!;
+    let downloads = 0;
+    const call = request({level: 'NONE'}, () => {
+      throw new Error('Authentication must not load');
+    });
+    for (const [path, item] of Object.entries<ApiDocument>(document.schema.paths)) {
+      const operation = item.get;
+      if (!operation?.responses?.['200']?.content?.['application/octet-stream']) continue;
+      downloads++;
+      expect(getScapiAuthInfo(document, operation).executable).to.equal(false);
+      const resolvedPath =
+        '/inventory/impex/v1' + path.replace('{organizationId}', 'f_ecom_test_001').replaceAll(/\{[^}]+\}/g, 'test');
+      await rejects(
+        () => call({method: 'GET', path: resolvedPath}, new AbortController().signal),
+        'SCAPI_TRANSFER_UNSUPPORTED',
+      );
+    }
+    expect(downloads).to.equal(6);
+  });
+
+  it('rejects unexpected binary successes and preserves text HTTP errors', async () => {
+    server.use(
+      http.get(
+        endpoint,
+        () =>
+          new HttpResponse(new Uint8Array([0, 255, 128, 10]), {
+            headers: {'Content-Type': 'application/octet-stream'},
+          }),
+      ),
+    );
+    await rejects(
+      () => request()({method: 'GET', path: prefix + 'test'}, new AbortController().signal),
+      'SCAPI_TRANSFER_UNSUPPORTED',
+    );
+    server.use(http.get(endpoint, () => HttpResponse.text('Service unavailable', {status: 503})));
+    expect(await request()({method: 'GET', path: prefix + 'test'}, new AbortController().signal)).to.deep.equal({
+      status: 503,
+      ok: false,
+      data: 'Service unavailable',
+    });
+  });
+
+  it('enforces per-response and cumulative response byte limits', async () => {
+    let size = 1_048_576;
+    server.use(http.get(endpoint, () => HttpResponse.text('x'.repeat(size))));
+    const call = request();
+    const input = {method: 'GET', path: prefix + 'test'};
+    const signal = new AbortController().signal;
+    for (let i = 0; i < 5; i++) expect(await call(input, signal)).to.have.property('ok', true);
+    size = 1;
+    await rejects(() => call(input, signal), 'SCAPI_RESPONSE_TOO_LARGE');
+    size = 1_048_577;
+    await rejects(() => request()(input, signal), 'SCAPI_RESPONSE_TOO_LARGE');
+    size = 10;
+    expect(await request()(input, signal)).to.have.property('ok', true);
+  });
+
+  it('refuses redirects without sending credentials to the redirect target', async () => {
+    let redirected = 0;
+    server.use(
+      http.get(
+        endpoint,
+        () => new HttpResponse(null, {status: 302, headers: {Location: 'https://other.example/target'}}),
+      ),
+      http.get('https://other.example/target', () => {
+        redirected++;
+        return HttpResponse.json({});
+      }),
+    );
+    await rejects(() => request()({method: 'GET', path: prefix + 'test'}, new AbortController().signal), 'fetch');
+    expect(redirected).to.equal(0);
+  });
+
+  it('limits helper calls to 20 and concurrency to four without dispatching excess calls', async () => {
+    let calls = 0;
+    const result = await runScapiCode({
+      request: async () => {
+        calls++;
+        return null;
+      },
+      code: `async () => {
+        for (let i = 0; i < 20; i++) await scapi.request({});
+        try { await scapi.request({}); } catch (error) { return error.message; }
+      }`,
+    });
+    expect(result).to.include('SCAPI_CALL_LIMIT');
+    expect(calls).to.equal(20);
+    let active = 0;
+    let maximum = 0;
+    calls = 0;
+    const concurrent = await runScapiCode({
+      request: async () => {
+        calls++;
+        maximum = Math.max(maximum, ++active);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        active--;
+        return true;
+      },
+      code: `async () => Promise.all(Array.from({length: 5}, () => scapi.request({}).catch(error => error.message)))`,
+    });
+    expect(maximum).to.equal(4);
+    expect(calls).to.equal(4);
+    expect(concurrent).to.deep.equal([
+      true,
+      true,
+      true,
+      true,
+      'SCAPI_CONCURRENCY_LIMIT: at most four concurrent requests.',
+    ]);
+  });
+
   it('rejects a different tenant, arbitrary origins and undeclared auth headers', async () => {
     const call = request();
     for (const input of [
@@ -365,6 +544,22 @@ describe('SCAPI code mode', function () {
         }),
       'Await every',
     );
+  });
+
+  it('aborts an in-flight helper request when execution is cancelled', async () => {
+    const controller = new AbortController();
+    let requestSignal: AbortSignal | undefined;
+    const running = runScapiCode({
+      code: 'async () => scapi.request({})',
+      signal: controller.signal,
+      request: async (_input, signal) => {
+        requestSignal = signal;
+        controller.abort();
+        return null;
+      },
+    });
+    await rejects(() => running, 'CANCELLED');
+    expect(requestSignal?.aborted).to.equal(true);
   });
 
   it('does not install the startup safety guard when replacing it with per-target policy', () => {

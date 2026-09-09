@@ -9,7 +9,8 @@ under `references/`.
 `collections.json` selects entire plugin collections by their existing name in
 `skills/plugins.json`; it does not duplicate the per-skill inventory. Collections
 can instead name a repository-relative directory for MCP-only skills. `isGA`
-controls release exposure; `workspaces` only influences ranking. Neither native
+is collection metadata; MCP includes every selected collection regardless of it.
+`workspaces` only influences ranking. Neither native
 skill installation nor `--docs-topics` defines the skill catalog.
 
 ## MCP skills and resources
@@ -123,6 +124,8 @@ Changesets.
   after resource metadata. This preserves raw URI validation before the MCP
   SDK normalizes dot segments. Future resource families must join this dispatcher.
 - New tools can publish titles, annotations, and object-root output schemas.
+  Code-mode tools return text-only JSON without an output schema; their arbitrary
+  results retain resolution and error references without a duplicate payload.
   The MCP SDK validates final output after `attachResolution` enrichment.
   Existing tools retain their existing output behavior.
 
@@ -164,7 +167,7 @@ that content is not a template for the public website.
 
 ## Tool availability and storefront detection
 
-All GA toolsets are enabled by default; `--toolsets` and `--tools` customize
+All toolsets are enabled by default; `--toolsets` and `--tools` customize
 that selection. Startup workspace detection must not hide tools. Keep the SDK's
 storefront detection for operations with an explicitly resolved project, such
 as selecting PWA Kit or Storefront Next bundle defaults. The directory used to

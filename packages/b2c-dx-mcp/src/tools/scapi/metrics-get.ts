@@ -107,7 +107,6 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
         'CLOSED BETA. Retrieve B2C observability metric time series by category and time range. ' +
         'Defaults to the last 24 hours. Requires Metrics API access and OAuth scope sfcc.metrics.',
       toolsets: ['SCAPI'],
-      isGA: false,
       requiresInstance: false, // SCAPI uses OAuth directly
       usesConfigurationContext: true,
       inputSchema: {

@@ -81,8 +81,8 @@
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "preinspect": "pnpm run build",
-    "inspect": "mcp-inspector node bin/run.js --toolsets all --allow-non-ga-tools",
-    "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all --allow-non-ga-tools",
+    "inspect": "mcp-inspector node bin/run.js --toolsets all",
+    "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",
@@ -92,7 +92,7 @@
     "test:e2e:ci": "mocha --forbid-only --reporter json --reporter-option output=test-results-e2e.json \"test/e2e/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint",
-    "prepack": "pnpm run generate:guidance && oclif manifest",
+    "prepack": "pnpm run generate:guidance && node scripts/prepare-sdk-bundle.mjs && oclif manifest",
     "postpack": "shx rm -f oclif.manifest.json",
     "generate:guidance": "tsx --conditions=development scripts/generate-guidance.ts",
     "prepare:guidance-test": "node scripts/prepare-guidance-test.mjs"
@@ -109,6 +109,7 @@
     "zod": "4.5.4"
   },
   "bundledDependencies": [
+    "@modelcontextprotocol/server",
     "@salesforce/b2c-agent-plugins"
   ],
   "devDependencies": {

@@ -13,7 +13,7 @@ describe('consolidated diagnostics over stdio', function () {
   let client: McpE2EClient;
 
   before(async () => {
-    client = new McpE2EClient({args: ['--allow-non-ga-tools']});
+    client = new McpE2EClient();
     await client.start();
   });
 

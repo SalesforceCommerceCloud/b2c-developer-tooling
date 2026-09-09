@@ -40,9 +40,9 @@ process.on('message', async message => {
     for (const [path, item] of Object.entries(schema.paths || {})) {
       const methods = {};
       for (const method of ['get','head','post','put','patch','delete','options']) {
-        if (item[method]) methods[method] = {...item[method], api: entry.id,
+        if (item[method]) methods[method] = resolve({...item[method], api: entry.id,
           parameters: [...(item.parameters || []), ...(item[method].parameters || [])],
-          security: item[method].security ?? schema.security ?? []};
+          security: item[method].security ?? schema.security ?? []}, entry.id);
       }
       spec.paths['/' + entry.id + path] = methods;
     }

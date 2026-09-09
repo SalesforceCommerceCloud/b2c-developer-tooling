@@ -93,17 +93,17 @@ Explore products, catalogs, orders, customers, inventory, pricing, and more.
 The bundled reference covers 594 Admin and Shopper operations across 57 versioned
 API schemas. Discovery works offline without Commerce credentials.
 
-Enable with `--allow-non-ga-tools`. Available in SCAPI, PWAV3, and STOREFRONTNEXT.
+Available in SCAPI, PWAV3, and STOREFRONTNEXT.
 
-| Tool | Capability |
-| --- | --- |
-| `scapi_search` | Search bundled Admin and Shopper contracts by authentication; no credentials required. |
-| `scapi_execute` | Compose Admin API requests, including creating, updating, and deleting records. |
+| Tool            | Capability                                                                             |
+| --------------- | -------------------------------------------------------------------------------------- |
+| `scapi_search`  | Search bundled Admin and Shopper contracts by authentication; no credentials required. |
+| `scapi_execute` | Compose Admin API requests, including creating, updating, and deleting records.        |
 
 Execution uses the selected project's OAuth credentials, short code, and tenant ID.
 Grant the scopes needed for your task; creating products requires `sfcc.products.rw`.
 This preview executes standard Admin JSON requests; Shopper execution is not yet
-supported. Custom APIs are outside the bundled reference; inspect their live
+supported. Binary file uploads and downloads are not supported. Custom APIs are outside the bundled reference; inspect their live
 contracts with `scapi_schemas_list`. Custom API execution is not yet supported.
 See [code mode access](./security#scapi-code-mode).
 
@@ -112,9 +112,8 @@ unused, and verify the saved product."
 
 ### Observability metrics (closed beta) {#metrics}
 
-`metrics_get` reads Commerce metrics. Available in SCAPI with Metrics API access,
-OAuth scope `sfcc.metrics`, and `--allow-non-ga-tools`. Enabling it does not enroll
-your tenant in the closed beta.
+`metrics_get` reads Commerce metrics. Available in SCAPI; requires tenant access
+to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 
 ## Configuration inspection
 

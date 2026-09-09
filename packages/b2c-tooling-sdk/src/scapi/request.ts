@@ -11,10 +11,16 @@ import {buildTenantScope, toOrganizationId} from '../clients/custom-apis.js';
 import {withScopes} from '../clients/scapi-backend-utils.js';
 import {createAuthMiddleware, createSafetyMiddleware} from '../clients/middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from '../clients/middleware-registry.js';
-import {SafetyGuard, type SafetyConfig} from '../safety/index.js';
+import {SafetyGuard, extractJobIdFromPath, type SafetyConfig} from '../safety/index.js';
 import {getLogger} from '../logging/logger.js';
 import {findScapiOperation, resolveScapiReference, type ApiDocument, type ScapiSchemaDocument} from './catalog.js';
-import {scapiAuthError, scapiAuthResponse, unsupportedScapiAuth} from './authentication.js';
+import {
+  scapiAuthError,
+  scapiAuthResponse,
+  unsupportedScapiAuth,
+  unsupportedScapiTransfer,
+  isScapiTextMediaType,
+} from './authentication.js';
 
 export interface ScapiRequestOptions {
   shortCode: string;
@@ -65,6 +71,11 @@ export function createScapiRequest(
       (requirement: ApiDocument) => Array.isArray(requirement.AmOAuth2) && Object.keys(requirement).length === 1,
     );
     if (!admin) throw unsupportedScapiAuth(matched.document, operation);
+    const transferLimit = unsupportedScapiTransfer(matched.document, operation);
+    if (transferLimit)
+      throw new Error(
+        `SCAPI_TRANSFER_UNSUPPORTED: ${operation.operationId}. ${transferLimit} Use a file-capable HTTP client.`,
+      );
     const query = args.query === undefined ? {} : args.query;
     if (!query || typeof query !== 'object' || Array.isArray(query)) throw new Error('query must be an object.');
     const queryValues = {...query} as Record<string, unknown>;
@@ -107,7 +118,9 @@ export function createScapiRequest(
       tenantScope: buildTenantScope(options.tenantId),
     };
     // Use per-execution policy instead of the CLI's startup-bound safety provider.
-    guard.assert({type: 'http', method, url: origin + path});
+    const url = origin + path;
+    const pathname = new URL(url).pathname;
+    guard.assert({type: 'http', method, url, path: pathname, jobId: extractJobIdFromPath(pathname)});
     let baseAuth: AuthStrategy;
     try {
       baseAuth = withScopes(typeof options.auth === 'function' ? options.auth() : options.auth, [
@@ -134,9 +147,17 @@ export function createScapiRequest(
     };
     const client = createClient<ApiDocument>({
       baseUrl: origin,
+      headers: {Accept: 'application/json, text/*'},
       fetch: async (request: Request) => {
         signal.throwIfAborted();
         const response = await fetch(request, {signal, redirect: 'error'});
+        const mediaType = response.headers.get('content-type');
+        if (response.ok && mediaType && !isScapiTextMediaType(mediaType)) {
+          void response.body?.cancel().catch(() => {});
+          throw new Error(
+            'SCAPI_TRANSFER_UNSUPPORTED: API returned a non-text response. Use a file-capable HTTP client; check any write before retrying.',
+          );
+        }
         const chunks: Uint8Array[] = [];
         let bytes = 0;
         const reader = response.body?.getReader();
@@ -151,7 +172,8 @@ export function createScapiRequest(
             chunks.push(chunk.value);
           }
         } finally {
-          await reader?.cancel();
+          // A tee'd response can wait for another consumer; cleanup must not delay a limit error.
+          void reader?.cancel().catch(() => {});
         }
         getLogger().debug({method, path: matched.template, status: response.status, bytes}, 'SCAPI code request');
         return new Response(chunks.length ? Buffer.concat(chunks) : null, {

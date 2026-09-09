@@ -36,14 +36,16 @@ Use your project's `dw.json`, environment variables, or existing shared B2C
 configuration. Skills and documentation do not require Commerce credentials.
 For connected operations, configure only the access you need:
 
-| Capability                     | Required access                                                                                                          |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| Cartridge deployment           | Instance hostname, code version, and WebDAV write credentials. Reloading also requires the relevant OCAPI access.        |
-| Instance logs                  | Instance hostname and WebDAV log-read credentials.                                                                       |
-| Script debugging               | Instance hostname and Business Manager username/password or access key with debugger permission. OAuth is not supported. |
-| SCAPI schemas                  | Short code, tenant ID, and OAuth client with `sfcc.scapi-schemas` scope.                                                 |
-| Custom API registration status | Short code, tenant ID, and OAuth client with `sfcc.custom-apis` scope.                                                   |
-| MRT bundles and logs           | MRT API key and project. Select an environment for deployment or live logs.                                              |
+| Capability                     | Required access                                                                                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cartridge deployment           | Instance hostname, code version, and WebDAV write credentials. Reloading also requires the relevant OCAPI access.                                  |
+| Instance logs                  | Instance hostname and WebDAV log-read credentials.                                                                                                 |
+| Script debugging               | Instance hostname and Business Manager username/password or access key with debugger permission. OAuth is not supported.                           |
+| SCAPI offline discovery        | No Commerce credentials required.                                                                                                                  |
+| SCAPI Admin execution          | Short code, tenant ID, and Account Manager client credentials with the operation's API scopes; for example, `sfcc.products.rw` to create products. |
+| SCAPI live schemas             | Short code, tenant ID, and OAuth client with `sfcc.scapi-schemas` scope.                                                                           |
+| Custom API registration status | Short code, tenant ID, and OAuth client with `sfcc.custom-apis` scope.                                                                             |
+| MRT bundles and logs           | MRT API key and project. Select an environment for deployment or live logs.                                                                        |
 
 See [authentication setup](../guide/authentication) for creating clients, setting
 scopes, and configuring WebDAV. See [configuration file formats](../guide/configuration#configuration-file)
@@ -99,16 +101,15 @@ if no valid selection remains the server falls back to all toolsets.
 
 ### Launch options {#mcp-server-flags}
 
-| Option                 | Environment variable      | Use                                                                 |
-| ---------------------- | ------------------------- | ------------------------------------------------------------------- |
-| `--project-directory`  | `SFCC_PROJECT_DIRECTORY`  | Select the project.                                                 |
-| `--config`             | `SFCC_CONFIG`             | Select a B2C configuration file.                                    |
-| `--instance`           | `SFCC_INSTANCE`           | Select a named instance.                                            |
-| `--toolsets`           | `SFCC_TOOLSETS`           | Enable toolsets, comma-separated.                                   |
-| `--tools`              | `SFCC_TOOLS`              | Enable individual tools, comma-separated.                           |
-| `--docs-topics`        | `SFCC_DOCS_TOPICS`        | Limit documentation topics.                                         |
-| `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Include preview tools. Disabled by default for direct registration. |
-| `--log-level`          | `SFCC_LOG_LEVEL`          | Set `trace`, `debug`, `info`, `warn`, `error`, or `silent`.         |
+| Option                | Environment variable     | Use                                                         |
+| --------------------- | ------------------------ | ----------------------------------------------------------- |
+| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Select the project.                                         |
+| `--config`            | `SFCC_CONFIG`            | Select a B2C configuration file.                            |
+| `--instance`          | `SFCC_INSTANCE`          | Select a named instance.                                    |
+| `--toolsets`          | `SFCC_TOOLSETS`          | Enable toolsets, comma-separated.                           |
+| `--tools`             | `SFCC_TOOLS`             | Enable individual tools, comma-separated.                   |
+| `--docs-topics`       | `SFCC_DOCS_TOPICS`       | Limit documentation topics.                                 |
+| `--log-level`         | `SFCC_LOG_LEVEL`         | Set `trace`, `debug`, `info`, `warn`, `error`, or `silent`. |
 
 Set launch environment variables in your MCP client's server configuration or
 the environment that starts the server. Project `.env` files supply per-project

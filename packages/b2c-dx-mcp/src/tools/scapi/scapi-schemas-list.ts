@@ -310,7 +310,6 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
       description:
         'List SCAPI schema metadata or fetch an OpenAPI schema. Fetch requires includeSchemas, apiFamily, apiName, and apiVersion. Use scapi_custom_apis_get_status for endpoint status.',
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
-      isGA: true,
       requiresInstance: false, // SCAPI uses OAuth directly, doesn't need B2CInstance (hostname)
       usesConfigurationContext: true,
       inputSchema: {

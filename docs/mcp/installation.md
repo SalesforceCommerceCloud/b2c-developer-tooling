@@ -87,7 +87,7 @@ claude plugin install b2c-dx-mcp --scope project
 :::
 
 Restart your client after installation. The plugin manages the server version
-and launch options, including preview-tool availability. Use direct registration
+and launch options. Use direct registration
 when you need to control those options yourself.
 
 ## Configure and verify
@@ -106,7 +106,7 @@ version if your team needs a fixed version; restart the MCP after updates.
 | Server does not start                  | Run `node --version` and `npx --version` in the environment launching your client.                                                         |
 | `spawn npx ENOENT`                     | The client cannot find Node.js on its PATH. Launch the editor from your terminal or configure the absolute path to `npx`.                  |
 | Wrong project or missing configuration | Set `--project-directory` to the intended project. Check the target with `config_inspect`.                                                 |
-| Missing tools                          | Check [tool selection](./configuration#toolset-selection) and whether the capability requires preview access.                              |
+| Missing tools                          | Check [tool selection](./configuration#toolset-selection) and your client's active tool list.                                              |
 | Authentication fails                   | Check the credentials and scopes for the [requested capability](./toolsets), then consult [authentication setup](../guide/authentication). |
 
 For client-specific controls, see the documentation for

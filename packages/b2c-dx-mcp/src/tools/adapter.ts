@@ -150,9 +150,6 @@ export interface ToolAdapterOptions<TInput, TOutput> extends ToolEffects {
   /** Toolsets this tool belongs to */
   toolsets: Toolset[];
 
-  /** Whether this tool is GA (generally available). Defaults to true. */
-  isGA?: boolean;
-
   /**
    * Whether this tool requires a B2CInstance.
    * Set to false for tools that don't need B2C instance connectivity (e.g., local scaffolding tools).
@@ -248,7 +245,7 @@ export function jsonResult(data: unknown, indent = 2): ToolResult {
 }
 
 /** Attach compact resolution provenance while preserving existing tool output. */
-export function attachResolution(result: ToolResult, resolution: ToolResolution): ToolResult {
+export function attachResolution(result: ToolResult, resolution: ToolResolution, indent = 2): ToolResult {
   let content = result.content;
   const original = result.structuredContent;
   const structured =
@@ -264,7 +261,7 @@ export function attachResolution(result: ToolResult, resolution: ToolResolution)
       const parsed = JSON.parse(content[0].text) as unknown;
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
         const output = {...(parsed as Record<string, unknown>), resolution};
-        content = [{...content[0], text: JSON.stringify(output, null, 2)}];
+        content = [{...content[0], text: JSON.stringify(output, null, indent)}];
         structuredContent = {...output, ...structured, resolution};
       }
     } catch {
@@ -334,7 +331,6 @@ export function createToolAdapter<TInput, TOutput>(
     description,
     inputSchema,
     toolsets,
-    isGA = true,
     requiresInstance = false,
     requiresMrtAuth = false,
     usesProjectContext = false,
@@ -369,7 +365,6 @@ export function createToolAdapter<TInput, TOutput>(
     openWorld: options.openWorld,
     outputSchema: options.outputSchema,
     toolsets,
-    isGA,
 
     async handler(rawArgs: Record<string, unknown>): Promise<ToolResult> {
       // 1. Validate input with Zod

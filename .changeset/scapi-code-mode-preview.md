@@ -5,6 +5,6 @@
 '@salesforce/b2c-dx-docs': patch
 ---
 
-Add preview SCAPI code mode with offline standard API discovery and JavaScript Admin requests using configured authentication and safety rules. Enable the MCP tools with `--allow-non-ga-tools`.
+Add preview SCAPI code mode with offline standard API discovery and JavaScript Admin requests using configured authentication and safety rules.
 
 Discovery distinguishes Admin and Shopper authentication; setup errors identify the relevant credentials and grants to check.

@@ -139,7 +139,6 @@ describe('tools/adapter', () => {
           idempotent: true,
           openWorld: false,
           toolsets: ['CARTRIDGES'],
-          isGA: true,
           requiresInstance: false,
           inputSchema: {
             message: z.string().describe('A message'),
@@ -153,29 +152,6 @@ describe('tools/adapter', () => {
       expect(tool.name).to.equal('test_tool');
       expect(tool.description).to.equal('A test tool');
       expect(tool.toolsets).to.deep.equal(['CARTRIDGES']);
-      expect(tool.isGA).to.be.true;
-    });
-
-    it('should default isGA to true', () => {
-      const loadServices = createMockLoadServices();
-
-      const tool = createToolAdapter(
-        {
-          name: 'test_tool',
-          description: 'A test tool',
-          effect: 'read',
-          idempotent: true,
-          openWorld: false,
-          toolsets: ['MRT'],
-          requiresInstance: false,
-          inputSchema: {},
-          execute: async () => 'result',
-          formatOutput: (output) => textResult(output),
-        },
-        loadServices,
-      );
-
-      expect(tool.isGA).to.be.true;
     });
 
     it('should validate input using Zod schema', async () => {

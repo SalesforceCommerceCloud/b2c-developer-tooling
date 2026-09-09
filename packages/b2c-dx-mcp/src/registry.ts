@@ -38,7 +38,6 @@ export function createToolRegistry(
   serverContext?: ServerContext,
   detectedWorkspaces: readonly ProjectType[] = [],
   enabledDocCategories?: readonly DocCategory[],
-  allowNonGaTools = false,
 ): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
@@ -56,7 +55,7 @@ export function createToolRegistry(
     ...createDocsTools(loadServices, {detectedWorkspaces, enabledCategories: enabledDocCategories}),
     ...createMrtTools(loadServices),
     ...createScapiTools(loadServices),
-    createGuidanceTool(allowNonGaTools),
+    createGuidanceTool(),
   ];
 
   // Organize tools by their declared toolsets (supports multi-toolset)
@@ -87,7 +86,6 @@ export async function registerToolsets(
   REGISTERED_SERVERS.add(server);
   const toolsets = flags.toolsets ?? [];
   const individualTools = flags.tools ?? [];
-  const allowNonGaTools = flags.allowNonGaTools ?? false;
   const logger = getLogger();
 
   // Resolve the launch-time docs topic allowlist (bounds the whole docs corpus).
@@ -105,7 +103,7 @@ export async function registerToolsets(
   }
 
   // Tool availability is independent of the workspace. Explicit selection customizes the default catalog.
-  const toolRegistry = createToolRegistry(loadServices, serverContext, [], enabledDocCategories, allowNonGaTools);
+  const toolRegistry = createToolRegistry(loadServices, serverContext, [], enabledDocCategories);
   const existingToolNames = new Set(
     Object.values(toolRegistry)
       .flat()
@@ -176,26 +174,26 @@ export async function registerToolsets(
   }
 
   // Register all selected tools
-  await registerTools(toolsToRegister, server, allowNonGaTools);
-  registerGuidanceResources(server, allowNonGaTools, registeredToolNames.has('skills_read'));
+  await registerTools(toolsToRegister, server);
+  registerGuidanceResources(server, registeredToolNames.has('skills_read'));
 }
 
 /**
  * Register a list of tools with the server.
  */
-async function registerTools(tools: McpTool[], server: B2CDxMcpServer, allowNonGaTools: boolean): Promise<void> {
+async function registerTools(tools: McpTool[], server: B2CDxMcpServer): Promise<void> {
   for (const tool of tools) {
-    // Skip non-GA tools if not allowed
-    if (tool.isGA === false && !allowNonGaTools) {
-      continue;
-    }
-
-    // Register the tool
     // Register the tool (invocations are tracked by B2CDxMcpServer)
-    server.addTool(tool.name, tool.description, tool.inputSchema, async (args) => tool.handler(args), {
-      title: tool.title,
-      annotations: toToolAnnotations(tool),
-      outputSchema: tool.outputSchema,
-    });
+    server.addTool(
+      tool.name,
+      tool.description,
+      tool.inputSchema,
+      async (args, context) => tool.handler(args, context),
+      {
+        title: tool.title,
+        annotations: toToolAnnotations(tool),
+        outputSchema: tool.outputSchema,
+      },
+    );
   }
 }

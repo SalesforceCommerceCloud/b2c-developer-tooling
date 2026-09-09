@@ -42,12 +42,6 @@ describe('McpServerCommand', () => {
       expect(toolsFlag).to.not.be.undefined;
     });
 
-    it('should define allow-non-ga-tools flag with default false', () => {
-      const flag = McpServerCommand.flags['allow-non-ga-tools'];
-      expect(flag).to.not.be.undefined;
-      expect(flag.default).to.equal(false);
-    });
-
     it('should not have a no-telemetry flag (telemetry controlled via env vars only)', () => {
       // Telemetry is disabled via SF_DISABLE_TELEMETRY=true or SFCC_DISABLE_TELEMETRY=true
       // This keeps the CLI cleaner and prevents accidental disabling
@@ -74,7 +68,6 @@ describe('McpServerCommand', () => {
     it('should support environment variables for flags', () => {
       expect(McpServerCommand.flags.toolsets.env).to.equal('SFCC_TOOLSETS');
       expect(McpServerCommand.flags.tools.env).to.equal('SFCC_TOOLS');
-      expect(McpServerCommand.flags['allow-non-ga-tools'].env).to.equal('SFCC_ALLOW_NON_GA_TOOLS');
       // config flag env is inherited from BaseCommand
       expect(McpServerCommand.baseFlags.config.env).to.equal('SFCC_CONFIG');
     });
@@ -152,7 +145,6 @@ describe('McpServerCommand', () => {
       // Stub init to set up flags
       sandbox.stub(command, 'init').resolves();
       (command as unknown as {flags: Record<string, unknown>}).flags = {
-        'allow-non-ga-tools': false,
         'log-level': 'silent',
       };
 
@@ -190,7 +182,6 @@ describe('McpServerCommand', () => {
       // Stub init to set up flags
       sandbox.stub(command, 'init').resolves();
       (command as unknown as {flags: Record<string, unknown>}).flags = {
-        'allow-non-ga-tools': false,
         'log-level': 'silent',
       };
 
@@ -233,7 +224,6 @@ describe('McpServerCommand', () => {
       // Stub init to set up flags with toolsets
       sandbox.stub(command, 'init').resolves();
       (command as unknown as {flags: Record<string, unknown>}).flags = {
-        'allow-non-ga-tools': false,
         'log-level': 'silent',
         toolsets: 'MRT,CARTRIDGES',
       };
@@ -1054,7 +1044,6 @@ describe('McpServerCommand', () => {
       // Stub init
       sandbox.stub(command, 'init').resolves();
       (command as unknown as {flags: Record<string, unknown>}).flags = {
-        'allow-non-ga-tools': false,
         'log-level': 'silent',
       };
 

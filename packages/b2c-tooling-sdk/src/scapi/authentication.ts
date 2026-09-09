@@ -14,6 +14,23 @@ export interface ScapiAuthInfo {
   executable: boolean;
 }
 
+export function isScapiTextMediaType(mediaType: string): boolean {
+  const type = mediaType.split(';')[0].trim().toLowerCase();
+  return type.startsWith('text/') || type === 'application/json' || type.endsWith('+json');
+}
+
+/** Shared discovery/execution limit: code mode transports JSON requests and text responses. */
+export function unsupportedScapiTransfer(document: ScapiSchemaDocument, operation: ApiDocument): string | undefined {
+  const body = operation.requestBody && resolveScapiReference(operation.requestBody, document.schema);
+  if (body?.required && !body.content?.['application/json'])
+    return 'This operation requires a non-JSON request body. File uploads are not supported.';
+  const mediaTypes = Object.entries<ApiDocument>(operation.responses ?? {})
+    .filter(([status]) => /^2(?:\d\d|XX)$/i.test(status))
+    .flatMap(([, response]) => Object.keys(resolveScapiReference(response, document.schema).content ?? {}));
+  if (mediaTypes.length && !mediaTypes.some(isScapiTextMediaType))
+    return 'This operation returns a binary file. File downloads are not supported.';
+}
+
 /** Identify supported authentication per operation, including mixed Admin/Shopper contracts. */
 export function getScapiAuthInfo(document: ScapiSchemaDocument, operation: ApiDocument): ScapiAuthInfo {
   const security: ApiDocument[] = operation.security ?? document.schema.security ?? [];
@@ -30,11 +47,10 @@ export function getScapiAuthInfo(document: ScapiSchemaDocument, operation: ApiDo
   const admin = security.some(
     (requirement) => Array.isArray(requirement.AmOAuth2) && Object.keys(requirement).length === 1,
   );
-  const body = operation.requestBody && resolveScapiReference(operation.requestBody, document.schema);
   return {
     types: [...types].sort(),
     schemes,
-    executable: admin && (!body?.required || Boolean(body.content?.['application/json'])),
+    executable: admin && !unsupportedScapiTransfer(document, operation),
   };
 }
 

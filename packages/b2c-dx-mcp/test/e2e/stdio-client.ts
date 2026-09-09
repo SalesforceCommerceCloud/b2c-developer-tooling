@@ -46,7 +46,7 @@ export interface McpE2EClientOptions {
   cwd?: string;
   /** Extra env vars (SFCC_DISABLE_TELEMETRY is always set). */
   env?: NodeJS.ProcessEnv;
-  /** Server args (e.g. ['--toolsets', 'all', '--allow-non-ga-tools']). */
+  /** Server args (e.g. ['--toolsets', 'all']). */
   args?: string[];
 }
 

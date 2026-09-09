@@ -70,11 +70,16 @@ Use the tarball preparation to assess release packaging.
 
 ## SCAPI code mode checkpoint
 
-Add `--allow-non-ga-tools` to the MCP arguments and restart the session. If
-`--tools` limits selection, include `scapi_search`, `scapi_execute`, and
+Code mode is available by default. If `--tools` limits selection, include
+`scapi_search`, `scapi_execute`, and
 `config_inspect`. The standard schema corpus ships inside the SDK tarball;
 normal builds and CI need no tenant or Schemas API connection. The packed smoke
 test checks product contract discovery outside the workspace.
+
+Code-mode tool descriptions include object types and examples. Search exposes
+expanded local refs; no `spec.resolve` call is needed for normal inspection.
+Both code tools return one JSON text block with no `structuredContent` or output
+schema. Verify resolution and authentication guidance remain in that JSON.
 
 Use an existing test project with Account Manager Admin credentials, short code,
 tenant ID, and the relevant scopes (`sfcc.products.rw` for product creation,

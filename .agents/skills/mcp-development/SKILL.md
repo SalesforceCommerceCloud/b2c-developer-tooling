@@ -36,7 +36,8 @@ tools need no pointer or prerequisite read; `config_inspect` stays direct.
 Use `createToolAdapter` and the SDK resolver. Accept per-call project/configuration
 context where relevant; preserve `attachResolution` and validate output after
 enrichment. Sessions retain their original target. Skills never resolve a project.
-Default toolsets are all GA tools; explicit selection customizes availability.
+All tools are enabled by default; explicit selection customizes availability.
+Do not gate tool or skill availability behind release-maturity launch flags.
 Client tool discovery may be deferred: discover before recommending reconfiguration.
 
 MCP skill resources and their index/template access remain available independently
@@ -106,11 +107,29 @@ focused; do not test prose by matching whole descriptions.
 
 Follow Cloudflare's discovery/execution convention: JavaScript async functions,
 `spec.paths` for offline discovery, and an authenticated `scapi.request` helper.
+Tool descriptions include concise object types and runnable discovery/execution
+examples; Commerce procedures belong in the required skill. Expose local refs
+expanded in the discovery view, retaining recursive/deep refs; keep source schemas
+intact. Code-mode results use text-only JSON without an output schema because
+programs choose their result shape. Preserve resolution and error skill references
+in compact JSON, including after resolution enrichment; do not duplicate arbitrary
+payloads in `structuredContent`. Measure final serialized size, not an intermediate
+representation. Teach discovery of operation IDs before selected schema fields;
+filter/page/aggregate live data in code and retain errors and partial-list counts.
+Warn about large schemas/results in tool descriptions. Introduce code mode in
+server instructions as the Commerce API fallback; prefer dedicated tools.
 Use native Node execution; no custom language parser or evaluator. A disposable
 child bounds runtime and cleans up work, but is not a security sandbox. Keep
 credentials in the host and apply SDK safety rules for the resolved target at
 each helper request. Preserve cancellation and resolution. Never replay a whole
 program automatically after writes; let SCAPI validate request payloads.
+Forward request context through registration; test cancellation through both
+stdio protocols and verify execution stops. Resolve project safety environment
+without mutating process.env; launch values win over project .env. Evaluate the
+same URL pathname/job ID before auth and in middleware. Test ordered exceptions,
+request/concurrency/response limits, and redirects. Keep discovery support flags
+aligned with execution; reject unsupported transfers before auth. Safety follows
+HTTP methods, including POST searches; document narrow rule exceptions, not bypasses.
 
 Classify authentication per operation from schema security, including mixed
 Admin/Shopper alternatives. Expose runtime support separately from configured

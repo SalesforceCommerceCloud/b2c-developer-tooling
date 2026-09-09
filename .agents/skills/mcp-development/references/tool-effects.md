@@ -75,6 +75,6 @@ authorizes arbitrary code or establishes read-only behavior.
 
 Keep descriptions clear about material effects without repeating annotation
 booleans. Verify actual `tools/list` through stdio, including wrapper tools and
-non-GA tools. Test new destructive options and retry behavior where those can
+optional tools. Test new destructive options and retry behavior where those can
 invalidate a classification. Annotations are advisory, not an authorization
 boundary or a promise that a client will suppress approval prompts.

@@ -100,7 +100,6 @@ function createCartridgeDeployTool(
         'Find and deploy cartridges to B2C Commerce via WebDAV. Supports include/exclude filters and code-version reload. ' +
         "After deployment, add new cartridges to the site's cartridge path in Business Manager: Sites → Manage Sites → Settings tab → Cartridges.",
       toolsets: ['CARTRIDGES'],
-      isGA: true,
       requiresInstance: true,
       usesProjectContext: true,
       inputSchema: {

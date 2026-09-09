@@ -55,7 +55,7 @@ claude plugin install b2c-dx-mcp --scope project
 ```json
 "b2c-dx-mcp": {
   "command": "npx",
-  "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+  "args": ["-y", "@salesforce/b2c-dx-mcp@latest"]
 }
 ```
 
@@ -69,7 +69,7 @@ claude plugin install b2c-dx-mcp --scope project
 "b2c-dx-mcp": {
   "type": "stdio",
   "command": "npx",
-  "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+  "args": ["-y", "@salesforce/b2c-dx-mcp@latest"]
 }
 ```
 

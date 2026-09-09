@@ -78,11 +78,11 @@ const outputSchema = {
   ]),
 };
 
-function catalogLoader(allowNonGa: boolean, collections?: readonly string[]): () => GuidanceCatalog {
+function catalogLoader(collections?: readonly string[]): () => GuidanceCatalog {
   let catalog: GuidanceCatalog | undefined;
   return () => {
     catalog ??= new GuidanceCatalog(fileURLToPath(new URL('../content/guidance/', import.meta.url)), {
-      allowNonGa,
+      allowNonGa: true,
       collections,
     });
     return catalog;
@@ -107,8 +107,8 @@ function errorResult(error: unknown): ToolResult {
 }
 
 /** Read-only guidance does not load instance configuration or credentials. */
-export function createGuidanceTool(allowNonGa = false): McpTool {
-  const getCatalog = catalogLoader(allowNonGa);
+export function createGuidanceTool(): McpTool {
+  const getCatalog = catalogLoader();
   return {
     name: 'skills_read',
     effect: 'read',
@@ -120,7 +120,6 @@ export function createGuidanceTool(allowNonGa = false): McpTool {
     inputSchema,
     outputSchema,
     toolsets: [...TOOLSETS],
-    isGA: true,
     async handler(args) {
       const parsed = z.object(inputSchema).strict().safeParse(args);
       if (!parsed.success)
@@ -141,12 +140,8 @@ export function createGuidanceTool(allowNonGa = false): McpTool {
 }
 
 /** Advertise an index and featured skills; the template reads the entire available catalog. */
-export function registerGuidanceResources(
-  server: B2CDxMcpServer,
-  allowNonGa = false,
-  includeSharedSkills = true,
-): void {
-  const catalog = catalogLoader(allowNonGa, includeSharedSkills ? undefined : ['mcp'])();
+export function registerGuidanceResources(server: B2CDxMcpServer, includeSharedSkills = true): void {
+  const catalog = catalogLoader(includeSharedSkills ? undefined : ['mcp'])();
   const read = async (uri: string): Promise<{contents: {uri: string; mimeType: string; text: string}[]}> => {
     try {
       return {contents: [{uri, mimeType: 'text/markdown', text: catalog.readResource(uri)}]};

@@ -3,370 +3,54 @@ name: b2c-scapi-shopper
 description: Call Shopper Commerce APIs (SCAPI) from headless storefronts and composable commerce apps. Use this skill whenever the user is building with PWA Kit, Storefront Next (SFNext), or a headless frontend and needs to search products, manage baskets, submit orders, access customer data, or set shopper context. Also use when they ask about Shopper API authentication, checkout flows from a frontend app, or performance optimization for API calls — even if they just say "search products from my PWA" or "build a headless checkout".
 ---
 
-# Shopper Commerce APIs (SCAPI)
-
-This skill guides you through consuming standard Shopper APIs for building headless commerce experiences. Shopper APIs are RESTful endpoints designed for customer-facing storefronts.
-
-> **Note:** For **creating** custom API endpoints, see [b2c-custom-api-development](../b2c-custom-api-development/SKILL.md). This skill focuses on **consuming** standard Shopper APIs.
-
-## Scope & grounding
-
-This skill provides quick-start patterns and examples for B2C Commerce Shopper APIs (SCAPI) used in headless storefronts — authentication, checkout, product APIs, and Shopper Context. The examples are version-agnostic and illustrative. Before answering questions that reference specific API versions, authentication flows, quota limits, default scopes, or before emitting code the user will run, confirm current details via `b2c docs search`/`b2c docs read` (CLI) or the docs_search/docs_read MCP tools. The official Commerce API documentation at developer.salesforce.com is the authoritative source for API specifications, current authentication patterns, and version-specific behavior.
-
-**Canonical docs:**
-- `commerce-api/work-with-baskets-orders` - Build Baskets and Place Orders guide
-- `commerce-api/shopper-context-api` - Shopper Context API reference
-- `commerce-api/shopper-context-best-practices` - Shopper Context best practices
-- `commerce-api/auth-z-scope-catalog` - Authorization Scopes Catalog
-- `commerce-api/slas` - SLAS Overview
-- `commerce-api/hook-method-details` - Hook Method Details
-- `commerce-api/use-shopper-api` - Use Shopper API guide
-- `commerce-api/performance` - Performance optimization guide
-
-## Overview
-
-Shopper APIs are designed for frontend commerce applications:
-
-- **Client**: PWA Kit, composable storefronts, mobile apps
-- **Authentication**: SLAS (Shopper Login and API Access Service)
-- **Response Time**: < 10 seconds (HTTP 504 if exceeded)
-- **CORS**: Not supported - use a reverse proxy or BFF (Backend for Frontend)
-
-### Base URL Structure
-
-```
-https://{shortCode}.api.commercecloud.salesforce.com/{apiFamily}/{apiName}/v1/organizations/{organizationId}/{resource}?siteId={siteId}
-```
-
-Example:
-```
-https://kv7kzm78.api.commercecloud.salesforce.com/product/shopper-products/v1/organizations/f_ecom_zzte_053/products/25518823M?siteId=RefArchGlobal
-```
-
-**Note:** Shopper Baskets API supports both `v1` and `v2`. See [Shopper Baskets API reference](https://developer.salesforce.com/docs/commerce/commerce-api/references/shopper-baskets-v2?meta=Summary) or `b2c docs read commerce-api/work-with-baskets-orders` for current version guidance.
-
-### Configuration Values
-
-| Value | Description | Example |
-|-------|-------------|---------|
-| `shortCode` | 8-character API routing code | `kv7kzm78` |
-| `organizationId` | Instance identifier | `f_ecom_zzte_053` |
-| `siteId` | Site/channel name | `RefArchGlobal` |
-
-Find these in Business Manager: **Administration > Site Development > Salesforce Commerce API Settings**
-
-## Authentication
-
-Shopper APIs require SLAS tokens. SLAS supports guest and registered shopper flows.
-
-### Create SLAS Client
-
-```bash
-# Create client with default scopes for a shopping app
-b2c slas client create \
-  --tenant-id zzte_053 \
-  --channels RefArchGlobal \
-  --default-scopes \
-  --redirect-uri http://localhost:3000/callback
-```
-
-See [b2c-slas skill](../../../b2c-cli/skills/b2c-slas/SKILL.md) for full client management.
-
-### Get Guest Token
-
-> Illustrative of the flow; confirm current SLAS authentication patterns (guest/registered, public/private client, PKCE) with `b2c docs read commerce-api/slas`.
-
-```javascript
-const response = await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/token`,
-    {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Basic ${btoa(clientId + ':' + clientSecret)}`
-        },
-        body: new URLSearchParams({
-            grant_type: 'client_credentials',
-            channel_id: siteId
-        })
-    }
-);
-
-const { access_token, refresh_token } = await response.json();
-```
-
-### Required Scopes
-
-All Shopper API scopes must be configured on your SLAS client. See [Scopes Reference](references/SCOPES.md) for the complete list.
-
-| API Family | Scope |
-|------------|-------|
-| Products | `sfcc.shopper-products` |
-| Search | `sfcc.shopper-product-search` |
-| Baskets | `sfcc.shopper-baskets-orders.rw` |
-| Orders | `sfcc.shopper-baskets-orders` |
-| Customers | `sfcc.shopper-customers.login`, `sfcc.shopper-myaccount.rw` |
-
-## API Families
-
-### Shopper Products
-
-Retrieve product details, pricing, and availability.
-
-```javascript
-// Get product by ID
-const product = await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/product/shopper-products/v1/organizations/${orgId}/products/${productId}?siteId=${siteId}`,
-    {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-    }
-).then(r => r.json());
-
-// Get multiple products
-const products = await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/product/shopper-products/v1/organizations/${orgId}/products?ids=prod1,prod2,prod3&siteId=${siteId}`,
-    {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-    }
-).then(r => r.json());
-```
-
-### Shopper Search
-
-Product search and suggestions.
-
-```javascript
-// Search products
-const results = await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/search/shopper-search/v1/organizations/${orgId}/product-search?siteId=${siteId}&q=shirt&limit=25`,
-    {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-    }
-).then(r => r.json());
-
-// Get search suggestions
-const suggestions = await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/search/shopper-search/v1/organizations/${orgId}/search-suggestions?siteId=${siteId}&q=shi`,
-    {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-    }
-).then(r => r.json());
-```
-
-### Shopper Baskets
-
-Create and manage shopping carts. See [Checkout Flow Reference](references/CHECKOUT-FLOW.md) for the complete flow.
-
-```javascript
-// Create basket
-const basket = await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/checkout/shopper-baskets/v1/organizations/${orgId}/baskets?siteId=${siteId}`,
-    {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-    }
-).then(r => r.json());
-
-// Add item to basket
-await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/checkout/shopper-baskets/v1/organizations/${orgId}/baskets/${basketId}/items?siteId=${siteId}`,
-    {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify([{
-            productId: '25518823M',
-            quantity: 1
-        }])
-    }
-);
-```
-
-### Shopper Orders
-
-Submit orders and retrieve order history.
-
-```javascript
-// Create order from basket
-const order = await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/checkout/shopper-orders/v1/organizations/${orgId}/orders?siteId=${siteId}`,
-    {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            basketId: basket.basketId
-        })
-    }
-).then(r => r.json());
-```
-
-> **The order POST is the first phase.** It commits an order in `CREATED`; it does not authorize or
-> place it. Next, update each required order payment instrument with
-> `PATCH /orders/{orderNo}/payment-instruments/{paymentInstrumentId}`. That endpoint invokes
-> `dw.order.payment.authorizeCreditCard` or `dw.order.payment.authorize`, then the default order-PI
-> `afterPATCH` implementation places the order after authorized coverage reaches the order total.
-> Treat the returned `NEW` order as success. On a deterministic payment failure, call
-> `POST /orders/{orderNo}/actions/fail?reopenBasket=true` with an appropriate reason code. Preserve a
-> `CREATED` order when provider state is indeterminate. See
-> [b2c-hooks](../b2c-hooks/SKILL.md#headless-order-payment-use-the-order-pi-authorization-seam) and
-> [b2c-ordering](../b2c-ordering/SKILL.md). Confirm version-specific request fields with the Shopper
-> Orders schema and hook signatures with `b2c docs read commerce-api/hook-method-details`.
-
-### Shopper Customers
-
-Customer registration, login, and account management.
-
-```javascript
-// Get customer profile (registered shopper)
-const customer = await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/customer/shopper-customers/v1/organizations/${orgId}/customers/${customerId}?siteId=${siteId}`,
-    {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-    }
-).then(r => r.json());
-```
-
-## Shopper Context API
-
-Maintain personalization state across requests using the Shopper Context API. The `siteId` query parameter is **required** for all Shopper Context operations.
-
-```javascript
-// Set shopper context
-await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/shopper/shopper-context/v1/organizations/${orgId}/shopper-context/${usid}?siteId=${siteId}`,
-    {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            effectiveDateTime: new Date().toISOString(),
-            sourceCode: 'SUMMER2024',
-            customerGroupIds: ['VIP', 'Loyalty']
-        })
-    }
-);
-```
-
-### When to Set Context
-
-- **Initial visit/login**: Immediately after obtaining SLAS token
-- **Token refresh**: Reuse existing USID for session continuity
-- **Login transitions**: When shopper changes from guest to registered (or vice versa)
-- **Logout**: Clear context explicitly
-
-### Quota Limits
-
-| Environment | Limit |
-|-------------|-------|
-| Non-production | 5,000 records |
-| Production | 1,000,000 records |
-
-**Strategies to manage quota:**
-- Use lower TTL (1-2 days for registered shoppers)
-- Reuse USIDs for the same shopper
-- Explicitly log out shoppers to delete context
-
-### Best Practices
-
-- Set context immediately after obtaining SLAS token
-- Use the USID from the SLAS token response
-- Context TTL: 1 day (guest), 7 days (registered)
-- **Security**: Use private SLAS clients only, call from BFF (not browser)
-- Don't use Shopper Context for data that's automatically set (like geolocation)
-
-## Performance Optimization
-
-### Use `select` Parameter
-
-Return only needed fields to reduce response size:
-
-```javascript
-// Only return specific product fields
-const product = await fetch(
-    `https://${shortCode}.api.commercecloud.salesforce.com/product/shopper-products/v1/organizations/${orgId}/products/${productId}?siteId=${siteId}&select=(id,name,price,images)`,
-    {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-    }
-).then(r => r.json());
-```
-
-### Use `expand` Carefully
-
-Expansions increase response time and reduce cache effectiveness:
-
-```javascript
-// Expand availability (60-second cache TTL)
-const product = await fetch(
-    `...?expand=availability,images,prices`,
-    { headers: { 'Authorization': `Bearer ${accessToken}` } }
-).then(r => r.json());
-```
-
-Consider separate requests instead of low-cache expansions.
-
-### Enable Compression
-
-Always enable HTTP compression in your client for faster responses.
-
-See [Common Patterns Reference](references/COMMON-PATTERNS.md) for more optimization patterns.
-
-## Debugging
-
-### Correlation IDs
-
-Include correlation IDs for request tracking:
-
-```javascript
-const response = await fetch(url, {
-    headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'correlation-id': crypto.randomUUID()
-    }
-});
-
-// Check response header for SCAPI-generated ID
-const scapiCorrelationId = response.headers.get('sfdc_correlation_id');
-```
-
-Search Log Center with: `externalID:({correlation-id})`
-
-### Verbose Logging
-
-Enable verbose logging for debugging:
-
-```javascript
-const response = await fetch(url, {
-    headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'sfdc_verbose': 'true'
-    }
-});
-```
-
-Find logs in Log Center under `scapi.verbose` category.
-
-## Related Skills
-
-- [b2c-slas](../../../b2c-cli/skills/b2c-slas/SKILL.md) - Create and manage SLAS clients
-- [b2c-slas-auth-patterns](../b2c-slas-auth-patterns/SKILL.md) - Advanced auth: OTP, passkeys, session bridge
-- [b2c-scapi-schemas](../../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
-- [b2c-custom-api-development](../b2c-custom-api-development/SKILL.md) - Create custom endpoints
-- [b2c-hooks](../b2c-hooks/SKILL.md) - Order-PI authorization hooks, default placement, and the single-phase `order.afterPOST` alternative
-- [b2c-ordering](../b2c-ordering/SKILL.md) - Order lifecycle, status transitions, and failure handling
-
-## Reference Documentation
-
-- [Checkout Flow](references/CHECKOUT-FLOW.md) - Complete basket to order workflow
-- [Common Patterns](references/COMMON-PATTERNS.md) - Error handling, pagination, field selection
-- [Scopes Reference](references/SCOPES.md) - Complete shopper scope reference by API family
+# Shopper Commerce APIs
+
+Build storefront product, basket, checkout, customer, and context flows with SCAPI.
+For backend management use [Admin APIs](../b2c-scapi-admin/SKILL.md).
+
+## Tool choice
+
+When B2C MCP is available:
+- Read `skill://mcp/scapi/SKILL.md` once through resources or `skills_read` before
+  code-mode tools; pass `skillRead: true`.
+- `scapi_search` with `authType: "shopper"` discovers bundled contracts offline.
+  Find method/path/operationId first, then selected inputs, response fields, and
+  security. Mixed Admin/Shopper operations can appear in either filter.
+- Shopper execution is unsupported in `scapi_execute`; adding a SLAS client
+  cannot enable it. Execute storefront flows through the application's Shopper
+  SDK/client with the appropriate SLAS token flow. Prefer dedicated tools where available.
+- `scapi_schemas_list` retrieves live tenant contracts and custom attributes;
+  `scapi_custom_apis_get_status` checks custom registration. Code mode does not
+  execute custom APIs.
+- `config_inspect` reports configured values with masking. `docs_search`/`docs_read`
+  answer platform semantics, authentication, and limits; avoid duplicate contract reads.
+
+CLI alternatives: `b2c scapi schemas list`,
+`b2c scapi schemas get <family> <name> <version>`, and `b2c setup inspect`.
+These schema commands use live Schemas API access; MCP discovery is offline.
+
+## Integration essentials
+
+- Reuse configured shortCode, organizationId, and siteId; do not invent identifiers.
+- Shopper authentication uses SLAS guest/registered flows and client scopes;
+  Account Manager credentials are not a substitute. Keep private-client secrets
+  and token exchange on the backend.
+- Discover the contract for the selected API version. Examples are illustrative;
+  verify version-specific behavior and limits in official docs.
+- Preserve basket/order state and handle errors explicitly. Page/filter responses
+  and return only fields needed by the next operation.
+- For headless payment authorization, inspect
+  [order-PI hooks](../b2c-hooks/SKILL.md#headless-order-payment-use-the-order-pi-authorization-seam)
+  and [order lifecycle](../b2c-ordering/SKILL.md) before choosing a placement flow.
+
+## Conditional references
+
+- [Client examples](references/CLIENT-EXAMPLES.md): implementing auth and API calls.
+- [Checkout](references/CHECKOUT-FLOW.md): basket-to-order workflow.
+- [Common patterns](references/COMMON-PATTERNS.md): errors, pagination, field selection.
+- [Scopes](references/SCOPES.md): Shopper grants by family.
+- [SLAS](../../../b2c-cli/skills/b2c-slas/SKILL.md): CLI client management.
+- [Advanced auth](../b2c-slas-auth-patterns/SKILL.md): OTP, passkeys, session bridge.
+- Official docs: `commerce-api/use-shopper-api`, `commerce-api/slas`,
+  `commerce-api/work-with-baskets-orders`, `commerce-api/shopper-context-best-practices`,
+  `commerce-api/auth-z-scope-catalog`, `commerce-api/performance`.

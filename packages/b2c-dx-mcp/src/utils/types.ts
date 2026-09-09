@@ -37,8 +37,6 @@ export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> extends Tool
   inputSchema: T;
   /** Toolsets this tool belongs to */
   toolsets: Toolset[];
-  /** Whether this tool is GA (generally available) */
-  isGA?: boolean;
 }
 
 /**
@@ -57,8 +55,6 @@ export interface StartupFlags {
   toolsets?: string[];
   /** Specific individual tools to enable */
   tools?: string[];
-  /** Allow non-GA (experimental) tools */
-  allowNonGaTools?: boolean;
   /** Path to config file (dw.json format) */
   configPath?: string;
   /** Default project directory for configuration and project operations. */

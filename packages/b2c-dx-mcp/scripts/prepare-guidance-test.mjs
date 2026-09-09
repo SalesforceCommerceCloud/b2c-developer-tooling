@@ -21,12 +21,13 @@ const workspace = join(testRoot, 'workspace');
 const codexHome = join(testRoot, 'codex-home');
 for (const directory of [artifacts, workspace, codexHome]) mkdirSync(directory, {mode: 0o700});
 
-function pnpm(args, cwd = repoRoot) {
+function pnpm(args, cwd = repoRoot, environment = {}) {
   if (!process.env.npm_execpath) throw new Error('Run this script with pnpm run prepare:guidance-test.');
   process.stdout.write(`Running pnpm ${args.join(' ')}\n`);
   try {
     execFileSync(process.execPath, [process.env.npm_execpath, ...args], {
       cwd,
+      env: {...process.env, ...environment},
       stdio: 'pipe',
       maxBuffer: 32 * 1024 * 1024,
     });
@@ -81,6 +82,12 @@ const pluginsPackage = JSON.parse(readFileSync(join(repoRoot, 'skills/package.js
 const bundledPlugins = join(installedMcp, 'node_modules/@salesforce/b2c-agent-plugins');
 assert.deepEqual(JSON.parse(readFileSync(join(bundledPlugins, 'package.json'), 'utf8')), pluginsPackage);
 const runJs = join(installedMcp, 'bin/run.js');
+const bundledServer = join(installedMcp, 'node_modules/@modelcontextprotocol/server');
+assert.equal(JSON.parse(readFileSync(join(bundledServer, 'package.json'), 'utf8')).version, '2.0.0');
+// Exercise cancellation from the installed artifact, including the bundled SDK fix for request ID 0.
+pnpm(['exec', 'mocha', '--reporter', 'min', 'test/e2e/scapi-cancellation.test.ts'], packageRoot, {
+  B2C_MCP_TEST_RUN_JS: runJs,
+});
 const manifest = JSON.parse(readFileSync(join(installedMcp, 'content/guidance/index.json'), 'utf8'));
 assert.deepEqual(manifest, JSON.parse(bundleManifest));
 for (const entry of manifest.entries) {
@@ -105,15 +112,11 @@ writeFileSync(
 const env = Object.fromEntries(
   Object.entries(process.env).filter(([key]) => !/^(SFCC_|MRT_|DW_|NODE_OPTIONS$|CODEX_HOME$)/.test(key)),
 );
-const proc = spawn(
-  process.execPath,
-  ['--require', offlineModule, runJs, '--allow-non-ga-tools', '--project-directory', workspace],
-  {
-    cwd: workspace,
-    env: {...env, SFCC_DISABLE_TELEMETRY: 'true'},
-    stdio: ['pipe', 'pipe', 'pipe'],
-  },
-);
+const proc = spawn(process.execPath, ['--require', offlineModule, runJs, '--project-directory', workspace], {
+  cwd: workspace,
+  env: {...env, SFCC_DISABLE_TELEMETRY: 'true'},
+  stdio: ['pipe', 'pipe', 'pipe'],
+});
 let stderr = '';
 proc.stderr.on('data', (chunk) => {
   stderr += chunk;
@@ -189,7 +192,8 @@ try {
     },
   });
   assert.notEqual(schemaSearch.isError, true, JSON.stringify(schemaSearch));
-  assert.equal(schemaSearch.structuredContent.result, 'createProduct');
+  assert.equal(schemaSearch.structuredContent, undefined);
+  assert.equal(JSON.parse(schemaSearch.content[0].text).result, 'createProduct');
   const resources = await request('resources/list');
   assert.deepEqual(resources.resources.map((resource) => resource.name).sort(), [
     'mcp/b2c-config',

@@ -35,12 +35,12 @@ Or configure per-instance in `dw.json`:
 
 Safety levels provide broad protection by category:
 
-| Level | Description | Blocks |
-|-------|-------------|--------|
-| `NONE` | No restrictions (default) | Nothing |
-| `NO_DELETE` | Prevent deletions | DELETE operations |
-| `NO_UPDATE` | Prevent deletions and destructive updates | DELETE + reset/stop/restart |
-| `READ_ONLY` | Read-only mode | All writes (POST/PUT/PATCH/DELETE) |
+| Level       | Description                               | Blocks                             |
+| ----------- | ----------------------------------------- | ---------------------------------- |
+| `NONE`      | No restrictions (default)                 | Nothing                            |
+| `NO_DELETE` | Prevent deletions                         | DELETE operations                  |
+| `NO_UPDATE` | Prevent deletions and destructive updates | DELETE + reset/stop/restart        |
+| `READ_ONLY` | Read-only mode                            | All writes (POST/PUT/PATCH/DELETE) |
 
 Levels apply to all HTTP requests made through the SDK. They are enforced by middleware, so they work regardless of which SDK method or CLI command initiates the request.
 
@@ -81,10 +81,10 @@ Rules provide granular control over specific operations. Each rule matches an op
 
 ### Rule Actions
 
-| Action | Behavior |
-|--------|----------|
-| `allow` | Operation is permitted -- overrides level restrictions |
-| `block` | Operation is refused |
+| Action    | Behavior                                                      |
+| --------- | ------------------------------------------------------------- |
+| `allow`   | Operation is permitted -- overrides level restrictions        |
+| `block`   | Operation is refused                                          |
 | `confirm` | Operation requires interactive confirmation before proceeding |
 
 ### Rule Matchers
@@ -96,7 +96,7 @@ Rules support three matcher types. All patterns use glob syntax (via [minimatch]
 Matches HTTP requests by method and URL path. Use this for fine-grained control over API endpoints:
 
 ```json
-{ "method": "DELETE", "path": "/code_versions/*", "action": "block" }
+{"method": "DELETE", "path": "/code_versions/*", "action": "block"}
 ```
 
 `method` and `path` can be used independently or together. When both are specified, both must match.
@@ -165,7 +165,7 @@ Configure safety per instance in `dw.json` using the `safety` object. This is es
     {
       "name": "dev",
       "hostname": "dev.example.com",
-      "safety": { "level": "NONE" }
+      "safety": {"level": "NONE"}
     },
     {
       "name": "staging",
@@ -173,15 +173,13 @@ Configure safety per instance in `dw.json` using the `safety` object. This is es
       "safety": {
         "level": "NO_DELETE",
         "confirm": true,
-        "rules": [
-          { "job": "sfcc-site-archive-export", "action": "allow" }
-        ]
+        "rules": [{"job": "sfcc-site-archive-export", "action": "allow"}]
       }
     },
     {
       "name": "production",
       "hostname": "prod.example.com",
-      "safety": { "level": "READ_ONLY" }
+      "safety": {"level": "READ_ONLY"}
     }
   ]
 }
@@ -191,11 +189,13 @@ Configure safety per instance in `dw.json` using the `safety` object. This is es
 
 Safety can be configured globally (across all projects and instances) using a `safety.json` file in the CLI's config directory.
 
-| Platform | Default Location |
-|----------|-----------------|
-| macOS | `~/Library/Application Support/@salesforce/b2c-cli/safety.json` |
-| Linux | `~/.config/b2c/safety.json` (or `$XDG_CONFIG_HOME`) |
-| Windows | `%LOCALAPPDATA%\@salesforce\b2c-cli\safety.json` |
+| Platform      | Default Location                 |
+| ------------- | -------------------------------- |
+| macOS / Linux | `~/.config/b2c/safety.json`      |
+| Windows       | `%LOCALAPPDATA%\b2c\safety.json` |
+
+`B2C_CONFIG_DIR` or `XDG_CONFIG_HOME` overrides the base directory, in that order;
+the file is then `<base>/b2c/safety.json`.
 
 Override the file location with the `SFCC_SAFETY_CONFIG` environment variable:
 
@@ -210,8 +210,8 @@ The file has the same shape as the `safety` object in `dw.json`:
   "level": "NO_DELETE",
   "confirm": true,
   "rules": [
-    { "job": "sfcc-site-archive-import", "action": "confirm" },
-    { "command": "sandbox:delete", "action": "block" }
+    {"job": "sfcc-site-archive-import", "action": "confirm"},
+    {"command": "sandbox:delete", "action": "block"}
   ]
 }
 ```
@@ -222,11 +222,11 @@ This is useful for enforcing baseline safety policies -- for example, when provi
 
 Safety configuration is merged from three sources (all optional):
 
-| Source | Sets |
-|--------|------|
-| Environment variables (`SFCC_SAFETY_LEVEL`, `SFCC_SAFETY_CONFIRM`) | Level, confirm |
-| Per-instance `dw.json` `safety` object | Level, confirm, rules |
-| Global `safety.json` | Level, confirm, rules |
+| Source                                                             | Sets                  |
+| ------------------------------------------------------------------ | --------------------- |
+| Environment variables (`SFCC_SAFETY_LEVEL`, `SFCC_SAFETY_CONFIRM`) | Level, confirm        |
+| Per-instance `dw.json` `safety` object                             | Level, confirm, rules |
+| Global `safety.json`                                               | Level, confirm, rules |
 
 The merge strategy:
 
@@ -242,9 +242,7 @@ Given this global config:
 ```json
 {
   "level": "NO_UPDATE",
-  "rules": [
-    { "job": "sfcc-site-archive-*", "action": "block" }
-  ]
+  "rules": [{"job": "sfcc-site-archive-*", "action": "block"}]
 }
 ```
 
@@ -253,14 +251,13 @@ And this instance config:
 ```json
 {
   "safety": {
-    "rules": [
-      { "job": "sfcc-site-archive-export", "action": "allow" }
-    ]
+    "rules": [{"job": "sfcc-site-archive-export", "action": "allow"}]
   }
 }
 ```
 
 The result:
+
 - Level is `NO_UPDATE` (from global)
 - Export jobs are **allowed** (instance rule matches first, overriding the global block)
 - Import jobs are **blocked** (falls through to the global rule)
@@ -268,31 +265,31 @@ The result:
 
 ## Environment Variables Reference
 
-| Variable | Description |
-|----------|-------------|
-| `SFCC_SAFETY_LEVEL` | Safety level: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` |
-| `SFCC_SAFETY_CONFIRM` | Enable confirmation mode: `true` or `1` |
-| `SFCC_SAFETY_CONFIG` | Path to global safety config file |
+| Variable              | Description                                                 |
+| --------------------- | ----------------------------------------------------------- |
+| `SFCC_SAFETY_LEVEL`   | Safety level: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` |
+| `SFCC_SAFETY_CONFIRM` | Enable confirmation mode: `true` or `1`                     |
+| `SFCC_SAFETY_CONFIG`  | Path to global safety config file                           |
 
 ## SDK Usage
 
 The safety system is available to SDK consumers via the `SafetyGuard` class:
 
 ```typescript
-import { SafetyGuard, resolveEffectiveSafetyConfig, withSafetyConfirmation } from '@salesforce/b2c-tooling-sdk';
+import {SafetyGuard, resolveEffectiveSafetyConfig, withSafetyConfirmation} from '@salesforce/b2c-tooling-sdk';
 
 // Create a guard from config
 const guard = new SafetyGuard({
   level: 'NO_UPDATE',
-  rules: [{ job: 'sfcc-site-archive-export', action: 'allow' }],
+  rules: [{job: 'sfcc-site-archive-export', action: 'allow'}],
 });
 
 // Evaluate an operation
-const evaluation = guard.evaluate({ type: 'job', jobId: 'sfcc-site-archive-export' });
+const evaluation = guard.evaluate({type: 'job', jobId: 'sfcc-site-archive-export'});
 // evaluation.action === 'allow'
 
 // Assert (throws SafetyBlockedError or SafetyConfirmationRequired)
-guard.assert({ type: 'http', method: 'DELETE', path: '/items/1' });
+guard.assert({type: 'http', method: 'DELETE', path: '/items/1'});
 
 // Confirmation flow with retry
 const result = await withSafetyConfirmation(

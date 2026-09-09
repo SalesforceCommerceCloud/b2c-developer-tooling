@@ -3,6 +3,21 @@
 Patches in this directory are applied by pnpm via the `pnpm.patchedDependencies`
 field in the root `package.json`.
 
+## `@modelcontextprotocol__server@2.0.0.patch` - cancellation of request ID zero
+
+The SDK's cancellation handler tests request IDs for truthiness, so it ignores
+ID `0` (and the valid empty-string ID). With the 2026-07-28 protocol, the first
+tool call can have ID `0`; cancelling it rejects the client promise but leaves
+the server's program running. The patch checks for `undefined` instead, in both
+ESM and CommonJS distributions.
+
+The MCP bundles this dependency so npm consumers receive the patched code too.
+Its `prepare-sdk-bundle.mjs` prepack step makes the hoisted dependency visible to
+pnpm's bundle collector. Remove the patch, server bundling, and that prepack step
+when a stable SDK release fixes this check.
+`test/e2e/scapi-cancellation.test.ts` verifies actual child-process termination
+over legacy and modern stdio, including a modern first-call ID of zero.
+
 ## `yargs@17.7.2.patch` — Node 26 compatibility (temporary)
 
 **Why:** On Node 26, `c8` crashes at startup with

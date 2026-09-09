@@ -24,7 +24,7 @@ describe('MCP Server E2E', function () {
 
   describe('1. Server Lifecycle', () => {
     it('starts successfully with default options', async () => {
-      const client = new McpE2EClient({args: ['--allow-non-ga-tools']});
+      const client = new McpE2EClient();
       await client.start();
       const result = await client.call('tools/list');
       expect(result).to.have.property('tools').that.is.an('array');
@@ -32,7 +32,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('starts with --toolsets all', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'all', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--toolsets', 'all']});
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
       expect(result.tools.length).to.be.greaterThan(0);
@@ -40,7 +40,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('starts with specific toolsets (--toolsets SCAPI,MRT)', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI,MRT', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI,MRT']});
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
       const names = result.tools.map((t) => t.name);
@@ -49,7 +49,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('starts with specific tool (--tools scapi_schemas_list)', async () => {
-      const client = new McpE2EClient({args: ['--tools', 'scapi_schemas_list', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--tools', 'scapi_schemas_list']});
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
       expect(result.tools).to.have.lengthOf(1);
@@ -57,12 +57,12 @@ describe('MCP Server E2E', function () {
       await client.stop();
     });
 
-    it('lists more tools with --allow-non-ga-tools', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'all', '--allow-non-ga-tools']});
+    it('includes metrics and code mode by default', async () => {
+      const client = new McpE2EClient();
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
       await client.stop();
-      expect(result.tools.length).to.be.greaterThan(0);
+      expect(result.tools.map(({name}) => name)).to.include.members(['metrics_get', 'scapi_search', 'scapi_execute']);
     });
 
     it('exits cleanly on connection close', async () => {
@@ -74,8 +74,8 @@ describe('MCP Server E2E', function () {
   });
 
   describe('2. MCP Protocol (tools/list)', () => {
-    it('lists tools with --toolsets all --allow-non-ga-tools', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'all', '--allow-non-ga-tools']});
+    it('lists tools with --toolsets all', async () => {
+      const client = new McpE2EClient({args: ['--toolsets', 'all']});
       await client.start();
       const result = (await client.call('tools/list')) as {
         tools: Array<{name: string; description?: string; inputSchema?: unknown}>;
@@ -89,7 +89,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('filters tools by toolset', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI']});
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
       const names = result.tools.map((t) => t.name);
@@ -99,7 +99,7 @@ describe('MCP Server E2E', function () {
 
     it('filters tools by individual tool name', async () => {
       const client = new McpE2EClient({
-        args: ['--tools', 'scapi_schemas_list,scapi_custom_apis_get_status', '--allow-non-ga-tools'],
+        args: ['--tools', 'scapi_schemas_list,scapi_custom_apis_get_status'],
       });
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
@@ -113,7 +113,7 @@ describe('MCP Server E2E', function () {
 
     it('ignores invalid --tools names and returns tools from enabled toolsets', async () => {
       const client = new McpE2EClient({
-        args: ['--toolsets', 'SCAPI', '--tools', 'nonexistent_tool_xyz', '--allow-non-ga-tools'],
+        args: ['--toolsets', 'SCAPI', '--tools', 'nonexistent_tool_xyz'],
       });
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
@@ -123,7 +123,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('tool metadata includes name, description, inputSchema', async () => {
-      const client = new McpE2EClient({args: ['--tools', 'scapi_schemas_list', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--tools', 'scapi_schemas_list']});
       await client.start();
       const result = (await client.call('tools/list')) as {
         tools: Array<{name: string; description: string; inputSchema: unknown}>;
@@ -135,7 +135,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('publishes a deterministic, well-described tool corpus with strict schemas', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'all', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--toolsets', 'all']});
       await client.start();
       type WireSchema = {
         type?: string;
@@ -181,7 +181,8 @@ describe('MCP Server E2E', function () {
       for (const tool of first.tools) {
         expect(tool.name).to.match(/^[A-Za-z0-9_.-]{1,128}$/);
         expect(tool.description).to.be.a('string').and.not.empty;
-        expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(400);
+        const descriptionLimit = ['scapi_execute', 'scapi_search'].includes(tool.name) ? 2000 : 400;
+        expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(descriptionLimit);
         expect(tool.inputSchema.type, `${tool.name} input schema must accept an object`).to.equal('object');
         checkSchema(tool.inputSchema, tool.name);
       }
@@ -287,7 +288,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('calls a tool and returns a response (result or structured error)', async () => {
-      const client = new McpE2EClient({args: ['--tools', 'scapi_schemas_list', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--tools', 'scapi_schemas_list']});
       await client.start();
       const result = await client.call('tools/call', {
         name: 'scapi_schemas_list',
@@ -302,7 +303,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('returns proper error for unknown tool name', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI']});
       await client.start();
       let thrown: Error | undefined;
       let result: unknown;
@@ -374,7 +375,7 @@ describe('MCP Server E2E', function () {
       }
     });
     for (const workspace of ['pwav3', 'storefront-next', 'cartridge', 'empty']) {
-      it(`enables all GA tools in the ${workspace} workspace`, async () => {
+      it(`enables all tools in the ${workspace} workspace`, async () => {
         const client = new McpE2EClient({cwd: join(FIXTURES_DIR, workspace)});
         await client.start();
         try {
@@ -382,7 +383,7 @@ describe('MCP Server E2E', function () {
           const names = result.tools.map((tool) => tool.name).sort();
           expect(names).to.deep.equal(expectedNames);
           expect(names).to.include.members(['cartridge_deploy', 'mrt_bundle_push', 'skills_read']);
-          expect(names).not.to.include('metrics_get');
+          expect(names).to.include.members(['metrics_get', 'scapi_search', 'scapi_execute']);
           expect(names).not.to.include('pwakit_get_guidelines');
           expect(names).not.to.include('scapi_custom_api_generate_scaffold');
         } finally {
@@ -395,7 +396,7 @@ describe('MCP Server E2E', function () {
   describe('5. Flag Inheritance', () => {
     it('accepts --config flag', async () => {
       const client = new McpE2EClient({
-        args: ['--toolsets', 'SCAPI', '--config', '/nonexistent/dw.json', '--allow-non-ga-tools'],
+        args: ['--toolsets', 'SCAPI', '--config', '/nonexistent/dw.json'],
       });
       await client.start();
       const result = (await client.call('tools/list')) as {tools: unknown[]};
@@ -405,7 +406,7 @@ describe('MCP Server E2E', function () {
 
     it('accepts --log-level silent', async () => {
       const client = new McpE2EClient({
-        args: ['--toolsets', 'SCAPI', '--log-level', 'silent', '--allow-non-ga-tools'],
+        args: ['--toolsets', 'SCAPI', '--log-level', 'silent'],
       });
       await client.start();
       const result = (await client.call('tools/list')) as {tools: unknown[]};
@@ -414,7 +415,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('accepts --debug flag', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI', '--debug', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI', '--debug']});
       await client.start();
       const result = (await client.call('tools/list')) as {tools: unknown[]};
       expect(result.tools).to.be.an('array');
@@ -423,15 +424,7 @@ describe('MCP Server E2E', function () {
 
     it('accepts instance flags (--server, --client-id, etc.)', async () => {
       const client = new McpE2EClient({
-        args: [
-          '--toolsets',
-          'SCAPI',
-          '--server',
-          'example.demandware.net',
-          '--client-id',
-          'cid',
-          '--allow-non-ga-tools',
-        ],
+        args: ['--toolsets', 'SCAPI', '--server', 'example.demandware.net', '--client-id', 'cid'],
       });
       await client.start();
       const result = (await client.call('tools/list')) as {tools: unknown[]};
@@ -441,7 +434,7 @@ describe('MCP Server E2E', function () {
 
     it('accepts MRT flags (--api-key, --project)', async () => {
       const client = new McpE2EClient({
-        args: ['--toolsets', 'MRT', '--api-key', 'key', '--project', 'proj', '--allow-non-ga-tools'],
+        args: ['--toolsets', 'MRT', '--api-key', 'key', '--project', 'proj'],
       });
       await client.start();
       const result = (await client.call('tools/list')) as {tools: unknown[]};
@@ -452,7 +445,7 @@ describe('MCP Server E2E', function () {
     it('respects environment variables as flag alternatives', async () => {
       const client = new McpE2EClient({
         args: [],
-        env: {SFCC_TOOLSETS: 'SCAPI', SFCC_ALLOW_NON_GA_TOOLS: 'true'},
+        env: {SFCC_TOOLSETS: 'SCAPI'},
       });
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
@@ -463,7 +456,7 @@ describe('MCP Server E2E', function () {
 
   describe('6. Error Handling', () => {
     it('server continues to respond after invalid JSON-RPC line', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI']});
       await client.start();
       client.sendRaw('not json\n');
       const result = (await client.call('tools/list')) as {tools: unknown[]};
@@ -472,7 +465,7 @@ describe('MCP Server E2E', function () {
     });
 
     it('unknown method returns proper error', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI', '--allow-non-ga-tools']});
+      const client = new McpE2EClient({args: ['--toolsets', 'SCAPI']});
       await client.start();
       try {
         await client.call('nonexistent/method', {});
