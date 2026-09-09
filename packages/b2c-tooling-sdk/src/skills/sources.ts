@@ -35,6 +35,14 @@ export const SKILL_SOURCES: Record<SkillSet, SkillSourceConfig> = {
     assetName: 'b2c-cli-skills.zip',
     tagPattern: pluginsTag,
   },
+  'b2c-python-sdk': {
+    id: 'b2c-python-sdk',
+    displayName: 'B2C Python tooling SDK usage (salesforce-b2c-tooling-sdk)',
+    type: 'release-artifact',
+    repo: 'SalesforceCommerceCloud/b2c-developer-tooling',
+    assetName: 'b2c-python-sdk-skills.zip',
+    tagPattern: pluginsTag,
+  },
   'storefront-next': {
     id: 'storefront-next',
     displayName: 'Storefront Next development skills',

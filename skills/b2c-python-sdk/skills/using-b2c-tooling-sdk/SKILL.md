@@ -19,8 +19,8 @@ This skill covers **consuming** the SDK. For developing the SDK itself, see
 Not on PyPI yet — install from git during development:
 
 ```bash
-pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python#subdirectory=python"
-# or pin a tag: ...@python-v0.3.0#subdirectory=python
+pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python#subdirectory=python/b2c-tooling-sdk"
+# or pin a tag: ...@python-v0.3.0#subdirectory=python/b2c-tooling-sdk
 ```
 
 For notebooks also install a kernel: `pip install ipykernel`. Once published this
