@@ -5,6 +5,7 @@
  */
 
 import {z} from 'zod';
+import {createWatchLifecycleTool} from './watch-lifecycle.js';
 import {
   matchesLevel,
   matchesSearch,
@@ -40,7 +41,7 @@ interface StartOutput {
   watch_id: string;
 }
 
-export function createLogsWatchStartTool(
+function createLogsWatchStartTool(
   loadServices: () => Promise<Services> | Services,
   serverContext?: ServerContext,
   injections?: LogsWatchStartInjections,
@@ -48,10 +49,12 @@ export function createLogsWatchStartTool(
   const tailLogsFn = injections?.tailLogs ?? tailLogs;
   return createToolAdapter<StartInput, StartOutput>(
     {
-      name: 'logs_watch_start',
+      name: 'logs_watch',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
-        'Start a B2C log watch and return watch_id. Start before the target action, poll with logs_watch_poll, ' +
-        'and always stop with logs_watch_stop. One active watch per hostname.',
+        'Start, list, or stop B2C log watches. Start before the target action; read with logs_watch_poll. Stop discards unread entries; safe to repeat.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       requiresInstance: true,
       inputSchema: {
@@ -70,11 +73,8 @@ export function createLogsWatchStartTool(
           .int()
           .positive()
           .optional()
-          .describe('How often the underlying tail polls the WebDAV server. Defaults to 3000ms.'),
-        level: z
-          .array(z.string())
-          .optional()
-          .describe('Server-side filter by log level. Entries not matching are dropped before buffering.'),
+          .describe('WebDAV polling interval, in milliseconds. Default: 3000.'),
+        level: z.array(z.string()).optional().describe('Keep matching levels before buffering.'),
         search: z.string().optional().describe('Case-insensitive substring filter applied as entries arrive.'),
       },
       async execute(args, context) {
@@ -87,7 +87,7 @@ export function createLogsWatchStartTool(
         if (existing) {
           throw new Error(
             `A log watch already exists for ${hostname} (watch_id: "${existing.watchId}"). ` +
-              `Stop it with logs_watch_stop first, or poll the existing watch.`,
+              `Stop it with logs_watch(action: stop) first, or poll the existing watch.`,
           );
         }
 
@@ -128,7 +128,7 @@ export function createLogsWatchStartTool(
         });
 
         // registerWatch re-checks the hostname and throws on a duplicate. If two
-        // logs_watch_start calls race past the findByHostname check above, the
+        // logs_watch(action: start) calls race past the findByHostname check above, the
         // loser's tailLogs poll is already running in the background — stop it so
         // it isn't orphaned (it would otherwise poll WebDAV until process exit).
         let entry;
@@ -156,5 +156,45 @@ export function createLogsWatchStartTool(
     },
     loadServices,
     serverContext,
+  );
+}
+
+export function createLogsWatchTool(
+  loadServices: () => Promise<Services> | Services,
+  serverContext?: ServerContext,
+  injections?: LogsWatchStartInjections,
+): McpTool {
+  const getRegistry = () => {
+    if (!serverContext) throw new Error('Server context is required for log watches.');
+    return serverContext.logWatches;
+  };
+  return createWatchLifecycleTool(
+    createLogsWatchStartTool(loadServices, serverContext, injections),
+    () => {
+      return {
+        watches: getRegistry()
+          .listWatches()
+          .map((w) => ({
+            buffered_entries: w.buffer.length,
+            created_at: new Date(w.createdAt).toISOString(),
+            dropped_entries: w.droppedEntries,
+            files_discovered: w.filesDiscovered,
+            hostname: w.hostname,
+            last_activity_at: new Date(w.lastActivityAt).toISOString(),
+            prefixes: w.prefixes,
+            stopped: w.stopped,
+            total_entries_seen: w.totalEntriesSeen,
+            watch_id: w.watchId,
+            resolution: w.resolution,
+          })),
+      };
+    },
+    async (watchId) => {
+      const registry = getRegistry();
+      const watch = registry.getWatch(watchId);
+      const total = watch?.totalEntriesSeen ?? 0;
+      if (watch) await registry.destroyWatch(watchId);
+      return {watch_id: watchId, stopped_at: new Date().toISOString(), total_entries_seen: total};
+    },
   );
 }

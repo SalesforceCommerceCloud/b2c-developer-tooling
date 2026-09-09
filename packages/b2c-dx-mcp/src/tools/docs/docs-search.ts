@@ -83,6 +83,9 @@ export function createDocsSearchTool(
   return createToolAdapter<SearchInput, SearchOutput>(
     {
       name: 'docs_search',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Search B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
         'Use for natural-language queries or unknown IDs; call docs_read with a result ID.' +

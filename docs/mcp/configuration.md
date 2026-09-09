@@ -74,6 +74,7 @@ environment variables. See [MRT authentication](../guide/authentication#managed-
 
 ## Tool selection {#toolset-selection}
 
+Find exact tool names in [Tools and Capabilities](./toolsets).
 All toolsets are enabled by default. To choose a smaller set, append either
 option to the MCP server launch arguments:
 

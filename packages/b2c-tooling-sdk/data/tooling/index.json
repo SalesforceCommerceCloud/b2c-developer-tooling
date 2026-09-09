@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-08T21:24:38.633Z",
+  "generatedAt": "2026-09-09T00:59:32.221Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -494,8 +494,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Skills and documentation {#documentation} • Cartridge deployment {#cartridges} • Managed Runtime bundles {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
-      "preview": "Choose B2C Commerce MCP capabilities for documentation, development, deployment, debugging, and observability."
+      "headings": "Skills and documentation {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
+      "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {
       "id": "vscode-extension-configuration",

@@ -172,6 +172,9 @@ function createMrtBundlePushTool(
   return createToolAdapter<MrtBundlePushInput, MrtBundlePushOutput>(
     {
       name: 'mrt_bundle_push',
+      effect: 'write',
+      idempotent: false,
+      openWorld: true,
       description:
         'Bundle a pre-built PWA Kit or Storefront Next project and push to Managed Runtime. Optionally deploy to a target environment.',
       toolsets: ['MRT', 'PWAV3', 'STOREFRONTNEXT'],

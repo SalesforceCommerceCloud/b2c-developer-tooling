@@ -42,8 +42,11 @@ export function createDebugStartSessionTool(
   return createToolAdapter<StartSessionInput, StartSessionOutput>(
     {
       name: 'debug_start_session',
+      effect: 'write',
+      idempotent: false,
+      openWorld: true,
       description:
-        'Start a script debugger session and map cartridges. Requires BM Basic Auth with WebDAV_Manage_Customization. ' +
+        'Start a script debugger session and map cartridges; replaces any remote debugger client. Requires BM Basic Auth with WebDAV_Manage_Customization. ' +
         'Use returned session_id; end with debug_end_session. Workflow: skill://mcp/debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {

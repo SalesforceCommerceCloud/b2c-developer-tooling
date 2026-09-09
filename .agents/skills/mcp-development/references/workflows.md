@@ -2,8 +2,7 @@
 
 Use this pattern for developer workflows and future administrator/merchant runbooks.
 Adapt the sections to the task; omit empty structure. Keep frontmatter descriptive
-and terse. Entrypoints should normally fit one content chunk (4096 characters)
-and stay below 500 words; move conditional detail into references.
+and terse. Entrypoints should normally stay below 500 words; move conditional detail into references.
 
 ## Decisions before procedures
 

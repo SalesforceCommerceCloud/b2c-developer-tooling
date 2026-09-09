@@ -32,13 +32,21 @@ breakpoint, and request before starting a session.
    custom headers; trigger authenticated or non-GET requests externally. An
    external trigger must run while capture waits, not after awaiting its result.
    A halted capture can return `trigger_pending: true`; resume with
-   `debug_continue` before expecting that request to finish. Do not retrigger it.
+   `debug_control` with `action: continue` before expecting that request to finish. Do not retrigger it.
 4. Use captured stack, variables, and expressions. For further halted inspection,
-   use `debug_get_stack`, `debug_get_variables`, or `debug_evaluate`. Expressions
+   use `debug_inspect` or `debug_evaluate`. Inspection returns stack and top-frame
+   variables (all scopes) by default; `include` selects stack, variables, or both.
+   Use `frame_index`, `scope`, or `object_path` for targeted inspection. Expressions
    can have side effects; keep evaluation within the requested scope.
-5. Check halted threads with `debug_list_sessions`, resume with `debug_continue`,
+5. Check halted threads with `debug_list_sessions`, resume with `debug_control` with `action: continue`,
    and always call `debug_end_session` with `clear_breakpoints: true`, including
    after errors or timeouts. Stop any log watches started for the investigation.
+
+## Stepping
+
+After a halt, call `debug_control` with `action: into`, `over`, or `out`, then
+`debug_wait_for_stop` before inspecting again. `action: continue` runs until the
+next breakpoint or request completion. End sessions explicitly.
 
 ## Recovery
 

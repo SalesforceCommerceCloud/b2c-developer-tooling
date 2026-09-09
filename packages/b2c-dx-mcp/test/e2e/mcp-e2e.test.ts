@@ -161,7 +161,9 @@ describe('MCP Server E2E', function () {
         }
         for (const [field, property] of Object.entries(schema.properties ?? {})) {
           const propertyPath = `${path}.${field}`;
-          expect(property.description, `${propertyPath} should have a description`).to.be.a('string').and.not.be.empty;
+          if (property.description !== undefined) {
+            expect(property.description.length, `${propertyPath} description too long`).to.be.at.most(120);
+          }
           checkSchema(property, propertyPath);
         }
         if (schema.items) checkSchema(schema.items, `${path}[]`);

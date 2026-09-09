@@ -4,12 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {createHash} from 'node:crypto';
 import {mkdirSync, readFileSync, readdirSync, lstatSync, rmSync, writeFileSync} from 'node:fs';
 import {dirname, join, relative, resolve, sep, isAbsolute} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {
   guidanceHeadings,
+  GUIDANCE_MAX_FILE_BYTES,
   type GuidanceCollection,
   type GuidanceEntry,
   type GuidanceManifest,
@@ -93,8 +93,11 @@ for (const {plugin, directory, ...collection} of config.collections) {
     const headings: string[] = [];
     for (const file of files) {
       const bytes = readFileSync(join(root, file));
+      if (bytes.length > GUIDANCE_MAX_FILE_BYTES) {
+        throw new Error(`Skill file exceeds 64 KiB: ${id}/${file}. Split it into focused references.`);
+      }
       headings.push(...guidanceHeadings(bytes.toString('utf8')).map((heading) => heading.title));
-      entry.files.push({path: file, hash: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length});
+      entry.files.push({path: file, bytes: bytes.length});
       contentFiles.set(`${id}/${file}`, bytes);
     }
     entry.headings = headings.join(' | ');

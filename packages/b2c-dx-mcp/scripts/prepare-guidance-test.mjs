@@ -4,9 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/* eslint-disable no-await-in-loop -- Read continuation and sequential latency samples require ordered calls. */
+/* eslint-disable no-await-in-loop -- Protocol checks and sequential latency samples require ordered calls. */
 import {execFileSync, spawn} from 'node:child_process';
-import {createHash} from 'node:crypto';
 import {mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {dirname, join, resolve} from 'node:path';
@@ -84,7 +83,6 @@ assert.deepEqual(manifest, JSON.parse(bundleManifest));
 for (const entry of manifest.entries) {
   for (const file of entry.files) {
     const bytes = readFileSync(join(installedMcp, 'content/guidance', entry.id, file.path));
-    assert.equal(createHash('sha256').update(bytes).digest('hex'), file.hash);
     assert.deepEqual(bytes, readFileSync(join(repoRoot, dirname(entry.source), file.path)));
   }
 }
@@ -178,19 +176,14 @@ try {
   const broaderSkill = await guidance({id: 'b2c-cli/b2c-code'});
   assert.equal(broaderSkill.uri, 'skill://b2c-cli/b2c-code/SKILL.md');
   const broaderResource = await request('resources/read', {uri: broaderSkill.uri});
-  assert.ok(broaderResource.contents[0].text.startsWith(broaderSkill.content));
+  assert.equal(broaderResource.contents[0].text, broaderSkill.content);
   const directory = await guidance({});
   assert.equal(directory.total, manifest.entries.length);
   const hits = await guidance({query: 'deploy cartridges'});
   assert.ok(hits.entries.some((entry) => entry.id === 'b2c-cli/b2c-code'));
-  let read = await guidance({id: 'mcp/server'});
+  const read = await guidance({id: 'mcp/server'});
   const native = await request('resources/read', {uri: read.uri});
-  let content = read.content;
-  while (!read.complete) {
-    read = await guidance({cursor: read.nextCursor});
-    content += read.content;
-  }
-  assert.equal(content, native.contents[0].text);
+  assert.equal(read.content, native.contents[0].text);
   const project = join(testRoot, 'context-project');
   mkdirSync(project);
   writeFileSync(join(project, 'package.json'), JSON.stringify({dependencies: {'@salesforce/pwa-kit-react-sdk': '1'}}));

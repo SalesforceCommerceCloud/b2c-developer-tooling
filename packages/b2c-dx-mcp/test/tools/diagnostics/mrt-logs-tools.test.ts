@@ -11,10 +11,8 @@ import type {MrtLogEntry, TailMrtLogsOptions, TailMrtLogsResult} from '@salesfor
 import {Services} from '../../../src/services.js';
 import {ServerContext} from '../../../src/server-context.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
-import {createMrtLogsWatchStartTool} from '../../../src/tools/diagnostics/mrt-logs-watch-start.js';
+import {createMrtLogsWatchTool} from '../../../src/tools/diagnostics/mrt-logs-watch.js';
 import {createMrtLogsWatchPollTool} from '../../../src/tools/diagnostics/mrt-logs-watch-poll.js';
-import {createMrtLogsWatchStopTool} from '../../../src/tools/diagnostics/mrt-logs-watch-stop.js';
-import {createMrtLogsWatchListTool} from '../../../src/tools/diagnostics/mrt-logs-watch-list.js';
 import type {ToolResult} from '../../../src/utils/index.js';
 
 function getResultJson<T>(result: ToolResult): T {
@@ -93,28 +91,28 @@ describe('tools/diagnostics/mrt-logs', () => {
   });
 
   /* eslint-disable camelcase */
-  describe('mrt_logs_watch_start', () => {
+  describe('mrt_logs_watch', () => {
     it('exposes correct metadata', () => {
-      const tool = createMrtLogsWatchStartTool(loadServices, serverContext);
-      expect(tool.name).to.equal('mrt_logs_watch_start');
+      const tool = createMrtLogsWatchTool(loadServices, serverContext);
+      expect(tool.name).to.equal('mrt_logs_watch');
       expect(tool.toolsets).to.have.members(['DIAGNOSTICS', 'PWAV3', 'STOREFRONTNEXT']);
     });
 
     it('returns watch id + project/environment and rejects duplicate', async () => {
       const tailStub = sinon.stub().resolves({stop: sinon.stub(), done: Promise.resolve()} as TailMrtLogsResult);
-      const tool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const tool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
 
-      const result = await tool.handler({});
+      const result = await tool.handler({action: 'start'});
       expect(result.isError).to.be.undefined;
       const json = getResultJson<{environment: string; project: string; watch_id: string}>(result);
       expect(json.project).to.equal('my-storefront');
       expect(json.environment).to.equal('staging');
       expect(json.watch_id).to.match(/^[\da-f-]{36}$/);
 
-      const dup = await tool.handler({});
+      const dup = await tool.handler({action: 'start'});
       expect(dup.isError).to.be.true;
       expect(getResultText(dup)).to.include('already exists');
     });
@@ -126,12 +124,12 @@ describe('tools/diagnostics/mrt-logs', () => {
         return Promise.resolve({stop: sinon.stub(), done: Promise.resolve()});
       });
       const services = createServices({origin: 'https://cloud-soak.mrt-soak.com'});
-      const tool = createMrtLogsWatchStartTool(() => services, serverContext, {
+      const tool = createMrtLogsWatchTool(() => services, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: async () => ({email: 'dev@example.com'}),
       });
 
-      await tool.handler({});
+      await tool.handler({action: 'start'});
       expect(captured[0].projectSlug).to.equal('my-storefront');
       expect(captured[0].environmentSlug).to.equal('staging');
       expect(captured[0].origin).to.equal('https://cloud-soak.mrt-soak.com');
@@ -144,14 +142,14 @@ describe('tools/diagnostics/mrt-logs', () => {
         captured.push(opts);
         return Promise.resolve({stop: sinon.stub(), done: Promise.resolve()});
       });
-      const tool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const tool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         async getProfile() {
           throw new Error('profile lookup failed');
         },
       });
 
-      const result = await tool.handler({});
+      const result = await tool.handler({action: 'start'});
       expect(result.isError).to.be.undefined;
       expect(captured[0].user).to.be.undefined;
     });
@@ -162,11 +160,11 @@ describe('tools/diagnostics/mrt-logs', () => {
         mrtConfig: {auth: new MockAuthStrategy(), environment: 'staging'},
         resolvedConfig: createMockResolvedConfig({}),
       });
-      const tool = createMrtLogsWatchStartTool(() => services, serverContext, {
+      const tool = createMrtLogsWatchTool(() => services, serverContext, {
         tailMrtLogs: sinon.stub(),
         getProfile: noProfile,
       });
-      const result = await tool.handler({});
+      const result = await tool.handler({action: 'start'});
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('MRT project is required');
     });
@@ -176,11 +174,11 @@ describe('tools/diagnostics/mrt-logs', () => {
         mrtConfig: {project: 'p', environment: 'e'},
         resolvedConfig: createMockResolvedConfig({}),
       });
-      const tool = createMrtLogsWatchStartTool(() => services, serverContext, {
+      const tool = createMrtLogsWatchTool(() => services, serverContext, {
         tailMrtLogs: sinon.stub(),
         getProfile: noProfile,
       });
-      const result = await tool.handler({});
+      const result = await tool.handler({action: 'start'});
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('MRT auth error');
     });
@@ -191,12 +189,12 @@ describe('tools/diagnostics/mrt-logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub(), done: Promise.resolve()});
       });
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
       const {watch_id} = getResultJson<{watch_id: string}>(
-        await startTool.handler({level: ['ERROR'], search: 'OrderMgr'}),
+        await startTool.handler({action: 'start', level: ['ERROR'], search: 'OrderMgr'}),
       );
 
       onEntry!(makeEntry({level: 'WARN', message: 'OrderMgr slow'})); // dropped (level)
@@ -220,12 +218,12 @@ describe('tools/diagnostics/mrt-logs', () => {
         });
         return Promise.resolve({stop: racedStop, done: Promise.resolve()});
       });
-      const tool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const tool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
 
-      const result = await tool.handler({});
+      const result = await tool.handler({action: 'start'});
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('already exists');
       expect(racedStop.calledOnce).to.be.true;
@@ -239,11 +237,11 @@ describe('tools/diagnostics/mrt-logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub(), done: Promise.resolve()});
       });
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
       onEntry!(makeEntry({message: 'boom'}));
 
@@ -263,11 +261,11 @@ describe('tools/diagnostics/mrt-logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub(), done: Promise.resolve()});
       });
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
       const pollTool = createMrtLogsWatchPollTool(loadServices, serverContext);
       const pollPromise = pollTool.handler({watch_id, timeout_ms: 5000});
@@ -283,11 +281,11 @@ describe('tools/diagnostics/mrt-logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub(), done: Promise.resolve()});
       });
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
       onEntry!(makeEntry({message: 'a'}));
       onEntry!(makeEntry({message: 'b'}));
@@ -309,11 +307,11 @@ describe('tools/diagnostics/mrt-logs', () => {
         onClose = opts.onClose;
         return Promise.resolve({stop: sinon.stub(), done: Promise.resolve()});
       });
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
       onError!(new Error('socket blew up'));
       onClose!(1006, 'abnormal');
@@ -337,11 +335,11 @@ describe('tools/diagnostics/mrt-logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub(), done: Promise.resolve()});
       });
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
       const watch = serverContext.mrtLogWatches.getWatch(watch_id)!;
       watch.bufferCap = 2;
@@ -372,18 +370,18 @@ describe('tools/diagnostics/mrt-logs', () => {
     });
   });
 
-  describe('mrt_logs_watch_stop', () => {
+  describe('mrt_logs_watch(action: stop)', () => {
     it('calls stop and removes the watch', async () => {
       const stop = sinon.stub();
       const tailStub = sinon.stub().resolves({stop, done: Promise.resolve()} as TailMrtLogsResult);
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
-      const stopTool = createMrtLogsWatchStopTool(loadServices, serverContext);
-      const result = await stopTool.handler({watch_id});
+      const stopTool = createMrtLogsWatchTool(loadServices, serverContext);
+      const result = await stopTool.handler({action: 'stop', watch_id});
       expect(result.isError).to.be.undefined;
       expect(stop.calledOnce).to.be.true;
       expect(serverContext.mrtLogWatches.getWatch(watch_id)).to.be.undefined;
@@ -392,17 +390,17 @@ describe('tools/diagnostics/mrt-logs', () => {
     it('is idempotent (second stop returns success, not error)', async () => {
       const stop = sinon.stub();
       const tailStub = sinon.stub().resolves({stop, done: Promise.resolve()} as TailMrtLogsResult);
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
-      const stopTool = createMrtLogsWatchStopTool(loadServices, serverContext);
-      const first = await stopTool.handler({watch_id});
+      const stopTool = createMrtLogsWatchTool(loadServices, serverContext);
+      const first = await stopTool.handler({action: 'stop', watch_id});
       expect(first.isError).to.be.undefined;
 
-      const second = await stopTool.handler({watch_id});
+      const second = await stopTool.handler({action: 'stop', watch_id});
       expect(second.isError).to.be.undefined;
       const json = getResultJson<{stopped_at: string; watch_id: string}>(second);
       expect(json.watch_id).to.equal(watch_id);
@@ -414,29 +412,29 @@ describe('tools/diagnostics/mrt-logs', () => {
       const stop = sinon.stub();
       const rejectedDone = Promise.reject(new Error('WebSocket connection failed: close code 1006'));
       const tailStub = sinon.stub().resolves({stop, done: rejectedDone} as TailMrtLogsResult);
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
-      const stopTool = createMrtLogsWatchStopTool(loadServices, serverContext);
-      const result = await stopTool.handler({watch_id});
+      const stopTool = createMrtLogsWatchTool(loadServices, serverContext);
+      const result = await stopTool.handler({action: 'stop', watch_id});
       expect(result.isError).to.be.undefined;
       expect(serverContext.mrtLogWatches.getWatch(watch_id)).to.be.undefined;
     });
   });
 
-  describe('mrt_logs_watch_list', () => {
+  describe('mrt_logs_watch(action: list)', () => {
     it('returns active watches', async () => {
       const tailStub = sinon.stub().resolves({stop: sinon.stub(), done: Promise.resolve()} as TailMrtLogsResult);
-      const startTool = createMrtLogsWatchStartTool(loadServices, serverContext, {
+      const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      await startTool.handler({});
+      await startTool.handler({action: 'start'});
 
-      const listTool = createMrtLogsWatchListTool(loadServices, serverContext);
+      const listTool = createMrtLogsWatchTool(loadServices, serverContext);
       const json = getResultJson<{
         watches: Array<{
           environment: string;
@@ -445,7 +443,7 @@ describe('tools/diagnostics/mrt-logs', () => {
           watch_id: string;
           stopped: boolean;
         }>;
-      }>(await listTool.handler({}));
+      }>(await listTool.handler({action: 'list'}));
       expect(json.watches).to.have.lengthOf(1);
       expect(json.watches[0].project).to.equal('my-storefront');
       expect(json.watches[0].environment).to.equal('staging');
@@ -455,19 +453,19 @@ describe('tools/diagnostics/mrt-logs', () => {
 
     it('lists distinct project/environment watches separately', async () => {
       const tailStub = sinon.stub().resolves({stop: sinon.stub(), done: Promise.resolve()} as TailMrtLogsResult);
-      const startStaging = createMrtLogsWatchStartTool(() => createServices({environment: 'staging'}), serverContext, {
+      const startStaging = createMrtLogsWatchTool(() => createServices({environment: 'staging'}), serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      const startProd = createMrtLogsWatchStartTool(() => createServices({environment: 'production'}), serverContext, {
+      const startProd = createMrtLogsWatchTool(() => createServices({environment: 'production'}), serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
       });
-      await startStaging.handler({});
-      await startProd.handler({});
+      await startStaging.handler({action: 'start'});
+      await startProd.handler({action: 'start'});
 
-      const listTool = createMrtLogsWatchListTool(loadServices, serverContext);
-      const json = getResultJson<{watches: Array<{environment: string}>}>(await listTool.handler({}));
+      const listTool = createMrtLogsWatchTool(loadServices, serverContext);
+      const json = getResultJson<{watches: Array<{environment: string}>}>(await listTool.handler({action: 'list'}));
       expect(json.watches.map((w) => w.environment).sort()).to.deep.equal(['production', 'staging']);
     });
   });

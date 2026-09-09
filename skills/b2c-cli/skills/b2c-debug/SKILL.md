@@ -7,7 +7,7 @@ description: Debug B2C Commerce server-side scripts using the b2c CLI. Use this 
 
 Debug server-side scripts on Salesforce B2C Commerce instances — set breakpoints, step through code, and inspect variables in SFRA controllers, hooks, jobs, and custom APIs.
 
-> **Prefer the MCP diagnostics tools when available.** If the B2C DX MCP server is installed (tools named `debug_start_session`, `debug_set_breakpoints`, `debug_wait_for_stop`, `debug_capture_at_breakpoint`, etc.), **use them instead of the RPC-based `b2c debug cli --rpc` workflow.** The MCP tools manage session state for you, return structured JSON, and support a non-blocking poll workflow (`debug_list_sessions` / `debug_wait_for_stop`) that is far more reliable for agents than driving JSONL over stdio. Only fall back to `b2c debug cli` (REPL or `--rpc`) when the MCP server is not installed, or when a human wants an interactive terminal session.
+> Prefer MCP debugging when available: `debug_control` resumes/steps; `debug_inspect` reads stacks and variables; `debug_evaluate` evaluates expressions. See `skill://mcp/debugger/SKILL.md` for the MCP workflow. Use the CLI for a requested terminal session or when MCP is unavailable.
 
 `b2c debug` provides a Debug Adapter Protocol (DAP) debug adapter for IDEs. For terminal or headless use without the MCP tools, `b2c debug cli` also offers an interactive REPL and a JSONL `--rpc` mode.
 

@@ -45,7 +45,7 @@ from the existing `skills` module that installs native plugin skills.
 
 Feature an MCP skill when it teaches a non-obvious tool interaction, lifecycle,
 or execution model. Do not create one per tool or duplicate its schema. Keep
-resource entrypoints below one content chunk; link broader skills by exact ID.
+resource entrypoints concise; link broader skills by exact ID.
 
 | Candidate                        | Decision                                                                                                           |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -77,7 +77,7 @@ and `evals/` are not a runtime filesystem interface.
 ## Build and release contract
 
 The MCP `generate:guidance` script copies source Markdown byte-for-byte and emits
-a deterministic manifest with relative provenance, SHA-256 hashes, and search
+a deterministic manifest with relative provenance, file sizes, and search
 metadata. `build` and `prepack` both run it. Generated prose in
 `packages/b2c-dx-mcp/content/guidance/` is ignored by Git but included in the npm
 tarball. Source errors fail generation before replacing the previous bundle.
@@ -96,17 +96,22 @@ changed packages only; dependency bumps cascade through Changesets.
 
 - `skills_read` lists, searches, or reads. Exact reads never fuzzy-substitute.
 - `id` and `uri` are alternatives. `file` and `section` narrow an exact read.
-  Search/list use `offset`; content continuation uses `cursor` alone.
+  Search/list use entry `offset`; reads accept character `offset`/`maxLength`
+  and return full content by default. Read results include `totalLength` and
+  `offset`, plus `truncated`/`nextOffset` when more content remains. Positions
+  refer to the selected file or section, matching `docs_read` conventions.
 - Results have an object root with a discriminated `result.kind`. Successful
   tool responses contain identical JSON in text and `structuredContent`.
   Errors use `isError` plus `error.code`, `message`, and recovery suggestions.
 - All skill resources retain the MCP resource shape and full-file semantics.
-  Files over 64 KiB direct callers to tool sections/continuation.
+  Tool reads return the same complete file, or an explicitly selected section.
+  Generation rejects files over 64 KiB; split oversized skills into references.
+  Runtime reads enforce the same file limit.
 - Directory/search responses stay below 16 KiB including both JSON copies;
-  tool content responses stay below 64 KiB. Default pages are at most 20 entries,
+  the 64 KiB skill limit measures file content, excluding response metadata and
+  serialization. Default pages are at most 20 entries,
   default searches at most five. Descriptions are condensed for discovery.
-- Continuation is stateless, bound to the file hash and selected section, and
-  rechecked against the same manifest/exposure rules. It grants no authority.
+- Reads use the same manifest/exposure rules without content hashes or cursors.
 - All raw resource readers register through `B2CDxMcpServer.addResourceReader`
   after resource metadata. This preserves raw URI validation before the MCP
   SDK normalizes dot segments. Future resource families must join this dispatcher.
@@ -118,8 +123,8 @@ changed packages only; dependency bumps cascade through Changesets.
 
 1. Contract and vertical slice: read-only catalog, native/fallback access, shared
    resolver, result metadata, representative authored skill, and packaging.
-2. Releasable distribution: all selected collections, search reuse, bounded
-   continuation, exposure checks, source parity, stdio tests, and external
+2. Releasable distribution: all selected collections, search reuse, full-file and section
+   reads, exposure checks, source parity, stdio tests, and external
    tarball validation. This is the current implementation scope.
 3. Content and catalog migration: consistent equivalence tables for all skills,
    validated structured mappings, concise legacy descriptions, and audited tool

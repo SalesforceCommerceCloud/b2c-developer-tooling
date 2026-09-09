@@ -24,6 +24,12 @@ client's active tool list after changing configuration. See
 [tool selection](./configuration#toolset-selection) for all options.
 
 Use your client's tool approval controls for operations you want to review.
+Tools identify read-only operations and possible state changes to compatible
+clients. Configuration inspection and debugger session listing are read-only;
+debugger control can affect running requests. Your client decides when to ask
+for approval; these labels do not restrict credentials or enforce access.
+Selecting a tool enables all of its operations; for example, `debug_control`
+includes both stepping and continuing execution.
 These controls apply within that client; your assistant may also have access to
 other MCP servers or a terminal.
 

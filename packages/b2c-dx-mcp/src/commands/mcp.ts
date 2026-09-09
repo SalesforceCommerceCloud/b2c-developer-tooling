@@ -427,8 +427,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         },
         telemetry: this.telemetry,
         instructions:
-          'When needed, read: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
-          'setup/tool selection skill://mcp/server/SKILL.md. Catalog: skill://index. config_inspect needs no prior read.',
+          'Optional skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
+          'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index.',
       },
     );
 

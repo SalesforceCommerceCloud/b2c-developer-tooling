@@ -40,24 +40,24 @@ export function createDebugSetBreakpointsTool(
   return createToolAdapter<SetBreakpointsInput, SetBreakpointsOutput>(
     {
       name: 'debug_set_breakpoints',
+      effect: 'write',
+      idempotent: true,
+      openWorld: true,
       description:
         'Replace all session breakpoints. verified means local source mapping, not deployed-code validation. ' +
         'Workflow: skill://mcp/debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        session_id: z.string().describe('Session ID returned by debug_start_session.'),
+        session_id: z.string(),
         breakpoints: z
           .array(
             z.object({
               file: z.string().describe('Local, cartridge-prefixed, or absolute server script path.'),
-              line: z.number().int().positive().describe('Line number for the breakpoint.'),
-              condition: z
-                .string()
-                .optional()
-                .describe('Optional conditional expression. Breakpoint only triggers when this evaluates to true.'),
+              line: z.number().int().positive().describe('1-based line number.'),
+              condition: z.string().optional().describe('Halt when this expression is true.'),
             }),
           )
-          .describe('Array of breakpoints to set. Replaces all existing breakpoints.'),
+          .describe('Replacement set; empty clears all.'),
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);

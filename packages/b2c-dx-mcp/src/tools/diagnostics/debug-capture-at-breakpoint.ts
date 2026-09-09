@@ -60,15 +60,18 @@ export function createDebugCaptureAtBreakpointTool(
   return createToolAdapter<CaptureInput, CaptureOutput>(
     {
       name: 'debug_capture_at_breakpoint',
+      effect: 'write',
+      idempotent: false,
+      openWorld: true,
       description:
         'Add a breakpoint and wait for a halt; return stack, variables, and evaluations. ' +
         'Trigger a GET here or an external request concurrently. Capture does not resume by default. ' +
         'Workflow: skill://mcp/debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        session_id: z.string().describe('Session ID returned by debug_start_session.'),
+        session_id: z.string(),
         file: z.string().describe('Local file path or server script path for the breakpoint.'),
-        line: z.number().int().positive().describe('Line number for the breakpoint.'),
+        line: z.number().int().positive().describe('1-based line number.'),
         condition: z.string().optional().describe('Optional conditional expression for the breakpoint.'),
         expressions: z
           .array(z.string())
@@ -80,9 +83,7 @@ export function createDebugCaptureAtBreakpointTool(
           .positive()
           .max(MAX_TIMEOUT_MS)
           .optional()
-          .describe(
-            `Timeout in milliseconds waiting for the breakpoint to be hit (default: ${DEFAULT_TIMEOUT_MS}, max: ${MAX_TIMEOUT_MS}).`,
-          ),
+          .describe(`Wait timeout in milliseconds. Default: ${DEFAULT_TIMEOUT_MS}; max: ${MAX_TIMEOUT_MS}.`),
         auto_continue: z
           .boolean()
           .optional()

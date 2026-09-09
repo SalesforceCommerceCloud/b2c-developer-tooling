@@ -18,6 +18,7 @@ import {createGuidanceTool} from '../src/guidance.js';
 import {Services} from '../src/services.js';
 import {createMockResolvedConfig} from './test-helpers.js';
 import {MCP_SKILL_REFERENCES} from '../src/skill-references.js';
+import {toToolAnnotations} from '../src/utils/index.js';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(packageRoot, '../..');
@@ -29,7 +30,6 @@ describe('guidance distribution and result contracts', () => {
     for (const reference of Object.values(MCP_SKILL_REFERENCES)) {
       const result = catalog.read(reference) as GuidanceRead;
       expect(result.kind).to.equal('read');
-      expect(result.complete).to.equal(true);
       expect(result.content.trim().length).to.be.greaterThan(0);
       expect(catalog.readResource(reference.uri)).to.include(result.content);
     }
@@ -53,14 +53,10 @@ describe('guidance distribution and result contracts', () => {
     }
     for (const entry of manifest.entries) {
       for (const file of entry.files) {
-        let read = catalog.read({id: entry.id, file: file.path}) as GuidanceRead;
-        let content = read.content;
-        while (!read.complete) {
-          read = catalog.read({cursor: read.nextCursor}) as GuidanceRead;
-          content += read.content;
-        }
+        const read = catalog.read({id: entry.id, file: file.path}) as GuidanceRead;
+        expect(catalog.readResource(read.uri)).to.equal(read.content);
         const source = join(repoRoot, dirname(entry.source), file.path);
-        expect(content, `${entry.id}/${file.path}`).to.equal(readFileSync(source, 'utf8'));
+        expect(read.content, `${entry.id}/${file.path}`).to.equal(readFileSync(source, 'utf8'));
       }
     }
   });
@@ -96,18 +92,23 @@ describe('guidance distribution and result contracts', () => {
         name: 'contract_probe',
         title: 'Contract Probe',
         description: 'Read a project result.',
+        effect: 'read',
+        idempotent: true,
+        openWorld: false,
         toolsets: ['DIAGNOSTICS'],
         inputSchema: {},
         usesProjectContext: true,
         outputSchema: {value: z.string(), resolution: z.object({project: z.unknown().optional()}).passthrough()},
-        annotations: {readOnlyHint: true},
         execute: async () => ({value: 'preserved'}),
         formatOutput: jsonResult,
       },
       () => services,
     );
     const server = new B2CDxMcpServer({name: 'contract', version: '1'});
-    server.addTool(tool.name, tool.description, tool.inputSchema, tool.handler, tool);
+    server.addTool(tool.name, tool.description, tool.inputSchema, tool.handler, {
+      ...tool,
+      annotations: toToolAnnotations(tool),
+    });
     const client = new Client({name: 'contract-test', version: '1'});
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     await server.connect(serverTransport);

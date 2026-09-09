@@ -25,15 +25,20 @@ const inputSchema = {
   uri: z.string().max(1024).optional().describe('Skill resource URI; replaces id and file.'),
   file: z.string().max(512).optional().describe('Relative reference path listed by an entrypoint.'),
   section: z.string().max(256).optional().describe('Exact heading ID returned by a read.'),
-  cursor: z.string().max(4096).optional().describe('Continue with nextCursor; omit all other arguments.'),
   collection: z.string().max(128).optional().describe('Filter by collection.'),
   limit: z.number().int().min(1).max(20).optional().describe('Page size: directory 20, search 5; maximum 20.'),
+  maxLength: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe('Read character limit; defaults to the full file or section.'),
   offset: z
     .number()
     .int()
     .nonnegative()
     .optional()
-    .describe('Directory/search offset; use nextOffset for another page.'),
+    .describe('Entry offset for discovery; character offset for reads. Default 0.'),
 };
 
 const collectionSchema = z.object({
@@ -66,12 +71,13 @@ const outputSchema = {
       id: z.string(),
       uri: z.string(),
       source: z.string(),
-      hash: z.string(),
       content: z.string(),
-      complete: z.boolean(),
+      totalLength: z.number().int(),
+      offset: z.number().int(),
+      truncated: z.boolean().optional(),
+      nextOffset: z.number().int().optional(),
       sections: z.array(z.object({id: z.string(), title: z.string()})),
       references: z.array(z.string()),
-      nextCursor: z.string().optional(),
     }),
   ]),
 };
@@ -107,6 +113,9 @@ export function createGuidanceTool(allowNonGa = false): McpTool {
   const getCatalog = catalogLoader(allowNonGa);
   return {
     name: 'skills_read',
+    effect: 'read',
+    idempotent: true,
+    openWorld: false,
     title: 'Read B2C Skills',
     description:
       'Full skill catalog: b2c (Commerce), b2c-cli, storefront-next, mcp (setup/workflows). Also a fallback for skill resources. Omit args to list; query to search; collection to filter; id to read.',
@@ -114,7 +123,6 @@ export function createGuidanceTool(allowNonGa = false): McpTool {
     outputSchema,
     toolsets: [...TOOLSETS],
     isGA: true,
-    annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
     async handler(args) {
       const parsed = z.object(inputSchema).strict().safeParse(args);
       if (!parsed.success)

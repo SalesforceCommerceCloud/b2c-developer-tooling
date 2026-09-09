@@ -39,6 +39,9 @@ export function createDocsReadTool(
   return createToolAdapter<ReadInput, null | ReadOutput>(
     {
       name: 'docs_read',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'Read a B2C Commerce (SFCC/Demandware) Script API reference, job step, developer guide, admin/merchant help article, or tooling doc by ID or fuzzy query. ' +
         'Use docs_search to find IDs.' +

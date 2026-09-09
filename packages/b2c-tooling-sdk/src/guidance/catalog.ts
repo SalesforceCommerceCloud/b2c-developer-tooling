@@ -4,7 +4,6 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {createHash} from 'node:crypto';
 import {lstatSync, readFileSync} from 'node:fs';
 import {join, resolve} from 'node:path';
 import type MiniSearch from 'minisearch';
@@ -14,7 +13,7 @@ import {GuidanceError} from './types.js';
 import type {GuidanceEntry, GuidanceManifest, GuidancePage, GuidanceRead, GuidanceRequest} from './types.js';
 
 const PREFIX = 'skill://';
-const HASH = /^[a-f\d]{64}$/;
+export const GUIDANCE_MAX_FILE_BYTES = 64 * 1024;
 export const GUIDANCE_INDEX_URI = 'skill://index';
 
 /** Canonical resource URI for an inventoried skill file. */
@@ -46,17 +45,9 @@ function readSafe(root: string, relative: string): Buffer {
   }
 }
 
-interface ContentCursor {
-  id: string;
-  file: string;
-  section?: string;
-  hash: string;
-  position: number;
-}
-
 /**
  * Manifest-backed, offline guidance resolver. Exposure applies to every read,
- * including resource URIs and stateless continuation cursors.
+ * including resource URIs and section reads.
  */
 export class GuidanceCatalog {
   private readonly root: string;
@@ -92,7 +83,7 @@ export class GuidanceCatalog {
       }
       const paths = new Set<string>();
       for (const file of entry.files) {
-        if (!safePath(file.path) || !file.path.endsWith('.md') || !HASH.test(file.hash) || paths.has(file.path)) {
+        if (!safePath(file.path) || !file.path.endsWith('.md') || paths.has(file.path)) {
           fail('INVALID_MANIFEST', 'Invalid or duplicate skill file.');
         }
         paths.add(file.path);
@@ -123,14 +114,11 @@ export class GuidanceCatalog {
       }));
   }
 
-  /** Full native resource read. Oversized files must use the bounded tool path. */
+  /** Resources and tool reads share full-file semantics and the same size limit. */
   readResource(uri: string): string {
     if (uri === GUIDANCE_INDEX_URI) return this.resourceIndex();
     const {id, file} = this.parseUri(uri);
     const {content} = this.resolveFile(id, file);
-    if (Buffer.byteLength(content) > 64 * 1024) {
-      fail('CONTENT_TOO_LARGE', 'Use skills_read with this URI, then nextCursor or a section.');
-    }
     return content;
   }
 
@@ -166,22 +154,23 @@ export class GuidanceCatalog {
         fail('INVALID_REQUEST', 'Use the index URI alone; use collection/query to filter the catalog.');
       return this.page({});
     }
-    if (request.cursor !== undefined) {
-      if (supplied.length !== 1) fail('INVALID_REQUEST', 'Use cursor alone to continue a read.');
-      return this.readContent(this.decodeCursor(request.cursor));
-    }
     if (request.id !== undefined || request.uri !== undefined) {
       if (request.id !== undefined && request.uri !== undefined) fail('INVALID_REQUEST', 'Use id or uri, not both.');
       if (
-        supplied.some((key) => !['id', 'uri', 'file', 'section'].includes(key)) ||
+        supplied.some((key) => !['id', 'uri', 'file', 'section', 'offset', 'maxLength'].includes(key)) ||
         (request.uri !== undefined && request.file !== undefined)
       ) {
         fail('INVALID_REQUEST', 'Exact reads accept id/file/section or uri/section.');
       }
       const selector = request.uri !== undefined ? this.parseUri(request.uri) : {id: request.id!, file: request.file};
-      return this.readContent({...selector, section: request.section});
+      return this.readContent({
+        ...selector,
+        section: request.section,
+        offset: request.offset,
+        maxLength: request.maxLength,
+      });
     }
-    if (request.file !== undefined || request.section !== undefined)
+    if (request.file !== undefined || request.section !== undefined || request.maxLength !== undefined)
       fail('INVALID_REQUEST', 'Supply id or uri to read a file or section.');
     return this.page(request);
   }
@@ -195,7 +184,7 @@ export class GuidanceCatalog {
     return {id: `${collection}/${entry}`, file: parts.join('/')};
   }
 
-  private resolveFile(id: string, file?: string): {entry: GuidanceEntry; file: string; content: string; hash: string} {
+  private resolveFile(id: string, file?: string): {entry: GuidanceEntry; file: string; content: string} {
     if (!safePath(id)) fail('INVALID_PATH', 'Use an exact skill ID from the directory.');
     const entry = this.entries.get(id);
     if (!entry) fail('NOT_FOUND', 'Skill ID is not available. Use skills_read to list or search.');
@@ -204,87 +193,48 @@ export class GuidanceCatalog {
     const metadata = entry.files.find((item) => item.path === selected);
     if (!metadata) fail('NOT_FOUND', 'File is not available. Read the entrypoint to list references.');
     const bytes = readSafe(this.root, `${id}/${selected}`);
-    const hash = createHash('sha256').update(bytes).digest('hex');
-    if (hash !== metadata.hash) fail('CONTENT_CHANGED', 'Skills changed since packaging. Rebuild and restart the MCP.');
-    return {entry, file: selected, content: bytes.toString('utf8'), hash};
-  }
-
-  private decodeCursor(cursor: string): ContentCursor {
-    try {
-      if (cursor.length > 4096 || !/^[\w-]+$/.test(cursor)) throw new Error();
-      const data = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as ContentCursor;
-      if (
-        typeof data.id !== 'string' ||
-        typeof data.file !== 'string' ||
-        !HASH.test(data.hash) ||
-        (data.section !== undefined && typeof data.section !== 'string') ||
-        !Number.isSafeInteger(data.position) ||
-        data.position <= 0
-      )
-        throw new Error();
-      return data;
-    } catch {
-      return fail('INVALID_CURSOR', 'Invalid continuation cursor. Start a new skill read.');
+    if (bytes.length > GUIDANCE_MAX_FILE_BYTES) {
+      fail('CONTENT_TOO_LARGE', 'Skill file exceeds 64 KiB; split the authored skill into references and rebuild.');
     }
+    return {entry, file: selected, content: bytes.toString('utf8')};
   }
 
   private readContent(selector: {
     id: string;
     file?: string;
     section?: string;
-    hash?: string;
-    position?: number;
+    offset?: number;
+    maxLength?: number;
   }): GuidanceRead {
-    const {entry, file, content, hash} = this.resolveFile(selector.id, selector.file);
-    if (selector.hash && selector.hash !== hash)
-      fail('CONTENT_CHANGED', 'Cursor content changed. Start a new skill read.');
+    if (
+      (selector.offset !== undefined && (!Number.isSafeInteger(selector.offset) || selector.offset < 0)) ||
+      (selector.maxLength !== undefined && (!Number.isSafeInteger(selector.maxLength) || selector.maxLength <= 0))
+    ) {
+      fail('INVALID_REQUEST', 'Use a nonnegative integer offset and a positive integer maxLength.');
+    }
+    const {entry, file, content} = this.resolveFile(selector.id, selector.file);
     const headings = guidanceHeadings(content);
     const section =
       selector.section === undefined ? undefined : headings.find((heading) => heading.id === selector.section);
     if (selector.section !== undefined && !section)
       fail('SECTION_NOT_FOUND', 'Unknown section. Read the file to list section IDs.');
     const selected = section ? content.slice(section.start, section.end) : content;
-    const start = selector.position ?? 0;
-    if (start > selected.length || (start > 0 && /[\uDC00-\uDFFF]/.test(selected[start] ?? ''))) {
-      fail('INVALID_CURSOR', 'Cursor position is outside the selected content.');
-    }
-    // 4K characters leaves room for escaped JSON, references, and structured/text parity.
-    let end = Math.min(selected.length, start + 4096);
-    if (end < selected.length) {
-      const boundary = headings
-        .map((heading) => heading.start - (section?.start ?? 0))
-        .filter((position) => position > start + 2048 && position <= end)
-        .at(-1);
-      end = boundary ?? end;
-      if (/[\uDC00-\uDFFF]/.test(selected[end])) end--;
-    }
-    const complete = end === selected.length;
-    const result: GuidanceRead = {
+    const totalLength = selected.length;
+    const offset = Math.min(selector.offset ?? 0, totalLength);
+    const slice = selected.slice(offset, offset + (selector.maxLength ?? totalLength));
+    const end = offset + slice.length;
+    return {
       kind: 'read',
       id: entry.id,
       uri: guidanceUri(entry.id, file),
       source: entry.source.replace(/[^/]+$/, file),
-      hash,
-      content: selected.slice(start, end),
-      complete,
+      content: slice,
+      totalLength,
+      offset,
+      ...(end < totalLength && {truncated: true, nextOffset: end}),
       sections: headings.map(({id, title}) => ({id, title})),
       references: entry.files.filter((item) => item.path !== file).map((item) => item.path),
-      ...(!complete && {
-        nextCursor: Buffer.from(
-          JSON.stringify({
-            id: entry.id,
-            file,
-            section: selector.section,
-            hash,
-            position: end,
-          }),
-        ).toString('base64url'),
-      }),
     };
-    if (Buffer.byteLength(JSON.stringify(result)) > 30 * 1024) {
-      fail('CONTENT_TOO_LARGE', 'Skill metadata exceeds the response budget; split the authored skill.');
-    }
-    return result;
   }
 
   private page(request: GuidanceRequest): GuidancePage {

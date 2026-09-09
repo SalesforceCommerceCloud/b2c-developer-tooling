@@ -24,6 +24,9 @@ export function createDocsSchemaSearchTool(loadServices: () => Promise<Services>
   return createToolAdapter<SearchInput, SearchOutput>(
     {
       name: 'docs_schema_search',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Search bundled B2C Commerce (SFCC/Demandware) XSD schemas by ID. ' +
         'Returns matching IDs and scores; use docs_schema_read for content.',

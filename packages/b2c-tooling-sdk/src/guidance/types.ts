@@ -15,7 +15,6 @@ export interface GuidanceCollection {
 /** Inventoried Markdown file. Hashes cover the exact shipped UTF-8 bytes. */
 export interface GuidanceFile {
   path: string;
-  hash: string;
   bytes: number;
 }
 
@@ -40,18 +39,18 @@ export interface GuidanceManifest {
   entries: GuidanceEntry[];
 }
 
-/** Directory/search pagination is independent from content continuation. */
+/** List/search pagination and exact file or section selectors with optional slicing. */
 export interface GuidanceRequest {
   id?: string;
   uri?: string;
   file?: string;
   section?: string;
-  cursor?: string;
   query?: string;
   collection?: string;
   workspace?: string | string[];
   limit?: number;
   offset?: number;
+  maxLength?: number;
 }
 
 /** Compact discovery entry; supporting files appear only when reading. */
@@ -74,19 +73,20 @@ export interface GuidancePage {
   nextOffset?: number;
 }
 
-/** One content chunk with exact source and continuation identity. */
+/** Skill content with explicit position and length within the selected file or section. */
 export interface GuidanceRead {
   kind: 'read';
   id: string;
   /** Readable through the resource template, whether or not individually advertised. */
   uri: string;
   source: string;
-  hash: string;
   content: string;
-  complete: boolean;
+  totalLength: number;
+  offset: number;
+  truncated?: boolean;
+  nextOffset?: number;
   sections: {id: string; title: string}[];
   references: string[];
-  nextCursor?: string;
 }
 
 /** Guidance errors are safe for clients and contain no host filesystem paths. */

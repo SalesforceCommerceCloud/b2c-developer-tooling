@@ -100,6 +100,9 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
   return createToolAdapter<MetricsGetInput, MetricsGetOutput>(
     {
       name: 'metrics_get',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'CLOSED BETA. Retrieve B2C observability metric time series by category and time range. ' +
         'Defaults to the last 24 hours. Requires Metrics API access and OAuth scope sfcc.metrics.',

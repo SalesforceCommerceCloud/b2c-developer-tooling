@@ -5,7 +5,7 @@
  */
 
 import type {z, ZodRawShape} from 'zod';
-import type {CallToolResult, ToolAnnotations} from '@modelcontextprotocol/sdk/types.js';
+import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import type {Toolset} from './constants.js';
 
 /**
@@ -14,17 +14,25 @@ import type {Toolset} from './constants.js';
  */
 export type ToolResult = CallToolResult;
 
+/** Effects of advertised operations; annotations are derived at registration. */
+export interface ToolEffects {
+  effect: 'destructive' | 'read' | 'write';
+  /** Repeating the same arguments causes no additional effects, even if results differ. */
+  idempotent: boolean;
+  /** Interacts with external entities rather than only a bounded local domain. */
+  openWorld: boolean;
+}
+
 /**
  * Configuration for an MCP tool.
  */
-export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> {
+export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> extends ToolEffects {
   /** Tool name (used in MCP protocol) */
   name: string;
   /** Human-readable description */
   description: string;
-  /** Optional display title, effect hints, and object-root result schema. */
+  /** Optional display title and object-root result schema. */
   title?: string;
-  annotations?: ToolAnnotations;
   outputSchema?: ZodRawShape;
   /** Zod schema for input validation */
   inputSchema: T;

@@ -5,6 +5,7 @@
  */
 
 import {z} from 'zod';
+import {createWatchLifecycleTool} from './watch-lifecycle.js';
 import {getProfile, tailMrtLogs} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import type {MrtLogEntry, TailMrtLogsOptions, TailMrtLogsResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
@@ -46,7 +47,7 @@ function matchesLevel(entry: MrtLogEntry, levels: Set<string>): boolean {
   return Boolean(entry.level && levels.has(entry.level.toUpperCase()));
 }
 
-export function createMrtLogsWatchStartTool(
+function createMrtLogsWatchStartTool(
   loadServices: () => Promise<Services> | Services,
   serverContext?: ServerContext,
   injections?: MrtLogsWatchStartInjections,
@@ -55,23 +56,20 @@ export function createMrtLogsWatchStartTool(
   const getProfileFn = injections?.getProfile ?? getProfile;
   return createToolAdapter<StartInput, StartOutput>(
     {
-      name: 'mrt_logs_watch_start',
+      name: 'mrt_logs_watch',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
-        'Start a live MRT application-log stream and return watch_id. Start before the target action, poll with ' +
-        'mrt_logs_watch_poll, and always stop with mrt_logs_watch_stop. Requires MRT project and environment.',
+        'Start, list, or stop live MRT log watches. Requires project/environment to start; read with mrt_logs_watch_poll. Stop discards unread entries; safe to repeat.',
       toolsets: ['DIAGNOSTICS', 'PWAV3', 'STOREFRONTNEXT'],
       requiresMrtAuth: true,
       inputSchema: {
-        level: z
-          .array(z.string())
-          .optional()
-          .describe(
-            'Filter by log level (ERROR, WARN, INFO, DEBUG, etc.). Entries not matching are dropped before buffering.',
-          ),
+        level: z.array(z.string()).optional().describe('Keep matching levels before buffering (e.g. ERROR, WARN).'),
         search: z
           .string()
           .optional()
-          .describe('Case-insensitive substring filter applied to message and raw text as entries arrive.'),
+          .describe('Case-insensitive substring in message or raw text; filters before buffering.'),
       },
       async execute(args, context) {
         const registry = getMrtLogWatchRegistry(context);
@@ -96,7 +94,7 @@ export function createMrtLogsWatchStartTool(
         if (existing) {
           throw new Error(
             `An MRT log watch already exists for ${project}/${environment} (watch_id: "${existing.watchId}"). ` +
-              `Stop it with mrt_logs_watch_stop first, or poll the existing watch.`,
+              `Stop it with mrt_logs_watch(action: stop) first, or poll the existing watch.`,
           );
         }
 
@@ -178,5 +176,45 @@ export function createMrtLogsWatchStartTool(
     },
     loadServices,
     serverContext,
+  );
+}
+
+export function createMrtLogsWatchTool(
+  loadServices: () => Promise<Services> | Services,
+  serverContext?: ServerContext,
+  injections?: MrtLogsWatchStartInjections,
+): McpTool {
+  const getRegistry = () => {
+    if (!serverContext) throw new Error('Server context is required for log watches.');
+    return serverContext.mrtLogWatches;
+  };
+  return createWatchLifecycleTool(
+    createMrtLogsWatchStartTool(loadServices, serverContext, injections),
+    () => {
+      return {
+        watches: getRegistry()
+          .listWatches()
+          .map((w) => ({
+            buffered_entries: w.buffer.length,
+            created_at: new Date(w.createdAt).toISOString(),
+            dropped_entries: w.droppedEntries,
+            environment: w.environment,
+            last_activity_at: new Date(w.lastActivityAt).toISOString(),
+            origin: w.origin,
+            project: w.project,
+            stopped: w.stopped,
+            total_entries_seen: w.totalEntriesSeen,
+            watch_id: w.watchId,
+            resolution: w.resolution,
+          })),
+      };
+    },
+    async (watchId) => {
+      const registry = getRegistry();
+      const watch = registry.getWatch(watchId);
+      const total = watch?.totalEntriesSeen ?? 0;
+      if (watch) await registry.destroyWatch(watchId);
+      return {watch_id: watchId, stopped_at: new Date().toISOString(), total_entries_seen: total};
+    },
   );
 }

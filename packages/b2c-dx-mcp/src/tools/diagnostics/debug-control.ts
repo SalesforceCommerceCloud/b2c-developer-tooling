@@ -8,45 +8,51 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
+import type {DebugSessionManager} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {getSessionEntry} from './session-registry.js';
 
-interface EvaluateInput {
+interface ControlInput {
+  action: ControlAction;
   session_id: string;
   thread_id: number;
-  frame_index?: number;
-  expression: string;
 }
 
-interface EvaluateOutput {
-  expression: string;
-  result: string;
+interface ControlOutput {
+  thread_id: number;
+  action: string;
 }
 
-export function createDebugEvaluateTool(
+type ControlAction = 'continue' | 'into' | 'out' | 'over';
+
+const CONTROL_HANDLERS: Record<ControlAction, (manager: DebugSessionManager, threadId: number) => Promise<void>> = {
+  continue: (m, id) => m.resume(id),
+  into: (m, id) => m.stepInto(id),
+  out: (m, id) => m.stepOut(id),
+  over: (m, id) => m.stepOver(id),
+};
+
+export function createDebugControlTool(
   loadServices: () => Promise<Services> | Services,
   serverContext?: ServerContext,
 ): McpTool {
-  return createToolAdapter<EvaluateInput, EvaluateOutput>(
+  return createToolAdapter<ControlInput, ControlOutput>(
     {
-      name: 'debug_evaluate',
+      name: 'debug_control',
       effect: 'write',
       idempotent: false,
       openWorld: true,
-      description:
-        'Evaluate JavaScript in a halted thread/frame. Expressions can call functions and change remote state.',
+      description: 'Resume or step a halted thread. Follow with debug_wait_for_stop.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
+        action: z.enum(['continue', 'into', 'over', 'out']),
         session_id: z.string(),
         thread_id: z.number().int(),
-        frame_index: z.number().int().min(0).optional().describe('Default: 0 (top frame).'),
-        expression: z.string().describe('JavaScript expression.'),
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);
-        const frameIndex = args.frame_index ?? 0;
-        const result = await entry.manager.client.evaluate(args.thread_id, frameIndex, args.expression);
-        return {expression: result.expression, result: result.result};
+        await CONTROL_HANDLERS[args.action](entry.manager, args.thread_id);
+        return {thread_id: args.thread_id, action: args.action};
       },
       formatOutput: (output) => jsonResult(output),
     },

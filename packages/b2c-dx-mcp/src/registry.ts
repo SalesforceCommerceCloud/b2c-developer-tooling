@@ -8,7 +8,7 @@ import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {DOC_CATEGORIES, resolveEnabledCategories, type DocCategory} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
-import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
+import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES, toToolAnnotations} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';
 import type {ServerContext} from './server-context.js';
 import type {ServicesLoader} from './tools/adapter.js';
@@ -194,7 +194,7 @@ async function registerTools(tools: McpTool[], server: B2CDxMcpServer, allowNonG
     // Register the tool (invocations are tracked by B2CDxMcpServer)
     server.addTool(tool.name, tool.description, tool.inputSchema, async (args) => tool.handler(args), {
       title: tool.title,
-      annotations: tool.annotations,
+      annotations: toToolAnnotations(tool),
       outputSchema: tool.outputSchema,
     });
   }

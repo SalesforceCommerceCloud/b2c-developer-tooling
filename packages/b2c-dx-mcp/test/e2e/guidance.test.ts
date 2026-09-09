@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/* eslint-disable no-await-in-loop -- Continuation and dependent reads must run in protocol order. */
+/* eslint-disable no-await-in-loop -- Discovery pages and dependent reads must run in protocol order. */
 import {expect} from 'chai';
 import type {GuidanceRead, GuidancePage} from '@salesforce/b2c-tooling-sdk/guidance';
 import {McpE2EClient} from './stdio-client.js';
@@ -109,21 +109,20 @@ describe('guidance over real stdio', function () {
 
   it('reads published MCP skills identically through resources and tools', async () => {
     for (const id of ['mcp/server', 'mcp/debugger', 'mcp/b2c-config', 'b2c-cli/b2c-code']) {
-      let response = await call({id});
+      const response = await call({id});
       const initial = response.structuredContent.result as GuidanceRead;
-      if (id.startsWith('mcp/')) expect(initial.complete).to.equal(true);
       expect(initial.uri).to.equal(`skill://${id}/SKILL.md`);
       const native = (await client.call('resources/read', {uri: initial.uri})) as {contents: {text: string}[]};
-      let content = '';
-      for (;;) {
-        expect(response.isError).not.to.equal(true);
-        expect(Buffer.byteLength(JSON.stringify(response))).to.be.lessThan(64 * 1024);
-        const read = response.structuredContent.result as GuidanceRead;
-        content += read.content;
-        if (read.complete) break;
-        response = await call({cursor: read.nextCursor});
-      }
-      expect(content).to.equal(native.contents[0].text);
+      expect(response.isError).not.to.equal(true);
+      expect(JSON.parse(response.content[0].text)).to.deep.equal(response.structuredContent);
+      expect(initial.content).to.equal(native.contents[0].text);
+      expect(initial.totalLength).to.equal(initial.content.length);
+      const page = (await call({id, maxLength: 100})).structuredContent.result as GuidanceRead;
+      expect(page).to.include({totalLength: initial.content.length, offset: 0, nextOffset: 100, truncated: true});
+      const rest = (await call({id, offset: page.nextOffset})).structuredContent.result as GuidanceRead;
+      expect(page.content + rest.content).to.equal(initial.content);
+      expect(rest).not.to.have.any.keys('truncated', 'nextOffset');
+      expect(initial).not.to.have.any.keys('hash', 'complete', 'nextCursor');
       const section = initial.sections[0].id;
       const selected = await call({id, section});
       expect((selected.structuredContent.result as GuidanceRead).content).to.match(/^#/);
@@ -131,7 +130,7 @@ describe('guidance over real stdio', function () {
         const ref = await call({id, file: initial.references[0]});
         const refRead = ref.structuredContent.result as GuidanceRead;
         const resource = (await client.call('resources/read', {uri: refRead.uri})) as {contents: {text: string}[]};
-        expect(resource.contents[0].text.startsWith(refRead.content)).to.equal(true);
+        expect(resource.contents[0].text).to.equal(refRead.content);
       }
     }
     const templates = (await client.call('resources/templates/list')) as {resourceTemplates: {uriTemplate: string}[]};

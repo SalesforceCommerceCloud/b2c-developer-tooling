@@ -67,6 +67,9 @@ export function createDocsListTool(
   return createToolAdapter<ListInput, ListOutput>(
     {
       name: 'docs_list',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'List IDs and titles for B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
         'Without a filter, returns category counts. ' +

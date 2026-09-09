@@ -39,6 +39,9 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
   return createToolAdapter<ConfigInspectInput, ConfigInspectOutput>(
     {
       name: 'config_inspect',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Inspect resolved B2C configuration, sources, warnings, and paths; usually no need to read dw.json. ' +
         'Secrets are masked by default.',

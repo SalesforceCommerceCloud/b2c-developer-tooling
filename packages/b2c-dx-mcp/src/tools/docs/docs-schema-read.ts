@@ -24,6 +24,9 @@ export function createDocsSchemaReadTool(loadServices: () => Promise<Services> |
   return createToolAdapter<ReadInput, null | ReadOutput>(
     {
       name: 'docs_schema_read',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Read a bundled B2C Commerce (SFCC/Demandware) XSD schema as XML by ID or fuzzy query. ' +
         'Use docs_schema_search to find IDs.',

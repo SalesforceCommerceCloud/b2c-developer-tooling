@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/** Heading offsets use JavaScript character positions, as do content cursors. */
+/** Heading offsets use JavaScript character positions for section selection. */
 export interface GuidanceHeading {
   id: string;
   title: string;

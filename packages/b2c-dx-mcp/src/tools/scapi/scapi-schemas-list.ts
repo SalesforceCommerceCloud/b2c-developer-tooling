@@ -304,6 +304,9 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'List SCAPI schema metadata or fetch an OpenAPI schema. Fetch requires includeSchemas, apiFamily, apiName, and apiVersion. Use scapi_custom_apis_get_status for endpoint status.',
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],

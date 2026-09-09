@@ -126,6 +126,9 @@ describe('tools/adapter', () => {
         {
           name: 'test_tool',
           description: 'A test tool',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['CARTRIDGES'],
           isGA: true,
           requiresInstance: false,
@@ -151,6 +154,9 @@ describe('tools/adapter', () => {
         {
           name: 'test_tool',
           description: 'A test tool',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['MRT'],
           requiresInstance: false,
           inputSchema: {},
@@ -170,6 +176,9 @@ describe('tools/adapter', () => {
         {
           name: 'validator_tool',
           description: 'Validates input',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['CARTRIDGES'],
           requiresInstance: false,
           inputSchema: {
@@ -206,6 +215,9 @@ describe('tools/adapter', () => {
         {
           name: 'strict_tool',
           description: 'Has strict validation',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['SCAPI'],
           requiresInstance: false,
           inputSchema: {
@@ -231,6 +243,9 @@ describe('tools/adapter', () => {
         {
           name: 'error_tool',
           description: 'Throws an error',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['MRT'],
           requiresInstance: false,
           inputSchema: {},
@@ -256,6 +271,9 @@ describe('tools/adapter', () => {
         {
           name: 'string_error_tool',
           description: 'Throws an error with a custom message',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['PWAV3'],
           requiresInstance: false,
           inputSchema: {},
@@ -282,6 +300,9 @@ describe('tools/adapter', () => {
         {
           name: 'services_tool',
           description: 'Uses services',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['STOREFRONTNEXT'],
           requiresInstance: false,
           inputSchema: {},
@@ -316,6 +337,9 @@ describe('tools/adapter', () => {
         {
           name: 'project_tool',
           description: 'Uses project context',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['CARTRIDGES'],
           usesConfigurationContext: true,
           inputSchema: {},
@@ -371,6 +395,9 @@ describe('tools/adapter', () => {
         {
           name: 'resolved_tool',
           description: 'Resolved tool',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['DIAGNOSTICS'],
           usesConfigurationContext: true,
           inputSchema: {},
@@ -381,7 +408,6 @@ describe('tools/adapter', () => {
       );
 
       expect(tool.inputSchema.projectDirectory.description).to.include('server default');
-      expect(tool.inputSchema.projectDirectory.description).to.include('config_inspect');
       expect(tool.inputSchema.projectDirectory.description).to.not.include('/server/project');
       for (const field of ['projectDirectory', 'configPath', 'instanceName']) {
         const fieldDescription = tool.inputSchema[field].description ?? '';
@@ -410,6 +436,9 @@ describe('tools/adapter', () => {
         {
           name: 'no_instance_tool',
           description: 'Does not need B2CInstance',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['PWAV3'],
           requiresInstance: false,
           inputSchema: {
@@ -439,6 +468,9 @@ describe('tools/adapter', () => {
         {
           name: 'json_output_tool',
           description: 'Returns JSON',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['SCAPI'],
           requiresInstance: false,
           inputSchema: {},
@@ -466,6 +498,9 @@ describe('tools/adapter', () => {
         {
           name: 'multi_toolset_tool',
           description: 'Belongs to multiple toolsets',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['PWAV3', 'STOREFRONTNEXT'],
           requiresInstance: false,
           inputSchema: {},
@@ -486,6 +521,9 @@ describe('tools/adapter', () => {
         {
           name: 'optional_fields_tool',
           description: 'Has optional fields',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['MRT'],
           requiresInstance: false,
           inputSchema: {
@@ -517,6 +555,9 @@ describe('tools/adapter', () => {
         {
           name: 'array_tool',
           description: 'Accepts array input',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['CARTRIDGES'],
           requiresInstance: false,
           inputSchema: {
@@ -541,6 +582,9 @@ describe('tools/adapter', () => {
         {
           name: 'detailed_errors_tool',
           description: 'Provides detailed errors',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
           toolsets: ['SCAPI'],
           requiresInstance: false,
           inputSchema: {
@@ -568,6 +612,9 @@ describe('tools/adapter', () => {
           {
             name: 'default_instance_tool',
             description: 'Default behavior',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['CARTRIDGES'],
             inputSchema: {},
             async execute(_args, context) {
@@ -593,6 +640,9 @@ describe('tools/adapter', () => {
           {
             name: 'bad_config_tool',
             description: 'Has bad config',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['CARTRIDGES'],
             requiresInstance: true,
             inputSchema: {},
@@ -625,6 +675,9 @@ describe('tools/adapter', () => {
           {
             name: 'default_mrt_auth_tool',
             description: 'Default MRT auth behavior',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['MRT'],
             inputSchema: {},
             async execute(_args, context) {
@@ -653,6 +706,9 @@ describe('tools/adapter', () => {
           {
             name: 'mrt_auth_success_tool',
             description: 'Uses MRT auth',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['MRT'],
             requiresMrtAuth: true,
             inputSchema: {},
@@ -688,6 +744,9 @@ describe('tools/adapter', () => {
           {
             name: 'mrt_cloud_origin_tool',
             description: 'Tests cloud origin support',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['MRT'],
             requiresMrtAuth: true,
             inputSchema: {},
@@ -722,6 +781,9 @@ describe('tools/adapter', () => {
           {
             name: 'mrt_origin_tool',
             description: 'Tests mrtOrigin passthrough',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['MRT'],
             requiresMrtAuth: true,
             inputSchema: {},
@@ -749,6 +811,9 @@ describe('tools/adapter', () => {
           {
             name: 'no_auth_tool',
             description: 'Local tool without auth',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['PWAV3'],
             requiresInstance: false,
             requiresMrtAuth: false,
@@ -778,6 +843,9 @@ describe('tools/adapter', () => {
           {
             name: 'mrt_no_auth_tool',
             description: 'Requires MRT auth but none configured',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['MRT'],
             requiresMrtAuth: true,
             inputSchema: {},
@@ -810,6 +878,9 @@ describe('tools/adapter', () => {
           {
             name: 'custom_format_tool',
             description: 'Has custom formatting',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['MRT'],
             requiresInstance: false,
             inputSchema: {
@@ -852,6 +923,9 @@ describe('tools/adapter', () => {
           {
             name: 'conditional_format_tool',
             description: 'Conditionally formats output',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
             toolsets: ['SCAPI'],
             requiresInstance: false,
             inputSchema: {

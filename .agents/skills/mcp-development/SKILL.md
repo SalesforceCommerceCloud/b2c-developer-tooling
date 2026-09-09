@@ -11,7 +11,8 @@ description: Develop B2C MCP tools, resources, workflow skills, and runbooks. Us
 - SDK `guidance`: shared offline catalog, search, section reads, and exposure filters.
 - `guidance/mcp`: shipped MCP skills. Native collections live under `skills/`.
 - `docs/mcp`: user capabilities, installation, configuration, and security.
-  Keep agent choreography and implementation mechanics in contributor guidance.
+  Tool references use capability/tool-name tables with shared access requirements.
+  Keep parameters and agent choreography in schemas and skills.
 
 For skill/runbook content, read [workflow authoring](references/workflows.md).
 For packaging and protocol details, read [the catalog contract](../../../guidance/README.md).
@@ -21,6 +22,8 @@ For packaging and protocol details, read [the catalog contract](../../../guidanc
 Keep tool descriptions useful without a skill read: purpose, significant effects,
 blocking behavior, prerequisites, and critical input interactions. Attribute
 descriptions own defaults and constraints; avoid repeating them in the tool text.
+Omit attribute prose when the name and type suffice. Combine operations with
+shared inputs and effects; validate action-specific inputs before loading config.
 Move extended examples, decision tables, and procedures into a focused skill.
 Use one exact skill URI on complex workflow entry tools. Small self-explanatory
 tools need no pointer or prerequisite read; `config_inspect` stays direct.
@@ -34,7 +37,24 @@ Client tool discovery may be deferred: discover before recommending reconfigurat
 MCP skill resources and their index/template access remain available independently
 of `skills_read`. That tool's selection enables the broader native collections.
 Apply the same exposure filter to indexing, listing, and direct URI reads.
+Return whole skill files or explicit sections by default. Optional read paging
+uses character offset/maxLength and totalLength/nextOffset, like docs_read.
+No content cursors or hashes. Split files over 64 KiB into authored references.
 Instructions and links must account for unavailable tools/collections.
+
+## Tool effects
+
+Every tool requires `effect`, `idempotent`, and `openWorld`. Registration derives
+all four MCP annotations; do not maintain separate hints in factories. Classify
+advertised operations: reads, non-destructive state changes, or explicit deletion/
+overwriting of user data or deployed code. Use destructive sparingly: deleting a
+REST resource or overwriting deployed files qualifies; publishing a new MRT bundle
+does not. Debugger control/capture is a write,
+not destructive merely because application code could have side effects. Read
+delivery may maintain watches, drain buffers, or update caches/activity timestamps.
+Read [annotation semantics](references/tool-effects.md) when adding or changing
+operations. Verify emitted `tools/list` hints, including optional tools. Hints
+inform client approvals; they neither authorize calls nor enforce server policy.
 
 ## Conditional result guidance
 

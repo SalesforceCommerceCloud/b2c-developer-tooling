@@ -16,6 +16,7 @@ import {
   McpError,
   ReadResourceRequestSchema,
   type ReadResourceResult,
+  type ToolAnnotations,
   // eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
 } from '@modelcontextprotocol/sdk/types.js';
 import type {ServerOptions} from '@modelcontextprotocol/sdk/server/index.js';
@@ -95,7 +96,7 @@ export class B2CDxMcpServer extends McpServer {
     description: string,
     inputSchema: ZodRawShape,
     handler: (args: Record<string, unknown>) => Promise<CallToolResult>,
-    metadata: Pick<McpToolConfig, 'annotations' | 'outputSchema' | 'title'> = {},
+    metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {annotations?: ToolAnnotations} = {},
   ): void {
     const wrappedHandler = async (
       args: Record<string, unknown>,

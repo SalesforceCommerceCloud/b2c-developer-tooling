@@ -32,6 +32,7 @@
  * ```typescript
  * const myTool = createToolAdapter({
  *   name: 'my_tool',
+ *   effect: 'read', idempotent: true, openWorld: true,
  *   description: 'Does something useful',
  *   toolsets: ['CARTRIDGES'],
  *   requiresInstance: true,
@@ -56,6 +57,7 @@
  *
  * const mrtTool = createToolAdapter({
  *   name: 'mrt_bundle_push',
+ *   effect: 'write', idempotent: false, openWorld: true,
  *   description: 'Push bundle to MRT',
  *   toolsets: ['MRT'],
  *   requiresMrtAuth: true,
@@ -73,7 +75,7 @@
 
 import {z, type ZodRawShape, type ZodObject, type ZodType} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
+import type {McpTool, ToolEffects, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
 import type {ServerContext} from '../server-context.js';
 import {
@@ -132,10 +134,9 @@ export interface ToolExecutionContext {
  * @template TInput - The validated input type (inferred from inputSchema)
  * @template TOutput - The output type from the execute function
  */
-export interface ToolAdapterOptions<TInput, TOutput> {
+export interface ToolAdapterOptions<TInput, TOutput> extends ToolEffects {
   /** Registration metadata is preserved independently of result enrichment. */
   title?: McpTool['title'];
-  annotations?: McpTool['annotations'];
   outputSchema?: McpTool['outputSchema'];
   /** Tool name (used in MCP protocol) */
   name: string;
@@ -356,7 +357,9 @@ export function createToolAdapter<TInput, TOutput>(
     description,
     inputSchema: effectiveInputSchema,
     title: options.title,
-    annotations: options.annotations,
+    effect: options.effect,
+    idempotent: options.idempotent,
+    openWorld: options.openWorld,
     outputSchema: options.outputSchema,
     toolsets,
     isGA,

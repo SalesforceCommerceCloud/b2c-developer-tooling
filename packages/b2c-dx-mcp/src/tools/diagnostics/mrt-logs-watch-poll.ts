@@ -38,24 +38,22 @@ export function createMrtLogsWatchPollTool(
   return createToolAdapter<PollInput, PollOutput>(
     {
       name: 'mrt_logs_watch_poll',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Drain buffered MRT logs, blocking up to timeout_ms when empty. Repeat if truncated=true. ' +
         'stopped=true means the stream closed; inspect errors.',
       toolsets: ['DIAGNOSTICS', 'PWAV3', 'STOREFRONTNEXT'],
       inputSchema: {
-        watch_id: z.string().describe('Watch id from mrt_logs_watch_start.'),
+        watch_id: z.string(),
         timeout_ms: z
           .number()
           .int()
           .min(0)
           .optional()
-          .describe('Max time to block waiting for new entries when buffer is empty. Defaults to 5000ms.'),
-        max_entries: z
-          .number()
-          .int()
-          .positive()
-          .optional()
-          .describe('Maximum entries to return per call. Defaults to 200.'),
+          .describe('Wait when empty, in milliseconds. Default: 5000; 0 returns immediately.'),
+        max_entries: z.number().int().positive().optional().describe('Maximum entries. Default: 200.'),
       },
       async execute(args, context) {
         const registry = getMrtLogWatchRegistry(context);
