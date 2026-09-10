@@ -10,7 +10,10 @@ import type {LoadConfigOptions} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import type {AuthStrategy} from '../auth/types.js';
 import {t} from '../i18n/index.js';
-import {DEFAULT_MRT_ORIGIN} from '../clients/mrt.js';
+import {DEFAULT_MRT_ORIGIN, MrtMaintenanceError, runWithMrtReadOnlyListener} from '../clients/mrt.js';
+
+/** Trust status page, surfaced so users can check status and ETA. */
+const MRT_STATUS_URL = 'https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN';
 
 /**
  * Base command for Managed Runtime (MRT) operations.
@@ -67,6 +70,17 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
     }),
   };
 
+  /** Ensures the read-only warning prints at most once per command run. */
+  private mrtReadOnlyWarned = false;
+
+  /** Warn once if any read is served while Managed Runtime is in read-only mode. */
+  public async _run<R>(): Promise<R> {
+    return runWithMrtReadOnlyListener(
+      () => this.warnReadOnlyOnce(),
+      () => super._run<R>(),
+    );
+  }
+
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     const mrt = extractMrtFlags(this.flags as Record<string, unknown>);
     const options: LoadConfigOptions = {
@@ -110,5 +124,39 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
         ),
       );
     }
+  }
+
+  /** Warn once (to stderr) that reads are served from a read-only Managed Runtime. */
+  protected warnReadOnlyOnce(): void {
+    if (this.mrtReadOnlyWarned) {
+      return;
+    }
+    this.mrtReadOnlyWarned = true;
+    this.warn(
+      t(
+        'warning.mrtReadOnly',
+        'Managed Runtime is in maintenance mode. Reads still work, but write operations are temporarily disabled.\n\nCheck status and ETA: {{statusUrl}}',
+        {statusUrl: MRT_STATUS_URL},
+      ),
+    );
+  }
+
+  /** Replace a read-only write rejection with actionable guidance; other errors pass through. */
+  protected async catch(err: Error & {exitCode?: number}): Promise<never> {
+    if (err instanceof MrtMaintenanceError) {
+      // Keep the raw detail off the user-facing message.
+      if (!err.cause && err.detail) {
+        err.cause = err.detail;
+      }
+      // e.g. "mrt bundle deploy"
+      const commandRef = this.id ? this.id.split(':').join(' ') : 'This mrt command';
+      err.message = t(
+        'error.mrtReadOnly',
+        'Managed Runtime is in maintenance mode. This command was not run.\n\n{{command}} requires write access, which is temporarily disabled. Read commands (list, get) still work.\n\nCheck status and ETA: {{statusUrl}}',
+        {command: commandRef, statusUrl: MRT_STATUS_URL},
+      );
+    }
+
+    return super.catch(err);
   }
 }
