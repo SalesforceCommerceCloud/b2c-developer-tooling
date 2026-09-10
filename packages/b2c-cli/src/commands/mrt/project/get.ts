@@ -50,8 +50,8 @@ export default class MrtProjectGet extends MrtCommand<typeof MrtProjectGet> {
 
   static args = {
     slug: Args.string({
-      description: 'Project slug',
-      required: true,
+      description: 'Project slug (or provide it via --project / --storefront)',
+      required: false,
     }),
   };
 
@@ -64,7 +64,8 @@ export default class MrtProjectGet extends MrtCommand<typeof MrtProjectGet> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> my-storefront',
-    '<%= config.bin %> <%= command.id %> my-storefront --json',
+    '<%= config.bin %> <%= command.id %> --project my-storefront',
+    '<%= config.bin %> <%= command.id %> --storefront my-storefront --json',
   ];
 
   static flags = {
@@ -74,7 +75,7 @@ export default class MrtProjectGet extends MrtCommand<typeof MrtProjectGet> {
   async run(): Promise<MrtProjectUpdate> {
     this.requireMrtCredentials();
 
-    const {slug} = this.args;
+    const slug = this.resolveProjectSlug(this.args.slug);
 
     this.log(t('commands.mrt.project.get.fetching', 'Fetching project "{{slug}}"...', {slug}));
 

@@ -25,8 +25,8 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
 
   static args = {
     slug: Args.string({
-      description: 'Project slug',
-      required: true,
+      description: 'Project slug (or provide it via --project / --storefront)',
+      required: false,
     }),
   };
 
@@ -39,7 +39,7 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
 
   static examples = [
     '<%= config.bin %> <%= command.id %> my-old-project',
-    '<%= config.bin %> <%= command.id %> my-old-project --force',
+    '<%= config.bin %> <%= command.id %> --project my-old-project --force',
   ];
 
   static flags = {
@@ -57,7 +57,7 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
 
     this.requireMrtCredentials();
 
-    const {slug} = this.args;
+    const slug = this.resolveProjectSlug(this.args.slug);
     const {force} = this.flags;
 
     // Confirm deletion unless --force is specified

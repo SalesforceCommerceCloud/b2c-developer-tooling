@@ -21,22 +21,27 @@ b2c mrt project create my-storefront --name "My Storefront"
 b2c mrt project create my-storefront --name "My Storefront" --organization my-org
 ```
 
+> **Slug as positional or flag:** `get`, `update`, and `delete` accept the project slug **either** as a positional argument **or** via `-p` / `--project` / `--storefront` (or `MRT_PROJECT` / `dw.json`). An explicit positional wins if both are given; at least one source must resolve.
+
 ### Get Project Details
 
 ```bash
-b2c mrt project get --project my-storefront
+b2c mrt project get my-storefront            # positional
+b2c mrt project get --project my-storefront  # flag
 b2c mrt project get -p my-storefront --json
 ```
 
 ### Update Project
 
 ```bash
+b2c mrt project update my-storefront --name "Updated Name"
 b2c mrt project update --project my-storefront --name "Updated Name"
 ```
 
 ### Delete Project
 
 ```bash
+b2c mrt project delete my-storefront
 b2c mrt project delete --project my-storefront
 b2c mrt project delete -p my-storefront --force  # skip confirmation
 ```

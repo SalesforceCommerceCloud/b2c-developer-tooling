@@ -189,30 +189,31 @@ b2c mrt project create "My Storefront" -o my-org --region us-east-1
 
 ### b2c mrt project get
 
-Get details of an MRT project.
+Get details of an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`MRT_PROJECT` and `dw.json` also work).
 
 ```bash
 b2c mrt project get my-storefront
-b2c mrt project get my-storefront --json
+b2c mrt project get --project my-storefront
+b2c mrt project get --storefront my-storefront --json
 ```
 
 ### b2c mrt project update
 
-Update an MRT project. The project slug is provided as a positional argument; at least one of `--name`, `--url`, or `--region` must be supplied.
+Update an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront`; at least one of `--name`, `--url`, or `--region` must be supplied.
 
 ```bash
 b2c mrt project update my-storefront --name "Updated Name"
-b2c mrt project update my-storefront --region us-east-1
+b2c mrt project update --project my-storefront --region us-east-1
 b2c mrt project update my-storefront --url https://www.example.com
 ```
 
 ### b2c mrt project delete
 
-Delete an MRT project. The project slug is provided as a positional argument.
+Delete an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront`.
 
 ```bash
 b2c mrt project delete my-storefront
-b2c mrt project delete my-storefront --force
+b2c mrt project delete --project my-storefront --force
 ```
 
 ---

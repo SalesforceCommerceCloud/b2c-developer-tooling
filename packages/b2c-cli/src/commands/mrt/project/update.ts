@@ -75,8 +75,8 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
 
   static args = {
     slug: Args.string({
-      description: 'Project slug',
-      required: true,
+      description: 'Project slug (or provide it via --project / --storefront)',
+      required: false,
     }),
   };
 
@@ -89,8 +89,8 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
 
   static examples = [
     '<%= config.bin %> <%= command.id %> my-storefront --name "New Name"',
-    '<%= config.bin %> <%= command.id %> my-storefront --region eu-west-1',
-    '<%= config.bin %> <%= command.id %> my-storefront --url https://example.com',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --region eu-west-1',
+    '<%= config.bin %> <%= command.id %> --storefront my-storefront --url https://example.com',
   ];
 
   static flags = {
@@ -112,7 +112,7 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
   async run(): Promise<MrtProjectUpdateType> {
     this.requireMrtCredentials();
 
-    const {slug} = this.args;
+    const slug = this.resolveProjectSlug(this.args.slug);
     const {name, url, region} = this.flags;
 
     if (!name && !url && !region) {

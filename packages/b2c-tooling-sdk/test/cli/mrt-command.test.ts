@@ -61,6 +61,10 @@ class TestMrtCommand extends MrtCommand<typeof TestMrtCommand> {
     return this.requireMrtCredentials();
   }
 
+  public testResolveProjectSlug(positional?: string) {
+    return this.resolveProjectSlug(positional);
+  }
+
   public testMrtBackendPreference() {
     return this.mrtBackendPreference;
   }
@@ -148,6 +152,42 @@ describe('cli/mrt-command', () => {
       await command.init();
       // Should not throw
       command.testRequireMrtCredentials();
+    });
+  });
+
+  describe('resolveProjectSlug', () => {
+    it('returns the positional slug when provided', async () => {
+      stubParse(command, {'credentials-file': '/dev/null'});
+      await command.init();
+      expect(command.testResolveProjectSlug('cli-positional')).to.equal('cli-positional');
+    });
+
+    it('falls back to the resolved --project/--storefront flag value', async () => {
+      stubParse(command, {project: 'flag-project', 'credentials-file': '/dev/null'});
+      await command.init();
+      expect(command.testResolveProjectSlug()).to.equal('flag-project');
+    });
+
+    it('prefers an explicit positional over the flag value', async () => {
+      stubParse(command, {project: 'flag-project', 'credentials-file': '/dev/null'});
+      await command.init();
+      expect(command.testResolveProjectSlug('cli-positional')).to.equal('cli-positional');
+    });
+
+    it('errors when neither a positional nor the flag resolves a slug', async () => {
+      stubParse(command, {'credentials-file': '/dev/null'});
+      await command.init();
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        command.testResolveProjectSlug();
+      } catch {
+        // Expected
+      }
+
+      expect(errorStub.calledOnce).to.be.true;
+      const message = errorStub.firstCall.args[0] as string;
+      expect(message).to.include('MRT project is required');
     });
   });
 

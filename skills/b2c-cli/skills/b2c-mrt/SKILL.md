@@ -27,7 +27,7 @@ Notes:
 
 - Under `--json`, these commands emit the **serving backend's native shape** (legacy `{count, next, previous, deployments}` vs SCAPI `{limit, offset, total, data}`). The human table is normalized; `--json` is not. Pin `legacy` or `scapi` when a script needs a stable shape.
 - Legacy-only flags (`--api-key`, `--cloud-origin` / `-o`, `--credentials-file` / `-c`) are ignored — with a warning — when SCAPI serves the request.
-- `--storefront` / `-s` is an alias of `--project` / `-p` (the SCAPI storefront ID is the project slug).
+- `--storefront` is a long-form alias of `--project` (the SCAPI storefront ID is the project slug); `-p` is the only short flag.
 
 ## Command Structure
 

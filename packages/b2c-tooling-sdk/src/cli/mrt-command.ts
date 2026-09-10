@@ -176,6 +176,28 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
   }
 
   /**
+   * Resolve the target MRT project slug for a command that accepts it either as
+   * a positional argument or via the `--project` / `--storefront` flag.
+   *
+   * An explicit positional wins; otherwise the resolved `--project` /
+   * `--storefront` flag value is used (which also covers `MRT_PROJECT`,
+   * `SFCC_MRT_PROJECT`, `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT`, and the
+   * `mrtProject` field in dw.json). Errors when neither yields a value.
+   */
+  protected resolveProjectSlug(positional?: string): string {
+    const slug = positional ?? this.resolvedConfig.values.mrtProject;
+    if (!slug) {
+      this.error(
+        t(
+          'error.mrtProjectRequired',
+          'MRT project is required. Provide it as an argument or via --project/--storefront (or set MRT_PROJECT, or mrtProject in dw.json).',
+        ),
+      );
+    }
+    return slug;
+  }
+
+  /**
    * SCAPI MRT connection bundle (shortCode + tenantId + a SCAPI-capable OAuth
    * strategy), or `undefined` when this command cannot reach the SCAPI
    * Storefront APIs.
