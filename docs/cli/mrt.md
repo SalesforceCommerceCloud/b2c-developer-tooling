@@ -118,6 +118,29 @@ The human-readable table is normalized across both backends, but `--json` is not
 
 ---
 
+## Maintenance (Read-Only) Mode
+
+Managed Runtime occasionally enters a read-only maintenance window during which write operations are temporarily disabled. The CLI detects this automatically:
+
+- **Read commands** (e.g. `list`, `get`) keep working and print a non-blocking warning:
+
+  ```
+  › Warning: Managed Runtime is in maintenance mode. Write operations are disabled; read operations (like this one) are unaffected.
+  Status: https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN
+  ```
+
+- **Write commands** (e.g. deploys, bundle uploads, environment changes) are blocked with a clear error instead of a raw API response, and the command does not run:
+
+  ```
+  ✖ Error: Managed Runtime is in maintenance mode. This command was not run.
+  mrt bundle deploy requires write access, which is temporarily disabled. Read commands (list, get) still work.
+  Check status and ETA: https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN
+  ```
+
+Check the [Managed Runtime Admin status page](https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN) for current status and the estimated end of the maintenance window, then re-run your write command once maintenance completes.
+
+---
+
 ## Organization Commands
 
 ### b2c mrt org list
