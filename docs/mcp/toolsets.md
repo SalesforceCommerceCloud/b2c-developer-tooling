@@ -103,14 +103,17 @@ Available in SCAPI, PWAV3, and STOREFRONTNEXT.
 
 Execution uses the selected project's OAuth credentials, short code, and tenant ID.
 Grant the scopes needed for your task; creating products requires `sfcc.products.rw`.
-This preview executes standard Admin JSON requests; Shopper execution is not yet
+This preview executes standard and custom Admin JSON requests; Shopper execution is not yet
 supported. Binary file uploads and downloads are not supported.
 
 Tenant custom attributes are supported in standard Admin requests. The offline
-reference excludes tenant-specific definitions; ask the agent to inspect your live
-schema before using custom fields. This requires `sfcc.scapi-schemas` in addition
-to the scopes for the API you want to use. `scapi_schemas_list` can retrieve these
-definitions and custom API contracts. Custom API execution is not yet supported.
+reference excludes tenant-specific definitions. Known custom fields work directly;
+the agent can discover unfamiliar fields from your live schema with `sfcc.scapi-schemas`
+access. `scapi_schemas_list` includes custom-property definitions by default.
+
+Custom Admin APIs are available through live schema discovery. Grant
+`sfcc.scapi-schemas` for discovery and the custom API's declared `c_*` scope for
+execution. Custom APIs using Shopper authentication are not yet supported.
 
 You can also request Account Manager or SLAS tokens for a separate HTTP client.
 Normal Admin requests authenticate automatically; token export is optional.

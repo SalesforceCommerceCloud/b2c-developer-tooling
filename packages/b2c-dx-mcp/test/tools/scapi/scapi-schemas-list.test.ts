@@ -268,7 +268,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
     });
 
-    it('returns collapsed false when expandAll true', async () => {
+    it('can disable tenant expansion independently of output collapsing', async () => {
       const fullSchema = {openapi: '3.0.0', paths: {}, info: {title: 'Full'}};
       mockGet.resolves({
         data: fullSchema,
@@ -283,6 +283,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
         apiVersion: 'v1',
         includeSchemas: true,
         expandAll: true,
+        expandCustomProperties: false,
       });
 
       const {parsed} = parseResultContent(result);
@@ -291,7 +292,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       expect(mockGet.firstCall.args[1]?.params?.query).to.be.undefined;
     });
 
-    it('requests tenant custom properties and preserves their definitions in full schemas', async () => {
+    it('requests tenant custom properties by default and preserves their definitions in full schemas', async () => {
       const fullSchema = {
         openapi: '3.0.0',
         paths: {},
@@ -304,7 +305,6 @@ describe('tools/scapi/scapi-schemas-list', () => {
         apiName: 'products',
         apiVersion: 'v1',
         includeSchemas: true,
-        expandCustomProperties: true,
         expandAll: true,
       });
 

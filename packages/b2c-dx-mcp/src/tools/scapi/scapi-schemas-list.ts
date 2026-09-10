@@ -150,7 +150,7 @@ async function fetchSpecificSchema(params: {
     {
       params: {
         path: {organizationId, apiFamily: apiFamily!, apiName: apiName!, apiVersion: apiVersion!},
-        query: args.expandCustomProperties ? {expand: 'custom_properties'} : undefined,
+        query: args.expandCustomProperties === false ? undefined : {expand: 'custom_properties'},
       },
     },
   );
@@ -332,7 +332,7 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
           .describe('Return full uncompressed schema. Only when includeSchemas=true. Default: false.'),
         expandCustomProperties: z
           .boolean()
-          .default(false)
+          .default(true)
           .describe('Include tenant custom property definitions when fetching a schema.'),
       },
       async execute(args, {services: svc}) {

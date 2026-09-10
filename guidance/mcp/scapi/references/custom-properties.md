@@ -3,6 +3,8 @@
 Use `scapi_schemas_list` for a focused schema read. When the contract is large,
 fetch and filter inside `scapi_execute` to keep it out of the conversation.
 The Schemas API requires `sfcc.scapi-schemas`; normal managed auth and safety apply.
+Known `c_*` fields work without a schema read. Discovery is optional and helps
+resolve tenant-specific names, types, and constraints.
 
 Example: find custom property definitions in the target instance's Products API.
 Pass the same `projectDirectory`/instance context as subsequent product requests.
@@ -35,7 +37,7 @@ async () => {
 Narrow by field name for large customizations; follow relevant `$ref` targets and
 inspect constraints before writing. The count reports omitted matches. A field's
 presence in a response schema does not establish that it is writable: inspect the
-operation's request schema. Use confirmed fields directly in `scapi.request` bodies;
+operation's request schema when discovering unfamiliar fields. Use fields directly in `scapi.request` bodies;
 no schema import or refresh is needed. Read back the requested fields to verify.
 
-This enriches standard API use. It does not enable custom endpoint execution.
+For custom endpoint execution, see [custom APIs](custom-apis.md).

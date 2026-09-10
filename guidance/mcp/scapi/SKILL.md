@@ -1,6 +1,6 @@
 ---
 name: MCP SCAPI Code Mode
-description: Discover standard SCAPI contracts, compose Admin requests, and verify changes using configured authentication and safety rules.
+description: Discover standard and live custom SCAPI contracts, compose Admin requests, and verify changes using configured authentication and safety rules.
 ---
 
 # SCAPI Code Mode
@@ -28,22 +28,26 @@ runtime support, not configured access; `op.security` gives scopes.
 
 ### Tenant custom properties and APIs
 
-Bundled schemas omit tenant `c_*` definitions. For custom fields, fetch the target
-API's live schema with `scapi_schemas_list`: `includeSchemas: true`,
-`apiFamily`, `apiName`, `apiVersion`, and `expandCustomProperties: true`.
+Bundled schemas omit tenant `c_*` definitions. Known custom fields can be sent
+directly in standard Admin bodies; schema retrieval is optional. SCAPI validates
+the payload. To discover tenant fields, fetch the live schema with
+`scapi_schemas_list`: `includeSchemas: true`, `apiFamily`, `apiName`, `apiVersion`.
+Custom-property expansion defaults to true; disable with `expandCustomProperties: false`.
 `expandAll: true` retains full definitions; it is separate from custom-property
 expansion. Large contracts: fetch through `scapi_execute` and return only relevant
 fields ([example](references/custom-properties.md)). Requires `sfcc.scapi-schemas`.
 Use the same project/instance for schema lookup and writes.
 
-Pass confirmed `c_*` fields in standard Admin request bodies; SCAPI validates them.
-Live reads do not change offline `spec`. If schema access fails, report it; do not
-invent field names/types. The optional CLI equivalent is `b2c scapi schemas get`,
-which expands custom properties by default.
+Live reads do not change offline `spec`. If schema access fails, report it; use
+already-known fields or ask for missing details. The optional CLI equivalent is
+`b2c scapi schemas get`, which also expands custom properties by default.
 
 For custom endpoint contracts, use `scapi_schemas_list` with `apiFamily: "custom"`;
-check registration with `scapi_custom_apis_get_status`. Custom API execution is
-unsupported even after reading its schema.
+check registration with `scapi_custom_apis_get_status` when needed. Execute Admin
+custom endpoints by fetching their live contract through `scapi.request` first
+in each program, then making declared calls. The read enables that contract for
+this execution only. Use `AmOAuth2` operations with their declared `c_*` scopes;
+Shopper operations remain unsupported. [Custom API workflow](references/custom-apis.md).
 
 ## Authentication
 

@@ -71,7 +71,7 @@ async () => {
     fields: Object.fromEntries(fields.map(k => [k, body.properties[k]])), auth: op.auth, security: op.security};
 }`;
 
-const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin APIs when no dedicated tool fits. Discover endpoints with scapi_search, then call scapi.request() (automatic auth). JSON requests; no Shopper/custom API execution or binary transfers.
+const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin APIs when no dedicated tool fits. Discover standard endpoints with scapi_search; for custom APIs, fetch the live contract through scapi.request() in the same program first. Requests authenticate automatically. JSON requests; no Shopper execution or binary transfers.
 Read skill://mcp/scapi/SKILL.md first.
 
 Reuse workflows with await codemode.run(name, input); describe before first use. Snippets share this execution's limits and configuration. async (input) receives the tool's input. executionId enables scapi_snippet_save; inspect the outcome before saving.

@@ -40,6 +40,7 @@ export function createScapiRequest(
   const origin = `https://${options.shortCode}.api.commercecloud.salesforce.com`;
   const organizationId = toOrganizationId(options.tenantId);
   const guard = new SafetyGuard(options.safety);
+  const documents = [...options.documents];
   let totalBytes = 0;
   return async (input, signal) => {
     signal.throwIfAborted();
@@ -61,7 +62,16 @@ export function createScapiRequest(
     const decoded = decodeURIComponent(path);
     if (decoded.includes('\\') || decoded.split('/').some((part) => part === '.' || part === '..') || /[{}]/.test(path))
       throw new Error('Invalid SCAPI path; substitute path parameters.');
-    const matched = findScapiOperation(options.documents, method, path);
+    if (path.startsWith('/custom/')) {
+      const [, , apiName, apiVersion] = path.split('/');
+      const id = `custom/${apiName}/${apiVersion}`;
+      if (!documents.some((document) => document.entry.id === id))
+        throw new Error(
+          `SCAPI_CUSTOM_SCHEMA_REQUIRED: Fetch /dx/scapi-schemas/v1/organizations/{organizationId}/schemas/${id} ` +
+            'with scapi.request in this execution before calling its endpoints. Inspect the contract and declared authentication.',
+        );
+    }
+    const matched = findScapiOperation(documents, method, path);
     if (matched.parameters.organizationId && matched.parameters.organizationId !== organizationId)
       throw new Error('SCAPI target differs from resolved organizationId.');
     const {schema} = matched.document;
@@ -217,6 +227,41 @@ export function createScapiRequest(
       }
     }
     const diagnostic = scapiAuthResponse(result.response.status, authContext);
+    // Only authenticated live schema responses extend this execution's custom API catalog.
+    if (
+      result.response.ok &&
+      method === 'GET' &&
+      matched.document.entry.id === 'dx/scapi-schemas/v1' &&
+      matched.parameters.apiFamily === 'custom'
+    ) {
+      const schema = data as ApiDocument | null;
+      if (
+        !schema ||
+        !/^3\./.test(schema.openapi) ||
+        !schema.paths ||
+        typeof schema.paths !== 'object' ||
+        Array.isArray(schema.paths)
+      )
+        throw new Error('SCAPI_CUSTOM_SCHEMA_INVALID: Expected an OpenAPI 3 contract with paths from the Schemas API.');
+      const {apiName, apiVersion} = matched.parameters;
+      const id = `custom/${apiName}/${apiVersion}`;
+      const document: ScapiSchemaDocument = {
+        entry: {
+          id,
+          apiFamily: 'custom',
+          apiName,
+          apiVersion,
+          schemaVersion: schema.info?.version ?? apiVersion,
+          status: 'live',
+          file: '',
+          source: url,
+        },
+        schema,
+      };
+      const previous = documents.findIndex((item) => item.entry.id === id);
+      if (previous < 0) documents.push(document);
+      else documents[previous] = document;
+    }
     return {status: result.response.status, ok: result.response.ok, data, ...(diagnostic ? {diagnostic} : {})};
   };
 }

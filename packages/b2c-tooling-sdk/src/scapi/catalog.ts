@@ -57,7 +57,9 @@ export function findScapiOperation(documents: ScapiSchemaDocument[], method: str
       const operation = item[method.toLowerCase()];
       if (!operation) continue;
       const actual = path.slice(base.length).split('/');
-      const expected = template.split('/');
+      const operationPath =
+        document.entry.apiFamily === 'custom' ? `/organizations/{organizationId}${template}` : template;
+      const expected = operationPath.split('/');
       if (actual.length !== expected.length) continue;
       const parameters: Record<string, string> = {};
       const match = expected.every((part, index) => {
@@ -68,7 +70,13 @@ export function findScapiOperation(documents: ScapiSchemaDocument[], method: str
         return part === actual[index];
       });
       if (match)
-        return {document, operation: operation as ApiDocument, pathItem: item, template: base + template, parameters};
+        return {
+          document,
+          operation: operation as ApiDocument,
+          pathItem: item,
+          template: base + operationPath,
+          parameters,
+        };
     }
   }
   throw new Error(`SCAPI_OPERATION_NOT_FOUND: ${method} ${path}. Search the schema before calling.`);

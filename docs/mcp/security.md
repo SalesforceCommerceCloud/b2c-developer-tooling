@@ -123,6 +123,11 @@ helper; it does not restrict arbitrary local JavaScript. Confirmation-required
 requests stop in this preview. Review any completed changes before retrying a
 failed or interrupted operation.
 
+Custom Admin APIs use the same safety policy. Grant `sfcc.scapi-schemas` for live
+contract discovery and the endpoint's declared `c_*` scope for execution. The
+`sfcc.custom-apis` scope grants registration visibility, not access to custom
+business logic.
+
 Admin and Shopper credentials serve different purposes. Admin operations use an
 Account Manager client and its granted scopes. Shopper flows use SLAS; configuring
 a SLAS client enables token export for external clients, but does not enable

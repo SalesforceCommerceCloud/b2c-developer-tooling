@@ -157,6 +157,10 @@ API access is optional enrichment. Refreshes need a schema-package changeset so
 native Changesets dependency propagation releases the SDK and MCP. Keep the
 manifest portable for consumers in other languages.
 Refresh without tenant custom-property expansion; test the bundle contains no
-tenant `c_*` definitions. Live schema reads may opt into `custom_properties` for
-the selected instance. Keep this separate from output collapsing and custom API
-execution support. Standard Admin bodies pass custom fields to SCAPI for validation.
+tenant `c_*` definitions. Live schema tools default to `custom_properties` expansion
+for the selected instance; keep this separate from output collapsing. Standard
+Admin bodies pass custom fields to SCAPI for validation without requiring discovery.
+Only successful managed Schemas API reads register custom contracts, per execution.
+Preserve the host copy and ignore schema server origins. Match endpoint-relative
+custom paths under the resolved organization; use declared AmOAuth2 scopes and
+the usual safety/auth/transfer checks. Do not enable unsupported Shopper flows.

@@ -7,6 +7,12 @@ description: Check custom SCAPI endpoint registration status using the b2c CLI. 
 
 Use the `b2c` CLI plugin to manage SCAPI Custom API endpoints and check their registration status.
 
+When B2C MCP is available, prefer `scapi_custom_apis_get_status` for registration
+and `scapi_schemas_list` for live contracts. For Admin custom API execution, read
+`skill://mcp/scapi/SKILL.md`; fetch the contract through `scapi.request` in the
+program before calling its endpoints. Schema reads need `sfcc.scapi-schemas`;
+execution needs the declared `c_*` scope. Shopper execution is unsupported.
+
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli scapi custom status`).
 
 ## Configuration

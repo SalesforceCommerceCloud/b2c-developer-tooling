@@ -2,7 +2,7 @@
 
 Only use when the task explicitly needs a token or an HTTP client outside code
 mode. `scapi.request()` and snippets already authenticate; these helpers neither
-configure their authentication nor enable unsupported Shopper/custom requests.
+configure their authentication nor enable unsupported Shopper requests.
 Run through `scapi_execute`, with the same project configuration and skill acknowledgment.
 
 ## Account Manager
