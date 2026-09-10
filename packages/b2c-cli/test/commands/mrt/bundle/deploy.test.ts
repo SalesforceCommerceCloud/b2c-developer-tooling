@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import MrtBundleDeploy from '../../../../src/commands/mrt/bundle/deploy.js';
+import {MrtMaintenanceError} from '@salesforce/b2c-tooling-sdk/clients';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../helpers/stub-parse.js';
 
@@ -528,6 +529,48 @@ describe('mrt bundle deploy', () => {
         expect(errorStub.calledOnce).to.equal(true);
         const [message] = errorStub.firstCall.args;
         expect(message).to.not.include('b2c mrt project list');
+      }
+    });
+  });
+
+  describe('read-only mode guidance', () => {
+    it('surfaces clear guidance when a deploy is blocked by read-only mode', async () => {
+      const command = createCommand();
+      await command.init();
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+      // The MRT client middleware throws this typed error for a rejected write.
+      const err = new MrtMaintenanceError(503, 'Service is in READ_ONLY mode');
+
+      try {
+        // The command's error path (inline or propagated) flows through the
+        // inherited MrtCommand.catch(), which reformats read-only failures.
+        await command.catch(err);
+        expect.fail('Expected error');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
+        const [message] = errorStub.firstCall.args;
+        expect(message).to.include('maintenance mode');
+        expect(message).to.include('This command was not run');
+        expect(message).to.include('https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN');
+        expect(message).to.not.include('{"detail"');
+      }
+    });
+
+    it('leaves a generic deploy failure unchanged', async () => {
+      const command = createCommand();
+      await command.init();
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+      const err = new Error('Failed to create deployment: Connection timeout');
+
+      try {
+        await command.catch(err);
+        expect.fail('Expected error');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
+        const [message] = errorStub.firstCall.args;
+        expect(message).to.equal('Failed to create deployment: Connection timeout');
       }
     });
   });
