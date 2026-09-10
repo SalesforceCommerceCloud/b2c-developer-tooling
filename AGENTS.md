@@ -199,7 +199,7 @@ This project uses [Changesets](https://github.com/changesets/changesets) for ver
 Changeset guidelines:
 
 - Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests
-- a pull request can have multiple changesets; separate files for separate changes
+- Use separate changesets for distinct user-facing features or fixes in a pull request. Describe the final change relative to the base branch, not the branch's implementation history; fold follow-up work on an unreleased feature into that feature's changeset.
 - Only list directly-changed packages in changeset frontmatter — do not include dependent packages (they get auto-bumped)
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
 - Use `major` for breaking changes that require consumers to update their code
