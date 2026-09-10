@@ -55,7 +55,7 @@ const MRT_STATUS_URL = 'https://status.salesforce.com/instances/MANAGEDRUNTIMEAD
  * 4. Default: https://cloud.mobify.com
  *
  * Backend selection:
- * - `--mrt-backend` flag > `MRT_BACKEND` env > `mrtBackend` dw.json > `auto`.
+ * - `--mrt-backend` flag > `MRT_BACKEND` env (`SFCC_MRT_BACKEND` also supported) > `mrtBackend` dw.json > `auto`.
  */
 export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<T> {
   static baseFlags = {
@@ -97,6 +97,13 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       description: 'MRT backend: auto (prefer SCAPI MRT when configured, else legacy), legacy, or scapi',
       options: ['auto', 'legacy', 'scapi'] as const,
       env: 'MRT_BACKEND',
+      // MRT_BACKEND is the primary env var (validated by oclif against `options`).
+      // Mirror the sibling MRT flags by also honoring the SFCC_-prefixed name; an
+      // unrecognized value is ignored so resolution falls back to `auto`.
+      default: async () => {
+        const v = process.env.SFCC_MRT_BACKEND;
+        return v === 'auto' || v === 'legacy' || v === 'scapi' ? v : undefined;
+      },
     })(),
   };
 
@@ -248,7 +255,10 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     legacyAuth?: AuthStrategy;
   } {
     const preference = this.mrtBackendPreference;
-    const scapiConnection = this.getScapiMrtConfig();
+    // Only probe SCAPI when it could actually be used. Under `legacy` the SCAPI
+    // backend never runs, and getScapiMrtConfig() -> getOAuthStrategy() can emit
+    // stateful-auth warnings as a side effect — noise on a legacy-only run.
+    const scapiConnection = preference === 'legacy' ? undefined : this.getScapiMrtConfig();
     const legacyAuth = this.hasMrtCredentials() ? this.getMrtAuth() : undefined;
 
     this.debugMrtBackendPrereqs(preference, scapiConnection, legacyAuth);

@@ -166,6 +166,29 @@ describe('cli/mrt-command', () => {
       expect(backendFlag.env).to.equal('MRT_BACKEND');
     });
 
+    it('falls back to SFCC_MRT_BACKEND when MRT_BACKEND is unset, ignoring unrecognized values', async () => {
+      // Parity with the sibling MRT flags (api-key/project/environment/cloud-origin),
+      // which all honor an SFCC_-prefixed alternate. `env` covers only MRT_BACKEND,
+      // so the SFCC_ variant is wired via the flag default.
+      const backendFlag = MrtCommand.baseFlags['mrt-backend'] as {default?: unknown};
+      const defaultFn = backendFlag.default as (ctx: unknown) => Promise<string | undefined>;
+      const prev = process.env.SFCC_MRT_BACKEND;
+      try {
+        process.env.SFCC_MRT_BACKEND = 'scapi';
+        expect(await defaultFn(undefined)).to.equal('scapi');
+        process.env.SFCC_MRT_BACKEND = 'bogus';
+        expect(await defaultFn(undefined)).to.equal(undefined);
+        delete process.env.SFCC_MRT_BACKEND;
+        expect(await defaultFn(undefined)).to.equal(undefined);
+      } finally {
+        if (prev === undefined) {
+          delete process.env.SFCC_MRT_BACKEND;
+        } else {
+          process.env.SFCC_MRT_BACKEND = prev;
+        }
+      }
+    });
+
     it('inherits the OAuth base flags (short-code, tenant-id, client-id)', () => {
       // Re-parenting onto OAuthCommand must carry over the SCAPI prerequisites.
       expect(MrtCommand.baseFlags).to.have.property('short-code');
@@ -386,6 +409,29 @@ describe('cli/mrt-command', () => {
       command.testGetMrtBackendContext();
 
       expect(warnStub.called).to.be.false;
+    });
+
+    it('does not probe SCAPI under --mrt-backend legacy even when SCAPI is fully eligible', async () => {
+      // Regression guard: under legacy the SCAPI backend never runs, so
+      // getScapiMrtConfig() — which calls getOAuthStrategy() and can emit
+      // [StatefulAuth] warnings as a side effect — must not be invoked. Probing it
+      // leaked SCAPI-auth noise onto legacy-only runs.
+      stubParse(command, {
+        ...SCAPI_FLAGS,
+        'client-id': 'client',
+        'client-secret': 'secret',
+        'mrt-backend': 'legacy',
+        'api-key': 'test-api-key',
+      });
+      await command.init();
+      const scapiSpy = sinon.spy(command as unknown as {getScapiMrtConfig: () => unknown}, 'getScapiMrtConfig');
+
+      const context = command.testGetMrtBackendContext();
+
+      expect(scapiSpy.called).to.be.false;
+      expect(context.scapiConnection).to.equal(undefined);
+      expect(context.preference).to.equal('legacy');
+      expect(context.legacyAuth).to.not.equal(undefined);
     });
   });
 
