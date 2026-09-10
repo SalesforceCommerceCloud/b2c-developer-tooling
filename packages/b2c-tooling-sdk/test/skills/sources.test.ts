@@ -61,10 +61,11 @@ describe('skill sources', () => {
     it('contains all registered skill sets', () => {
       expect(ALL_SKILL_SETS).to.include('b2c');
       expect(ALL_SKILL_SETS).to.include('b2c-cli');
+      expect(ALL_SKILL_SETS).to.include('b2c-python-sdk');
       expect(ALL_SKILL_SETS).to.include('cap-dev');
       expect(ALL_SKILL_SETS).to.include('storefront-next');
       expect(ALL_SKILL_SETS).to.include('storefront-next-figma');
-      expect(ALL_SKILL_SETS).to.have.lengthOf(5);
+      expect(ALL_SKILL_SETS).to.have.lengthOf(6);
     });
   });
 
