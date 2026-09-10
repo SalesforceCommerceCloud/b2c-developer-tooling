@@ -1,0 +1,2 @@
+# Bundled upstream API contracts; keep schema metadata and tooling reviewable.
+schemas/scapi/**/*.json linguist-vendored=true linguist-generated=true
