@@ -95,25 +95,28 @@ API schemas. Discovery works offline without Commerce credentials.
 
 Available in SCAPI, PWAV3, and STOREFRONTNEXT.
 
-| Tool            | Capability                                                                             |
-| --------------- | -------------------------------------------------------------------------------------- |
-| `scapi_search`  | Search bundled Admin and Shopper contracts by authentication; no credentials required. |
-| `scapi_execute` | Compose Admin API requests, including creating, updating, and deleting records.        |
-| `scapi_snippet_save` | Save a completed workflow for reuse when requested. |
+| Tool                 | Capability                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `scapi_search`       | Search bundled Admin and Shopper contracts by authentication; no credentials required. |
+| `scapi_execute`      | Compose Admin API requests, including creating, updating, and deleting records.        |
+| `scapi_snippet_save` | Save a completed workflow for reuse when requested.                                    |
 
 Execution uses the selected project's OAuth credentials, short code, and tenant ID.
 Grant the scopes needed for your task; creating products requires `sfcc.products.rw`.
 This preview executes standard Admin JSON requests; Shopper execution is not yet
 supported. Binary file uploads and downloads are not supported. Custom APIs are outside the bundled reference; inspect their live
 contracts with `scapi_schemas_list`. Custom API execution is not yet supported.
+You can also request Account Manager or SLAS tokens for a separate HTTP client.
+Normal Admin requests authenticate automatically; token export is optional.
 See [code mode access](./security#scapi-code-mode).
 
 For example: "Create an offline test product in my catalog, check that its ID is
 unused, and verify the saved product."
 
 Code mode includes reusable workflows for failed-job triage, campaign/promotion
-inspection, and basic product creation with an optional name and offline setting
-(offline by default). Shipped names use `builtin/`;
+inspection, and basic product creation with an optional name, offline setting
+(offline by default), and storefront catalog category assignment. Assignment
+requires Catalogs API access, including `sfcc.catalogs.rw`. Shipped names use `builtin/`;
 your saved workflows use `user/`. You can ask: "Use the built-in failed-job triage
 workflow for September 1-8 and show the first three failures."
 

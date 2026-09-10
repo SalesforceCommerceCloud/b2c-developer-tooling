@@ -1,6 +1,6 @@
 ---
 name: b2c-config
-description: MCP configuration sources, project and instance selection, and masked inspection. Use for setup or unresolved configuration issues; routine config_inspect needs no skill read.
+description: MCP configuration, authentication setup, external access grants, and masked inspection. Use for setup or unresolved configuration issues; routine config_inspect needs no skill read.
 ---
 
 # MCP Configuration
@@ -44,6 +44,29 @@ plugins, `dw.json`, `~/.mobify` (MRT key), low-priority config plugins, then
   Restart MCP after changing launch flags or its process environment. Existing
   debugger sessions retain their selected target.
 
+## Setup and access
+
+Separate missing local values from missing external grants. `config_inspect`
+cannot create an API client, assign roles, or validate remote access. Explain the
+specific Account Manager, Business Manager, or Runtime Admin step when needed;
+changing a local scope list does not grant permission.
+
+When docs tools are available, use `docs_read({query: ID})` for these known IDs:
+
+| Need                                                 | Documentation ID / relevant topic                                 |
+| ---------------------------------------------------- | ----------------------------------------------------------------- |
+| MCP credentials or project selection                 | `mcp-configuration`                                               |
+| Configuration fields and precedence                  | `guide-configuration`                                             |
+| Account Manager client, roles, scopes, tenant filter | `guide-authentication` / Account Manager and SCAPI Authentication |
+| BM WebDAV access key or MRT API key                  | `guide-authentication` / WebDAV Access or Managed Runtime API Key |
+| Debugger permission or MCP safety restriction        | `mcp-security`                                                    |
+| SLAS client administration, when requested           | `cli-slas` / required roles and client setup                      |
+
+For another setup question, `docs_search({query: "<specific setup issue>", category: "tooling"})`,
+then read the returned ID. Use available categories; tool/topic selection can
+exclude these docs. Public links below remain alternatives. Read only relevant
+pages; follow returned `nextOffset` when the needed topic lies later in an article.
+
 ## CLI, when requested
 
 From the same project, `b2c setup inspect --json` uses the same resolver and
@@ -51,6 +74,8 @@ default masking. Match the environment, `--config`, and `--instance` selections
 when comparing results. For CLI setup or configuration commands, consult
 [b2c-cli/b2c-config](skill://b2c-cli/b2c-config/SKILL.md) when the broader skill
 collections are enabled, or the shared configuration documentation below.
+For authentication specifically, `skills_read({id: "b2c-cli/b2c-config", section: "authentication"})`.
+CLI browser-login instructions do not enable SCAPI Admin code-mode user auth.
 
 ## Further reading
 

@@ -6,14 +6,14 @@ All calls share the enclosing execution limits, configuration, and safety rules.
 
 ## builtin/create-product
 
-Basic product creation: select a catalog, optional name and offline state; check existence and verify saved fields.
+Create a basic product, optionally assign it to a storefront catalog category, and verify saved fields and assignment.
 
 Effect: write.
 
 Input JSON Schema:
 
 ```json
-{"type":"object","properties":{"productId":{"type":"string","minLength":1},"catalogId":{"type":"string","minLength":1},"name":{"type":"string","minLength":1,"description":"Product name in the default locale."},"offline":{"type":"boolean","default":true,"description":"Create offline by default; false sets the default online flag."}},"required":["productId","catalogId"],"additionalProperties":false}
+{"type":"object","properties":{"productId":{"type":"string","minLength":1},"catalogId":{"type":"string","minLength":1,"description":"Owning catalog for the new product."},"name":{"type":"string","minLength":1,"description":"Product name in the default locale."},"offline":{"type":"boolean","default":true,"description":"Create offline by default; false sets the default online flag."},"category":{"type":"object","description":"Optional assignment target; its catalog may differ from the owning catalog.","properties":{"catalogId":{"type":"string","minLength":1},"categoryId":{"type":"string","minLength":1}},"required":["catalogId","categoryId"],"additionalProperties":false}},"required":["productId","catalogId"],"additionalProperties":false}
 ```
 
 ## builtin/campaign-promotions

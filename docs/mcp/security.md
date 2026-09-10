@@ -109,9 +109,12 @@ This allows job execution searches while keeping other POST requests restricted.
 
 ## SCAPI code mode
 
-The preview `scapi_search` and `scapi_execute` tools run JavaScript locally with
-Node.js. Enable them for assistants you trust with local code execution; they
-are not sandboxed from your filesystem or network.
+The preview `scapi_search` and `scapi_execute` tools use JavaScript for API
+discovery, Commerce requests, and result processing. Local file editing, builds,
+and shell commands belong in your assistant's terminal or file tools.
+Code mode restricts filesystem APIs, subprocesses, worker threads, and native
+addons, and disables built-in `fetch` and `WebSocket`. These guardrails prevent
+accidental misuse; they are not a security sandbox or network isolation.
 
 SCAPI execution uses the selected project's Account Manager credentials and
 API scopes. It can create, update, or delete Commerce records. The configured
@@ -122,9 +125,15 @@ failed or interrupted operation.
 
 Admin and Shopper credentials serve different purposes. Admin operations use an
 Account Manager client and its granted scopes. Shopper flows use SLAS; configuring
-a SLAS client does not enable Shopper execution in this preview. Authentication
+a SLAS client enables token export for external clients, but does not enable
+Shopper requests through the SCAPI helper in this preview. Authentication
 errors identify the relevant credentials or grants to check. A 403 can also mean
 missing instance access, rather than a missing API scope.
+
+Code mode can export Account Manager or SLAS access tokens when you need them
+for a separate HTTP client. Normal SCAPI requests authenticate automatically.
+Exported tokens are credentials and may appear in your assistant's conversation
+history. Requests made by an external client are outside MCP Safety Mode.
 
 Saved workflows execute local JavaScript with the same access as other code-mode
 programs. Save or install only source you trust. Saving retains source and metadata;

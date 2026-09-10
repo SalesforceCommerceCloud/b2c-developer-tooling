@@ -94,6 +94,7 @@ describe('SCAPI snippets', () => {
       ['builtin/create-product', undefined],
       ['builtin/create-product', null],
       ['builtin/create-product', {}],
+      ['builtin/create-product', {productId: 'a', catalogId: 'b', category: {catalogId: 'storefront'}}],
       ['builtin/create-product', {productId: 'a', catalogId: 'b', offline: 'false'}],
       ['builtin/create-product', {productId: 'a', catalogId: 'b', name: ''}],
       ['builtin/create-product', {productId: 'a', catalogId: 'b', unexpected: true}],
@@ -240,6 +241,12 @@ describe('SCAPI snippets', () => {
     const expected = loadBuiltinScapiSnippets().find((item) => item.name === 'builtin/create-product');
     const result = await runScapiCode({code: "async () => codemode.describe('builtin/create-product')"});
     expect(result).to.deep.equal(expected);
-    expect((result as ScapiSnippet).inputSchema.properties).to.have.keys('productId', 'catalogId', 'name', 'offline');
+    expect((result as ScapiSnippet).inputSchema.properties).to.have.keys(
+      'productId',
+      'catalogId',
+      'name',
+      'offline',
+      'category',
+    );
   });
 });

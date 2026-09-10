@@ -10,6 +10,7 @@ import {
   loadScapiSchemas,
   runScapiCode,
   createScapiRequest,
+  createScapiAuth,
   loadScapiSnippets,
   saveScapiSnippet,
 } from '@salesforce/b2c-tooling-sdk/scapi';
@@ -22,7 +23,11 @@ import {createProjectContextInputSchema, type ProjectContextInput, type ToolReso
 import {jsonResult, attachResolution} from '../adapter.js';
 import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.js';
 
-const code = z.string().min(1).max(32_768).describe('JavaScript async arrow function. Return a concise JSON result.');
+const code = z
+  .string()
+  .min(1)
+  .max(32_768)
+  .describe('JavaScript async arrow function. Return concise JSON. No filesystem or shell access.');
 const skillRead = z.boolean().optional().describe('True after reading the linked SCAPI skill.');
 const snippetDescription = `\nSnippets: await codemode.search(query) returns up to 10 names/descriptions/effects; await codemode.describe(name) returns source/inputSchema. Prefixes: builtin/, user/.`;
 function requireScapiSkill(read: boolean | undefined): void {
@@ -66,20 +71,20 @@ async () => {
     fields: Object.fromEntries(fields.map(k => [k, body.properties[k]])), auth: op.auth, security: op.security};
 }`;
 
-const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin APIs when no dedicated tool fits. Discover endpoints with scapi_search, then call scapi.request(). JSON requests; no Shopper/custom API execution or binary transfers.
+const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin APIs when no dedicated tool fits. Discover endpoints with scapi_search, then call scapi.request() (automatic auth). JSON requests; no Shopper/custom API execution or binary transfers.
 Read skill://mcp/scapi/SKILL.md first.
 
-Reuse workflows with await codemode.run(name, input); describe before first use. Snippets share this execution's limits and configuration. async (input) receives the tool's input. executionId identifies source eligible for scapi_snippet_save during this server session; inspect the outcome before saving.
+Reuse workflows with await codemode.run(name, input); describe before first use. Snippets share this execution's limits and configuration. async (input) receives the tool's input. executionId enables scapi_snippet_save; inspect the outcome before saving.
 
 Available in your code:
-declare const organizationId: string; // resolved tenant
+declare const organizationId: string | undefined; // resolved tenant
 declare const siteId: string | undefined; // configured site
 declare const scapi: {
   request(options: {method: string; path: string; query?: Record<string, unknown>; body?: unknown}):
     Promise<{status: number; ok: boolean; data: any; diagnostic?: {code: string; message: string}}>;
 };
 
-Compose known dependent requests in one async arrow function; await requests and pass intermediate results directly. Responses can be huge: filter/map/slice in code; return counts, selected rows, and verification fields. Preserve failures and diagnostics. HTTP failures return ok:false; transport/auth/safety failures throw. Local Node execution; SDK safety rules apply. Check writes before retrying.
+Compose known dependent requests in one async arrow function; await requests and pass intermediate results directly. Responses can be huge: filter/map/slice in code; return counts, selected rows, and verification fields. Preserve failures and diagnostics. HTTP failures return ok:false; transport/auth/safety failures throw. SDK safety governs scapi.request. fetch/WebSocket are disabled. Optional auth.accountManager()/auth.slas() export tokens for external clients; see skill. Check writes before retrying.
 
 Example: inspect a campaign's promotions
 async () => codemode.run('builtin/campaign-promotions', {campaignId: 'selected-campaign', limit: 4})`;
@@ -177,7 +182,7 @@ export function createScapiCodeTools(loadServices: ServicesLoader, snippetDirect
       idempotent: false,
       openWorld: true,
       async handler(args, context) {
-        let resolution;
+        let resolution: ToolResolution | undefined;
         try {
           const input = z.object(executeInput).strict().parse(args) as ProjectContextInput & {
             code: string;
@@ -189,30 +194,35 @@ export function createScapiCodeTools(loadServices: ServicesLoader, snippetDirect
           resolution = services.getResolution();
           const config = services.getResolvedConfig();
           const {shortCode, tenantId, siteId} = config.values;
-          if (!shortCode || !tenantId)
-            throw new Error('SCAPI requires configured shortCode and tenantId. Use config_inspect.');
           const safetyEnvironment = Object.fromEntries(
             ['SFCC_SAFETY_LEVEL', 'SFCC_SAFETY_CONFIRM', 'SFCC_SAFETY_CONFIG'].map((name) => [
               name,
               services.getEnvironmentVariable(name),
             ]),
           );
-          const request = createScapiRequest({
-            shortCode,
-            tenantId,
-            siteId,
-            auth: () => config.createOAuth(),
-            documents: loadScapiSchemas(),
-            safety: resolveEffectiveSafetyConfig(
-              config.values.safety,
-              loadGlobalSafetyConfig(getB2CConfigDirectory(), safetyEnvironment, resolution.projectDirectory?.path),
-              safetyEnvironment,
-            ),
-          });
+          let managedRequest: ReturnType<typeof createScapiRequest>;
+          const request = async (options: unknown, signal: AbortSignal) => {
+            if (!shortCode || !tenantId)
+              throw new Error('SCAPI requires configured shortCode and tenantId. Use config_inspect.');
+            managedRequest ??= createScapiRequest({
+              shortCode,
+              tenantId,
+              siteId,
+              auth: () => config.createOAuth(),
+              documents: loadScapiSchemas(),
+              safety: resolveEffectiveSafetyConfig(
+                config.values.safety,
+                loadGlobalSafetyConfig(getB2CConfigDirectory(), safetyEnvironment, resolution?.projectDirectory?.path),
+                safetyEnvironment,
+              ),
+            });
+            return managedRequest(options, signal);
+          };
           const result = await runScapiCode({
             code: input.code,
             request,
-            organizationId: toOrganizationId(tenantId),
+            auth: createScapiAuth(config.values, resolution.projectDirectory?.path),
+            organizationId: tenantId ? toOrganizationId(tenantId) : undefined,
             siteId,
             cwd: resolution.projectDirectory?.path,
             signal: context?.signal,

@@ -128,6 +128,118 @@ describe('SCAPI workflow examples', () => {
     );
   });
 
+  describe('product category assignment', () => {
+    const category = {catalogId: 'storefront-catalog', categoryId: 'new arrivals'};
+    const product = {id: 'PRODUCT_ID', owningCatalogId: 'CATALOG_ID', onlineFlag: {default: false}};
+    const assignment = {...category, productId: product.id};
+    const org = '/organizations/f_ecom_test_001';
+    const productPath = '/product/products/v1' + org + '/products/PRODUCT_ID';
+    const categoryPath = '/product/catalogs/v1' + org + '/catalogs/storefront-catalog/categories/new%20arrivals';
+    const assignmentPath = categoryPath + '/products/PRODUCT_ID';
+
+    async function run(responses: unknown[]) {
+      const calls: unknown[] = [];
+      const result = await runExample(
+        'products',
+        async (input) => {
+          calls.push(input);
+          const response = responses.shift();
+          if (response instanceof Error) throw response;
+          if (!response) throw new Error('Unexpected extra request');
+          return response;
+        },
+        {category},
+      );
+      return {result, calls};
+    }
+
+    const creation = () => [
+      {ok: false, status: 404},
+      {ok: true, status: 200, data: {id: category.categoryId, catalogId: category.catalogId}},
+      {ok: true, status: 201, data: product},
+      {ok: true, status: 200, data: product},
+    ];
+
+    it('creates in the owning catalog, assigns in another catalog, and projects verification', async () => {
+      const {result, calls} = await run([
+        ...creation(),
+        {ok: true, status: 201, data: assignment},
+        {ok: true, status: 200, data: {...assignment, product: {large: 'omit'}, creationDate: 'omit'}},
+      ]);
+      expect(calls).to.deep.equal([
+        {method: 'GET', path: productPath},
+        {method: 'GET', path: categoryPath},
+        {method: 'PUT', path: productPath, body: product},
+        {method: 'GET', path: productPath},
+        {method: 'PUT', path: assignmentPath, body: assignment},
+        {method: 'GET', path: assignmentPath},
+      ]);
+      expect(result).to.deep.equal({
+        state: 'verified',
+        id: product.id,
+        catalog: product.owningCatalogId,
+        onlineFlag: product.onlineFlag,
+        writeStatus: 201,
+        category: {...assignment, writeStatus: 201, verified: true},
+      });
+    });
+
+    it('stops before any write when the target category does not exist', async () => {
+      const {result, calls} = await run([
+        {ok: false, status: 404},
+        {ok: false, status: 404},
+      ]);
+      expect(calls).to.have.length(2);
+      expect(result).to.include({stage: 'inspect-category', status: 404});
+      expect(result).not.to.have.property('writeStatus');
+    });
+
+    it('preserves product creation and HTTP diagnostics if assignment is rejected', async () => {
+      const {result, calls} = await run([
+        ...creation(),
+        {ok: false, status: 403, data: {title: 'Forbidden'}, diagnostic: {code: 'SCAPI_FORBIDDEN'}},
+      ]);
+      expect(calls).to.have.length(5);
+      expect(result).to.include({
+        state: 'partial',
+        stage: 'assign-category',
+        id: product.id,
+        writeStatus: 201,
+        status: 403,
+      });
+      expect(result).to.have.nested.property('diagnostic.code', 'SCAPI_FORBIDDEN');
+    });
+
+    it('preserves both writes if assignment verification throws', async () => {
+      const {result, calls} = await run([
+        ...creation(),
+        {ok: true, status: 201},
+        new Error('Verification unavailable'),
+      ]);
+      expect(calls).to.have.length(6);
+      expect(result).to.include({
+        state: 'partial',
+        stage: 'verify-category',
+        writeStatus: 201,
+        error: 'Error: Verification unavailable',
+        checkWriteBeforeRetry: true,
+      });
+      expect(result).to.have.nested.property('category.writeStatus', 201);
+    });
+
+    it('reports mismatched assignment verification without deleting or replaying writes', async () => {
+      const {result, calls} = await run([
+        ...creation(),
+        {ok: true, status: 201},
+        {ok: true, status: 200, data: {...assignment, productId: 'different-product'}},
+      ]);
+      expect(calls).to.have.length(6);
+      expect(result).to.have.property('state', 'verification_failed');
+      expect(result).to.have.nested.property('category.verified', false);
+      expect(result).to.have.nested.property('category.observed.productId', 'different-product');
+    });
+  });
+
   it('joins bounded promotion batches and preserves per-record failures and continuation', async () => {
     let calls = 0;
     let active = 0;

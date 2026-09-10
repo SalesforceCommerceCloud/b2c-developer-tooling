@@ -55,6 +55,12 @@ next breakpoint or request completion. End sessions explicitly.
   `clear_breakpoints: true` when finished. Do not leave an unbounded capture waiting.
 - Configuration still unexplained after `config_inspect`: consult
   [MCP configuration](skill://mcp/b2c-config/SKILL.md).
+- Missing BM permission/access key: `docs_read({query: "mcp-security"})` for debugger
+  requirements; `guide-authentication` for WebDAV key setup. For other setup issues,
+  `docs_search` with the specific error. If docs tools are unavailable, use
+  [debugger access](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security#debugger)
+  and [WebDAV key setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication#webdav-access).
+  General WebDAV OAuth instructions do not apply to the debugger.
 - Before repeating a failed request, check whether it already changed state.
 
 ## CLI or IDE, when requested

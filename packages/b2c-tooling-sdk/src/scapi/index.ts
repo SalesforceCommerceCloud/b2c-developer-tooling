@@ -8,6 +8,7 @@
 export {loadScapiSchemas, findScapiOperation, resolveScapiReference} from './catalog.js';
 export type {ApiDocument, ScapiSchemaEntry, ScapiSchemaDocument} from './catalog.js';
 export {runScapiCode} from './runtime.js';
+export {createScapiAuth} from './auth-primitives.js';
 export type {ScapiCodeOptions} from './runtime.js';
 export {
   loadBuiltinScapiSnippets,

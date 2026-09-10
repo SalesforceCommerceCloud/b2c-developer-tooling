@@ -7,6 +7,9 @@ description: Discover standard SCAPI contracts, compose Admin requests, and veri
 
 Prefer dedicated tools. Otherwise discover with `scapi_search`, compose with
 `scapi_execute`. Use JavaScript async arrow functions; no TypeScript or imports.
+Use code mode for API discovery, request composition, and result processing.
+Use terminal/file tools for local development, builds, and filesystem work.
+Filesystem APIs, subprocesses, worker threads, and native addons are restricted.
 Read this skill once via resources or `skills_read`,
 then pass `skillRead: true`. This does not authorize mutations.
 
@@ -27,16 +30,29 @@ with `scapi_custom_apis_get_status`. Custom API execution is unsupported.
 
 ## Authentication
 
+- `scapi.request()` and snippets using it authenticate automatically. Do not acquire
+  or pass tokens first. For an explicitly requested token or external HTTP client,
+  use `auth.accountManager()` / `auth.slas()` in `scapi_execute`:
+  [token exports](references/tokens.md). These helpers are unavailable in search.
 - Admin `AmOAuth2`: Account Manager credentials. Each request selects operation/tenant
   scopes and reuses suitable cached tokens; no upfront scope union.
 - Missing credentials: `config_inspect` with masking. `clientId` is Admin;
   `slasClientId` is Shopper. Configuration does not grant access.
 - Scope rejection: grant reported scopes in Account Manager; check extra configured
   scopes. Read/write alternatives are alternatives. Later failures do not undo writes.
-- Shopper execution is unsupported; SLAS settings cannot enable it.
+- Shopper requests through `scapi.request()` are unsupported; SLAS token export
+  is available for external clients.
   SLAS admin roles differ: [CLI/SDK](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas).
 - HTTP 401/403 retain `status`/`data` plus `diagnostic`; preserve these.
   A 403 alone does not prove missing scopes.
+
+For missing values or wrong targets, read [MCP configuration](skill://mcp/b2c-config/SKILL.md)
+(`skills_read` ID `mcp/b2c-config`). For external client/role/tenant-filter setup,
+use `docs_read({query: "guide-authentication"})`; official Admin authorization:
+`commerce-api/authorization-for-admin-apis`, scope definitions: `commerce-api/auth-z-scope-catalog`.
+For other access questions, search `docs_search` with the specific error and API.
+If docs are unavailable, use the [authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication).
+These are conditional setup references, not additional prerequisite reads.
 
 ## Compose and verify
 
@@ -58,6 +74,9 @@ with `scapi_custom_apis_get_status`. Custom API execution is unsupported.
 - SDK safety applies per request, including POST searches. Use only authorized
   targeted exceptions. Confirmation-required requests stop. Binary transfers
   need a file-capable client.
+- `fetch` and `WebSocket` are disabled. Use `scapi.request()` inside programs;
+  direct HTTP belongs in an external client, outside MCP Safety Mode. Do not use
+  imports or other Node networking APIs to bypass this boundary.
 
 ## Reusable workflows
 
@@ -74,7 +93,7 @@ Discover/describe inside either code tool; run snippets only inside `scapi_execu
 Saving requires an explicit user request and a reviewed outcome; a completed
 execution may still contain HTTP errors or partial failures.
 
-- [Products](references/products.md): basic creation, optional name/offline state, verify.
+- [Products](references/products.md): create, optionally assign a storefront category, verify both.
 - [Promotions](references/promotions.md): join assignments/details in bounded batches.
 - [Jobs](references/jobs.md): search failures, inspect a page, return continuation.
 

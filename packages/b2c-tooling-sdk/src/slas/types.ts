@@ -27,6 +27,8 @@ export interface SlasTokenResponse {
  * Configuration for SLAS shopper token retrieval.
  */
 export interface SlasTokenConfig {
+  /** Cancel authorization and token exchange. */
+  signal?: AbortSignal;
   /** SCAPI short code */
   shortCode: string;
   /** Organization ID in f_ecom_xxxx_yyy format */

@@ -8,9 +8,10 @@ import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {createHash} from 'node:crypto';
-import {readFileSync} from 'node:fs';
+import {mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {dirname, join} from 'node:path';
+import {tmpdir} from 'node:os';
 import {
   loadScapiSchemas,
   createScapiRequest,
@@ -53,6 +54,87 @@ describe('SCAPI code mode', function () {
   before(() => server.listen({onUnhandledRequest: 'error'}));
   afterEach(() => server.resetHandlers());
   after(() => server.close());
+
+  it('restricts local development APIs without affecting parent-managed work', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'b2c code mode '));
+    const file = join(cwd, 'fixture.txt');
+    writeFileSync(file, 'unchanged');
+    try {
+      for (const expression of [
+        'process.getBuiltinModule("fs").readFileSync("fixture.txt", "utf8")',
+        'process.getBuiltinModule("fs").writeFileSync("fixture.txt", "changed")',
+        'process.getBuiltinModule("child_process").execFileSync(process.execPath, ["--version"])',
+        'new (process.getBuiltinModule("worker_threads").Worker)("", {eval: true})',
+      ]) {
+        await rejects(() => runScapiCode({cwd, code: `async () => ${expression}`}), 'SCAPI_RUNTIME_RESTRICTED');
+      }
+      expect(readFileSync(file, 'utf8')).to.equal('unchanged');
+      const result = await runScapiCode({
+        cwd,
+        request: async () => ({data: readFileSync(file, 'utf8')}),
+        code: 'async () => ({sum: [1, 2, 3].reduce((a, b) => a + b, 0), response: await scapi.request({})})',
+      });
+      expect(result).to.deep.equal({sum: 6, response: {data: 'unchanged'}});
+    } finally {
+      rmSync(cwd, {recursive: true, force: true});
+    }
+  });
+
+  for (const expression of [
+    "fetch('http://127.0.0.1:1')",
+    "globalThis.fetch('http://127.0.0.1:1')",
+    "new WebSocket('ws://127.0.0.1:1')",
+    "(globalThis.fetch = () => 'bypassed', fetch('http://127.0.0.1:1'))",
+  ]) {
+    it(`rejects ambient networking: ${expression}`, async () => {
+      await rejects(() => runScapiCode({code: `async () => ${expression}`}), 'SCAPI_DIRECT_NETWORK_DISABLED');
+    });
+  }
+
+  it('exports tokens only when returned and keeps authentication out of discovery', async () => {
+    const auth = async () => ({accessToken: 'test-secret'});
+    expect(await runScapiCode({auth, code: 'async () => auth.accountManager()'})).to.deep.equal({
+      accessToken: 'test-secret',
+    });
+    expect(await runScapiCode({auth, code: 'async () => { await auth.slas(); return {done: true}; }'})).to.deep.equal({
+      done: true,
+    });
+    await rejects(() => runScapiCode({code: 'async () => auth.accountManager()'}), 'Use scapi_execute');
+  });
+
+  it('shares call limits across token exports and managed requests', async () => {
+    await rejects(
+      () =>
+        runScapiCode({
+          auth: async () => null,
+          request: async () => null,
+          code: 'async () => { for (let i = 0; i < 20; i++) await auth.accountManager(); return scapi.request({}); }',
+        }),
+      'SCAPI_CALL_LIMIT',
+    );
+  });
+
+  it('cancels an in-flight token export when execution is cancelled', async () => {
+    const controller = new AbortController();
+    let aborted = false;
+    await rejects(
+      () =>
+        runScapiCode({
+          signal: controller.signal,
+          auth: async (_operation, _options, signal) =>
+            new Promise((resolve) => {
+              signal.addEventListener('abort', () => {
+                aborted = true;
+                resolve(null);
+              });
+              controller.abort();
+            }),
+          code: 'async () => auth.accountManager()',
+        }),
+      'SCAPI_EXECUTION_CANCELLED',
+    );
+    expect(aborted).to.equal(true);
+  });
 
   it('ships every inventoried schema intact and excludes custom APIs', () => {
     const root = dirname(createRequire(import.meta.url).resolve('@salesforce/b2c-api-schemas/manifest.json'));

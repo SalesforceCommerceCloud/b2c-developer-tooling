@@ -123,6 +123,17 @@ child bounds runtime and cleans up work, but is not a security sandbox. Keep
 credentials in the host and apply SDK safety rules for the resolved target at
 each helper request. Preserve cancellation and resolution. Never replay a whole
 program automatically after writes; let SCAPI validate request payloads.
+Disable ambient fetch/WebSocket to discourage unmanaged requests; do not claim
+network isolation. Enable Node permissions only on the disposable child, without
+filesystem, subprocess, worker, or addon grants. Launch the current executable
+directly; keep configuration, package loading, and snippet storage in the parent.
+These guardrails keep code mode focused on APIs and result processing. Route local
+development work to terminal/file tools; do not pursue a hostile-code sandbox or
+expand API blacklists. Test managed calls and denials on supported Node/platforms.
+Token-export helpers serve explicit external-client needs;
+managed requests authenticate automatically. Resolve prerequisites lazily by
+helper, honor configured auth methods, and propagate cancellation through grants.
+Never expose configured secrets to the worker or persist tokens in snippet source.
 Forward request context through registration; test cancellation through both
 stdio protocols and verify execution stops. Resolve project safety environment
 without mutating process.env; launch values win over project .env. Evaluate the

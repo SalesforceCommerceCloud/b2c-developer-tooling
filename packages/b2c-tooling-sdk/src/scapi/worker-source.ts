@@ -9,6 +9,13 @@ export const SCAPI_WORKER_SOURCE = String.raw`
 const send = process.send.bind(process);
 const pending = new Map();
 let sequence = 0;
+function directNetwork() {
+  throw new Error('SCAPI_DIRECT_NETWORK_DISABLED: Use scapi.request() in code mode. For direct HTTP calls, export a token and use a client outside code mode; SDK safety does not govern those calls.');
+}
+// Prevent accidental use of ambient networking; this is not a hostile-code sandbox.
+for (const name of ['fetch', 'WebSocket']) {
+  Object.defineProperty(globalThis, name, {value: directNetwork, writable: false, configurable: false});
+}
 process.on('disconnect', () => process.exit(0));
 process.on('message', async message => {
   if (message.type === 'reply') {
@@ -52,14 +59,20 @@ process.on('message', async message => {
     pending.set(id, {resolve, reject});
     send({type:'request', id, options});
   })};
+  const authCall = (operation, options = {}) => new Promise((resolve, reject) => {
+    const id = ++sequence;
+    pending.set(id, {resolve, reject});
+    send({type:'auth', id, operation, options});
+  });
+  const auth = {accountManager: options => authCall('accountManager', options), slas: options => authCall('slas', options)};
   const snippetCall = (operation, name, input) => new Promise((resolve, reject) => {
     const id = ++sequence;
     pending.set(id, {resolve, reject});
     send({type:'snippet', id, operation, name, input});
   });
   let runningSnippets = 0;
-  const evaluate = (code, input) => new Function('spec', 'scapi', 'codemode', 'organizationId', 'siteId', 'input',
-    'return (' + code + ')(input);')(spec, scapi, codemode, message.organizationId, message.siteId, input);
+  const evaluate = (code, input) => new Function('spec', 'scapi', 'codemode', 'auth', 'organizationId', 'siteId', 'input',
+    'return (' + code + ')(input);')(spec, scapi, codemode, auth, message.organizationId, message.siteId, input);
   const codemode = {
     search: (query = '') => snippetCall('search', String(query)),
     describe: name => snippetCall('describe', String(name)),
@@ -74,12 +87,15 @@ process.on('message', async message => {
   };
   try {
     const value = await evaluate(message.code, message.input);
-    if (pending.size || runningSnippets) throw new Error('Await every scapi.request and codemode call before returning. Requests may already have taken effect.');
+    if (pending.size || runningSnippets) throw new Error('Await every scapi.request, auth, and codemode call before returning. Requests may already have taken effect.');
     const json = JSON.stringify(value === undefined ? null : value);
     if (Buffer.byteLength(json) > message.maxOutputBytes) throw new Error('SCAPI_RESULT_TOO_LARGE: return fewer fields or a smaller page.');
     send({type:'result', value: JSON.parse(json)});
   } catch (error) {
-    send({type:'error', error: String(error.message || error).slice(0, 4000)});
+    const message = error.code === 'ERR_ACCESS_DENIED'
+      ? 'SCAPI_RUNTIME_RESTRICTED: Code mode supports API discovery, managed requests, and result processing. Use terminal or file tools outside code mode for filesystem access, subprocesses, or other local development work.'
+      : String(error.message || error);
+    send({type:'error', error: message.slice(0, 4000)});
   }
 });
 `;

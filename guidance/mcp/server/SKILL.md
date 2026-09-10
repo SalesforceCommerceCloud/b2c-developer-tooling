@@ -71,6 +71,9 @@ When scripting tool calls, emit `structuredContent` when present, otherwise
 
 ## Setup references
 
+- Credentials, external grants, or access failures: [MCP configuration](skill://mcp/b2c-config/SKILL.md),
+  `skills_read({id: "mcp/b2c-config", section: "setup-and-access"})` when available.
+  It maps setup issues to exact documentation IDs; no universal setup read is needed.
 - [Client installation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation)
 - [Launch configuration](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration)
 - [Capabilities and toolsets](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets)

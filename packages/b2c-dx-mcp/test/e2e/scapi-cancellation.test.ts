@@ -6,9 +6,6 @@
 
 import {expect} from 'chai';
 import {spy} from 'sinon';
-import {mkdtemp, readFile, rm} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
-import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 import {fileURLToPath} from 'node:url';
 import {Client, type ClientOptions} from '@modelcontextprotocol/client';
@@ -31,14 +28,12 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
     this.timeout(30_000);
 
     it('kills the running program and keeps the server usable', async () => {
-      const directory = await mkdtemp(join(tmpdir(), 'scapi-cancel-'));
-      const marker = join(directory, 'started');
       const versionNegotiation: ClientOptions['versionNegotiation'] =
         mode === 'legacy' ? {mode: 'legacy'} : {mode: {pin: mode}};
       const client = new Client({name: 'scapi-cancel-test', version: '1'}, {versionNegotiation});
       const transport = new StdioClientTransport({
         command: process.execPath,
-        args: [runJs, '--tools', 'scapi_search'],
+        args: [runJs, '--tools', 'scapi_search', '--log-level', 'debug'],
         env: {SFCC_DISABLE_TELEMETRY: 'true'},
         stderr: 'pipe',
       });
@@ -47,6 +42,10 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
       let pid: number | undefined;
       try {
         await client.connect(transport);
+        let stderr = '';
+        transport.stderr?.on('data', (chunk: Buffer) => {
+          stderr += chunk.toString();
+        });
         const running = client
           .callTool(
             {
@@ -54,23 +53,17 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
               arguments: {
                 skillRead: true,
                 api: 'product/products/v1',
-                code: `async () => {
-              const fs = await import('node:fs');
-              fs.writeFileSync(${JSON.stringify(marker)}, String(process.pid));
-              while (true) {}
-            }`,
+                code: 'async () => { while (true) {} }',
               },
             },
             {signal: controller.signal},
           )
           .catch((error: unknown) => error);
         await until(async () => {
-          try {
-            pid = Number(await readFile(marker, 'utf8'));
-            return true;
-          } catch {
-            return false;
-          }
+          const match = stderr.match(/"?workerPid"?\s*:\s*(\d+)/);
+          if (!match) return false;
+          pid = Number(match[1]);
+          return true;
         });
         const call = sent.getCalls().find(({args}) => 'method' in args[0] && args[0].method === 'tools/call')?.args[0];
         expect(call).to.have.property('id', mode === 'legacy' ? 1 : 0);
@@ -102,7 +95,6 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
           }
         }
         await client.close();
-        await rm(directory, {recursive: true, force: true});
       }
     });
   });

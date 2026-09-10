@@ -72,6 +72,12 @@ can be disabled, offer an applicable public documentation link or conditional
 access instruction. Author shared facts once and check configuration/authentication
 claims against the resolver and shared skills.
 
+Route setup failures to exact skill IDs/sections or `docs_read` IDs; use
+`docs_search` for unknown topics. Distinguish local settings from external client,
+role, scope, or access-key setup. Keep public URL alternatives for excluded tools
+or collections. References are conditional; do not gate routine inspection or
+send MCP users through CLI authentication procedures unless that workflow applies.
+
 Use ATX headings for section reads and verify exact IDs through the catalog.
 Missing-section errors should return available headings for an exact retry,
 without requiring a full file read. Keep examples selective: required and

@@ -5,6 +5,7 @@
  */
 
 import {spawn} from 'node:child_process';
+import {getLogger} from '../logging/logger.js';
 import type {ScapiSchemaDocument} from './catalog.js';
 import {SCAPI_WORKER_SOURCE} from './worker-source.js';
 import {describeScapiSchemas, type ScapiAuthType} from './authentication.js';
@@ -17,6 +18,7 @@ export interface ScapiCodeOptions {
   documents?: ScapiSchemaDocument[];
   authType?: ScapiAuthType;
   request?: (options: unknown, signal: AbortSignal) => Promise<unknown>;
+  auth?: (operation: string, options: unknown, signal: AbortSignal) => Promise<unknown>;
   organizationId?: string;
   siteId?: string;
   cwd?: string;
@@ -41,10 +43,10 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
     const controller = new AbortController();
     const child = spawn(
       process.execPath,
-      ['--max-old-space-size=128', '--input-type=commonjs', '--eval', SCAPI_WORKER_SOURCE],
+      ['--permission', '--max-old-space-size=128', '--input-type=commonjs', '--eval', SCAPI_WORKER_SOURCE],
       {
         cwd: options.cwd,
-        // Authentication stays in the parent. Programs may use normal local Node capabilities.
+        // Credentials stay in the parent; explicit token helpers return only tokens and metadata.
         env: {PATH: process.env.PATH, SYSTEMROOT: process.env.SYSTEMROOT, TEMP: process.env.TEMP},
         stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
         windowsHide: true,
@@ -78,6 +80,7 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
     };
     child.stdout?.on('data', drain);
     child.stderr?.on('data', drain);
+    child.on('spawn', () => getLogger().debug({workerPid: child.pid}, 'SCAPI code worker started'));
     child.on('error', (error) => finish(undefined, error));
     child.on('close', (code) => {
       clearTimeout(timer);
@@ -115,13 +118,18 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
         }
         return;
       }
-      if (message.type !== 'request') return;
-      if (!options.request) return reply(undefined, 'Schema search cannot make SCAPI requests. Use scapi_execute.');
+      if (message.type !== 'request' && message.type !== 'auth') return;
+      if (message.type === 'auth' ? !options.auth : !options.request)
+        return reply(undefined, 'Schema search cannot make SCAPI or authentication requests. Use scapi_execute.');
       if (++calls > 20) return reply(undefined, 'SCAPI_CALL_LIMIT: at most 20 requests per execution.');
       if (active >= 4) return reply(undefined, 'SCAPI_CONCURRENCY_LIMIT: at most four concurrent requests.');
       active++;
       try {
-        reply(await options.request(message.options, controller.signal));
+        reply(
+          message.type === 'auth'
+            ? await options.auth!(message.operation ?? '', message.options, controller.signal)
+            : await options.request!(message.options, controller.signal),
+        );
       } catch (error) {
         reply(undefined, error instanceof Error ? error.message : String(error));
       } finally {
@@ -134,6 +142,7 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
         ...options,
         documents,
         request: undefined,
+        auth: undefined,
         snippets: undefined,
         signal: undefined,
         maxOutputBytes: Math.min(options.maxOutputBytes ?? 24_000, 65_536),
