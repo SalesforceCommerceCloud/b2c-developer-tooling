@@ -27,12 +27,12 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 
 These flags are available on all MRT commands:
 
-| Flag                  | Environment Variable | Description                                                                                |
-| --------------------- | -------------------- | ------------------------------------------------------------------------------------------ |
-| `--api-key`           | `MRT_API_KEY`        | MRT API key (legacy MRT Cloud API)                                                         |
-| `--project`, `-p`     | `MRT_PROJECT`        | MRT project slug. Alias: `--storefront` / `-s` (the SCAPI storefront ID — the same value). |
-| `--environment`, `-e` | `MRT_ENVIRONMENT`    | Target environment (e.g., staging, production). `MRT_TARGET` also supported.               |
-| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `auto` (default), `legacy`, or `scapi`. See [MRT Backends](#mrt-backends). |
+| Flag                  | Environment Variable | Description                                                                                                                   |
+| --------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `--api-key`           | `MRT_API_KEY`        | MRT API key (legacy MRT Cloud API)                                                                                            |
+| `--project`, `-p`     | `MRT_PROJECT`        | MRT project slug. Alias: `--storefront` / `-s` (the SCAPI storefront ID — the same value).                                    |
+| `--environment`, `-e` | `MRT_ENVIRONMENT`    | Target environment (e.g., staging, production). `MRT_TARGET` also supported.                                                  |
+| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `auto` (default), `legacy`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends). |
 
 The SCAPI backend also honors the standard OAuth flags (`--client-id`, `--client-secret`, `--short-code`, `--tenant-id`, and the JWT flags). See [MRT Backends](#mrt-backends).
 
@@ -41,7 +41,7 @@ The SCAPI backend also honors the standard OAuth flags (`--client-id`, `--client
 MRT commands resolve configuration in the following order of precedence:
 
 1. Command-line flags
-2. Environment variables (including `MRT_BACKEND`)
+2. Environment variables (including `MRT_BACKEND` / `SFCC_MRT_BACKEND`)
 3. `dw.json` file (`mrtProject`, `mrtEnvironment`, `mrtBackend` fields)
 4. `~/.mobify` config file (for `api_key`)
 
@@ -76,7 +76,7 @@ MRT is served by two backends:
 - **legacy** — the MRT Cloud API (`cloud.mobify.com`), authenticated with a per-user API key (`--api-key` / `~/.mobify`). This is the backend for every MRT command.
 - **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. Each supported command requires the SCAPI scopes for the API it maps to — today the deployment commands (`bundle history` / `deploy`) need `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw`.
 
-Select the backend with `--mrt-backend` (or `MRT_BACKEND`, or `mrtBackend` in `dw.json`):
+Select the backend with `--mrt-backend` (or `MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
 | Value            | Behavior                                                                                                                                                                                                                          |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
