@@ -51,6 +51,8 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * List notifications for an MRT project.
  */
 export default class MrtNotificationList extends MrtCommand<typeof MrtNotificationList> {
+  static aliases = ['mrt:storefront:notification:list'];
+
   static description = withDocs(
     t('commands.mrt.notification.list.description', 'List notifications for a Managed Runtime project'),
     '/cli/mrt.html#b2c-mrt-project-notification-list',

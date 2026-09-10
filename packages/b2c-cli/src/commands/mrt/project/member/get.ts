@@ -29,6 +29,8 @@ function printMemberDetails(member: MrtMember, project: string): void {
  * Get details of a project member.
  */
 export default class MrtMemberGet extends MrtCommand<typeof MrtMemberGet> {
+  static aliases = ['mrt:storefront:member:get'];
+
   static args = {
     email: Args.string({
       description: 'Email address of the member',

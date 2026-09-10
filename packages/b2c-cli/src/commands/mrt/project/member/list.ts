@@ -42,6 +42,8 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * List members for an MRT project.
  */
 export default class MrtMemberList extends MrtCommand<typeof MrtMemberList> {
+  static aliases = ['mrt:storefront:member:list'];
+
   static description = withDocs(
     t('commands.mrt.member.list.description', 'List members for a Managed Runtime project'),
     '/cli/mrt.html#b2c-mrt-project-member-list',

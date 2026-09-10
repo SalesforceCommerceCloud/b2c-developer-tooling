@@ -71,6 +71,8 @@ function printProjectDetails(project: MrtProjectUpdateType): void {
  * Update an MRT project.
  */
 export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate> {
+  static aliases = ['mrt:storefront:update'];
+
   static args = {
     slug: Args.string({
       description: 'Project slug',

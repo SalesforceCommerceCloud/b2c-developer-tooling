@@ -2,6 +2,8 @@
 
 Detailed reference for MRT project, member, and notification commands.
 
+> **`storefront` alias:** `mrt storefront` is an alias for `mrt project` (including `member` and `notification` subtopics), and `--storefront` is an alias for `--project` on every command that accepts it. The `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` environment variables work as fallbacks for `MRT_PROJECT` / `SFCC_MRT_PROJECT`. The alias matches SCAPI MRT API terminology; the `project` forms continue to work unchanged. Examples below use `project`, but `storefront` is interchangeable.
+
 ## Project Management
 
 ### List Projects

@@ -13,6 +13,8 @@ import {confirm} from '../../../../prompts.js';
  * Delete a notification from an MRT project.
  */
 export default class MrtNotificationDelete extends MrtCommand<typeof MrtNotificationDelete> {
+  static aliases = ['mrt:storefront:notification:delete'];
+
   static args = {
     id: Args.string({
       description: 'Notification ID to delete',

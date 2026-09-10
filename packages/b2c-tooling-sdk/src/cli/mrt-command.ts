@@ -25,8 +25,8 @@ const MRT_STATUS_URL = 'https://status.salesforce.com/instances/MANAGEDRUNTIMEAD
  * 3. ~/.mobify config file (api_key field), or ~/.mobify--[hostname] if --cloud-origin is set
  *
  * Project/environment resolution order:
- * 1. --project / --environment flags
- * 2. MRT_PROJECT / MRT_ENVIRONMENT environment variables (SFCC_-prefixed and MRT_TARGET also supported)
+ * 1. --project (alias: --storefront) / --environment flags
+ * 2. MRT_PROJECT / MRT_ENVIRONMENT environment variables (SFCC_-prefixed, MRT_STOREFRONT / SFCC_MRT_STOREFRONT, and MRT_TARGET also supported)
  * 3. dw.json (mrtProject / mrtEnvironment fields)
  *
  * Cloud origin resolution:
@@ -46,9 +46,11 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
     }),
     project: Flags.string({
       char: 'p',
-      description: 'MRT project slug (or set mrtProject in dw.json)',
+      aliases: ['storefront'],
+      description: 'MRT storefront/project slug (alias: --storefront; or set mrtProject in dw.json)',
       env: 'MRT_PROJECT',
-      default: async () => process.env.SFCC_MRT_PROJECT || undefined,
+      default: async () =>
+        process.env.SFCC_MRT_PROJECT || process.env.MRT_STOREFRONT || process.env.SFCC_MRT_STOREFRONT || undefined,
     }),
     environment: Flags.string({
       char: 'e',

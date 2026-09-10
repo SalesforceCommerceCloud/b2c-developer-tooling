@@ -17,6 +17,8 @@ import {t, withDocs} from '../../../../i18n/index.js';
  * Add a member to an MRT project.
  */
 export default class MrtMemberAdd extends MrtCommand<typeof MrtMemberAdd> {
+  static aliases = ['mrt:storefront:member:add'];
+
   static args = {
     email: Args.string({
       description: 'Email address of the user to add',

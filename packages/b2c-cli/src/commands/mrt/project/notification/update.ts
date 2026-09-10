@@ -12,6 +12,8 @@ import {t, withDocs} from '../../../../i18n/index.js';
  * Update a notification in an MRT project.
  */
 export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotificationUpdate> {
+  static aliases = ['mrt:storefront:notification:update'];
+
   static args = {
     id: Args.string({
       description: 'Notification ID',

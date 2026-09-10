@@ -13,6 +13,8 @@ import {confirm} from '../../../../prompts.js';
  * Remove a member from an MRT project.
  */
 export default class MrtMemberRemove extends MrtCommand<typeof MrtMemberRemove> {
+  static aliases = ['mrt:storefront:member:remove'];
+
   static args = {
     email: Args.string({
       description: 'Email address of the member to remove',

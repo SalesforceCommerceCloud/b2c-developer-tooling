@@ -12,6 +12,8 @@ import {t, withDocs} from '../../../../i18n/index.js';
  * Create a notification for an MRT project.
  */
 export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotificationCreate> {
+  static aliases = ['mrt:storefront:notification:create'];
+
   static description = withDocs(
     t('commands.mrt.notification.create.description', 'Create a notification for a Managed Runtime project'),
     '/cli/mrt.html#b2c-mrt-project-notification-create',

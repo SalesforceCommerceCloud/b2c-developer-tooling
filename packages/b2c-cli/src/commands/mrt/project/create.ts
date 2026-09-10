@@ -71,6 +71,8 @@ function printProjectDetails(project: MrtProject): void {
  * Create a new MRT project.
  */
 export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate> {
+  static aliases = ['mrt:storefront:create'];
+
   static args = {
     name: Args.string({
       description: 'Project name',

@@ -23,6 +23,8 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt save-credentials` | | Save MRT credentials to ~/.mobify |
 | `mrt user` | `profile`, `api-key`, `email-prefs` | Manage user settings |
 
+> **`storefront` alias:** `mrt storefront` is an alias for `mrt project` (including the `member` and `notification` subtopics). For example, `b2c mrt storefront get my-storefront` is identical to `b2c mrt project get my-storefront`. The alias matches the terminology used by the SCAPI MRT API; `mrt project` continues to work unchanged.
+
 ## Global MRT Flags
 
 These flags are available on all MRT commands:
@@ -30,15 +32,15 @@ These flags are available on all MRT commands:
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
 | `--api-key` | `MRT_API_KEY` | MRT API key |
-| `--project`, `-p` | `MRT_PROJECT` | MRT project slug |
+| `--project`, `-p` (alias: `--storefront`) | `MRT_PROJECT` (also `MRT_STOREFRONT`) | MRT storefront/project slug |
 | `--environment`, `-e` | `MRT_ENVIRONMENT` | Target environment (e.g., staging, production). `MRT_TARGET` also supported. |
 
 ### Configuration Sources
 
 MRT commands resolve configuration in the following order of precedence:
 
-1. Command-line flags
-2. Environment variables
+1. Command-line flags (`--project` / `--storefront`)
+2. Environment variables (`MRT_PROJECT`, then `SFCC_MRT_PROJECT`, then `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` as fallbacks)
 3. `dw.json` file (`mrtProject`, `mrtEnvironment` fields)
 4. `~/.mobify` config file (for `api_key`)
 

@@ -43,6 +43,8 @@ function printNotificationDetails(notification: MrtNotification, project: string
  * Get details of a notification.
  */
 export default class MrtNotificationGet extends MrtCommand<typeof MrtNotificationGet> {
+  static aliases = ['mrt:storefront:notification:get'];
+
   static args = {
     id: Args.string({
       description: 'Notification ID',

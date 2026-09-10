@@ -17,6 +17,8 @@ import {t, withDocs} from '../../../../i18n/index.js';
  * Update a member's role in an MRT project.
  */
 export default class MrtMemberUpdate extends MrtCommand<typeof MrtMemberUpdate> {
+  static aliases = ['mrt:storefront:member:update'];
+
   static args = {
     email: Args.string({
       description: 'Email address of the member to update',

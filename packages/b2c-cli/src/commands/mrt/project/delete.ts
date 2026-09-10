@@ -21,6 +21,8 @@ interface DeleteResult {
  * Delete an MRT project.
  */
 export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete> {
+  static aliases = ['mrt:storefront:delete'];
+
   static args = {
     slug: Args.string({
       description: 'Project slug',
