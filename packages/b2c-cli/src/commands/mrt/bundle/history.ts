@@ -11,21 +11,17 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {
-  listDeployments,
-  type ListDeploymentsResult,
-  type MrtDeployment,
-} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {listMrtDeployments, type MrtDeploymentView} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<MrtDeployment>> = {
+const COLUMNS: Record<string, ColumnDef<MrtDeploymentView>> = {
   bundleId: {
     header: 'Bundle ID',
-    get: (deploy) => deploy.bundle?.id?.toString() ?? '-',
+    get: (deploy) => deploy.bundleId?.toString() ?? '-',
   },
   bundleMessage: {
     header: 'Message',
-    get: (deploy) => deploy.bundle?.message ?? '-',
+    get: (deploy) => deploy.bundleMessage ?? '-',
   },
   status: {
     header: 'Status',
@@ -33,15 +29,23 @@ const COLUMNS: Record<string, ColumnDef<MrtDeployment>> = {
   },
   type: {
     header: 'Type',
-    get: (deploy) => deploy.deploy_type ?? '-',
+    get: (deploy) => deploy.deploymentType ?? '-',
   },
   user: {
     header: 'User',
-    get: (deploy) => deploy.user ?? '-',
+    get: (deploy) => deploy.createdBy ?? '-',
   },
   created: {
     header: 'Created',
-    get: (deploy) => (deploy.created_at ? new Date(deploy.created_at).toLocaleString() : '-'),
+    get: (deploy) => (deploy.creationDate ? new Date(deploy.creationDate).toLocaleString() : '-'),
+  },
+  deploymentId: {
+    header: 'Deployment ID',
+    get: (deploy) => deploy.deploymentId ?? '-',
+  },
+  backend: {
+    header: 'Backend',
+    get: (deploy) => deploy.backend,
   },
 };
 
@@ -63,6 +67,7 @@ export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory
   static examples = [
     '<%= config.bin %> <%= command.id %> --project my-storefront --environment staging',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e production --limit 5',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --mrt-backend scapi',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --json',
   ];
 
@@ -77,9 +82,11 @@ export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory
     ...columnFlagsFor(COLUMNS),
   };
 
-  async run(): Promise<ListDeploymentsResult> {
-    this.requireMrtCredentials();
+  protected operations = {
+    listMrtDeployments,
+  };
 
+  async run(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
@@ -91,25 +98,29 @@ export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory
       );
     }
 
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
     const {limit, offset} = this.flags;
 
-    this.log(
-      t('commands.mrt.bundle.history.fetching', 'Fetching deployment history for {{project}}/{{environment}}...', {
-        project,
-        environment,
-      }),
-    );
+    if (!this.jsonEnabled()) {
+      this.log(
+        t('commands.mrt.bundle.history.fetching', 'Fetching deployment history for {{project}}/{{environment}}...', {
+          project,
+          environment,
+        }),
+      );
+    }
 
-    const result = await listDeployments(
-      {
-        projectSlug: project,
-        targetSlug: environment,
-        limit,
-        offset,
-        origin: this.resolvedConfig.values.mrtOrigin,
-      },
-      this.getMrtAuth(),
-    );
+    const result = await this.operations.listMrtDeployments({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      targetSlug: environment,
+      limit,
+      offset,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Listing deployment history via backend'),
+    });
 
     if (!this.jsonEnabled()) {
       if (result.deployments.length === 0) {
@@ -123,6 +134,14 @@ export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory
       }
     }
 
-    return result;
+    // Under --json, emit the backend's native response verbatim (legacy MRT
+    // Cloud API list shape, or the SCAPI Storefront Deployments response) so the
+    // machine contract stays backend-specific and backward-compatible. The
+    // normalized rows above are for the human table only.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

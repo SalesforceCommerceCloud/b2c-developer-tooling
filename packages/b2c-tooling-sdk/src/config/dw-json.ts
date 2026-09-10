@@ -116,6 +116,8 @@ export interface DwJsonConfig {
   selfSigned?: boolean;
   /** API backend preference for operations that support both OCAPI and SCAPI */
   apiBackend?: 'ocapi' | 'scapi' | 'auto';
+  /** MRT backend preference: legacy MRT Cloud API vs SCAPI MRT deployments API */
+  mrtBackend?: 'auto' | 'legacy' | 'scapi';
   /** Path to JWT certificate file (cert.pem) for JWT authentication */
   jwtCertPath?: string;
   /** Path to JWT private key file (key.pem) for JWT authentication */

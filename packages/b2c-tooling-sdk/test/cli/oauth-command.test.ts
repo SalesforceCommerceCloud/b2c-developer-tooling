@@ -286,6 +286,17 @@ describe('cli/oauth-command', () => {
       stubParse(command);
       await command.init();
 
+      // Establish the "no sources" precondition deterministically. A developer
+      // machine may have real Managed Runtime credentials on disk, which
+      // MobifySource loads from its default path regardless of the test harness's
+      // MRT_CREDENTIALS_FILE override; that contributes a config source and
+      // (correctly) suppresses the hint, so relying on ambient state would make
+      // this pass only on a credential-free box.
+      (command as unknown as {resolvedConfig: {values: Record<string, unknown>; sources: unknown[]}}).resolvedConfig = {
+        values: {},
+        sources: [],
+      };
+
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       try {

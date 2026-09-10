@@ -23,7 +23,8 @@ The CLI uses different authentication mechanisms depending on the operation:
 | [SLAS](/cli/slas) client management                                                                | OAuth                                                                 | None (uses built-in client) or [API Client](#account-manager-api-client)                                             |
 | [Sandbox](/cli/sandbox) management                                                                 | OAuth                                                                 | None (uses built-in client) or [API Client](#account-manager-api-client)                                             |
 | [Account Manager](/cli/account-manager)                                                            | OAuth                                                                 | None (uses built-in client) or [API Client](#account-manager-api-client)                                             |
-| [MRT](/cli/mrt) commands                                                                           | MRT API Key                                                           | [MRT API Key](#managed-runtime-api-key)                                                                              |
+| [MRT](/cli/mrt) commands (most)                                                                    | MRT API Key                                                           | [MRT API Key](#managed-runtime-api-key)                                                                              |
+| [MRT](/cli/mrt) `bundle history`, `bundle deploy <id>`                                             | MRT API Key, or OAuth + SCAPI (`sfcc.storefront.deployments` / `.rw`) | [MRT API Key](#managed-runtime-api-key) or [SCAPI Scopes](#scapi-authentication)                                     |
 
 ::: tip Zero-Config for Platform Commands
 Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (Authorization Code + PKCE). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
@@ -504,24 +505,26 @@ As of B2C Commerce release 26.8, the SCAPI Admin APIs used here support stateles
 
 ### Scopes by Command
 
-| Command                                               | Required Scope                        | Reference                           |
-| ----------------------------------------------------- | ------------------------------------- | ----------------------------------- |
-| `b2c scapi schemas list/get`                          | `sfcc.scapi-schemas`                  | [SCAPI Schemas](/cli/scapi-schemas) |
-| `b2c scapi custom status`                             | `sfcc.custom-apis`                    | [Custom APIs](/cli/custom-apis)     |
-| `b2c ecdn` (read operations)                          | `sfcc.cdn-zones`                      | [eCDN](/cli/ecdn)                   |
-| `b2c ecdn` (write operations)                         | `sfcc.cdn-zones.rw`                   | [eCDN](/cli/ecdn)                   |
-| `b2c jobs` (read; e.g. `list`, `get`, `wait`)         | `sfcc.jobs` or `sfcc.jobs.rw`         | [Jobs](/cli/jobs)                   |
-| `b2c jobs` (write; e.g. `run`, `delete`)              | `sfcc.jobs.rw`                        | [Jobs](/cli/jobs)                   |
-| `b2c code list`                                       | `sfcc.scripts` or `sfcc.scripts.rw`   | [Code](/cli/code)                   |
-| `b2c code activate`, `code delete`                    | `sfcc.scripts.rw`                     | [Code](/cli/code)                   |
-| `b2c bm users list/get`                               | `sfcc.users` or `sfcc.users.rw`       | [BM](/cli/bm)                       |
-| `b2c bm users search`                                 | `sfcc.users` or `sfcc.users.rw`       | [BM](/cli/bm)                       |
-| `b2c bm users create/update/delete`                   | `sfcc.users.rw`                       | [BM](/cli/bm)                       |
-| `b2c bm roles list/get`                               | `sfcc.roles` or `sfcc.roles.rw`       | [BM](/cli/bm)                       |
-| `b2c bm roles create/delete/grant/revoke/permissions` | `sfcc.roles.rw`                       | [BM](/cli/bm)                       |
-| `b2c sites list`, `sites cartridges list`             | `sfcc.sites` or `sfcc.sites.rw`       | [Sites](/cli/sites)                 |
-| `b2c sites cartridges add/remove/set`                 | `sfcc.sites.rw`                       | [Sites](/cli/sites)                 |
-| Catalog discovery used by export/VS Code              | `sfcc.catalogs` or `sfcc.catalogs.rw` | [Jobs](/cli/jobs)                   |
+| Command                                               | Required Scope                         | Reference                             |
+| ----------------------------------------------------- | -------------------------------------- | ------------------------------------- |
+| `b2c scapi schemas list/get`                          | `sfcc.scapi-schemas`                   | [SCAPI Schemas](/cli/scapi-schemas)   |
+| `b2c scapi custom status`                             | `sfcc.custom-apis`                     | [Custom APIs](/cli/custom-apis)       |
+| `b2c ecdn` (read operations)                          | `sfcc.cdn-zones`                       | [eCDN](/cli/ecdn)                     |
+| `b2c ecdn` (write operations)                         | `sfcc.cdn-zones.rw`                    | [eCDN](/cli/ecdn)                     |
+| `b2c jobs` (read; e.g. `list`, `get`, `wait`)         | `sfcc.jobs` or `sfcc.jobs.rw`          | [Jobs](/cli/jobs)                     |
+| `b2c jobs` (write; e.g. `run`, `delete`)              | `sfcc.jobs.rw`                         | [Jobs](/cli/jobs)                     |
+| `b2c code list`                                       | `sfcc.scripts` or `sfcc.scripts.rw`    | [Code](/cli/code)                     |
+| `b2c code activate`, `code delete`                    | `sfcc.scripts.rw`                      | [Code](/cli/code)                     |
+| `b2c bm users list/get`                               | `sfcc.users` or `sfcc.users.rw`        | [BM](/cli/bm)                         |
+| `b2c bm users search`                                 | `sfcc.users` or `sfcc.users.rw`        | [BM](/cli/bm)                         |
+| `b2c bm users create/update/delete`                   | `sfcc.users.rw`                        | [BM](/cli/bm)                         |
+| `b2c bm roles list/get`                               | `sfcc.roles` or `sfcc.roles.rw`        | [BM](/cli/bm)                         |
+| `b2c bm roles create/delete/grant/revoke/permissions` | `sfcc.roles.rw`                        | [BM](/cli/bm)                         |
+| `b2c sites list`, `sites cartridges list`             | `sfcc.sites` or `sfcc.sites.rw`        | [Sites](/cli/sites)                   |
+| `b2c sites cartridges add/remove/set`                 | `sfcc.sites.rw`                        | [Sites](/cli/sites)                   |
+| Catalog discovery used by export/VS Code              | `sfcc.catalogs` or `sfcc.catalogs.rw`  | [Jobs](/cli/jobs)                     |
+| `b2c mrt bundle history` (SCAPI backend)              | `sfcc.storefront.deployments` or `.rw` | [MRT Backends](/cli/mrt#mrt-backends) |
+| `b2c mrt bundle deploy <id>` (SCAPI backend)          | `sfcc.storefront.deployments.rw`       | [MRT Backends](/cli/mrt#mrt-backends) |
 
 The CLI automatically requests these scopes. Your API client must have them in the Default Scopes list.
 
