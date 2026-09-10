@@ -68,6 +68,7 @@ interface SchemasListInput {
   includeSchemas?: boolean;
   /** If true, return full schema without collapsing (only works when includeSchemas=true) */
   expandAll?: boolean;
+  expandCustomProperties?: boolean;
 }
 
 /**
@@ -149,6 +150,7 @@ async function fetchSpecificSchema(params: {
     {
       params: {
         path: {organizationId, apiFamily: apiFamily!, apiName: apiName!, apiVersion: apiVersion!},
+        query: args.expandCustomProperties ? {expand: 'custom_properties'} : undefined,
       },
     },
   );
@@ -328,6 +330,10 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
           .boolean()
           .default(false)
           .describe('Return full uncompressed schema. Only when includeSchemas=true. Default: false.'),
+        expandCustomProperties: z
+          .boolean()
+          .default(false)
+          .describe('Include tenant custom property definitions when fetching a schema.'),
       },
       async execute(args, {services: svc}) {
         // Get client and organization ID

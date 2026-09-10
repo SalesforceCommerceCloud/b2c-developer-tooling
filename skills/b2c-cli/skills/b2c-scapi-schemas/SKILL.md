@@ -14,8 +14,11 @@ Shopper contracts. Read `skill://mcp/scapi/SKILL.md` via resource or `skills_rea
 first; pass `skillRead: true`. Discover method/path/operationId, then selected
 inputs and fields. No credentials or live Schemas API access needed.
 
-Use `scapi_schemas_list` for live schemas, custom attributes, and custom APIs;
-`scapi_custom_apis_get_status` for registration status. Live schema access needs
+Use `scapi_schemas_list` for live schemas, custom attributes, and custom APIs.
+For tenant fields, supply API family/name/version, `includeSchemas: true`, and
+`expandCustomProperties: true`; `expandAll: true` preserves full definitions.
+For large schemas, fetch/filter through code mode as described in the MCP SCAPI skill.
+Use `scapi_custom_apis_get_status` for registration status. Live schema access needs
 `sfcc.scapi-schemas`. Prefer a dedicated task tool for execution, otherwise
 `scapi_execute` supports Admin JSON calls with configured auth/scopes. Shopper,
 custom API, and binary execution are unsupported. Use docs tools for semantics
@@ -23,6 +26,9 @@ and limits rather than duplicating contract discovery.
 
 For CLI work, use `b2c scapi schemas list` and
 `b2c scapi schemas get <family> <name> <version>`; both use live access.
+CLI get expands custom properties by default; `--no-expand-custom-properties`
+requests the standard contract. MCP expansion is opt-in. Confirmed custom fields
+can be sent through standard Admin code-mode requests; no offline schema refresh is needed.
 `config_inspect` is the masked MCP equivalent of `b2c setup inspect`.
 Read [CLI examples](references/CLI-EXAMPLES.md) for filters, selective expansion,
 custom properties, and file output. There is no CLI code-mode equivalent.

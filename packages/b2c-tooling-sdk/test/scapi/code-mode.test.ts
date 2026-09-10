@@ -7,10 +7,8 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {createHash} from 'node:crypto';
 import {mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
-import {createRequire} from 'node:module';
-import {dirname, join} from 'node:path';
+import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {
   loadScapiSchemas,
@@ -136,19 +134,22 @@ describe('SCAPI code mode', function () {
     expect(aborted).to.equal(true);
   });
 
-  it('ships every inventoried schema intact and excludes custom APIs', () => {
-    const root = dirname(createRequire(import.meta.url).resolve('@salesforce/b2c-api-schemas/manifest.json'));
+  it('ships standard OpenAPI contracts without tenant custom properties or custom APIs', () => {
     const docs = loadScapiSchemas();
     expect(docs.length).to.be.greaterThan(40);
     expect(docs.some(({entry}) => entry.apiFamily === 'custom')).to.equal(false);
     for (const {entry, schema} of docs) {
-      expect(
-        createHash('sha256')
-          .update(readFileSync(join(root, entry.file)))
-          .digest('hex'),
-      ).to.equal(entry.sha256);
       expect(schema.openapi).to.match(/^3\./);
       expect(schema.paths).to.be.an('object');
+      const pending: unknown[] = [schema];
+      while (pending.length > 0) {
+        const node = pending.pop();
+        if (!node || typeof node !== 'object') continue;
+        for (const [key, value] of Object.entries(node)) {
+          expect(key.startsWith('c_'), `${entry.id}: tenant property ${key}`).to.equal(false);
+          pending.push(value);
+        }
+      }
     }
   });
 
@@ -328,7 +329,36 @@ describe('SCAPI code mode', function () {
     expect(result.diagnostic.code).to.equal('SCAPI_UNAUTHORIZED');
   });
 
-  it('creates a product and reads it back through real child execution and SDK HTTP middleware', async () => {
+  it('fetches tenant custom property definitions through managed code mode and filters the live schema', async () => {
+    server.use(
+      http.get(
+        'https://test.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/:organizationId/schemas/product/products/v1',
+        ({request: req, params}) => {
+          expect(params.organizationId).to.equal('f_ecom_test_001');
+          expect(new URL(req.url).searchParams.get('expand')).to.equal('custom_properties');
+          return HttpResponse.json({
+            components: {schemas: {Product: {properties: {id: {type: 'string'}, c_finish: {type: 'string'}}}}},
+          });
+        },
+      ),
+    );
+    const result = await runScapiCode({
+      organizationId: 'f_ecom_test_001',
+      request: request(),
+      code: `async () => {
+        const response = await scapi.request({
+          method: 'GET',
+          path: '/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/products/v1',
+          query: {expand: ['custom_properties']}
+        });
+        if (!response.ok) return response;
+        return response.data.components.schemas.Product.properties.c_finish;
+      }`,
+    });
+    expect(result).to.deep.equal({type: 'string'});
+  });
+
+  it('creates a product with a custom property and reads it back through real child execution and SDK HTTP middleware', async () => {
     let product: Record<string, unknown> | undefined;
     let puts = 0;
     server.use(
@@ -346,15 +376,16 @@ describe('SCAPI code mode', function () {
       const path = '/product/products/v1/organizations/' + organizationId + '/products/phase1-test';
       const before = await scapi.request({method: 'GET', path});
       if (before.status !== 404) throw new Error('Product already exists or cannot be inspected');
-      const created = await scapi.request({method: 'PUT', path, body: {id:'phase1-test', owningCatalogId:'master', name:{default:'Test product'}}});
+      const created = await scapi.request({method: 'PUT', path, body: {id:'phase1-test', owningCatalogId:'master', name:{default:'Test product'}, c_finish:'matte'}});
       if (!created.ok) throw new Error('Creation failed');
       const after = await scapi.request({method:'GET', path});
-      return {status:created.status, id:after.data.id, name:after.data.name.default};
+      return {status:created.status, id:after.data.id, name:after.data.name.default, c_finish:after.data.c_finish};
     }`;
     expect(await runScapiCode({code, organizationId: 'f_ecom_test_001', request: request()})).to.deep.equal({
       status: 201,
       id: 'phase1-test',
       name: 'Test product',
+      c_finish: 'matte',
     });
     expect(puts).to.equal(1);
     await rejects(() => runScapiCode({code, organizationId: 'f_ecom_test_001', request: request()}), 'already exists');

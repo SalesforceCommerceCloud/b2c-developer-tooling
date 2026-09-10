@@ -156,3 +156,7 @@ SDK through a regular dependency. Builds/CI use checked-in contracts; live Schem
 API access is optional enrichment. Refreshes need a schema-package changeset so
 native Changesets dependency propagation releases the SDK and MCP. Keep the
 manifest portable for consumers in other languages.
+Refresh without tenant custom-property expansion; test the bundle contains no
+tenant `c_*` definitions. Live schema reads may opt into `custom_properties` for
+the selected instance. Keep this separate from output collapsing and custom API
+execution support. Standard Admin bodies pass custom fields to SCAPI for validation.

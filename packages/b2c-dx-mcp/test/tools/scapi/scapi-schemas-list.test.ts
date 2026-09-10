@@ -288,6 +288,29 @@ describe('tools/scapi/scapi-schemas-list', () => {
       const {parsed} = parseResultContent(result);
       expect(parsed?.collapsed).to.be.false;
       expect(parsed?.schema).to.deep.include(fullSchema);
+      expect(mockGet.firstCall.args[1]?.params?.query).to.be.undefined;
+    });
+
+    it('requests tenant custom properties and preserves their definitions in full schemas', async () => {
+      const fullSchema = {
+        openapi: '3.0.0',
+        paths: {},
+        components: {schemas: {Product: {properties: {c_finish: {type: 'string', enum: ['matte', 'gloss']}}}}},
+      };
+      mockGet.resolves({data: fullSchema, response: {status: 200, statusText: 'OK'}});
+      const tool = createScapiSchemasListTool(() => services);
+      const result = await tool.handler({
+        apiFamily: 'product',
+        apiName: 'products',
+        apiVersion: 'v1',
+        includeSchemas: true,
+        expandCustomProperties: true,
+        expandAll: true,
+      });
+
+      expect(result.isError).to.be.undefined;
+      expect(mockGet.firstCall.args[1]?.params?.query).to.deep.equal({expand: 'custom_properties'});
+      expect(parseResultContent(result).parsed?.schema).to.deep.equal(fullSchema);
     });
 
     it('includes warning when status filter provided in fetch mode', async () => {

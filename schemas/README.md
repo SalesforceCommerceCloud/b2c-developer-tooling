@@ -5,8 +5,8 @@ The private workspace package is bundled with the TypeScript SDK. No npm access
 to this package is needed by consumers. Other languages can read these JSON files
 directly from a versioned repository snapshot.
 
-The manifest identifies API/version/status, relative file path, upstream source,
-and SHA-256. Contracts come from the SCAPI Schemas API without tenant custom
+The manifest identifies API/version/status, relative file path, and upstream source.
+Contracts come from the SCAPI Schemas API without tenant custom
 property expansion. Custom API contracts are excluded. Coverage is the complete
 standard listing returned by the source instance, including deprecated versions;
 the manifest is the exact supported inventory, not a claim about future APIs.

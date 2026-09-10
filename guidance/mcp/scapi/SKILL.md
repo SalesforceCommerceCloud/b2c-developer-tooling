@@ -25,8 +25,25 @@ can be huge. Return only what the next decision needs:
 
 Local refs expand; recursive/deep refs retain `$ref`. `op.auth.executable` means
 runtime support, not configured access; `op.security` gives scopes.
-For tenant custom fields/endpoints use `scapi_schemas_list`; check registration
-with `scapi_custom_apis_get_status`. Custom API execution is unsupported.
+
+### Tenant custom properties and APIs
+
+Bundled schemas omit tenant `c_*` definitions. For custom fields, fetch the target
+API's live schema with `scapi_schemas_list`: `includeSchemas: true`,
+`apiFamily`, `apiName`, `apiVersion`, and `expandCustomProperties: true`.
+`expandAll: true` retains full definitions; it is separate from custom-property
+expansion. Large contracts: fetch through `scapi_execute` and return only relevant
+fields ([example](references/custom-properties.md)). Requires `sfcc.scapi-schemas`.
+Use the same project/instance for schema lookup and writes.
+
+Pass confirmed `c_*` fields in standard Admin request bodies; SCAPI validates them.
+Live reads do not change offline `spec`. If schema access fails, report it; do not
+invent field names/types. The optional CLI equivalent is `b2c scapi schemas get`,
+which expands custom properties by default.
+
+For custom endpoint contracts, use `scapi_schemas_list` with `apiFamily: "custom"`;
+check registration with `scapi_custom_apis_get_status`. Custom API execution is
+unsupported even after reading its schema.
 
 ## Authentication
 

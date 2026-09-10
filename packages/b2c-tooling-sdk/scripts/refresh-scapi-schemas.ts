@@ -9,7 +9,6 @@ import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
 import {parseArgs, promisify} from 'node:util';
 import {execFile} from 'node:child_process';
-import {createHash} from 'node:crypto';
 import type {OpenApiSchema, SchemaListItem} from '../src/clients/scapi-schemas.js';
 
 const {values} = parseArgs({options: {'project-directory': {type: 'string'}, instance: {type: 'string'}}});
@@ -61,7 +60,6 @@ try {
       schemaVersion: entry.schemaVersion,
       status: entry.status,
       file,
-      sha256: createHash('sha256').update(content).digest('hex'),
       source: `https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/${id}`,
     });
     process.stdout.write(`Fetched ${id}\n`);

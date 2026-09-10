@@ -19,7 +19,6 @@ export interface ScapiSchemaEntry {
   schemaVersion: string;
   status: string;
   file: string;
-  sha256: string;
   source: string;
 }
 export interface ScapiSchemaDocument {
