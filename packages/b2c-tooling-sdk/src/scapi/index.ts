@@ -9,6 +9,14 @@ export {loadScapiSchemas, findScapiOperation, resolveScapiReference} from './cat
 export type {ApiDocument, ScapiSchemaEntry, ScapiSchemaDocument} from './catalog.js';
 export {runScapiCode} from './runtime.js';
 export type {ScapiCodeOptions} from './runtime.js';
+export {
+  loadBuiltinScapiSnippets,
+  loadScapiSnippets,
+  saveScapiSnippet,
+  getScapiSnippetDirectory,
+  initializeScapiSnippetStore,
+} from './snippets.js';
+export type {ScapiSnippet} from './snippets.js';
 export {createScapiRequest} from './request.js';
 export type {ScapiRequestOptions} from './request.js';
 export {getScapiAuthInfo} from './authentication.js';

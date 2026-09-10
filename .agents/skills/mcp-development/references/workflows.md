@@ -2,7 +2,9 @@
 
 Use this pattern for developer workflows and future administrator/merchant runbooks.
 Adapt the sections to the task; omit empty structure. Keep frontmatter descriptive
-and terse. Entrypoints should normally stay below 500 words; move conditional detail into references.
+and terse. Around 500 words is a useful entrypoint guideline, not a cap. Complex
+skills such as SCAPI can grow to preserve decision-relevant guidance; move long
+examples and conditional procedures into references.
 
 ## Decisions before procedures
 
@@ -79,3 +81,19 @@ projections. Move conditional procedures into linked references rather than
 making one workflow load an entire neighboring skill.
 Examples must use real tools and supported fields. Do not create scripts/assets
 as if the Markdown resource template executes or installs them.
+
+For code-mode recipes, start from demonstrated tasks, remove session-specific
+identifiers, and teach reusable sequences and result shapes. Keep long examples
+in conditional references. Compose known dependent calls; pause for unresolved
+intent or contracts. Preserve failed stages, completed writes, error messages,
+and continuation inputs. Test executable mutation examples against mocks,
+including existing records and uncertain verification. Recipes are examples to
+adapt, not transaction guarantees. Promote stable examples into parameterized
+SCAPI snippets when reuse is useful. Author executable source once under SDK
+`data/scapi-snippets`; the manifest supplies names, descriptions, effects, and
+input schemas. MCP guidance generation derives the built-in reference catalog.
+Use `builtin/` for released snippets, `user/` for explicit saves of completed
+executions. User storage follows injected oclif dataDir, with SDK fallback; never
+write into package files or infer a project from startup cwd. Named calls share
+request budgets, cancellation, authentication, and safety with the enclosing run.
+Saving source does not imply successful business verification or authorize reuse.

@@ -5,71 +5,83 @@ description: Discover standard SCAPI contracts, compose Admin requests, and veri
 
 # SCAPI Code Mode
 
-Prefer dedicated tools. For other Commerce API tasks, `scapi_search` discovers
-contracts; `scapi_execute` runs requests. Both take a JavaScript async arrow
-function, without TypeScript or imports. Read this skill once via resources or
-`skills_read`; then pass `skillRead: true`. Acknowledgment does not authorize mutations.
+Prefer dedicated tools. Otherwise discover with `scapi_search`, compose with
+`scapi_execute`. Use JavaScript async arrow functions; no TypeScript or imports.
+Read this skill once via resources or `skills_read`,
+then pass `skillRead: true`. This does not authorize mutations.
 
 ## Discover
 
-Discovery is offline; no credentials or Schemas API needed. Schemas and live
-responses can be huge. Inspect them in code; return only what the next decision needs.
+Discovery is offline; no credentials or Schemas API needed. Schemas and responses
+can be huge. Return only what the next decision needs:
 
-1. Find APIs with `spec.apis` or filter `spec.paths`; return method/path/operationId.
-2. Narrow by `api`, path, or `authType`. Inspect one operation's inputs, required
-   fields, and selected property definitions; inspect `allOf` when present.
-3. Inspect response fields only as needed. Avoid returning entire operations,
-   request/response trees, or recursively expanded schemas.
+1. Find APIs/operations through `spec.apis`/`spec.paths`; return method/path/operationId.
+2. Narrow by `api`, path, or `authType`; inspect required inputs and selected fields,
+   including `allOf` when present.
+3. Inspect response fields only as needed; avoid whole operations/schema trees.
 
-Tool descriptions provide object types and examples. Local refs are expanded;
-recursive/deep refs retain `$ref`. `op.auth.executable` is runtime support, not
-configured access; `op.security` gives scopes. Mixed auth matches either type.
-Tenant custom properties/endpoints are excluded; inspect live contracts
-with `scapi_schemas_list`, registration with `scapi_custom_apis_get_status`.
+Local refs expand; recursive/deep refs retain `$ref`. `op.auth.executable` means
+runtime support, not configured access; `op.security` gives scopes.
+For tenant custom fields/endpoints use `scapi_schemas_list`; check registration
+with `scapi_custom_apis_get_status`. Custom API execution is unsupported.
 
 ## Authentication
 
-- Admin `AmOAuth2`: Account Manager credentials; operation/tenant scopes are
-  requested automatically. Product creation needs `sfcc.products.rw`.
-- Missing Admin config: inspect masked values; configure `clientId` and credentials.
-  `slasClientId` is a separate Shopper identity.
-- Rejected scopes: grant the reported scopes to the Account Manager client;
-  check extra configured scopes too. Merely adding names to local config does
-  not grant access. Reported read/write alternatives are alternatives.
-- Shopper execution is unsupported; SLAS configuration cannot enable it.
-  SLAS administration uses admin roles. [SLAS CLI/SDK](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas).
-- HTTP 401/403 responses retain `status`/`data` and add `diagnostic` advice.
-  Preserve diagnostics. A 403 alone does not prove missing scopes.
+- Admin `AmOAuth2`: Account Manager credentials. Each request selects operation/tenant
+  scopes and reuses suitable cached tokens; no upfront scope union.
+- Missing credentials: `config_inspect` with masking. `clientId` is Admin;
+  `slasClientId` is Shopper. Configuration does not grant access.
+- Scope rejection: grant reported scopes in Account Manager; check extra configured
+  scopes. Read/write alternatives are alternatives. Later failures do not undo writes.
+- Shopper execution is unsupported; SLAS settings cannot enable it.
+  SLAS admin roles differ: [CLI/SDK](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas).
+- HTTP 401/403 retain `status`/`data` plus `diagnostic`; preserve these.
+  A 403 alone does not prove missing scopes.
 
-## Execute and verify
+## Compose and verify
 
-- Inspect unknown configuration with `config_inspect`; keep masking. Pass
-  `projectDirectory` to execution. `organizationId`/`siteId` use resolved values.
-- `scapi.request({method, path, query?, body?})` returns `{status, ok, data}`.
-  Encode path IDs with `encodeURIComponent`; `organizationId` placeholders
-  resolve automatically. SDK safety rules apply per request.
-- Product `PUT` also updates. GET first: proceed on 404; otherwise require update
-  intent. Resolve `owningCatalogId` from actual catalogs or the user. Read back.
-- Await every request. Check `ok`/`status`; HTTP errors are returned, transport or
-  auth/safety failures throw. SCAPI validates payloads.
-- Filter/page at the API; use `filter`, `map`, `slice`, and aggregates before
-  returning. Include totals/hasMore for partial lists, IDs and verification
-  fields for records, and status/data/diagnostic on errors. Omit unrelated fields.
-- Limits: 20 calls, four concurrent, 30 seconds, 24 KB returned data.
-  On oversized/truncated discovery, narrow the operation or fields; for live
-  reads, reduce the page/projection. Do not just stringify or crop the same payload.
-- After execution failure, check earlier writes before retrying. Confirmation-required
-  requests stop; no program replay or automatic cleanup deletion.
-- `READ_ONLY` also blocks POST searches. Use a targeted method/path allow rule
-  only when authorized; do not lower the whole policy to run a search.
-- Binary uploads/downloads are unsupported. Use a file-capable client when needed.
+- Pass the execution `projectDirectory`; reuse resolved `organizationId`/`siteId`.
+  Encode path IDs. `{organizationId}` placeholders resolve automatically.
+- Compose dependent calls with intermediate results and local helpers.
+  Pause for unresolved intent or contracts.
+- Sequence dependent writes; batch independent reads at most four at a time.
+  Await all requests. Map rejections to `{id, error: String(error)}`;
+  raw `Promise.allSettled()` reasons lose Error details in JSON.
+- PUT can create or update: check existence and intent; read back writes.
+- Check `ok`/`status`: HTTP errors return; transport/auth/safety failures throw.
+  Preserve completed writes and failed stages. Check writes before retrying;
+  no program replay or automatic cleanup deletion.
+- Filter/page at the API, then project/aggregate in code. Include IDs, verification
+  fields, errors, totals, and continuation inputs. Do not crop away missing data.
+- Limits: 20 calls, four concurrent, 30 seconds, 24 KB returned. Narrow oversized
+  discovery; reduce live pages/projections.
+- SDK safety applies per request, including POST searches. Use only authorized
+  targeted exceptions. Confirmation-required requests stop. Binary transfers
+  need a file-capable client.
 
-## Tool choice
+## Reusable workflows
 
-No CLI code-mode equivalent exists.
-Contract omits required settings, such as promotion discount rules? Use
-[XML archives](skill://b2c-cli/b2c-site-import-export/SKILL.md) when applicable;
-verify those settings, not just metadata. [CLI docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs).
+Find workflows with `codemode.search(query)`; `codemode.describe(name)`
+returns source/inputSchema. Inspect before first use; `codemode.run(name, input)`
+composes inside execution with shared limits/auth/safety. `builtin/` ships with
+the MCP; `user/` persists locally. [Catalog](references/snippets.md).
 
-Platform semantics: [SCAPI reference](https://developer.salesforce.com/docs/commerce/commerce-api/references).
-Configuration and access: [MCP setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration).
+Reuse a snippet when its inputs and verification cover the task. Otherwise adapt
+its source or compose direct requests; do not omit requested fields to fit a
+snippet. Inputs are schema-validated before invocation. Pass variable values
+through the tool's `input` to `async (input)` when preparing reusable code.
+Discover/describe inside either code tool; run snippets only inside `scapi_execute`.
+Saving requires an explicit user request and a reviewed outcome; a completed
+execution may still contain HTTP errors or partial failures.
+
+- [Products](references/products.md): basic creation, optional name/offline state, verify.
+- [Promotions](references/promotions.md): join assignments/details in bounded batches.
+- [Jobs](references/jobs.md): search failures, inspect a page, return continuation.
+
+For explicit save requests, see [saving](references/saving.md).
+
+No CLI code-mode equivalent. For missing settings such as promotion discounts,
+consider [XML archives](skill://b2c-cli/b2c-site-import-export/SKILL.md)
+([CLI docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs)).
+[Platform reference](https://developer.salesforce.com/docs/commerce/commerce-api/references).
+[Configuration/access](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration).

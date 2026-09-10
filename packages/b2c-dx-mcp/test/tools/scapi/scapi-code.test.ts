@@ -27,17 +27,19 @@ describe('SCAPI code tools', function () {
   it('requires skill acknowledgment before configuration or code execution on both tools', async () => {
     const load = stub().throws(new Error('Configuration must not load'));
     await Promise.all(
-      createScapiCodeTools(load).flatMap((tool) =>
-        [undefined, false].map(async (skillRead) => {
-          const result = await tool.handler({
-            code: 'async () => { throw new Error("PROGRAM_EXECUTED"); }',
-            ...(skillRead === undefined ? {} : {skillRead}),
-          });
-          expect(result.isError, tool.name).to.equal(true);
-          expect(readJson(result)).to.have.property('error').that.includes('SCAPI_SKILL_REQUIRED');
-          expect(readJson(result)).to.have.property('error').that.includes('skill://mcp/scapi/SKILL.md');
-        }),
-      ),
+      createScapiCodeTools(load)
+        .slice(0, 2)
+        .flatMap((tool) =>
+          [undefined, false].map(async (skillRead) => {
+            const result = await tool.handler({
+              code: 'async () => { throw new Error("PROGRAM_EXECUTED"); }',
+              ...(skillRead === undefined ? {} : {skillRead}),
+            });
+            expect(result.isError, tool.name).to.equal(true);
+            expect(readJson(result)).to.have.property('error').that.includes('SCAPI_SKILL_REQUIRED');
+            expect(readJson(result)).to.have.property('error').that.includes('skill://mcp/scapi/SKILL.md');
+          }),
+        ),
     );
     expect(load.called).to.equal(false);
   });
@@ -53,6 +55,45 @@ describe('SCAPI code tools', function () {
     expect(result.isError).not.to.equal(true);
     expect(readJson(result)).to.deep.equal({result: 'createProduct'});
     expect(load.called).to.equal(false);
+  });
+
+  it('saves the executed source on request and discovers it after server recreation', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'b2c-mcp-snippets-'));
+    try {
+      const config = createMockResolvedConfig({shortCode: 'test', tenantId: 'test_001'});
+      const load = () => Services.fromResolvedConfig(config);
+      const [, execute, save] = createScapiCodeTools(load, directory);
+      const code = 'async (input) => ({value: input.value})';
+      const completed = await execute.handler({skillRead: true, code, input: {value: 'transient-value'}});
+      expect(completed.isError).not.to.equal(true);
+      const executionId = readJson(completed).executionId;
+      const metadata = {
+        executionId,
+        name: 'user/echo-value',
+        description: 'Return a selected value.',
+        effect: 'read',
+        inputSchema: {type: 'object', properties: {value: {type: 'string'}}, required: ['value']},
+      };
+      const saved = await save.handler(metadata);
+      expect(readJson(saved)).to.deep.equal({result: {name: 'user/echo-value', saved: true}});
+      expect((await save.handler(metadata)).isError).to.equal(true);
+      const [search, reexecute, resave] = createScapiCodeTools(load, directory);
+      const described = readJson(
+        await search.handler({skillRead: true, code: "async () => codemode.describe('user/echo-value')"}),
+      ).result as {code: string};
+      expect(described.code).to.equal(code);
+      expect(described).not.to.have.property('input');
+      const rerun = await reexecute.handler({
+        skillRead: true,
+        code: "async () => codemode.run('user/echo-value', {value: 'new-value'})",
+      });
+      expect(readJson(rerun).result).to.deep.equal({value: 'new-value'});
+      expect(readJson(await resave.handler({...metadata, name: 'user/another'})).error).to.include(
+        'SCAPI_EXECUTION_NOT_FOUND',
+      );
+    } finally {
+      rmSync(directory, {recursive: true, force: true});
+    }
   });
 
   it('keeps nested schema discovery within the result budget without indentation inflation', async () => {

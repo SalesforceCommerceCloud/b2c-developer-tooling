@@ -8,9 +8,12 @@ import {spawn} from 'node:child_process';
 import type {ScapiSchemaDocument} from './catalog.js';
 import {SCAPI_WORKER_SOURCE} from './worker-source.js';
 import {describeScapiSchemas, type ScapiAuthType} from './authentication.js';
+import {createScapiSnippetResolver, loadBuiltinScapiSnippets, type ScapiSnippet} from './snippets.js';
 
 export interface ScapiCodeOptions {
   code: string;
+  input?: unknown;
+  snippets?: ScapiSnippet[];
   documents?: ScapiSchemaDocument[];
   authType?: ScapiAuthType;
   request?: (options: unknown, signal: AbortSignal) => Promise<unknown>;
@@ -29,6 +32,7 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
     throw new Error('Code must contain 1-32768 bytes.');
   if (options.signal?.aborted) throw new Error('SCAPI_EXECUTION_CANCELLED');
   const documents = describeScapiSchemas(options.documents ?? [], options.authType);
+  const resolveSnippet = createScapiSnippetResolver(options.snippets ?? loadBuiltinScapiSnippets());
   if (options.authType && !documents.length)
     throw new Error(
       `No ${options.authType} operations match this search. Omit authType to inspect all authentication requirements.`,
@@ -50,6 +54,7 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
     let outputBytes = 0;
     let calls = 0;
     let active = 0;
+    let snippetCalls = 0;
     let outcome: {value?: unknown; error?: Error} | undefined;
     const finish = (value?: unknown, error?: Error) => {
       if (settled) return;
@@ -84,13 +89,33 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
     });
     child.on('message', async (raw: unknown) => {
       if (settled || !raw || typeof raw !== 'object') return;
-      const message = raw as {type: string; id: number; value?: unknown; error?: string; options?: unknown};
+      const message = raw as {
+        type: string;
+        id: number;
+        value?: unknown;
+        error?: string;
+        options?: unknown;
+        operation?: string;
+        name?: string;
+        input?: unknown;
+      };
       if (message.type === 'result') return finish(message.value);
       if (message.type === 'error') return finish(undefined, new Error(message.error));
-      if (message.type !== 'request') return;
       const reply = (value?: unknown, error?: string) => {
         if (!settled && child.connected) child.send({type: 'reply', id: message.id, value, error}, () => {});
       };
+      if (message.type === 'snippet') {
+        try {
+          if (++snippetCalls > 100)
+            throw new Error('SCAPI_SNIPPET_LIMIT: at most 100 snippet operations per execution.');
+          if (message.operation === 'run' && !options.request) throw new Error('Use scapi_execute to run snippets.');
+          reply(resolveSnippet(message.operation ?? '', message.name ?? '', message.input));
+        } catch (error) {
+          reply(undefined, error instanceof Error ? error.message : String(error));
+        }
+        return;
+      }
+      if (message.type !== 'request') return;
       if (!options.request) return reply(undefined, 'Schema search cannot make SCAPI requests. Use scapi_execute.');
       if (++calls > 20) return reply(undefined, 'SCAPI_CALL_LIMIT: at most 20 requests per execution.');
       if (active >= 4) return reply(undefined, 'SCAPI_CONCURRENCY_LIMIT: at most four concurrent requests.');
@@ -109,6 +134,7 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
         ...options,
         documents,
         request: undefined,
+        snippets: undefined,
         signal: undefined,
         maxOutputBytes: Math.min(options.maxOutputBytes ?? 24_000, 65_536),
       },

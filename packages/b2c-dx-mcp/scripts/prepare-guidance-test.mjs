@@ -194,6 +194,15 @@ try {
   assert.notEqual(schemaSearch.isError, true, JSON.stringify(schemaSearch));
   assert.equal(schemaSearch.structuredContent, undefined);
   assert.equal(JSON.parse(schemaSearch.content[0].text).result, 'createProduct');
+  const snippetSearch = await request('tools/call', {
+    name: 'scapi_search',
+    arguments: {skillRead: true, code: "async () => codemode.describe('builtin/create-product')"},
+  });
+  assert.notEqual(snippetSearch.isError, true, JSON.stringify(snippetSearch));
+  const snippet = JSON.parse(snippetSearch.content[0].text).result;
+  assert.equal(snippet.name, 'builtin/create-product');
+  assert.ok(snippet.code.includes('async (input)'));
+  assert.deepEqual(snippet.inputSchema.required, ['productId', 'catalogId']);
   const resources = await request('resources/list');
   assert.deepEqual(resources.resources.map((resource) => resource.name).sort(), [
     'mcp/b2c-config',

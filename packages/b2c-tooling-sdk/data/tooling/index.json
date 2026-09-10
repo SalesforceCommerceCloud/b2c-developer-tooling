@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-09T03:10:33.366Z",
+  "generatedAt": "2026-09-10T14:23:03.470Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -449,7 +449,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md",
-      "headings": "Project and instance {#project-directory} • Credentials {#dw-json} • Environment variables {#env-file} • Managed Runtime credentials {#mrt-credentials} • Tool selection {#toolset-selection} • Launch options {#mcp-server-flags} • Documentation topics {#documentation-tools-restriction} • Logging and telemetry",
+      "headings": "Project and instance {#project-directory} • Credentials {#dw-json} • Environment variables {#env-file} • Managed Runtime credentials {#mrt-credentials} • Tool selection {#toolset-selection} • Launch options {#mcp-server-flags} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Logging and telemetry",
       "preview": "Choose the project, credentials, and tools available to your B2C Commerce coding assistant."
     },
     {

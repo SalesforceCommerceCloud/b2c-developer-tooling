@@ -15,9 +15,21 @@ import {
   type GuidanceManifest,
 } from '@salesforce/b2c-tooling-sdk/guidance';
 import {parseSkillFrontmatter} from '@salesforce/b2c-tooling-sdk/skills';
+import {loadBuiltinScapiSnippets} from '@salesforce/b2c-tooling-sdk/scapi';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(packageRoot, '../..');
+const snippetIndex =
+  '# Built-in SCAPI snippets\n\nGenerated from the shipped catalog. Discover user snippets with `codemode.search(query)`.\n' +
+  'Describe before first use: `await codemode.describe(name)`. Run through `scapi_execute`: `await codemode.run(name, input)`.\n' +
+  'All calls share the enclosing execution limits, configuration, and safety rules.\n\n' +
+  loadBuiltinScapiSnippets()
+    .map(
+      (snippet) =>
+        `## ${snippet.name}\n\n${snippet.description}\n\nEffect: ${snippet.effect}.\n\nInput JSON Schema:\n\n\`\`\`json\n${JSON.stringify(snippet.inputSchema)}\n\`\`\`\n`,
+    )
+    .join('\n');
+writeFileSync(join(repoRoot, 'guidance/mcp/scapi/references/snippets.md'), snippetIndex);
 const destination = join(packageRoot, 'content/guidance');
 const config = JSON.parse(readFileSync(join(repoRoot, 'guidance/collections.json'), 'utf8')) as {
   version: number;

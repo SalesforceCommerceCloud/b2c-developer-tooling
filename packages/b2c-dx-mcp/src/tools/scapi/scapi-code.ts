@@ -5,7 +5,14 @@
  */
 
 import {z} from 'zod';
-import {loadScapiSchemas, runScapiCode, createScapiRequest} from '@salesforce/b2c-tooling-sdk/scapi';
+import {randomUUID} from 'node:crypto';
+import {
+  loadScapiSchemas,
+  runScapiCode,
+  createScapiRequest,
+  loadScapiSnippets,
+  saveScapiSnippet,
+} from '@salesforce/b2c-tooling-sdk/scapi';
 import {toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
 import {getB2CConfigDirectory} from '@salesforce/b2c-tooling-sdk/config';
 import {resolveEffectiveSafetyConfig, loadGlobalSafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
@@ -17,20 +24,21 @@ import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.
 
 const code = z.string().min(1).max(32_768).describe('JavaScript async arrow function. Return a concise JSON result.');
 const skillRead = z.boolean().optional().describe('True after reading the linked SCAPI skill.');
+const snippetDescription = `\nSnippets: await codemode.search(query) returns up to 10 names/descriptions/effects; await codemode.describe(name) returns source/inputSchema. Prefixes: builtin/, user/.`;
 function requireScapiSkill(read: boolean | undefined): void {
   if (read !== true)
     throw new Error(
       'SCAPI_SKILL_REQUIRED: Read skill://mcp/scapi/SKILL.md through resources or skills_read, then retry with skillRead: true.',
     );
 }
-const searchDescription = `Discover bundled SCAPI APIs offline: products, catalogs, orders, customers, inventory, pricing, campaigns, promotions, jobs, and Shopper APIs. Prefer dedicated tools; code mode covers other API tasks.
+const searchDescription = `Discover bundled Admin/Shopper SCAPI contracts offline. Prefer dedicated tools when available.
 Read skill://mcp/scapi/SKILL.md first.
 
 Schemas can be huge. Discover operation IDs/paths first; then select required and task-relevant fields. Avoid whole operations or request/response trees. Local refs are expanded; recursive/deep refs remain $ref.
 
 Code objects (execute JavaScript, not these types):
 interface Operation {
-  api: string; operationId: string; summary?: string; description?: string; tags?: string[];
+  api: string; operationId: string; summary?: string;
   parameters: Array<{name: string; in: string; required?: boolean; schema?: unknown}>;
   requestBody?: {required?: boolean; content: Record<string, {schema: any}>};
   responses?: Record<string, unknown>;
@@ -61,6 +69,8 @@ async () => {
 const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin APIs when no dedicated tool fits. Discover endpoints with scapi_search, then call scapi.request(). JSON requests; no Shopper/custom API execution or binary transfers.
 Read skill://mcp/scapi/SKILL.md first.
 
+Reuse workflows with await codemode.run(name, input); describe before first use. Snippets share this execution's limits and configuration. async (input) receives the tool's input. executionId identifies source eligible for scapi_snippet_save during this server session; inspect the outcome before saving.
+
 Available in your code:
 declare const organizationId: string; // resolved tenant
 declare const siteId: string | undefined; // configured site
@@ -69,17 +79,13 @@ declare const scapi: {
     Promise<{status: number; ok: boolean; data: any; diagnostic?: {code: string; message: string}}>;
 };
 
-Use a JavaScript async arrow function; await requests. Responses can be huge: filter/map/slice in code; return counts, selected rows, and verification fields. Preserve failures and diagnostics. HTTP failures return ok:false; transport/auth/safety failures throw. Local Node execution; SDK safety rules apply. Check writes before retrying.
+Compose known dependent requests in one async arrow function; await requests and pass intermediate results directly. Responses can be huge: filter/map/slice in code; return counts, selected rows, and verification fields. Preserve failures and diagnostics. HTTP failures return ok:false; transport/auth/safety failures throw. Local Node execution; SDK safety rules apply. Check writes before retrying.
 
-Example: inspect one product
-async () => {
-  const r = await scapi.request({method: 'GET',
-    path: '/product/products/v1/organizations/' + organizationId + '/products/' + encodeURIComponent('test-product')});
-  return r.ok ? {status: r.status, id: r.data.id, catalog: r.data.owningCatalogId, online: r.data.online} : r;
-}`;
+Example: inspect a campaign's promotions
+async () => codemode.run('builtin/campaign-promotions', {campaignId: 'selected-campaign', limit: 4})`;
 
 function codeResult(
-  data: {result?: unknown; error?: string; skillReferences?: SkillReference[]},
+  data: {result?: unknown; executionId?: string; error?: string; skillReferences?: SkillReference[]},
   resolution?: ToolResolution,
 ): ToolResult {
   const result = resolution ? attachResolution(jsonResult(data, 0), resolution, 0) : jsonResult(data, 0);
@@ -103,7 +109,9 @@ function failure(error: unknown, resolution?: ToolResolution): ToolResult {
   };
 }
 
-export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
+export function createScapiCodeTools(loadServices: ServicesLoader, snippetDirectory?: string): McpTool[] {
+  // Retain only source for the last 50 completed executions, until this server ends.
+  const executions = new Map<string, string>();
   const searchInput = {
     code,
     skillRead,
@@ -113,12 +121,24 @@ export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
       .optional()
       .describe('Filter operations by authentication; mixed operations match either.'),
   };
-  const executeInput = {...createProjectContextInputSchema('configuration'), code, skillRead};
+  const executeInput = {
+    ...createProjectContextInputSchema('configuration'),
+    code,
+    skillRead,
+    input: z.unknown().optional().describe('JSON input for async (input); kept separate from saved source.'),
+  };
+  const saveInput = {
+    executionId: z.string().uuid(),
+    name: z.string().regex(/^user\/[a-z0-9][a-z0-9-]{0,79}$/),
+    description: z.string().min(1).max(500),
+    effect: z.enum(['read', 'write', 'destructive']),
+    inputSchema: z.record(z.string(), z.unknown()).describe('JSON Schema for the parameterized program input.'),
+  };
   return [
     {
       name: 'scapi_search',
       title: 'SCAPI Spec Search',
-      description: searchDescription,
+      description: searchDescription + snippetDescription,
       inputSchema: searchInput,
       toolsets: ['SCAPI', 'PWAV3', 'STOREFRONTNEXT'],
 
@@ -138,6 +158,7 @@ export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
               authType: input.authType,
               signal: context?.signal,
               timeoutMs: 10_000,
+              snippets: loadScapiSnippets(snippetDirectory),
             }),
           });
         } catch (error) {
@@ -148,7 +169,7 @@ export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
     {
       name: 'scapi_execute',
       title: 'SCAPI Code Executor',
-      description: executeDescription,
+      description: executeDescription + snippetDescription,
       inputSchema: executeInput,
       toolsets: ['SCAPI', 'PWAV3', 'STOREFRONTNEXT'],
 
@@ -161,6 +182,7 @@ export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
           const input = z.object(executeInput).strict().parse(args) as ProjectContextInput & {
             code: string;
             skillRead?: boolean;
+            input?: unknown;
           };
           requireScapiSkill(input.skillRead);
           const services = await loadServices(input);
@@ -194,10 +216,41 @@ export function createScapiCodeTools(loadServices: ServicesLoader): McpTool[] {
             siteId,
             cwd: resolution.projectDirectory?.path,
             signal: context?.signal,
+            input: input.input,
+            snippets: loadScapiSnippets(snippetDirectory),
           });
-          return codeResult({result}, resolution);
+          const executionId = randomUUID();
+          executions.set(executionId, input.code);
+          if (executions.size > 50) executions.delete(executions.keys().next().value!);
+          return codeResult({result, executionId}, resolution);
         } catch (error) {
           return failure(error, resolution);
+        }
+      },
+    },
+    {
+      name: 'scapi_snippet_save',
+      title: 'Save SCAPI Workflow',
+      description:
+        'Save a completed execution as a reusable user/ snippet only when the user asks. Inspect its outcome and source first; source must take variable values through input and contain no credentials. Saves source and metadata, not input or results. Existing names are not overwritten.',
+      inputSchema: saveInput,
+      toolsets: ['SCAPI', 'PWAV3', 'STOREFRONTNEXT'],
+      effect: 'write',
+      idempotent: false,
+      openWorld: false,
+      async handler(args) {
+        try {
+          const input = z.object(saveInput).strict().parse(args);
+          const source = executions.get(input.executionId);
+          if (!source)
+            throw new Error(
+              'SCAPI_EXECUTION_NOT_FOUND: only the last 50 completed executions in this server session can be saved. Do not replay writes just to save a snippet.',
+            );
+          const {executionId: _, ...metadata} = input;
+          saveScapiSnippet({...metadata, code: source}, snippetDirectory);
+          return codeResult({result: {name: input.name, saved: true}});
+        } catch (error) {
+          return failure(error);
         }
       },
     },

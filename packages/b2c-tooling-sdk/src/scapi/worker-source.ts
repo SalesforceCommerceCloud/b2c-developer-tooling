@@ -52,10 +52,29 @@ process.on('message', async message => {
     pending.set(id, {resolve, reject});
     send({type:'request', id, options});
   })};
+  const snippetCall = (operation, name, input) => new Promise((resolve, reject) => {
+    const id = ++sequence;
+    pending.set(id, {resolve, reject});
+    send({type:'snippet', id, operation, name, input});
+  });
+  let runningSnippets = 0;
+  const evaluate = (code, input) => new Function('spec', 'scapi', 'codemode', 'organizationId', 'siteId', 'input',
+    'return (' + code + ')(input);')(spec, scapi, codemode, message.organizationId, message.siteId, input);
+  const codemode = {
+    search: (query = '') => snippetCall('search', String(query)),
+    describe: name => snippetCall('describe', String(name)),
+    run: async (name, input) => {
+      if (runningSnippets >= 16) throw new Error('SCAPI_SNIPPET_LIMIT: at most 16 active snippet calls.');
+      runningSnippets++;
+      try {
+        const code = await snippetCall('run', String(name), input);
+        return await evaluate(code, input);
+      } finally { runningSnippets--; }
+    }
+  };
   try {
-    const fn = new Function('spec', 'scapi', 'organizationId', 'siteId', 'return (' + message.code + ')();');
-    const value = await fn(spec, scapi, message.organizationId, message.siteId);
-    if (pending.size) throw new Error('Await every scapi.request before returning. Requests may already have taken effect.');
+    const value = await evaluate(message.code, message.input);
+    if (pending.size || runningSnippets) throw new Error('Await every scapi.request and codemode call before returning. Requests may already have taken effect.');
     const json = JSON.stringify(value === undefined ? null : value);
     if (Buffer.byteLength(json) > message.maxOutputBytes) throw new Error('SCAPI_RESULT_TOO_LARGE: return fewer fields or a smaller page.');
     send({type:'result', value: JSON.parse(json)});

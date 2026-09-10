@@ -122,6 +122,19 @@ credentials and settings; use the client environment for startup options.
 `help-admin`, and `help-merchant`, separated by commas. Omit it to make all
 available topics accessible. It does not restrict bundled workflow skills.
 
+## Saved workflows {#saved-workflows}
+
+Built-in SCAPI workflows are included with the package. User-saved workflows live
+under `scapi/snippets/` in the shared B2C data directory, normally
+`~/.local/share/b2c` on macOS/Linux or `%LOCALAPPDATA%\b2c` on Windows. Oclif data
+directory overrides apply. This storage is shared across MCP clients and the B2C
+CLI installation; a separate client profile alone does not isolate it.
+
+Each user workflow is a JSON file containing JavaScript source, its description,
+and input schema. Back up these files to preserve your workflows; remove a file
+to remove that workflow. Existing names are not overwritten when saving. Built-in
+workflows update with the package and are separate from your saved files.
+
 ## Logging and telemetry
 
 Use `--log-level debug` temporarily when investigating a connection or

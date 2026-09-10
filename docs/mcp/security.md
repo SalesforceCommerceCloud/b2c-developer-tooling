@@ -126,6 +126,13 @@ a SLAS client does not enable Shopper execution in this preview. Authentication
 errors identify the relevant credentials or grants to check. A 403 can also mean
 missing instance access, rather than a missing API scope.
 
+Saved workflows execute local JavaScript with the same access as other code-mode
+programs. Save or install only source you trust. Saving retains source and metadata;
+it does not separately store execution inputs, responses, or credentials. Values
+written directly into the source remain in the saved file, so keep secrets out of
+workflow code. A workflow's read/write label describes its purpose; the selected
+project's safety policy still governs each SCAPI request, including POST searches.
+
 ## Telemetry {#telemetry}
 
 Telemetry is enabled by default. It records usage and diagnostic information,

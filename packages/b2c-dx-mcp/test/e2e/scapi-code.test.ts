@@ -5,6 +5,9 @@
  */
 
 import {expect} from 'chai';
+import {mkdtempSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {McpE2EClient} from './stdio-client.js';
 
 function readJson<T>(response: unknown): T {
@@ -28,6 +31,60 @@ describe('SCAPI code mode over stdio', function () {
       expect(tools.map(({name}) => name)).to.include.members(['scapi_search', 'scapi_execute']);
     } finally {
       await client.stop();
+    }
+  });
+
+  it('discovers built-ins and preserves explicitly saved workflows across stdio restarts', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'b2c-snippet-stdio-'));
+    const options = {
+      cwd: directory,
+      args: ['--tools', 'scapi_search,scapi_execute,scapi_snippet_save'],
+      env: {B2C_TEST_DATA_DIR: directory, SFCC_SHORTCODE: 'test', SFCC_TENANT_ID: 'test_001'},
+    };
+    const first = new McpE2EClient(options);
+    const second = new McpE2EClient(options);
+    try {
+      await first.start();
+      const discovered = readJson<{result: {results: {name: string}[]}}>(
+        await first.call('tools/call', {
+          name: 'scapi_search',
+          arguments: {skillRead: true, code: "async () => codemode.search('failed job')"},
+        }),
+      );
+      expect(discovered.result.results.map((s) => s.name)).to.include('builtin/failed-job-triage');
+      const completed = readJson<{executionId: string}>(
+        await first.call('tools/call', {
+          name: 'scapi_execute',
+          arguments: {skillRead: true, code: 'async (input) => input.value', input: {value: 42}},
+        }),
+      );
+      expect(completed.executionId).to.be.a('string');
+      const saved = readJson<{result: {saved: boolean}}>(
+        await first.call('tools/call', {
+          name: 'scapi_snippet_save',
+          arguments: {
+            executionId: completed.executionId,
+            name: 'user/selected-value',
+            description: 'Return the selected value.',
+            effect: 'read',
+            inputSchema: {type: 'object', required: ['value'], properties: {value: {type: 'number'}}},
+          },
+        }),
+      );
+      expect(saved.result.saved).to.equal(true);
+      await first.stop();
+      await second.start();
+      const rerun = readJson<{result: number}>(
+        await second.call('tools/call', {
+          name: 'scapi_execute',
+          arguments: {skillRead: true, code: "async () => codemode.run('user/selected-value', {value: 7})"},
+        }),
+      );
+      expect(rerun.result).to.equal(7);
+    } finally {
+      await first.stop();
+      await second.stop();
+      rmSync(directory, {recursive: true, force: true});
     }
   });
 
