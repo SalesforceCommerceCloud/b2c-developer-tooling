@@ -30,10 +30,12 @@
 import type {AuthStrategy, AuthMethod, AuthCredentials} from './types.js';
 import {ALL_AUTH_METHODS} from './types.js';
 import {OAuthStrategy} from './oauth.js';
+import {JwtOAuthStrategy} from './oauth-jwt.js';
 import {ImplicitOAuthStrategy} from './oauth-implicit.js';
 import {createUserAuthStrategy} from './oauth-pkce-fallback.js';
 import {BasicAuthStrategy} from './basic.js';
 import {ApiKeyStrategy} from './api-key.js';
+import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 
 /**
  * Options for resolving an auth strategy.
@@ -233,4 +235,74 @@ export function resolveAuthStrategy(
     `No valid auth method available. Allowed methods: [${allowedMethods.join(', ')}]. ` +
       `Missing credentials: ${details}`,
   );
+}
+
+/**
+ * Credentials for the non-interactive (system) OAuth flows — client-credentials
+ * and JWT Bearer. A superset of the OAuth fields shared by `NormalizedConfig`
+ * and `AuthConfig.oauth`, so either can be passed directly (extra fields are
+ * ignored by structural typing).
+ */
+export interface SystemOAuthCredentials {
+  clientId?: string;
+  clientSecret?: string;
+  scopes?: string[];
+  accountManagerHost?: string;
+  jwtCertPath?: string;
+  jwtKeyPath?: string;
+  jwtPassphrase?: string;
+}
+
+/**
+ * Builds a stateless, scope-flexible **system** OAuth strategy — client-credentials
+ * or JWT Bearer — or `undefined` when neither is fully configured.
+ *
+ * These are the only flows that can request arbitrary `sfcc.*` scopes from Account
+ * Manager per call (via the scope-cascade / additional-scopes hooks the SCAPI client
+ * factories rely on). Browser user-auth (PKCE/implicit) and fixed-token stored
+ * sessions are intentionally excluded, so this is the shared definition of
+ * "SCAPI-eligible auth" used by both {@link B2CInstance.scapiClientConfig} and
+ * `MrtCommand.getScapiMrtConfig`.
+ *
+ * Unlike {@link resolveAuthStrategy}, this handles JWT (which needs cert/key paths
+ * not present on {@link AuthCredentials}) and never throws — callers treat
+ * `undefined` as "not SCAPI-eligible". The Account Manager host default is applied by
+ * the strategy constructors, so `accountManagerHost` may be passed through as-is.
+ *
+ * @param credentials - The available system OAuth credentials.
+ * @param methods - Allowed methods in priority order. Defaults to
+ *   client-credentials before JWT, matching the CLI's auth priority.
+ * @returns The first eligible strategy, or `undefined` if none is configured.
+ */
+export function resolveSystemOAuthStrategy(
+  credentials: SystemOAuthCredentials,
+  methods: AuthMethod[] = ['client-credentials', 'jwt'],
+): AuthStrategy | undefined {
+  const {clientId, clientSecret, scopes, jwtCertPath, jwtKeyPath, jwtPassphrase} = credentials;
+  if (!clientId) {
+    return undefined;
+  }
+
+  // JwtOAuthConfig requires a defined host; OAuthStrategy applies the same
+  // default internally, so this stays consistent across both flows.
+  const accountManagerHost = credentials.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
+
+  for (const method of methods) {
+    if (method === 'client-credentials' && clientSecret) {
+      return new OAuthStrategy({clientId, clientSecret, scopes, accountManagerHost});
+    }
+
+    if (method === 'jwt' && jwtCertPath && jwtKeyPath) {
+      return new JwtOAuthStrategy({
+        clientId,
+        certPath: jwtCertPath,
+        keyPath: jwtKeyPath,
+        passphrase: jwtPassphrase,
+        accountManagerHost,
+        scopes,
+      });
+    }
+  }
+
+  return undefined;
 }

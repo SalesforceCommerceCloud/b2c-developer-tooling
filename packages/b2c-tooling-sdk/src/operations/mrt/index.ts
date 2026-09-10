@@ -126,7 +126,18 @@ export type {
 } from './env.js';
 
 // Deployment operations
-export {listDeployments, createDeployment} from './deployment.js';
+export {
+  listDeployments,
+  createDeployment,
+  listDeploymentsScapi,
+  createDeploymentScapi,
+  getDeploymentScapi,
+  waitForDeploymentScapi,
+  listMrtDeployments,
+  deployMrtBundle,
+  normalizeLegacyDeployment,
+  normalizeDeploymentScapi,
+} from './deployment.js';
 export type {
   ListDeploymentsOptions,
   ListDeploymentsResult,
@@ -134,7 +145,26 @@ export type {
   CreateDeploymentResult,
   MrtDeployment,
   MrtDeploymentCreate,
+  MrtDeploymentView,
+  MrtDeploymentsView,
+  MrtDeployResultView,
+  CreateDeploymentScapiResult,
+  DeploymentScapiPollInfo,
+  WaitForDeploymentScapiOptions,
+  ListMrtDeploymentsBackendOptions,
+  DeployMrtBundleBackendOptions,
 } from './deployment.js';
+
+// MRT backend selection and fallback
+export {resolveMrtBackend, runMrtWithFallback, mrtScapiUnavailableMessage} from './mrt-backend.js';
+export type {
+  MrtBackend,
+  MrtBackendPreference,
+  ScapiMrtConnection,
+  MrtBackendBranches,
+  MrtBackendRun,
+  RunMrtWithFallbackOptions,
+} from './mrt-backend.js';
 
 // Organization operations
 export {listOrganizations} from './organization.js';

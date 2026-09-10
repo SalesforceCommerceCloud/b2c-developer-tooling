@@ -165,6 +165,7 @@ export function extractMrtFlags(flags: ParsedFlags): ExtractedMrtFlags {
       mrtProject: flags.project as string | undefined,
       mrtEnvironment: flags.environment as string | undefined,
       mrtOrigin: cloudOrigin,
+      mrtBackend: flags['mrt-backend'] as NormalizedConfig['mrtBackend'],
     },
     options: {
       cloudOrigin,
