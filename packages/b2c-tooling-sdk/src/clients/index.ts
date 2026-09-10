@@ -443,6 +443,25 @@ export type {
   components as ScapiCatalogsComponents,
 } from './scapi-catalogs.js';
 
+// SCAPI Storefront family (storefront/*/v1) — the modern MRT backend. One
+// client per API; Deployments now, Environments + Storefronts to follow.
+export {createStorefrontDeploymentsClient, STOREFRONT_DEPLOYMENTS_CASCADE} from './storefront-deployments.js';
+export type {
+  StorefrontDeploymentsClient,
+  StorefrontDeploymentsClientConfig,
+  StorefrontDeploymentsError,
+  StorefrontDeploymentsResponse,
+  Bundle as StorefrontBundle,
+  BundleResult as StorefrontBundleResult,
+  BundleUploadResponse as StorefrontBundleUploadResponse,
+  Deployment as StorefrontDeployment,
+  DeploymentResult as StorefrontDeploymentResult,
+  DeploymentCreateRequest as StorefrontDeploymentCreateRequest,
+  DeploymentStatus as StorefrontDeploymentStatus,
+  paths as StorefrontDeploymentsPaths,
+  components as StorefrontDeploymentsComponents,
+} from './storefront-deployments.js';
+
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
 export {
   createScapiRequestError,
@@ -450,6 +469,7 @@ export {
   assertScapiAdminAuthSupported,
   isFallbackTrigger,
   isInvalidScopeError,
+  resolvePreferredBackend,
   resolveScapiOrOcapi,
   SAFE_SCAPI_FALLBACK_STATUSES,
   SCAPI_CAPABILITY_BASELINE_RELEASE,
@@ -460,7 +480,12 @@ export {
   scapiCapabilityUnsupportedMessage,
   withScopes,
 } from './scapi-backend-utils.js';
-export type {ApiBackendPreference, BackendBase, ResolveBackendOptions} from './scapi-backend-utils.js';
+export type {
+  ApiBackendPreference,
+  BackendBase,
+  ResolveBackendOptions,
+  ResolvePreferredBackendOptions,
+} from './scapi-backend-utils.js';
 export {createFallbackBackend} from './scapi-fallback-backend.js';
 export {createDualBackend} from './dual-backend-factory.js';
 export type {DualBackendConfig, DualBackendCtors, ScapiBackendCtorConfig} from './dual-backend-factory.js';
