@@ -69,36 +69,6 @@
       "anyOf": [
         {
           "not": {
-            "properties": {
-              "embedded": {
-                "enum": [
-                  true
-                ]
-              }
-            },
-            "required": [
-              "embedded"
-            ]
-          }
-        },
-        {
-          "properties": {
-            "arch_type": {
-              "enum": [
-                "headless"
-              ]
-            }
-          },
-          "required": [
-            "arch_type"
-          ]
-        }
-      ]
-    },
-    {
-      "anyOf": [
-        {
-          "not": {
             "required": [
               "component_id"
             ]
