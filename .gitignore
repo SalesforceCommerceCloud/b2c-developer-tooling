@@ -43,3 +43,6 @@ skills/eval/project/.git
 skills/eval/results-*.json
 # Python bytecode
 __pycache__/
+
+# Salesforce CLI local state
+.sf/

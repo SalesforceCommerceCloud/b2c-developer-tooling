@@ -68,6 +68,19 @@
       "category": "Productivity"
     },
     {
+      "name": "b2c-python-sdk",
+      "description": "Consuming the salesforce-b2c-tooling-sdk Python SDK — authenticate to B2C Commerce, resolve dw.json config, and call OCAPI/SCAPI/WebDAV clients and operations from scripts or notebooks.",
+      "source": {
+        "source": "local",
+        "path": "./skills/b2c-python-sdk"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
       "name": "b2c-dx-mcp",
       "source": {
         "source": "local",
