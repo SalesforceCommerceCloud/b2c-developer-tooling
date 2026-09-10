@@ -147,8 +147,10 @@ export async function runCLI(args: string[], options: CLIOptions = {}): Promise<
     env: {
       ...process.env,
       ...env,
-      SFCC_LOG_LEVEL: env.SFCC_LOG_LEVEL || process.env.SFCC_LOG_LEVEL || 'silent',
+      SFCC_LOG_LEVEL: env.SFCC_LOG_LEVEL || process.env.SFCC_LOG_LEVEL || 'debug',
     },
+    // Preserve stderr for assertions while also showing diagnostics in CI logs.
+    stderr: ['pipe', 'inherit'],
     reject: false,
     timeout,
     cwd,
