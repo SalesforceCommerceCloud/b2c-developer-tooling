@@ -81,11 +81,17 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 600;
   padding: 8px 12px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 6px;
+  border: 1px solid var(--vp-c-brand-1);
+  border-radius: 4px;
   white-space: nowrap;
+  transition:
+    background-color 0.15s linear,
+    border-color 0.15s linear;
 }
-.install-tools-trigger:hover {
+.install-tools-trigger:hover,
+.install-tools-trigger:focus-visible {
+  color: var(--vp-c-brand-2);
+  border-color: var(--vp-c-brand-2);
   background: var(--vp-c-brand-soft);
 }
 .install-tools-dialog {

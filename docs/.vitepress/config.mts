@@ -295,8 +295,9 @@ export default defineConfig({
     ],
 
     footer: {
-      message: 'Released under the Apache-2.0 License.',
-      copyright: `Copyright © ${new Date().getFullYear()} Salesforce, Inc.`,
+      message:
+        'Released under the <a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt">Apache-2.0 License</a>.',
+      copyright: `Copyright © 2024-${new Date().getFullYear()} Salesforce, Inc.`,
     },
 
     sidebar: {

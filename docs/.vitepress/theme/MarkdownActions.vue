@@ -121,7 +121,7 @@ async function copyMarkdown() {
   color: var(--vp-c-text-2);
   background: var(--vp-c-bg-soft);
   border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
   font-family: inherit;
@@ -136,7 +136,8 @@ async function copyMarkdown() {
   width: 100%;
 }
 
-.md-action:hover {
+.md-action:hover,
+.md-action:focus-visible {
   color: var(--vp-c-brand-1);
   border-color: var(--vp-c-brand-1);
   background: var(--vp-c-bg);
