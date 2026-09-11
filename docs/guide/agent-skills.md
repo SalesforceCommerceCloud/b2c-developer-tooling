@@ -262,7 +262,11 @@ individual skills. See [Setup Commands](/cli/setup) for all options.
 
 ### Add useful logging
 
+<ExamplePrompt>
+
 > Add logging to this checkout controller so I can diagnose failures without logging customer data or credentials.
+
+</ExamplePrompt>
 
 ![Screenshot placeholder: an assistant applying B2C Commerce logging guidance to a checkout controller.](/placeholders/skills-checkout-logging.svg)
 
@@ -270,7 +274,11 @@ The **B2C Commerce** collection covers cartridge development, including logging 
 
 ### Build an editable component
 
+<ExamplePrompt>
+
 > Create a Page Designer component for my Storefront Next project with an editable heading, image, and link.
+
+</ExamplePrompt>
 
 ![Screenshot placeholder: a Storefront Next Page Designer component with editable content, alongside the assistant's completion summary.](/placeholders/skills-page-designer.svg)
 
@@ -280,11 +288,23 @@ The **Storefront Next** collection covers components and Page Designer integrati
 
 Example requests for the installed collections:
 
+<ExamplePrompt>
+
 > Help me create a Custom API for loyalty information.
+
+</ExamplePrompt>
+
+<ExamplePrompt>
 
 > Add a new route with a loader to my Storefront Next app.
 
+</ExamplePrompt>
+
+<ExamplePrompt>
+
 > Convert this Figma frame into Page Designer components for my Storefront Next project.
+
+</ExamplePrompt>
 
 Live operations such as deployment also require the relevant
 [tools and credentials](./authentication). Skills provide guidance; installing

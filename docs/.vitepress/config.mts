@@ -102,6 +102,7 @@ const toolkitSidebar = [
         collapsed: true,
         items: [
           {text: 'Configuration', link: '/mcp/configuration'},
+          {text: 'MCP Tools', link: '/mcp/toolsets'},
           {text: 'Security and Access', link: '/mcp/security'},
         ],
       },
@@ -198,10 +199,6 @@ const referenceSidebar = [
       {text: 'Logging', link: '/cli/logging'},
     ],
   },
-  {
-    text: 'MCP',
-    items: [{text: 'MCP Tools', link: '/mcp/toolsets'}],
-  },
 ];
 
 export default defineConfig({
@@ -210,6 +207,14 @@ export default defineConfig({
     'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE Extension for Salesforce B2C Commerce',
   base: basePath,
   srcExclude: ['_partials/**'],
+
+  head: [['link', {rel: 'describedby', type: 'text/plain', href: `${basePath}llms.txt`}]],
+
+  transformPageData(pageData, {siteConfig}) {
+    if (!fs.existsSync(path.join(siteConfig.srcDir, pageData.relativePath))) return;
+    const head = (pageData.frontmatter.head ??= []);
+    head.push(['link', {rel: 'alternate', type: 'text/markdown', href: `${basePath}${pageData.relativePath}`}]);
+  },
 
   // Git-based "Last updated" timestamps (overridable per-page via frontmatter)
   lastUpdated: true,
@@ -291,9 +296,9 @@ export default defineConfig({
       formatOptions: {dateStyle: 'medium'},
     },
     nav: [
-      {text: 'Docs', link: '/', activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/cli/(?!overview)|/mcp/toolsets)/`},
+      {text: 'Docs', link: '/', activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/cli/(?!overview))/`},
       {text: 'Guides', link: '/guide/workflows', activeMatch: `^${guidesActiveMatch}`},
-      {text: 'Reference', link: '/cli/', activeMatch: '^/(cli/(?!overview)|mcp/toolsets)'},
+      {text: 'Reference', link: '/cli/', activeMatch: '^/cli/(?!overview)'},
       {
         text: 'SDKs',
         activeMatch: '^/api/',
@@ -303,13 +308,13 @@ export default defineConfig({
 
     footer: {
       message:
-        'Released under the <a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt">Apache-2.0 License</a>.',
+        'Released under the <a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt">Apache-2.0 License</a>.' +
+        ` LLM? Read <a href="${basePath}llms.txt">llms.txt</a>.`,
       copyright: `Copyright © 2024-${new Date().getFullYear()} Salesforce, Inc.`,
     },
 
     sidebar: {
       '/': toolkitSidebar,
-      '/mcp/toolsets': referenceSidebar,
       '/mcp/': toolkitSidebar,
       '/vscode-extension/': toolkitSidebar,
       '/cli/overview': toolkitSidebar,

@@ -1,13 +1,67 @@
 ---
 name: documentation
-description: Updating user guides, CLI reference, and API documentation for the B2C CLI project. Use when adding or changing CLI command docs, writing JSDoc for TypeDoc generation, updating Vitepress sidebar config, or creating new guide pages.
+description: Update toolkit documentation, navigation, and shared site components. Use for user guides, MCP pages, CLI reference, VitePress styling, and JSDoc for TypeDoc generation.
 metadata:
   internal: true
 ---
 
 # Documentation
 
-This skill covers updating documentation for the B2C CLI project.
+This skill covers documentation for the Agentic B2C Developer Toolkit.
+
+## Audience and Framing
+
+- Public docs explain capabilities, installation, configuration, and security.
+  Describe outcomes people can request from their assistant; keep agent tool
+  choreography, runtime internals, and implementation rationale in agent skills
+  or contributor docs. Include technical details when they affect a user's choice.
+- Say "B2C Commerce" rather than "Commerce" alone. Use "IDE Extension" for the
+  editor product. The TypeScript SDK is a supporting foundation, not a primary
+  toolkit product alongside CLI, IDE, and AI tools.
+- MCP tool references use compact tool-name/capability tables, access requirements,
+  meaningful limits, and example requests. Link shared configuration/authentication;
+  MCP Configuration covers MCP-specific settings only.
+- Prefer plugin installation where supported; keep manual setup and toolset
+  customization secondary. A brief linked mention of the Agent Plugins standard
+  is useful; manifest/schema details are not installation guidance.
+- MCP exposes skill guidance through `skills_read`; it does not install those
+  collections as native assistant skills. Separate skills installation is optional,
+  supported alongside MCP or alone. Show collections before their install examples.
+
+## Shared Visual Patterns
+
+Use the globally registered `ExamplePrompt` component for requests a reader can
+give their assistant:
+
+```markdown
+<ExamplePrompt>
+
+> Summarize this campaign's promotions and flag schedule conflicts.
+
+</ExamplePrompt>
+```
+
+Keep blank lines around the Markdown quote so VitePress parses it. The component
+provides the upright "Example prompt" label, chat icon, tinted background, and
+italic prompt text. Preserve the quote in Markdown exports. Ordinary quotations,
+notes, terminal commands, and agent instructions do not use this treatment.
+
+- Reuse `AssistantInstall` for client tabs and the shared MCP setup partials for
+  the MCP page and Install AI Tools dialog. Order: Claude, Codex, VS Code, Cursor,
+  OpenCode, Gemini. Keep full instructions in rendered HTML for search and no-JS
+  readers. Put supported install buttons inside their client tab, before instructions.
+- Use `DocCards` for capability links and `.workflow-feature` for an example
+  prompt paired with an image. Add screenshots or diagrams where they explain a
+  task, not to decorate every section. Use clearly labeled placeholders until real
+  captures are available. Research screenshots in `design-references/` stay uncommitted.
+- Preserve the site's Salesforce colors and shared typography. Verify visual
+  changes in the browser at desktop and mobile widths; source edits alone do not
+  establish that icons, wrapping, or spacing render correctly.
+- For clickable screenshots outside `public/`, import the image in the page's
+  `<script setup>` and bind the link's `:href` to that import. A plain Markdown
+  link to the source image can work in dev but 404 after Vite hashes the asset.
+  Check link targets in a production build with `DOCS_BASE_PATH=/pr-672/` (or
+  another subpath), not only in the dev server.
 
 ## Documentation Structure
 
@@ -259,6 +313,19 @@ pnpm run docs:build
 pnpm run docs:preview
 ```
 
+## Agent Discovery on the Docs Site
+
+`docs/public/llms.txt` is a curated agent entrypoint: CLI installation via `npx`,
+MCP/plugin setup, installed docs and skills tools, then selected Markdown references.
+Keep installation first and details terse; do not expand it into an exhaustive
+index or `llms-full.txt` bundle. Update it when setup or core capabilities change.
+
+The footer and HTML `rel="describedby"` link expose `llms.txt`. Each page has a
+`rel="alternate"` Markdown link matching View as Markdown. Source Markdown is
+exported at its existing path, with shared includes expanded; directory pages
+use `index.md`. Links in `llms.txt` are relative to its location so stable, dev,
+and PR previews stay self-contained. Check those references against built files.
+
 ## Guides Search Corpus (`b2c docs`)
 
 Separate from the Vitepress site above, the SDK bundles a search index that
@@ -390,47 +457,12 @@ Located in `typedoc.json`:
 
 When adding new SDK modules, add their barrel file to `entryPoints`.
 
-## Vitepress Configuration
+## VitePress Configuration
 
-Located in `docs/.vitepress/config.mts`:
-
-```typescript
-export default defineConfig({
-  title: 'B2C CLI',
-  base: '/b2c-developer-tooling/',
-
-  themeConfig: {
-    nav: [
-      { text: 'Guide', link: '/guide/' },
-      { text: 'CLI Reference', link: '/cli/' },
-      { text: 'API Reference', link: '/api/' },
-    ],
-
-    sidebar: {
-      '/guide/': [
-        {
-          text: 'Getting Started',
-          items: [
-            { text: 'Installation', link: '/guide/installation' },
-            { text: 'Authentication', link: '/guide/authentication' },
-          ],
-        },
-      ],
-      '/cli/': [
-        {
-          text: 'Commands',
-          items: [
-            { text: 'code', link: '/cli/code' },
-            { text: 'webdav', link: '/cli/webdav' },
-          ],
-        },
-      ],
-    },
-  },
-});
-```
-
-When adding new CLI commands or guide pages, update the sidebar config.
+Edit `docs/.vitepress/config.mts` for navigation and sidebar routing. Update both
+sidebar selection and top-nav `activeMatch` when moving a page between sections.
+Use existing theme components in `docs/.vitepress/theme/` rather than duplicating
+styles or installation content.
 
 ## Claude Code Skills (Plugin)
 
@@ -498,14 +530,18 @@ b2c <topic> <command> --flag value
 
 ## Navigation Structure
 
-**Top Navigation:**
-- Guide (`/guide/`)
-- CLI Reference (`/cli/`)
-- API Reference (`/api/`)
+- **Docs** (`/`): shared toolkit sidebar for getting started, CLI overview, IDE
+  Extension, and AI Tools. AI Tools contains MCP and Agent Skills; plugin setup
+  belongs on those pages, not a separate Plugins landing page.
+- **MCP** (`/mcp/`): overview and installation together; children are Configuration,
+  MCP Tools, and Security and Access, in that order.
+- **Guides** (`/guide/workflows`): task guides with their own expanded groups.
+- **Reference** (`/cli/`): CLI commands with their own sidebar.
+- **SDKs**: TypeScript SDK (`/api/`); TypeDoc generates its reference navigation.
 
-**Sidebar:**
-- Contextual based on section
-- API reference sidebar auto-generated from TypeDoc
+Keep sidebar labels aligned with page titles; concise entries such as MCP and
+Introduction are intentional. Preserve published URLs/anchors when reorganizing
+content. Unpublished branch-only pages need no redirect when removed.
 
 ## Style Guidelines
 

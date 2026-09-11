@@ -35,7 +35,11 @@ and other clients, see [Other clients](#other-clients).
 - **Debug:** investigate logs, set cartridge breakpoints, and inspect variables.
 - **Deploy:** publish cartridges and Managed Runtime storefront bundles.
 
+<ExamplePrompt>
+
 > Investigate this sandbox error using logs and local cartridge source. Explain the cause before changing code.
+
+</ExamplePrompt>
 
 ![Screenshot placeholder: Codex investigating a sandbox error using logs and cartridge source.](/placeholders/mcp-codex-debugging.svg)
 
@@ -44,9 +48,17 @@ and other clients, see [Other clients](#other-clients).
 [SCAPI code mode](./toolsets#scapi-code-mode) covers nearly 600 Salesforce Commerce API operations.
 Review campaigns and promotions, investigate job failures, or create products and assign catalog categories.
 
+<ExamplePrompt>
+
 > Show failed job executions from the last 24 hours, grouped by job. Highlight recurring failures.
 
+</ExamplePrompt>
+
+<ExamplePrompt>
+
 > Summarize the promotions in campaign spring-sale. Flag schedule conflicts and disabled promotions.
+
+</ExamplePrompt>
 
 Standard and custom Admin APIs support live requests. Shopper APIs are available for reference.
 

@@ -62,7 +62,11 @@ Connect your assistant to B2C Commerce tools, nearly 600 API operations, and wor
 
 Give your assistant the development patterns for your next storefront change.
 
+<ExamplePrompt>
+
 > Create a Page Designer component for my Storefront Next project with an editable heading, image, and link.
+
+</ExamplePrompt>
 
 [See Agent Skills in action](./guide/agent-skills#skills-in-action) &middot; [Storefront Next guide](./guide/storefront-next)
 
@@ -99,7 +103,11 @@ Automate builds, deployments, and other repeatable B2C Commerce tasks.
 
 Ask your assistant to review campaign schedules and identify what needs attention.
 
+<ExamplePrompt>
+
 > Summarize the promotions in campaign spring-sale. Flag schedule conflicts and disabled promotions.
+
+</ExamplePrompt>
 
 [Explore administrator and merchant tasks](./mcp/#administrator-and-merchant-tasks)
 

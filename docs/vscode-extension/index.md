@@ -2,13 +2,25 @@
 description: The official Salesforce B2C Commerce IDE Extension for VS Code, Cursor, and other VS Code-compatible editors — code sync, sandbox management, API exploration, and debugging.
 ---
 
+<script setup>
+import overviewImage from './images/overview.png';
+import debuggerImage from './images/script-debugger.png';
+import sandboxImage from './images/sandbox-explorer.png';
+import libraryImage from './images/library-explorer.png';
+import apiImage from './images/api-browser.png';
+</script>
+
 # B2C Commerce IDE Extension
 
 Build and debug B2C Commerce projects in **VS Code, Cursor, and other VS Code-compatible editors** with the official extension published by Salesforce. Manage sandboxes, sync cartridges, browse content libraries and SCAPI schemas, debug server-side scripts, and scaffold new projects from your editor. If your project already works with the [B2C CLI](../cli/overview), the extension picks up the same connection automatically.
 
 Available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension) and [Open VSX Registry](https://open-vsx.org/extension/salesforce/b2c-vs-extension). See [installation](./installation) for your editor.
 
-[![Salesforce B2C Commerce activity bar](./images/overview.png)](./images/overview.png)
+<a :href="overviewImage">
+
+![Salesforce B2C Commerce activity bar](./images/overview.png)
+
+</a>
 
 ## Highlights
 
@@ -20,7 +32,11 @@ Write storefront code with ISML syntax highlighting, snippets, formatting, tag c
 
 Step through anything that runs server-side: cartridge controllers, jobs, custom scripts, SCAPI hooks, and Custom APIs. Set breakpoints, drop log points, watch variables, and step in and out — the full debugger experience you'd expect from any other Node project.
 
-[![B2C Script Debugger](./images/script-debugger.png)](./images/script-debugger.png)
+<a :href="debuggerImage">
+
+![B2C Script Debugger](./images/script-debugger.png)
+
+</a>
 
 ### Scaffolding
 
@@ -30,7 +46,11 @@ Generate new cartridges, controllers, hooks, jobs, and other boilerplate from a 
 
 Spin up, start, stop, clone, and clean up your on-demand sandboxes from a tree view. Cloned sandboxes are clearly marked, and the right-click menu only shows actions that make sense for the sandbox's current state. From the Command Palette, **Start/Stop/Restart Sandbox** targets the active status-bar instance (OAuth + ODS sandbox hostname required).
 
-[![Sandbox Realm Explorer](./images/sandbox-explorer.png)](./images/sandbox-explorer.png)
+<a :href="sandboxImage">
+
+![Sandbox Realm Explorer](./images/sandbox-explorer.png)
+
+</a>
 
 ### Library Explorer
 
@@ -38,7 +58,11 @@ Find Page Designer pages and components fast, with one-click export (with assets
 
 **Content blocks** (reusable, shared `fragment.*` content) get a dedicated **Content Blocks** group under each library — the single source of truth where a block and its full child tree live. Wherever a page or component links a block, it appears as a reference (↗) that reveals the canonical block in the group when clicked, so a shared block is only ever edited in one place. (Converting a component into a content block is done in Business Manager / Page Designer.)
 
-[![Library Explorer](./images/library-explorer.png)](./images/library-explorer.png)
+<a :href="libraryImage">
+
+![Library Explorer](./images/library-explorer.png)
+
+</a>
 
 ### Cartridge Management and Code Watch/Upload
 
@@ -48,7 +72,11 @@ Edit cartridges locally and have changes show up on your sandbox automatically. 
 
 Explore every SCAPI API your instance exposes and try requests against them in a built-in Swagger UI. Authentication is handled for you using the same credentials your CLI already has.
 
-[![SCAPI API Explorer](./images/api-browser.png)](./images/api-browser.png)
+<a :href="apiImage">
+
+![SCAPI API Explorer](./images/api-browser.png)
+
+</a>
 
 ### WebDAV Browser
 
