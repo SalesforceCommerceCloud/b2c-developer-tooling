@@ -12,3 +12,5 @@ Add `storefront` as an alias for `project` across the `mrt` command surface, mat
 - `mrt bundle save` moved `--save-dir` from `-s` to `-d`, freeing `-s` for the storefront alias. **Update any scripts using `-s` for the save directory** (the long form `--save-dir` is unchanged).
 
 `mrt project get`, `update`, and `delete` accept the project slug **either** as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`; also honoring `MRT_PROJECT` and `dw.json`). Symmetrically, `mrt env create` and `mrt env delete` now accept the environment slug **either** as a positional argument **or** via `--environment` / `-e` (also honoring `MRT_ENVIRONMENT` and `dw.json`). An explicit positional still wins when both are given.
+
+Error messages surface the alias too: the "MRT project is required" errors now mention `--project` / `--storefront` (`-p` / `-s`), and passing a flag twice through an alias (e.g. `-p x -s y`) now reports which long and short forms refer to the same flag instead of the bare "can only be specified once".

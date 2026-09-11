@@ -75,7 +75,9 @@ export default class MrtNotificationGet extends MrtCommand<typeof MrtNotificatio
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     this.log(t('commands.mrt.notification.get.fetching', 'Fetching notification {{id}}...', {id}));
