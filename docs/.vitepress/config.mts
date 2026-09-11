@@ -71,7 +71,6 @@ const toolkitSidebar = [
       {text: 'Authentication', link: '/guide/authentication'},
       {text: 'Configuration', link: '/guide/configuration'},
       {text: 'Safety Mode', link: '/guide/safety'},
-      {text: 'Security', link: '/guide/security'},
     ],
   },
   {
@@ -131,6 +130,7 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
       {text: 'Script Debugger', link: '/guide/script-debugger'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Commerce Apps', link: '/guide/commerce-apps'},
+      {text: 'Security', link: '/guide/security'},
     ],
   },
   {

@@ -14,6 +14,7 @@ New to the toolkit? Start with the [Introduction](./index) for installation and 
 - [Script debugger](./script-debugger) - Debug server-side cartridge code in your editor.
 - [IDE integration](./ide-integration) - Connect editor tooling and Script API IntelliSense.
 - [Commerce Apps](./commerce-apps) - Develop and deploy Commerce App Packages.
+- [Security](./security) - Review toolkit security practices and dependency protections.
 
 ## Deployment and automation
 

@@ -1,6 +1,7 @@
 @import './salesforce-fonts.css';
 
 :root {
+  scrollbar-gutter: stable;
   --vp-layout-max-width: 100%;
   --vp-sidebar-width: 256px;
   --vp-nav-height: 112px;
@@ -155,6 +156,12 @@
   }
   :root .Layout .VPNavBarMenu > .VPNavBarMenuGroup {
     margin-left: auto;
+  }
+  :root .Layout .VPNavBarMenuGroup .text {
+    line-height: 24px;
+  }
+  :root .Layout .VPNavBarMenuGroup > .menu {
+    top: 100%;
   }
   :root .Layout .VPNavBarMenuLink,
   :root .Layout .VPNavBarMenuGroup .button {
