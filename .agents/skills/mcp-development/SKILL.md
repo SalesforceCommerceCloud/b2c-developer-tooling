@@ -13,6 +13,23 @@ description: Develop B2C MCP tools, resources, workflow skills, and runbooks. Us
 - `docs/mcp`: user capabilities, installation, configuration, and security.
   Tool references use capability/tool-name tables with shared access requirements.
   Keep parameters and agent choreography in schemas and skills.
+  Lead public setup with the agent plugin for compatible clients; put direct
+  registration and toolset customization second. Lead capabilities with developer
+  tasks, followed by administrator/merchant use cases and example prompts.
+  Use a short product description followed immediately by quick install. Put
+  full client setup on Installation and optional launch defaults under advanced
+  manual configuration. Public prose explains user outcomes, setup, access, and
+  limitations; omit routine agent decisions, discovery, and invocation procedures.
+  Changing a tool name to "ask your assistant" does not make agent choreography
+  user-facing. Keep tool names in reference tables and customization examples.
+  Sidebar labels identify destinations tersely (Introduction, Installation,
+  Tool Reference); page headings can be more descriptive. Order navigation by
+  user tasks and reuse the same MCP navigation across site sections.
+  Explain included native skills by linking to the Agent Skills & Plugins catalog.
+  MCP-specific operating skills are agent instructions, not a public capability
+  needing a separate page.
+  Name the platform B2C Commerce in public prose; preserve official product names
+  such as Salesforce Commerce API.
 
 For skill/runbook content, read [workflow authoring](references/workflows.md).
 For packaging and protocol details, read [the catalog contract](../../../guidance/README.md).

@@ -1,43 +1,33 @@
 # Salesforce B2C Commerce MCP Server
 
-Give your coding assistant Commerce documentation and workflow skills,
-cartridge and Managed Runtime deployment, script debugging, logs, and SCAPI
-discovery. Supports Codex, Claude Code, Cursor, GitHub Copilot, and other MCP
-clients.
+The B2C DX MCP Server provides B2C Commerce documentation, development skills,
+debugging, deployment, and API access for your AI assistant.
 
-## Install
+## Get started
 
-Requires Node.js 22.16 or later. Add this server command to your MCP client:
+**Install the B2C MCP plugin** for Codex, Claude Code, or GitHub Copilot.
+Choose your client in the
+[installation guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation).
+Requires Node.js 22.16 or later. Documentation and skills work without B2C Commerce
+credentials; connect an instance when you want to use live tools.
+
+Direct MCP registration is available for other clients or advanced configuration:
 
 ```bash
-npx -y @salesforce/b2c-dx-mcp@latest --project-directory /absolute/path/to/project
+npx -y @salesforce/b2c-dx-mcp@latest
 ```
 
-See the [installation guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation)
-for client-specific configuration and plugin installation.
+## Learn more
 
-## Capabilities and configuration
-
-All toolsets are enabled by default. Use `--toolsets` or `--tools` to customize
-what your assistant can access. Skills and documentation require no Commerce
-credentials. Deployment, debugging, and observability require the relevant
-instance or MRT access.
-
-- [Tools and capabilities](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets)
+- [What you can do](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/)
+- [Tool reference](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets)
 - [Configuration](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration)
-- [Workflow skills](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/skills)
+- [Agent Skills & Plugins](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills)
 - [Security and access](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security)
 
-To expose skills and documentation only:
-
-```bash
-npx -y @salesforce/b2c-dx-mcp@latest --tools skills_read,docs_search,docs_read,docs_list
-```
-
 Telemetry is enabled by default. Disable it with `SFCC_DISABLE_TELEMETRY=true`
-in your MCP client's server environment.
-
-For development and testing, see [CONTRIBUTING.md](./CONTRIBUTING.md).
+in the environment that launches the server. For development and testing,
+see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
