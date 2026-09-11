@@ -25,6 +25,7 @@ SITE_ARCHIVE_PATH="$SCRIPT_DIR/fixtures/site_archive"
 # Test configuration
 SITE_ID="TestSite"
 TTL_HOURS=4  # 4 hours in case test fails and needs manual cleanup
+FIRST_ODS_ID=""
 HTTP_DIAGNOSTICS_DIR=$(mktemp -d)
 
 # Keep response bodies on stdout for callers; log status and safe tracing headers on stderr.
@@ -69,6 +70,11 @@ cleanup() {
         $CLI ods delete "$ODS_ID" --force || true
     fi
 
+    if [ -n "$FIRST_ODS_ID" ]; then
+        echo "Deleting first sandbox: $FIRST_ODS_ID"
+        $CLI ods delete "$FIRST_ODS_ID" --force || true
+    fi
+
     rm -rf "$HTTP_DIAGNOSTICS_DIR"
     exit $exit_code
 }
@@ -84,9 +90,17 @@ echo "Short Code: $SFCC_SHORTCODE"
 echo ""
 
 ################################################################################
-# 1. Create On-Demand Sandbox
+# 1. Create On-Demand Sandboxes
 ################################################################################
-echo "Step 1: Creating on-demand sandbox..."
+echo "Step 1: Creating first sandbox to avoid testing on instance 001..."
+
+# Temporary workaround for SLAS 401s on instance 001. Only wait on the second sandbox.
+FIRST_ODS_RESULT=$($CLI ods create --realm "$TEST_REALM" --ttl "$TTL_HOURS" --json)
+FIRST_ODS_ID=$(echo "$FIRST_ODS_RESULT" | jq -er '.id | select(type == "string" and length > 0)')
+echo "First sandbox: $FIRST_ODS_ID"
+sleep 10
+
+echo "Creating and waiting for the second sandbox for testing..."
 
 ODS_CREATE_RESULT=$($CLI ods create \
     --realm "$TEST_REALM" \
@@ -288,14 +302,17 @@ echo ""
 ################################################################################
 # 10. Delete Sandbox
 ################################################################################
-echo "Step 10: Deleting sandbox..."
+echo "Step 10: Deleting both sandboxes..."
 
 $CLI ods delete "$ODS_ID" --force
 
 # Clear ODS_ID so cleanup doesn't try to delete again
 ODS_ID=""
 
-echo "SUCCESS: Sandbox deleted"
+$CLI ods delete "$FIRST_ODS_ID" --force
+FIRST_ODS_ID=""
+
+echo "SUCCESS: Both sandboxes deleted"
 echo ""
 
 ################################################################################
