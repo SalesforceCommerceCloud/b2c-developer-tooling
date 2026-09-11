@@ -23,6 +23,20 @@ investigations also need the [B2C CLI](./installation), Business Manager access,
 or information from an integration provider. See [authentication](./authentication)
 and [Safety Mode](./safety) for access and operation controls.
 
+## Understand settings and procedures
+
+Use [documentation search](../mcp/#b2c-commerce-documentation) to understand
+Business Manager settings, job behavior, and recovery procedures before making
+a change. The MCP includes Salesforce Help for administrators and merchants
+alongside developer references, so your assistant can explain the documented
+behavior and link to the source. Documentation questions need no instance access.
+
+<ExamplePrompt>
+
+> What should I check before rerunning a failed catalog import? Find the Salesforce guidance on import modes and job behavior, explain the risks to existing products, and link to the relevant pages.
+
+</ExamplePrompt>
+
 ## Review job health
 
 Check whether scheduled work completed its intended updates, including jobs

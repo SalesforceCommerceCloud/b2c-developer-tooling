@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-11T19:44:32.329Z",
+  "generatedAt": "2026-09-11T20:10:11.271Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -386,7 +386,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations.md",
-      "headings": "Get started • Review job health • Investigate checkout and failed orders • Escalate with useful evidence • Verify recovery",
+      "headings": "Get started • Understand settings and procedures • Review job health • Investigate checkout and failed orders • Escalate with useful evidence • Verify recovery",
       "preview": "Review job health, investigate checkout and failed orders, and prepare actionable handoffs with your AI assistant."
     },
     {
@@ -413,7 +413,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/script-debugger.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/script-debugger.md",
-      "headings": "Requirements • Choosing an interface • See Also",
+      "headings": "Requirements • Choosing an interface • Debug with your assistant • See Also",
       "preview": "Debug server-side B2C Commerce scripts (controllers, hooks, jobs, custom APIs) with the Script Debugger — via the VS Code extension, the CLI DAP debug adapter, or the MCP diagnostics tools."
     },
     {
@@ -485,7 +485,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.md",
-      "headings": "Set up your assistant {#setup} • Developer Tasks • Administrator and Merchant Tasks • Configuration and access • Tools and skills • Other clients {#other-clients} • Claude Desktop {#claude-desktop} • Copilot CLI {#copilot-cli} • ChatGPT online {#chatgpt} • Other MCP clients {#other-mcp-clients} • Updates and customization • Troubleshooting",
+      "headings": "Set up your assistant {#setup} • B2C Commerce documentation • Developer Tasks • Administrator and Merchant Tasks • Configuration and access • Tools and skills • Other clients {#other-clients} • Claude Desktop {#claude-desktop} • Copilot CLI {#copilot-cli} • ChatGPT online {#chatgpt} • Other MCP clients {#other-mcp-clients} • Updates and customization • Troubleshooting",
       "preview": "Connect your AI assistant to B2C Commerce tools, documentation, skills, and APIs."
     },
     {
@@ -503,7 +503,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Skills and documentation {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • B2C Commerce data and operations {#scapi-code-mode} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
+      "headings": "Documentation and skills {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • B2C Commerce data and operations {#scapi-code-mode} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
       "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {

@@ -11,7 +11,7 @@ New to the toolkit? Start with the [Introduction](./index) for installation and 
 
 - [Storefront Next](./storefront-next) - Set up a storefront development workflow.
 - [Scaffolding](./scaffolding) - Generate projects, cartridges, and components.
-- [Script debugger](./script-debugger) - Debug server-side cartridge code in your editor.
+- [Script debugger](./script-debugger) - Inspect live cartridge code with your editor or AI assistant.
 - [IDE integration](./ide-integration) - Connect editor tooling and Script API IntelliSense.
 - [Commerce Apps](./commerce-apps) - Develop and deploy Commerce App Packages.
 - [Security](./security) - Review toolkit security practices and dependency protections.

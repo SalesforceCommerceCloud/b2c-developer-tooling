@@ -29,19 +29,39 @@ Our plugins use the open [Agent Plugins standard](https://agent-plugins.org/).
 For [Claude Desktop](#claude-desktop), [Copilot CLI](#copilot-cli), [ChatGPT online](#chatgpt),
 and other clients, see [Other clients](#other-clients).
 
+## B2C Commerce documentation
+
+Ask your assistant to find and explain Salesforce documentation for the task
+at hand. Search spans the Script API, storefront and API guides, standard job
+steps, XML schemas, and Salesforce Help for administration and merchandising.
+Get help understanding code, planning a site change, or checking Business Manager
+settings, with links to the relevant references. No B2C Commerce credentials are needed.
+
+<ExamplePrompt>
+
+> How do promotion exclusivity and rank affect which discounts a shopper receives? Explain with an example and link to the Salesforce documentation.
+
+</ExamplePrompt>
+
+[Explore documentation search](./toolsets#documentation). Also available through
+the [B2C CLI](../cli/docs).
+
 ## Developer Tasks
 
 - **Build:** find platform documentation and apply B2C Commerce development patterns.
-- **Debug:** investigate logs, set cartridge breakpoints, and inspect variables.
+- **Debug:** investigate logs and inspect live cartridge execution with breakpoints, variables, and call stacks.
 - **Deploy:** publish cartridges and Managed Runtime storefront bundles.
 
 <ExamplePrompt>
 
-> Investigate this sandbox error using logs and local cartridge source. Explain the cause before changing code.
+> This controller returns the wrong result in my sandbox. Set a breakpoint and inspect the variables while I reproduce the request. Explain what happened, then resume execution and disconnect. Don't change the code.
 
 </ExamplePrompt>
 
-![Screenshot placeholder: Codex investigating a sandbox error using logs and cartridge source.](/placeholders/mcp-codex-debugging.svg)
+[Debug with your assistant](../guide/script-debugger#debug-with-your-assistant).
+Breakpoints pause requests; use a sandbox for debugging.
+
+![Screenshot placeholder: Codex inspecting a paused sandbox request, its call stack, and live cartridge variables.](/placeholders/mcp-codex-debugging.svg)
 
 ## Administrator and Merchant Tasks
 

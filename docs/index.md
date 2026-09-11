@@ -48,7 +48,7 @@ Deploy cartridges, run jobs, manage sandboxes, and automate your B2C Commerce wo
 Sync code, explore your instance, and debug server-side scripts in your editor.
 
 [![](/icons/mcp.svg) MCP / Agent Skills](./mcp/)
-Connect your assistant to B2C Commerce tools, nearly 600 API operations, and workflow skills.
+Connect your assistant to B2C Commerce documentation, live tools, nearly 600 API operations, and workflow skills.
 
 </DocCards>
 
@@ -82,8 +82,8 @@ Give your assistant the development patterns for your next storefront change.
 
 <DocCards>
 
-[Debug cartridge code](./guide/script-debugger)
-Set breakpoints and inspect server-side scripts in your editor.
+[Debug cartridge code](./guide/script-debugger#debug-with-your-assistant)
+Let your assistant inspect live variables and trace a failing request, or use your editor's debugger.
 
 [Deploy code and metadata](./guide/import-sets)
 Apply project configuration and metadata changes with import sets.
@@ -140,8 +140,8 @@ Query B2C Commerce data and turn operational reports into useful answers.
 
 <DocCards>
 
-[All Guides](./guide/workflows)
-Find practical workflows for development, deployment, administration, and migration.
+[Search B2C Commerce documentation](./mcp/#b2c-commerce-documentation)
+Ask your assistant about APIs, Business Manager, or merchandising, with references to Salesforce documentation.
 
 [CLI Extensions](./guide/third-party-plugins)
 Add integrations and commands to fit your team's workflow.

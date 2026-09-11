@@ -12,13 +12,21 @@ These tables list tool names for reference and for your client's tool controls.
 Optional [toolset customization](./configuration#toolset-selection) is covered
 at the end of this page.
 
-## Skills and documentation {#documentation}
+## Documentation and skills {#documentation}
 
-Available in every toolset. No B2C Commerce credentials required.
+**Find answers across Salesforce B2C Commerce references and guides from your assistant.**
+
+Look up Script API behavior, storefront patterns, API setup, standard job steps,
+and XML import/export formats. Salesforce Help adds Business Manager guidance
+for administrators and merchants: jobs, replication, access, catalogs, pricing,
+promotions, search, and content. Ask for an explanation applied to your task and
+links to the source documentation.
+
+Included in every toolset. No B2C Commerce credentials required.
 
 | Tool                 | Capability                                                                   |
 | -------------------- | ---------------------------------------------------------------------------- |
-| `skills_read`        | Browse, search, and read B2C Commerce, CLI, Storefront Next, and MCP skills. |
+| `skills_read`        | Find development, operations, CLI, Storefront Next, and MCP workflow skills. |
 | `docs_search`        | Find platform references, guides, Salesforce Help, and tooling docs.         |
 | `docs_read`          | Read a documentation article.                                                |
 | `docs_list`          | Browse documentation categories and titles.                                  |
@@ -26,18 +34,19 @@ Available in every toolset. No B2C Commerce credentials required.
 | `docs_schema_read`   | Read an XML schema.                                                          |
 | `docs_schema_list`   | List available XML schemas.                                                  |
 
-Your assistant can find and read guidance from our B2C Commerce, CLI, and
-Storefront Next [skill collections](../guide/agent-skills) through `skills_read`,
-without a separate skills installation.
-See [documentation topic settings](./configuration#documentation-tools-restriction)
-to customize documentation coverage.
+The included [skill collections](../guide/agent-skills) complement documentation
+with development patterns and operational workflows. No separate skills
+installation is needed.
 
 <ExamplePrompt>
 
-> Find the Script API reference for the method used here and explain its behavior
-> in this cartridge.
+> Check this catalog import XML against the B2C Commerce schema and documented import behavior. Explain what would be replaced or preserved before I run the import, and link to the references.
 
 </ExamplePrompt>
+
+Documentation search is also available through the [B2C CLI](../cli/docs).
+See [documentation topic settings](./configuration#documentation-tools-restriction)
+to customize coverage.
 
 ## Deployment {#cartridges}
 
@@ -55,6 +64,10 @@ Bundle publishing requires an [MRT API key and project](../guide/authentication#
 plus an environment when deploying.
 
 ## Debugging {#diagnostics}
+
+Let your assistant investigate what happens inside a running cartridge. It can
+pause at a breakpoint, inspect the call stack and variable values, and step
+through controllers, hooks, jobs, and custom API code to explain unexpected behavior.
 
 Available in DIAGNOSTICS, CARTRIDGES, and SCAPI. Requires a Business Manager user
 or access key with `WebDAV_Manage_Customization`; OAuth is unsupported.
@@ -76,10 +89,11 @@ sandbox and end sessions when finished. See [debugger access](./security#debugge
 
 <ExamplePrompt>
 
-> This request fails in my sandbox. Inspect the relevant cartridge code and
-> capture the variables at the failing line.
+> Pause at this line in my sandbox while I reproduce the request. Show which branch ran and the relevant variable values, then resume and disconnect. Don't modify the code.
 
 </ExamplePrompt>
+
+[See debugging with an assistant or IDE](../guide/script-debugger).
 
 ## Logs {#logs}
 
