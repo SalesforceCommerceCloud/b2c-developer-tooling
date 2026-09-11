@@ -130,8 +130,8 @@ type SsrRegion = (typeof SSR_REGIONS)[number];
 export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
   static args = {
     slug: Args.string({
-      description: 'Environment slug/identifier (e.g., staging, production)',
-      required: true,
+      description: 'Environment slug/identifier (e.g., staging, production; or provide it via --environment / -e)',
+      required: false,
     }),
   };
 
@@ -214,7 +214,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
   async run(): Promise<MrtEnvironment> {
     this.requireMrtCredentials();
 
-    const {slug} = this.args;
+    const slug = this.resolveEnvironmentSlug(this.args.slug);
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {

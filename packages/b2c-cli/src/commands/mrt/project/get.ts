@@ -50,7 +50,7 @@ export default class MrtProjectGet extends MrtCommand<typeof MrtProjectGet> {
 
   static args = {
     slug: Args.string({
-      description: 'Project slug (or provide it via --project / --storefront)',
+      description: 'Project slug (or provide it via --project / --storefront / -p / -s)',
       required: false,
     }),
   };

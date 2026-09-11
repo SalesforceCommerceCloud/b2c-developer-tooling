@@ -2,7 +2,7 @@
 
 Detailed reference for MRT project, member, and notification commands.
 
-> **`storefront` alias:** `mrt storefront` is an alias for `mrt project` (including `member` and `notification` subtopics), and `--storefront` is an alias for `--project` on every command that accepts it. The `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` environment variables work as fallbacks for `MRT_PROJECT` / `SFCC_MRT_PROJECT`. The alias matches SCAPI MRT API terminology; the `project` forms continue to work unchanged. Examples below use `project`, but `storefront` is interchangeable.
+> **`storefront` alias:** `mrt storefront` is an alias for `mrt project` (including `member` and `notification` subtopics), and `--storefront` / `-s` are aliases for `--project` / `-p` on every command that accepts it — all four are interchangeable. The `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` environment variables work as fallbacks for `MRT_PROJECT` / `SFCC_MRT_PROJECT`. The alias matches SCAPI MRT API terminology; the `project` forms continue to work unchanged. Examples below use `project`, but `storefront` is interchangeable. On `mrt project create`, this flag sets the new project's slug (auto-generated from the name if omitted).
 
 ## Project Management
 
@@ -16,12 +16,15 @@ b2c mrt project list --json
 
 ### Create Project
 
+The positional argument is the project **name**; `--organization` / `-o` is required. Choose the new project's slug with `--project` / `--storefront` (`-p` / `-s`); when omitted, MRT auto-generates it from the name.
+
 ```bash
-b2c mrt project create my-storefront --name "My Storefront"
-b2c mrt project create my-storefront --name "My Storefront" --organization my-org
+b2c mrt project create "My Storefront" --organization my-org
+b2c mrt project create "My Storefront" -o my-org --storefront my-storefront
+b2c mrt project create "My Storefront" -o my-org -s my-storefront --region us-east-1
 ```
 
-> **Slug as positional or flag:** `get`, `update`, and `delete` accept the project slug **either** as a positional argument **or** via `-p` / `--project` / `--storefront` (or `MRT_PROJECT` / `dw.json`). An explicit positional wins if both are given; at least one source must resolve.
+> **Slug as positional or flag:** `get`, `update`, and `delete` accept the project slug **either** as a positional argument **or** via `-p` / `-s` / `--project` / `--storefront` (or `MRT_PROJECT` / `dw.json`). An explicit positional wins if both are given; at least one source must resolve.
 
 ### Get Project Details
 
@@ -120,7 +123,7 @@ b2c mrt project notification create -p my-storefront \
 **Flags:**
 | Flag | Description |
 |------|-------------|
-| `--target`, `-t` | Target environment (can specify multiple) |
+| `--target`, `-t` | Target environment (can specify multiple). Aliases: `--environment`, `-e`. |
 | `--recipient`, `-r` | Email recipient (can specify multiple) |
 | `--on-start` | Notify when deployment starts |
 | `--on-success` | Notify when deployment succeeds |

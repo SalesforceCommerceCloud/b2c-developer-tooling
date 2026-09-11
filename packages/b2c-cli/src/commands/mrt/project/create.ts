@@ -89,7 +89,8 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
 
   static examples = [
     '<%= config.bin %> <%= command.id %> "My Storefront" --organization my-org',
-    '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org --slug my-storefront',
+    '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org --storefront my-storefront',
+    '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org -s my-storefront',
     '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org --region us-east-1',
   ];
 
@@ -99,10 +100,6 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
       char: 'o',
       description: 'Organization slug to create the project in',
       required: true,
-    }),
-    slug: Flags.string({
-      char: 's',
-      description: 'Project slug (auto-generated if not provided)',
     }),
     url: Flags.string({
       description: 'Project URL',
@@ -118,7 +115,10 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
     this.requireMrtCredentials();
 
     const {name} = this.args;
-    const {organization, slug, url, region} = this.flags;
+    const {organization, url, region} = this.flags;
+    // The new project's slug comes from the shared --project / --storefront (-p / -s)
+    // flag; when omitted the MRT API auto-generates one from the name.
+    const slug = this.resolvedConfig.values.mrtProject;
 
     this.log(
       t('commands.mrt.project.create.creating', 'Creating project "{{name}}" in {{organization}}...', {

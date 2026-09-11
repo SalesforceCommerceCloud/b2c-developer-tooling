@@ -69,7 +69,9 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     project: Flags.string({
       char: 'p',
       aliases: ['storefront'],
-      description: 'MRT project slug — the SCAPI MRT storefront ID (or set mrtProject in dw.json); alias: --storefront',
+      charAliases: ['s'],
+      description:
+        'MRT project slug — the SCAPI MRT storefront ID (or set mrtProject in dw.json); aliases: -s, --storefront',
       env: 'MRT_PROJECT',
       default: async () =>
         process.env.SFCC_MRT_PROJECT || process.env.MRT_STOREFRONT || process.env.SFCC_MRT_STOREFRONT || undefined,
@@ -82,7 +84,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       default: async () => process.env.SFCC_MRT_ENVIRONMENT || process.env.MRT_TARGET || undefined,
     }),
     'cloud-origin': Flags.string({
-      char: 'o',
+      char: 'u',
       description: `MRT cloud origin URL (or set mrtOrigin in dw.json; default: ${DEFAULT_MRT_ORIGIN})`,
       env: 'MRT_CLOUD_ORIGIN',
       default: async () => process.env.SFCC_MRT_CLOUD_ORIGIN || undefined,
@@ -190,7 +192,29 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       this.error(
         t(
           'error.mrtProjectRequired',
-          'MRT project is required. Provide it as an argument or via --project/--storefront (or set MRT_PROJECT, or mrtProject in dw.json).',
+          'MRT project is required. Provide it as an argument or via --project/--storefront (-p/-s) (or set MRT_PROJECT, or mrtProject in dw.json).',
+        ),
+      );
+    }
+    return slug;
+  }
+
+  /**
+   * Resolve the target MRT environment slug for a command that accepts it either
+   * as a positional argument or via the `--environment` / `--target` (`-e`) flag.
+   *
+   * An explicit positional wins; otherwise the resolved `--environment` /
+   * `--target` flag value is used (which also covers `MRT_ENVIRONMENT`,
+   * `SFCC_MRT_ENVIRONMENT`, `MRT_TARGET`, and the `mrtEnvironment` field in
+   * dw.json). Errors when neither yields a value.
+   */
+  protected resolveEnvironmentSlug(positional?: string): string {
+    const slug = positional ?? this.resolvedConfig.values.mrtEnvironment;
+    if (!slug) {
+      this.error(
+        t(
+          'error.mrtEnvironmentRequired',
+          'MRT environment is required. Provide it as an argument or via --environment/-e (or set MRT_ENVIRONMENT, or mrtEnvironment in dw.json).',
         ),
       );
     }
@@ -375,7 +399,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     const rawArgs = this._rawArgv;
     const legacyFlags: {name: string; tokens: string[]}[] = [
       {name: '--api-key', tokens: ['--api-key']},
-      {name: '--cloud-origin', tokens: ['--cloud-origin', '-o']},
+      {name: '--cloud-origin', tokens: ['--cloud-origin', '-u']},
       {name: '--credentials-file', tokens: ['--credentials-file', '-c']},
     ];
     return legacyFlags

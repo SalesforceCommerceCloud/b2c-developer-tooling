@@ -65,6 +65,10 @@ class TestMrtCommand extends MrtCommand<typeof TestMrtCommand> {
     return this.resolveProjectSlug(positional);
   }
 
+  public testResolveEnvironmentSlug(positional?: string) {
+    return this.resolveEnvironmentSlug(positional);
+  }
+
   public testMrtBackendPreference() {
     return this.mrtBackendPreference;
   }
@@ -191,14 +195,52 @@ describe('cli/mrt-command', () => {
     });
   });
 
+  describe('resolveEnvironmentSlug', () => {
+    it('returns the positional slug when provided', async () => {
+      stubParse(command, {'credentials-file': '/dev/null'});
+      await command.init();
+      expect(command.testResolveEnvironmentSlug('cli-positional')).to.equal('cli-positional');
+    });
+
+    it('falls back to the resolved --environment/--target flag value', async () => {
+      stubParse(command, {environment: 'flag-env', 'credentials-file': '/dev/null'});
+      await command.init();
+      expect(command.testResolveEnvironmentSlug()).to.equal('flag-env');
+    });
+
+    it('prefers an explicit positional over the flag value', async () => {
+      stubParse(command, {environment: 'flag-env', 'credentials-file': '/dev/null'});
+      await command.init();
+      expect(command.testResolveEnvironmentSlug('cli-positional')).to.equal('cli-positional');
+    });
+
+    it('errors when neither a positional nor the flag resolves a slug', async () => {
+      stubParse(command, {'credentials-file': '/dev/null'});
+      await command.init();
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        command.testResolveEnvironmentSlug();
+      } catch {
+        // Expected
+      }
+
+      expect(errorStub.calledOnce).to.be.true;
+      const message = errorStub.firstCall.args[0] as string;
+      expect(message).to.include('MRT environment is required');
+    });
+  });
+
   describe('flags', () => {
-    it('exposes --storefront as an alias of --project (long-form only, no -s)', () => {
+    it('exposes --storefront and -s as aliases of --project', () => {
       // stubParse bypasses real oclif parsing, so assert on the flag definition
       // directly to confirm the alias wiring survives.
       const projectFlag = MrtCommand.baseFlags.project as {aliases?: string[]; charAliases?: string[]};
       expect(projectFlag.aliases).to.include('storefront');
-      // --storefront is long-form only; -s stays free for --save-dir / --slug on subcommands.
-      expect(projectFlag.charAliases ?? []).to.not.include('s');
+      // -s is a short alias for the project/storefront on every mrt command; the
+      // command-level --slug (project create) / --save-dir (bundle save) win on
+      // those specific subcommands via oclif's command-flag precedence.
+      expect(projectFlag.charAliases ?? []).to.include('s');
     });
 
     it('offers auto/legacy/scapi on --mrt-backend and reads MRT_BACKEND', () => {
@@ -407,7 +449,7 @@ describe('cli/mrt-command', () => {
       // legacy branch *honors* these flags — so warning up front would be misleading.
       stubParse(command, {...SCAPI_FLAGS, 'client-id': 'client', 'client-secret': 'secret'});
       await command.init();
-      setRawArgv(command, ['-o', 'https://custom.example.com', '-c', '/tmp/.mobify']);
+      setRawArgv(command, ['-u', 'https://custom.example.com', '-c', '/tmp/.mobify']);
       const warnStub = sinon.stub(command, 'warn');
 
       command.testGetMrtBackendContext();
@@ -418,7 +460,7 @@ describe('cli/mrt-command', () => {
     it('warns under explicit --mrt-backend scapi when legacy flags are supplied', async () => {
       stubParse(command, {...SCAPI_FLAGS, 'client-id': 'client', 'client-secret': 'secret', 'mrt-backend': 'scapi'});
       await command.init();
-      setRawArgv(command, ['-o', 'https://custom.example.com']);
+      setRawArgv(command, ['-u', 'https://custom.example.com']);
       const warnStub = sinon.stub(command, 'warn');
 
       command.testGetMrtBackendContext();
@@ -444,7 +486,7 @@ describe('cli/mrt-command', () => {
       // Explicit legacy honors the flags, so the warning would be misleading.
       stubParse(command, {'mrt-backend': 'legacy', 'api-key': 'test-api-key'});
       await command.init();
-      setRawArgv(command, ['-o', 'https://custom.example.com']);
+      setRawArgv(command, ['-u', 'https://custom.example.com']);
       const warnStub = sinon.stub(command, 'warn');
 
       command.testGetMrtBackendContext();

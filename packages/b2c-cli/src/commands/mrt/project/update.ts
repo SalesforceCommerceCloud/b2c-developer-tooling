@@ -75,7 +75,7 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
 
   static args = {
     slug: Args.string({
-      description: 'Project slug (or provide it via --project / --storefront)',
+      description: 'Project slug (or provide it via --project / --storefront / -p / -s)',
       required: false,
     }),
   };

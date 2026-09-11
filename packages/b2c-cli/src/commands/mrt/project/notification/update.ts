@@ -8,6 +8,13 @@ import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {updateNotification, type MrtNotification} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
+// A notification "target" is a list of environment/target slugs — the same domain
+// as the base --environment flag, but multi-valued. These commands never read the
+// inherited single-value --environment, and its --target alias would collide with
+// this command's own --target. Drop the inherited flag and let --target carry the
+// environment vocabulary via its --environment / -e aliases instead.
+const {environment: _omitEnvironment, ...baseFlagsWithoutEnvironment} = MrtCommand.baseFlags;
+
 /**
  * Update a notification in an MRT project.
  */
@@ -20,6 +27,11 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
       required: true,
     }),
   };
+
+  // Cast: the runtime object legitimately omits `environment`; MrtCommand's narrow
+  // baseFlags type still lists it (a required prop the static-side check enforces),
+  // but this command never reads `this.flags.environment`.
+  static baseFlags = baseFlagsWithoutEnvironment as typeof MrtCommand.baseFlags;
 
   static description = withDocs(
     t('commands.mrt.notification.update.description', 'Update a Managed Runtime notification'),
@@ -34,10 +46,12 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
   ];
 
   static flags = {
-    ...MrtCommand.baseFlags,
     target: Flags.string({
       char: 't',
-      description: 'Target slug to associate with this notification (can be specified multiple times)',
+      aliases: ['environment'],
+      charAliases: ['e'],
+      description:
+        'Target environment slug for this notification (aliases: --environment, -e; can be specified multiple times)',
       multiple: true,
     }),
     recipient: Flags.string({

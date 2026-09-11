@@ -62,11 +62,10 @@ describe('mrt storefront alias', () => {
       expect(project.aliases).to.include('storefront');
     });
 
-    it('keeps -p as the short flag; --storefront is long-form only', () => {
-      const project = MrtCommand.baseFlags.project as {aliases?: string[]; char?: string};
+    it('keeps -p as the primary short flag and adds -s as a short alias', () => {
+      const project = MrtCommand.baseFlags.project as {aliases?: string[]; char?: string; charAliases?: string[]};
       expect(project.char).to.equal('p');
-      // Aliases are plain strings (no per-alias char), so --storefront has no short flag by construction.
-      expect(project.aliases).to.satisfy((a: unknown[]) => a.every((x) => typeof x === 'string'));
+      expect(project.charAliases ?? []).to.include('s');
     });
 
     it('mirrors the alias on the inline project flag of bundle save', () => {
@@ -75,15 +74,16 @@ describe('mrt storefront alias', () => {
     });
   });
 
-  describe('-s short flag is unchanged (no regression)', () => {
-    it('bundle save -s still means --save-dir', () => {
+  describe('-s freed for the project/storefront alias', () => {
+    it('bundle save moved --save-dir off -s to -d, freeing -s for the storefront alias', () => {
       const saveDir = MrtBundleSave.flags['save-dir'] as {char?: string};
-      expect(saveDir.char).to.equal('s');
+      expect(saveDir.char).to.equal('d');
+      const project = MrtBundleSave.flags.project as {charAliases?: string[]};
+      expect(project.charAliases ?? []).to.include('s');
     });
 
-    it('project create -s still means --slug', () => {
-      const slug = MrtProjectCreate.flags.slug as {char?: string};
-      expect(slug.char).to.equal('s');
+    it('project create no longer defines its own --slug flag', () => {
+      expect(MrtProjectCreate.flags).to.not.have.property('slug');
     });
   });
 

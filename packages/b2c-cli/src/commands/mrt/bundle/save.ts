@@ -42,13 +42,14 @@ export default class MrtBundleSave extends BaseCommand<typeof MrtBundleSave> {
     project: Flags.string({
       char: 'p',
       aliases: ['storefront'],
-      description: 'MRT storefront/project slug (alias: --storefront; or set MRT_PROJECT env var)',
+      charAliases: ['s'],
+      description: 'MRT storefront/project slug (aliases: --storefront, -s; or set MRT_PROJECT env var)',
       env: 'MRT_PROJECT',
       default: async () =>
         process.env.SFCC_MRT_PROJECT || process.env.MRT_STOREFRONT || process.env.SFCC_MRT_STOREFRONT || undefined,
     }),
     'save-dir': Flags.string({
-      char: 's',
+      char: 'd',
       description: 'Directory to save the bundle to',
       required: true,
     }),
