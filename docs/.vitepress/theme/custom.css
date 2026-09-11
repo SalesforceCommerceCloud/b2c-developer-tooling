@@ -1,5 +1,5 @@
 :root {
-  --vp-layout-max-width: 1600px;
+  --vp-layout-max-width: 100%;
   --vp-sidebar-width: 256px;
   --vp-nav-height: 112px;
   --vp-c-brand-1: #006fa4;
@@ -11,16 +11,16 @@
   --vp-home-hero-name-background: linear-gradient(135deg, #00a1e0 0%, #0070d2 100%);
 }
 
-/* One centered frame, with a wider overview and a bounded article + outline. */
+/* Full-width navigation; center the bounded page and outline beside the sidebar. */
 @media (min-width: 960px) {
   :root .Layout .VPContent.has-sidebar {
-    max-width: var(--vp-layout-max-width);
+    max-width: none;
     margin: 0 auto;
     padding-left: var(--vp-sidebar-width);
     padding-right: 0;
   }
   :root .Layout .VPSidebar {
-    left: max(0px, calc((100vw - var(--vp-layout-max-width)) / 2));
+    left: 0;
     width: var(--vp-sidebar-width);
     padding: calc(var(--vp-nav-height) + 24px) 24px 48px;
     background: var(--vp-c-bg);
@@ -32,12 +32,18 @@
   :root .Layout .VPDoc.has-sidebar {
     padding: 40px 40px 0;
   }
-  :root .Layout .VPDoc.has-sidebar .container {
+  :root .Layout .VPDoc.has-sidebar > .container {
     max-width: 1120px;
+  }
+  :root .Layout .VPDoc.has-aside > .container {
+    max-width: 984px;
   }
   :root .Layout .VPDoc.has-sidebar > .container > .content {
     min-width: 0;
     padding: 0 0 96px;
+  }
+  :root .Layout .VPDoc.has-aside > .container > .content {
+    max-width: 760px;
   }
   :root .Layout .VPDoc.has-aside .content-container {
     max-width: 760px;
@@ -46,6 +52,7 @@
     max-width: 1120px;
   }
   :root .Layout .VPDoc .aside {
+    flex-shrink: 0;
     max-width: 224px;
     padding-left: 32px;
   }
@@ -69,7 +76,7 @@
   :root .Layout .VPNavBar .container,
   :root .Layout .VPNavBar.has-sidebar .container {
     position: relative;
-    max-width: calc(var(--vp-layout-max-width) - 48px);
+    max-width: none;
   }
   :root .Layout .VPNavBar .container > .title,
   :root .Layout .VPNavBar.has-sidebar .container > .title {
