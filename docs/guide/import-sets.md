@@ -16,12 +16,15 @@ The command requires OAuth credentials to run the platform import job and WebDAV
 
 ## Import Sources and Order
 
-`b2c job import-set` considers two sources:
-
-1. Metadata supplied by discovered cartridges.
-2. Project migrations, from `./migrations` by default.
-
-All cartridge metadata is considered before project migrations. Cartridges are ordered by name, and archives within each source are sorted lexically.
+<figure class="workflow-diagram" aria-label="Import set ordering and execution">
+<ol>
+<li><strong>Cartridge metadata</strong><span>Ordered by cartridge name, then archive name</span></li>
+<li><strong>Project migrations</strong><span>Archives in <code>./migrations</code>, ordered by name</span></li>
+<li><strong>Skip completed archives</strong><span>Use the selected instance's import history</span></li>
+<li><strong>Apply pending archives</strong><span>Run in order; stop if an archive fails</span></li>
+</ol>
+<figcaption>Cartridge metadata comes first, followed by project migrations. Repeat runs skip successful imports.</figcaption>
+</figure>
 
 Run the command from the project root. If the project is elsewhere, use the global `--project-directory` flag.
 
@@ -98,6 +101,8 @@ Preview the complete plan without importing or changing import history:
 ```bash
 b2c job import-set --dry-run
 ```
+
+![Screenshot placeholder: B2C CLI import preview showing pending and completed imports in order.](/placeholders/cli-import-preview.svg)
 
 Apply pending archives:
 

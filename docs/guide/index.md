@@ -12,7 +12,7 @@ The Agentic B2C Developer Toolkit helps you and your AI assistant build, deploy,
 - **IDE Extension** — sandbox management, cartridge code sync, content libraries, SCAPI explorer, and a server-side script debugger.
 - **Tooling SDK** — typed TypeScript APIs for custom integrations and automation.
 
-## Quick CLI Install
+## CLI Install
 
 ::: code-group
 
@@ -30,16 +30,16 @@ brew install salesforcecommercecloud/tools/b2c-cli
 
 :::
 
-See the [CLI Installation Guide](./installation) for more installation options.
+See the [CLI Installation Guide](./installation) for more options and [Configuration](./configuration) to set up your projects and instances.
 
-## Quick MCP Install
+## MCP Install
 
-Install the **B2C MCP plugin** for your client.
+Choose your assistant. Use the **B2C MCP plugin** where supported.
 
 <!--@include: ../_partials/mcp-plugin-install.md-->
 
 Start a new session in your project. For **Copilot in VS Code**, other clients,
-and manual setup, see [installation](../mcp/installation).
+and manual setup, see [installation](../mcp/#setup).
 
 Documentation and skills work immediately without B2C Commerce credentials.
 Connected tasks use your [existing B2C configuration](../mcp/configuration).
@@ -47,7 +47,7 @@ Connected tasks use your [existing B2C configuration](../mcp/configuration).
 The MCP includes the B2C Commerce, B2C CLI, and Storefront Next skills from our
 [agent skills plugins](./agent-skills). No need to install those skills plugins separately.
 
-## Quick IDE Extension Install
+## IDE Extension Install
 
 The Salesforce B2C Commerce IDE Extension brings sandbox management, code sync, content libraries, the SCAPI explorer, and a server-side debugger into VS Code, Cursor, and other compatible editors. Open the Extensions view in your editor and search for **Salesforce B2C Commerce** — VS Code installs from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension), while Cursor, VSCodium, Windsurf, and other VS Code–compatible editors install from the [Open VSX Registry](https://open-vsx.org/extension/salesforce/b2c-vs-extension).
 

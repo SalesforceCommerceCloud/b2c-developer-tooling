@@ -35,6 +35,11 @@ function close() {
   dialog.value?.close();
 }
 
+function followSetupLink(event: MouseEvent) {
+  const link = (event.target as Element).closest('a');
+  if (link && new URL(link.href).origin === window.location.origin) close();
+}
+
 onMounted(() => {
   if (props.host) window.addEventListener('b2c-install-tools', open);
 });
@@ -62,10 +67,10 @@ onBeforeUnmount(() => {
             &#215;
           </button>
         </header>
-        <p>Install the B2C MCP plugin for B2C Commerce tools, documentation, and included skills.</p>
-        <PluginInstall />
-        <p>Start a new session after installation. No separate skills plugins needed.</p>
-        <a :href="withBase('/mcp/installation')" @click="close">Other clients and manual setup &rarr;</a>
+        <p>B2C Commerce tools, documentation, and skills for your assistant.</p>
+        <div @click="followSetupLink"><PluginInstall /></div>
+        <p>No separate skills plugins needed.</p>
+        <a :href="withBase('/mcp/#other-mcp-clients')" @click="close">Other clients and manual setup &rarr;</a>
         <footer>
           <a :href="withBase('/guide/installation')" @click="close">Install CLI</a>
           <a :href="withBase('/vscode-extension/installation')" @click="close">Install IDE extension</a>
@@ -95,7 +100,7 @@ onBeforeUnmount(() => {
   background: var(--vp-c-brand-soft);
 }
 .install-tools-dialog {
-  width: min(720px, calc(100vw - 32px));
+  width: min(840px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);
   max-height: calc(100dvh - 32px);
   margin: auto;

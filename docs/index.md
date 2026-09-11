@@ -1,5 +1,5 @@
 ---
-description: Tools and guides for building, debugging, deploying, and managing Salesforce B2C Commerce.
+description: Salesforce B2C Commerce tools for developers, administrators, and AI agents.
 pageClass: toolkit-overview
 aside: false
 outline: false
@@ -9,7 +9,7 @@ outline: false
 
 <div class="page-lead">
 
-Build, debug, deploy, and manage Salesforce B2C Commerce from your terminal, editor, or AI assistant.
+Salesforce B2C Commerce tools for developers, administrators, and AI agents.
 
 </div>
 
@@ -17,13 +17,13 @@ Build, debug, deploy, and manage Salesforce B2C Commerce from your terminal, edi
 
 <div class="cli-intro-copy">
 
-Build from your terminal. Manage code versions, check Custom APIs, run jobs, and automate everyday B2C Commerce tasks.
+Build storefronts, deploy code, investigate issues, and manage your sites from your terminal, editor, or AI assistant.
 
 <div class="overview-actions">
 
-<a class="primary-cta" href="./guide/installation">Install the B2C CLI</a>
+<a class="primary-cta" href="./guide/">Get started</a>
 
-[Get started](./guide/)
+<a class="secondary-cta" href="./guide/installation">Install the B2C CLI</a>
 
 </div>
 
@@ -47,20 +47,36 @@ Deploy cartridges, run jobs, manage sandboxes, and automate your B2C Commerce wo
 [![](/icons/editor.svg) IDE Extension](./vscode-extension/)
 Sync code, explore your instance, and debug server-side scripts in your editor.
 
-[![](/icons/mcp.svg) MCP](./mcp/)
-Debug, deploy, and manage B2C Commerce with nearly 600 API operations in your AI assistant.
-
-[![](/icons/skills.svg) Agent Skills](./guide/agent-skills)
-Explore expertise for B2C Commerce, B2C CLI, and Storefront Next. Included with the MCP or available through plugins.
+[![](/icons/mcp.svg) MCP / Agent Skills](./guide/agent-plugins)
+Connect your assistant to B2C Commerce tools, nearly 600 API operations, and workflow skills.
 
 </DocCards>
 
 ## Developer Tasks
 
-<DocCards>
+<div class="workflow-feature">
 
-[Develop a Storefront Next storefront](./guide/storefront-next)
-Set up your development environment and start building a storefront.
+<div>
+
+### Build with B2C Commerce skills
+
+Give your assistant the development patterns for your next storefront change.
+
+> Create a Page Designer component for my Storefront Next project with an editable heading, image, and link.
+
+[See Agent Skills in action](./guide/agent-skills#skills-in-action) &middot; [Storefront Next guide](./guide/storefront-next)
+
+</div>
+
+<figure>
+
+![Screenshot placeholder: a Page Designer component built with Storefront Next skills.](/placeholders/skills-page-designer.svg)
+
+</figure>
+
+</div>
+
+<DocCards>
 
 [Debug cartridge code](./guide/script-debugger)
 Set breakpoints and inspect server-side scripts in your editor.
@@ -75,6 +91,28 @@ Automate builds, deployments, and other repeatable B2C Commerce tasks.
 
 ## Administrator and Merchant Tasks
 
+<div class="workflow-feature">
+
+<div>
+
+### Review promotions before launch
+
+Ask your assistant to review campaign schedules and identify what needs attention.
+
+> Summarize the promotions in campaign spring-sale. Flag schedule conflicts and disabled promotions.
+
+[Explore administrator and merchant tasks](./mcp/#administrator-and-merchant-tasks)
+
+</div>
+
+<figure>
+
+![Screenshot placeholder: a campaign review showing promotion schedules and items to check before launch.](/placeholders/mcp-chatgpt-campaign.svg)
+
+</figure>
+
+</div>
+
 <DocCards>
 
 [Manage users and API clients](./guide/account-manager)
@@ -82,9 +120,6 @@ Review users, roles, organizations, and API access in Account Manager.
 
 [Investigate job failures](./mcp/toolsets#scapi-code-mode)
 Ask your assistant to review job executions and identify recurring failures.
-
-[Work with products and promotions](./mcp/toolsets#scapi-code-mode)
-Create products, assign catalog categories, and review campaign promotions with your assistant.
 
 [Explore analytics reports](./guide/analytics-reports-cip-ccac)
 Query B2C Commerce data and turn operational reports into useful answers.

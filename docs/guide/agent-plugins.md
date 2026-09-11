@@ -6,14 +6,15 @@ description: Install B2C Commerce tools and skills in your AI assistant with age
 
 Add B2C Commerce tools and expertise to your AI assistant.
 
-## Install the B2C MCP plugin <span class="recommended VPBadge">Recommended</span> {#install}
+## Set up the B2C MCP {#install}
 
-The B2C MCP plugin includes the MCP server and access to B2C Commerce, B2C CLI,
+The B2C MCP includes tools and access to B2C Commerce, B2C CLI,
 and Storefront Next skills. **No separate skills plugin installation is needed.**
+Choose plugin installation where your client supports it.
 
 <!--@include: ../_partials/mcp-plugin-install.md-->
 
-Start a new session after installation. See [MCP installation](../mcp/installation)
+Start a new session after installation. See [MCP installation](../mcp/#setup)
 for all clients and manual setup.
 
 ## Skills plugins
@@ -35,5 +36,5 @@ For standalone collection installation and updates, see the [client instructions
 ## Updates
 
 Use your client's plugin update controls to keep installed plugins current.
-See [installation and updates](../mcp/installation#updates-and-customization)
+See [installation and updates](../mcp/#updates-and-customization)
 for the B2C MCP plugin. Skills copied manually need to be [updated manually](./agent-skills#manual-installation).

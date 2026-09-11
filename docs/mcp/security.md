@@ -115,21 +115,3 @@ history. Requests made by an external client are outside MCP Safety Mode.
 Save or install only workflows you trust, and keep credentials out of their source.
 Saved workflows use the credentials and safety policy of the project where you
 run them.
-
-## Telemetry {#telemetry}
-
-Telemetry is enabled by default. It records usage and diagnostic information,
-including tool names, timing, lifecycle events, client/version information, and
-error messages. To disable it, set either `SFCC_DISABLE_TELEMETRY=true` or
-`SF_DISABLE_TELEMETRY=true` in the environment that launches the MCP server.
-
-For a directly configured server, add this alongside `command` and `args`:
-
-```json
-"env": {
-  "SFCC_DISABLE_TELEMETRY": "true"
-}
-```
-
-MCP diagnostic logs are separate from telemetry. Use debug logging temporarily
-and review logs before sharing them.

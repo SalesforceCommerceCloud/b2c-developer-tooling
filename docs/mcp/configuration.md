@@ -1,117 +1,67 @@
 ---
-description: Connect your B2C Commerce environments, reuse existing credentials, and customize your MCP setup when needed.
+description: Customize B2C MCP tools, documentation topics, startup defaults, and saved workflows.
 ---
 
-# Configuration
+# MCP Configuration
 
-Documentation and skills work as soon as you install the MCP. To read live data,
-debug, or deploy, connect the environments you want to use. If you already use
-the B2C CLI or IDE extension, the MCP can reuse that configuration.
+The MCP uses the same B2C Commerce configuration as the CLI and IDE extension.
+See [Configuration](../guide/configuration) for project files, environment variables,
+and named instances, and [Authentication](../guide/authentication) for credentials
+and API access. Documentation and skills need no B2C Commerce credentials.
 
-## Credentials {#dw-json}
+This page covers settings specific to running the MCP server.
 
-Use your project's `dw.json`, environment variables, or existing shared B2C
-configuration. Skills and documentation do not require B2C Commerce credentials.
-For connected operations, configure only the access you need:
+## Startup configuration {#advanced-manual-configuration}
 
-| Capability                     | Required access                                                                                                                                    |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cartridge deployment           | Instance hostname, code version, and WebDAV write credentials. Reloading also requires the relevant OCAPI access.                                  |
-| Instance logs                  | Instance hostname and WebDAV log-read credentials.                                                                                                 |
-| Script debugging               | Instance hostname and Business Manager username/password or access key with debugger permission. OAuth is not supported.                           |
-| SCAPI offline discovery        | No B2C Commerce credentials required.                                                                                                              |
-| SCAPI Admin execution          | Short code, tenant ID, and Account Manager client credentials with the operation's API scopes; for example, `sfcc.products.rw` to create products. |
-| SCAPI live schemas             | Short code, tenant ID, and OAuth client with `sfcc.scapi-schemas` scope.                                                                           |
-| Custom API registration status | Short code, tenant ID, and OAuth client with `sfcc.custom-apis` scope.                                                                             |
-| MRT bundles and logs           | MRT API key and project. Select an environment for deployment or live logs.                                                                        |
-
-See [authentication setup](../guide/authentication) for creating clients, setting
-scopes, and configuring WebDAV. See [configuration file formats](../guide/configuration#configuration-file)
-for `dw.json` examples and named instances. See [security](./security) before
-sharing credentials or enabling write operations.
-
-### Environment variables {#env-file}
-
-A project `.env` file can supply B2C and MRT configuration. For example:
-
-```dotenv
-SFCC_SERVER=your-sandbox.demandware.net
-SFCC_CODE_VERSION=your-code-version
-SFCC_CONFIG=./config/dw.json
-```
-
-Keep credential-bearing files out of version control. See the
-[environment variable reference](../guide/configuration#environment-variables)
-for authentication variables and precedence. Explicit launch flags and environment
-settings can override values in configuration files.
-
-### Managed Runtime credentials {#mrt-credentials}
-
-Provide `mrtApiKey`, `mrtProject`, and, where needed, `mrtEnvironment` in your
-B2C configuration. Existing `~/.mobify` credentials are also supported.
-`MRT_API_KEY`, `MRT_PROJECT`, and `MRT_ENVIRONMENT` are the corresponding
-environment variables. See [MRT authentication](../guide/authentication#managed-runtime-api-key).
-
-## Advanced manual configuration
-
-The plugin needs no project-path or toolset launch settings. The following
-options are for [manual installations](./installation) with custom defaults.
-
-### Fixed project and instance defaults {#project-directory}
-
-Optionally set `--project-directory /absolute/path/to/project` in the server's
-launch arguments. Use `--config` to choose a configuration file or `--instance`
-to choose a named instance. Relative configuration paths resolve from the
-project directory. These are defaults, not access restrictions.
-See [shared configuration](../guide/configuration) for file formats and named instances.
-
-### Choose available tools {#toolset-selection}
-
-The plugin's default setup includes all toolsets; no selection is needed.
-To choose specific tools or toolsets, use the names in the [tool reference](./toolsets).
-In a [direct installation](./installation), append either option to the server
-launch arguments:
+Plugin installation needs no additional launch settings. For a
+[manual installation](./#setup), add options to the server command in your client's
+MCP configuration. For example, to select two toolsets:
 
 ```bash
---toolsets CARTRIDGES,MRT
+npx -y @salesforce/b2c-dx-mcp@latest --toolsets CARTRIDGES,MRT
 ```
 
-```bash
---tools skills_read,docs_search,docs_read
-```
+Set startup environment variables in your MCP client's server configuration or
+the environment that launches it. Use that environment for toolset and documentation
+selection; project `.env` files supply per-project B2C configuration.
+Restart the MCP connection after changing startup settings.
 
-Explicit selection replaces the default of all toolsets. Combining `--toolsets` and
-`--tools` includes both selections. Valid toolsets are `CARTRIDGES`, `DIAGNOSTICS`,
-`MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, and `all`.
+### Project defaults {#project-directory}
 
-Skills and documentation are included with every toolset. When selecting
-individual tools, include `skills_read` to retain the included B2C Commerce skills
-and the documentation tools you want. Check your client's tool list after
-changing configuration: invalid names are ignored, and
-if no valid selection remains the server falls back to all toolsets.
+Your assistant can select a project or named instance for each task. To fix a
+startup default, use the shared `--project-directory`, `--config`, or `--instance`
+options. See [Configuration](../guide/configuration) for their values and file formats.
+These defaults do not restrict which projects the assistant can access.
 
-### Launch options {#mcp-server-flags}
+## Tools and toolsets {#toolset-selection}
 
-| Option                | Environment variable     | Use                                                         |
-| --------------------- | ------------------------ | ----------------------------------------------------------- |
-| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Set the default project directory.                          |
-| `--config`            | `SFCC_CONFIG`            | Select a B2C configuration file.                            |
-| `--instance`          | `SFCC_INSTANCE`          | Select a named instance.                                    |
-| `--toolsets`          | `SFCC_TOOLSETS`          | Enable toolsets, comma-separated.                           |
-| `--tools`             | `SFCC_TOOLS`             | Enable individual tools, comma-separated.                   |
-| `--docs-topics`       | `SFCC_DOCS_TOPICS`       | Limit documentation topics.                                 |
-| `--log-level`         | `SFCC_LOG_LEVEL`         | Set `trace`, `debug`, `info`, `warn`, `error`, or `silent`. |
+All toolsets are enabled by default. Use names from [MCP Tools](./toolsets) to
+choose a subset:
 
-Set launch environment variables in your MCP client's server configuration or
-the environment that starts the server. Project `.env` files supply per-project
-credentials and settings; use the client environment for startup options.
+| Option       | Environment variable | Selection                                                                |
+| ------------ | -------------------- | ------------------------------------------------------------------------ |
+| `--toolsets` | `SFCC_TOOLSETS`      | Comma-separated toolsets, such as `CARTRIDGES,MRT`.                      |
+| `--tools`    | `SFCC_TOOLS`         | Comma-separated tool names, such as `skills_read,docs_search,docs_read`. |
 
-### Documentation topics {#documentation-tools-restriction}
+Explicit selection replaces the default of all toolsets. Combining `--toolsets`
+and `--tools` includes both selections. Valid toolsets are `CARTRIDGES`,
+`DIAGNOSTICS`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, and `all`.
 
-`--docs-topics` accepts `script-api`, `job-step`, `commerce-api`,
-`pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`,
-`help-admin`, and `help-merchant`, separated by commas. Omit it to make all
-available topics accessible. It does not restrict bundled workflow skills.
+Toolsets include shared skills and documentation. When selecting individual tools,
+include `skills_read` for the skill collections and the documentation tools you
+want. Invalid names are ignored; if no valid selection remains, the server
+falls back to all toolsets.
+
+## Documentation topics {#documentation-tools-restriction}
+
+Use `--docs-topics` or `SFCC_DOCS_TOPICS` to select documentation topics,
+separated by commas:
+
+`script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`,
+`sfra`, `b2c-commerce`, `tooling`, `help-admin`, `help-merchant`.
+
+Omit this option to include all available topics. It does not restrict the
+included skills.
 
 ## Saved workflows {#saved-workflows}
 
@@ -124,9 +74,9 @@ up, copy the `scapi/snippets/` folder from your B2C data directory:
 These are the default locations; a custom B2C data directory changes the path.
 Built-in workflows update with the package and are separate from your saved files.
 
-## Logging and telemetry
+## Logging
 
 Use `--log-level debug` temporarily when investigating a connection or
 configuration problem. Review logs before sharing them.
 
-For telemetry settings and data handling, see [security](./security#telemetry).
+See [Security and Access](./security#protect-credentials-and-data) before sharing logs.

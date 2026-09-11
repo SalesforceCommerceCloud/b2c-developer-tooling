@@ -5,7 +5,7 @@ description: B2C Commerce MCP tool names, capabilities, and required access.
 # MCP Tools
 
 Use B2C Commerce documentation, deployment, debugging, and API tools from your
-assistant. The [plugin installation](./installation) includes all toolsets;
+assistant. The [plugin installation](./#setup) includes all toolsets;
 connected capabilities use the credentials you [configure](./configuration).
 
 These tables list tool names for reference and for your client's tool controls.
@@ -48,7 +48,7 @@ access. Check [deployment permissions](./security#deployments) before connecting
 
 ### Managed Runtime {#mrt}
 
-Bundle publishing requires an [MRT API key and project](./configuration#mrt-credentials),
+Bundle publishing requires an [MRT API key and project](../guide/authentication#managed-runtime-api-key),
 plus an environment when deploying.
 
 ## Debugging {#diagnostics}
@@ -144,6 +144,8 @@ Code mode includes reusable workflows for failed-job triage, campaign/promotion
 inspection, and basic product creation with an optional name, offline setting
 (offline by default), and storefront catalog category assignment. Assignment
 requires Catalogs API access, including `sfcc.catalogs.rw`.
+
+![Screenshot placeholder: Claude Code creating a product and verifying its storefront category assignment.](/placeholders/mcp-claude-product.svg)
 
 > Show failed job executions from the past week. Summarize the first three
 > failures and tell me whether there are more to investigate.
