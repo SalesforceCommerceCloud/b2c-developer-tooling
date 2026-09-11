@@ -105,6 +105,11 @@ b2c slas client create \
 
 Use `b2c slas token` to obtain a shopper access token for API testing. The `--site-id` is specific to the request and must be provided per call.
 
+The command applies shared HTTP middleware, including headers from `SFCC_EXTRA_HEADERS`
+(a JSON object) or `--extra-headers`, to authorization, login, and token requests.
+JSON output nests token fields under `response` (for example, `.response.accessToken`).
+For authentication failures, use `--log-level debug` to capture HTTP status and the SLAS response correlation ID.
+
 ```bash
 # Guest token with auto-discovery (finds first public SLAS client)
 b2c slas token --site-id RefArch

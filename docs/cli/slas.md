@@ -53,6 +53,11 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 
 Get a SLAS shopper access token for testing APIs.
 
+Shopper authorization, login, and token requests use the shared HTTP middleware.
+Custom headers configured through `SFCC_EXTRA_HEADERS` (a JSON object) or
+`--extra-headers` apply to every step of both guest and registered flows.
+Use `--log-level debug` to include SLAS response correlation IDs when diagnosing failures.
+
 ### Usage
 
 ```bash
@@ -124,12 +129,14 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ```json
 {
-  "accessToken": "...",
-  "refreshToken": "...",
-  "expiresIn": 1800,
-  "tokenType": "Bearer",
-  "usid": "...",
-  "customerId": "...",
+  "response": {
+    "accessToken": "...",
+    "refreshToken": "...",
+    "expiresIn": 1800,
+    "tokenType": "Bearer",
+    "usid": "...",
+    "customerId": "..."
+  },
   "clientId": "...",
   "siteId": "RefArch",
   "isGuest": true

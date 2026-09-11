@@ -10,6 +10,8 @@
  * @module slas/types
  */
 
+import type {MiddlewareRegistry} from '../clients/middleware-registry.js';
+
 /**
  * Response from SLAS token endpoints.
  */
@@ -27,6 +29,8 @@ export interface SlasTokenResponse {
  * Configuration for SLAS shopper token retrieval.
  */
 export interface SlasTokenConfig {
+  /** Defaults to the global HTTP middleware registry. */
+  middlewareRegistry?: MiddlewareRegistry;
   /** SCAPI short code */
   shortCode: string;
   /** Organization ID in f_ecom_xxxx_yyy format */
