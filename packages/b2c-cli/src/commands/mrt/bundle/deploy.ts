@@ -30,7 +30,7 @@ type ScapiDeploymentResult = Awaited<ReturnType<typeof waitForDeploymentScapi>>;
  * Deploy a bundle to Managed Runtime.
  *
  * Without bundleId: Creates a bundle from the local build directory and uploads it.
- * Optionally deploys to a target environment if --environment is specified.
+ * Optionally deploys to an environment if --environment is specified.
  * The local-build path is legacy-pinned (bundle upload is not part of the SCAPI
  * MRT surface yet), so it runs against the MRT Cloud API regardless of backend.
  *
@@ -309,7 +309,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
 
       if (this.flags.wait) {
         if (!target) {
-          this.warn('--wait was specified but no environment target was provided. Skipping wait.');
+          this.warn('--wait was specified but no environment was provided. Skipping wait.');
           return result;
         }
         return this.waitForDeployment(project, target);

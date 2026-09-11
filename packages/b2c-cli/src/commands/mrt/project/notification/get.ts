@@ -24,7 +24,7 @@ function printNotificationDetails(notification: MrtNotification, project: string
   ui.div('');
   ui.div({text: 'ID:', width: labelWidth}, {text: notification.id ?? ''});
   ui.div({text: 'Project:', width: labelWidth}, {text: project});
-  ui.div({text: 'Targets:', width: labelWidth}, {text: notification.targets?.join(', ') ?? '-'});
+  ui.div({text: 'Environments:', width: labelWidth}, {text: notification.targets?.join(', ') ?? '-'});
   ui.div({text: 'Recipients:', width: labelWidth}, {text: notification.recipients?.join(', ') ?? '-'});
   ui.div({text: 'Events:', width: labelWidth}, {text: events.join(', ') || '-'});
 

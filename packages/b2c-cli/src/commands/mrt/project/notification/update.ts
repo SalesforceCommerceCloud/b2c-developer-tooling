@@ -8,11 +8,11 @@ import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {updateNotification, type MrtNotification} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
-// A notification "target" is a list of environment/target slugs — the same domain
-// as the base --environment flag, but multi-valued. These commands never read the
-// inherited single-value --environment, and its --target alias would collide with
-// this command's own --target. Drop the inherited flag and let --target carry the
-// environment vocabulary via its --environment / -e aliases instead.
+// A notification's environments are a list of environment slugs — the same domain
+// as the base --environment flag, but multi-valued. This command never reads the
+// inherited single-value --environment, and its own multi-valued --environment flag
+// would collide with it, so drop the inherited one. The old --target / -t forms are
+// retained as aliases for back-compat.
 const {environment: _omitEnvironment, ...baseFlagsWithoutEnvironment} = MrtCommand.baseFlags;
 
 /**
@@ -46,12 +46,11 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
   ];
 
   static flags = {
-    target: Flags.string({
-      char: 't',
-      aliases: ['environment'],
-      charAliases: ['e'],
-      description:
-        'Target environment slug for this notification (aliases: --environment, -e; can be specified multiple times)',
+    environment: Flags.string({
+      char: 'e',
+      aliases: ['target'],
+      charAliases: ['t'],
+      description: 'Environment slug for this notification (aliases: --target, -t; can be specified multiple times)',
       multiple: true,
     }),
     recipient: Flags.string({
@@ -86,7 +85,7 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
     }
 
     const {
-      target: targets,
+      environment: environments,
       recipient: recipients,
       'on-start': onStart,
       'on-success': onSuccess,
@@ -100,7 +99,7 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
         {
           projectSlug: project,
           notificationId: id,
-          targets,
+          targets: environments,
           recipients,
           deploymentStart: onStart,
           deploymentSuccess: onSuccess,

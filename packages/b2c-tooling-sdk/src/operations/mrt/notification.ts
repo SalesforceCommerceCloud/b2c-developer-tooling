@@ -230,9 +230,13 @@ export async function createNotification(
     resourcetype: 'EmailNotification',
     targets,
     recipients,
-    deployment_start: deploymentStart,
-    deployment_success: deploymentSuccess,
-    deployment_failed: deploymentFailed,
+    // The notifications API rejects the request unless all three deployment_*
+    // flags are present in the body, so always send an explicit boolean
+    // (defaulting a missing flag to false) rather than omitting the key — a
+    // `deployment_*: undefined` would be dropped during JSON serialization.
+    deployment_start: deploymentStart ?? false,
+    deployment_success: deploymentSuccess ?? false,
+    deployment_failed: deploymentFailed ?? false,
   };
 
   const {data, error} = await client.POST('/api/projects/{project_slug}/notifications/', {
@@ -387,6 +391,12 @@ export async function updateNotification(
 
   const body: PatchedMrtNotification = {
     resourcetype: 'EmailNotification',
+    // The notifications API rejects the request unless all three deployment_*
+    // flags are present in the body, so always send explicit booleans
+    // (defaulting a missing flag to false) rather than omitting the keys.
+    deployment_start: deploymentStart ?? false,
+    deployment_success: deploymentSuccess ?? false,
+    deployment_failed: deploymentFailed ?? false,
   };
 
   if (targets !== undefined) {
@@ -394,15 +404,6 @@ export async function updateNotification(
   }
   if (recipients !== undefined) {
     body.recipients = recipients;
-  }
-  if (deploymentStart !== undefined) {
-    body.deployment_start = deploymentStart;
-  }
-  if (deploymentSuccess !== undefined) {
-    body.deployment_success = deploymentSuccess;
-  }
-  if (deploymentFailed !== undefined) {
-    body.deployment_failed = deploymentFailed;
   }
 
   const {data, error} = await client.PATCH('/api/projects/{project_slug}/notifications/{id}/', {

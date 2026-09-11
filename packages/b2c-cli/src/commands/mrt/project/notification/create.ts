@@ -8,11 +8,11 @@ import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {createNotification, type MrtNotification} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
-// A notification "target" is a list of environment/target slugs — the same domain
-// as the base --environment flag, but multi-valued. These commands never read the
-// inherited single-value --environment, and its --target alias would collide with
-// this command's own --target. Drop the inherited flag and let --target carry the
-// environment vocabulary via its --environment / -e aliases instead.
+// A notification's environments are a list of environment slugs — the same domain
+// as the base --environment flag, but multi-valued. This command never reads the
+// inherited single-value --environment, and its own multi-valued --environment flag
+// would collide with it, so drop the inherited one. The old --target / -t forms are
+// retained as aliases for back-compat.
 const {environment: _omitEnvironment, ...baseFlagsWithoutEnvironment} = MrtCommand.baseFlags;
 
 /**
@@ -34,17 +34,16 @@ export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotifica
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> --project my-storefront --target staging --recipient team@example.com --on-start --on-failed',
-    '<%= config.bin %> <%= command.id %> -p my-storefront --target staging --target production --recipient ops@example.com',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --environment staging --recipient team@example.com --on-start --on-failed',
+    '<%= config.bin %> <%= command.id %> -p my-storefront --environment staging --environment production --recipient ops@example.com',
   ];
 
   static flags = {
-    target: Flags.string({
-      char: 't',
-      aliases: ['environment'],
-      charAliases: ['e'],
-      description:
-        'Target environment slug for this notification (aliases: --environment, -e; can be specified multiple times)',
+    environment: Flags.string({
+      char: 'e',
+      aliases: ['target'],
+      charAliases: ['t'],
+      description: 'Environment slug for this notification (aliases: --target, -t; can be specified multiple times)',
       multiple: true,
       required: true,
     }),
@@ -80,7 +79,7 @@ export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotifica
     }
 
     const {
-      target: targets,
+      environment: environments,
       recipient: recipients,
       'on-start': onStart,
       'on-success': onSuccess,
@@ -93,11 +92,11 @@ export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotifica
       const result = await createNotification(
         {
           projectSlug: project,
-          targets,
+          targets: environments,
           recipients,
-          deploymentStart: onStart || undefined,
-          deploymentSuccess: onSuccess || undefined,
-          deploymentFailed: onFailed || undefined,
+          deploymentStart: onStart,
+          deploymentSuccess: onSuccess,
+          deploymentFailed: onFailed,
           origin: this.resolvedConfig.values.mrtOrigin,
         },
         this.getMrtAuth(),
@@ -109,7 +108,11 @@ export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotifica
             id: result.id ?? 'unknown',
           }),
         );
-        this.log(t('commands.mrt.notification.create.targets', 'Targets: {{targets}}', {targets: targets.join(', ')}));
+        this.log(
+          t('commands.mrt.notification.create.environments', 'Environments: {{environments}}', {
+            environments: environments.join(', '),
+          }),
+        );
         this.log(
           t('commands.mrt.notification.create.recipients', 'Recipients: {{recipients}}', {
             recipients: recipients.join(', '),
