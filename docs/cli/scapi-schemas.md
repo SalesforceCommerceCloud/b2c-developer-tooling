@@ -86,6 +86,8 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 
 List available SCAPI schemas with optional filtering.
 
+[![B2C CLI listing checkout API schemas, with Shopper Baskets v2 current and v1 deprecated.](/terminal/scapi-schemas.png)](/terminal/scapi-schemas.png)
+
 ### Usage
 
 ```bash

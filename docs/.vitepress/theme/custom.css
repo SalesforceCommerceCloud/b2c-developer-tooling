@@ -203,7 +203,8 @@
   border-radius: 8px;
 }
 .vp-doc img[src$='/cli-code-versions.png'],
-.vp-doc img[src$='/cli-custom-api-status.png'] {
+.vp-doc img[src$='/cli-custom-api-status.png'],
+.vp-doc img[src*='/terminal/'] {
   width: 100%;
   max-width: 680px;
   margin: 28px auto;

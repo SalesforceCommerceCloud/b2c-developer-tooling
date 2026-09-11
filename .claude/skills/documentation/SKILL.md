@@ -63,6 +63,31 @@ notes, terminal commands, and agent instructions do not use this treatment.
   Check link targets in a production build with `DOCS_BASE_PATH=/pr-672/` (or
   another subpath), not only in the dev server.
 
+### CLI Terminal Images
+
+Use Freeze for compact CLI output images beside the relevant command. Prefer
+read-only listings, searches, status checks, and local previews. Use real output;
+choose useful columns and supported result limits before capture. Local sample
+data is appropriate when labeled as a sample. Do not invent successful output or
+expose credentials, personal information, or customer data.
+
+Match the existing Custom API image: JetBrains Mono, 14px, `#171717` background,
+window controls, 12px corner radius, no outer background or shadow. Cyan prompts
+and restrained status colors are sufficient. Aim for a 700px logical frame and
+roughly 5-12 output lines. Freeze auto-sized PNGs render at 4x resolution; an
+explicit width disables that scaling, so use padding to keep shorter captures
+at a consistent width. Keep raw captures and render settings in the locally
+ignored `design-references/` directory.
+
+Publish reviewed PNGs under `docs/public/terminal/`. Link the image to its full
+size using `[![descriptive alt text](/terminal/name.png)](/terminal/name.png)`;
+describe the command's useful result and significant statuses in the alt text,
+not just "terminal screenshot." Identify sample data and consequential flags
+such as offline mode when needed to interpret the result. Avoid transcribing
+entire tables. The shared CSS limits display width to 680px. Keep copyable command examples in
+the page. Verify image readability and links on desktop, mobile, and a built
+site with a URL prefix.
+
 ## Documentation Structure
 
 The project has three types of documentation:

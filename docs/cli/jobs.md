@@ -210,6 +210,8 @@ b2c job wait my-job abc123-def456 --poll-interval 5
 
 Search for job executions on a B2C Commerce instance.
 
+[![B2C CLI listing six recent job executions, all completed with OK status.](/terminal/job-executions.png)](/terminal/job-executions.png)
+
 ### Usage
 
 ```bash

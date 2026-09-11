@@ -47,7 +47,7 @@ function makeInstance(opts: {apiBackend?: 'ocapi' | 'scapi' | 'auto'; scapi?: bo
 
 const SPEC = {
   jobId: JOB_ID,
-  ocapiBody: {file_name: 'a.zip'},
+  body: {file_name: 'a.zip'},
   parameters: [{name: 'ImportFile', value: 'a.zip'}],
   failVerb: 'execute import job',
   waitOptions: FAST_WAIT,
