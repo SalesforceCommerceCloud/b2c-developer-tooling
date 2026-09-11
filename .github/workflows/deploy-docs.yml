@@ -50,33 +50,25 @@ jobs:
       - name: Get latest release tag
         id: release
         run: |
-          PKG_TAG=$(git tag --list '@salesforce/*' --sort=-creatordate | head -n1)
-          DOCS_TAG=$(git tag --list 'docs@*' --sort=-creatordate | head -n1)
-
-          LATEST_TAG=""
-          if [[ -n "$PKG_TAG" && -n "$DOCS_TAG" ]]; then
-            LATEST_TAG=$(git tag --list '@salesforce/*' --list 'docs@*' --sort=-creatordate | head -n1)
-          elif [[ -n "$PKG_TAG" ]]; then
-            LATEST_TAG="$PKG_TAG"
-          elif [[ -n "$DOCS_TAG" ]]; then
-            LATEST_TAG="$DOCS_TAG"
-          fi
+          # Refresh history after any stable product release, but keep the site
+          # source on the latest stable release reachable from main.
+          LATEST_TAG=$(git tag --merged origin/main --list '@salesforce/*' --list 'docs@*' --sort=-creatordate |
+            awk '/@[0-9]+\.[0-9]+\.[0-9]+$/ && !found {print; found=1}')
+          test -n "$LATEST_TAG"
 
           echo "Building docs from: ${LATEST_TAG:-<none>}"
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Build documentation from release tag
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Save config and deps from main (has version dropdown and latest dependencies)
-          cp docs/.vitepress/config.mts /tmp/config.mts
-          cp docs/package.json /tmp/docs-package.json
-          cp pnpm-lock.yaml /tmp/pnpm-lock.yaml
-
           # Remove S3-extracted uxstudio files before checkout to avoid conflicts
           rm -rf docs/public/uxstudio
 
           # Checkout release tag
-          git checkout ${{ steps.release.outputs.tag }}
+          git checkout "$RELEASE_TAG"
 
           # Restore UX Studio artifacts
           rm -rf docs/public/uxstudio
@@ -84,14 +76,14 @@ jobs:
           tar -xzf /tmp/uxstudio-4.5.tar.gz -C docs/public/uxstudio
           tar -xzf /tmp/uxstudio-4.6.tar.gz -C docs/public/uxstudio
 
-          # Restore config and deps from main
-          cp /tmp/config.mts docs/.vitepress/config.mts
-          cp /tmp/docs-package.json docs/package.json
-          cp /tmp/pnpm-lock.yaml pnpm-lock.yaml
-
-          # Build docs
+          # Keep content, theme, and dependencies from the same release.
           pnpm install --frozen-lockfile
           pnpm -r run build
+          # Older tags predate the release notes page. Once present, refresh on
+          # every deployment (including docs-only releases); failures stop deploy.
+          if [[ -f docs/.vitepress/releases/refresh.ts ]]; then
+            pnpm --filter @salesforce/b2c-dx-docs run releases:refresh
+          fi
           pnpm run docs:build
 
       - name: Upload artifact

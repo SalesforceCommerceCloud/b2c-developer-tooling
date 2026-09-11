@@ -93,6 +93,7 @@ docs/
 Purpose: Help users get started and understand concepts.
 
 When to update:
+
 - New features that need explanation
 - Changes to installation or setup process
 - New authentication methods
@@ -127,6 +128,7 @@ pnpm install -g @salesforce/b2c-cli
 Purpose: Document command syntax, flags, and usage examples.
 
 When to update:
+
 - New commands added
 - Flags added, removed, or changed
 - Command behavior changes
@@ -151,29 +153,33 @@ b2c code deploy [PATH] [FLAGS]
 
 ### Arguments
 
-| Argument | Description | Required | Default |
-|----------|-------------|----------|---------|
-| PATH | Path to cartridges directory | No | . |
+| Argument | Description                  | Required | Default |
+| -------- | ---------------------------- | -------- | ------- |
+| PATH     | Path to cartridges directory | No       | .       |
 
 ### Flags
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| --server | -s | Instance hostname | - |
-| --code-version | -v | Code version name | - |
-| --cartridge | -c | Include specific cartridges | - |
-| --exclude-cartridge | -x | Exclude cartridges | - |
+| Flag                | Short | Description                 | Default |
+| ------------------- | ----- | --------------------------- | ------- |
+| --server            | -s    | Instance hostname           | -       |
+| --code-version      | -v    | Code version name           | -       |
+| --cartridge         | -c    | Include specific cartridges | -       |
+| --exclude-cartridge | -x    | Exclude cartridges          | -       |
 
 ### Examples
 
 \`\`\`bash
+
 # Deploy all cartridges in current directory
+
 b2c code deploy --server dev01.example.com --code-version v1
 
 # Deploy specific cartridges
+
 b2c code deploy ./cartridges -c app_storefront -c app_custom
 
 # Deploy excluding certain cartridges
+
 b2c code deploy -x test_cartridge -x bm_extensions
 \`\`\`
 
@@ -199,7 +205,7 @@ Never edit files in `docs/api/` directly. Instead:
 
 Add to barrel files (`index.ts`):
 
-```typescript
+````typescript
 /**
  * Authentication strategies for B2C Commerce APIs.
  *
@@ -220,11 +226,11 @@ Add to barrel files (`index.ts`):
  *
  * @module auth
  */
-```
+````
 
 ### Class Documentation
 
-```typescript
+````typescript
 /**
  * Client for WebDAV file operations on B2C Commerce instances.
  *
@@ -246,11 +252,11 @@ export class WebDavClient {
    */
   constructor(hostname: string, auth: AuthStrategy) {}
 }
-```
+````
 
 ### Function Documentation
 
-```typescript
+````typescript
 /**
  * Deploys cartridges to a B2C Commerce instance.
  *
@@ -275,9 +281,9 @@ export class WebDavClient {
 export async function deployCartridges(
   instance: B2CInstance,
   cartridgePath: string,
-  options?: DeployOptions
+  options?: DeployOptions,
 ): Promise<DeployResult> {}
-```
+````
 
 ### Type Documentation
 
@@ -325,6 +331,55 @@ The footer and HTML `rel="describedby"` link expose `llms.txt`. Each page has a
 exported at its existing path, with shared includes expanded; directory pages
 use `index.md`. Links in `llms.txt` are relative to its location so stable, dev,
 and PR previews stay self-contained. Check those references against built files.
+
+## Release Notes
+
+`/releases/` combines published product changes with optional authored Markdown.
+Documentation-only releases and Documentation sections do not appear. Shared
+changes appear once with product labels; dependency updates are expandable.
+Group changes with the same product labels into unordered lists. Authored
+highlights remain prose above the generated notes.
+Use one date heading per day for the right-side outline, followed by Older
+Releases. Keep the outline aligned with product filters. Do not show a total
+update count: this page covers a selected period, not the entire release history.
+Keep authored highlights human-facing: outcomes, relevant limits, and upgrade
+actions. Do not copy CI mechanics or package plumbing into public prose.
+
+- `docs/.vitepress/releases/seed.json` is the checked-in history since July 1,
+  2026, including related IDE and skills artifacts. Local and PR builds need no
+  GitHub access. Change the starting point deliberately with
+  `pnpm --filter @salesforce/b2c-dx-docs run releases:refresh --seed-since YYYY-MM-DD`.
+- `pnpm --filter @salesforce/b2c-dx-docs run releases:refresh` uses authenticated
+  `gh` to fetch stable product releases since that date into ignored `live.json`.
+  Production runs this on every deployment, including doc-only releases. A failed
+  refresh stops deployment. Removing local `live.json` restores the seed view.
+- Add optional entries under `docs/releases/_entries/<slug>.md`:
+
+  ```yaml
+  ---
+  title: Introducing SCAPI code mode
+  date: 2026-09-15
+  products: [mcp]
+  release: '@salesforce/b2c-dx-mcp@3.0.0'
+  ---
+  ```
+
+  Follow with ordinary Markdown (no Vue/HTML components). With `release`, the
+  entry adds a highlight above that release's generated changes; it stays hidden
+  until the exact tag is available. Omit `release` for a standalone announcement.
+  Product IDs: `cli`, `ide`, `mcp`, `skills`, `mrt`, `sdk`. SDK is secondary.
+  The VitePress dev server watches entry edits; restart it after an invalid entry.
+
+- Release rendering runs when VitePress loads its config, including direct
+  `vitepress build`. Generated partials and Markdown exports are ignored; never
+  hand-edit them. All notes are present in static HTML, local search, and the
+  `/releases/index.md` export. Filters enhance the static content in the browser.
+- Run `pnpm --filter @salesforce/b2c-dx-docs run test:releases` for parser, merge,
+  editorial, offline-generation, and strict TypeScript checks. The `.ts` scripts
+  run via `tsx` and use the repository's shared ESLint rules in `lint:agent`.
+  Run `pnpm --filter @salesforce/b2c-dx-docs run format:releases` after edits.
+  Also check the page on desktop and
+  mobile, product filters, Markdown export, and a build with a subpath base.
 
 ## Guides Search Corpus (`b2c docs`)
 
@@ -447,10 +502,7 @@ Located in `typedoc.json`:
     "packages/b2c-tooling-sdk/src/operations/code/index.ts"
   ],
   "out": "docs/api",
-  "plugin": [
-    "typedoc-plugin-markdown",
-    "typedoc-vitepress-theme"
-  ],
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
   "exclude": ["**/*.generated.ts"]
 }
 ```
@@ -469,6 +521,7 @@ styles or installation content.
 The `skills/b2c-cli/skills/` directory contains skills that teach Claude about using the CLI commands. These are distributed via the plugin.
 
 When to update:
+
 - New CLI commands added
 - Existing commands changed
 - New usage patterns
@@ -490,7 +543,9 @@ Overview of the command topic.
 ### <Use Case>
 
 \`\`\`bash
+
 # Comment explaining the command
+
 b2c <topic> <command> [args] [flags]
 \`\`\`
 
@@ -545,7 +600,7 @@ content. Unpublished branch-only pages need no redirect when removed.
 
 ## Style Guidelines
 
-- Use code blocks with language hints (```bash, ```typescript)
+- Use code blocks with language hints (`bash, `typescript)
 - Include practical examples for every command/function
 - Keep flag tables consistent across command docs
 - Use relative links for internal references

@@ -154,7 +154,7 @@
     height: 48px;
     gap: 12px;
   }
-  :root .Layout .VPNavBarMenu > .VPNavBarMenuGroup {
+  :root .Layout .VPNavBarMenu > a[href$='/releases/'] {
     margin-left: auto;
   }
   :root .Layout .VPNavBarMenuGroup .text {

@@ -48,3 +48,6 @@ jobs:
 
       - name: Build documentation
         run: pnpm run docs:build
+
+      - name: Test release notes
+        run: pnpm --filter @salesforce/b2c-dx-docs run test:releases

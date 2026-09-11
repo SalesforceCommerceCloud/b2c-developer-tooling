@@ -4,6 +4,10 @@ import path from 'node:path';
 import {defineConfig, type DefaultTheme} from 'vitepress';
 import {groupIconMdPlugin, groupIconVitePlugin} from 'vitepress-plugin-group-icons';
 import typedocSidebar from '../api/typedoc-sidebar.json';
+import {generateReleaseNotes} from './releases/generate.js';
+
+const docsDirectory = path.resolve(import.meta.dirname, '..');
+const releaseNotes = generateReleaseNotes(docsDirectory);
 
 // Copy source .md files to the build output so pages can be fetched as raw
 // markdown (powers the "View as Markdown" / "Copy for LLM" buttons).
@@ -206,7 +210,7 @@ export default defineConfig({
   description:
     'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE Extension for Salesforce B2C Commerce',
   base: basePath,
-  srcExclude: ['_partials/**'],
+  srcExclude: ['_partials/**', 'releases/_entries/**', 'public/releases/**'],
 
   head: [['link', {rel: 'describedby', type: 'text/plain', href: `${basePath}llms.txt`}]],
 
@@ -224,6 +228,7 @@ export default defineConfig({
 
   buildEnd(siteConfig) {
     copyMarkdownSources(siteConfig.srcDir, siteConfig.outDir);
+    fs.writeFileSync(path.join(siteConfig.outDir, 'releases/index.md'), releaseNotes.markdown);
     // Extract the Salesforce Help corpus straight into the build output (raw
     // .md served verbatim; fetched by `b2c docs read` via each entry's
     // sourceUrl). Done here — in buildEnd — because it only matters for the
@@ -243,6 +248,20 @@ export default defineConfig({
 
   vite: {
     plugins: [
+      {
+        name: 'release-notes',
+        configureServer(server) {
+          const entries = path.join(docsDirectory, 'releases/_entries');
+          const seed = path.join(docsDirectory, '.vitepress/releases/seed.json');
+          const live = path.join(docsDirectory, '.vitepress/releases/live.json');
+          server.watcher.add([entries, seed, live]);
+          server.watcher.on('all', (_event, file) => {
+            if (file === seed || file === live || file.startsWith(entries + path.sep)) {
+              generateReleaseNotes(docsDirectory);
+            }
+          });
+        },
+      },
       groupIconVitePlugin({
         // Assistant tabs are Vue components, outside the plugin's Markdown scan.
         defaultLabels: ['Claude Code', 'Codex', 'Copilot (VS Code)', 'Cursor', 'OpenCode', 'Gemini'],
@@ -296,9 +315,10 @@ export default defineConfig({
       formatOptions: {dateStyle: 'medium'},
     },
     nav: [
-      {text: 'Docs', link: '/', activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/cli/(?!overview))/`},
+      {text: 'Docs', link: '/', activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/releases/|/cli/(?!overview))/`},
       {text: 'Guides', link: '/guide/workflows', activeMatch: `^${guidesActiveMatch}`},
       {text: 'Reference', link: '/cli/', activeMatch: '^/cli/(?!overview)'},
+      {text: 'Release Notes', link: '/releases/'},
       {
         text: 'SDKs',
         activeMatch: '^/api/',
@@ -309,7 +329,7 @@ export default defineConfig({
     footer: {
       message:
         'Released under the <a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt">Apache-2.0 License</a>.' +
-        ` LLM? Read <a href="${basePath}llms.txt">llms.txt</a>.`,
+        ` <a href="${basePath}releases/">Release notes</a>. LLM? Read <a href="${basePath}llms.txt">llms.txt</a>.`,
       copyright: `Copyright © 2024-${new Date().getFullYear()} Salesforce, Inc.`,
     },
 

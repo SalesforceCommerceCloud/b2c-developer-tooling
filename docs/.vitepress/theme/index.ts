@@ -14,6 +14,7 @@ import MarkdownActions from './MarkdownActions.vue';
 import AssistantInstall from './AssistantInstall.vue';
 import McpInstallButtons from './McpInstallButtons.vue';
 import ExamplePrompt from './ExamplePrompt.vue';
+import ReleaseFeed from './ReleaseFeed.vue';
 import {lookupRedirect} from './redirects';
 
 export default {
@@ -32,6 +33,7 @@ export default {
     app.component('AssistantInstall', AssistantInstall);
     app.component('McpInstallButtons', McpInstallButtons);
     app.component('ExamplePrompt', ExamplePrompt);
+    app.component('ReleaseFeed', ReleaseFeed);
 
     // Client-side redirects for moved/merged pages (SSR-safe: browser only).
     if (typeof window !== 'undefined') {
