@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-11T03:10:06.664Z",
+  "generatedAt": "2026-09-11T03:22:21.647Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -264,21 +264,12 @@
       "preview": "Manage Account Manager users, roles, organizations, and API clients with the B2C CLI, including authentication options, CI/CD automation, and common workflows."
     },
     {
-      "id": "guide-agent-plugins",
-      "title": "Plugins",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-plugins.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-plugins.md",
-      "headings": "Set up the B2C MCP {#install} • Skills plugins • Updates",
-      "preview": "Install B2C Commerce tools and skills in your AI assistant with agent plugins."
-    },
-    {
       "id": "guide-agent-skills",
       "title": "Agent Skills",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.md",
-      "headings": "Install skills {#quick-start} • Codex • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Claude Code • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • GitHub Copilot in VS Code {#copilot-vs-code} • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Cursor • OpenCode • Gemini CLI • Other Agent Harnesses {#other-ides} • Manual installation {#manual-installation} • Skills in action • Add useful logging • Build an editable component • Usage Examples • Skill Collections {#available-plugins}",
+      "headings": "Skill Collections {#available-plugins} • Install skills {#quick-start} • Codex • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Claude Code • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • GitHub Copilot in VS Code {#copilot-vs-code} • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Cursor • OpenCode • Gemini CLI • Other Agent Harnesses {#other-ides} • Manual installation {#manual-installation} • Skills in action • Add useful logging • Build an editable component • Usage Examples",
       "preview": "Agentic B2C Developer Toolkit — AI agent skills and plugins that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack."
     },
     {

@@ -96,7 +96,6 @@ const toolkitSidebar = [
   {
     text: 'AI Tools',
     items: [
-      {text: 'Plugins', link: '/guide/agent-plugins'},
       {
         text: 'MCP',
         link: '/mcp/',

@@ -47,7 +47,7 @@ Deploy cartridges, run jobs, manage sandboxes, and automate your B2C Commerce wo
 [![](/icons/editor.svg) IDE Extension](./vscode-extension/)
 Sync code, explore your instance, and debug server-side scripts in your editor.
 
-[![](/icons/mcp.svg) MCP / Agent Skills](./guide/agent-plugins)
+[![](/icons/mcp.svg) MCP / Agent Skills](./mcp/)
 Connect your assistant to B2C Commerce tools, nearly 600 API operations, and workflow skills.
 
 </DocCards>

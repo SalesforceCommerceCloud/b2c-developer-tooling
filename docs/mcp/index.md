@@ -8,15 +8,17 @@ The B2C MCP server connects your AI assistant to Salesforce B2C Commerce tools,
 documentation, and workflow skills. Build and debug storefronts, deploy code,
 and manage your sites through requests in your assistant.
 
-It includes the B2C Commerce, B2C CLI, and Storefront Next collections from our
-[agent skills plugins](../guide/agent-skills). **No need to install those skills
-plugins separately.** Documentation and skills work without B2C Commerce credentials;
+Your assistant can find and read guidance from our B2C Commerce, B2C CLI, and
+Storefront Next [skill collections](../guide/agent-skills) through the
+[`skills_read` tool](./toolsets#documentation). **No separate skills installation
+is needed.** Documentation and skills work without B2C Commerce credentials;
 connected tasks use your existing [B2C configuration](../guide/configuration).
 
 ## Set up your assistant {#setup}
 
 Choose your assistant. **Plugin installation is recommended where supported**;
 manual setup includes the same tools, documentation, and skills.
+Our plugins use the open [Agent Plugins standard](https://agent-plugins.org/).
 
 <AssistantInstall sync-url>
 
@@ -62,7 +64,7 @@ lets you choose specific tools or toolsets for manual installations.
 ## Tools and skills
 
 Browse [MCP Tools](./toolsets) for capabilities and tool names, or [Agent Skills](../guide/agent-skills)
-for the included expertise. Use [Plugins](../guide/agent-plugins) to explore optional additions.
+for the included collections, optional additions, and standalone installation.
 
 ## Other clients {#other-clients}
 
