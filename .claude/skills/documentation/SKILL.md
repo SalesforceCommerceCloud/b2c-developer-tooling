@@ -319,6 +319,19 @@ pnpm run docs:build
 pnpm run docs:preview
 ```
 
+## Hosted Builds
+
+`.github/workflows/docs-preview.yml` publishes unreleased docs from `main` at
+`/next/` on the preview host after every push. PR previews use `/pr-<number>/` and
+are removed when the PR closes. Both build packages and the docs site; neither
+refreshes published release history from GitHub.
+
+To rebuild manually, dispatch the workflow with no inputs for `main`, or set
+`pr_number` for a PR (including drafts). The workflow always resolves the source
+commit explicitly. The preview URL is recorded in the workflow summary; PRs
+also receive a preview comment. Production docs remain tied to stable release
+tags through `deploy-docs.yml`.
+
 ## Agent Discovery on the Docs Site
 
 `docs/public/llms.txt` is a curated agent entrypoint: CLI installation via `npx`,
