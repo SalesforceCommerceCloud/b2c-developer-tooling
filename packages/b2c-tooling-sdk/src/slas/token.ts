@@ -92,7 +92,13 @@ async function loggedFetch(url: string, init: RequestInit): Promise<{response: R
   const duration = Date.now() - startTime;
 
   logger.debug(
-    {method, url, status: response.status, duration},
+    {
+      method,
+      url,
+      status: response.status,
+      duration,
+      correlationId: response.headers.get('sfdc_correlation_id') ?? undefined,
+    },
     `[SLAS RESP] ${method} ${url} ${response.status} ${duration}ms`,
   );
 

@@ -7,6 +7,8 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
+import sinon from 'sinon';
+import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {
   getGuestToken,
   getRegisteredToken,
@@ -47,6 +49,7 @@ describe('slas/token', () => {
 
   afterEach(() => {
     server.resetHandlers();
+    sinon.restore();
   });
 
   after(() => {
@@ -132,9 +135,13 @@ describe('slas/token', () => {
     });
 
     it('throws on token error', async () => {
+      const debug = sinon.stub(getLogger(), 'debug');
       server.use(
         http.post(`${BASE_URL}/oauth2/token`, () => {
-          return HttpResponse.json({error: 'invalid_client'}, {status: 401});
+          return HttpResponse.json(
+            {error: 'invalid_client'},
+            {status: 401, headers: {sfdc_correlation_id: 'test-correlation', 'set-cookie': 'session=sensitive-cookie'}},
+          );
         }),
       );
 
@@ -145,6 +152,11 @@ describe('slas/token', () => {
         expect((error as Error).message).to.include('client_credentials');
         expect((error as Error).message).to.include('401');
       }
+
+      const responseLog = debug.getCalls().find((call) => call.args[0]?.status === 401);
+      expect(responseLog?.args[0]).to.include({status: 401, correlationId: 'test-correlation'});
+      expect(JSON.stringify(debug.args)).not.to.include('sensitive-cookie');
+      expect(JSON.stringify(debug.args)).not.to.include('bad-secret');
     });
   });
 
