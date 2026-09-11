@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-10T15:56:17.747Z",
+  "generatedAt": "2026-09-11T00:35:16.278Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -156,6 +156,15 @@
       "preview": "Commands for managing Managed Runtime projects, environments, bundles, and deployments."
     },
     {
+      "id": "cli-overview",
+      "title": "B2C CLI",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/overview.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/overview.md",
+      "headings": "Quick install • What you can do • Other ways to work",
+      "preview": "B2C CLI tools for developing, deploying, and administering Salesforce B2C Commerce from the terminal and CI/CD."
+    },
+    {
       "id": "cli-preferences",
       "title": "Preferences",
       "category": "tooling",
@@ -255,12 +264,21 @@
       "preview": "Manage Account Manager users, roles, organizations, and API clients with the B2C CLI, including authentication options, CI/CD automation, and common workflows."
     },
     {
+      "id": "guide-agent-plugins",
+      "title": "Plugins",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-plugins.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-plugins.md",
+      "headings": "Install the B2C MCP plugin <span class=\"recommended VPBadge\">Recommended</span> {#install} • Skills plugins • Updates",
+      "preview": "Install B2C Commerce tools and skills in your AI assistant with agent plugins."
+    },
+    {
       "id": "guide-agent-skills",
-      "title": "Agent Skills & Plugins",
+      "title": "Agent Skills",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.md",
-      "headings": "Quick Start • Available Plugins • Claude Code • Codex • Cursor • Skill Discovery Locations • Install with the B2C CLI • Reuse Claude Code Plugin Installs • Copilot • Copilot (VS Code) • Copilot CLI • B2C CLI • Agentforce Vibes • Other IDEs • Manual Installation • Usage Examples",
+      "headings": "Quick Start • Skill Collections {#available-plugins} • Claude Code • Codex • Cursor • Copilot • Copilot (VS Code) • Copilot CLI • B2C CLI • Agentforce Vibes • Other IDEs • Manual Installation • Usage Examples",
       "preview": "Agentic B2C Developer Toolkit — AI agent skills and plugins that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack."
     },
     {
@@ -341,8 +359,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/index.md",
-      "headings": "Quick CLI Install • Quick MCP Install • Claude Code (Project Scope) • Cursor (Project Scope) • GitHub Copilot (Project Scope) • Quick VS Code Extension Install • Next Steps",
-      "preview": "Introduction to the Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, VS Code extension, and SDK for Salesforce Agentforce Commerce."
+      "headings": "Quick CLI Install • Quick MCP Install • Quick IDE Extension Install • Next Steps",
+      "preview": "Introduction to the Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, IDE extension, and SDK for Salesforce B2C Commerce."
     },
     {
       "id": "guide-installation",
@@ -444,22 +462,31 @@
       "preview": "Community plugins for the B2C CLI including data migrations, IntelliJ SFCC config integration, credential storage, docs search, catalog reduction, and pipeline visualization."
     },
     {
+      "id": "guide-workflows",
+      "title": "Guides",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/workflows.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/workflows.md",
+      "headings": "Development • Deployment and automation • Administration • Migration",
+      "preview": "Practical guides for developing, deploying, and administering Salesforce B2C Commerce with the Agentic B2C Developer Toolkit."
+    },
+    {
       "id": "mcp-configuration",
       "title": "Configuration",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md",
-      "headings": "Project and instance {#project-directory} • Credentials {#dw-json} • Environment variables {#env-file} • Managed Runtime credentials {#mrt-credentials} • Tool selection {#toolset-selection} • Launch options {#mcp-server-flags} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Logging and telemetry",
-      "preview": "Choose the project, credentials, and tools available to your B2C Commerce coding assistant."
+      "headings": "Credentials {#dw-json} • Environment variables {#env-file} • Managed Runtime credentials {#mrt-credentials} • Advanced manual configuration • Fixed project and instance defaults {#project-directory} • Choose available tools {#toolset-selection} • Launch options {#mcp-server-flags} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Logging and telemetry",
+      "preview": "Connect your B2C Commerce environments, reuse existing credentials, and customize your MCP setup when needed."
     },
     {
       "id": "mcp-index",
-      "title": "B2C Commerce MCP Server",
+      "title": "MCP (Model Context Protocol)",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.md",
-      "headings": "Get started • Choose the tools you expose {#project-type-detection}",
-      "preview": "Give your coding assistant B2C Commerce skills, documentation, deployment, debugging, and log access."
+      "headings": "Set up with a plugin <span class=\"recommended VPBadge\">Recommended</span> {#plugin-setup} • Manual setup • Developer Tasks • Administrator and Merchant Tasks • Configuration and access • Tools and skills",
+      "preview": "Connect your AI assistant to B2C Commerce tools, documentation, skills, and APIs."
     },
     {
       "id": "mcp-installation",
@@ -467,8 +494,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation.md",
-      "headings": "Codex • Claude Code • Cursor • GitHub Copilot • Plugin installation • Configure and verify • Troubleshooting",
-      "preview": "Install the B2C DX MCP Server in Codex, Claude Code, Cursor, or GitHub Copilot."
+      "headings": "Codex • Install the plugin • Manual MCP setup • Claude Code • Install the plugin • Manual MCP setup • GitHub Copilot in VS Code • Install the plugin • Manual MCP setup • GitHub Copilot CLI • Install the plugin • Manual MCP setup • Cursor • Connect the MCP server • Claude Desktop • Windsurf • Gemini CLI • OpenCode • Cline • Amp • Warp • Zed • JetBrains AI Assistant • fx • Other MCP clients • Connect a local server • Windows manual setup • Try it out • Updates and customization • Troubleshooting",
+      "preview": "Add B2C Commerce to Codex, Claude Code, or GitHub Copilot with the recommended agent plugin. Direct MCP setup is also available."
     },
     {
       "id": "mcp-security",
@@ -476,25 +503,16 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security.md",
-      "headings": "Limit available tools • Protect credentials and data • Deployments {#deployments} • Debugger access {#debugger} • Safety settings • SCAPI code mode • Telemetry {#telemetry}",
-      "preview": "Control MCP tool access, protect Commerce credentials, and understand deployment, debugging, and data access."
-    },
-    {
-      "id": "mcp-skills",
-      "title": "Workflow Skills",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/skills.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/skills.md",
-      "headings": "Included capabilities • Installation and configuration • Access and security",
-      "preview": "Built-in workflow skills for B2C CLI, Commerce development, and Storefront Next, available through the B2C DX MCP Server."
+      "headings": "Review access and changes • Protect credentials and data • Deployments {#deployments} • Debugger access {#debugger} • Safety settings • SCAPI code mode • Telemetry {#telemetry}",
+      "preview": "Control MCP tool access, protect B2C Commerce credentials, and understand deployment, debugging, and data access."
     },
     {
       "id": "mcp-toolsets",
-      "title": "Tools and Capabilities",
+      "title": "MCP Tools",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Skills and documentation {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • SCAPI code mode (preview) • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
+      "headings": "Skills and documentation {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • B2C Commerce data and operations {#scapi-code-mode} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
       "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {
@@ -504,16 +522,16 @@
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.md",
       "headings": "Connecting to a B2C Instance • Per-feature requirements • Example `dw.json` • How the Extension Chooses a Project • Selecting an Instance • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
-      "preview": "Connect the Salesforce B2C Commerce VS Code Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
+      "preview": "Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
     },
     {
       "id": "vscode-extension-index",
-      "title": "Salesforce B2C Commerce VS Code Extension",
+      "title": "B2C Commerce IDE Extension",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.md",
       "headings": "Highlights • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Cartridge Management and Code Watch/Upload • SCAPI API Explorer • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
-      "preview": "The official Salesforce B2C Commerce VS Code Extension — sandbox management, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, script debugger, and project scaffolding."
+      "preview": "The official Salesforce B2C Commerce IDE Extension for VS Code, Cursor, and other VS Code-compatible editors — code sync, sandbox management, API exploration, and debugging."
     },
     {
       "id": "vscode-extension-installation",
@@ -522,7 +540,7 @@
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/installation.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/installation.md",
       "headings": "Install from your editor • Install from the command line • Install from a VSIX • Get the latest build • Install it • Before you start • Connect to your sandbox • Next Steps",
-      "preview": "Install the official Salesforce B2C Commerce VS Code Extension from the Visual Studio Marketplace, the Open VSX Registry, or a .vsix release artifact."
+      "preview": "Install the official Salesforce B2C Commerce IDE Extension from the Visual Studio Marketplace, the Open VSX Registry, or a .vsix release artifact."
     }
   ]
 }

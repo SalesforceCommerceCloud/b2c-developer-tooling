@@ -1,7 +1,7 @@
 import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import {defineConfig} from 'vitepress';
+import {defineConfig, type DefaultTheme} from 'vitepress';
 import {groupIconMdPlugin, groupIconVitePlugin} from 'vitepress-plugin-group-icons';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 
@@ -10,16 +10,27 @@ import typedocSidebar from '../api/typedoc-sidebar.json';
 function copyMarkdownSources(srcDir: string, outDir: string) {
   const entries = fs.readdirSync(srcDir, {withFileTypes: true});
   for (const entry of entries) {
-    if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+    if (entry.name.startsWith('.') || entry.name.startsWith('_') || entry.name === 'node_modules') continue;
     const src = path.join(srcDir, entry.name);
     const dest = path.join(outDir, entry.name);
     if (entry.isDirectory()) {
       fs.mkdirSync(dest, {recursive: true});
       copyMarkdownSources(src, dest);
     } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      fs.copyFileSync(src, dest);
+      fs.writeFileSync(dest, expandIncludes(src));
     }
   }
+}
+
+// Resolve the same plain-file includes used in authored pages for raw Markdown readers.
+function expandIncludes(file: string, ancestors = new Set<string>()): string {
+  if (ancestors.has(file)) throw new Error(`Circular Markdown include: ${file}`);
+  const next = new Set([...ancestors, file]);
+  return fs
+    .readFileSync(file, 'utf8')
+    .replace(/<!--@include:\s*(.+?)\s*-->/g, (_, relativePath: string) =>
+      expandIncludes(path.resolve(path.dirname(file), relativePath), next),
+    );
 }
 
 // Extract the committed Salesforce Help corpus tarball (docs/help-content.tar.gz)
@@ -47,101 +58,114 @@ const previewBasePath = process.env.DOCS_BASE_PATH
   ? `/${process.env.DOCS_BASE_PATH.replace(/^\/+|\/+$/g, '')}/`
   : undefined;
 
-// Public production docs URL — preview builds point their version switcher here because
-// relative links would otherwise resolve under the ephemeral /pr-N/ base.
-const prodDocsUrl = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/';
-
 // Base paths - dev build lives in /dev/ subdirectory, stable/release is at root
 const siteBase = '/b2c-developer-tooling';
 const basePath = previewBasePath ?? (isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`);
 
-// Build version dropdown items
-// VitePress prepends base path to links starting with /, so we use relative paths
-// that work correctly for each build context
-function getVersionItems() {
-  if (previewBasePath) {
-    // Preview build: docs live under an ephemeral /pr-N/ base with no sibling versions.
-    // Link out to the published docs with absolute URLs so the switcher works.
-    return [
-      {text: 'Latest Release', link: prodDocsUrl},
-      {text: 'Development (main)', link: `${prodDocsUrl}dev/`},
-    ];
-  }
-
-  if (isDevBuild) {
-    // Dev build: base is /b2c-developer-tooling/dev/
-    // Use ../ to navigate up to stable docs at root
-    return [
-      {text: 'Latest Release', link: '../'},
-      {text: 'Development (main)', link: '/'},
-    ];
-  }
-
-  // Stable build: base is /b2c-developer-tooling/
-  return [
-    {text: 'Latest Release', link: '/'},
-    {text: 'Development (main)', link: '/dev/'},
-  ];
-}
-
-const guidesSidebar = [
+const toolkitSidebar = [
+  {text: 'Overview', link: '/'},
   {
     text: 'Getting Started',
     items: [
       {text: 'Introduction', link: '/guide/'},
-      {text: 'Installation', link: '/guide/installation'},
+      {text: 'Authentication', link: '/guide/authentication'},
       {text: 'Configuration', link: '/guide/configuration'},
-      {text: 'Agent Skills & Plugins', link: '/guide/agent-skills'},
-    ],
-  },
-  {
-    text: 'How-To',
-    items: [
-      {text: 'Authentication Setup', link: '/guide/authentication'},
-      {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
-      {text: 'sfcc-ci Migration', link: '/guide/sfcc-ci-migration'},
-      {text: 'sfcc-ci SDK Migration', link: '/guide/sdk-migration'},
-      {text: 'Account Manager', link: '/guide/account-manager'},
-      {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
-      {text: 'Metrics', link: '/guide/metrics'},
-      {text: 'IDE Integration', link: '/guide/ide-integration'},
-      {text: 'Script Debugger', link: '/guide/script-debugger'},
-      {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Safety Mode', link: '/guide/safety'},
       {text: 'Security', link: '/guide/security'},
-      {text: 'Storefront Next', link: '/guide/storefront-next'},
-      {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
-      {text: 'Commerce Apps (CAPs)', link: '/guide/commerce-apps'},
-      {text: 'Import Sets', link: '/guide/import-sets'},
     ],
   },
   {
-    text: 'VS Code Extension',
+    text: 'Developer Tools',
     items: [
-      {text: 'Overview', link: '/vscode-extension/'},
-      {text: 'Installation', link: '/vscode-extension/installation'},
-      {text: 'Configuration', link: '/vscode-extension/configuration'},
+      {
+        text: 'CLI',
+        link: '/cli/overview',
+        collapsed: true,
+        items: [{text: 'Installation', link: '/guide/installation'}],
+      },
+      {
+        text: 'IDE Extension',
+        link: '/vscode-extension/',
+        collapsed: true,
+        items: [
+          {text: 'Installation', link: '/vscode-extension/installation'},
+          {text: 'Configuration', link: '/vscode-extension/configuration'},
+        ],
+      },
     ],
   },
   {
-    text: 'MCP Server',
+    text: 'AI Tools',
     items: [
-      {text: 'Overview', link: '/mcp/'},
-      {text: 'Installation', link: '/mcp/installation'},
-      {text: 'Configuration', link: '/mcp/configuration'},
-      {text: 'Tools & Capabilities', link: '/mcp/toolsets'},
-      {text: 'Workflow Skills', link: '/mcp/skills'},
-      {text: 'Security & Access', link: '/mcp/security'},
+      {text: 'Plugins', link: '/guide/agent-plugins'},
+      {
+        text: 'MCP',
+        link: '/mcp/',
+        collapsed: true,
+        items: [
+          {text: 'Installation', link: '/mcp/installation'},
+          {text: 'Configuration', link: '/mcp/configuration'},
+          {text: 'Security and Access', link: '/mcp/security'},
+        ],
+      },
+      {text: 'Agent Skills', link: '/guide/agent-skills'},
     ],
   },
   {
-    text: 'Extending',
+    text: 'Extend',
     items: [
-      {text: 'Custom Plugins', link: '/guide/extending'},
-      {text: '3rd Party Plugins', link: '/guide/third-party-plugins'},
+      {text: 'CLI Extensions', link: '/guide/third-party-plugins'},
+      {text: 'Build an Extension', link: '/guide/extending'},
     ],
   },
 ];
+
+const guidesSidebar: DefaultTheme.SidebarItem[] = [
+  {text: 'All Guides', link: '/guide/workflows'},
+  {
+    text: 'Development',
+    collapsed: false,
+    items: [
+      {text: 'Storefront Next', link: '/guide/storefront-next'},
+      {text: 'Scaffolding', link: '/guide/scaffolding'},
+      {text: 'Script Debugger', link: '/guide/script-debugger'},
+      {text: 'IDE Integration', link: '/guide/ide-integration'},
+      {text: 'Commerce Apps', link: '/guide/commerce-apps'},
+    ],
+  },
+  {
+    text: 'Deployment & Automation',
+    collapsed: false,
+    items: [
+      {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
+      {text: 'Import Sets', link: '/guide/import-sets'},
+      {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
+    ],
+  },
+  {
+    text: 'Administration',
+    collapsed: false,
+    items: [
+      {text: 'Account Manager', link: '/guide/account-manager'},
+      {text: 'Analytics Reports', link: '/guide/analytics-reports-cip-ccac'},
+      {text: 'Metrics', link: '/guide/metrics'},
+    ],
+  },
+  {
+    text: 'Migration',
+    collapsed: false,
+    items: [
+      {text: 'From sfcc-ci', link: '/guide/sfcc-ci-migration'},
+      {text: 'From the sfcc-ci SDK', link: '/guide/sdk-migration'},
+    ],
+  },
+];
+
+// Preserve existing guide URLs while assigning task guides their own navigation.
+const guidePaths = guidesSidebar
+  .flatMap(({link, items}) => [link, ...(items ?? []).map((item) => item.link)])
+  .filter((link): link is string => Boolean(link));
+const guidesActiveMatch = `(?:${guidePaths.join('|')})(?:\\.html)?/?$`;
 
 const referenceSidebar = [
   {
@@ -177,47 +201,17 @@ const referenceSidebar = [
     ],
   },
   {
-    text: 'MCP Server',
-    items: [
-      {text: 'Tools & Capabilities', link: '/mcp/toolsets'},
-      {text: 'Installation', link: '/mcp/installation'},
-      {text: 'Configuration', link: '/mcp/configuration'},
-      {text: 'Security & Access', link: '/mcp/security'},
-    ],
+    text: 'MCP',
+    items: [{text: 'MCP Tools', link: '/mcp/toolsets'}],
   },
 ];
 
-// Script to force hard navigation for version switching links
-// VitePress SPA router can't handle navigation between separate VitePress builds
-const versionSwitchScript = `
-document.addEventListener('click', (e) => {
-  const link = e.target.closest('a');
-  if (!link) return;
-  const href = link.getAttribute('href');
-  // Check if this is a version switch link
-  if (href && (href.includes('/dev/') || href === '../')) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (href === '../') {
-      // Navigate from /dev/ back to stable root - construct path explicitly
-      // to avoid relative path issues with trailing slashes
-      const path = window.location.pathname;
-      const stablePath = path.replace(/\\/dev\\/.*$/, '/').replace(/\\/dev$/, '/');
-      window.location.href = stablePath;
-    } else {
-      window.location.href = link.href;
-    }
-  }
-}, true);
-`;
-
 export default defineConfig({
-  title: 'B2C Developer Toolkit',
+  title: 'Agentic B2C Developer Toolkit',
   description:
-    'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and the B2C DX VS Code Extension for Salesforce B2C Commerce',
+    'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE Extension for Salesforce B2C Commerce',
   base: basePath,
-
-  head: [['script', {}, versionSwitchScript]],
+  srcExclude: ['_partials/**'],
 
   // Git-based "Last updated" timestamps (overridable per-page via frontmatter)
   lastUpdated: true,
@@ -277,7 +271,7 @@ export default defineConfig({
   },
 
   themeConfig: {
-    logo: '/logo-mark.svg',
+    logo: '/logo.svg',
     outline: {
       level: [2, 3],
     },
@@ -290,15 +284,13 @@ export default defineConfig({
       formatOptions: {dateStyle: 'medium'},
     },
     nav: [
-      {text: 'Guides', link: '/guide/'},
-      {text: 'Agent Plugins', link: '/guide/agent-skills'},
-      {text: 'VS Code', link: '/vscode-extension/'},
-      {text: 'MCP', link: '/mcp/'},
-      {text: 'Reference', link: '/cli/'},
-      {text: 'SDK', link: '/api/'},
+      {text: 'Docs', link: '/', activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/cli/(?!overview)|/mcp/toolsets)/`},
+      {text: 'Guides', link: '/guide/workflows', activeMatch: `^${guidesActiveMatch}`},
+      {text: 'Reference', link: '/cli/', activeMatch: '^/(cli/(?!overview)|mcp/toolsets)'},
       {
-        text: previewBasePath ? 'Preview' : isDevBuild ? 'Dev' : 'Latest',
-        items: getVersionItems(),
+        text: 'SDKs',
+        activeMatch: '^/api/',
+        items: [{text: 'TypeScript SDK', link: '/api/'}],
       },
     ],
 
@@ -308,17 +300,20 @@ export default defineConfig({
     },
 
     sidebar: {
-      '/mcp/tools/': guidesSidebar,
-      '/mcp/': guidesSidebar,
-      '/vscode-extension/': guidesSidebar,
+      '/': toolkitSidebar,
+      '/mcp/toolsets': referenceSidebar,
+      '/mcp/': toolkitSidebar,
+      '/vscode-extension/': toolkitSidebar,
+      '/cli/overview': toolkitSidebar,
       '/cli/': referenceSidebar,
-      '/guide/': guidesSidebar,
+      ...Object.fromEntries(guidePaths.map((link) => [link, guidesSidebar])),
+      '/guide/': toolkitSidebar,
       '/api/': [
         {
-          text: 'SDK Reference',
+          text: 'SDK',
           items: [{text: 'Overview', link: '/api/'}],
         },
-        ...typedocSidebar,
+        ...typedocSidebar.map((section) => ({...section, collapsed: true})),
       ],
     },
 

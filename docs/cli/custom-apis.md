@@ -4,17 +4,19 @@ description: Commands for managing SCAPI Custom API endpoints, checking registra
 
 # Custom APIs
 
-Commands for managing SCAPI Custom API endpoints.
+Check which SCAPI Custom API endpoints are active and investigate registration failures.
+
+![B2C CLI showing Custom API names, HTTP methods, and registration status.](/cli-custom-api-status.png)
 
 ## Global Custom APIs Flags
 
 These flags are available on all Custom APIs commands:
 
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--tenant-id` | `SFCC_TENANT_ID` | (Required) Organization/tenant ID |
-| `--short-code` | `SFCC_SHORTCODE` | SCAPI short code |
-| `--client-id` | `SFCC_CLIENT_ID` | Account Manager API Client ID |
+| Flag              | Environment Variable | Description                       |
+| ----------------- | -------------------- | --------------------------------- |
+| `--tenant-id`     | `SFCC_TENANT_ID`     | (Required) Organization/tenant ID |
+| `--short-code`    | `SFCC_SHORTCODE`     | SCAPI short code                  |
+| `--client-id`     | `SFCC_CLIENT_ID`     | Account Manager API Client ID     |
 | `--client-secret` | `SFCC_CLIENT_SECRET` | Account Manager API Client secret |
 
 Additional authentication flags (`--auth-methods`, `--user-auth`, `--account-manager-host`, `--jwt-cert`, `--jwt-key`, `--jwt-passphrase`) and logging flags (`--log-level`, `--debug`, `--jsonl`) are also available. See the [Authentication Guide](/guide/authentication#scapi-authentication) for credential configuration, or run any command with `--help` for the complete flag list.
@@ -27,10 +29,10 @@ Custom APIs commands require an Account Manager API Client with OAuth credential
 
 The following scopes are automatically requested by the CLI:
 
-| Scope | Description |
-|-------|-------------|
-| `sfcc.custom-apis` | Access to Custom APIs endpoints |
-| `SALESFORCE_COMMERCE_API:<tenant_id>` | Tenant-specific access scope |
+| Scope                                 | Description                     |
+| ------------------------------------- | ------------------------------- |
+| `sfcc.custom-apis`                    | Access to Custom APIs endpoints |
+| `SALESFORCE_COMMERCE_API:<tenant_id>` | Tenant-specific access scope    |
 
 ### Configuration
 
@@ -61,14 +63,14 @@ b2c scapi custom status --tenant-id <TENANT_ID>
 
 ### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--tenant-id` | (Required) Organization/tenant ID | |
-| `--status`, `-s` | Filter by endpoint status (`active`, `not_registered`) | |
-| `--group-by`, `-g` | Group output by field (`type` or `site`) | |
-| `--columns`, `-c` | Columns to display (comma-separated) | |
-| `--extended`, `-x` | Show all columns including extended fields | `false` |
-| `--json` | Output results as JSON | `false` |
+| Flag               | Description                                            | Default |
+| ------------------ | ------------------------------------------------------ | ------- |
+| `--tenant-id`      | (Required) Organization/tenant ID                      |         |
+| `--status`, `-s`   | Filter by endpoint status (`active`, `not_registered`) |         |
+| `--group-by`, `-g` | Group output by field (`type` or `site`)               |         |
+| `--columns`, `-c`  | Columns to display (comma-separated)                   |         |
+| `--extended`, `-x` | Show all columns including extended fields             | `false` |
+| `--json`           | Output results as JSON                                 | `false` |
 
 ### Available Columns
 
@@ -80,10 +82,10 @@ Extended columns (shown with `--extended`): `sites`, `securityScheme`, `operatio
 
 The `type` column shows a human-readable API type based on the security scheme:
 
-| Security Scheme | Type |
-|-----------------|------|
-| `AmOAuth2` | Admin |
-| `ShopperToken` | Shopper |
+| Security Scheme | Type    |
+| --------------- | ------- |
+| `AmOAuth2`      | Admin   |
+| `ShopperToken`  | Shopper |
 
 ### Examples
 

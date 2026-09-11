@@ -1,0 +1,6 @@
+---
+'@salesforce/b2c-dx-docs': patch
+'@salesforce/b2c-tooling-sdk': patch
+---
+
+Redesign the documentation with clearer navigation, quick installation for AI tools, and task-focused MCP guidance. Update the bundled documentation search index with the revised guides and setup instructions.

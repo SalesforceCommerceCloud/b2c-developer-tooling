@@ -1,39 +1,17 @@
 ---
-description: Choose the project, credentials, and tools available to your B2C Commerce coding assistant.
+description: Connect your B2C Commerce environments, reuse existing credentials, and customize your MCP setup when needed.
 ---
 
 # Configuration
 
-Configure the MCP for the project and environments you intend your assistant to
-use. It shares credential formats with the B2C CLI and VS Code extension.
-
-## Project and instance {#project-directory}
-
-Set `--project-directory /absolute/path/to/project` in your MCP launch arguments.
-This selects the default project for configuration and local files. Do not
-rely on the client's starting directory, especially with user-level or plugin
-installations.
-
-To use a particular configuration file or named instance, add `--config` and
-`--instance` to the launch arguments. Relative configuration paths resolve from
-the project directory. A shared global configuration may also provide defaults
-and named instances; see [shared configuration](../guide/configuration).
-
-Ask your assistant to **inspect the B2C MCP configuration** with `config_inspect`
-to confirm the project, instance, and hostname. Secrets are redacted by default.
-This usually avoids opening credential files manually and shows which sources
-provided the effective settings.
-Tools that support multiple projects can select a different project or instance
-for an individual task, so verify the target before deploying or debugging.
-
-Documentation tools can use the task's project to tailor storefront results.
-Skills are available independently of the project directory. The server's
-launch directory does not determine tool availability.
+Documentation and skills work as soon as you install the MCP. To read live data,
+debug, or deploy, connect the environments you want to use. If you already use
+the B2C CLI or IDE extension, the MCP can reuse that configuration.
 
 ## Credentials {#dw-json}
 
 Use your project's `dw.json`, environment variables, or existing shared B2C
-configuration. Skills and documentation do not require Commerce credentials.
+configuration. Skills and documentation do not require B2C Commerce credentials.
 For connected operations, configure only the access you need:
 
 | Capability                     | Required access                                                                                                                                    |
@@ -41,7 +19,7 @@ For connected operations, configure only the access you need:
 | Cartridge deployment           | Instance hostname, code version, and WebDAV write credentials. Reloading also requires the relevant OCAPI access.                                  |
 | Instance logs                  | Instance hostname and WebDAV log-read credentials.                                                                                                 |
 | Script debugging               | Instance hostname and Business Manager username/password or access key with debugger permission. OAuth is not supported.                           |
-| SCAPI offline discovery        | No Commerce credentials required.                                                                                                                  |
+| SCAPI offline discovery        | No B2C Commerce credentials required.                                                                                                              |
 | SCAPI Admin execution          | Short code, tenant ID, and Account Manager client credentials with the operation's API scopes; for example, `sfcc.products.rw` to create products. |
 | SCAPI live schemas             | Short code, tenant ID, and OAuth client with `sfcc.scapi-schemas` scope.                                                                           |
 | Custom API registration status | Short code, tenant ID, and OAuth client with `sfcc.custom-apis` scope.                                                                             |
@@ -74,11 +52,25 @@ B2C configuration. Existing `~/.mobify` credentials are also supported.
 `MRT_API_KEY`, `MRT_PROJECT`, and `MRT_ENVIRONMENT` are the corresponding
 environment variables. See [MRT authentication](../guide/authentication#managed-runtime-api-key).
 
-## Tool selection {#toolset-selection}
+## Advanced manual configuration
 
-Find exact tool names in [Tools and Capabilities](./toolsets).
-All toolsets are enabled by default. To choose a smaller set, append either
-option to the MCP server launch arguments:
+The plugin needs no project-path or toolset launch settings. The following
+options are for [manual installations](./installation) with custom defaults.
+
+### Fixed project and instance defaults {#project-directory}
+
+Optionally set `--project-directory /absolute/path/to/project` in the server's
+launch arguments. Use `--config` to choose a configuration file or `--instance`
+to choose a named instance. Relative configuration paths resolve from the
+project directory. These are defaults, not access restrictions.
+See [shared configuration](../guide/configuration) for file formats and named instances.
+
+### Choose available tools {#toolset-selection}
+
+The plugin's default setup includes all toolsets; no selection is needed.
+To choose specific tools or toolsets, use the names in the [tool reference](./toolsets).
+In a [direct installation](./installation), append either option to the server
+launch arguments:
 
 ```bash
 --toolsets CARTRIDGES,MRT
@@ -93,17 +85,16 @@ Explicit selection replaces the default of all toolsets. Combining `--toolsets` 
 `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, and `all`.
 
 Skills and documentation are included with every toolset. When selecting
-individual tools, include `skills_read` for the broader skill collections and
-the documentation tools you want. MCP-specific skill resources remain available.
-Check the
-client's tool list after changing configuration: invalid names are ignored, and
+individual tools, include `skills_read` to retain the included B2C Commerce skills
+and the documentation tools you want. Check your client's tool list after
+changing configuration: invalid names are ignored, and
 if no valid selection remains the server falls back to all toolsets.
 
 ### Launch options {#mcp-server-flags}
 
 | Option                | Environment variable     | Use                                                         |
 | --------------------- | ------------------------ | ----------------------------------------------------------- |
-| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Select the project.                                         |
+| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Set the default project directory.                          |
 | `--config`            | `SFCC_CONFIG`            | Select a B2C configuration file.                            |
 | `--instance`          | `SFCC_INSTANCE`          | Select a named instance.                                    |
 | `--toolsets`          | `SFCC_TOOLSETS`          | Enable toolsets, comma-separated.                           |
@@ -124,16 +115,14 @@ available topics accessible. It does not restrict bundled workflow skills.
 
 ## Saved workflows {#saved-workflows}
 
-Built-in SCAPI workflows are included with the package. User-saved workflows live
-under `scapi/snippets/` in the shared B2C data directory, normally
-`~/.local/share/b2c` on macOS/Linux or `%LOCALAPPDATA%\b2c` on Windows. Oclif data
-directory overrides apply. This storage is shared across MCP clients and the B2C
-CLI installation; a separate client profile alone does not isolate it.
+Saved SCAPI workflows remain available across sessions and clients. To back them
+up, copy the `scapi/snippets/` folder from your B2C data directory:
 
-Each user workflow is a JSON file containing JavaScript source, its description,
-and input schema. Back up these files to preserve your workflows; remove a file
-to remove that workflow. Existing names are not overwritten when saving. Built-in
-workflows update with the package and are separate from your saved files.
+- macOS/Linux: `~/.local/share/b2c/scapi/snippets/`
+- Windows: `%LOCALAPPDATA%\b2c\scapi\snippets\`
+
+These are the default locations; a custom B2C data directory changes the path.
+Built-in workflows update with the package and are separate from your saved files.
 
 ## Logging and telemetry
 

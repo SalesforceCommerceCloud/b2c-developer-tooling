@@ -1,45 +1,54 @@
 ---
-description: Give your coding assistant B2C Commerce skills, documentation, deployment, debugging, and log access.
+description: Connect your AI assistant to B2C Commerce tools, documentation, skills, and APIs.
 ---
 
-# B2C Commerce MCP Server
+# MCP (Model Context Protocol)
 
-Connect your coding assistant to Salesforce B2C Commerce. The B2C DX MCP Server
-supports Codex, Claude Code, Cursor, GitHub Copilot, and other MCP clients.
-It supports MCP 2026-07-28 and earlier clients over local stdio; your client
-selects the protocol automatically.
+Give your AI assistant B2C Commerce documentation, development skills, debugging, deployment, and API access.
 
-Use it to:
+## Set up with a plugin <span class="recommended VPBadge">Recommended</span> {#plugin-setup}
 
-- Find Commerce documentation and workflow skills while developing.
-- Deploy cartridges and publish Managed Runtime bundles.
-- Investigate server-side code with breakpoints, variables, and logs.
-- Discover SCAPI schemas and check custom API registration.
-- Discover nearly 600 API operations and manage Commerce records through
-  [SCAPI code mode](./toolsets#scapi-code-mode-preview) (preview).
+Install the **B2C MCP plugin** for your client. It includes the B2C Commerce,
+B2C CLI, and Storefront Next skills. **No need to install those skills plugins separately.**
 
-[Browse capabilities](./toolsets) to see what is available and which operations
-need credentials or can change your environment.
+<!--@include: ../_partials/mcp-plugin-install.md-->
 
-## Get started
+Start a new session in your project. Documentation and skills work without B2C Commerce credentials.
 
-1. [Install the server](./installation) in your coding assistant.
-2. [Select your project and tools](./configuration). Skills and documentation
-   can be used without Commerce credentials.
-3. [Configure access](./security) for the environments and operations you need.
+## Manual setup
 
-For example, ask your assistant to explain a Commerce API, help prepare a
-cartridge deployment, or investigate a sandbox error. The included
-[workflow skills](./skills) covers B2C CLI, Commerce development, and
-Storefront Next.
+For Cursor, Claude Desktop, and other clients, or for a custom configuration, use
+[manual installation](./installation). You get the same tools, documentation, and skills.
 
-## Choose the tools you expose {#project-type-detection}
+## Developer Tasks
 
-All toolsets are enabled by default, regardless of the project's storefront
-framework or the directory where your client starts the server. Use
-[explicit tool selection](./configuration#toolset-selection) to customize the
-capabilities available to your assistant.
+- **Build:** find platform documentation and apply B2C Commerce development patterns.
+- **Debug:** investigate logs, set cartridge breakpoints, and inspect variables.
+- **Deploy:** publish cartridges and Managed Runtime storefront bundles.
 
-The project directory still determines which configuration and files a task
-uses. Shared tools support PWA Kit and Storefront Next projects; set the intended
-project in [configuration](./configuration#project-directory).
+> Investigate this sandbox error using logs and local cartridge source. Explain the cause before changing code.
+
+## Administrator and Merchant Tasks
+
+[SCAPI code mode](./toolsets#scapi-code-mode) covers nearly 600 Salesforce Commerce API operations.
+Review campaigns and promotions, investigate job failures, or create products and assign catalog categories.
+
+> Show failed job executions from the last 24 hours, grouped by job. Highlight recurring failures.
+
+> Summarize the promotions in campaign spring-sale. Flag schedule conflicts and disabled promotions.
+
+Standard and custom Admin APIs support live requests. Shopper APIs are available for reference.
+
+## Configuration and access
+
+Connected tasks use your [B2C Commerce configuration](./configuration) and account permissions.
+See [authentication](../guide/authentication) for credential setup and [Security and Access](./security)
+for approvals, credential handling, and Safety Mode.
+
+The default installation includes all toolsets. [Advanced configuration](./configuration#toolset-selection)
+lets you choose specific tools or toolsets for manual installations.
+
+## Tools and skills
+
+Browse [MCP Tools](./toolsets) for capabilities and tool names, or [Agent Skills](../guide/agent-skills)
+for the included expertise. Use [Plugins](../guide/agent-plugins) to explore optional additions.

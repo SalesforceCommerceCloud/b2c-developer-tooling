@@ -1,16 +1,16 @@
 ---
-description: Introduction to the Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, VS Code extension, and SDK for Salesforce Agentforce Commerce.
+description: Introduction to the Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, IDE extension, and SDK for Salesforce B2C Commerce.
 ---
 
 # Introduction
 
-The Agentic B2C Developer Toolkit exposes the B2C Commerce platform as commands, MCP tools, and coding skills — so you and your AI agents can build, deploy, and operate storefronts from the terminal or directly inside your IDE. No clicking through Business Manager to deploy, no context-switching to run a job, no manual copy-paste when your agent needs to touch a live sandbox.
+The Agentic B2C Developer Toolkit helps you and your AI assistant build, deploy, and operate Salesforce B2C Commerce from your terminal or IDE.
 
-- **B2C CLI** — a single command for every workflow: cartridge deploys, jobs, ODS/MRT, WebDAV, site archives, SLAS, eCDN, Account Manager, CI/CD.
-- **Agent Skills** — 30+ preconfigured skills that teach your coding agent (Claude Code, Cursor, Agentforce Vibes, Copilot, Codex) how B2C Commerce works — SCAPI Custom APIs, SLAS, SFRA controllers and forms, ISML, Page Designer, hooks, custom objects — and which CLI commands to run when.
-- **MCP Server** — a focused set of MCP tools that complement the CLI for agent-driven workflows.
-- **VS Code Extension** — sandbox management, cartridge code sync, content libraries, SCAPI explorer, and a server-side script debugger right inside VS Code.
-- **Tooling SDK** — everything the CLI does, available as a typed TypeScript SDK for custom integrations.
+- **B2C CLI** — commands for cartridge deployment, jobs, sandboxes, Managed Runtime, WebDAV, and administration.
+- **MCP Server** — documentation, skills, debugging, deployment, and B2C Commerce API access for your AI assistant.
+- **Agent Skills** — B2C Commerce, B2C CLI, and Storefront Next guidance, included with the MCP or available as standalone plugins.
+- **IDE Extension** — sandbox management, cartridge code sync, content libraries, SCAPI explorer, and a server-side script debugger.
+- **Tooling SDK** — typed TypeScript APIs for custom integrations and automation.
 
 ## Quick CLI Install
 
@@ -34,62 +34,30 @@ See the [CLI Installation Guide](./installation) for more installation options.
 
 ## Quick MCP Install
 
-The B2C DX MCP Server enables AI assistants to help with B2C Commerce development tasks.
+Install the **B2C MCP plugin** for your client.
 
-### Claude Code (Project Scope)
+<!--@include: ../_partials/mcp-plugin-install.md-->
 
-1. Open your project root in Claude Code.
-2. Install the plugin marketplace entry:
+Start a new session in your project. For **Copilot in VS Code**, other clients,
+and manual setup, see [installation](../mcp/installation).
 
-```bash
-claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-claude plugin install b2c-dx-mcp --scope project
-```
+Documentation and skills work immediately without B2C Commerce credentials.
+Connected tasks use your [existing B2C configuration](../mcp/configuration).
 
-### Cursor (Project Scope)
+The MCP includes the B2C Commerce, B2C CLI, and Storefront Next skills from our
+[agent skills plugins](./agent-skills). No need to install those skills plugins separately.
 
-1. Open your project root.
-2. Create or edit `.cursor/mcp.json`.
-3. Add this entry under `mcpServers` (merge with existing config, do not replace the full file):
+## Quick IDE Extension Install
 
-```json
-"b2c-dx-mcp": {
-  "command": "npx",
-  "args": ["-y", "@salesforce/b2c-dx-mcp@latest"]
-}
-```
+The Salesforce B2C Commerce IDE Extension brings sandbox management, code sync, content libraries, the SCAPI explorer, and a server-side debugger into VS Code, Cursor, and other compatible editors. Open the Extensions view in your editor and search for **Salesforce B2C Commerce** — VS Code installs from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension), while Cursor, VSCodium, Windsurf, and other VS Code–compatible editors install from the [Open VSX Registry](https://open-vsx.org/extension/salesforce/b2c-vs-extension).
 
-### GitHub Copilot (Project Scope)
-
-1. Open your project root.
-2. Create or edit `.vscode/mcp.json`.
-3. Add this entry under `servers` (merge with existing config, do not replace the full file):
-
-```json
-"b2c-dx-mcp": {
-  "type": "stdio",
-  "command": "npx",
-  "args": ["-y", "@salesforce/b2c-dx-mcp@latest"]
-}
-```
-
-See the [MCP Server Installation Guide](/mcp/installation) for full setup steps and troubleshooting.
-
-## Quick VS Code Extension Install
-
-The Salesforce B2C Commerce VS Code Extension brings sandbox management, code sync, content libraries, the SCAPI explorer, and a server-side debugger into VS Code. Open the Extensions view in your editor and search for **Salesforce B2C Commerce** — VS Code installs from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension), while Cursor, VSCodium, Windsurf, and other VS Code–compatible editors install from the [Open VSX Registry](https://open-vsx.org/extension/salesforce/b2c-vs-extension).
-
-See the [VS Code Extension](/vscode-extension/) section for the full overview, [installation](/vscode-extension/installation), and [configuration](/vscode-extension/configuration).
+See the [IDE Extension](/vscode-extension/) section for the full overview, [installation](/vscode-extension/installation), and [configuration](/vscode-extension/configuration).
 
 ## Next Steps
 
-- [Authentication Setup](./authentication) - Set up Account Manager, OCAPI, and WebDAV
-- [Import Sets](./import-sets) - Apply cartridge metadata and project migrations as a repeatable deployment history
-- [Analytics Reports (CIP/CCAC)](./analytics-reports-cip-ccac) - Run curated analytics reports and SQL queries
-- [Configuration](./configuration) - Configure instances and credentials
-- [IDE Integration](./ide-integration) - Connect third-party IDE tooling to B2C CLI configuration and enable Script API IntelliSense
-- [MCP Server](/mcp/) - AI-assisted development with Model Context Protocol
-- [VS Code Extension](/vscode-extension/) - Sandbox management, code sync, and the script debugger inside VS Code
-- [CLI Reference](/cli/) - Browse available commands
-- [MCP Tools](/mcp/toolsets) - Explore MCP tools for cartridges, MRT, SCAPI, and so on
-- [SDK Reference](/api/) - Explore the SDK
+- [Authentication](./authentication) — Set up credentials for connected tasks.
+- [Configuration](./configuration) — Configure projects and named instances.
+- [Guides](./workflows) — Find development, deployment, and administration workflows.
+- [CLI Reference](../cli/) — Browse commands and options.
+- [MCP Tools](../mcp/toolsets) — Explore available tools and toolsets.
+- [SDK](../api/) — Build custom integrations.

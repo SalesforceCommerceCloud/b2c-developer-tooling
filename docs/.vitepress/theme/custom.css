@@ -1,61 +1,317 @@
 :root {
-  --vp-c-brand-1: #00A1E0;
-  --vp-c-brand-2: #0090c8;
+  --vp-layout-max-width: 1600px;
+  --vp-sidebar-width: 256px;
+  --vp-nav-height: 112px;
+  --vp-c-brand-1: #006fa4;
+  --vp-c-brand-2: #007eb0;
   --vp-c-brand-3: #007eb0;
   --vp-c-brand-soft: rgba(0, 161, 224, 0.14);
   /* Hero name gradient (Salesforce blue) */
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(135deg, #00A1E0 0%, #0070D2 100%);
+  --vp-home-hero-name-background: linear-gradient(135deg, #00a1e0 0%, #0070d2 100%);
 }
 
-.dark {
-  --vp-c-brand-1: #00A1E0;
-  --vp-c-brand-2: #33b4e6;
-  --vp-c-brand-3: #66c7ec;
-  --vp-c-brand-soft: rgba(0, 161, 224, 0.16);
-  --vp-home-hero-name-background: linear-gradient(135deg, #33b4e6 0%, #00A1E0 100%);
-}
-
-/* Hero image sizing */
-.VPHero .container {
-  max-width: calc(var(--vp-layout-max-width) - 100px);
-}
-
-.VPHero .image-container {
-  max-width: 600px !important;
-  padding: 24px;
-  margin-bottom: 20px;
-}
-
+/* One centered frame, with a wider overview and a bounded article + outline. */
 @media (min-width: 960px) {
-  .VPHero .image-container {
-    margin-bottom: 0;
-    transform: none;
-    max-width: 100% !important;
-    margin-left: 60px;
+  :root .Layout .VPContent.has-sidebar {
+    max-width: var(--vp-layout-max-width);
+    margin: 0 auto;
+    padding-left: var(--vp-sidebar-width);
+    padding-right: 0;
+  }
+  :root .Layout .VPSidebar {
+    left: max(0px, calc((100vw - var(--vp-layout-max-width)) / 2));
+    width: var(--vp-sidebar-width);
+    padding: calc(var(--vp-nav-height) + 24px) 24px 48px;
+    background: var(--vp-c-bg);
+    border-right: 1px solid var(--vp-c-divider);
+  }
+  :root .Layout .VPSidebar .curtain {
+    display: none;
+  }
+  :root .Layout .VPDoc.has-sidebar {
+    padding: 40px 40px 0;
+  }
+  :root .Layout .VPDoc.has-sidebar .container {
+    max-width: 1120px;
+  }
+  :root .Layout .VPDoc.has-sidebar > .container > .content {
+    min-width: 0;
+    padding: 0 0 96px;
+  }
+  :root .Layout .VPDoc.has-aside .content-container {
+    max-width: 760px;
+  }
+  :root .Layout .VPDoc:not(.has-aside) .content-container {
+    max-width: 1120px;
+  }
+  :root .Layout .VPDoc .aside {
+    max-width: 224px;
+    padding-left: 32px;
+  }
+  :root .Layout .VPDoc .aside-container,
+  :root .Layout .VPDoc .aside-curtain {
+    width: 192px;
   }
 }
 
-.VPHero .image-container .image-bg {
-  display: none;
+/* Keep VitePress search and menu behavior; arrange its controls in two rows. */
+@media (min-width: 768px) {
+  :root .Layout .VPNavBar,
+  :root .Layout .VPNavBar:not(.home),
+  :root .Layout .VPNavBar:not(.home.top) .content-body {
+    background: var(--vp-c-bg);
+  }
+  :root .Layout .VPNavBar .wrapper,
+  :root .Layout .VPNavBar.has-sidebar .wrapper {
+    padding: 0 24px;
+  }
+  :root .Layout .VPNavBar .container,
+  :root .Layout .VPNavBar.has-sidebar .container {
+    position: relative;
+    max-width: calc(var(--vp-layout-max-width) - 48px);
+  }
+  :root .Layout .VPNavBar .container > .title,
+  :root .Layout .VPNavBar.has-sidebar .container > .title {
+    position: static;
+    width: auto;
+    height: 64px;
+    padding: 0;
+  }
+  :root .Layout .VPNavBarTitle .title {
+    height: 64px;
+    border: 0;
+  }
+  :root .Layout .VPNavBarTitle .logo {
+    height: 32px;
+  }
+  :root .Layout .VPNavBar .content,
+  :root .Layout .VPNavBar.has-sidebar .content {
+    position: static;
+    padding: 0;
+  }
+  :root .Layout .VPNavBar .content-body,
+  :root .Layout .VPNavBar:not(.home.top) .content-body {
+    position: static;
+    height: 64px;
+    margin: 0;
+    padding: 0;
+  }
+  :root .Layout .VPNavBarSearch {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0;
+    flex-grow: 0;
+  }
+  :root .Layout .VPNavBarSearchButton {
+    width: clamp(200px, 22vw, 340px);
+    height: 36px;
+    border: 1px solid var(--vp-c-divider);
+    background: var(--vp-c-bg-soft);
+    border-radius: 6px;
+  }
+  :root .Layout .VPNavBarSearchButton .keys {
+    margin-left: auto;
+  }
+  :root .Layout .VPNavBarMenu {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    gap: 12px;
+  }
+  :root .Layout .VPNavBarMenu > .VPNavBarMenuGroup {
+    margin-left: auto;
+  }
+  :root .Layout .VPNavBarMenuLink,
+  :root .Layout .VPNavBarMenuGroup .button {
+    height: 48px;
+  }
+  :root .Layout .VPNavBarMenuLink:first-of-type {
+    padding-left: 0;
+  }
+  :root .Layout .VPNavBarMenuLink.active {
+    box-shadow: inset 0 -2px var(--vp-c-brand-1);
+  }
+  :root .Layout .VPNavBar .divider,
+  :root .Layout .VPNavBar.has-sidebar .divider {
+    padding: 0;
+  }
 }
 
-.VPHero .image-container img {
-  max-width: 600px !important;
-  max-height: 500px;
-  object-fit: contain;
+.cli-intro {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 32px;
+  margin: 20px 0;
+}
+.cli-intro-copy {
+  font-size: 17px;
+  line-height: 1.7;
+}
+.cli-preview {
+  margin: 0;
+}
+.cli-preview p {
+  margin: 0;
+}
+.vp-doc .cli-preview img {
+  display: block;
+  width: 100%;
+  margin: 0;
+  border-radius: 8px;
+}
+.vp-doc img[src$='/cli-code-versions.png'],
+.vp-doc img[src$='/cli-custom-api-status.png'] {
+  width: 100%;
+  max-width: 680px;
+  margin: 28px auto;
+  border-radius: 8px;
+}
+.vp-doc .primary-cta {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: #006fa4;
+  color: #fff;
+  text-decoration: none;
+}
+.vp-doc .primary-cta:hover {
+  background: #005a86;
+}
+.cli-intro .overview-actions {
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 24px 0 0;
 }
 
-/* Home features icon treatment */
-.VPFeature .box .icon {
-  background-color: var(--vp-c-brand-soft);
-  width: 56px;
-  height: 56px;
-  font-size: 28px;
-  border-radius: 12px;
+:root .Layout .VPDoc .vp-doc > p,
+:root .Layout .VPDoc .vp-doc > ul,
+:root .Layout .VPDoc .vp-doc > ol {
+  max-width: 84ch;
 }
 
-.VPFeature .box .icon img {
-  width: 32px;
-  height: 32px;
+:root .Layout .VPDoc .vp-doc h1 {
+  font-size: 32px;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+:root .Layout .VPDoc .vp-doc h2 {
+  font-size: 23px;
+}
+.page-lead {
+  max-width: 70ch;
+  font-size: 21px;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+.toolkit-overview .page-lead {
+  max-width: none;
+  font-size: 18px;
+  line-height: 1.5;
+}
+:root .Layout.toolkit-overview .vp-doc h2 {
+  margin-top: 28px;
+  padding-top: 20px;
+}
+.toolkit-overview .vp-doc .doc-cards {
+  margin-top: 16px;
+}
+.overview-actions {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin: 24px 0 32px;
+}
+.overview-actions p {
+  margin: 0;
+}
+.overview-actions a {
+  font-weight: 600;
+}
+.task-links ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 32px;
+  list-style: none;
+  padding: 0;
+}
+.task-links li {
+  margin: 0 !important;
+}
+.task-links a {
+  text-decoration: none;
+}
+.recommended {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: normal;
+}
+:root .Layout .VPNavBar .install-tools-trigger {
+  margin-left: 16px;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 4px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --vp-nav-height: 64px;
+  }
+  .cli-intro {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0;
+  }
+  .cli-preview {
+    max-width: 560px;
+  }
+  :root .Layout .VPNavBarTitle .logo {
+    height: 28px;
+  }
+  :root .Layout .VPNavBar .install-tools-trigger {
+    display: none;
+  }
+  :root .Layout .VPNavBarTitle .title {
+    max-width: 175px;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  .task-links ul {
+    grid-template-columns: 1fr;
+  }
+  .page-lead {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+  :root .Layout .VPNavBarTitle .title {
+    max-width: 230px;
+    white-space: normal;
+    font-size: 14px;
+    line-height: 1.3;
+  }
+}
+
+.dark {
+  --vp-c-brand-1: #00a1e0;
+  --vp-c-brand-2: #33b4e6;
+  --vp-c-brand-3: #66c7ec;
+  --vp-c-brand-soft: rgba(0, 161, 224, 0.16);
+  --vp-home-hero-name-background: linear-gradient(135deg, #33b4e6 0%, #00a1e0 100%);
 }
