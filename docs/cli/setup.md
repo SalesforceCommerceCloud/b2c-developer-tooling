@@ -578,6 +578,7 @@ Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes
 | ----------------------- | ---------------------------------------------------------------------- |
 | `b2c`                   | B2C Commerce development patterns and practices                        |
 | `b2c-cli`               | B2C CLI commands and operations                                        |
+| `b2c-ops` | Operator and administrator runbooks for job health, checkout failures, and incident triage |
 | `storefront-next`       | Storefront Next development — routing, components, deployment          |
 | `storefront-next-figma` | Storefront Next Figma design-kit workflows (requires Figma MCP server) |
 | `cap-dev`               | Commerce App Package scaffolding, validation, and submission           |

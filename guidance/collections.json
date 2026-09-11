@@ -2,7 +2,12 @@
   "version": 1,
   "featuredResources": ["mcp/server", "mcp/debugger", "mcp/b2c-config", "mcp/scapi"],
   "collections": [
-    {"id": "b2c-cli", "title": "B2C CLI Workflows", "plugin": "b2c-cli", "isGA": true},
+    {
+      "id": "b2c-cli",
+      "title": "B2C CLI Workflows",
+      "plugin": "b2c-cli",
+      "isGA": true
+    },
     {
       "id": "b2c",
       "title": "B2C Commerce Development",
@@ -11,12 +16,23 @@
       "workspaces": ["cartridges", "sfra"]
     },
     {
+      "id": "b2c-ops",
+      "title": "B2C Operations Runbooks",
+      "plugin": "b2c-ops",
+      "isGA": true
+    },
+    {
       "id": "storefront-next",
       "title": "Storefront Next",
       "plugin": "storefront-next",
       "isGA": true,
       "workspaces": ["storefront-next"]
     },
-    {"id": "mcp", "title": "MCP Workflows", "directory": "guidance/mcp", "isGA": true}
+    {
+      "id": "mcp",
+      "title": "MCP Workflows",
+      "directory": "guidance/mcp",
+      "isGA": true
+    }
   ]
 }

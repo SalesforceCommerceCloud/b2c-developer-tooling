@@ -99,23 +99,25 @@ Automate builds, deployments, and other repeatable B2C Commerce tasks.
 
 <div>
 
-### Review promotions before launch
+### Investigate failed orders
 
-Ask your assistant to review campaign schedules and identify what needs attention.
+Use the MCP and operations skills to connect failed orders with payment errors
+and job updates. Understand the impact and prepare evidence for the team that
+can help.
 
 <ExamplePrompt>
 
-> Summarize the promotions in campaign spring-sale. Flag schedule conflicts and disabled promotions.
+> Investigate failed orders on my site over the last two hours. Look for patterns in affected products and payment errors, and prepare a handoff with the evidence. Don't change orders or retry payments.
 
 </ExamplePrompt>
 
-[Explore administrator and merchant tasks](./mcp/#administrator-and-merchant-tasks)
+[Explore operations workflows](./guide/operations)
 
 </div>
 
 <figure>
 
-![Screenshot placeholder: a campaign review showing promotion schedules and items to check before launch.](/placeholders/mcp-chatgpt-campaign.svg)
+![Screenshot placeholder: an assistant investigating failed orders, identifying affected products and payment errors, and preparing an evidence-based handoff.](/placeholders/mcp-order-investigation.svg)
 
 </figure>
 
@@ -126,8 +128,8 @@ Ask your assistant to review campaign schedules and identify what needs attentio
 [Manage users and API clients](./guide/account-manager)
 Review users, roles, organizations, and API access in Account Manager.
 
-[Investigate job failures](./mcp/toolsets#scapi-code-mode)
-Ask your assistant to review job executions and identify recurring failures.
+[Review campaigns and promotions](./mcp/#administrator-and-merchant-tasks)
+Check campaign schedules and identify promotions that need attention before launch.
 
 [Explore analytics reports](./guide/analytics-reports-cip-ccac)
 Query B2C Commerce data and turn operational reports into useful answers.

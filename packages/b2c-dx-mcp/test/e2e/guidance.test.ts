@@ -57,7 +57,12 @@ describe('guidance over real stdio', function () {
       }
       const templates = (await restricted.call('resources/templates/list')) as {resourceTemplates: unknown[]};
       expect(templates.resourceTemplates).to.have.length(1);
-      for (const id of ['b2c-cli/b2c-code', 'b2c/b2c-onboarding', 'storefront-next/sfnext-configuration']) {
+      for (const id of [
+        'b2c-cli/b2c-code',
+        'b2c-ops/b2c-job-health',
+        'b2c/b2c-onboarding',
+        'storefront-next/sfnext-configuration',
+      ]) {
         const response = await restricted.request(id, 'resources/read', {uri: `skill://${id}/SKILL.md`});
         expect(response.error, id).to.exist;
       }
@@ -117,13 +122,21 @@ describe('guidance over real stdio', function () {
     expect(ids.length).to.equal(total);
     expect(new Set(ids).size).to.equal(total);
     expect(new Set(ids.map((id) => id.split('/')[0]))).to.deep.equal(
-      new Set(['b2c', 'b2c-cli', 'mcp', 'storefront-next']),
+      new Set(['b2c', 'b2c-cli', 'b2c-ops', 'mcp', 'storefront-next']),
     );
     expect(ids).to.include('mcp/server');
   });
 
   it('reads published MCP skills identically through resources and tools', async () => {
-    for (const id of ['mcp/server', 'mcp/debugger', 'mcp/b2c-config', 'mcp/scapi', 'b2c-cli/b2c-code']) {
+    for (const id of [
+      'mcp/server',
+      'mcp/debugger',
+      'mcp/b2c-config',
+      'mcp/scapi',
+      'b2c-cli/b2c-code',
+      'b2c-ops/b2c-production-triage',
+      'b2c-ops/b2c-order-failure-triage',
+    ]) {
       const response = await call({id});
       const initial = response.structuredContent.result as GuidanceRead;
       expect(initial.uri).to.equal(`skill://${id}/SKILL.md`);

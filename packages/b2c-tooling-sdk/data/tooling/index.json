@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-11T03:22:21.647Z",
+  "generatedAt": "2026-09-11T19:44:32.329Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -269,7 +269,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.md",
-      "headings": "Skill Collections {#available-plugins} • Install skills {#quick-start} • Codex • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Claude Code • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • GitHub Copilot in VS Code {#copilot-vs-code} • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Cursor • OpenCode • Gemini CLI • Other Agent Harnesses {#other-ides} • Manual installation {#manual-installation} • Skills in action • Add useful logging • Build an editable component • Usage Examples",
+      "headings": "Skill Collections {#available-plugins} • Install skills {#quick-start} • Codex • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Claude Code • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • GitHub Copilot in VS Code {#copilot-vs-code} • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Cursor • OpenCode • Gemini CLI • Other Agent Harnesses {#other-ides} • Manual installation {#manual-installation} • Skills in action • Investigate an operational incident • Add useful logging • Build an editable component • Usage Examples",
       "preview": "Agentic B2C Developer Toolkit — AI agent skills and plugins that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack."
     },
     {
@@ -381,6 +381,15 @@
       "preview": "Use the mrt-utilities package to simulate a deployed Managed Runtime environment locally with Express middleware and streaming adapters."
     },
     {
+      "id": "guide-operations",
+      "title": "Operations",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations.md",
+      "headings": "Get started • Review job health • Investigate checkout and failed orders • Escalate with useful evidence • Verify recovery",
+      "preview": "Review job health, investigate checkout and failed orders, and prepare actionable handoffs with your AI assistant."
+    },
+    {
       "id": "guide-safety",
       "title": "Safety Mode",
       "category": "tooling",
@@ -458,7 +467,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/workflows.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/workflows.md",
-      "headings": "Development • Deployment and automation • Administration • Migration",
+      "headings": "Development • Deployment and automation • Operations and administration • Migration",
       "preview": "Practical guides for developing, deploying, and administering Salesforce B2C Commerce with the Agentic B2C Developer Toolkit."
     },
     {

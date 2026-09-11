@@ -34,7 +34,7 @@ if (!version) {
 // b2c-dx-mcp is NOT part of b2c-agent-plugins — it tracks @salesforce/b2c-dx-mcp separately.
 const marketplacePath = join(repoRoot, '.claude-plugin/marketplace.json');
 const marketplace = readJson(marketplacePath);
-const claudeTargets = new Set(['b2c-cli', 'b2c', 'storefront-next']);
+const claudeTargets = new Set(['b2c-cli', 'b2c', 'b2c-ops', 'storefront-next']);
 for (const plugin of marketplace.plugins) {
   if (claudeTargets.has(plugin.name)) {
     plugin.version = version;
@@ -55,6 +55,8 @@ const pluginManifestTargets = [
   'skills/b2c-cli/.codex-plugin/plugin.json',
   'skills/b2c/plugin.json',
   'skills/b2c/.codex-plugin/plugin.json',
+  'skills/b2c-ops/plugin.json',
+  'skills/b2c-ops/.codex-plugin/plugin.json',
   'skills/storefront-next/plugin.json',
   'skills/storefront-next/.codex-plugin/plugin.json',
 ];

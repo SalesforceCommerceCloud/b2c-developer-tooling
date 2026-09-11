@@ -11,11 +11,11 @@ const selectedClient = ref('claude');
 
 # Agent Skills
 
-B2C skills give your AI assistant guidance for B2C Commerce development, CLI
-workflows, and Storefront Next projects.
+B2C skills give your AI assistant guidance for B2C Commerce development,
+operations, CLI workflows, and Storefront Next projects.
 
 **The [B2C MCP](../mcp/) gives your assistant access to guidance from the `b2c`,
-`b2c-cli`, and `storefront-next` collections** through its
+`b2c-cli`, `b2c-ops`, and `storefront-next` collections** through its
 [`skills_read` tool](../mcp/toolsets#documentation). Your assistant can find and read
 that guidance as needed, without a separate skills installation. You can also
 install these collections directly in your assistant, alongside the MCP or on their own.
@@ -27,11 +27,16 @@ The Figma plugins are optional additions and require the Figma MCP server.
 | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | [`b2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c/skills)                                                   | B2C Commerce development: controllers, ISML, logging, services, jobs, Page Designer, and Custom APIs.      |
 | [`b2c-cli`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-cli/skills)                                           | CLI workflows for deployment, jobs, site archives, WebDAV, and sandboxes.                                  |
+| [`b2c-ops`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-ops/skills)                                           | Administrator and operator runbooks: job health, checkout and failed orders, incident triage, and escalation.       |
 | [`storefront-next`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/storefront-next/skills)                           | Storefront development: routing, data, components, Page Designer, authentication, testing, and deployment. |
 | [`storefront-next-figma`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/storefront-next-figma/skills)               | Customize Storefront Next Figma design kits and apply your brand. Requires the Figma MCP server.           |
 | [`figma-to-sfnext-pagedesigner`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/figma-to-sfnext-pagedesigner/skills) | Turn Figma frames into Storefront Next Page Designer components. Requires the Figma MCP server.            |
 
 ## Install skills {#quick-start}
+
+For administrator and operator workflows, choose **`b2c-ops`** in your client's
+plugin installer, or substitute `b2c-ops` for the collection in the commands below.
+See [Operations](./operations) for example requests and expected results.
 
 To install skills directly, choose your assistant. These examples
 install both `b2c` and `b2c-cli`. Add optional collections such as `storefront-next`
@@ -259,6 +264,19 @@ individual skills. See [Setup Commands](/cli/setup) for all options.
 </details>
 
 ## Skills in action
+
+### Investigate an operational incident
+
+The `b2c-ops` runbooks help your assistant scope impact, compare evidence, and
+prepare a handoff. They work with the MCP or your existing CLI access.
+
+<ExamplePrompt>
+
+> Our inventory job is green, but the storefront stock looks stale. Investigate what completed and what is missing. Recommend the next action without rerunning the job.
+
+</ExamplePrompt>
+
+[Explore operations workflows](./operations)
 
 ### Add useful logging
 

@@ -148,7 +148,7 @@ as alternatives to storing credentials in plaintext files.
 - Documentation: CLI `b2c docs search`, `b2c docs read`, and `b2c docs schema`;
   MCP `docs_search`, `docs_read`, and `docs_schema_*`. Search platform references,
   guides, Salesforce Help, and toolkit docs; read relevant results as needed.
-- Skills: MCP `skills_read` finds and reads B2C Commerce, B2C CLI, Storefront Next,
+- Skills: MCP `skills_read` finds and reads B2C Commerce, B2C CLI, b2c-ops runbooks, Storefront Next,
   and MCP workflow guidance. Read applicable MCP skills before complex tool use.
 - B2C Commerce APIs: prefer a dedicated MCP tool when one covers the task.
   Otherwise, `scapi_search` and `scapi_execute` support Admin API workflows across
@@ -196,6 +196,7 @@ this file, so they stay within the current documentation version.
 - [MCP configuration](mcp/configuration.md): Tool selection and server-specific settings.
 - [MCP security](mcp/security.md): Approvals, credentials, data handling, and code mode access.
 - [Agent Skills](guide/agent-skills.md): Collections and standalone installation.
+- [Operations](guide/operations.md): Job health, checkout incidents, and administrator/developer/Support handoffs; use the b2c-ops runbooks for these tasks.
 - [Task guides](guide/workflows.md): Development, administration, and merchandising workflows.
 - [IDE Extension](vscode-extension/index.md): VS Code-compatible editors and installation links.
 - [TypeScript SDK](api/index.md): Build new tooling and inspect the shared behavior behind the official CLI, MCP, and IDE extension.

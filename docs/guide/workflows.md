@@ -22,8 +22,9 @@ New to the toolkit? Start with the [Introduction](./index) for installation and 
 - [Import sets](./import-sets) - Apply metadata and project migrations.
 - [MRT utilities](./mrt-utilities) - Work with Managed Runtime deployments.
 
-## Administration
+## Operations and administration
 
+- [Operations](./operations) - Review job health, investigate incidents, and prepare team or Support handoffs.
 - [Account Manager](./account-manager) - Manage users, organizations, roles, and API clients.
 - [Analytics reports](./analytics-reports-cip-ccac) - Query B2C Commerce data and run reports.
 - [Metrics](./metrics) - Inspect B2C Commerce observability metrics.

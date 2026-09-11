@@ -8,8 +8,8 @@ The B2C MCP server connects your AI assistant to Salesforce B2C Commerce tools,
 documentation, and workflow skills. Build and debug storefronts, deploy code,
 and manage your sites through requests in your assistant.
 
-Your assistant can find and read guidance from our B2C Commerce, B2C CLI, and
-Storefront Next [skill collections](../guide/agent-skills) through the
+Your assistant can find and read guidance from our B2C Commerce, B2C CLI,
+operations runbooks, and Storefront Next [skill collections](../guide/agent-skills) through the
 [`skills_read` tool](./toolsets#documentation). **No separate skills installation
 is needed.** Documentation and skills work without B2C Commerce credentials;
 connected tasks use your existing [B2C configuration](../guide/configuration).
@@ -48,9 +48,13 @@ and other clients, see [Other clients](#other-clients).
 [SCAPI code mode](./toolsets#scapi-code-mode) covers nearly 600 Salesforce Commerce API operations.
 Review campaigns and promotions, investigate job failures, or create products and assign catalog categories.
 
+Included [operations runbooks](../guide/operations) help your assistant review
+scheduled work, investigate checkout failures, and prepare evidence for your
+administrator, developer, integration provider, or Salesforce Support.
+
 <ExamplePrompt>
 
-> Show failed job executions from the last 24 hours, grouped by job. Highlight recurring failures.
+> Review last night's jobs for my configured site. Flag recurring failures or incomplete updates and prepare a handoff for anything that needs attention. Don't rerun jobs or change data.
 
 </ExamplePrompt>
 

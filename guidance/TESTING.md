@@ -68,6 +68,28 @@ source edits. After skill edits, run
 `pnpm --filter @salesforce/b2c-dx-mcp run generate:guidance` before restarting.
 Use the tarball preparation to assess release packaging.
 
+## Operations runbook checkpoint
+
+Use an ordinary operations workspace without demo-specific instructions/source.
+Regenerate guidance and restart MCP. The `b2c-ops` collection should be searchable
+and present in `skill://index`, but not add individual featured resources.
+
+- "Review last night's catalog jobs for my configured site. Check whether their
+  intended updates arrived, even if the jobs are green. Do not rerun or change data."
+- "Checkout has been failing for two hours. I have no source checkout. Investigate
+  and prepare a handoff for the appropriate owner; keep unknown impact explicit."
+- "This looks like a B2C Commerce platform issue. Draft a Salesforce Support case
+  with the evidence we have; do not submit it."
+- "Find FAILED orders in the last two hours, quantify their share of indexed
+  orders, and correlate a small sample with integration logs. Do not change orders."
+
+Check fixed target/window, focused skill/reference reads, correct MCP/CLI choices,
+SCAPI acknowledgment, bounded results, meaningful failed stages, and explicit
+authorization before intervention. Missing order-search access is unknown, not
+zero failures. Job health requires business validation. Escalation can go to an
+administrator, developer, provider, or Support; a draft is not a submitted case.
+Run the same task with native `b2c-ops` skills when verifying standalone use.
+
 ## SCAPI code mode checkpoint
 
 Code mode is available by default. If `--tools` limits selection, include

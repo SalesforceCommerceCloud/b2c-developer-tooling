@@ -32,6 +32,18 @@
       "version": "1.8.5"
     },
     {
+      "name": "b2c-ops",
+      "description": "B2C Commerce operator and administrator runbooks for job health, checkout failures, and incident triage.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./skills/b2c-ops",
+      "category": "productivity",
+      "strict": false,
+      "version": "1.8.5"
+    },
+    {
       "name": "b2c-dx-mcp",
       "description": "Build, debug, and deploy Salesforce B2C Commerce with your AI assistant. Includes documentation, workflow skills, and Salesforce Commerce API tools.",
       "author": {
@@ -57,7 +69,7 @@
     },
     {
       "name": "storefront-next-figma",
-      "description": "Figma design-kit skills for Storefront Next verticals — duplicate the kit, sync brand variables, and publish Code Connect. Requires the Figma MCP server.",
+      "description": "Figma design-kit skills for Storefront Next verticals \u2014 duplicate the kit, sync brand variables, and publish Code Connect. Requires the Figma MCP server.",
       "author": {
         "name": "Salesforce"
       },
@@ -69,7 +81,7 @@
     },
     {
       "name": "figma-to-sfnext-pagedesigner",
-      "description": "Convert a Figma frame into live Storefront Next Page Designer blocks — React components with decorator metadata, brand-token reconciliation, and product data loaders. Requires the Figma MCP server.",
+      "description": "Convert a Figma frame into live Storefront Next Page Designer blocks \u2014 React components with decorator metadata, brand-token reconciliation, and product data loaders. Requires the Figma MCP server.",
       "author": {
         "name": "Salesforce"
       },

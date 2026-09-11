@@ -623,6 +623,17 @@ b2c <topic> <command> --flag value
 
 ## Navigation Structure
 
+Administrator/operator tasks live in Guides under Operations & Administration.
+The Operations guide introduces shipped runbooks with business outcomes, example
+prompts, required access, and useful escalation (including Salesforce Support).
+Organize it around user capabilities, not individual skills or runbook names.
+Keep skill selection/procedures agent-facing; a future cross-plugin skill catalog
+will own individual skill listings. Collection names belong in installation context.
+Keep agent procedures in `skills/b2c-ops`, not the human guide. Link new supported
+tasks from the homepage and MCP where relevant; do not present planned merchant
+workflows as available. Runbook installation follows the same Agent Skills/MCP
+patterns, with MCP bundling preferred and standalone skills still supported.
+
 - **Docs** (`/`): shared toolkit sidebar for getting started, CLI overview, IDE
   Extension, and AI Tools. AI Tools contains MCP and Agent Skills; plugin setup
   belongs on those pages, not a separate Plugins landing page.

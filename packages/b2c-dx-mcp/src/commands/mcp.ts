@@ -427,7 +427,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
             instructions:
               'Prefer dedicated tools. Otherwise use scapi_search/scapi_execute for Commerce APIs; first read skill://mcp/scapi/SKILL.md. ' +
               'Skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
-              'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index.',
+              'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index (look for b2c-ops runbooks for operations and incidents).',
           },
         );
 

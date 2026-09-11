@@ -116,7 +116,7 @@ export function createGuidanceTool(): McpTool {
     openWorld: false,
     title: 'Read B2C Skills',
     description:
-      'Full skill catalog: b2c (Commerce), b2c-cli, storefront-next, mcp (setup/workflows). Also a fallback for skill resources. Omit args to list; query to search; collection to filter; id to read.',
+      'Skills: b2c (development), b2c-cli, b2c-ops (operator/admin runbooks), storefront-next, mcp (setup/workflows). Resource fallback and full catalog. Omit args to list; query to search; collection to filter; id to read.',
     inputSchema,
     outputSchema,
     toolsets: [...TOOLSETS],

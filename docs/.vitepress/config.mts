@@ -146,9 +146,10 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
     ],
   },
   {
-    text: 'Administration',
+    text: 'Operations & Administration',
     collapsed: false,
     items: [
+      {text: 'Operations', link: '/guide/operations'},
       {text: 'Account Manager', link: '/guide/account-manager'},
       {text: 'Analytics Reports', link: '/guide/analytics-reports-cip-ccac'},
       {text: 'Metrics', link: '/guide/metrics'},

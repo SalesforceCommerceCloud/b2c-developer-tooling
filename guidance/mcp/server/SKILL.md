@@ -50,6 +50,12 @@ Use launch arguments/environment for server settings, not project `.env` or `dw.
   and more. Read [the SCAPI skill](skill://mcp/scapi/SKILL.md) first.
 - Custom API scaffold: `b2c scaffold generate custom-api`; no MCP equivalent.
 - API/product documentation: `docs_search` / `docs_read`.
+- Operations or incidents: look for `b2c-ops` runbooks in `skill://index` or
+  `skills_read` with `collection: "b2c-ops"` and the task query. Start with the
+  matching job-health, checkout-triage, order-failure-triage, or production-triage skill. Read only
+  relevant references. Runbooks guide evidence and handoff, not authorization
+  to rerun jobs or change data. CLI fallback is appropriate for an uncovered
+  signal when terminal access is available; a skill does not supply that access.
 
 Do not infer tool names from CLI commands. Check a mutation's outcome before
 retrying after missing output.
@@ -57,7 +63,8 @@ retrying after missing output.
 ## Skills
 
 Browse `skill://index` or, when enabled, search `skills_read`: `b2c` (platform/cartridges),
-`b2c-cli` (CLI), `storefront-next` (storefronts), `mcp` (server/tool workflows).
+`b2c-cli` (CLI), `b2c-ops` (operator/admin runbooks), `storefront-next` (storefronts),
+`mcp` (server/tool workflows).
 Read the relevant URI or returned ID. Result `skillReferences` point to optional
 detail for observed conditions: read the URI, or pass its URI and `section` to
 `skills_read`. Skills are directory-agnostic.
