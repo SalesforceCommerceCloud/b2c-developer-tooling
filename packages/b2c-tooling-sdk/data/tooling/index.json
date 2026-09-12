@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-12T03:40:30.210Z",
+  "generatedAt": "2026-09-12T04:21:51.087Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -296,7 +296,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd.md",
-      "headings": "Overview • Authentication • Quick Start: Deploy Cartridges • Actions Reference • Root Action • Setup • Run • Code Deploy • Data Import • MRT Deploy • Job Run • WebDAV Upload • Staging Environments (Two-Factor mTLS) • CLI Flags • GitHub Actions • Patterns • Data Import Pipeline • MRT Release Deploy • Using Outputs • Version Pinning • Plugins • Logging • CI Defaults",
+      "headings": "Overview • Authentication • Quick Start: Deploy Cartridges • Actions Reference • Root Action • Setup • Run • Code Deploy • Data Import • MRT Deploy • Job Run • WebDAV Upload • Staging Environments (Two-Factor mTLS) • CLI Flags • GitHub Actions • Patterns • Data Import Pipeline • MRT Release Deploy • Using Outputs • Version Pinning • Upgrade from Action v1 • Plugins • Logging • CI Defaults",
       "preview": "Automate B2C Commerce code deployment, data import, MRT bundles, and job execution with the official B2C CLI GitHub Actions for CI/CD pipelines."
     },
     {

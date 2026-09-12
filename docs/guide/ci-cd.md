@@ -8,7 +8,9 @@ The B2C Developer Tooling project provides official GitHub Actions for automatin
 
 ## Overview
 
-The official actions handle CLI installation, credential configuration, and Node.js setup automatically — so your workflow files stay focused on *what* you want to deploy rather than *how* to configure the tooling. High-level actions provide typed inputs for common operations like code deployment and data import, while a raw command passthrough covers everything else.
+The official actions handle CLI installation, credential configuration, and Node.js setup automatically — so your workflow files stay focused on _what_ you want to deploy rather than _how_ to configure the tooling. High-level actions provide typed inputs for common operations like code deployment and data import, while a raw command passthrough covers everything else.
+
+Action v2 installs CLI 2.x by default. Action v1 remains on CLI 1.x, so a workflow only adopts breaking CLI changes when its `uses:` references move from `@v1` to `@v2`.
 
 The actions are available from the `SalesforceCommerceCloud/b2c-developer-tooling` repository and support:
 
@@ -27,21 +29,21 @@ Store credentials as GitHub [repository secrets](https://docs.github.com/en/acti
 
 **Recommended secrets:**
 
-| Secret | Description |
-|--------|-------------|
-| `SFCC_CLIENT_ID` | OAuth Client ID |
-| `SFCC_CLIENT_SECRET` | OAuth Client Secret |
-| `SFCC_USERNAME` | WebDAV username |
-| `SFCC_PASSWORD` | WebDAV password/access key |
-| `MRT_API_KEY` | MRT API key |
+| Secret               | Description                |
+| -------------------- | -------------------------- |
+| `SFCC_CLIENT_ID`     | OAuth Client ID            |
+| `SFCC_CLIENT_SECRET` | OAuth Client Secret        |
+| `SFCC_USERNAME`      | WebDAV username            |
+| `SFCC_PASSWORD`      | WebDAV password/access key |
+| `MRT_API_KEY`        | MRT API key                |
 
 **Recommended variables:**
 
-| Variable | Description |
-|----------|-------------|
-| `SFCC_SERVER` | B2C instance hostname |
-| `MRT_PROJECT` | MRT project slug |
-| `MRT_ENVIRONMENT` | MRT environment |
+| Variable          | Description           |
+| ----------------- | --------------------- |
+| `SFCC_SERVER`     | B2C instance hostname |
+| `MRT_PROJECT`     | MRT project slug      |
+| `MRT_ENVIRONMENT` | MRT environment       |
 
 Credentials can be passed per-action or set once with the **setup** action so they're available to all subsequent steps.
 
@@ -61,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
 
       # Install the B2C CLI and configure credentials for subsequent steps
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
           client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
@@ -81,7 +83,7 @@ jobs:
           echo "code-version=${BRANCH}-$(date +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
 
       # Deploy cartridges — only operation-specific inputs needed
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
         with:
           code-version: ${{ steps.version.outputs.code-version }}
           activate: true
@@ -94,30 +96,30 @@ The **setup** step installs the CLI and configures credentials for all subsequen
 ### Root Action
 
 ```
-uses: SalesforceCommerceCloud/b2c-developer-tooling@v1
+uses: SalesforceCommerceCloud/b2c-developer-tooling@v2
 ```
 
 Combines setup and command execution. Pass a `command` to run a CLI command, or omit it for setup-only.
 
-| Input | Default | Description |
-|-------|---------|-------------|
-| `command` | — | CLI command to run |
-| `version` | `latest` | CLI version to install |
-| `node-version` | `22` | Node.js version |
-| `json` | `true` | Append `--json` flag and parse output |
-| `working-directory` | `.` | Working directory |
-| Auth inputs | — | See [Authentication](#authentication) |
+| Input               | Default | Description                           |
+| ------------------- | ------- | ------------------------------------- |
+| `command`           | —       | CLI command to run                    |
+| `version`           | `2`     | CLI version to install                |
+| `node-version`      | `22`    | Node.js version                       |
+| `json`              | `true`  | Append `--json` flag and parse output |
+| `working-directory` | `.`     | Working directory                     |
+| Auth inputs         | —       | See [Authentication](#authentication) |
 
 ### Setup
 
 ```
-uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
 ```
 
 Installs the CLI and writes credentials to environment variables. Use this when you need multiple steps after setup. Called directly, `setup` always installs the requested `version`. Set `skip-if-present: 'true'` to reuse an already-installed CLI and install only when none is present (this is what the high-level actions do internally so they never reinstall on top of an existing CLI).
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
   with:
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
     client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
@@ -131,58 +133,58 @@ Plugins are installed after the CLI; already-installed plugins are skipped by ex
 
 The setup action accepts the following inputs (each maps to the corresponding `SFCC_*` environment variable):
 
-| Input | Environment Variable |
-|-------|---------------------|
-| `client-id` | `SFCC_CLIENT_ID` |
-| `client-secret` | `SFCC_CLIENT_SECRET` |
-| `server` | `SFCC_SERVER` |
-| `code-version` | `SFCC_CODE_VERSION` |
-| `username` | `SFCC_USERNAME` |
-| `password` | `SFCC_PASSWORD` |
-| `short-code` | `SFCC_SHORTCODE` |
-| `tenant-id` | `SFCC_TENANT_ID` |
-| `account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` |
-| `webdav-server` | `SFCC_WEBDAV_SERVER` |
-| `certificate` | `SFCC_CERTIFICATE` |
+| Input                    | Environment Variable          |
+| ------------------------ | ----------------------------- |
+| `client-id`              | `SFCC_CLIENT_ID`              |
+| `client-secret`          | `SFCC_CLIENT_SECRET`          |
+| `server`                 | `SFCC_SERVER`                 |
+| `code-version`           | `SFCC_CODE_VERSION`           |
+| `username`               | `SFCC_USERNAME`               |
+| `password`               | `SFCC_PASSWORD`               |
+| `short-code`             | `SFCC_SHORTCODE`              |
+| `tenant-id`              | `SFCC_TENANT_ID`              |
+| `account-manager-host`   | `SFCC_ACCOUNT_MANAGER_HOST`   |
+| `webdav-server`          | `SFCC_WEBDAV_SERVER`          |
+| `certificate`            | `SFCC_CERTIFICATE`            |
 | `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE` |
-| `selfsigned` | `SFCC_SELFSIGNED` |
-| `mrt-api-key` | `MRT_API_KEY` |
-| `mrt-project` | `MRT_PROJECT` |
-| `mrt-environment` | `MRT_ENVIRONMENT` |
-| `log-level` | `SFCC_LOG_LEVEL` |
+| `selfsigned`             | `SFCC_SELFSIGNED`             |
+| `mrt-api-key`            | `MRT_API_KEY`                 |
+| `mrt-project`            | `MRT_PROJECT`                 |
+| `mrt-environment`        | `MRT_ENVIRONMENT`             |
+| `log-level`              | `SFCC_LOG_LEVEL`              |
 
 The `webdav-server`, `certificate`, `certificate-passphrase`, and `selfsigned` inputs are only needed for staging environments that require a separate WebDAV hostname and a client certificate (mTLS). See [Staging Environments (Two-Factor mTLS)](#staging-environments-two-factor-mtls).
 
 ### Run
 
 ```
-uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
+uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2
 ```
 
 Executes any CLI command. Pairs with the setup action.
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2
   with:
     command: 'sandbox list --realm abcd'
 ```
 
-| Input | Default | Description |
-|-------|---------|-------------|
-| `command` | *(required)* | CLI command to run |
-| `json` | `true` | Append `--json` and parse output |
-| `working-directory` | `.` | Working directory |
+| Input               | Default      | Description                      |
+| ------------------- | ------------ | -------------------------------- |
+| `command`           | _(required)_ | CLI command to run               |
+| `json`              | `true`       | Append `--json` and parse output |
+| `working-directory` | `.`          | Working directory                |
 
 ### Code Deploy
 
 ```
-uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
 ```
 
 Deploy cartridges with typed inputs.
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
   with:
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
     client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
@@ -194,25 +196,25 @@ Deploy cartridges with typed inputs.
     cartridges: 'app_storefront_base,app_custom'
 ```
 
-| Input | Default | Description |
-|-------|---------|-------------|
-| `cartridge-path` | `.` | Path to cartridge source directory |
-| `activate` | `false` | Activate code version after deploy |
-| `code-version` | — | Code version (overrides env) |
-| `cartridges` | — | Comma-separated cartridges to include |
-| `exclude-cartridges` | — | Comma-separated cartridges to exclude |
-| `delete` | `false` | Delete existing cartridges first |
+| Input                | Default | Description                           |
+| -------------------- | ------- | ------------------------------------- |
+| `cartridge-path`     | `.`     | Path to cartridge source directory    |
+| `activate`           | `false` | Activate code version after deploy    |
+| `code-version`       | —       | Code version (overrides env)          |
+| `cartridges`         | —       | Comma-separated cartridges to include |
+| `exclude-cartridges` | —       | Comma-separated cartridges to exclude |
+| `delete`             | `false` | Delete existing cartridges first      |
 
 ### Data Import
 
 ```
-uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
+uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v2
 ```
 
 Import a site archive. Handles upload, job execution, waiting, and cleanup in one step.
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v2
   with:
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
     client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
@@ -223,23 +225,23 @@ Import a site archive. Handles upload, job execution, waiting, and cleanup in on
     timeout: 600
 ```
 
-| Input | Default | Description |
-|-------|---------|-------------|
-| `target` | *(required)* | Local file, directory, or zip to import |
-| `timeout` | — | Timeout in seconds |
-| `keep-archive` | `false` | Keep archive on instance after import |
-| `show-log` | `true` | Show job log on failure |
+| Input          | Default      | Description                             |
+| -------------- | ------------ | --------------------------------------- |
+| `target`       | _(required)_ | Local file, directory, or zip to import |
+| `timeout`      | —            | Timeout in seconds                      |
+| `keep-archive` | `false`      | Keep archive on instance after import   |
+| `show-log`     | `true`       | Show job log on failure                 |
 
 ### MRT Deploy
 
 ```
-uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v1
+uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v2
 ```
 
 Push and deploy an MRT bundle.
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v2
   with:
     mrt-api-key: ${{ secrets.MRT_API_KEY }}
     project: ${{ vars.MRT_PROJECT }}
@@ -248,24 +250,24 @@ Push and deploy an MRT bundle.
     message: 'Deploy from CI'
 ```
 
-| Input | Default | Description |
-|-------|---------|-------------|
-| `project` | — | MRT project slug |
-| `environment` | — | Target environment |
-| `build-directory` | `build` | Local build directory |
-| `message` | — | Bundle message |
-| `bundle-id` | — | Deploy existing bundle by ID |
+| Input             | Default | Description                  |
+| ----------------- | ------- | ---------------------------- |
+| `project`         | —       | MRT project slug             |
+| `environment`     | —       | Target environment           |
+| `build-directory` | `build` | Local build directory        |
+| `message`         | —       | Bundle message               |
+| `bundle-id`       | —       | Deploy existing bundle by ID |
 
 ### Job Run
 
 ```
-uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v1
+uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v2
 ```
 
 Execute a B2C job and optionally wait for completion.
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v2
   with:
     job-id: 'sfcc-site-archive-import'
     wait: true
@@ -275,35 +277,35 @@ Execute a B2C job and optionally wait for completion.
       ImportMode=merge
 ```
 
-| Input | Default | Description |
-|-------|---------|-------------|
-| `job-id` | *(required)* | Job ID to execute |
-| `wait` | `true` | Wait for completion |
-| `timeout` | `900` | Timeout in seconds (when wait=true) |
-| `parameters` | — | `KEY=VALUE` pairs, one per line |
-| `show-log` | `true` | Show job log on failure |
+| Input        | Default      | Description                         |
+| ------------ | ------------ | ----------------------------------- |
+| `job-id`     | _(required)_ | Job ID to execute                   |
+| `wait`       | `true`       | Wait for completion                 |
+| `timeout`    | `900`        | Timeout in seconds (when wait=true) |
+| `parameters` | —            | `KEY=VALUE` pairs, one per line     |
+| `show-log`   | `true`       | Show job log on failure             |
 
 ### WebDAV Upload
 
 ```
-uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/webdav-upload@v1
+uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/webdav-upload@v2
 ```
 
 Upload files via WebDAV.
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/webdav-upload@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/webdav-upload@v2
   with:
     local-path: './export/site-import.zip'
     remote-path: 'src/instance/'
     root: IMPEX
 ```
 
-| Input | Default | Description |
-|-------|---------|-------------|
-| `local-path` | *(required)* | Local file or directory |
-| `remote-path` | *(required)* | Remote destination path |
-| `root` | `IMPEX` | WebDAV root (IMPEX, TEMP, CARTRIDGES, etc.) |
+| Input         | Default      | Description                                 |
+| ------------- | ------------ | ------------------------------------------- |
+| `local-path`  | _(required)_ | Local file or directory                     |
+| `remote-path` | _(required)_ | Remote destination path                     |
+| `root`        | `IMPEX`      | WebDAV root (IMPEX, TEMP, CARTRIDGES, etc.) |
 
 ## Staging Environments (Two-Factor mTLS)
 
@@ -330,13 +332,13 @@ b2c code deploy \
   --client-secret "$SFCC_CLIENT_SECRET"
 ```
 
-| Flag | dw.json Field | Environment Variable |
-|------|---------------|---------------------|
-| `--server` | `hostname` | `SFCC_SERVER` |
-| `--webdav-server` | `webdav-hostname` | `SFCC_WEBDAV_SERVER` |
-| `--certificate` | `certificate` | `SFCC_CERTIFICATE` |
-| `--passphrase` | `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE` |
-| `--selfsigned` | `self-signed` | `SFCC_SELFSIGNED` |
+| Flag              | dw.json Field            | Environment Variable          |
+| ----------------- | ------------------------ | ----------------------------- |
+| `--server`        | `hostname`               | `SFCC_SERVER`                 |
+| `--webdav-server` | `webdav-hostname`        | `SFCC_WEBDAV_SERVER`          |
+| `--certificate`   | `certificate`            | `SFCC_CERTIFICATE`            |
+| `--passphrase`    | `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE` |
+| `--selfsigned`    | `self-signed`            | `SFCC_SELFSIGNED`             |
 
 ### GitHub Actions
 
@@ -346,16 +348,16 @@ Because the `.p12` is a binary file, store it as a base64-encoded GitHub secret 
 
 These are in addition to the [authentication](#authentication) secrets and variables — the same `SFCC_*` names used elsewhere map straight through to the `setup` inputs:
 
-| Secret | Maps to input → env var | Description |
-|--------|-------------------------|-------------|
-| `SFCC_CLIENT_ID` | `client-id` → `SFCC_CLIENT_ID` | OAuth Client ID |
-| `SFCC_CLIENT_SECRET` | `client-secret` → `SFCC_CLIENT_SECRET` | OAuth Client Secret |
-| `SFCC_CERTIFICATE_PASSPHRASE` | `certificate-passphrase` → `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the `.p12` |
-| `STAGING_CERTIFICATE_P12_BASE64` | *(none — decoded to a file)* | Base64-encoded `.p12` client certificate |
+| Secret                           | Maps to input → env var                                  | Description                              |
+| -------------------------------- | -------------------------------------------------------- | ---------------------------------------- |
+| `SFCC_CLIENT_ID`                 | `client-id` → `SFCC_CLIENT_ID`                           | OAuth Client ID                          |
+| `SFCC_CLIENT_SECRET`             | `client-secret` → `SFCC_CLIENT_SECRET`                   | OAuth Client Secret                      |
+| `SFCC_CERTIFICATE_PASSPHRASE`    | `certificate-passphrase` → `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the `.p12`                |
+| `STAGING_CERTIFICATE_P12_BASE64` | _(none — decoded to a file)_                             | Base64-encoded `.p12` client certificate |
 
-| Variable | Maps to input → env var | Description |
-|----------|-------------------------|-------------|
-| `SFCC_SERVER` | `server` → `SFCC_SERVER` | e.g. `staging-internal-ccdemo.demandware.net` |
+| Variable             | Maps to input → env var                | Description                                        |
+| -------------------- | -------------------------------------- | -------------------------------------------------- |
+| `SFCC_SERVER`        | `server` → `SFCC_SERVER`               | e.g. `staging-internal-ccdemo.demandware.net`      |
 | `SFCC_WEBDAV_SERVER` | `webdav-server` → `SFCC_WEBDAV_SERVER` | e.g. `cert.staging.internal.ccdemo.demandware.net` |
 
 `STAGING_CERTIFICATE_P12_BASE64` is the only value here that is **not** an `SFCC_*` environment variable — it holds the raw base64 of the certificate file, which a workflow step decodes to disk. The `certificate` input then points at that decoded path (the tooling reads the file path from `SFCC_CERTIFICATE`, not the certificate contents).
@@ -391,7 +393,7 @@ jobs:
             | base64 --decode > "$RUNNER_TEMP/staging-deploy.p12"
           chmod 600 "$RUNNER_TEMP/staging-deploy.p12"
 
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
           client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
@@ -403,7 +405,7 @@ jobs:
 
       - run: npm ci && npm run build
 
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
         with:
           code-version: staging-${{ github.run_number }}
           activate: true
@@ -442,7 +444,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v2
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
           client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
@@ -473,7 +475,7 @@ jobs:
       - name: Build storefront
         run: npm run build
 
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v2
         with:
           mrt-api-key: ${{ secrets.MRT_API_KEY }}
           project: ${{ vars.MRT_PROJECT }}
@@ -487,7 +489,7 @@ jobs:
 When `json` is enabled (the default), the `result` output contains the command's structured JSON. Reference it directly in downstream steps:
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
   id: deploy
   with:
     code-version: v25_03_1
@@ -500,8 +502,8 @@ When `json` is enabled (the default), the `result` output contains the command's
 ```json
 {
   "cartridges": [
-    { "name": "app_storefront_base", "dest": "app_storefront_base", "src": "..." },
-    { "name": "app_custom", "dest": "app_custom", "src": "..." }
+    {"name": "app_storefront_base", "dest": "app_storefront_base", "src": "..."},
+    {"name": "app_custom", "dest": "app_custom", "src": "..."}
   ],
   "codeVersion": "v25_03_1",
   "reloaded": true
@@ -511,7 +513,7 @@ When `json` is enabled (the default), the `result` output contains the command's
 Actions exit with the CLI's exit code, so a failed job will fail the step. Use `continue-on-error` and `fromJSON()` when you need to inspect the result after a failure:
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/job-run@v2
   id: job
   continue-on-error: true
   with:
@@ -520,29 +522,35 @@ Actions exit with the CLI's exit code, so a failed job will fail the step. Use `
 
 - name: Handle job failure
   if: steps.job.outputs.exit-code != '0'
-  run: echo "Job failed with status ${{ fromJSON(steps.job.outputs.result).exit_status.code }}"
+  run: echo "Job failed with status ${{ fromJSON(steps.job.outputs.result).exitStatus.code }}"
 ```
 
 ## Version Pinning
 
-Use the `version` input to pin the CLI version:
+Use the floating Action major to receive backward-compatible Action updates. Action v2 selects the latest CLI 2.x release by default; Action v1 selects the latest CLI 1.x release.
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling@v2
   with:
-    version: '0.4.1'
+    version: '2.0.0' # Pin an exact CLI version
 ```
 
-Use `@v1` for the latest stable action version (recommended). The floating `v1` tag is updated on each backward-compatible release.
+Use an immutable Action tag such as `@v2.0.0`, or a full commit SHA, when the workflow must not receive automatic Action updates. Set `version: latest` explicitly only when it should cross future CLI major versions automatically.
 
-> **Note:** High-level actions (`code-deploy`, `data-import`, `job-run`, `mrt-deploy`, `webdav-upload`) and the root action internally reference `actions/setup@v1` and `actions/run@v1`. This means even if you pin the outer action to a specific SHA or tag, the setup and run steps resolve to the latest `v1` release. For full SHA-level reproducibility, use `actions/setup` + `actions/run` directly — each can be pinned independently to an exact SHA. For most users, `@v1` on the high-level actions is the recommended approach.
+### Upgrade from Action v1
+
+Change every B2C Action reference in the workflow from `@v1` to `@v2`; do not mix majors in one job because high-level actions reuse an already-installed CLI. CLI 2 normalizes structured job results to camelCase, so update parsed fields such as `execution_status` and `exit_status.code` to `executionStatus` and `exitStatus.code`. Review any other command JSON consumed by the workflow before upgrading.
+
+Keep `@v1` to remain on the maintained CLI 1.x line. An explicit `version: '1'` follows the newest published CLI 1.x maintenance release; an exact value such as `1.23.2` freezes the CLI as well.
+
+> **Reproducibility:** Each released high-level or root action internally references its matching immutable `actions/setup@v2.x.y` and `actions/run@v2.x.y` release. Pin the outer action to an exact release tag for a fixed Action suite. Use direct `actions/setup` and `actions/run` references pinned to full commit SHAs when organizational policy requires SHA pins for every action.
 
 ## Plugins
 
 The CLI supports [plugins](/guide/extending) for custom configuration sources, HTTP middleware, and more. Install plugins in CI with the `plugins` input on the `setup` action:
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
   with:
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
     client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
@@ -559,7 +567,7 @@ Each line is an npm package name or GitHub `owner/repo`. Plugins are installed a
 The `setup` action accepts a `log-level` input that sets `SFCC_LOG_LEVEL` for all subsequent steps:
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
   with:
     log-level: debug
 ```

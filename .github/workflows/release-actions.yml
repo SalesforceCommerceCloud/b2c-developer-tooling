@@ -1,0 +1,84 @@
+name: Release GitHub Actions
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, package tag, or commit containing the Action release'
+        required: true
+        default: 'main'
+        type: string
+
+concurrency: release-github-actions
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Validate and tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          path: release-tooling
+
+      - name: Checkout release ref
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          path: release-source
+
+      - name: Validate Action release
+        id: action-release
+        run: node release-tooling/.github/scripts/validate-action-release.mjs release-source
+
+      - name: Install the compatible CLI major
+        id: setup
+        uses: ./release-source/actions/setup
+        with:
+          version: ${{ steps.action-release.outputs.cli-major }}
+
+      - name: Smoke test command execution
+        uses: ./release-source/actions/run
+        with:
+          command: '--help'
+          json: 'false'
+
+      - name: Publish immutable and floating tags
+        working-directory: release-source
+        env:
+          EXACT_TAG: ${{ steps.action-release.outputs.exact-tag }}
+          MAJOR_TAG: ${{ steps.action-release.outputs.major-tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          RELEASE_SHA=$(git rev-parse HEAD)
+          REMOTE_EXACT=$(git ls-remote --tags origin "refs/tags/$EXACT_TAG" | cut -f1)
+
+          if [ -n "$REMOTE_EXACT" ] && [ "$REMOTE_EXACT" != "$RELEASE_SHA" ]; then
+            echo "::error::Immutable Action tag $EXACT_TAG already points to $REMOTE_EXACT"
+            exit 1
+          fi
+
+          git tag -f "$EXACT_TAG" "$RELEASE_SHA"
+          git tag -f "$MAJOR_TAG" "$RELEASE_SHA"
+          git push --atomic --force origin "refs/tags/$EXACT_TAG" "refs/tags/$MAJOR_TAG"
+
+          if [ -z "$REMOTE_EXACT" ]; then
+            echo "Created immutable Action tag $EXACT_TAG"
+          else
+            echo "Immutable Action tag $EXACT_TAG already points to this release"
+          fi
+          echo "Updated floating Action tag $MAJOR_TAG to $RELEASE_SHA"
+
+          {
+            echo "## GitHub Actions $EXACT_TAG"
+            echo
+            echo "Published $EXACT_TAG and updated $MAJOR_TAG to \`$RELEASE_SHA\`."
+          } >> "$GITHUB_STEP_SUMMARY"
