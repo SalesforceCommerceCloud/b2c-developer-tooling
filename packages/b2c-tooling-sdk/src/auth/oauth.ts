@@ -244,7 +244,8 @@ export class OAuthStrategy implements AuthStrategy {
    * Gets the full token response including expiration and scopes.
    * Useful for commands that need to display or return token metadata.
    */
-  async getTokenResponse(): Promise<AccessTokenResponse> {
+  async getTokenResponse(signal?: AbortSignal): Promise<AccessTokenResponse> {
+    signal?.throwIfAborted();
     const logger = getLogger();
     const cached = getCachedOAuthToken(this.cacheKey, this.config.scopes || []);
 
@@ -253,6 +254,12 @@ export class OAuthStrategy implements AuthStrategy {
       return cached;
     }
 
+    if (signal) {
+      // A cancelled caller must not abort a shared token refresh for other consumers.
+      const token = await this.clientCredentialsGrant(this.config.scopes, signal);
+      setCachedOAuthToken(this.cacheKey, token);
+      return token;
+    }
     return this.refreshTokenSingleflight();
   }
 
@@ -392,7 +399,7 @@ export class OAuthStrategy implements AuthStrategy {
    * Performs client credentials grant flow with the given scope set.
    * Defaults to the strategy's configured scopes when `scopes` is omitted.
    */
-  private async clientCredentialsGrant(scopeOverride?: string[]): Promise<AccessTokenResponse> {
+  private async clientCredentialsGrant(scopeOverride?: string[], signal?: AbortSignal): Promise<AccessTokenResponse> {
     const logger = getLogger();
     const requestedScopes = scopeOverride ?? this.config.scopes;
     const url = `https://${this.accountManagerHost}/dwsso/oauth2/access_token`;
@@ -441,7 +448,7 @@ export class OAuthStrategy implements AuthStrategy {
     const startTime = Date.now();
     let response: Response;
     try {
-      response = await fetch(request);
+      response = await fetch(request, {signal, redirect: 'error'});
     } catch (err) {
       const host = new URL(url).host;
       throw wrapNetworkError(err, {operation: 'OAuth token request', host});

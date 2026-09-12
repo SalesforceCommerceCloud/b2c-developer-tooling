@@ -68,6 +68,7 @@ export type HttpClientType =
   | 'scapi-merchant-roles'
   | 'scapi-sites'
   | 'scapi-catalogs'
+  | 'scapi'
   | 'storefront-deployments';
 
 /**
@@ -188,10 +189,11 @@ export class MiddlewareRegistry {
    * @param clientType - The type of client requesting middleware
    * @returns Array of middleware in registration order
    */
-  getMiddleware(clientType: HttpClientType): UnifiedMiddleware[] {
+  getMiddleware(clientType: HttpClientType, options: {exclude?: string[]} = {}): UnifiedMiddleware[] {
     const middleware: UnifiedMiddleware[] = [];
 
     for (const provider of this.providers) {
+      if (options.exclude?.includes(provider.name)) continue;
       const m = provider.getMiddleware(clientType);
       if (m) {
         middleware.push(m);

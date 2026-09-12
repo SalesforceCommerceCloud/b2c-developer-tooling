@@ -15,6 +15,8 @@ export type SlasShopperClient = Client<paths>;
 export interface SlasShopperClientConfig {
   shortCode: string;
   organizationId: string;
+  /** Cancel authorization and token exchange. */
+  signal?: AbortSignal;
   /** Defaults to the global middleware registry. */
   middlewareRegistry?: MiddlewareRegistry;
 }
@@ -31,6 +33,7 @@ export function createSlasShopperClient(config: SlasShopperClientConfig): SlasSh
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     bodySerializer: (body: unknown) => new URLSearchParams(body as Record<string, string>).toString(),
     redirect: 'manual',
+    signal: config.signal,
   });
 
   client.use({
@@ -41,6 +44,6 @@ export function createSlasShopperClient(config: SlasShopperClientConfig): SlasSh
   for (const middleware of registry.getMiddleware('slas')) {
     client.use(middleware);
   }
-  client.use(createLoggingMiddleware('SLAS'));
+  client.use(createLoggingMiddleware({prefix: 'SLAS', logDetails: false}));
   return client;
 }

@@ -73,7 +73,7 @@
     }
   },
   "scripts": {
-    "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
+    "build": "pnpm run generate:guidance && shx rm -rf dist && tsc -p tsconfig.build.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
@@ -81,8 +81,8 @@
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "preinspect": "pnpm run build",
-    "inspect": "mcp-inspector node bin/run.js --toolsets all --allow-non-ga-tools",
-    "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all --allow-non-ga-tools",
+    "inspect": "mcp-inspector node bin/run.js --toolsets all",
+    "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",
@@ -92,22 +92,30 @@
     "test:e2e:ci": "mocha --forbid-only --reporter json --reporter-option output=test-results-e2e.json \"test/e2e/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint",
-    "prepack": "oclif manifest",
-    "postpack": "shx rm -f oclif.manifest.json"
+    "prepack": "pnpm run generate:guidance && node scripts/prepare-sdk-bundle.mjs && oclif manifest",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "generate:guidance": "tsx --conditions=development scripts/generate-guidance.ts",
+    "prepare:guidance-test": "node scripts/prepare-guidance-test.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.30.0",
+    "@modelcontextprotocol/server": "2.0.0",
     "@oclif/core": "catalog:",
+    "@salesforce/b2c-agent-plugins": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "glob": "catalog:",
+    "postcss": "8.5.15",
     "ts-morph": "27.0.2",
     "yaml": "2.9.0",
-    "postcss": "8.5.15",
-    "zod": "3.25.76"
+    "zod": "4.5.4"
   },
+  "bundledDependencies": [
+    "@modelcontextprotocol/server",
+    "@salesforce/b2c-agent-plugins"
+  ],
   "devDependencies": {
     "@eslint/compat": "catalog:",
     "@eslint/js": "^9",
+    "@modelcontextprotocol/client": "2.0.0",
     "@modelcontextprotocol/inspector": "2.2.0",
     "@oclif/prettier-config": "catalog:",
     "@salesforce/dev-config": "catalog:",

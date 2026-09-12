@@ -16,6 +16,7 @@ import {
   type MappedBreakpoint,
 } from '@salesforce/b2c-tooling-sdk/operations/debug';
 import {getSessionEntry} from './session-registry.js';
+import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.js';
 
 interface SetBreakpointsInput {
   session_id: string;
@@ -29,6 +30,7 @@ interface BreakpointResult extends MappedBreakpoint {
 interface SetBreakpointsOutput {
   breakpoints: BreakpointResult[];
   warnings?: string[];
+  skillReferences?: SkillReference[];
 }
 
 export function createDebugSetBreakpointsTool(
@@ -38,29 +40,26 @@ export function createDebugSetBreakpointsTool(
   return createToolAdapter<SetBreakpointsInput, SetBreakpointsOutput>(
     {
       name: 'debug_set_breakpoints',
+      effect: 'write',
+      idempotent: true,
+      openWorld: true,
       description:
-        'Set breakpoints in a debug session. Replaces all previously set breakpoints. ' +
-        'Accepts local file paths (mapped to server paths via cartridge discovery), cartridge-prefixed paths, or server paths starting with /. ' +
-        'Check the "verified" field and "warnings" — unmapped paths are flagged.',
+        'Replace all session breakpoints. verified means local source mapping, not deployed-code validation. ' +
+        'Workflow: skill://mcp/debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        session_id: z.string().describe('Session ID returned by debug_start_session.'),
+        session_id: z.string(),
         breakpoints: z
           .array(
-            z.object({
-              file: z
-                .string()
-                .describe(
-                  'Local file path or server script path (e.g. /app_storefront/cartridge/controllers/Cart.js).',
-                ),
-              line: z.number().int().positive().describe('Line number for the breakpoint.'),
-              condition: z
-                .string()
-                .optional()
-                .describe('Optional conditional expression. Breakpoint only triggers when this evaluates to true.'),
-            }),
+            z
+              .object({
+                file: z.string().describe('Local, cartridge-prefixed, or absolute server script path.'),
+                line: z.number().int().positive().describe('1-based line number.'),
+                condition: z.string().optional().describe('Halt when this expression is true.'),
+              })
+              .strict(),
           )
-          .describe('Array of breakpoints to set. Replaces all existing breakpoints.'),
+          .describe('Replacement set; empty clears all.'),
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);
@@ -86,6 +85,7 @@ export function createDebugSetBreakpointsTool(
             verified: entry.sourceMapper.toLocalPath(bp.script_path) !== undefined,
           })),
           warnings: warnings.length > 0 ? warnings : undefined,
+          skillReferences: warnings.length > 0 ? [MCP_SKILL_REFERENCES.debuggerPrerequisites] : undefined,
         };
       },
       formatOutput: (output) => jsonResult(output),

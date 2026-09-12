@@ -1,0 +1,1898 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Auth Admin",
+    "version": "1.18.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Shopper"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth-admin/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/tenants/{tenantId}": {
+      "get": {
+        "operationId": "retrieveTenant",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The tenant was retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "registerTenant",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The tenant was updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The tenant was created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/tenants/{tenantId}/clients": {
+      "get": {
+        "operationId": "retrieveClients",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All tenant clients retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/tenants/{tenantId}/clients/{clientId}": {
+      "get": {
+        "operationId": "retrieveClient",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The client was retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Client"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "registerClient",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The client was updated successfully. A secret is only returned when a secret was sent with the update request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Client"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The client was created successfully. This is the only time the secret is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Client"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteClient",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/tenants/{tenantId}/clients/{clientId}/password-action-templates": {
+      "get": {
+        "operationId": "retrievePwdActionTemplate",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "actionType",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PWDLESS_LOGIN",
+                "PWD_RESET_ACTION",
+                "PWD_RESET_CROSS_DEVICE_ACTION"
+              ],
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "templateType",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EMAIL",
+                "SMS"
+              ],
+              "maxLength": 8
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The password action template was retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordActionTemplate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "registerPwdActionTemplate",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordActionTemplate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The password action template was updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordActionTemplate"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "A password action template was created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordActionTemplate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deletePwdActionTemplate",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "actionType",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PWDLESS_LOGIN",
+                "PWD_RESET_ACTION",
+                "PWD_RESET_CROSS_DEVICE_ACTION"
+              ],
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "templateType",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EMAIL",
+                "SMS"
+              ],
+              "maxLength": 8
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/tenants/{tenantId}/idps": {
+      "get": {
+        "operationId": "retrieveIdentityProviders",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All tenant identity providers retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdpListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/tenants/{tenantId}/idps/{name}": {
+      "get": {
+        "operationId": "retrieveIdentityProvider",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The identity provider was retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityProvider"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "registerIdentityProvider",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityProvider"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The identity provider was updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityProviderResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The identity provider was created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityProviderResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Duplicate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteIdentityProvider",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Wrong tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/tenants/{tenantId}/customers/{customerId}": {
+      "delete": {
+        "operationId": "deleteShopper",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 28
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          },
+          {
+            "name": "emailAddress",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Tenant": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "maxLength": 8
+          },
+          "merchantId": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "contact": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "emailAddress": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "phoneNo": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "isDeleted": {
+            "type": "boolean",
+            "maxLength": 1
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "XS",
+              "S",
+              "M",
+              "L"
+            ]
+          },
+          "requestQuotaPerMinute": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "contact",
+          "description",
+          "emailAddress",
+          "isDeleted",
+          "merchantId",
+          "phoneNo",
+          "requestQuotaPerMinute",
+          "status",
+          "tenantId",
+          "tier"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "TenantDto": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "maxLength": 8
+          },
+          "merchantName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "contact": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "emailAddress": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "phoneNo": {
+            "type": "string",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "contact",
+          "description",
+          "emailAddress",
+          "merchantName",
+          "phoneNo",
+          "tenantId"
+        ]
+      },
+      "Client": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "secret": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          "redirectUri": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "callbackUri": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            }
+          },
+          "isPrivateClient": {
+            "type": "boolean"
+          },
+          "loginEpRestrict": {
+            "type": "boolean",
+            "maxLength": 1
+          },
+          "isSixDigitOtp": {
+            "type": "boolean"
+          },
+          "strictClientAuth": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "callbackUri",
+          "channels",
+          "clientId",
+          "name",
+          "redirectUri",
+          "scopes",
+          "secret"
+        ]
+      },
+      "ClientListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Client"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ClientRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "clientId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "secret": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 4096
+            }
+          },
+          "redirectUri": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          "callbackUri": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            }
+          },
+          "isPrivateClient": {
+            "type": "boolean"
+          },
+          "loginEpRestrict": {
+            "type": "boolean"
+          },
+          "isSixDigitOtp": {
+            "type": "boolean"
+          },
+          "strictClientAuth": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "channels",
+          "clientId",
+          "isPrivateClient",
+          "name",
+          "redirectUri",
+          "scopes",
+          "secret"
+        ]
+      },
+      "PasswordTemplateActionType": {
+        "type": "string",
+        "enum": [
+          "PWDLESS_LOGIN",
+          "PWD_RESET_ACTION",
+          "PWD_RESET_CROSS_DEVICE_ACTION",
+          "WEBAUTHN_AUTHORIZE_USER"
+        ]
+      },
+      "PasswordTemplateType": {
+        "type": "string",
+        "enum": [
+          "SMS",
+          "EMAIL"
+        ]
+      },
+      "PasswordActionTemplate": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "type": "string",
+            "maxLength": 36
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "link": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "locale": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "actionType": {
+            "$ref": "#/components/schemas/PasswordTemplateActionType"
+          },
+          "templateType": {
+            "$ref": "#/components/schemas/PasswordTemplateType"
+          },
+          "template": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "actionType",
+          "channelId",
+          "link",
+          "locale",
+          "name",
+          "subject",
+          "template",
+          "templateType"
+        ]
+      },
+      "IdentityProviderResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "authUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "tokenUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "tokenInfoUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "userInfoUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "redirectUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "wellKnownUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "clientId": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "clientSecret": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "isPreferred": {
+            "type": "boolean",
+            "maxLength": 1
+          },
+          "isClientCredsBody": {
+            "type": "boolean",
+            "maxLength": 1
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 8192
+            }
+          },
+          "teamId": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "keyId": {
+            "type": "string",
+            "maxLength": 8192
+          },
+          "loginMergeClaims": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          "oidcClaimMapper": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            }
+          }
+        },
+        "required": [
+          "authUrl",
+          "clientId",
+          "clientSecret",
+          "isClientCredsBody",
+          "isPreferred",
+          "name",
+          "redirectUrl",
+          "scopes",
+          "tokenInfoUrl",
+          "tokenUrl",
+          "userInfoUrl"
+        ]
+      },
+      "IdpListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IdentityProviderResponse"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "IdentityProvider": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "adfs",
+              "apple",
+              "auth0",
+              "azure",
+              "cognito",
+              "facebook",
+              "forgerock",
+              "gigya",
+              "gigya_social",
+              "google",
+              "okta",
+              "ping",
+              "salesforce"
+            ],
+            "maxLength": 200
+          },
+          "authUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "tokenUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "tokenInfoUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "userInfoUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "redirectUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "wellKnownUrl": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "clientId": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "clientSecret": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "preferenceValue": {
+            "type": "boolean",
+            "maxLength": 1
+          },
+          "isClientCredsBody": {
+            "type": "boolean",
+            "maxLength": 1
+          },
+          "useWellKnown": {
+            "type": "boolean",
+            "maxLength": 1
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 8192
+            }
+          },
+          "teamId": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "keyId": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "loginMergeClaims": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          "oidcClaimMapper": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            }
+          }
+        },
+        "required": [
+          "authUrl",
+          "clientId",
+          "clientSecret",
+          "isClientCredsBody",
+          "name",
+          "redirectUrl",
+          "scopes",
+          "tokenInfoUrl",
+          "tokenUrl",
+          "userInfoUrl",
+          "wellKnownUrl"
+        ]
+      }
+    },
+    "parameters": {
+      "tenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 32
+        }
+      },
+      "clientId": {
+        "name": "clientId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 36
+        }
+      },
+      "channelId": {
+        "name": "channelId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 100
+        }
+      },
+      "actionType": {
+        "name": "actionType",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "PWDLESS_LOGIN",
+            "PWD_RESET_ACTION",
+            "PWD_RESET_CROSS_DEVICE_ACTION"
+          ],
+          "maxLength": 36
+        }
+      },
+      "templateType": {
+        "name": "templateType",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "EMAIL",
+            "SMS"
+          ],
+          "maxLength": 8
+        }
+      },
+      "locale": {
+        "name": "locale",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
+        }
+      },
+      "name": {
+        "name": "name",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "customerId": {
+        "name": "customerId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 28
+        }
+      },
+      "emailAddress": {
+        "name": "emailAddress",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "x-sdk-classname": "SlasAdmin"
+}

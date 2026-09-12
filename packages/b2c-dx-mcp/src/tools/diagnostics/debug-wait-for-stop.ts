@@ -34,18 +34,21 @@ export function createDebugWaitForStopTool(
   return createToolAdapter<WaitForStopInput, WaitForStopOutput>(
     {
       name: 'debug_wait_for_stop',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'Wait for a debugger thread to halt. Returns immediately if already halted; otherwise blocks until a halt or timeout.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        session_id: z.string().describe('Session ID returned by debug_start_session.'),
+        session_id: z.string(),
         timeout_ms: z
           .number()
           .int()
           .positive()
           .max(MAX_TIMEOUT_MS)
           .optional()
-          .describe(`Timeout in milliseconds (default: ${DEFAULT_TIMEOUT_MS}, max: ${MAX_TIMEOUT_MS}).`),
+          .describe(`Wait timeout in milliseconds. Default: ${DEFAULT_TIMEOUT_MS}; max: ${MAX_TIMEOUT_MS}.`),
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);

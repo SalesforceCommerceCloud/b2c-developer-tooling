@@ -11,17 +11,21 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {categoryEnumValues, enabledCategoriesNote} from './topics.js';
-import {WORKSPACE_VALUES, detectedWorkspaceNote, resolveWorkspace, type WorkspaceParam} from './storefront.js';
+import {
+  workspaceInputSchema,
+  detectedWorkspaceNote,
+  resolveProjectWorkspace,
+  type WorkspaceContextInput,
+} from './storefront.js';
 
 /** Default number of results returned when `limit` is not supplied. Kept small to bound payload size for agents. */
 const DEFAULT_LIMIT = 5;
 
-interface SearchInput {
+interface SearchInput extends WorkspaceContextInput {
   limit?: number;
   offset?: number;
   query: string;
   category?: DocCategory;
-  workspace?: WorkspaceParam;
   verbose?: boolean;
 }
 
@@ -79,6 +83,9 @@ export function createDocsSearchTool(
   return createToolAdapter<SearchInput, SearchOutput>(
     {
       name: 'docs_search',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Search B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
         'Use for natural-language queries or unknown IDs; call docs_read with a result ID.' +
@@ -86,12 +93,9 @@ export function createDocsSearchTool(
         detectedWorkspaceNote(detectedWorkspaces),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
+        ...workspaceInputSchema,
         query: z.string().min(1).describe('Search query (class name, topic, or natural-language phrase).'),
         category: z.enum(categoryEnumValues(enabledCategories)).optional().describe('Restrict results to one corpus.'),
-        workspace: z
-          .enum(WORKSPACE_VALUES)
-          .optional()
-          .describe('"auto" uses startup workspace; "all" disables weighting; or select a workspace type.'),
         limit: z
           .number()
           .int()
@@ -110,7 +114,7 @@ export function createDocsSearchTool(
           .describe('Include keywords and canonical url on each result (larger payload). Defaults to false.'),
       },
       async execute(args) {
-        const workspace = resolveWorkspace(args.workspace, detectedWorkspaces);
+        const workspace = await resolveProjectWorkspace(args, detectedWorkspaces);
         const limit = args.limit ?? DEFAULT_LIMIT;
         const offset = args.offset ?? 0;
         // The SDK returns top-N search hits. Retrieve the complete ranked set here

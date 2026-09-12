@@ -11,13 +11,14 @@ Use the `b2c` CLI to retrieve and monitor log files on Salesforce B2C Commerce i
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
+The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Agent-Friendly Log Retrieval
 
 The `logs get` command is optimized for coding agents:
+
 - Exits immediately after retrieving logs (non-interactive)
 - Supports `--json` for structured output
 - Filters by time, level, and text search
@@ -150,31 +151,31 @@ When using `--json`, `logs get` returns:
 }
 ```
 
-| Field | Description |
-|-------|-------------|
-| `file` | Source log file name (use with `b2c-cli:b2c-webdav` to download full file) |
-| `level` | Log level: ERROR, WARN, INFO, DEBUG, FATAL, TRACE |
-| `timestamp` | Entry timestamp |
-| `message` | Log message (paths normalized for IDE click-to-open) |
-| `raw` | Raw unprocessed log line |
+| Field       | Description                                                                |
+| ----------- | -------------------------------------------------------------------------- |
+| `file`      | Source log file name (use with `b2c-cli:b2c-webdav` to download full file) |
+| `level`     | Log level: ERROR, WARN, INFO, DEBUG, FATAL, TRACE                          |
+| `timestamp` | Entry timestamp                                                            |
+| `message`   | Log message (paths normalized for IDE click-to-open)                       |
+| `raw`       | Raw unprocessed log line                                                   |
 
 ## Log Types
 
 Common log file prefixes:
 
-| Prefix | Description |
-|--------|-------------|
-| `error` | System errors |
+| Prefix        | Description                             |
+| ------------- | --------------------------------------- |
+| `error`       | System errors                           |
 | `customerror` | Custom script errors (`Logger.error()`) |
-| `warn` | Warnings |
-| `debug` | Debug output (when enabled) |
-| `info` | Informational messages |
-| `jobs` | Job execution logs |
-| `api` | API problems and violations |
-| `deprecation` | Deprecated API usage |
-| `quota` | Quota warnings |
+| `warn`        | Warnings                                |
+| `debug`       | Debug output (when enabled)             |
+| `info`        | Informational messages                  |
+| `jobs`        | Job execution logs                      |
+| `api`         | API problems and violations             |
+| `deprecation` | Deprecated API usage                    |
+| `quota`       | Quota warnings                          |
 
-The prefixes above are the **built-in** log files. In addition, any script that logs through a *custom logger category* writes to its own dedicated file with a `custom-` prefix — **distinct from `customerror`**. Integration and job code (payment gateways, ERP/OMS/CRM syncs, feed and import jobs) almost always logs this way, so the entry you need for a triage is frequently in a `custom-*` file, not in `error`/`customerror`.
+The prefixes above are the **built-in** log files. In addition, any script that logs through a _custom logger category_ writes to its own dedicated file with a `custom-` prefix — **distinct from `customerror`**. Integration and job code (payment gateways, ERP/OMS/CRM syncs, feed and import jobs) almost always logs this way, so the entry you need for a triage is frequently in a `custom-*` file, not in `error`/`customerror`.
 
 Custom log file names follow this pattern:
 
@@ -184,15 +185,15 @@ custom-<prefix>-<hostname>-appserver-<date>.log
 
 The `<prefix>` segment is the **first argument** passed to `Logger.getLogger(prefix, category)` in the emitting code, so it maps a log file straight back to the code that wrote it:
 
-| Code | Log file | Filter to read it |
-|------|----------|-------------------|
+| Code                                              | Log file                        | Filter to read it                  |
+| ------------------------------------------------- | ------------------------------- | ---------------------------------- |
 | `Logger.getLogger('PaymentProcessor', 'payment')` | `custom-PaymentProcessor-*.log` | `--filter custom-PaymentProcessor` |
-| `Logger.getLogger('PimTaxImport', 'tax')` | `custom-PimTaxImport-*.log` | `--filter custom-PimTaxImport` |
-| `Logger.getLogger('orderexport', 'export')` | `custom-orderexport-*.log` | `--filter custom-orderexport` |
+| `Logger.getLogger('PimTaxImport', 'tax')`         | `custom-PimTaxImport-*.log`     | `--filter custom-PimTaxImport`     |
+| `Logger.getLogger('orderexport', 'export')`       | `custom-orderexport-*.log`      | `--filter custom-orderexport`      |
 
-(The second argument is the log *category*, used for configuration; it does not appear in the file name.) For the authoring side — how to create these loggers — see the `b2c:b2c-logging` skill.
+(The second argument is the log _category_, used for configuration; it does not appear in the file name.) For the authoring side — how to create these loggers — see the `b2c:b2c-logging` skill.
 
-> **Note:** `--filter` does a **prefix (starts-with) match** on a file's log category, not an exact match — so `--filter custom-` sweeps every `custom-*` file, and `--filter custom-Payment` also matches `custom-PaymentProcessor`. The category is extracted by taking everything up to the *second* dash, so a custom logger name is treated as word characters only (no dashes): a file named `custom-payment-gateway-*.log` is seen as category `custom-payment`. To read one specific custom log, filter on its full extracted prefix (e.g. `--filter custom-PimTaxImport`); to sweep them all, use `--filter custom-`.
+> **Note:** `--filter` does a **prefix (starts-with) match** on a file's log category, not an exact match — so `--filter custom-` sweeps every `custom-*` file, and `--filter custom-Payment` also matches `custom-PaymentProcessor`. The category is extracted by taking everything up to the _second_ dash, so a custom logger name is treated as word characters only (no dashes): a file named `custom-payment-gateway-*.log` is seen as category `custom-payment`. To read one specific custom log, filter on its full extracted prefix (e.g. `--filter custom-PimTaxImport`); to sweep them all, use `--filter custom-`.
 
 ## Discovering Custom Log Files
 

@@ -7,7 +7,7 @@ description: Debug B2C Commerce server-side scripts using the b2c CLI. Use this 
 
 Debug server-side scripts on Salesforce B2C Commerce instances — set breakpoints, step through code, and inspect variables in SFRA controllers, hooks, jobs, and custom APIs.
 
-> **Prefer the MCP diagnostics tools when available.** If the B2C DX MCP server is installed (tools named `debug_start_session`, `debug_set_breakpoints`, `debug_wait_for_stop`, `debug_capture_at_breakpoint`, etc.), **use them instead of the RPC-based `b2c debug cli --rpc` workflow.** The MCP tools manage session state for you, return structured JSON, and support a non-blocking poll workflow (`debug_list_sessions` / `debug_wait_for_stop`) that is far more reliable for agents than driving JSONL over stdio. Only fall back to `b2c debug cli` (REPL or `--rpc`) when the MCP server is not installed, or when a human wants an interactive terminal session.
+> Prefer MCP debugging when available: `debug_control` resumes/steps; `debug_inspect` reads stacks and variables; `debug_evaluate` evaluates expressions. See `skill://mcp/debugger/SKILL.md` for the MCP workflow. Use the CLI for a requested terminal session or when MCP is unavailable.
 
 `b2c debug` provides a Debug Adapter Protocol (DAP) debug adapter for IDEs. For terminal or headless use without the MCP tools, `b2c debug cli` also offers an interactive REPL and a JSONL `--rpc` mode.
 
@@ -15,9 +15,9 @@ Debug server-side scripts on Salesforce B2C Commerce instances — set breakpoin
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
+The CLI resolves the target instance and debugger credentials from environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. It does not search parent directories. `package.json` supplies only non-sensitive defaults; `~/.mobify` supplies MRT credentials, not debugger credentials. **Flags like `--server`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; keep secrets masked unless the user explicitly requests their values). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 For MCP debugging, pass `projectDirectory` to `debug_start_session` whenever the MCP server may have been launched outside the project. The tool uses that root to load the project's `.env` and default `dw.json`; pass `configPath` to select a different primary `dw.json`-format file and `instanceName` to select a named instance from the primary or shared default file. Cartridge discovery and local/server source mapping default to `projectDirectory`; pass `cartridgeDirectory` only when the cartridges live under a different root. The start call captures this information in `resolution`, which `debug_list_sessions` returns without requiring the caller to repeat it. The MCP server controls its SDAPI client identity internally, so callers do not pass a debugger client ID.
 

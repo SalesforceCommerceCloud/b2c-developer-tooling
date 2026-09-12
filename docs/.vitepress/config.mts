@@ -127,10 +127,11 @@ const guidesSidebar = [
     text: 'MCP Server',
     items: [
       {text: 'Overview', link: '/mcp/'},
-      {text: 'MCP Installation', link: '/mcp/installation'},
-      {text: 'MCP Configuration', link: '/mcp/configuration'},
-      {text: 'Toolsets & Tools', link: '/mcp/toolsets'},
-      {text: 'Figma Tools Setup', link: '/mcp/figma-tools-setup'},
+      {text: 'Installation', link: '/mcp/installation'},
+      {text: 'Configuration', link: '/mcp/configuration'},
+      {text: 'Tools & Capabilities', link: '/mcp/toolsets'},
+      {text: 'Workflow Skills', link: '/mcp/skills'},
+      {text: 'Security & Access', link: '/mcp/security'},
     ],
   },
   {
@@ -176,42 +177,12 @@ const referenceSidebar = [
     ],
   },
   {
-    text: 'MCP Tools',
+    text: 'MCP Server',
     items: [
-      {
-        text: 'Cartridges',
-        collapsed: true,
-        items: [{text: 'Deployment', link: '/mcp/tools/cartridge-deploy'}],
-      },
-      {
-        text: 'SCAPI',
-        collapsed: true,
-        items: [
-          {text: 'Schemas', link: '/mcp/tools/scapi-schemas-list'},
-          {text: 'Custom APIs', link: '/mcp/tools/scapi-custom-apis'},
-        ],
-      },
-      {
-        text: 'PWA Kit',
-        collapsed: true,
-        items: [
-          {text: 'Bundle Deployment', link: '/mcp/tools/mrt-bundle-push'},
-          {text: 'Development Guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
-        ],
-      },
-      {
-        text: 'Diagnostics',
-        collapsed: true,
-        items: [
-          {text: 'Script Debugger', link: '/mcp/tools/diagnostics'},
-          {text: 'Logs (Instance & MRT)', link: '/mcp/tools/logs'},
-        ],
-      },
-      {
-        text: 'Documentation',
-        collapsed: true,
-        items: [{text: 'Documentation Tools', link: '/mcp/tools/docs'}],
-      },
+      {text: 'Tools & Capabilities', link: '/mcp/toolsets'},
+      {text: 'Installation', link: '/mcp/installation'},
+      {text: 'Configuration', link: '/mcp/configuration'},
+      {text: 'Security & Access', link: '/mcp/security'},
     ],
   },
 ];
@@ -337,7 +308,7 @@ export default defineConfig({
     },
 
     sidebar: {
-      '/mcp/tools/': referenceSidebar,
+      '/mcp/tools/': guidesSidebar,
       '/mcp/': guidesSidebar,
       '/vscode-extension/': guidesSidebar,
       '/cli/': referenceSidebar,

@@ -1,43 +1,45 @@
 ---
-description: MCP Server for Salesforce B2C Commerce - AI-assisted development tools for Claude, Cursor, and other AI assistants.
+description: Give your coding assistant B2C Commerce skills, documentation, deployment, debugging, and log access.
 ---
 
-# MCP Server
+# B2C Commerce MCP Server
 
-The B2C DX MCP Server enables AI assistants (like Claude Code, Cursor, GitHub Copilot, and others) to help with B2C Commerce development tasks. It provides toolsets for **SCAPI**, **CARTRIDGES**, **MRT**, **PWAV3**, and **STOREFRONTNEXT** development.
+Connect your coding assistant to Salesforce B2C Commerce. The B2C DX MCP Server
+supports Codex, Claude Code, Cursor, GitHub Copilot, and other MCP clients.
+It supports MCP 2026-07-28 and earlier clients over local stdio; your client
+selects the protocol automatically.
 
-## Quick Start
+Use it to:
 
-1. **Install** — set up the MCP server for your client. See the [Installation Guide](./installation) for Claude Code, Cursor, GitHub Copilot, and other clients.
+- Find Commerce documentation and workflow skills while developing.
+- Deploy cartridges and publish Managed Runtime bundles.
+- Investigate server-side code with breakpoints, variables, and logs.
+- Discover SCAPI schemas and check custom API registration.
+- Discover nearly 600 API operations and manage Commerce records through
+  [SCAPI code mode](./toolsets#scapi-code-mode-preview) (preview).
 
-2. **Configure credentials** — create a [`dw.json`](./configuration#dw-json) or [`.env`](./configuration#env-file) file in your project root. No changes to `mcp.json` needed.
+[Browse capabilities](./toolsets) to see what is available and which operations
+need credentials or can change your environment.
 
-3. **Start using tools** — the server auto-detects your project type and enables relevant [toolsets](./toolsets).
+## Get started
 
-For authentication setup instructions, see the [Authentication Setup guide](../guide/authentication) which covers API client creation, WebDAV access, SCAPI authentication, and MRT API keys.
+1. [Install the server](./installation) in your coding assistant.
+2. [Select your project and tools](./configuration). Skills and documentation
+   can be used without Commerce credentials.
+3. [Configure access](./security) for the environments and operations you need.
 
-## Project Type Detection
+For example, ask your assistant to explain a Commerce API, help prepare a
+cartridge deployment, or investigate a sandbox error. The included
+[workflow skills](./skills) covers B2C CLI, Commerce development, and
+Storefront Next.
 
-The **SCAPI** and **DIAGNOSTICS** toolsets are always enabled. On top of those, the server analyzes your project directory and enables additional toolsets based on what it finds:
+## Choose the tools you expose {#project-type-detection}
 
-| Project Type            | Detection                                                                                                                          | Toolsets Added                  |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| **Cartridges**          | `.project` file in a cartridge directory                                                                                           | CARTRIDGES                      |
-| **SFRA**                | An `app_storefront_base` cartridge (or `paths.base` in `package.json`)                                                             | CARTRIDGES                      |
-| **PWA Kit v3**          | `@salesforce/pwa-kit-*` or `@salesforce/retail-react-app` dependency, or `ccExtensibility` in `package.json`                       | PWAV3, MRT                      |
-| **Storefront Next**     | `@salesforce/storefront-next-dev` dependency or a package name starting with `storefront-next`, in the root or a workspace package | STOREFRONTNEXT, MRT, CARTRIDGES |
-| **No project detected** | No B2C markers found                                                                                                               | _(base only)_                   |
+All toolsets are enabled by default, regardless of the project's storefront
+framework or the directory where your client starts the server. Use
+[explicit tool selection](./configuration#toolset-selection) to customize the
+capabilities available to your assistant.
 
-Every configuration also includes the always-on base toolsets (**SCAPI** + **DIAGNOSTICS**). Hybrid projects (e.g. cartridges + PWA Kit) get the union of the matching rows. You can also [manually select toolsets](./configuration#toolset-selection).
-
-## Plugins
-
-The MCP server uses the B2C CLI under the hood, so CLI plugins automatically extend MCP functionality. See the [CLI Plugin documentation](../guide/extending) for details.
-
-## Next Steps
-
-- [Installation Guide](./installation) - Set up Claude Code, Cursor, GitHub Copilot, or other MCP clients
-- [Configuration](./configuration) - Configure credentials, environment variables, MCP flags, toolset selection, and logging
-- [Toolsets & Tools](./toolsets) - Explore available toolsets and tools
-- [CLI Reference](../cli/) - Learn about the B2C CLI commands
-- [API Reference](../api/) - Explore the SDK API
+The project directory still determines which configuration and files a task
+uses. Shared tools support PWA Kit and Storefront Next projects; set the intended
+project in [configuration](./configuration#project-directory).

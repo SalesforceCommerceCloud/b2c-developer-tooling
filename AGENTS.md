@@ -1,6 +1,7 @@
 # B2C CLI
 
 This is a monorepo project with the following packages:
+
 - `./packages/b2c-cli` - the command line interface built with oclif
 - `./packages/b2c-tooling-sdk` - the SDK/library for B2C Commerce operations; supports the CLI and can be used standalone
 - `./packages/b2c-dx-mcp` - Model Context Protocol server; also built with oclif
@@ -133,6 +134,11 @@ This produces a `docs@<version>` tag and triggers a docs rebuild on merge of the
 - CLI commands have access to this logger via `this.log` method from oclif Command class
 - CLI commands can write directly to stdout/stderr if their primary purpose is to output or stream data
 
+## MCP Development
+
+For MCP tools, resources, and workflow skills, see the
+[MCP development skill](./.agents/skills/mcp-development/SKILL.md).
+
 ## CLI Command Development
 
 See [CLI command development skill](./.claude/skills/cli-command-development/SKILL.md) for patterns.
@@ -142,6 +148,7 @@ See [CLI command development skill](./.claude/skills/cli-command-development/SKI
 **User-facing skills** (for CLI users): `./skills/b2c-cli/skills/` - update when modifying CLI commands.
 
 **Developer skills** (for contributors): `./.claude/skills/` - covers:
+
 - [CLI command development](./.claude/skills/cli-command-development/SKILL.md) - oclif commands, flags, table output
 - [SDK module development](./.claude/skills/sdk-module-development/SKILL.md) - modules, exports, barrel files
 - [API client development](./.claude/skills/api-client-development/SKILL.md) - OpenAPI clients, OAuth scopes, SCAPI patterns
@@ -183,14 +190,16 @@ See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing t
 This project uses [Changesets](https://github.com/changesets/changesets) for version management with **independent per-package versioning**. Each package versions independently based on its own changesets.
 
 **How it works:**
+
 - A changeset affecting only the SDK bumps only the SDK version
 - Packages that depend on a bumped package get an automatic patch bump (via `updateInternalDependencies: "patch"`) — e.g., if SDK bumps, CLI, MCP, and Docs all auto-get a patch bump
 - Only packages with a newer version than what's on npm get published (docs package is private and uses git tags instead)
 - A changeset targeting only `@salesforce/b2c-dx-docs` triggers a doc-only release — no npm packages are published, just a `docs@<version>` tag and docs rebuild
 
 Changeset guidelines:
+
 - Create a changeset for any user-facing changes (features, bug fixes); typically in new pull requests
-- a pull request can have multiple changesets; separate files for separate changes
+- Use separate changesets for distinct user-facing features or fixes in a pull request. Describe the final change relative to the base branch, not the branch's implementation history; fold follow-up work on an unreleased feature into that feature's changeset.
 - Only list directly-changed packages in changeset frontmatter — do not include dependent packages (they get auto-bumped)
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
 - Use `major` for breaking changes that require consumers to update their code
@@ -200,7 +209,7 @@ Changeset guidelines:
   - HOW a consumer should update their code
 - Good changesets are brief and user-focused (not contributor); they are generally 1 line or two; The content of the changeset is used in CHANGELOG and release notes. You do not need to list internal implementation details or all details of commands; just the high level summary for users.
 
-Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-vs-extension`, `@salesforce/b2c-dx-docs`, `@salesforce/b2c-agent-plugins`
+Valid changeset packages: `@salesforce/b2c-api-schemas`, `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-vs-extension`, `@salesforce/b2c-dx-docs`, `@salesforce/b2c-agent-plugins`
 
 Create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 

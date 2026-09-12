@@ -1,0 +1,4411 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Shopper Orders",
+    "version": "1.20.1",
+    "x-api-type": "Shopper",
+    "x-api-family": "Checkout"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/checkout/shopper-orders/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/orders": {
+      "post": {
+        "operationId": "createOrder",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Basket"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the submitted order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- a failure during the creation of a gift certificate\nfor a gift certificate item.\n- the basket ID in the request body is null or\nempty.\n- an invalid product item.\n- an option with the specified option ID is\nunknown.\n- an option with the specified option value ID\nis unknown.\n- a product item is not available.\n- the customer assigned to the basket does not\nmatch the verified customer represented by the JWT token.\n- the basket contains flashes (validation errors that prevent order placement).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The basket with the given basket ID is unknown.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/oms-meta-data": {
+      "get": {
+        "operationId": "getOmsMetaData",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the OMS meta data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmsMetaData"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/409OmsNotActive"
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ],
+        "x-extensionPoints": [
+          {
+            "phase": "modifyResponse",
+            "name": "sfcc.checkout.shopper-orders.v1.orders.oms-meta-data.modifyGETResponse",
+            "description": "Called to modify the OMS meta data returned in the response.",
+            "arguments": [
+              {
+                "$ref": "#/components/schemas/OmsMetaData"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}": {
+      "get": {
+        "operationId": "getOrder",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "oms",
+                  "oms_shipments"
+                ]
+              }
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The order with the given order number is unknown.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/lookup": {
+      "post": {
+        "operationId": "guestOrderLookup",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "oms",
+                  "oms_shipments"
+                ]
+              }
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderLookupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success, the response returns the order, though sensitive details may be filtered based on access level.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- The combination of identifying information is not sufficient for any access level.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order was not found. Possible reasons:\n- the order with the given order number is unknown.\n- the combination of identifying information you provided, such as email or postal code, does not match the order record.\n- the provided access code is invalid or has expired.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/actions/fail": {
+      "post": {
+        "operationId": "failOrder",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "reopenBasket",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FailOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order failed successfully. No content returned.\n",
+            "headers": {
+              "Location": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Order failed successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Possible reasons:\n  - Invalid request parameters.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The order with the given order number is unknown for the shopper.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The order is in invalid status.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/actions/oms-cancel-order": {
+      "post": {
+        "operationId": "cancelOmsOrder",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmsCancelOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the updated order retrieved from Order Management (OMS).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400OmsCancelBadRequest"
+          },
+          "404": {
+            "description": "Order was not found. Possible reasons:\n- the order with the given order number is unknown.\n- the provided access code is invalid or has expired.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/409OmsCancelConflict"
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ],
+        "x-extensionPoints": [
+          {
+            "phase": "modifyResponse",
+            "name": "sfcc.checkout.shopper-orders.v1.orders.orderNo.actions.oms-cancel-order.modifyPOSTResponse",
+            "description": "Called to modify the order returned in the response after cancellation.",
+            "arguments": [
+              {
+                "$ref": "#/components/schemas/Order"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/actions/oms-return-order": {
+      "post": {
+        "operationId": "returnOmsOrder",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmsReturnOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the updated order retrieved from Order Management (OMS).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400OmsReturnBadRequest"
+          },
+          "404": {
+            "description": "Order was not found. Possible reasons:\n- the order with the given order number is unknown.\n- the provided access code is invalid or has expired.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/409OmsReturnConflict"
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ],
+        "x-extensionPoints": [
+          {
+            "phase": "modifyResponse",
+            "name": "sfcc.checkout.shopper-orders.v1.orders.orderNo.actions.oms-return-order.modifyPOSTResponse",
+            "description": "Called to modify the order returned in the response after the return was initiated.",
+            "arguments": [
+              {
+                "$ref": "#/components/schemas/Order"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/actions/request-access-code": {
+      "post": {
+        "operationId": "requestOrderAccessCode",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "oms"
+                ]
+              }
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestOrderAccessCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted. Always returned, regardless of whether the order and email combination is valid, to prevent enumeration of valid orders.\nIf the combination is valid, a new access code is generated and delivered via email."
+          },
+          "400": {
+            "$ref": "#/components/responses/400RequestAccessCodeBadRequest"
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ],
+        "x-extensionPoints": [
+          {
+            "phase": "service-logic",
+            "name": "sfcc.app.order.sendOrderAccessCode",
+            "description": "Invoked to send the access code via email when the order number and email combination is valid.",
+            "arguments": [
+              {
+                "$ref": "#/components/schemas/Order"
+              },
+              {
+                "$ref": "#/components/schemas/OrderAccessCode"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/payment-instruments": {
+      "post": {
+        "operationId": "createPaymentInstrumentForOrder",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderPaymentInstrumentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the order with the added payment instrument.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- the given order number is invalid.\n- the provided payment method is invalid or not applicable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The order with the given order number is unknown.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/payment-instruments/{paymentInstrumentId}": {
+      "delete": {
+        "operationId": "removePaymentInstrumentFromOrder",
+        "parameters": [
+          {
+            "name": "paymentInstrumentId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PaymentInstrumentId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the order without the deleted payment instrument.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Possible reasons:\n- The order with the given order number is unknown.\n- The payment instrument with the given order payment\ninstrument ID is unknown.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updatePaymentInstrumentForOrder",
+        "parameters": [
+          {
+            "name": "paymentInstrumentId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PaymentInstrumentId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderPaymentInstrumentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the order with the updated payment instrument. When Salesforce Payments is enabled, the paymentReference object will be included in the paymentInstruments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- the basket payment instrument with the given\nID already is permanently masked.\n- the provided payment method is invalid or not applicable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Possible reasons:\n- The order with the given order number is unknown.\n- The payment instrument with the given payment\ninstrument ID is unknown.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/payment-methods": {
+      "get": {
+        "operationId": "getPaymentMethodsForOrder",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the applicable payment methods for the order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The customer assigned to the order does not\nmatch the verified customer represented by the JSON Web Token (JWT).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The order with the given order number is unknown.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/taxes": {
+      "get": {
+        "operationId": "getTaxesFromOrder",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success, the response body contains the external taxation from all items from the referenced\norder.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Taxes"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The order with the given order number is unknown.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Possible Reasons: \n  - The tax mode of the referenced basket is not set to EXTERNAL.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.shopper-baskets-orders",
+              "sfcc.shopper-baskets-orders.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "LanguageCountry": {
+        "type": "string",
+        "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
+      },
+      "LanguageCode": {
+        "type": "string",
+        "pattern": "^[a-z][a-z]$"
+      },
+      "DefaultFallback": {
+        "type": "string",
+        "default": "default",
+        "pattern": "^default$"
+      },
+      "LocaleCode": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/LanguageCountry"
+          },
+          {
+            "$ref": "#/components/schemas/LanguageCode"
+          },
+          {
+            "$ref": "#/components/schemas/DefaultFallback"
+          }
+        ]
+      },
+      "CountryCode": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z]$"
+      },
+      "OrderAddress": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "address1": {
+            "type": "string"
+          },
+          "address2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "countryCode": {
+            "$ref": "#/components/schemas/CountryCode"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "postBox": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "salutation": {
+            "type": "string"
+          },
+          "secondName": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "suffix": {
+            "type": "string"
+          },
+          "suite": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "ProductId": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "ProductDetailsLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "productDescription": {
+            "type": "string"
+          },
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "BonusDiscountLineItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "bonusProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductDetailsLink"
+            }
+          },
+          "couponCode": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "maxBonusItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "promotionId": {
+            "type": "string"
+          }
+        }
+      },
+      "CouponItemId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "CouponItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "couponItemId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CouponItemId"
+              }
+            ]
+          },
+          "statusCode": {
+            "type": "string",
+            "enum": [
+              "coupon_code_already_in_basket",
+              "coupon_code_already_redeemed",
+              "coupon_code_unknown",
+              "coupon_disabled",
+              "redemption_limit_exceeded",
+              "customer_redemption_limit_exceeded",
+              "timeframe_redemption_limit_exceeded",
+              "no_active_promotion",
+              "coupon_already_in_basket",
+              "no_applicable_promotion",
+              "applied",
+              "adhoc"
+            ]
+          },
+          "valid": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "pattern": "^([A-Z][A-Z][A-Z]|N/A)$"
+      },
+      "CustomerInfo": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "customerNo": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "GiftCertificateItemId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "GiftCertificateItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "giftCertificateItemId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GiftCertificateItemId"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "recipientEmail": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "senderName": {
+            "type": "string"
+          },
+          "shipmentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "recipientEmail"
+        ]
+      },
+      "GroupedTaxItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "taxRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxValue": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "Discount": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "percentage": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceBookId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percentage",
+              "fixed_price",
+              "amount",
+              "free",
+              "price_book_price",
+              "bonus",
+              "total_fixed_price",
+              "bonus_choice",
+              "percentage_off_options"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "PriceAdjustmentId": {
+        "type": "string"
+      },
+      "PriceAdjustment": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "appliedDiscount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Discount"
+              }
+            ]
+          },
+          "couponCode": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "custom": {
+            "type": "boolean"
+          },
+          "itemText": {
+            "type": "string"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "manual": {
+            "type": "boolean"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceAdjustmentId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriceAdjustmentId"
+              }
+            ]
+          },
+          "promotionId": {
+            "type": "string"
+          },
+          "reasonCode": {
+            "type": "string"
+          }
+        }
+      },
+      "Status": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PaymentCard": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "cardType": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "creditCardExpired": {
+            "type": "boolean"
+          },
+          "creditCardToken": {
+            "type": "string"
+          },
+          "expirationMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expirationYear": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "holder": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "issueNumber": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "maskedNumber": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "numberLastDigits": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "validFromMonth": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 12,
+            "minimum": 1
+          },
+          "validFromYear": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "GiftCardResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "brand": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "maskedCardNumber": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "expirationMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expirationYear": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PaymentInstrumentId": {
+        "type": "string"
+      },
+      "OrderPaymentInstrument": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "authorizationStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Status"
+              }
+            ]
+          },
+          "bankRoutingNumber": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "maskedGiftCertificateCode": {
+            "type": "string"
+          },
+          "paymentCard": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentCard"
+              }
+            ]
+          },
+          "giftCard": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GiftCardResponse"
+              }
+            ]
+          },
+          "paymentInstrumentId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentInstrumentId"
+              }
+            ]
+          },
+          "paymentMethodId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "paymentReference": {
+            "type": "object",
+            "properties": {
+              "paymentReferenceId": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "gateway": {
+                "type": "string",
+                "enum": [
+                  "stripe",
+                  "paypal",
+                  "adyen"
+                ]
+              },
+              "gatewayProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "stripe": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "paypal": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "adyen": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProductItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "adjustedTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "bonusDiscountLineItemId": {
+            "type": "string"
+          },
+          "bonusProductLineItem": {
+            "type": "boolean"
+          },
+          "bundledProductItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductItem"
+            }
+          },
+          "gift": {
+            "type": "boolean"
+          },
+          "giftMessage": {
+            "type": "string"
+          },
+          "inventoryId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "itemId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ItemId"
+              }
+            ]
+          },
+          "itemText": {
+            "type": "string"
+          },
+          "optionItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionItem"
+            }
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceAdjustment"
+            }
+          },
+          "priceAfterItemDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceAfterOrderDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "productId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "productListItem": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductListItemReference"
+              }
+            ]
+          },
+          "productName": {
+            "type": "string"
+          },
+          "qualifyingProductItemId": {
+            "type": "string",
+            "maxLength": 28
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "shipmentId": {
+            "type": "string"
+          },
+          "shippingItemId": {
+            "type": "string"
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxClassId": {
+            "type": "string"
+          },
+          "taxItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxItem"
+            },
+            "maxItems": 10
+          },
+          "taxRate": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ItemId": {
+        "type": "string"
+      },
+      "OptionItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "adjustedTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "bonusDiscountLineItemId": {
+            "type": "string"
+          },
+          "bonusProductLineItem": {
+            "type": "boolean"
+          },
+          "bundledProductItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductItem"
+            }
+          },
+          "gift": {
+            "type": "boolean"
+          },
+          "giftMessage": {
+            "type": "string"
+          },
+          "inventoryId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "itemId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ItemId"
+              }
+            ]
+          },
+          "itemText": {
+            "type": "string"
+          },
+          "optionId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "optionItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionItem"
+            }
+          },
+          "optionValueId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceAdjustment"
+            }
+          },
+          "priceAfterItemDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceAfterOrderDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "productListItem": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductListItemReference"
+              }
+            ]
+          },
+          "productName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "shipmentId": {
+            "type": "string"
+          },
+          "shippingItemId": {
+            "type": "string"
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxClassId": {
+            "type": "string"
+          },
+          "taxRate": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "optionId",
+          "optionValueId"
+        ]
+      },
+      "ProductListLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "wish_list",
+              "gift_registry",
+              "shopping_list",
+              "custom_1",
+              "custom_2",
+              "custom_3"
+            ]
+          }
+        }
+      },
+      "ProductListItemReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ItemId"
+              }
+            ]
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "productDetailsLink": {
+            "$ref": "#/components/schemas/ProductDetailsLink"
+          },
+          "productList": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductListLink"
+              }
+            ]
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "purchasedQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "product",
+              "gift_certificate"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "TaxItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "id",
+          "rate"
+        ]
+      },
+      "BasketProductItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProductItem"
+          }
+        ]
+      },
+      "DeliveryWindow": {
+        "type": "object",
+        "properties": {
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ShipmentId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "ShippingPromotion": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "calloutMsg": {
+            "type": "string"
+          },
+          "promotionId": {
+            "type": "string"
+          },
+          "promotionName": {
+            "type": "string"
+          }
+        }
+      },
+      "ShippingMethod": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "deliveryWindow": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryWindow"
+              }
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "externalShippingMethod": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "name": {
+            "type": "string"
+          },
+          "orderCutoffAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "shippingPromotions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShippingPromotion"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Shipment": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "adjustedMerchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "adjustedShippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "deliveryWindow": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryWindow"
+              }
+            ]
+          },
+          "gift": {
+            "type": "boolean"
+          },
+          "giftMessage": {
+            "type": "string"
+          },
+          "merchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "orderCutoffAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "productSubTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "productTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shipmentId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ShipmentId"
+              }
+            ],
+            "default": "me"
+          },
+          "shipmentNo": {
+            "type": "string"
+          },
+          "shipmentTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shippingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderAddress"
+              }
+            ]
+          },
+          "shippingMethod": {
+            "$ref": "#/components/schemas/ShippingMethod"
+          },
+          "shippingStatus": {
+            "type": "string",
+            "enum": [
+              "not_shipped",
+              "shipped"
+            ]
+          },
+          "shippingTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "trackingNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "ShippingItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "adjustedTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "itemText": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceAdjustment"
+            }
+          },
+          "priceAfterItemDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "shipmentId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ShipmentId"
+              }
+            ]
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxClassId": {
+            "type": "string"
+          },
+          "taxItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxItem"
+            },
+            "maxItems": 10
+          },
+          "taxRate": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "PromotionLink": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "calloutMsg": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "link": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1
+          }
+        }
+      },
+      "ApproachingDiscount": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "order",
+              "shipping"
+            ]
+          },
+          "conditionThreshold": {
+            "type": "number",
+            "format": "double"
+          },
+          "merchandiseTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "discount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Discount"
+              }
+            ]
+          },
+          "promotionLink": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PromotionLink"
+              }
+            ]
+          },
+          "shipmentId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "shippingMethods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShippingMethod"
+            }
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "Basket": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "adjustedMerchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "adjustedShippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "agentBasket": {
+            "type": "boolean"
+          },
+          "basketId": {
+            "type": "string"
+          },
+          "billingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderAddress"
+              }
+            ]
+          },
+          "bonusDiscountLineItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BonusDiscountLineItem"
+            }
+          },
+          "channelType": {
+            "type": "string",
+            "enum": [
+              "storefront",
+              "callcenter",
+              "marketplace",
+              "dss",
+              "store",
+              "pinterest",
+              "twitter",
+              "facebookads",
+              "subscriptions",
+              "onlinereservation",
+              "customerservicecenter",
+              "instagramcommerce",
+              "tiktok",
+              "snapchat",
+              "google",
+              "whatsapp",
+              "youtube",
+              "chatgpt",
+              "gemini"
+            ]
+          },
+          "couponItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponItem"
+            }
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "customerInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomerInfo"
+              }
+            ]
+          },
+          "giftCertificateItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GiftCertificateItem"
+            }
+          },
+          "groupedTaxItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupedTaxItem"
+            }
+          },
+          "inventoryReservationExpiry": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "merchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "orderPriceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceAdjustment"
+            }
+          },
+          "orderTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "paymentInstruments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderPaymentInstrument"
+            }
+          },
+          "productItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BasketProductItem"
+            }
+          },
+          "productSubTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "productTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shipments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Shipment"
+            }
+          },
+          "shippingItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShippingItem"
+            }
+          },
+          "shippingTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "sourceCode": {
+            "type": "string"
+          },
+          "taxTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxation": {
+            "type": "string",
+            "enum": [
+              "gross",
+              "net"
+            ]
+          },
+          "taxRoundedAtGroup": {
+            "type": "boolean"
+          },
+          "temporaryBasket": {
+            "type": "boolean"
+          },
+          "approachingDiscounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApproachingDiscount"
+            }
+          }
+        }
+      },
+      "OrderNo": {
+        "type": "string",
+        "maxLength": 50,
+        "minLength": 1
+      },
+      "OmsProductData": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ordered",
+              "returned",
+              "canceled",
+              "paid",
+              "reshipped",
+              "fulfilled",
+              "partially_fulfilled",
+              "allocated",
+              "partially_allocated",
+              "return_initiated"
+            ]
+          },
+          "quantityAvailableToCancel": {
+            "type": "number",
+            "format": "double"
+          },
+          "quantityAvailableToReturn": {
+            "type": "number",
+            "format": "double"
+          },
+          "quantityCanceled": {
+            "type": "number",
+            "format": "double"
+          },
+          "quantityReturnInitiated": {
+            "type": "number",
+            "format": "double"
+          },
+          "quantityReturned": {
+            "type": "number",
+            "format": "double"
+          },
+          "quantityOrdered": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "OrderProductItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProductItem"
+          }
+        ],
+        "properties": {
+          "omsData": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OmsProductData"
+              }
+            ]
+          }
+        }
+      },
+      "OmsShipmentItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productItemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "OmsShipment": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "trackingNumber": {
+            "type": "string"
+          },
+          "trackingUrl": {
+            "type": "string"
+          },
+          "expectedDeliveryDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualDeliveryDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "shipmentItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmsShipmentItem"
+            }
+          }
+        }
+      },
+      "OmsData": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "shipments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmsShipment"
+            }
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "adjustedMerchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "adjustedShippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "billingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderAddress"
+              }
+            ]
+          },
+          "bonusDiscountLineItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BonusDiscountLineItem"
+            }
+          },
+          "channelType": {
+            "type": "string",
+            "enum": [
+              "storefront",
+              "callcenter",
+              "marketplace",
+              "dss",
+              "store",
+              "pinterest",
+              "twitter",
+              "facebookads",
+              "subscriptions",
+              "onlinereservation",
+              "customerservicecenter",
+              "instagramcommerce",
+              "tiktok",
+              "snapchat",
+              "google",
+              "whatsapp",
+              "youtube",
+              "chatgpt",
+              "gemini"
+            ]
+          },
+          "confirmationStatus": {
+            "type": "string",
+            "enum": [
+              "not_confirmed",
+              "confirmed"
+            ]
+          },
+          "couponItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponItem"
+            }
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currency": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ]
+          },
+          "customerInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomerInfo"
+              }
+            ]
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "exportStatus": {
+            "type": "string",
+            "enum": [
+              "not_exported",
+              "exported",
+              "ready",
+              "failed"
+            ]
+          },
+          "externalOrderStatus": {
+            "type": "string"
+          },
+          "giftCertificateItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GiftCertificateItem"
+            }
+          },
+          "globalPartyId": {
+            "type": "string"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "merchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "orderNo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderNo"
+              }
+            ]
+          },
+          "orderPriceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceAdjustment"
+            }
+          },
+          "orderToken": {
+            "type": "string"
+          },
+          "orderTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "orderViewCode": {
+            "type": "string"
+          },
+          "paymentInstruments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderPaymentInstrument"
+            }
+          },
+          "paymentStatus": {
+            "type": "string",
+            "enum": [
+              "not_paid",
+              "part_paid",
+              "paid"
+            ]
+          },
+          "productItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderProductItem"
+            }
+          },
+          "productSubTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "productTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxRoundedAtGroup": {
+            "type": "boolean"
+          },
+          "shipments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Shipment"
+            }
+          },
+          "shippingItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShippingItem"
+            }
+          },
+          "shippingStatus": {
+            "type": "string",
+            "enum": [
+              "not_shipped",
+              "part_shipped",
+              "shipped"
+            ]
+          },
+          "shippingTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "siteId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteId"
+              }
+            ]
+          },
+          "omsData": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OmsData"
+              }
+            ]
+          },
+          "sourceCode": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "new",
+              "completed",
+              "cancelled",
+              "replaced",
+              "failed"
+            ]
+          },
+          "taxTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxation": {
+            "type": "string",
+            "enum": [
+              "gross",
+              "net"
+            ]
+          },
+          "groupedTaxItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupedTaxItem"
+            }
+          },
+          "guest": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "OmsReasonCode": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "default": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "default",
+          "reason"
+        ]
+      },
+      "OmsMetaData": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "cancelReasonCodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmsReasonCode"
+            }
+          },
+          "returnReasonCodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmsReasonCode"
+            }
+          }
+        },
+        "required": [
+          "cancelReasonCodes",
+          "returnReasonCodes"
+        ]
+      },
+      "OmsNotActiveErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "OrderLookupRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "orderViewCode": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "FailOrderRequest": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "payment_confirm_failure",
+              "payment_capture_failure",
+              "payment_auth_failure"
+            ]
+          }
+        }
+      },
+      "OrderAccessCode": {
+        "type": "string",
+        "maxLength": 6,
+        "pattern": "^\\d{6}$"
+      },
+      "OmsCancelOrderRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "orderAccessCode": {
+            "$ref": "#/components/schemas/OrderAccessCode"
+          }
+        }
+      },
+      "InvalidReasonCodeErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "OrderCancelFailedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "orderNo": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "OmsReturnProductItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "itemId",
+          "quantity"
+        ]
+      },
+      "OmsReturnOrderRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "productItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmsReturnProductItem"
+            },
+            "minItems": 1
+          },
+          "orderAccessCode": {
+            "$ref": "#/components/schemas/OrderAccessCode"
+          }
+        },
+        "required": [
+          "productItems"
+        ]
+      },
+      "UnknownProductItemIdsErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "orderNo": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "unknownItemIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        }
+      },
+      "ReturnQuantityExceededErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "orderNo": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "itemIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        }
+      },
+      "OrderReturnFailedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "orderNo": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "RequestOrderAccessCodeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "InvalidAccessCodeRequestErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "OrderPaymentCardRequest": {
+        "type": "object",
+        "properties": {
+          "cardType": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "creditCardToken": {
+            "type": "string"
+          },
+          "expirationMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expirationYear": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "holder": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "issueNumber": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "maskedNumber": {
+            "type": "string",
+            "maxLength": 25,
+            "pattern": "^[0-9 -]{0,7}\\D{6,15}\\d{0,4}$"
+          },
+          "validFromMonth": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 12,
+            "minimum": 1
+          },
+          "validFromYear": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "GiftCardRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "brand": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "cardNumber": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "cvc": {
+            "type": "string",
+            "maxLength": 4
+          },
+          "expirationMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expirationYear": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "brand",
+          "cardNumber",
+          "cvc"
+        ]
+      },
+      "PaymentReferenceRequest": {
+        "type": "object",
+        "properties": {
+          "paymentMethodType": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "zoneId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9\\-_]{1,100}$"
+          },
+          "gateway": {
+            "type": "string",
+            "enum": [
+              "stripe",
+              "paypal",
+              "adyen"
+            ]
+          },
+          "gatewayProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "stripe": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "paypal": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "adyen": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "OrderPaymentInstrumentRequest": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "bankRoutingNumber": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "giftCertificateCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "paymentCard": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderPaymentCardRequest"
+              }
+            ]
+          },
+          "giftCardRequest": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GiftCardRequest"
+              }
+            ]
+          },
+          "paymentMethodId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "paymentReferenceRequest": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentReferenceRequest"
+              }
+            ]
+          }
+        }
+      },
+      "PaymentCardSpec": {
+        "type": "object",
+        "properties": {
+          "cardType": {
+            "type": "string"
+          },
+          "checksumVerificationEnabled": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "numberLengths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "numberPrefixes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "securityCodeLength": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PaymentMethod": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentCardSpec"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "image": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "paymentProcessorId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "PaymentMethodResult": {
+        "type": "object",
+        "properties": {
+          "applicablePaymentMethods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethod"
+            }
+          }
+        }
+      },
+      "TaxItems": {
+        "type": "object",
+        "properties": {
+          "taxItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxItem"
+            }
+          }
+        }
+      },
+      "Taxes": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "taxes": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TaxItems"
+            }
+          }
+        },
+        "required": [
+          "taxes"
+        ]
+      }
+    },
+    "responses": {
+      "409OmsNotActive": {
+        "description": "Order Management (OMS) is not active for this site.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/OmsNotActiveErrorResponse"
+            }
+          }
+        }
+      },
+      "400OmsCancelBadRequest": {
+        "description": "The cancel request is invalid. Possible reasons:\n- The supplied reason code is not configured in Order Management (OMS).",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/InvalidReasonCodeErrorResponse"
+            }
+          }
+        }
+      },
+      "409OmsCancelConflict": {
+        "description": "The order cannot be cancelled. Possible reasons:\n- The order is no longer in a state that permits cancellation.\n- Order Management (OMS) rejected the cancel request after ECOM accepted the input.\n- Order Management (OMS) is not active for this site.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/OrderCancelFailedErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/OmsNotActiveErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "400OmsReturnBadRequest": {
+        "description": "The return request is invalid. Possible reasons:\n- The supplied reason code is not configured in Order Management (OMS).\n- One or more of the supplied `productItems[].itemId` values do not match any product item of the order.\n- The requested return quantity exceeds the quantity available to return for one or more items.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidReasonCodeErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/UnknownProductItemIdsErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/ReturnQuantityExceededErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "409OmsReturnConflict": {
+        "description": "The order cannot be returned. Possible reasons:\n- The order is no longer in a state that permits return of the requested items.\n- Order Management (OMS) rejected the return after ECOM accepted the input.\n- Order Management (OMS) is not active for this site.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/OrderReturnFailedErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/OmsNotActiveErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "400RequestAccessCodeBadRequest": {
+        "description": "The access code request is invalid. Possible reasons:\n- The email field is missing or empty.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/InvalidAccessCodeRequestErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "locale": {
+        "name": "locale",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/LocaleCode"
+        }
+      },
+      "orderNo": {
+        "name": "orderNo",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrderNo"
+        }
+      },
+      "expandOrders": {
+        "name": "expand",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "oms",
+              "oms_shipments"
+            ]
+          }
+        }
+      },
+      "reopenBasket": {
+        "name": "reopenBasket",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "expandOms": {
+        "name": "expand",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "oms"
+            ]
+          }
+        }
+      },
+      "paymentInstrumentId": {
+        "name": "paymentInstrumentId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/PaymentInstrumentId"
+        }
+      },
+      "sfdcUsid": {
+        "name": "sfdc_usid",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "sfdcDwDnt": {
+        "name": "sfdc_dw_dnt",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "0",
+            "1"
+          ]
+        }
+      },
+      "personalized": {
+        "name": "personalized",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "none"
+          ]
+        }
+      },
+      "sfdcShopperContext": {
+        "name": "sfdc_shopper_context",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "ShopperToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-baskets-orders": "Scope granting read-access to shopper basket or orders endpoints",
+              "sfcc.shopper-baskets-orders.rw": "Scope granting read and write access to shopper basket or orders endpoints"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/authorize",
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-baskets-orders": "Scope granting read-access to shopper basket or orders endpoints",
+              "sfcc.shopper-baskets-orders.rw": "Scope granting read and write access to shopper basket or orders endpoints"
+            }
+          }
+        }
+      },
+      "ShopperTokenTsob": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/trusted-system/token",
+            "scopes": {
+              "sfcc.shopper-baskets-orders": "Scope granting read-access to shopper basket or orders endpoints",
+              "sfcc.shopper-baskets-orders.rw": "Scope granting read and write access to shopper basket or orders endpoints"
+            }
+          }
+        }
+      },
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.shopper-baskets-orders": "Scope granting read-access to shopper basket or orders endpoints",
+              "sfcc.shopper-baskets-orders.rw": "Scope granting read and write access to shopper basket or orders endpoints"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.shopper-baskets-orders": "Scope granting read-access to shopper basket or orders endpoints",
+              "sfcc.shopper-baskets-orders.rw": "Scope granting read and write access to shopper basket or orders endpoints"
+            }
+          }
+        }
+      },
+      "ShopperClientContextToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token?hint=client_context",
+            "scopes": {
+              "sfcc.shopper-baskets-orders": "Scope granting read-access to shopper basket or orders endpoints",
+              "sfcc.shopper-baskets-orders.rw": "Scope granting read and write access to shopper basket or orders endpoints"
+            }
+          }
+        }
+      }
+    }
+  }
+}

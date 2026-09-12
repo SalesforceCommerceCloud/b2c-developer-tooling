@@ -11,11 +11,12 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, errorResult, jsonResult} from '../adapter.js';
 import {enabledCategoriesNote} from './topics.js';
+import {workspaceInputSchema, resolveProjectWorkspace, type WorkspaceContextInput} from './storefront.js';
 
 /** Default maximum characters of content returned per read call, to bound the inline payload. */
 const DEFAULT_MAX_LENGTH = 12_000;
 
-interface ReadInput {
+interface ReadInput extends WorkspaceContextInput {
   query: string;
   offset?: number;
   maxLength?: number;
@@ -38,12 +39,16 @@ export function createDocsReadTool(
   return createToolAdapter<ReadInput, null | ReadOutput>(
     {
       name: 'docs_read',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'Read a B2C Commerce (SFCC/Demandware) Script API reference, job step, developer guide, admin/merchant help article, or tooling doc by ID or fuzzy query. ' +
         'Use docs_search to find IDs.' +
         enabledCategoriesNote(enabledCategories),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
+        ...workspaceInputSchema,
         query: z
           .string()
           .min(1)
@@ -66,7 +71,7 @@ export function createDocsReadTool(
         // picks the same top hit docs_search ranks first. Exact id matches
         // short-circuit inside readDocByQuery before searching, so the boost
         // only affects fuzzy resolution.
-        const workspace = detectedWorkspaces.length > 0 ? [...detectedWorkspaces] : undefined;
+        const workspace = await resolveProjectWorkspace(args, detectedWorkspaces);
         const found = await readDocByQuery(args.query, {enabledCategories, workspace});
         if (!found) return null;
         const totalLength = found.content.length;

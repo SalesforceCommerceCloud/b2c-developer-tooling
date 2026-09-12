@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-10T16:07:19.239Z",
+  "generatedAt": "2026-09-12T00:52:09.801Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -449,17 +449,17 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md",
-      "headings": "Credentials • `dw.json` (Recommended) {#dw-json} • `.env` File {#env-file} • MRT Credentials (`~/.mobify`) {#mrt-credentials} • Per-call Project Context {#project-directory} • Configuration Priority • Toolset Selection • Auto-Discovery (Default) • Manual Selection • Individual Tool Selection • Logging • Telemetry • MCP Server Flags Reference {#mcp-server-flags} • Documentation Tools Restriction • Environment Variables Reference {#environment-variables-reference} • MCP Server Environment Variables {#mcp-server-environment-variables} • Next Steps",
-      "preview": "Configure the B2C DX MCP Server with credentials, flags, environment variables, and toolset selection."
+      "headings": "Project and instance {#project-directory} • Credentials {#dw-json} • Environment variables {#env-file} • Managed Runtime credentials {#mrt-credentials} • Tool selection {#toolset-selection} • Launch options {#mcp-server-flags} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Logging and telemetry",
+      "preview": "Choose the project, credentials, and tools available to your B2C Commerce coding assistant."
     },
     {
       "id": "mcp-index",
-      "title": "MCP Server",
+      "title": "B2C Commerce MCP Server",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.md",
-      "headings": "Quick Start • Project Type Detection • Plugins • Next Steps",
-      "preview": "MCP Server for Salesforce B2C Commerce - AI-assisted development tools for Claude, Cursor, and other AI assistants."
+      "headings": "Get started • Choose the tools you expose {#project-type-detection}",
+      "preview": "Give your coding assistant B2C Commerce skills, documentation, deployment, debugging, and log access."
     },
     {
       "id": "mcp-installation",
@@ -467,89 +467,35 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation.md",
-      "headings": "Prerequisites • Claude Code • Plugin Marketplace • CLI • Codex • Plugin Marketplace • Cursor • Project-Level Configuration (Recommended) • Quick Install (User-Level) • GitHub Copilot • After Installation • Troubleshooting • Server Not Starting • `spawn npx ENOENT` Error • \"Could not determine executable to run\" Error (Windows) • Tools Not Available • Configuration Not Loading • Next Steps",
-      "preview": "Install and configure the B2C DX MCP Server for Claude Code, Cursor, GitHub Copilot, and other MCP clients."
+      "headings": "Codex • Claude Code • Cursor • GitHub Copilot • Plugin installation • Configure and verify • Troubleshooting",
+      "preview": "Install the B2C DX MCP Server in Codex, Claude Code, Cursor, or GitHub Copilot."
     },
     {
-      "id": "mcp-tools-cartridge-deploy",
-      "title": "Cartridge Deployment",
+      "id": "mcp-security",
+      "title": "Security and Access",
       "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/cartridge-deploy.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/cartridge-deploy.md",
-      "headings": "cartridge_deploy • Authentication • Parameters • Usage • See Also",
-      "preview": "Deploy cartridges to a B2C Commerce instance via WebDAV with automatic code version reload."
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security.md",
+      "headings": "Limit available tools • Protect credentials and data • Deployments {#deployments} • Debugger access {#debugger} • Safety settings • SCAPI code mode • Telemetry {#telemetry}",
+      "preview": "Control MCP tool access, protect Commerce credentials, and understand deployment, debugging, and data access."
     },
     {
-      "id": "mcp-tools-diagnostics",
-      "title": "Script Debugger",
+      "id": "mcp-skills",
+      "title": "Workflow Skills",
       "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/diagnostics.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/diagnostics.md",
-      "headings": "Authentication • Recovery from broken or orphaned sessions • Session Lifecycle • debug_start_session • debug_end_session • debug_list_sessions • Breakpoints • debug_set_breakpoints • Execution Control • debug_wait_for_stop • debug_continue • debug_step_over • debug_step_into • debug_step_out • Inspection • debug_get_stack • debug_get_variables • debug_evaluate • Higher-Level Tools • debug_capture_at_breakpoint • See Also",
-      "preview": "MCP tools for script debugging on B2C Commerce instances via the Script Debugger API (SDAPI)."
-    },
-    {
-      "id": "mcp-tools-docs",
-      "title": "Documentation Tools",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/docs.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/docs.md",
-      "headings": "Documentation (Multi-Corpus) • docs_search • docs_read • docs_list • XSD Schemas • docs_schema_search • docs_schema_read • docs_schema_list • See also",
-      "preview": "MCP tools for searching B2C Commerce documentation including Script API reference, Developer Center guides, Salesforce Help, tooling docs, job steps, and XSD schemas."
-    },
-    {
-      "id": "mcp-tools-logs",
-      "title": "Log Tools",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/logs.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/logs.md",
-      "headings": "Instance logs • Authentication • logs_list_files • logs_get_recent • logs_watch_start • logs_watch_poll • logs_watch_stop • logs_watch_list • MRT logs • Authentication • mrt_logs_watch_start • mrt_logs_watch_poll • mrt_logs_watch_stop • mrt_logs_watch_list • See also",
-      "preview": "MCP tools for fetching and tailing B2C Commerce instance logs and Managed Runtime (MRT) application logs."
-    },
-    {
-      "id": "mcp-tools-mrt-bundle-push",
-      "title": "Bundle Deployment",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/mrt-bundle-push.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/mrt-bundle-push.md",
-      "headings": "mrt_bundle_push • Authentication • Parameters • Default values by project type • Usage • See also",
-      "preview": "Build and push bundles to Managed Runtime for PWA Kit and Storefront Next deployments."
-    },
-    {
-      "id": "mcp-tools-pwakit-get-guidelines",
-      "title": "PWA Kit Development Guidelines",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/pwakit-get-guidelines.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/pwakit-get-guidelines.md",
-      "headings": "pwakit_get_guidelines • Authentication • Parameters • Available Sections • Usage • Default (Comprehensive Guidelines) • Single or Multiple Sections • See Also",
-      "preview": "Get PWA Kit v3 development guidelines and best practices for React, Chakra UI, and Commerce API."
-    },
-    {
-      "id": "mcp-tools-scapi-custom-apis",
-      "title": "SCAPI Custom APIs",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/scapi-custom-apis.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/scapi-custom-apis.md",
-      "headings": "scapi_custom_api_generate_scaffold • Authentication • Parameters • Usage • Next steps after scaffolding • scapi_custom_apis_get_status • Authentication • Parameters • Usage • See Also",
-      "preview": "MCP tools for scaffolding custom SCAPI endpoints and checking their registration status."
-    },
-    {
-      "id": "mcp-tools-scapi-schemas-list",
-      "title": "SCAPI Schemas",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/scapi-schemas-list.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/scapi-schemas-list.md",
-      "headings": "scapi_schemas_list • Authentication • Parameters • Usage • See Also",
-      "preview": "List or fetch SCAPI schema metadata and OpenAPI specs for standard and custom APIs."
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/skills.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/skills.md",
+      "headings": "Included capabilities • Installation and configuration • Access and security",
+      "preview": "Built-in workflow skills for B2C CLI, Commerce development, and Storefront Next, available through the B2C DX MCP Server."
     },
     {
       "id": "mcp-toolsets",
-      "title": "Toolsets & Tools",
+      "title": "Tools and Capabilities",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "CARTRIDGES • DIAGNOSTICS • MRT • PWAV3 • SCAPI • STOREFRONTNEXT • Next Steps",
-      "preview": "Available toolsets and tools in the B2C DX MCP Server for SCAPI, CARTRIDGES, DIAGNOSTICS, MRT, PWAV3, and STOREFRONTNEXT development."
+      "headings": "Skills and documentation {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • SCAPI code mode (preview) • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
+      "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {
       "id": "vscode-extension-configuration",

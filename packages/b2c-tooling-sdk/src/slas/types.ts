@@ -29,6 +29,8 @@ export interface SlasTokenResponse {
  * Configuration for SLAS shopper token retrieval.
  */
 export interface SlasTokenConfig {
+  /** Cancel authorization and token exchange. */
+  signal?: AbortSignal;
   /** Defaults to the global HTTP middleware registry. */
   middlewareRegistry?: MiddlewareRegistry;
   /** SCAPI short code */

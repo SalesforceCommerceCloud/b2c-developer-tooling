@@ -104,6 +104,7 @@ describe('slas/token', () => {
               });
             }
             expect(request.headers.get('content-type')).to.equal('application/x-www-form-urlencoded');
+            expect(request.redirect).to.equal('error');
             expect(body.get('channel_id')).to.equal('RefArch');
             expect(request.headers.get('authorization')).to.equal(
               privateClient ? `Basic ${Buffer.from('test-client-id:test-secret').toString('base64')}` : null,
@@ -160,6 +161,40 @@ describe('slas/token', () => {
         host: `${SHORT_CODE}.api.commercecloud.salesforce.com`,
       });
     }
+  });
+
+  it('preserves cancellation through request middleware', async () => {
+    const controller = new AbortController();
+    let requestAborted = false;
+    globalMiddlewareRegistry.register({
+      name: 'slas-cancellation',
+      getMiddleware: () => createExtraParamsMiddleware({headers: {'x-test': 'true'}, query: {test: 'true'}}),
+    });
+    server.use(
+      http.post(`${BASE_URL}/oauth2/token`, ({request}) => {
+        request.signal.addEventListener('abort', () => {
+          requestAborted = true;
+        });
+        controller.abort();
+        return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+      }),
+    );
+    try {
+      await getGuestToken(baseConfig({slasClientSecret: 'test-secret', signal: controller.signal}));
+      expect.fail('Expected cancellation');
+    } catch (error) {
+      expect((error as Error).message).to.match(/abort/i);
+    }
+    expect(requestAborted).to.equal(true);
+  });
+
+  it('logs request status without authentication headers or token bodies', async () => {
+    const trace = sinon.spy(getLogger(), 'trace');
+    const debug = sinon.spy(getLogger(), 'debug');
+    server.use(http.post(`${BASE_URL}/oauth2/token`, () => HttpResponse.json(MOCK_TOKEN_RESPONSE)));
+    await getGuestToken(baseConfig({slasClientSecret: 'test-secret'}));
+    expect(trace.called).to.equal(false);
+    expect(debug.args.some(([details]) => typeof details === 'object' && details?.status === 200)).to.equal(true);
   });
 
   describe('getGuestToken - public client (PKCE)', () => {

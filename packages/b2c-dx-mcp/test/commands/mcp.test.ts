@@ -16,7 +16,7 @@ import {
   type ResolveConfigOptions,
 } from '@salesforce/b2c-tooling-sdk/config';
 import McpServerCommand from '../../src/commands/mcp.js';
-import {B2CDxMcpServer} from '../../src/server.js';
+import {StdioServerTransport} from '@modelcontextprotocol/server/stdio';
 import {Services} from '../../src/services.js';
 import {createMockResolvedConfig} from '../test-helpers.js';
 
@@ -40,12 +40,6 @@ describe('McpServerCommand', () => {
     it('should define tools flag', () => {
       const toolsFlag = McpServerCommand.flags.tools;
       expect(toolsFlag).to.not.be.undefined;
-    });
-
-    it('should define allow-non-ga-tools flag with default false', () => {
-      const flag = McpServerCommand.flags['allow-non-ga-tools'];
-      expect(flag).to.not.be.undefined;
-      expect(flag.default).to.equal(false);
     });
 
     it('should not have a no-telemetry flag (telemetry controlled via env vars only)', () => {
@@ -74,7 +68,6 @@ describe('McpServerCommand', () => {
     it('should support environment variables for flags', () => {
       expect(McpServerCommand.flags.toolsets.env).to.equal('SFCC_TOOLSETS');
       expect(McpServerCommand.flags.tools.env).to.equal('SFCC_TOOLS');
-      expect(McpServerCommand.flags['allow-non-ga-tools'].env).to.equal('SFCC_ALLOW_NON_GA_TOOLS');
       // config flag env is inherited from BaseCommand
       expect(McpServerCommand.baseFlags.config.env).to.equal('SFCC_CONFIG');
     });
@@ -112,7 +105,7 @@ describe('McpServerCommand', () => {
 
   describe('telemetry initialization', () => {
     let sandbox: SinonSandbox;
-    let serverConnectStub: SinonStub;
+    let transportStartStub: SinonStub;
     let addAttributesStub: SinonStub;
 
     beforeEach(() => {
@@ -126,15 +119,15 @@ describe('McpServerCommand', () => {
       sandbox.stub(Telemetry.prototype, 'sendException');
       addAttributesStub = sandbox.stub(Telemetry.prototype, 'addAttributes');
 
-      // Stub server.connect to prevent actual stdio transport
-      serverConnectStub = sandbox.stub(B2CDxMcpServer.prototype, 'connect').resolves();
+      // Stub transport.start to prevent actual stdio transport
+      transportStartStub = sandbox.stub(StdioServerTransport.prototype, 'start').resolves();
     });
 
     afterEach(() => {
       sandbox.restore();
     });
 
-    it('should pass telemetry to server when telemetry is initialized', async () => {
+    it('should start stdio when telemetry is initialized', async () => {
       // Create a real Telemetry instance (will use our stubbed prototype methods)
       const telemetryInstance = new Telemetry({
         project: 'test',
@@ -152,7 +145,6 @@ describe('McpServerCommand', () => {
       // Stub init to set up flags
       sandbox.stub(command, 'init').resolves();
       (command as unknown as {flags: Record<string, unknown>}).flags = {
-        'allow-non-ga-tools': false,
         'log-level': 'silent',
       };
 
@@ -174,8 +166,8 @@ describe('McpServerCommand', () => {
       // Run the command
       await command.run();
 
-      // Verify server.connect was called (server started successfully)
-      expect(serverConnectStub.calledOnce).to.be.true;
+      // Verify transport.start was called (server started successfully)
+      expect(transportStartStub.calledOnce).to.be.true;
     });
 
     it('should start server without telemetry when telemetry is not configured', async () => {
@@ -190,7 +182,6 @@ describe('McpServerCommand', () => {
       // Stub init to set up flags
       sandbox.stub(command, 'init').resolves();
       (command as unknown as {flags: Record<string, unknown>}).flags = {
-        'allow-non-ga-tools': false,
         'log-level': 'silent',
       };
 
@@ -211,8 +202,8 @@ describe('McpServerCommand', () => {
       // Run the command
       await command.run();
 
-      // Verify server.connect was called (server started successfully even without telemetry)
-      expect(serverConnectStub.calledOnce).to.be.true;
+      // Verify transport.start was called (server started successfully even without telemetry)
+      expect(transportStartStub.calledOnce).to.be.true;
     });
 
     it('should add toolsets to telemetry attributes when toolsets are specified', async () => {
@@ -233,7 +224,6 @@ describe('McpServerCommand', () => {
       // Stub init to set up flags with toolsets
       sandbox.stub(command, 'init').resolves();
       (command as unknown as {flags: Record<string, unknown>}).flags = {
-        'allow-non-ga-tools': false,
         'log-level': 'silent',
         toolsets: 'MRT,CARTRIDGES',
       };
@@ -1054,7 +1044,6 @@ describe('McpServerCommand', () => {
       // Stub init
       sandbox.stub(command, 'init').resolves();
       (command as unknown as {flags: Record<string, unknown>}).flags = {
-        'allow-non-ga-tools': false,
         'log-level': 'silent',
       };
 
@@ -1070,8 +1059,8 @@ describe('McpServerCommand', () => {
       // Stub logger
       sandbox.stub(command as unknown as Record<string, unknown>, 'logger').get(() => ({info: sandbox.stub()}));
 
-      // Stub server.connect
-      sandbox.stub(B2CDxMcpServer.prototype, 'connect').resolves();
+      // Stub transport.start
+      sandbox.stub(StdioServerTransport.prototype, 'start').resolves();
 
       // Stub telemetry
       const telemetryInstance = new Telemetry({

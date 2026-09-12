@@ -32,6 +32,7 @@
  * ```typescript
  * const myTool = createToolAdapter({
  *   name: 'my_tool',
+ *   effect: 'read', idempotent: true, openWorld: true,
  *   description: 'Does something useful',
  *   toolsets: ['CARTRIDGES'],
  *   requiresInstance: true,
@@ -56,6 +57,7 @@
  *
  * const mrtTool = createToolAdapter({
  *   name: 'mrt_bundle_push',
+ *   effect: 'write', idempotent: false, openWorld: true,
  *   description: 'Push bundle to MRT',
  *   toolsets: ['MRT'],
  *   requiresMrtAuth: true,
@@ -71,9 +73,9 @@
  * ```
  */
 
-import {z, type ZodRawShape, type ZodObject, type ZodType} from 'zod';
+import {z, type ZodRawShape} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
+import type {McpTool, ToolEffects, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
 import type {ServerContext} from '../server-context.js';
 import {
@@ -132,7 +134,10 @@ export interface ToolExecutionContext {
  * @template TInput - The validated input type (inferred from inputSchema)
  * @template TOutput - The output type from the execute function
  */
-export interface ToolAdapterOptions<TInput, TOutput> {
+export interface ToolAdapterOptions<TInput, TOutput> extends ToolEffects {
+  /** Registration metadata is preserved independently of result enrichment. */
+  title?: McpTool['title'];
+  outputSchema?: McpTool['outputSchema'];
   /** Tool name (used in MCP protocol) */
   name: string;
 
@@ -144,9 +149,6 @@ export interface ToolAdapterOptions<TInput, TOutput> {
 
   /** Toolsets this tool belongs to */
   toolsets: Toolset[];
-
-  /** Whether this tool is GA (generally available). Defaults to true. */
-  isGA?: boolean;
 
   /**
    * Whether this tool requires a B2CInstance.
@@ -243,17 +245,24 @@ export function jsonResult(data: unknown, indent = 2): ToolResult {
 }
 
 /** Attach compact resolution provenance while preserving existing tool output. */
-export function attachResolution(result: ToolResult, resolution: ToolResolution): ToolResult {
+export function attachResolution(result: ToolResult, resolution: ToolResolution, indent = 2): ToolResult {
   let content = result.content;
-  let structuredContent: Record<string, unknown> = {...result.structuredContent, resolution};
+  const original = result.structuredContent;
+  const structured =
+    original !== null && typeof original === 'object' && !Array.isArray(original)
+      ? original
+      : original === undefined
+        ? {}
+        : {value: original};
+  let structuredContent: Record<string, unknown> = {...structured, resolution};
 
   if (content.length === 1 && content[0]?.type === 'text') {
     try {
       const parsed = JSON.parse(content[0].text) as unknown;
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
         const output = {...(parsed as Record<string, unknown>), resolution};
-        content = [{...content[0], text: JSON.stringify(output, null, 2)}];
-        structuredContent = {...output, ...result.structuredContent, resolution};
+        content = [{...content[0], text: JSON.stringify(output, null, indent)}];
+        structuredContent = {...output, ...structured, resolution};
       }
     } catch {
       // Plain-text tools expose resolution through structuredContent only.
@@ -270,7 +279,7 @@ export function attachResolution(result: ToolResult, resolution: ToolResolution)
  * @returns Formatted error message
  */
 function formatZodErrors(error: z.ZodError): string {
-  return error.errors.map((e) => `${e.path.join('.') || 'input'}: ${e.message}`).join('; ');
+  return error.issues.map((e) => `${e.path.join('.') || 'input'}: ${e.message}`).join('; ');
 }
 
 /**
@@ -322,7 +331,6 @@ export function createToolAdapter<TInput, TOutput>(
     description,
     inputSchema,
     toolsets,
-    isGA = true,
     requiresInstance = false,
     requiresMrtAuth = false,
     usesProjectContext = false,
@@ -345,14 +353,18 @@ export function createToolAdapter<TInput, TOutput>(
     : inputSchema;
 
   // Create Zod schema from inputSchema definition
-  const zodSchema = z.object(effectiveInputSchema) as ZodObject<ZodRawShape, 'strip', ZodType, TInput>;
+  const zodSchema = z.object(effectiveInputSchema);
 
   return {
     name,
     description,
     inputSchema: effectiveInputSchema,
+    title: options.title,
+    effect: options.effect,
+    idempotent: options.idempotent,
+    openWorld: options.openWorld,
+    outputSchema: options.outputSchema,
     toolsets,
-    isGA,
 
     async handler(rawArgs: Record<string, unknown>): Promise<ToolResult> {
       // 1. Validate input with Zod

@@ -1,0 +1,2649 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Inventory Availability",
+    "version": "1.1.31",
+    "x-api-type": "Admin",
+    "x-api-family": "Inventory"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/inventory/availability/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/availability-records/delta-token": {
+      "post": {
+        "operationId": "createNewDeltaToken",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNewDeltaTokenBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "New Delta Token was created successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateNewDeltaTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.availability.rw",
+              "sfcc_inventory_availability_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/delta-token/actions/update": {
+      "post": {
+        "operationId": "updateDeltaToken",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDeltaTokenBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Delta Token stream updated successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateDeltaTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Delta Token link expired.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.availability.rw",
+              "sfcc_inventory_availability_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/actions/batch-update": {
+      "post": {
+        "operationId": "batchInventoryUpdate",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchInventoryUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Batch inventory updated successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchInventoryUpdateErrors"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Batch inventory updated successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.availability.rw",
+              "sfcc_inventory_availability_rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "batchInventoryPatch",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchInventoryUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Batch inventory partially updated with potentially some errors reported.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchInventoryUpdateErrors"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "All batch inventory items updated successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.availability.rw",
+              "sfcc_inventory_availability_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/actions/get-deltas": {
+      "post": {
+        "operationId": "getAvailabilityDeltas",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetAvailabilityDeltasPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Changes are returned in the body with a new Delta Token to use for the next call.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAvailabilityDeltasResponse200"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Delta Token link expired.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.availability",
+              "sfcc_inventory_availability"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/actions/get-availability": {
+      "post": {
+        "operationId": "skuAvailabilityByLocationAndOrGroup",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryAvailabilityRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Availability information successfully returned.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response200"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.availability",
+              "sfcc_inventory_availability"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/actions/batch-update": {
+      "post": {
+        "operationId": "batchProductSegmentationRequest",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ProductSegmentationAppendRequestBody"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ProductSegmentationDeleteRequestBody"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Some product segmentations could not be fully processed.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Errors"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Successfully processed all product segmentations.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/locations/{locationId}/availability-records/skus/{sku}/{requestId}": {
+      "put": {
+        "operationId": "replaceSkuLocation",
+        "parameters": [
+          {
+            "name": "locationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/LocationId"
+            }
+          },
+          {
+            "name": "sku",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SkuId"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryUpdateRequestBodyPut"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Data updated successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.availability.rw",
+              "sfcc_inventory_availability_rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteLocationSku",
+        "parameters": [
+          {
+            "name": "locationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/LocationId"
+            }
+          },
+          {
+            "name": "sku",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SkuId"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Location SKU successfully deleted from the system.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location SKU not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "There is an inventory export in progress, deletion is not allowed.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.availability.rw",
+              "sfcc_inventory_availability_rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateSkuLocation",
+        "parameters": [
+          {
+            "name": "locationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/LocationId"
+            }
+          },
+          {
+            "name": "sku",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SkuId"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryUpdateRequestBodyPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Data updated successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.availability.rw",
+              "sfcc_inventory_availability_rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "PlaceType": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "GroupId": {
+        "type": "string",
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[a-zA-Z0-9-_]*$"
+      },
+      "LocationId": {
+        "type": "string",
+        "maxLength": 128,
+        "minLength": 2,
+        "pattern": "^[a-zA-Z0-9-_]*$"
+      },
+      "Places": {
+        "type": "array",
+        "items": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/GroupId"
+            },
+            {
+              "$ref": "#/components/schemas/LocationId"
+            }
+          ]
+        },
+        "maxItems": 100
+      },
+      "CreateNewDeltaTokenBody": {
+        "type": "object",
+        "properties": {
+          "placeType": {
+            "$ref": "#/components/schemas/PlaceType"
+          },
+          "places": {
+            "$ref": "#/components/schemas/Places"
+          }
+        },
+        "required": [
+          "placeType",
+          "places"
+        ]
+      },
+      "DeltaToken": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "CreateNewDeltaTokenResponse": {
+        "type": "object",
+        "properties": {
+          "deltaToken": {
+            "$ref": "#/components/schemas/DeltaToken"
+          }
+        },
+        "required": [
+          "deltaToken"
+        ]
+      },
+      "InventoryResponseErrorSchema": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "parameterName": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "errorCode",
+          "message",
+          "type"
+        ]
+      },
+      "UpdateDeltaTokenBody": {
+        "type": "object",
+        "properties": {
+          "deltaToken": {
+            "$ref": "#/components/schemas/DeltaToken"
+          },
+          "places": {
+            "$ref": "#/components/schemas/Places"
+          }
+        },
+        "required": [
+          "deltaToken",
+          "places"
+        ]
+      },
+      "UpdateDeltaTokenResponse": {
+        "type": "object",
+        "properties": {
+          "deltaToken": {
+            "$ref": "#/components/schemas/DeltaToken"
+          },
+          "places": {
+            "$ref": "#/components/schemas/Places"
+          }
+        },
+        "required": [
+          "deltaToken"
+        ]
+      },
+      "ExternalRefId": {
+        "type": "string",
+        "maxLength": 250
+      },
+      "Date": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "Quantity": {
+        "type": "number",
+        "minimum": 0.001,
+        "multipleOf": 0.001
+      },
+      "Future": {
+        "type": "object",
+        "properties": {
+          "expectedDate": {
+            "$ref": "#/components/schemas/Date"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/Quantity"
+          }
+        },
+        "required": [
+          "expectedDate",
+          "quantity"
+        ]
+      },
+      "GroupEligibilityExclusion": {
+        "type": "string",
+        "maxLength": 128,
+        "minLength": 2
+      },
+      "AttributeSet": {
+        "type": "object",
+        "properties": {
+          "groupEligibilityExclusion": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupEligibilityExclusion"
+            }
+          }
+        },
+        "required": [
+          "groupEligibilityExclusion"
+        ]
+      },
+      "QOH": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "multipleOf": 0.001
+      },
+      "SafetyStock": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0
+      },
+      "SkuId": {
+        "type": "string",
+        "maxLength": 250,
+        "minLength": 2,
+        "pattern": "^[^\\\\<>;%/\\s]*$"
+      },
+      "IdempotenceId": {
+        "type": "string",
+        "maxLength": 250
+      },
+      "BatchInventoryUpdateRequestRecord": {
+        "type": "object",
+        "properties": {
+          "externalRefId": {
+            "$ref": "#/components/schemas/ExternalRefId"
+          },
+          "futureStock": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Future"
+            }
+          },
+          "attributeSet": {
+            "$ref": "#/components/schemas/AttributeSet"
+          },
+          "location": {
+            "$ref": "#/components/schemas/LocationId"
+          },
+          "onHand": {
+            "$ref": "#/components/schemas/QOH"
+          },
+          "safetyStockCount": {
+            "$ref": "#/components/schemas/SafetyStock"
+          },
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "id": {
+            "$ref": "#/components/schemas/IdempotenceId"
+          },
+          "effectiveDate": {
+            "$ref": "#/components/schemas/Date"
+          }
+        },
+        "required": [
+          "id",
+          "location",
+          "sku"
+        ]
+      },
+      "BatchInventoryUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchInventoryUpdateRequestRecord"
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "records"
+        ]
+      },
+      "BatchInventoryUpdateErrorDetail": {
+        "type": "object",
+        "properties": {
+          "externalRefId": {
+            "$ref": "#/components/schemas/ExternalRefId"
+          },
+          "locationId": {
+            "$ref": "#/components/schemas/LocationId"
+          },
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "id": {
+            "$ref": "#/components/schemas/IdempotenceId"
+          }
+        },
+        "required": [
+          "id",
+          "locationId",
+          "sku"
+        ]
+      },
+      "BatchInventoryUpdateSingleError": {
+        "type": "object",
+        "properties": {
+          "details": {
+            "$ref": "#/components/schemas/BatchInventoryUpdateErrorDetail"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "errorCode": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "details",
+          "errorCode",
+          "message"
+        ]
+      },
+      "BatchInventoryUpdateErrors": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchInventoryUpdateSingleError"
+            }
+          }
+        },
+        "required": [
+          "errors"
+        ]
+      },
+      "GetAvailabilityDeltasPostBody": {
+        "type": "object",
+        "properties": {
+          "deltaToken": {
+            "$ref": "#/components/schemas/DeltaToken"
+          }
+        },
+        "required": [
+          "deltaToken"
+        ]
+      },
+      "ShouldQueryAgain": {
+        "type": "boolean"
+      },
+      "PlaceId": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "ATF": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "multipleOf": 0.001
+      },
+      "ATO": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "multipleOf": 0.001
+      },
+      "QuantityReserved": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "multipleOf": 0.001
+      },
+      "DeltaRecordType": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "deltaType": {
+            "type": "string",
+            "enum": [
+              "Change",
+              "Delete"
+            ]
+          },
+          "id": {
+            "$ref": "#/components/schemas/PlaceId"
+          },
+          "effectiveDate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Date"
+              }
+            ]
+          },
+          "sequenceNumber": {
+            "type": "number"
+          },
+          "onHand": {
+            "$ref": "#/components/schemas/QOH"
+          },
+          "atf": {
+            "$ref": "#/components/schemas/ATF"
+          },
+          "ato": {
+            "$ref": "#/components/schemas/ATO"
+          },
+          "reserved": {
+            "$ref": "#/components/schemas/QuantityReserved"
+          },
+          "safetyStockCount": {
+            "$ref": "#/components/schemas/SafetyStock"
+          },
+          "futures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Future"
+            }
+          }
+        },
+        "required": [
+          "atf",
+          "ato",
+          "deltaType",
+          "futures",
+          "id",
+          "onHand",
+          "reserved",
+          "safetyStockCount",
+          "sequenceNumber",
+          "sku"
+        ]
+      },
+      "GetAvailabilityDeltasResponse200": {
+        "type": "object",
+        "properties": {
+          "nextDeltaToken": {
+            "$ref": "#/components/schemas/DeltaToken"
+          },
+          "shouldQueryAgain": {
+            "$ref": "#/components/schemas/ShouldQueryAgain"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeltaRecordType"
+            }
+          }
+        },
+        "required": [
+          "nextDeltaToken",
+          "records",
+          "shouldQueryAgain"
+        ]
+      },
+      "InventoryAvailabilityRequestBody": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkuId"
+              }
+            ]
+          },
+          "group": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GroupId"
+              }
+            ]
+          },
+          "skus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkuId"
+            }
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocationId"
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupId"
+            }
+          }
+        }
+      },
+      "Reserved": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "multipleOf": 0.001
+      },
+      "Exists": {
+        "type": "boolean"
+      },
+      "ItemLocationInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/LocationId"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sku": {
+                  "$ref": "#/components/schemas/SkuId"
+                },
+                "atf": {
+                  "$ref": "#/components/schemas/ATF"
+                },
+                "ato": {
+                  "$ref": "#/components/schemas/ATO"
+                },
+                "onHand": {
+                  "$ref": "#/components/schemas/QOH"
+                },
+                "reserved": {
+                  "$ref": "#/components/schemas/Reserved"
+                },
+                "safetyStockCount": {
+                  "$ref": "#/components/schemas/SafetyStock"
+                },
+                "effectiveDate": {
+                  "$ref": "#/components/schemas/Date"
+                },
+                "futures": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Future"
+                  }
+                },
+                "attributeSet": {
+                  "$ref": "#/components/schemas/AttributeSet"
+                },
+                "exists": {
+                  "$ref": "#/components/schemas/Exists"
+                }
+              },
+              "required": [
+                "atf",
+                "ato",
+                "onHand",
+                "reserved",
+                "safetyStockCount",
+                "sku"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "records"
+        ]
+      },
+      "DateGroup": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Date"
+          }
+        ]
+      },
+      "FutureGroup": {
+        "type": "object",
+        "properties": {
+          "expectedDate": {
+            "$ref": "#/components/schemas/DateGroup"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/Quantity"
+          }
+        },
+        "required": [
+          "expectedDate",
+          "quantity"
+        ]
+      },
+      "ItemGroupInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/GroupId"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sku": {
+                  "$ref": "#/components/schemas/SkuId"
+                },
+                "atf": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ATF"
+                    }
+                  ]
+                },
+                "ato": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ATO"
+                    }
+                  ]
+                },
+                "onHand": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/QOH"
+                    }
+                  ]
+                },
+                "reserved": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Reserved"
+                    }
+                  ]
+                },
+                "safetyStockCount": {
+                  "$ref": "#/components/schemas/SafetyStock"
+                },
+                "groupReserved": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Reserved"
+                    }
+                  ]
+                },
+                "sharedGroupReserved": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Reserved"
+                    }
+                  ]
+                },
+                "effectiveDate": {
+                  "$ref": "#/components/schemas/Date"
+                },
+                "futures": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FutureGroup"
+                  }
+                },
+                "exists": {
+                  "$ref": "#/components/schemas/Exists"
+                }
+              },
+              "required": [
+                "atf",
+                "ato",
+                "onHand",
+                "reserved",
+                "safetyStockCount",
+                "sku"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "records"
+        ]
+      },
+      "Response200": {
+        "type": "object",
+        "properties": {
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemLocationInfo"
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemGroupInfo"
+            }
+          }
+        },
+        "required": [
+          "locations"
+        ]
+      },
+      "ProductSegmentationAppendRequestBody": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "groupId": {
+                  "$ref": "#/components/schemas/GroupId"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "APPEND"
+                  ]
+                },
+                "skus": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SkuId"
+                  }
+                }
+              },
+              "required": [
+                "groupId",
+                "mode",
+                "skus"
+              ]
+            }
+          }
+        },
+        "required": [
+          "groups"
+        ]
+      },
+      "ProductSegmentationDeleteRequestBody": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "groupId": {
+                  "$ref": "#/components/schemas/GroupId"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "DELETE"
+                  ]
+                },
+                "skus": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SkuId"
+                  }
+                }
+              },
+              "required": [
+                "groupId",
+                "mode",
+                "skus"
+              ]
+            }
+          }
+        },
+        "required": [
+          "groups"
+        ]
+      },
+      "Errors": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          "required": [
+            "error"
+          ]
+        }
+      },
+      "InventoryUpdateRequestBodyPut": {
+        "type": "object",
+        "properties": {
+          "externalRefId": {
+            "$ref": "#/components/schemas/ExternalRefId"
+          },
+          "onHand": {
+            "$ref": "#/components/schemas/QOH"
+          },
+          "safetyStockCount": {
+            "$ref": "#/components/schemas/SafetyStock"
+          },
+          "effectiveDate": {
+            "$ref": "#/components/schemas/Date"
+          },
+          "futureStock": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Future"
+            }
+          },
+          "attributeSet": {
+            "$ref": "#/components/schemas/AttributeSet"
+          }
+        }
+      },
+      "InventoryUpdateRequestBodyPatch": {
+        "type": "object",
+        "properties": {
+          "externalRefId": {
+            "$ref": "#/components/schemas/ExternalRefId"
+          },
+          "onHand": {
+            "$ref": "#/components/schemas/QOH"
+          },
+          "safetyStockCount": {
+            "$ref": "#/components/schemas/SafetyStock"
+          },
+          "effectiveDate": {
+            "$ref": "#/components/schemas/Date"
+          },
+          "futureStock": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Future"
+            }
+          },
+          "attributeSet": {
+            "$ref": "#/components/schemas/AttributeSet"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "locationId": {
+        "name": "locationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/LocationId"
+        }
+      },
+      "sku": {
+        "name": "sku",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/SkuId"
+        }
+      },
+      "requestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.inventory.availability.rw": "Inventory Availability scope",
+              "sfcc_inventory_availability_rw": "Inventory Availability scope",
+              "sfcc.inventory.availability": "Inventory Availability scope READONLY",
+              "sfcc_inventory_availability": "Inventory Availability scope READONLY",
+              "sfcc.inventory.impex-inventory.rw": "Inventory Impex Inventory scope",
+              "sfcc_inventory_impex_inventory_rw": "Inventory Impex Inventory scope"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.inventory.availability.rw": "Inventory Availability scope",
+              "sfcc_inventory_availability_rw": "Inventory Availability scope",
+              "sfcc.inventory.availability": "Inventory Availability scope READONLY",
+              "sfcc_inventory_availability": "Inventory Availability scope READONLY",
+              "sfcc.inventory.impex-inventory.rw": "Inventory Impex Inventory scope",
+              "sfcc_inventory_impex_inventory_rw": "Inventory Impex Inventory scope"
+            }
+          }
+        }
+      }
+    }
+  }
+}

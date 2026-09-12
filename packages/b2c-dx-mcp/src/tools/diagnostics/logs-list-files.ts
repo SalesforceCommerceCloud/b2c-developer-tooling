@@ -36,9 +36,10 @@ export function createLogsListFilesTool(
   return createToolAdapter<ListFilesInput, ListFilesOutput>(
     {
       name: 'logs_list_files',
-      description:
-        'List log files on the configured B2C Commerce instance via WebDAV. ' +
-        'Use this to discover what log prefixes are active (error, customerror, debug, jobs, ...) before fetching entries with logs_get_recent or starting a watch.',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
+      description: 'List B2C log files and prefixes available for reading or watching.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       requiresInstance: true,
       inputSchema: {

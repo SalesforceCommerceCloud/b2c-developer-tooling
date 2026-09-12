@@ -18,6 +18,7 @@ import {
   type MappedVariable,
 } from '@salesforce/b2c-tooling-sdk/operations/debug';
 import {getRegistry, getSessionEntry} from './session-registry.js';
+import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.js';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TIMEOUT_MS = 120_000;
@@ -47,6 +48,9 @@ interface CaptureOutput {
   evaluations?: Array<{expression: string; result: string}>;
   auto_continued: boolean;
   trigger_status?: number;
+  trigger_pending?: boolean;
+  warnings?: string[];
+  skillReferences?: SkillReference[];
 }
 
 export function createDebugCaptureAtBreakpointTool(
@@ -56,30 +60,38 @@ export function createDebugCaptureAtBreakpointTool(
   return createToolAdapter<CaptureInput, CaptureOutput>(
     {
       name: 'debug_capture_at_breakpoint',
+      effect: 'write',
+      idempotent: false,
+      openWorld: true,
       description:
-        'Set a breakpoint, optionally GET trigger_url, wait for a halt, and return stack, variables, and expressions. ' +
-        'Without trigger_url, blocks until an external request hits the breakpoint or timeout expires.',
+        'Add a breakpoint and wait for a halt; return stack, variables, and evaluations. ' +
+        'Trigger a GET here or an external request concurrently. Capture does not resume by default. ' +
+        'Workflow: skill://mcp/debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        session_id: z.string().describe('Session ID returned by debug_start_session.'),
+        session_id: z.string(),
         file: z.string().describe('Local file path or server script path for the breakpoint.'),
-        line: z.number().int().positive().describe('Line number for the breakpoint.'),
+        line: z.number().int().positive().describe('1-based line number.'),
         condition: z.string().optional().describe('Optional conditional expression for the breakpoint.'),
-        expressions: z.array(z.string()).optional().describe('Expressions to evaluate when the breakpoint is hit.'),
+        expressions: z
+          .array(z.string())
+          .optional()
+          .describe('Expressions evaluated when halted; may change remote state.'),
         timeout_ms: z
           .number()
           .int()
           .positive()
           .max(MAX_TIMEOUT_MS)
           .optional()
-          .describe(
-            `Timeout in milliseconds waiting for the breakpoint to be hit (default: ${DEFAULT_TIMEOUT_MS}, max: ${MAX_TIMEOUT_MS}).`,
-          ),
+          .describe(`Wait timeout in milliseconds. Default: ${DEFAULT_TIMEOUT_MS}; max: ${MAX_TIMEOUT_MS}.`),
         auto_continue: z
           .boolean()
           .optional()
-          .describe('If true, resume the thread after capturing the snapshot. Defaults to false.'),
-        trigger_url: z.string().optional().describe('HTTP GET URL to invoke after arming the breakpoint.'),
+          .describe('Resume after capture; default false leaves the request halted. Use true for snapshots.'),
+        trigger_url: z
+          .string()
+          .optional()
+          .describe('GET after arming; no custom headers. May remain pending while halted.'),
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);
@@ -106,10 +118,17 @@ export function createDebugCaptureAtBreakpointTool(
         };
 
         // Fire trigger URL in the background (it will hang when the breakpoint halts the thread)
+        let triggerStatus: number | undefined;
+        let triggerPending = Boolean(args.trigger_url);
         const triggerPromise = args.trigger_url
           ? fetch(args.trigger_url, {redirect: 'follow'})
-              .then((r) => r.status)
-              .catch((): undefined => undefined)
+              .then((r) => {
+                triggerStatus = r.status;
+              })
+              .catch(() => {})
+              .finally(() => {
+                triggerPending = false;
+              })
           : undefined;
 
         const thread = await registry.waitForHalt(entry, timeout);
@@ -120,6 +139,11 @@ export function createDebugCaptureAtBreakpointTool(
             halted: false,
             timed_out: true,
             auto_continued: false,
+            trigger_pending: args.trigger_url ? triggerPending : undefined,
+            warnings: [
+              'No halt observed before timeout. Check deployed code, cartridge path, and trigger. The breakpoint remains armed; end the session with clear_breakpoints when finished.',
+            ],
+            skillReferences: [MCP_SKILL_REFERENCES.debuggerRecovery],
           };
         }
 
@@ -151,7 +175,8 @@ export function createDebugCaptureAtBreakpointTool(
           autoContinued = true;
         }
 
-        const triggerStatus = triggerPromise ? await triggerPromise : undefined;
+        // A halted request cannot finish until the caller resumes it in another tool call.
+        if (autoContinued && triggerPromise) await triggerPromise;
 
         return {
           breakpoint: breakpointInfo,
@@ -162,6 +187,7 @@ export function createDebugCaptureAtBreakpointTool(
           evaluations: evaluations.length > 0 ? evaluations : undefined,
           auto_continued: autoContinued,
           trigger_status: triggerStatus,
+          trigger_pending: args.trigger_url ? triggerPending : undefined,
         };
       },
       formatOutput: (output) => jsonResult(output),

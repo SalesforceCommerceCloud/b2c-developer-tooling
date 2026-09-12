@@ -2,6 +2,13 @@
 
 For general contributing guidelines, see the [root CONTRIBUTING.md](../../CONTRIBUTING.md).
 
+For tool contracts, context efficiency, result guidance, and runbook patterns, see
+the [MCP development skill](../../.agents/skills/mcp-development/SKILL.md).
+
+For packaged skill validation and an isolated Codex test setup, see
+[skill testing](../../guidance/TESTING.md). Authoring conventions, protocol
+contracts, and implementation checkpoints are in [skill authoring](../../guidance/README.md).
+
 ## Quick Start
 
 ```bash
@@ -38,8 +45,7 @@ For local development or testing, use the development build directly:
       "args": [
         "/path/to/packages/b2c-dx-mcp/bin/dev.js",
         "--project-directory",
-        "${workspaceFolder}",
-        "--allow-non-ga-tools"
+        "${workspaceFolder}"
       ]
     }
   }
@@ -65,10 +71,10 @@ For CLI-based testing:
 
 ```bash
 # List all tools
-npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools --method tools/list
+npx mcp-inspector --cli node bin/dev.js --toolsets all --method tools/list
 
 # Call a specific tool
-npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools \
+npx mcp-inspector --cli node bin/dev.js --toolsets all \
   --method tools/call \
   --tool-name cartridge_deploy
 
@@ -80,10 +86,10 @@ Send raw MCP protocol messages for testing:
 
 ```bash
 # List all tools (run from packages/b2c-dx-mcp)
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/dev.js --toolsets all --allow-non-ga-tools
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node bin/dev.js --toolsets all
 
 # Call a specific tool
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_deploy","arguments":{}}}' | node bin/dev.js --toolsets all --allow-non-ga-tools
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"cartridge_deploy","arguments":{}}}' | node bin/dev.js --toolsets all
 ```
 
 ### IDE Integration
@@ -95,7 +101,7 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
   "mcpServers": {
     "b2c-dx-local": {
       "command": "node",
-      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"]
+      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all"]
     }
   }
 }
@@ -132,8 +138,7 @@ cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=<base64-en
        "-y",
        "@salesforce/b2c-dx-mcp@latest",
        "--project-directory",
-       "${workspaceFolder}",
-       "--allow-non-ga-tools"
+       "${workspaceFolder}"
      ]
    }
    ```
@@ -143,7 +148,7 @@ cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=<base64-en
 2. **Encode to Base64** using Node.js:
 
    ```bash
-   node -e "console.log(Buffer.from(JSON.stringify({command: 'npx', args: ['-y', '@salesforce/b2c-dx-mcp@latest', '--project-directory', '\${workspaceFolder}', '--allow-non-ga-tools']})).toString('base64'))"
+   node -e "console.log(Buffer.from(JSON.stringify({command: 'npx', args: ['-y', '@salesforce/b2c-dx-mcp@latest', '--project-directory', '\${workspaceFolder}']})).toString('base64'))"
    ```
 
 3. **Construct the full link**:
@@ -156,7 +161,7 @@ cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=<base64-en
 **User-level link (used in documentation):**
 
 ```markdown
-[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
+[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9Il19)
 ```
 
 ### Where to Update
@@ -179,7 +184,7 @@ Update the "Add to Cursor" links in:
 To enable telemetry during local development (for testing telemetry collection), you **must** set `SFCC_APP_INSIGHTS_KEY` to a development/test Application Insights key to avoid sending data to production:
 
 ```bash
-SFCC_DISABLE_TELEMETRY=false SFCC_APP_INSIGHTS_KEY="InstrumentationKey=your-dev-key-here" node bin/dev.js --toolsets all --allow-non-ga-tools
+SFCC_DISABLE_TELEMETRY=false SFCC_APP_INSIGHTS_KEY="InstrumentationKey=your-dev-key-here" node bin/dev.js --toolsets all
 ```
 
 Or in your IDE MCP configuration:
@@ -189,7 +194,7 @@ Or in your IDE MCP configuration:
   "mcpServers": {
     "b2c-dx-local": {
       "command": "node",
-      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"],
+      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all"],
       "env": {
         "SFCC_DISABLE_TELEMETRY": "false",
         "SFCC_APP_INSIGHTS_KEY": "InstrumentationKey=your-dev-key-here"
@@ -204,7 +209,7 @@ Or in your IDE MCP configuration:
 To see what telemetry data would be collected (requires telemetry to be enabled), set `SFCC_TELEMETRY_LOG=true`:
 
 ```bash
-SFCC_DISABLE_TELEMETRY=false SFCC_APP_INSIGHTS_KEY="InstrumentationKey=your-dev-key-here" SFCC_TELEMETRY_LOG=true node bin/dev.js --toolsets all --allow-non-ga-tools
+SFCC_DISABLE_TELEMETRY=false SFCC_APP_INSIGHTS_KEY="InstrumentationKey=your-dev-key-here" SFCC_TELEMETRY_LOG=true node bin/dev.js --toolsets all
 ```
 
 Or in your IDE MCP configuration:
@@ -214,7 +219,7 @@ Or in your IDE MCP configuration:
   "mcpServers": {
     "b2c-dx-local": {
       "command": "node",
-      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"],
+      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all"],
       "env": {
         "SFCC_DISABLE_TELEMETRY": "false",
         "SFCC_APP_INSIGHTS_KEY": "InstrumentationKey=your-dev-key-here",

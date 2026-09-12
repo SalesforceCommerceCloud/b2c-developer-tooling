@@ -9,7 +9,6 @@
  *
  * This module exports all available tools and utilities.
  * Tools use the @salesforce/b2c-tooling-sdk operations layer directly.
- * Use `--allow-non-ga-tools` flag to enable tools (preview release).
  *
  * @module tools
  */
@@ -22,5 +21,4 @@ export * from './cartridges/index.js';
 export * from './diagnostics/index.js';
 export * from './docs/index.js';
 export * from './mrt/index.js';
-export * from './pwav3/index.js';
 export * from './scapi/index.js';

@@ -315,7 +315,8 @@ export class JwtOAuthStrategy implements AuthStrategy {
    * Gets the full token response including expiration and scopes.
    * Useful for commands that need to display or return token metadata.
    */
-  async getTokenResponse(): Promise<AccessTokenResponse> {
+  async getTokenResponse(signal?: AbortSignal): Promise<AccessTokenResponse> {
+    signal?.throwIfAborted();
     const cached = getCachedOAuthToken(this.cacheKey, this.config.scopes || []);
 
     if (cached) {
@@ -324,7 +325,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
     }
 
     // Get new token (returns full response)
-    return this.requestNewToken();
+    return this.requestNewTokenForScopes(this.config.scopes, signal);
   }
 
   /**
@@ -366,7 +367,10 @@ export class JwtOAuthStrategy implements AuthStrategy {
    * Requests a new access token from Account Manager using JWT Bearer flow,
    * for the given scope set. Caches under a key derived from `scopes`.
    */
-  private async requestNewTokenForScopes(scopes: string[] | undefined): Promise<AccessTokenResponse> {
+  private async requestNewTokenForScopes(
+    scopes: string[] | undefined,
+    signal?: AbortSignal,
+  ): Promise<AccessTokenResponse> {
     this.logger.trace('[JwtOAuthStrategy] Requesting new access token with JWT Bearer flow');
 
     // Generate signed JWT
@@ -411,7 +415,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
 
     let response: Response;
     try {
-      response = await fetch(request);
+      response = await fetch(request, {signal, redirect: 'error'});
     } catch (err) {
       const host = new URL(tokenUrl).host;
       throw wrapNetworkError(err, {operation: 'OAuth JWT token request', host});

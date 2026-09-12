@@ -527,6 +527,8 @@ export interface LoggingMiddlewareConfig {
    * @example ['data', 'password', 'secret']
    */
   maskBodyKeys?: string[];
+  /** Log headers and bodies at trace level. Disable for authentication endpoints. Defaults to true. */
+  logDetails?: boolean;
 }
 
 /**
@@ -568,8 +570,11 @@ function maskBody(body: unknown, keysToMask?: string[]): unknown {
  */
 export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfig): Middleware {
   // Support both string (prefix) and config object for backwards compatibility
-  const {prefix, maskBodyKeys} =
-    typeof config === 'string' ? {prefix: config, maskBodyKeys: undefined} : (config ?? {});
+  const {
+    prefix,
+    maskBodyKeys,
+    logDetails = true,
+  } = typeof config === 'string' ? {prefix: config, maskBodyKeys: undefined} : (config ?? {});
 
   const reqTag = prefix ? `[${prefix} REQ]` : '';
   const respTag = prefix ? `[${prefix} RESP]` : '';
@@ -580,6 +585,9 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
       const url = request.url;
 
       logger.debug({method: request.method, url}, `${reqTag} ${request.method} ${url}`);
+
+      (request as Request & {_startTime?: number})._startTime = Date.now();
+      if (!logDetails) return request;
 
       // Read body from the request (already serialized by openapi-fetch).
       // Skip binary/multipart payloads: reading them would buffer the entire
@@ -609,8 +617,6 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
         `${reqTag} ${request.method} ${url} body`,
       );
 
-      (request as Request & {_startTime?: number})._startTime = Date.now();
-
       return request;
     },
 
@@ -632,6 +638,8 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
         },
         `${respTag} ${request.method} ${url} ${response.status} ${duration}ms`,
       );
+
+      if (!logDetails) return response;
 
       const clonedResponse = response.clone();
       let responseBody: unknown;

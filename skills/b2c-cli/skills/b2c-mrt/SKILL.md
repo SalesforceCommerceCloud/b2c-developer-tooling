@@ -11,9 +11,9 @@ Use the `b2c` CLI to manage Managed Runtime (MRT) projects, environments, bundle
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the MRT API key from `SFCC_MRT_API_KEY`, `~/.mobify`, `dw.json`, `package.json`, and configuration plugins. Project and environment defaults can come from `dw.json` (`mrtProject`, `mrtEnvironment`) or env vars. **Flags like `--api-key`, `-p`, and `-e` are usually unnecessary** when defaults are configured — only pass them to override.
+The CLI resolves the MRT API key from `MRT_API_KEY` (or `SFCC_MRT_API_KEY`), `dw.json`, `~/.mobify`, or configuration plugins. Project and environment defaults can also come from `package.json` under `b2c` (`mrtProject`, `mrtEnvironment`) or environment variables. `package.json` cannot supply API keys or other secrets. **Flags like `--api-key`, `-p`, and `-e` are usually unnecessary** when defaults are configured — only pass them to override.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; keep secrets masked unless the user explicitly requests their values). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ### MRT Backends (legacy vs SCAPI)
 

@@ -110,6 +110,7 @@ export async function getGuestToken(config: SlasTokenConfig): Promise<SlasTokenR
     error,
     response: tokenResponse,
   } = await client.POST('/oauth2/token', {
+    redirect: 'error',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: tokenBody,
   });
@@ -138,6 +139,7 @@ async function getPrivateClientGuestToken(config: SlasTokenConfig): Promise<Slas
     error,
     response: tokenResponse,
   } = await client.POST('/oauth2/token', {
+    redirect: 'error',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Authorization: `Basic ${basicAuth}`,
@@ -240,6 +242,7 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
     error,
     response: tokenResponse,
   } = await client.POST('/oauth2/token', {
+    redirect: 'error',
     headers: tokenHeaders,
     body: tokenBody,
   });

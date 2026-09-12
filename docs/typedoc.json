@@ -1,6 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
+    "../packages/b2c-tooling-sdk/src/scapi/index.ts",
     "../packages/b2c-tooling-sdk/src/config/index.ts",
     "../packages/b2c-tooling-sdk/src/auth/index.ts",
     "../packages/b2c-tooling-sdk/src/clients/index.ts",
@@ -33,7 +34,8 @@
     "../packages/b2c-tooling-sdk/src/docs/index.ts",
     "../packages/b2c-tooling-sdk/src/schemas/index.ts",
     "../packages/b2c-tooling-sdk/src/cli/index.ts",
-    "../packages/b2c-tooling-sdk/src/i18n/index.ts"
+    "../packages/b2c-tooling-sdk/src/i18n/index.ts",
+    "../packages/b2c-tooling-sdk/src/guidance/index.ts"
   ],
   "exclude": ["**/*.generated.ts"],
   "out": "./api",

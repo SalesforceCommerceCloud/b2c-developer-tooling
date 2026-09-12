@@ -6,7 +6,8 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import MiniSearch from 'minisearch';
+import type MiniSearch from 'minisearch';
+import {createRankedIndex} from '../search/ranking.js';
 import {getUserAgent} from '../clients/user-agent.js';
 import type {ProjectType} from '../discovery/types.js';
 import {getLogger} from '../logging/logger.js';
@@ -182,7 +183,7 @@ export function categoriesForWorkspace(workspace: ProjectType | ProjectType[]): 
 
 // Singleton caches for the combined index and the MiniSearch instance.
 let cachedIndex: SearchIndex | null = null;
-let cachedMiniSearch: MiniSearch<IndexedDoc> | null = null;
+let cachedMiniSearch: MiniSearch | null = null;
 
 // Maps each entry id to the absolute data directory that holds its bundled file.
 // Lets a single combined index span multiple bundled corpora without changing
@@ -191,16 +192,6 @@ const entryDataDir = new Map<string, string>();
 
 // Maps each entry id to its full DocEntry, for O(1) lookup on read.
 const entryById = new Map<string, DocEntry>();
-
-/** Internal shape indexed by MiniSearch. `keywords` is flattened for indexing. */
-interface IndexedDoc {
-  id: string;
-  title: string;
-  category: string;
-  headings: string;
-  summary: string;
-  keywords: string;
-}
 
 /**
  * Projects a stored entry to the shape returned to callers. Drops `headings`,
@@ -278,38 +269,12 @@ export function loadSearchIndex(): SearchIndex {
  * better recall on prose (Developer Center guides) than a title-only fuzzy
  * match, while still returning class-name lookups (e.g. "ProductMgr") first.
  */
-function getMiniSearch(): MiniSearch<IndexedDoc> {
+function getMiniSearch(): MiniSearch {
   if (cachedMiniSearch) return cachedMiniSearch;
 
   const index = loadSearchIndex();
 
-  const ms = new MiniSearch<IndexedDoc>({
-    idField: 'id',
-    fields: ['title', 'id', 'headings', 'keywords', 'summary'],
-    // We look entries up in entryById on read, so nothing extra needs storing.
-    storeFields: ['category'],
-    searchOptions: {
-      boost: {title: 3, id: 2.5, keywords: 2, headings: 2, summary: 1.5},
-      fuzzy: 0.2,
-      prefix: true,
-      // OR-combine: relevance ranking surfaces the best (near-AND) matches first
-      // while still finding prose docs from natural-language queries whose
-      // stopwords ("how", "the") are not indexed. Verified best recall in eval.
-      // NOTE: the per-document category boost is applied per-search in
-      // searchDocs (it depends on runtime workspace context), not baked here.
-    },
-  });
-
-  ms.addAll(
-    index.entries.map((e) => ({
-      id: e.id,
-      title: e.title ?? '',
-      category: e.category ?? '',
-      headings: e.headings ?? '',
-      summary: e.summary ?? '',
-      keywords: Array.isArray(e.keywords) ? e.keywords.join(' ') : '',
-    })),
-  );
+  const ms = createRankedIndex(index.entries);
 
   getLogger().debug({documentCount: index.entries.length}, 'Built MiniSearch index for documentation search');
 

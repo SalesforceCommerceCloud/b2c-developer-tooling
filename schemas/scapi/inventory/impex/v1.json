@@ -1,0 +1,6615 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Inventory Impex",
+    "version": "1.1.30",
+    "x-api-type": "Admin",
+    "x-api-family": "Inventory"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/inventory/impex/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/location-graph/exports": {
+      "post": {
+        "operationId": "getLocationGraphExport",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully initiated location graph export.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateLocationGraphExportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-graphs",
+              "sfcc_inventory_impex_graphs"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/location-graph/exports/{exportId}": {
+      "delete": {
+        "operationId": "deleteLocationGraphExports",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted the location graph.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-graphs",
+              "sfcc_inventory_impex_graphs"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/location-graph/exports/{exportId}/file-content": {
+      "get": {
+        "operationId": "downloadLocationGraphExportFile",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully downloaded the file.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportLocationGraphDownloadFile"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The location graph export ID does not exist.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The download link is no longer available at the server.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-graphs",
+              "sfcc_inventory_impex_graphs"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/location-graph/exports/{exportId}/status": {
+      "get": {
+        "operationId": "getLocationGraphExportStatus",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved location group export status.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportLocationGraphStatusResponse200"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-graphs",
+              "sfcc_inventory_impex_graphs"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/imports": {
+      "get": {
+        "operationId": "getInventoryImport",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "available",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved a JSON array with a collection of import ID values.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetRunningImportsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "operationId": "submitInventoryImport",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateImportRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully submitted import.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateImportResponse200"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/imports/{importId}": {
+      "delete": {
+        "operationId": "deleteInventoryImport",
+        "parameters": [
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted the requested import job.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Import in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/imports/{importId}/status": {
+      "get": {
+        "operationId": "getAvailabilityImportStatus",
+        "parameters": [
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved import status.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportStatusResponse200"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/imports/{importId}/file-content": {
+      "get": {
+        "operationId": "downloadAvailabilityImportResultsFile",
+        "parameters": [
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved availability import results file.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Import in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/imports/uploadlink/{uploadLinkId}": {
+      "post": {
+        "operationId": "postUploadImportFile",
+        "parameters": [
+          {
+            "name": "uploadLinkId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully started the file upload. Details are available in the response body.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportUploadLinkResponse200"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already received the file.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The uploadLink URI is no longer available at the server.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/imports": {
+      "post": {
+        "operationId": "submitProductSegmentationImport",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateProductSegmentationImportRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully initiated import.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateProductSegmentationImportResponse200"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/imports/{importId}": {
+      "delete": {
+        "operationId": "deleteProductSegmentationImport",
+        "parameters": [
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted the requested SKU exclusion import job.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Import in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/imports/{importId}/file-content": {
+      "get": {
+        "operationId": "downloadProductSegmentationImportResults",
+        "parameters": [
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully downloaded the file.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The download link is no longer available at the server.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/imports/{importId}/status": {
+      "get": {
+        "operationId": "getProductSegmentationImportStatus",
+        "parameters": [
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved product segmentation import status.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSegmentationImportStatusResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/imports/uploadlink/{uploadLinkId}": {
+      "post": {
+        "operationId": "postProductSegmentationUploadImportFile",
+        "parameters": [
+          {
+            "name": "uploadLinkId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully started the file upload. Details are available in the response body.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportProductSegmentationUploadLinkResponse200"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already received the file.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The uploadLink URI is no longer available at the server.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/exports": {
+      "post": {
+        "operationId": "initiateProductSegmentationExport",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateSegmentationExportBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully submitted request to initiate Product Segmentation Export.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateProductSegmentationExportResponse200"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/exports/{exportId}": {
+      "delete": {
+        "operationId": "deleteProductSegmentationExport",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted a single export group ID.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/exports/{exportId}/file-content": {
+      "get": {
+        "operationId": "downloadProductSegmentationExportFile",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully downloaded the file.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The download link is no longer available at the server.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/product-segmentation/exports/{exportId}/status": {
+      "get": {
+        "operationId": "retrieveProductSegmentationExportStatus",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved export status.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportProductSegmentationStatusResponse200"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/exports": {
+      "post": {
+        "operationId": "initiateAvailabilityExport",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateAvailabilityExportBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully submitted request to initiate export.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateGroupExportResponse200"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/exports/{exportId}": {
+      "delete": {
+        "operationId": "deleteAvailabilityExport",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted batches of export group inventory availability.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/exports/{exportId}/file-content": {
+      "get": {
+        "operationId": "downloadAvailabilityExportFile",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully downloaded the file.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The download link is no longer available at the server.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/availability-records/exports/{exportId}/status": {
+      "get": {
+        "operationId": "retrieveGroupExportStatus",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved export status.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportGroupStatusResponse200"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/event-log/exports": {
+      "post": {
+        "operationId": "submitEventsActivityExport",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateEventActivityExportRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully submitted export.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateEventLogExportResponse200"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/event-log/exports/{exportId}/status": {
+      "get": {
+        "operationId": "retrieveEventLogExportStatus",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved export status.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportEventLogStatusResponse200"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/event-log/exports/{exportId}/file-content": {
+      "get": {
+        "operationId": "downloadEventsActivityExportFile",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully downloaded the file.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The event activity export ID does not exist.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The download link is no longer available at the server.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/reservations/exports": {
+      "post": {
+        "operationId": "submitReservationsExport",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateReservationsExportRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully submitted export request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateReservationsExportResponse200"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory.rw",
+              "sfcc_inventory_impex_inventory_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/reservations/exports/{exportId}": {
+      "delete": {
+        "operationId": "deleteReservationsExport",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted a single reservations export.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/reservations/exports/{exportId}/file-content": {
+      "get": {
+        "operationId": "downloadReservationsExportFile",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully downloaded the file.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The reservations export file does not exist.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Export in progress.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The download link is no longer available at the server.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/reservations/exports/{exportId}/status": {
+      "get": {
+        "operationId": "retrieveReservationsExportStatus",
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/UniqueId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved export status.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportReservationsStatusResponse200"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.impex-inventory",
+              "sfcc_inventory_impex_inventory"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "UniqueId": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "InitiateLocationGraphExportResponse": {
+        "type": "object",
+        "properties": {
+          "exportId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "exportStatusLink": {
+            "type": "string",
+            "pattern": "^/inventory/impex/v1/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/location-graph/exports/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/status$"
+          }
+        },
+        "required": [
+          "exportId",
+          "exportStatusLink"
+        ]
+      },
+      "InventoryResponseErrorSchema": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "parameterName": {
+            "type": "string",
+            "maxLength": 250
+          }
+        },
+        "required": [
+          "errorCode",
+          "message",
+          "type"
+        ]
+      },
+      "NotAuthorized": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "maxLength": 36
+          },
+          "status": {
+            "type": "integer"
+          },
+          "error": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 250
+          }
+        },
+        "required": [
+          "error",
+          "message",
+          "path",
+          "status",
+          "timestamp"
+        ]
+      },
+      "LocationId": {
+        "type": "string",
+        "maxLength": 128,
+        "minLength": 2,
+        "pattern": "^[a-zA-Z0-9-_]*$"
+      },
+      "GroupId": {
+        "type": "string",
+        "maxLength": 128,
+        "minLength": 2,
+        "pattern": "^[a-zA-Z0-9-_]*$"
+      },
+      "ExportLocationGraphDownloadFile": {
+        "type": "object",
+        "properties": {
+          "locations": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/LocationId"
+                }
+              ]
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/GroupId"
+                    }
+                  ]
+                },
+                "locations": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/LocationId"
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "locations"
+              ]
+            }
+          }
+        },
+        "required": [
+          "groups",
+          "locations"
+        ]
+      },
+      "ExportLocationGraphStatusResponse200": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STAGING",
+              "WAITING",
+              "EXPIRED",
+              "SUBMITTED",
+              "PENDING",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED",
+              "STOPPED"
+            ]
+          },
+          "export": {
+            "type": "object",
+            "properties": {
+              "startTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "endTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "recordsProcessedCount": {
+                "type": "integer"
+              },
+              "recordsExportedCount": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "recordsExportedCount",
+              "recordsProcessedCount",
+              "startTimeUTC"
+            ]
+          },
+          "download": {
+            "type": "object",
+            "properties": {
+              "downloadLink": {
+                "type": "string",
+                "pattern": "^/inventory/impex/v1/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/location-graph/exports/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/file-content$"
+              },
+              "downloadLinkExpirationUTC": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "downloadLink",
+              "downloadLinkExpirationUTC"
+            ]
+          },
+          "validation": {
+            "type": "object",
+            "properties": {
+              "fileHash": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "fileHashType": {
+                "type": "string",
+                "enum": [
+                  "SHA-256",
+                  "SHA-512"
+                ]
+              },
+              "fileSize": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "fileHash",
+              "fileHashType",
+              "fileSize"
+            ]
+          }
+        },
+        "required": [
+          "export",
+          "id",
+          "status"
+        ]
+      },
+      "GetRunningImportsResponse": {
+        "type": "object",
+        "properties": {
+          "imports": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/UniqueId"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "imports"
+        ]
+      },
+      "ImportFileTypes": {
+        "type": "string",
+        "enum": [
+          "JSON",
+          "CSV"
+        ]
+      },
+      "ImportRequestObjects": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "fileFormat": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportFileTypes"
+              }
+            ]
+          },
+          "fileEncoding": {
+            "type": "string",
+            "enum": [
+              "GZIP"
+            ]
+          },
+          "fileHash": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "fileHashType": {
+            "type": "string",
+            "enum": [
+              "SHA-256",
+              "SHA-512"
+            ]
+          },
+          "linkDuration": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fileName"
+        ]
+      },
+      "InitiateImportRequestBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ImportRequestObjects"
+          }
+        ]
+      },
+      "InitiateImportResponse200": {
+        "type": "object",
+        "properties": {
+          "importId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "importStatusLink": {
+            "type": "string",
+            "pattern": "^/inventory/impex/v1/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/availability-records/imports/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/status$"
+          },
+          "uploadLink": {
+            "type": "string",
+            "pattern": "^/inventory/impex/v1/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/availability-records/imports/uploadlink/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "uploadMethod": {
+            "type": "string",
+            "enum": [
+              "POST"
+            ]
+          },
+          "uploadLinkExpirationUTC": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "importId",
+          "importStatusLink",
+          "uploadLink",
+          "uploadLinkExpirationUTC",
+          "uploadMethod"
+        ]
+      },
+      "ImportStatusResponse200": {
+        "type": "object",
+        "properties": {
+          "importId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STAGING",
+              "WAITING",
+              "SUBMITTED",
+              "EXPIRED",
+              "PENDING",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED",
+              "STOPPED"
+            ]
+          },
+          "validation": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "Success",
+                  "Failed",
+                  "Pending"
+                ]
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 250
+                }
+              }
+            },
+            "required": [
+              "errors",
+              "status"
+            ]
+          },
+          "upload": {
+            "type": "object",
+            "properties": {
+              "fileName": {
+                "type": "string",
+                "maxLength": 250
+              }
+            },
+            "required": [
+              "fileName"
+            ]
+          },
+          "import": {
+            "type": "object",
+            "properties": {
+              "startTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "endTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "recordsProcessedCount": {
+                "type": "integer"
+              },
+              "recordsReadCount": {
+                "type": "integer"
+              },
+              "recordsSkippedCount": {
+                "type": "integer"
+              },
+              "fullResults": {
+                "type": "object",
+                "properties": {
+                  "href": {
+                    "type": "string",
+                    "maxLength": 1024
+                  },
+                  "exportResultExpirationUTC": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "exportResultExpirationUTC",
+                  "href"
+                ]
+              }
+            },
+            "required": [
+              "fullResults",
+              "recordsProcessedCount",
+              "recordsReadCount",
+              "recordsSkippedCount"
+            ]
+          }
+        },
+        "required": [
+          "import",
+          "importId",
+          "status",
+          "upload",
+          "validation"
+        ]
+      },
+      "ImportUploadLinkResponse200": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "RUNNING",
+              "COMPLETED"
+            ]
+          },
+          "importId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          }
+        },
+        "required": [
+          "importId",
+          "status"
+        ]
+      },
+      "InitiateProductSegmentationImportRequest": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "linkDuration": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "fileName",
+          "linkDuration"
+        ]
+      },
+      "InitiateProductSegmentationImportRequestBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/InitiateProductSegmentationImportRequest"
+          }
+        ]
+      },
+      "InitiateProductSegmentationImportResponse200": {
+        "type": "object",
+        "properties": {
+          "importId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "importStatusLink": {
+            "type": "string",
+            "pattern": "^/v2/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/product-segmentation/imports/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/status$"
+          },
+          "uploadLink": {
+            "type": "string",
+            "pattern": "^/v2/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/product-segmentation/imports/uploadlink/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "uploadMethod": {
+            "type": "string",
+            "enum": [
+              "POST"
+            ]
+          },
+          "uploadLinkExpirationUTC": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "importId",
+          "importStatusLink",
+          "uploadLink",
+          "uploadLinkExpirationUTC",
+          "uploadMethod"
+        ]
+      },
+      "ProductSegmentationImportStatusResponse": {
+        "type": "object",
+        "properties": {
+          "importId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STAGING",
+              "WAITING",
+              "EXPIRED",
+              "SUBMITTED",
+              "PENDING",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED",
+              "STOPPED"
+            ]
+          },
+          "validation": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "Success",
+                  "Failed",
+                  "Pending"
+                ]
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 250
+                }
+              }
+            },
+            "required": [
+              "errors",
+              "status"
+            ]
+          },
+          "upload": {
+            "type": "object",
+            "properties": {
+              "fileName": {
+                "type": "string",
+                "maxLength": 250
+              }
+            },
+            "required": [
+              "fileName"
+            ]
+          },
+          "import": {
+            "type": "object",
+            "properties": {
+              "startTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "endTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "recordsProcessedCount": {
+                "type": "integer"
+              },
+              "recordsReadCount": {
+                "type": "integer"
+              },
+              "recordsSkippedCount": {
+                "type": "integer"
+              },
+              "fullResults": {
+                "type": "object",
+                "properties": {
+                  "href": {
+                    "type": "string",
+                    "maxLength": 1024
+                  },
+                  "exportResultExpirationUTC": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "exportResultExpirationUTC",
+                  "href"
+                ]
+              }
+            },
+            "required": [
+              "fullResults",
+              "recordsProcessedCount",
+              "recordsReadCount",
+              "recordsSkippedCount"
+            ]
+          }
+        },
+        "required": [
+          "import",
+          "importId",
+          "status",
+          "upload",
+          "validation"
+        ]
+      },
+      "ImportProductSegmentationUploadLinkResponse200": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "RUNNING",
+              "COMPLETED"
+            ]
+          },
+          "importId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          }
+        },
+        "required": [
+          "importId",
+          "status"
+        ]
+      },
+      "InitiateSegmentationExportBody": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/GroupId"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "groups"
+        ]
+      },
+      "InitiateProductSegmentationExportResponse200": {
+        "type": "object",
+        "properties": {
+          "exportId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "exportStatusLink": {
+            "type": "string",
+            "pattern": "^/inventory/impex/v1/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/product-segmentation/exports/pe-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/status$"
+          }
+        },
+        "required": [
+          "exportId",
+          "exportStatusLink"
+        ]
+      },
+      "ExportProductSegmentationStatusResponse200": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STAGING",
+              "WAITING",
+              "EXPIRED",
+              "SUBMITTED",
+              "PENDING",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED",
+              "STOPPED"
+            ]
+          },
+          "export": {
+            "type": "object",
+            "properties": {
+              "startTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "endTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "recordsProcessedCount": {
+                "type": "number"
+              },
+              "recordsExportedCount": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "recordsExportedCount",
+              "recordsProcessedCount"
+            ]
+          },
+          "download": {
+            "type": "object",
+            "properties": {
+              "downloadLink": {
+                "type": "string",
+                "pattern": "^/inventory/impex/v1/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/product-segmentation/exports/pe-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/file-content$"
+              },
+              "downloadLinkExpirationUTC": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "downloadLink",
+              "downloadLinkExpirationUTC"
+            ]
+          },
+          "validation": {
+            "type": "object",
+            "properties": {
+              "fileHashType": {
+                "type": "string",
+                "enum": [
+                  "SHA-256",
+                  "SHA-512"
+                ]
+              },
+              "fileHash": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "fileSize": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "fileHash",
+              "fileHashType",
+              "fileSize"
+            ]
+          }
+        },
+        "required": [
+          "download",
+          "export",
+          "id",
+          "status"
+        ]
+      },
+      "InitiateAvailabilityExportBody": {
+        "type": "object",
+        "properties": {
+          "objects": {
+            "type": "object",
+            "properties": {
+              "groups": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/GroupId"
+                    }
+                  ]
+                }
+              },
+              "locations": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/LocationId"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "InitiateGroupExportResponse200": {
+        "type": "object",
+        "properties": {
+          "exportId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "exportStatusLink": {
+            "type": "string",
+            "pattern": "^/inventory/inventory-availability/v1/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/availability-records/exports/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/status$"
+          }
+        },
+        "required": [
+          "exportId",
+          "exportStatusLink"
+        ]
+      },
+      "ExportGroupStatusResponse200": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STAGING",
+              "WAITING",
+              "EXPIRED",
+              "SUBMITTED",
+              "PENDING",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED",
+              "STOPPED"
+            ]
+          },
+          "export": {
+            "type": "object",
+            "properties": {
+              "startTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "endTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "recordsProcessedCount": {
+                "type": "number"
+              },
+              "recordsExportedCount": {
+                "type": "number"
+              },
+              "groups": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/GroupId"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "recordsExportedCount",
+              "recordsProcessedCount"
+            ]
+          },
+          "download": {
+            "type": "object",
+            "properties": {
+              "downloadLink": {
+                "type": "string",
+                "pattern": "^/v2/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/availability-records/exports/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/file-content$"
+              },
+              "downloadLinkExpirationUTC": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "downloadLink",
+              "downloadLinkExpirationUTC"
+            ]
+          },
+          "validation": {
+            "type": "object",
+            "properties": {
+              "fileHashType": {
+                "type": "string",
+                "enum": [
+                  "SHA-256",
+                  "SHA-512"
+                ]
+              },
+              "fileHash": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "fileSize": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "fileHash",
+              "fileHashType",
+              "fileSize"
+            ]
+          }
+        },
+        "required": [
+          "download",
+          "export",
+          "id",
+          "status"
+        ]
+      },
+      "SkuId": {
+        "type": "string",
+        "maxLength": 250,
+        "minLength": 2,
+        "pattern": "^[^\\\\<>;%/\\s]*$"
+      },
+      "GetEventLogRequestBody": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/LocationId"
+                }
+              ]
+            }
+          },
+          "fileFormat": {
+            "type": "string",
+            "default": "JSON",
+            "enum": [
+              "JSON",
+              "CSV"
+            ]
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/GroupId"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "sku",
+          "startsOn"
+        ]
+      },
+      "InitiateEventActivityExportRequestBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GetEventLogRequestBody"
+          }
+        ]
+      },
+      "InitiateEventLogExportResponse200": {
+        "type": "object",
+        "properties": {
+          "exportId": {
+            "type": "string",
+            "pattern": "^e-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "exportStatusLink": {
+            "type": "string",
+            "pattern": "^/inventory/impex/v1/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/event-log/exports/e-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/status$"
+          }
+        },
+        "required": [
+          "exportId",
+          "exportStatusLink"
+        ]
+      },
+      "ExportEventLogStatusResponse200": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GroupId"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STAGING",
+              "WAITING",
+              "EXPIRED",
+              "SUBMITTED",
+              "PENDING",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED",
+              "STOPPED"
+            ]
+          },
+          "export": {
+            "type": "object",
+            "properties": {
+              "startTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "endTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "recordsProcessedCount": {
+                "type": "number"
+              },
+              "recordsExportedCount": {
+                "type": "number"
+              },
+              "groups": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/GroupId"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "recordsExportedCount",
+              "recordsProcessedCount"
+            ]
+          },
+          "download": {
+            "type": "object",
+            "properties": {
+              "downloadLink": {
+                "type": "string",
+                "pattern": "^/v2/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/event-log/exports/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/file-content$"
+              },
+              "downloadLinkExpirationUTC": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "downloadLink",
+              "downloadLinkExpirationUTC"
+            ]
+          },
+          "validation": {
+            "type": "object",
+            "properties": {
+              "fileHashType": {
+                "type": "string",
+                "enum": [
+                  "SHA-256",
+                  "SHA-512"
+                ]
+              },
+              "fileHash": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "fileSize": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "fileHash",
+              "fileHashType",
+              "fileSize"
+            ]
+          }
+        },
+        "required": [
+          "download",
+          "export",
+          "id",
+          "status"
+        ]
+      },
+      "GetReservationsRequestBody": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ]
+          },
+          "fromDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "toDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "fromDate",
+          "status"
+        ]
+      },
+      "InitiateReservationsExportRequestBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GetReservationsRequestBody"
+          }
+        ]
+      },
+      "InitiateReservationsExportResponse200": {
+        "type": "object",
+        "properties": {
+          "exportId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "exportStatusLink": {
+            "type": "string",
+            "pattern": "^/inventory/impex/v1/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/reservations/exports/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/status$"
+          }
+        },
+        "required": [
+          "exportId",
+          "exportStatusLink"
+        ]
+      },
+      "ExportReservationsStatusResponse200": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniqueId"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STAGING",
+              "WAITING",
+              "EXPIRED",
+              "SUBMITTED",
+              "PENDING",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED",
+              "STOPPED"
+            ]
+          },
+          "export": {
+            "type": "object",
+            "properties": {
+              "startTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "endTimeUTC": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "recordsProcessedCount": {
+                "type": "number"
+              },
+              "recordsExportedCount": {
+                "type": "number"
+              },
+              "groups": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/GroupId"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "recordsExportedCount",
+              "recordsProcessedCount"
+            ]
+          },
+          "download": {
+            "type": "object",
+            "properties": {
+              "downloadLink": {
+                "type": "string",
+                "pattern": "^/v2/organizations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/reservations/exports/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/file-content$"
+              },
+              "downloadLinkExpirationUTC": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "downloadLink",
+              "downloadLinkExpirationUTC"
+            ]
+          },
+          "validation": {
+            "type": "object",
+            "properties": {
+              "fileHashType": {
+                "type": "string",
+                "enum": [
+                  "SHA-256",
+                  "SHA-512"
+                ]
+              },
+              "fileHash": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "fileSize": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "fileHash",
+              "fileHashType",
+              "fileSize"
+            ]
+          }
+        },
+        "required": [
+          "download",
+          "export",
+          "id",
+          "status"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "exportId": {
+        "name": "exportId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/UniqueId"
+        }
+      },
+      "available": {
+        "name": "available",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "importId": {
+        "name": "importId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/UniqueId"
+        }
+      },
+      "uploadLinkId": {
+        "name": "uploadLinkId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/UniqueId"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.inventory.impex-graphs": "Impex Graphs READONLY scope",
+              "sfcc_inventory_impex_graphs": "Impex Graphs READONLY scope",
+              "sfcc.inventory.impex-inventory": "Impex Inventory READONLY scope",
+              "sfcc_inventory_impex_inventory": "Impex Inventory READONLY scope",
+              "sfcc.inventory.impex-inventory.rw": "Impex Inventory scope",
+              "sfcc_inventory_impex_inventory_rw": "Impex Inventory scope"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.inventory.impex-graphs": "Impex Graphs READONLY scope",
+              "sfcc_inventory_impex_graphs": "Impex Graphs READONLY scope",
+              "sfcc.inventory.impex-inventory": "Impex Inventory READONLY scope",
+              "sfcc_inventory_impex_inventory": "Impex Inventory READONLY scope",
+              "sfcc.inventory.impex-inventory.rw": "Impex Inventory scope",
+              "sfcc_inventory_impex_inventory_rw": "Impex Inventory scope"
+            }
+          }
+        }
+      }
+    }
+  }
+}

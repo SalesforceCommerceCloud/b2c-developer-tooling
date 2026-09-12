@@ -33,7 +33,7 @@
     },
     {
       "name": "b2c-dx-mcp",
-      "description": "MCP server for AI-assisted Salesforce B2C Commerce development with project-aware tooling for common workflows.",
+      "description": "Build, debug, and deploy Salesforce B2C Commerce with your AI assistant. Includes documentation, workflow skills, and Salesforce Commerce API tools.",
       "author": {
         "name": "Salesforce"
       },

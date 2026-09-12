@@ -34,6 +34,7 @@ import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
 import {initializeFileAuthSessionStore} from '../auth/session-store.js';
 import {initializeContentCache} from '../docs/content-cache.js';
+import {initializeScapiSnippetStore} from '../scapi/snippets.js';
 import {setUserAgent} from '../clients/user-agent.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
 
@@ -245,6 +246,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Tests may override the path via B2C_TEST_DATA_DIR to isolate the auth-sessions.json
     // file (e.g. per mocha worker) so they don't race on the developer's real session file.
     initializeFileAuthSessionStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
+    initializeScapiSnippetStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
 
     // Point the docs online-content cache at oclif's cacheDir (e.g. ~/.cache/b2c)
     // so cached docs live alongside other CLI cache data and honor oclif dir

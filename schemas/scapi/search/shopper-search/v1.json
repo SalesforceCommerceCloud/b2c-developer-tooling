@@ -1,0 +1,1889 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Shopper Search",
+    "version": "1.14.0",
+    "x-api-type": "Shopper",
+    "x-api-family": "Search"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/search/shopper-search/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/product-search": {
+      "get": {
+        "operationId": "productSearch",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 500,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "refine",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "maxItems": 9
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "searchMode",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "semantic",
+                "lexical"
+              ]
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/CurrencyCode"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "availability",
+                  "images",
+                  "prices",
+                  "represented_products",
+                  "variations",
+                  "promotions",
+                  "custom_properties",
+                  "page_meta_tags",
+                  "slug"
+                ]
+              }
+            }
+          },
+          {
+            "name": "allImages",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "imgTypes",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "perPricebook",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "allVariationProperties",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includedCustomVariationProperties",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^c_.*"
+              },
+              "maxItems": 5
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product search successfully returned results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-product-search",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-product-search",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/search-suggestions": {
+      "get": {
+        "operationId": "getSearchSuggestions",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50,
+              "minLength": 3
+            }
+          },
+          {
+            "name": "searchMode",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "semantic",
+                "lexical"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "maximum": 10,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/CurrencyCode"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "images",
+                  "prices",
+                  "custom_product_properties"
+                ]
+              }
+            }
+          },
+          {
+            "name": "includedCustomProductProperties",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 256,
+                "pattern": "^c_.*"
+              },
+              "maxItems": 5
+            }
+          },
+          {
+            "name": "includeEinsteinSuggestedPhrases",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search suggestions successfully returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Returned when a query parameter or its value is unknown, or when a maximum or minimum constraint is violated.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-product-search",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-product-search",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "Select": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[(].*[)]$"
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "pattern": "^([A-Z][A-Z][A-Z]|N/A)$"
+      },
+      "LanguageCountry": {
+        "type": "string",
+        "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
+      },
+      "LanguageCode": {
+        "type": "string",
+        "pattern": "^[a-z][a-z]$"
+      },
+      "DefaultFallback": {
+        "type": "string",
+        "default": "default",
+        "pattern": "^default$"
+      },
+      "LocaleCode": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/LanguageCountry"
+          },
+          {
+            "$ref": "#/components/schemas/LanguageCode"
+          },
+          {
+            "$ref": "#/components/schemas/DefaultFallback"
+          }
+        ]
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "Image": {
+        "type": "object",
+        "properties": {
+          "alt": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "disBaseLink": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "link": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "link"
+        ]
+      },
+      "ProductType": {
+        "type": "object",
+        "properties": {
+          "bundle": {
+            "type": "boolean"
+          },
+          "item": {
+            "type": "boolean"
+          },
+          "master": {
+            "type": "boolean"
+          },
+          "option": {
+            "type": "boolean"
+          },
+          "set": {
+            "type": "boolean"
+          },
+          "variant": {
+            "type": "boolean"
+          },
+          "variationGroup": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ProductRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "VariationAttributeValue": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "image": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ]
+          },
+          "imageSwatch": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "orderable": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "VariationAttribute": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationAttributeValue"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ImageGroup": {
+        "type": "object",
+        "properties": {
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Image"
+            },
+            "minLength": 1
+          },
+          "variationAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationAttribute"
+            }
+          },
+          "viewType": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "images",
+          "viewType"
+        ]
+      },
+      "PriceRange": {
+        "type": "object",
+        "properties": {
+          "maxPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "minPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "pricebook": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "ProductPromotion": {
+        "type": "object",
+        "properties": {
+          "calloutMsg": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "promotionId": {
+            "type": "string",
+            "maxLength": 260,
+            "minLength": 1
+          },
+          "promotionalPrice": {
+            "type": "number",
+            "format": "double",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "calloutMsg",
+          "promotionId",
+          "promotionalPrice"
+        ]
+      },
+      "ProductPriceTable": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "pricebook": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "Variant": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "orderable": {
+            "type": "boolean"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "productId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "tieredPrices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPriceTable"
+            }
+          },
+          "variationValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 4000
+            }
+          },
+          "productPromotions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPromotion"
+            }
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "VariationGroup": {
+        "type": "object",
+        "properties": {
+          "orderable": {
+            "type": "boolean",
+            "minLength": 1
+          },
+          "price": {
+            "type": "number",
+            "format": "double",
+            "minLength": 1
+          },
+          "productId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "variationValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "minLength": 1
+          }
+        },
+        "required": [
+          "orderable",
+          "price",
+          "productId",
+          "variationValues"
+        ]
+      },
+      "ProductSearchHit": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "hitType": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "image": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ]
+          },
+          "orderable": {
+            "type": "boolean"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceMax": {
+            "type": "number",
+            "format": "double"
+          },
+          "productId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "productName": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "productType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductType"
+              }
+            ]
+          },
+          "representedProduct": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductRef"
+              }
+            ]
+          },
+          "representedProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductRef"
+            }
+          },
+          "variationAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationAttribute"
+            }
+          },
+          "imageGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageGroup"
+            }
+          },
+          "priceRanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceRange"
+            }
+          },
+          "productPromotions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPromotion"
+            }
+          },
+          "tieredPrices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPriceTable"
+            }
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            }
+          },
+          "variationGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationGroup"
+            }
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "PageMetaTag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "value": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
+      },
+      "SearchMode": {
+        "type": "string",
+        "enum": [
+          "semantic",
+          "lexical"
+        ]
+      },
+      "query": {
+        "type": "string",
+        "maxLength": 50
+      },
+      "AppliedProcessor": {
+        "type": "object",
+        "properties": {
+          "processorName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "result": {
+            "$ref": "#/components/schemas/query"
+          },
+          "refinements": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        }
+      },
+      "ProcessedQuery": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/query"
+          },
+          "appliedProcessors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppliedProcessor"
+            },
+            "maxItems": 5
+          }
+        }
+      },
+      "ProductSearchRefinementValue": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "hitCount": {
+            "type": "integer",
+            "format": "int32",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "presentationId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchRefinementValue"
+            }
+          }
+        },
+        "required": [
+          "hitCount",
+          "label",
+          "value"
+        ]
+      },
+      "ProductSearchRefinement": {
+        "type": "object",
+        "properties": {
+          "attributeId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchRefinementValue"
+            }
+          }
+        },
+        "required": [
+          "attributeId"
+        ]
+      },
+      "SuggestedPhrase": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "exactMatch": {
+            "type": "boolean",
+            "minLength": 1
+          },
+          "phrase": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "exactMatch",
+          "phrase"
+        ]
+      },
+      "SuggestedTerm": {
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "boolean",
+            "minLength": 1
+          },
+          "corrected": {
+            "type": "boolean",
+            "minLength": 1
+          },
+          "exactMatch": {
+            "type": "boolean",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "completed",
+          "corrected",
+          "exactMatch",
+          "value"
+        ]
+      },
+      "SuggestedTerms": {
+        "type": "object",
+        "properties": {
+          "originalTerm": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedTerm"
+            }
+          }
+        },
+        "required": [
+          "originalTerm"
+        ]
+      },
+      "Suggestion": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "suggestedPhrases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedPhrase"
+            }
+          },
+          "suggestedTerms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedTerms"
+            },
+            "minLength": 1
+          }
+        },
+        "required": [
+          "suggestedTerms"
+        ]
+      },
+      "ProductSearchSortingOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ]
+      },
+      "ProductSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchHit"
+            },
+            "minLength": 1
+          },
+          "pageMetaTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageMetaTag"
+            }
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "searchMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMode"
+              }
+            ]
+          },
+          "effectiveSearchMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMode"
+              }
+            ]
+          },
+          "processedQuery": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProcessedQuery"
+              }
+            ]
+          },
+          "refinements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchRefinement"
+            },
+            "minLength": 1
+          },
+          "searchPhraseSuggestions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Suggestion"
+              }
+            ],
+            "minLength": 1
+          },
+          "selectedRefinements": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 4000
+            }
+          },
+          "selectedSortingOption": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "sortingOptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchSortingOption"
+            },
+            "minLength": 1
+          }
+        },
+        "required": [
+          "hits",
+          "limit",
+          "offset",
+          "query",
+          "refinements",
+          "searchPhraseSuggestions",
+          "sortingOptions",
+          "total"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "BrandSuggestions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Suggestion"
+          }
+        ]
+      },
+      "SuggestedCategory": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 260,
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "parentCategoryName": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "parentCategoryName"
+        ]
+      },
+      "CategorySuggestions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Suggestion"
+          }
+        ],
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedCategory"
+            }
+          }
+        }
+      },
+      "SuggestedProduct": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "price": {
+            "type": "number",
+            "format": "double",
+            "minLength": 1
+          },
+          "productId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "productName": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "currency",
+          "price",
+          "productId",
+          "productName"
+        ]
+      },
+      "ProductSuggestions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Suggestion"
+          }
+        ],
+        "properties": {
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedProduct"
+            }
+          }
+        }
+      },
+      "CustomSuggestions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Suggestion"
+          }
+        ],
+        "properties": {
+          "customSuggestion": {
+            "type": "string"
+          }
+        }
+      },
+      "EinsteinSuggestedPhrases": {
+        "type": "object",
+        "properties": {
+          "popularSearchPhrases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedPhrase"
+            },
+            "maxLength": 10
+          },
+          "recentSearchPhrases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedPhrase"
+            },
+            "maxLength": 10
+          }
+        }
+      },
+      "SuggestionResult": {
+        "type": "object",
+        "properties": {
+          "brandSuggestions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrandSuggestions"
+              }
+            ]
+          },
+          "categorySuggestions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategorySuggestions"
+              }
+            ]
+          },
+          "productSuggestions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductSuggestions"
+              }
+            ]
+          },
+          "customSuggestion": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomSuggestions"
+              }
+            ]
+          },
+          "einsteinSuggestedPhrases": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EinsteinSuggestedPhrases"
+              }
+            ]
+          },
+          "searchPhrase": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 3
+          },
+          "searchMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMode"
+              }
+            ]
+          },
+          "effectiveSearchMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMode"
+              }
+            ]
+          }
+        },
+        "required": [
+          "searchPhrase"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "productSearchSelect": {
+        "name": "select",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/Select"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "qProductSearch": {
+        "name": "q",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 500,
+          "minLength": 1
+        }
+      },
+      "refine": {
+        "name": "refine",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "maxItems": 9
+        }
+      },
+      "sort": {
+        "name": "sort",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "searchMode": {
+        "name": "searchMode",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "semantic",
+            "lexical"
+          ]
+        }
+      },
+      "currency": {
+        "name": "currency",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/CurrencyCode"
+        }
+      },
+      "locale": {
+        "name": "locale",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/LocaleCode"
+        }
+      },
+      "expandProductSearch": {
+        "name": "expand",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "none",
+              "availability",
+              "images",
+              "prices",
+              "represented_products",
+              "variations",
+              "promotions",
+              "custom_properties",
+              "page_meta_tags",
+              "slug"
+            ]
+          }
+        }
+      },
+      "allImages": {
+        "name": "allImages",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "imgTypes": {
+        "name": "imgTypes",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "perPricebook": {
+        "name": "perPricebook",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "allVariationProperties": {
+        "name": "allVariationProperties",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "includedCustomVariationProperties": {
+        "name": "includedCustomVariationProperties",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 256,
+            "pattern": "^c_.*"
+          },
+          "maxItems": 5
+        }
+      },
+      "qSearchSuggestion": {
+        "name": "q",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 3
+        }
+      },
+      "limitSearchSuggestion": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "integer",
+          "default": 5,
+          "maximum": 10,
+          "minimum": 1
+        }
+      },
+      "expandSearchSuggestion": {
+        "name": "expand",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "images",
+              "prices",
+              "custom_product_properties"
+            ]
+          }
+        }
+      },
+      "includedCustomProductProperties": {
+        "name": "includedCustomProductProperties",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 256,
+            "pattern": "^c_.*"
+          },
+          "maxItems": 5
+        }
+      },
+      "includeEinsteinSuggestedPhrases": {
+        "name": "includeEinsteinSuggestedPhrases",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "sfdcUsid": {
+        "name": "sfdc_usid",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "sfdcDwDnt": {
+        "name": "sfdc_dw_dnt",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "0",
+            "1"
+          ]
+        }
+      },
+      "personalized": {
+        "name": "personalized",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "none"
+          ]
+        }
+      },
+      "sfdcShopperContext": {
+        "name": "sfdc_shopper_context",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "ShopperToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-product-search": "Allows read operations on shopper search."
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/authorize",
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-product-search": "Allows read operations on shopper search."
+            }
+          }
+        }
+      },
+      "ShopperClientContextToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token?hint=client_context",
+            "scopes": {
+              "sfcc.shopper-product-search": "Allows read operations on shopper search."
+            }
+          }
+        }
+      }
+    }
+  }
+}
