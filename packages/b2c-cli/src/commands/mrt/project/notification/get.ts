@@ -24,7 +24,7 @@ function printNotificationDetails(notification: MrtNotification, project: string
   ui.div('');
   ui.div({text: 'ID:', width: labelWidth}, {text: notification.id ?? ''});
   ui.div({text: 'Project:', width: labelWidth}, {text: project});
-  ui.div({text: 'Targets:', width: labelWidth}, {text: notification.targets?.join(', ') ?? '-'});
+  ui.div({text: 'Environments:', width: labelWidth}, {text: notification.targets?.join(', ') ?? '-'});
   ui.div({text: 'Recipients:', width: labelWidth}, {text: notification.recipients?.join(', ') ?? '-'});
   ui.div({text: 'Events:', width: labelWidth}, {text: events.join(', ') || '-'});
 
@@ -43,6 +43,8 @@ function printNotificationDetails(notification: MrtNotification, project: string
  * Get details of a notification.
  */
 export default class MrtNotificationGet extends MrtCommand<typeof MrtNotificationGet> {
+  static aliases = ['mrt:storefront:notification:get'];
+
   static args = {
     id: Args.string({
       description: 'Notification ID',
@@ -73,7 +75,9 @@ export default class MrtNotificationGet extends MrtCommand<typeof MrtNotificatio
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     this.log(t('commands.mrt.notification.get.fetching', 'Fetching notification {{id}}...', {id}));

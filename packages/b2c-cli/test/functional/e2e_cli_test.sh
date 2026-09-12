@@ -25,6 +25,7 @@ SITE_ARCHIVE_PATH="$SCRIPT_DIR/fixtures/site_archive"
 # Test configuration
 SITE_ID="TestSite"
 TTL_HOURS=4  # 4 hours in case test fails and needs manual cleanup
+FIRST_ODS_ID=""
 HTTP_DIAGNOSTICS_DIR=$(mktemp -d)
 
 # Keep response bodies on stdout for callers; log status and safe tracing headers on stderr.
@@ -69,6 +70,11 @@ cleanup() {
         $CLI ods delete "$ODS_ID" --force || true
     fi
 
+    if [ -n "$FIRST_ODS_ID" ]; then
+        echo "Deleting first sandbox: $FIRST_ODS_ID"
+        $CLI ods delete "$FIRST_ODS_ID" --force || true
+    fi
+
     rm -rf "$HTTP_DIAGNOSTICS_DIR"
     exit $exit_code
 }
@@ -84,9 +90,17 @@ echo "Short Code: $SFCC_SHORTCODE"
 echo ""
 
 ################################################################################
-# 1. Create On-Demand Sandbox
+# 1. Create On-Demand Sandboxes
 ################################################################################
-echo "Step 1: Creating on-demand sandbox..."
+echo "Step 1: Creating first sandbox to avoid testing on instance 001..."
+
+# Temporary workaround for SLAS 401s on instance 001. Only wait on the second sandbox.
+FIRST_ODS_RESULT=$($CLI ods create --realm "$TEST_REALM" --ttl "$TTL_HOURS" --json)
+FIRST_ODS_ID=$(echo "$FIRST_ODS_RESULT" | jq -er '.id | select(type == "string" and length > 0)')
+echo "First sandbox: $FIRST_ODS_ID"
+sleep 10
+
+echo "Creating and waiting for the second sandbox for testing..."
 
 ODS_CREATE_RESULT=$($CLI ods create \
     --realm "$TEST_REALM" \
@@ -222,25 +236,22 @@ SLAS_BASE="https://${SFCC_SHORTCODE}.api.commercecloud.salesforce.com"
 echo "  ORG ID: $ORG_ID"
 echo "  SLAS Base: $SLAS_BASE"
 
-# Build curl extra headers args if set (newline-separated, e.g. "X-Header: value")
-CURL_HEADER_ARGS=()
-if [ -n "$CURL_EXTRA_HEADERS" ]; then
-    while IFS= read -r header; do
-        [ -n "$header" ] && CURL_HEADER_ARGS+=(-H "$header")
-    done <<< "$CURL_EXTRA_HEADERS"
+# Exercise the CLI's private-client guest flow; keep the secret out of process arguments.
+if ! TOKEN_RESPONSE=$(SFCC_SLAS_CLIENT_SECRET="$SLAS_SECRET" "$CLI" slas token \
+    --slas-client-id "$SLAS_CLIENT_ID" \
+    --tenant-id "$TENANT_ID" \
+    --short-code "$SFCC_SHORTCODE" \
+    --site-id "$SITE_ID" \
+    --json); then
+    echo "FAILED: Could not obtain shopper token"
+    exit 1
 fi
 
-# Get shopper token via client credentials (guest login)
-TOKEN_RESPONSE=$(curl_with_diagnostics "${SLAS_BASE}/shopper/auth/v1/organizations/${ORG_ID}/oauth2/token" \
-    "${CURL_HEADER_ARGS[@]}" \
-    -u "${SLAS_CLIENT_ID}:${SLAS_SECRET}" \
-    -d "grant_type=client_credentials&channel_id=${SITE_ID}")
-
-SHOPPER_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
-
-if [ -z "$SHOPPER_TOKEN" ] || [ "$SHOPPER_TOKEN" == "null" ]; then
-    echo "FAILED: Could not obtain shopper token"
-    echo "$TOKEN_RESPONSE" | jq 'del(.access_token, .refresh_token, .id_token)'
+if ! SHOPPER_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -er \
+    --arg clientId "$SLAS_CLIENT_ID" --arg siteId "$SITE_ID" \
+    'select(.isGuest == true and .clientId == $clientId and .siteId == $siteId)
+     | .response.accessToken | select(type == "string" and length > 0)'); then
+    echo "FAILED: SLAS token command did not return a guest token for the requested client and site"
     exit 1
 fi
 
@@ -252,17 +263,23 @@ echo ""
 ################################################################################
 echo "Step 8: Testing shopper product search..."
 
+# Extra curl headers apply only to this direct shopper-search request.
+CURL_HEADER_ARGS=()
+if [ -n "$CURL_EXTRA_HEADERS" ]; then
+    while IFS= read -r header; do
+        [ -n "$header" ] && CURL_HEADER_ARGS+=(-H "$header")
+    done <<< "$CURL_EXTRA_HEADERS"
+fi
+
 SEARCH_RESPONSE=$(curl_with_diagnostics "${SLAS_BASE}/search/shopper-search/v1/organizations/${ORG_ID}/product-search?siteId=${SITE_ID}&limit=5&q=sample" \
     "${CURL_HEADER_ARGS[@]}" \
     -H "Authorization: Bearer ${SHOPPER_TOKEN}")
 
-# Check if we got a valid response (should have a 'hits' array or 'total' field)
-SEARCH_TOTAL=$(echo "$SEARCH_RESPONSE" | jq -r '.total // .hits | length // 0')
-
-if [ "$SEARCH_TOTAL" == "null" ]; then
-    echo "WARNING: Search returned unexpected response format"
+# Require the current Shopper Search response shape; zero results are valid.
+if ! SEARCH_TOTAL=$(echo "$SEARCH_RESPONSE" | jq -er '.total | select(type == "number" and . >= 0)'); then
+    echo "FAILED: Search returned unexpected response format"
     echo "$SEARCH_RESPONSE" | jq
-    # Don't fail - the product might not be indexed yet
+    exit 1
 else
     echo "SUCCESS: Shopper search returned results"
     echo "  Total results: $SEARCH_TOTAL"
@@ -285,14 +302,17 @@ echo ""
 ################################################################################
 # 10. Delete Sandbox
 ################################################################################
-echo "Step 10: Deleting sandbox..."
+echo "Step 10: Deleting both sandboxes..."
 
 $CLI ods delete "$ODS_ID" --force
 
 # Clear ODS_ID so cleanup doesn't try to delete again
 ODS_ID=""
 
-echo "SUCCESS: Sandbox deleted"
+$CLI ods delete "$FIRST_ODS_ID" --force
+FIRST_ODS_ID=""
+
+echo "SUCCESS: Both sandboxes deleted"
 echo ""
 
 ################################################################################

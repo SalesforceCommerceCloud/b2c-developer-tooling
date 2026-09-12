@@ -84,6 +84,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   'auth-methods': 'authMethods',
   'cip-host': 'cipHost',
   'api-backend': 'apiBackend',
+  'mrt-backend': 'mrtBackend',
 };
 
 /**
@@ -202,6 +203,8 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     selfSigned: json.selfSigned,
     // API backend
     apiBackend: json.apiBackend,
+    // MRT backend
+    mrtBackend: json.mrtBackend,
     // JWT Bearer auth options
     jwtCertPath: json.jwtCertPath,
     jwtKeyPath: json.jwtKeyPath,
@@ -352,6 +355,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.apiBackend !== undefined) {
     result.apiBackend = config.apiBackend;
+  }
+  if (config.mrtBackend !== undefined) {
+    result.mrtBackend = config.mrtBackend;
   }
   if (config.jwtCertPath !== undefined) {
     result.jwtCertPath = config.jwtCertPath;
@@ -570,6 +576,8 @@ export function mergeConfigsWithProtection(
       selfSigned: overrides.selfSigned ?? base.selfSigned,
       // API backend
       apiBackend: overrides.apiBackend ?? base.apiBackend,
+      // MRT backend
+      mrtBackend: overrides.mrtBackend ?? base.mrtBackend,
       // JWT Bearer auth options
       jwtCertPath: overrides.jwtCertPath ?? base.jwtCertPath,
       jwtKeyPath: overrides.jwtKeyPath ?? base.jwtKeyPath,

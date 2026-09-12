@@ -29,6 +29,8 @@ function printMemberDetails(member: MrtMember, project: string): void {
  * Get details of a project member.
  */
 export default class MrtMemberGet extends MrtCommand<typeof MrtMemberGet> {
+  static aliases = ['mrt:storefront:member:get'];
+
   static args = {
     email: Args.string({
       description: 'Email address of the member',
@@ -59,7 +61,9 @@ export default class MrtMemberGet extends MrtCommand<typeof MrtMemberGet> {
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     this.log(t('commands.mrt.member.get.fetching', 'Fetching member {{email}}...', {email}));

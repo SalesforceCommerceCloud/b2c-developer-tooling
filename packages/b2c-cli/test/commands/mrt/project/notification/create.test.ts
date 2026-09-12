@@ -26,7 +26,7 @@ describe('mrt project notification create', () => {
 
   it('throws error when project is missing', async () => {
     const command = await createCommand({
-      target: ['staging'],
+      environment: ['staging'],
       recipient: ['team@example.com'],
     });
 
@@ -48,7 +48,7 @@ describe('mrt project notification create', () => {
     const command = await createCommand({
       json: true,
       project: 'my-project',
-      target: ['staging', 'production'],
+      environment: ['staging', 'production'],
       recipient: ['team@example.com', 'ops@example.com'],
       'on-start': true,
       'on-success': true,
@@ -94,7 +94,7 @@ describe('mrt project notification create', () => {
     const command = await createCommand({
       json: true,
       project: 'my-project',
-      target: ['staging'],
+      environment: ['staging'],
       recipient: ['team@example.com'],
     });
 
@@ -134,7 +134,7 @@ describe('mrt project notification create', () => {
   it('handles API errors', async () => {
     const command = await createCommand({
       project: 'my-project',
-      target: ['staging'],
+      environment: ['staging'],
       recipient: ['team@example.com'],
     });
 

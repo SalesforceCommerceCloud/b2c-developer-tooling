@@ -49,6 +49,10 @@ const groups = [
     annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true},
   },
   {
+    names: ['scapi_snippet_save'],
+    annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false},
+  },
+  {
     names: ['cartridge_deploy', 'scapi_execute'],
     annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true},
   },

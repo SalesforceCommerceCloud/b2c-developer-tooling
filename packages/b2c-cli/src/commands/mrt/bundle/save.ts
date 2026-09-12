@@ -41,12 +41,15 @@ export default class MrtBundleSave extends BaseCommand<typeof MrtBundleSave> {
     ...BaseCommand.baseFlags,
     project: Flags.string({
       char: 'p',
-      description: 'MRT project slug (or set MRT_PROJECT env var)',
+      aliases: ['storefront'],
+      charAliases: ['s'],
+      description: 'MRT storefront/project slug (aliases: --storefront, -s; or set MRT_PROJECT env var)',
       env: 'MRT_PROJECT',
-      default: async () => process.env.SFCC_MRT_PROJECT || undefined,
+      default: async () =>
+        process.env.SFCC_MRT_PROJECT || process.env.MRT_STOREFRONT || process.env.SFCC_MRT_STOREFRONT || undefined,
     }),
     'save-dir': Flags.string({
-      char: 's',
+      char: 'd',
       description: 'Directory to save the bundle to',
       required: true,
     }),
@@ -76,7 +79,7 @@ export default class MrtBundleSave extends BaseCommand<typeof MrtBundleSave> {
     const project = this.flags.project;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag or set MRT_PROJECT.');
+      this.error('MRT project is required. Provide --project/--storefront (-p/-s) or set MRT_PROJECT.');
     }
 
     const saveDir = this.flags['save-dir'];

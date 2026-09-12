@@ -527,6 +527,8 @@ export interface LoggingMiddlewareConfig {
    * @example ['data', 'password', 'secret']
    */
   maskBodyKeys?: string[];
+  /** Log headers and bodies at trace level. Disable for authentication endpoints. Defaults to true. */
+  logDetails?: boolean;
 }
 
 /**
@@ -568,8 +570,11 @@ function maskBody(body: unknown, keysToMask?: string[]): unknown {
  */
 export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfig): Middleware {
   // Support both string (prefix) and config object for backwards compatibility
-  const {prefix, maskBodyKeys} =
-    typeof config === 'string' ? {prefix: config, maskBodyKeys: undefined} : (config ?? {});
+  const {
+    prefix,
+    maskBodyKeys,
+    logDetails = true,
+  } = typeof config === 'string' ? {prefix: config, maskBodyKeys: undefined} : (config ?? {});
 
   const reqTag = prefix ? `[${prefix} REQ]` : '';
   const respTag = prefix ? `[${prefix} RESP]` : '';
@@ -580,6 +585,9 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
       const url = request.url;
 
       logger.debug({method: request.method, url}, `${reqTag} ${request.method} ${url}`);
+
+      (request as Request & {_startTime?: number})._startTime = Date.now();
+      if (!logDetails) return request;
 
       // Read body from the request (already serialized by openapi-fetch).
       // Skip binary/multipart payloads: reading them would buffer the entire
@@ -609,8 +617,6 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
         `${reqTag} ${request.method} ${url} body`,
       );
 
-      (request as Request & {_startTime?: number})._startTime = Date.now();
-
       return request;
     },
 
@@ -621,9 +627,19 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
       const url = request.url;
 
       logger.debug(
-        {method: request.method, url, status: response.status, duration},
+        {
+          method: request.method,
+          url,
+          status: response.status,
+          duration,
+          ...(response.headers.has('sfdc_correlation_id')
+            ? {correlationId: response.headers.get('sfdc_correlation_id')}
+            : {}),
+        },
         `${respTag} ${request.method} ${url} ${response.status} ${duration}ms`,
       );
+
+      if (!logDetails) return response;
 
       const clonedResponse = response.clone();
       let responseBody: unknown;
@@ -763,11 +779,7 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
           newHeaders.set(key, value);
         }
         logger.trace({extraHeaders: config.headers}, '[ExtraParams] Adding extra headers to request');
-        modifiedRequest = new Request(modifiedRequest.url, {
-          method: modifiedRequest.method,
-          headers: newHeaders,
-          ...(canHaveBody && modifiedRequest.body ? {body: modifiedRequest.body, duplex: 'half'} : {}),
-        } as RequestInit);
+        modifiedRequest = new Request(modifiedRequest, {headers: newHeaders});
       }
 
       // Add extra query parameters
@@ -782,11 +794,8 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
           {extraQuery: config.query, originalUrl: modifiedRequest.url, newUrl: url.toString()},
           '[ExtraParams] Adding extra query params to URL',
         );
-        modifiedRequest = new Request(url.toString(), {
-          method: modifiedRequest.method,
-          headers: modifiedRequest.headers,
-          ...(canHaveBody && modifiedRequest.body ? {body: modifiedRequest.body, duplex: 'half'} : {}),
-        } as RequestInit);
+        // Preserve redirect mode and other fetch options when replacing the URL.
+        modifiedRequest = new Request(url, modifiedRequest);
       }
 
       // Merge extra body fields for JSON requests
@@ -802,9 +811,7 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
               {originalBody: parsedBody, extraBody: config.body, mergedBody},
               '[ExtraParams] Merging extra body fields into request',
             );
-            modifiedRequest = new Request(modifiedRequest.url, {
-              method: modifiedRequest.method,
-              headers: modifiedRequest.headers,
+            modifiedRequest = new Request(modifiedRequest, {
               body: JSON.stringify(mergedBody),
             });
           } catch {
@@ -815,8 +822,7 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
           logger.trace({body: config.body}, '[ExtraParams] Creating new body with extra fields');
           const headers = new Headers(modifiedRequest.headers);
           headers.set('content-type', 'application/json');
-          modifiedRequest = new Request(modifiedRequest.url, {
-            method: modifiedRequest.method,
+          modifiedRequest = new Request(modifiedRequest, {
             headers,
             body: JSON.stringify(config.body),
           });
