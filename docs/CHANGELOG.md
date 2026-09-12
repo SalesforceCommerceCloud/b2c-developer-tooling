@@ -1,5 +1,49 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.0
+
+### Minor Changes
+
+- [#413](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/413) [`3773648`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/37736482722f91bca319a1b20887c01571e97663) - Migrate `job`, `code`, `bm users`, `bm roles`, `sites`, and catalog discovery to SCAPI-first operation with a temporary OCAPI compatibility fallback. `auto` tries SCAPI when its coordinates and stateless authentication are available, pins the selected backend for multi-request operations, and falls back only on safe capability/auth/request rejections. Site cartridge-path writes, portable BM user search, disabled-user updates, system-job triggers, SDK/CLI/MCP code-version discovery, and VS Code jobs/code/catalog surfaces now participate. Inventory-list enumeration, BM `whoami`, access-key administration, and raw OCAPI user-search JSON remain temporary OCAPI compatibility operations because the current live SCAPI schemas have no equivalent. Explicit SCAPI mode rejects these operations before contacting OCAPI and identifies B2C Commerce release 26.8 as the current capability baseline. (Thanks [@clavery](https://github.com/clavery)!)
+
+  `setup instance create` accepts optional SCAPI coordinates for SCAPI-first active-code-version detection. They are not required in `auto`; missing coordinates select OCAPI, and failed interactive detection reports the reason before allowing manual entry.
+
+  This is a major release because JSON/results can change shape during the migration. `job run`, `job wait`, and `job search` return canonical camelCase fields with either backend, including OCAPI fallback; consumers must update fields such as `execution_status` to `executionStatus`. Other commands can retain backend-specific shapes, for which explicitly selecting OCAPI preserves the legacy shape. SDK high-level code helpers accept an explicit scripts backend; dual-backend factories and `JobsCompatibilityBackend` expose reusable fallback without making implicit backend selection an SDK-wide policy.
+
+  SCAPI currently requires client-credentials or JWT Bearer authentication. Browser-based user auth continues through OCAPI/WebDAV and is selected by `auto`; explicit SCAPI with user auth errors clearly until the platform adds support.
+
+  The VS Code extension uses configured tenant IDs consistently in API Browser, keeps partial export discovery warnings in the output log instead of showing notifications, and supports JWT-authenticated OCAPI fallback equivalently to client credentials.
+
+### Patch Changes
+
+- [#672](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/672) [`304f0eb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/304f0eba3188b6dc62974ba2e63dea4fa9aaf84f) - Add b2c-ops runbooks for job health, checkout and failed-order investigation, and incident triage, available as a skills plugin, through CLI installation, and included in the MCP. Add an Operations guide with example requests, recovery checks, and handoffs to administrators, developers, providers, or Salesforce Support. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#672](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/672) [`304f0eb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/304f0eba3188b6dc62974ba2e63dea4fa9aaf84f) - Add searchable release notes with product filters, shared updates, and optional release highlights. Include published releases from July 2026 onward, with links to older releases on GitHub. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#643](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/643) [`f208d0c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f208d0c0be40f9b597f8bcba8636feb3be011ff2) - Made VS Code instance selection workspace-specific by default, with explicit actions to set or follow the shared default without unexpectedly changing other tools and workspaces. Opening an instance's configuration now reveals its exact named entry. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#670](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/670) [`407075c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/407075c8d6b69647afbc31ac15004941be84957a) - Add embedded Commerce skills through MCP resources and searchable `skills_read`, with focused configuration, authentication, and workflow guidance and consistent CLI/MCP recommendations. Enable all toolsets by default, streamline debugging and logging, identify tool effects for client approval controls, and support MCP 2026-07-28 alongside earlier clients. Include concise installation, capabilities, configuration, and security documentation. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Update explicit tool selections to use `debug_control`, `debug_inspect`, `logs_watch`, and `mrt_logs_watch`; remove `pwakit_get_guidelines` and `scapi_custom_api_generate_scaffold`. Remove `--allow-non-ga-tools` from launch commands. Use `--toolsets` or `--tools` to customize the catalog and `b2c scaffold generate custom-api` for local scaffolding.
+
+- [#670](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/670) [`407075c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/407075c8d6b69647afbc31ac15004941be84957a) - Add SCAPI code mode with offline discovery of 594 Admin and Shopper operations and standard or custom Admin API execution using automatic authentication and SDK Safety Mode. Compose requests and return focused results through `scapi_search` and `scapi_execute`, with bounded execution and actionable access errors. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Discover tenant custom API contracts live and execute their declared Admin operations. Live schema reads include custom-property definitions by default; known custom fields work directly in standard Admin requests. Bundled schemas remain tenant-independent.
+
+  Reuse built-in workflows for product creation with optional category assignment, campaign/promotion inspection, and failed-job triage, or save reviewed workflows for later use. Export Account Manager and SLAS tokens when an external client needs them; normal SCAPI requests authenticate automatically. Code mode restricts local filesystem/process APIs to keep programs focused on API workflows; use terminal and file tools for local development.
+
+- [#413](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/413) [`3773648`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/37736482722f91bca319a1b20887c01571e97663) - Detect deprecated OCAPI instances and guide users to SCAPI. (Thanks [@clavery](https://github.com/clavery)!)
+
+  When an instance has OCAPI disabled, `code`, `job`, `bm`, `sites`, and `cap` commands now fail with an actionable message — naming the exact SCAPI scope the operation needs (e.g. `sfcc.scripts` / `sfcc.scripts.rw`) — instead of an opaque "Failed to ..." error. Documentation and agent skills for `code`, `job`, and `bm` are now SCAPI-first, presenting OCAPI as the deprecated fallback.
+
+- [#642](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/642) [`a0214e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a0214e43c1d3a6f148634af1741f7cee0785551b) - Allow SLAS client `get`, `update`, `delete`, and `open` commands to use the configured SLAS client ID when their positional client ID is omitted, while keeping the positional value as an explicit override. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#675](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/675) [`b2b026c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b2b026c109c6d3aad219ddd9603bfe59d426e8ec) - Apply shared HTTP middleware to SLAS shopper token flows so custom headers such as `SFCC_EXTRA_HEADERS` reach every request. Preserve redirect and cancellation settings when adding extra request parameters, and document the token response shape. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#677](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/677) [`de36e4a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/de36e4a5f99a38ad102b8314d14ec515602ce16d) - Refocus Storefront Next guidance on managing existing storefronts with environment-variable updates, logs, deployments, and assistant support. Link to Salesforce's Business Manager setup guides and align the included skills and documentation search with that workflow. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#672](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/672) [`304f0eb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/304f0eba3188b6dc62974ba2e63dea4fa9aaf84f) - Redesign the documentation with clearer navigation, quick installation for AI tools, and terminal examples throughout the CLI reference. Highlight documentation search for developers, administrators, and merchants, plus live debugging with an assistant. Explain Safety Mode configuration and confirmations across the CLI, MCP, and IDE extension. Add an llms.txt setup guide and discoverable Markdown pages for agents. Update the bundled documentation search index with the revised guides and setup instructions. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.23
 
 ### Patch Changes
