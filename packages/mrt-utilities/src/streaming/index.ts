@@ -10,3 +10,9 @@ export {
   createExpressResponse,
   createStreamingLambdaAdapter,
 } from './create-lambda-adapter.js';
+
+export {
+  createStreamingLambdaAdapterV2,
+  type StreamingCompressionConfig,
+  type StreamingEncoding,
+} from './create-lambda-adapter-v2.js';
