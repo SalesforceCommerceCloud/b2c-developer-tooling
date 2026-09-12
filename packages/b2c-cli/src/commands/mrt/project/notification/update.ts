@@ -8,16 +8,30 @@ import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {updateNotification, type MrtNotification} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
+// A notification's environments are a list of environment slugs — the same domain
+// as the base --environment flag, but multi-valued. This command never reads the
+// inherited single-value --environment, and its own multi-valued --environment flag
+// would collide with it, so drop the inherited one. The old --target / -t forms are
+// retained as aliases for back-compat.
+const {environment: _omitEnvironment, ...baseFlagsWithoutEnvironment} = MrtCommand.baseFlags;
+
 /**
  * Update a notification in an MRT project.
  */
 export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotificationUpdate> {
+  static aliases = ['mrt:storefront:notification:update'];
+
   static args = {
     id: Args.string({
       description: 'Notification ID',
       required: true,
     }),
   };
+
+  // Cast: the runtime object legitimately omits `environment`; MrtCommand's narrow
+  // baseFlags type still lists it (a required prop the static-side check enforces),
+  // but this command never reads `this.flags.environment`.
+  static baseFlags = baseFlagsWithoutEnvironment as typeof MrtCommand.baseFlags;
 
   static description = withDocs(
     t('commands.mrt.notification.update.description', 'Update a Managed Runtime notification'),
@@ -32,10 +46,11 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
   ];
 
   static flags = {
-    ...MrtCommand.baseFlags,
-    target: Flags.string({
-      char: 't',
-      description: 'Target slug to associate with this notification (can be specified multiple times)',
+    environment: Flags.string({
+      char: 'e',
+      aliases: ['target'],
+      charAliases: ['t'],
+      description: 'Environment slug for this notification (aliases: --target, -t; can be specified multiple times)',
       multiple: true,
     }),
     recipient: Flags.string({
@@ -64,11 +79,13 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const {
-      target: targets,
+      environment: environments,
       recipient: recipients,
       'on-start': onStart,
       'on-success': onSuccess,
@@ -82,7 +99,7 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
         {
           projectSlug: project,
           notificationId: id,
-          targets,
+          targets: environments,
           recipients,
           deploymentStart: onStart,
           deploymentSuccess: onSuccess,

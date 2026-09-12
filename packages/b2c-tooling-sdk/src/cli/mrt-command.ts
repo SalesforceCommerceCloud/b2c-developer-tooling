@@ -44,8 +44,8 @@ const MRT_STATUS_URL = 'https://status.salesforce.com/instances/MANAGEDRUNTIMEAD
  * 3. ~/.mobify config file (api_key field), or ~/.mobify--[hostname] if --cloud-origin is set
  *
  * Project/environment resolution order:
- * 1. --project (alias --storefront / -s) / --environment flags
- * 2. MRT_PROJECT / MRT_ENVIRONMENT environment variables (SFCC_-prefixed and MRT_TARGET also supported)
+ * 1. --project (alias: --storefront) / --environment flags
+ * 2. MRT_PROJECT / MRT_ENVIRONMENT environment variables (SFCC_-prefixed, MRT_STOREFRONT / SFCC_MRT_STOREFRONT, and MRT_TARGET also supported)
  * 3. dw.json (mrtProject / mrtEnvironment fields)
  *
  * Cloud origin resolution:
@@ -71,9 +71,10 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       aliases: ['storefront'],
       charAliases: ['s'],
       description:
-        'MRT project slug — the SCAPI MRT storefront ID (or set mrtProject in dw.json); alias: --storefront/-s',
+        'MRT project slug — the SCAPI MRT storefront ID (or set mrtProject in dw.json); aliases: -s, --storefront',
       env: 'MRT_PROJECT',
-      default: async () => process.env.SFCC_MRT_PROJECT || undefined,
+      default: async () =>
+        process.env.SFCC_MRT_PROJECT || process.env.MRT_STOREFRONT || process.env.SFCC_MRT_STOREFRONT || undefined,
     }),
     environment: Flags.string({
       char: 'e',
@@ -83,7 +84,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       default: async () => process.env.SFCC_MRT_ENVIRONMENT || process.env.MRT_TARGET || undefined,
     }),
     'cloud-origin': Flags.string({
-      char: 'o',
+      char: 'u',
       description: `MRT cloud origin URL (or set mrtOrigin in dw.json; default: ${DEFAULT_MRT_ORIGIN})`,
       env: 'MRT_CLOUD_ORIGIN',
       default: async () => process.env.SFCC_MRT_CLOUD_ORIGIN || undefined,
@@ -174,6 +175,50 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
         ),
       );
     }
+  }
+
+  /**
+   * Resolve the target MRT project slug for a command that accepts it either as
+   * a positional argument or via the `--project` / `--storefront` flag.
+   *
+   * An explicit positional wins; otherwise the resolved `--project` /
+   * `--storefront` flag value is used (which also covers `MRT_PROJECT`,
+   * `SFCC_MRT_PROJECT`, `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT`, and the
+   * `mrtProject` field in dw.json). Errors when neither yields a value.
+   */
+  protected resolveProjectSlug(positional?: string): string {
+    const slug = positional ?? this.resolvedConfig.values.mrtProject;
+    if (!slug) {
+      this.error(
+        t(
+          'error.mrtProjectRequired',
+          'MRT project is required. Provide it as an argument or via --project/--storefront (-p/-s) (or set MRT_PROJECT, or mrtProject in dw.json).',
+        ),
+      );
+    }
+    return slug;
+  }
+
+  /**
+   * Resolve the target MRT environment slug for a command that accepts it either
+   * as a positional argument or via the `--environment` / `--target` (`-e`) flag.
+   *
+   * An explicit positional wins; otherwise the resolved `--environment` /
+   * `--target` flag value is used (which also covers `MRT_ENVIRONMENT`,
+   * `SFCC_MRT_ENVIRONMENT`, `MRT_TARGET`, and the `mrtEnvironment` field in
+   * dw.json). Errors when neither yields a value.
+   */
+  protected resolveEnvironmentSlug(positional?: string): string {
+    const slug = positional ?? this.resolvedConfig.values.mrtEnvironment;
+    if (!slug) {
+      this.error(
+        t(
+          'error.mrtEnvironmentRequired',
+          'MRT environment is required. Provide it as an argument or via --environment/-e (or set MRT_ENVIRONMENT, or mrtEnvironment in dw.json).',
+        ),
+      );
+    }
+    return slug;
   }
 
   /**
@@ -354,7 +399,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     const rawArgs = this._rawArgv;
     const legacyFlags: {name: string; tokens: string[]}[] = [
       {name: '--api-key', tokens: ['--api-key']},
-      {name: '--cloud-origin', tokens: ['--cloud-origin', '-o']},
+      {name: '--cloud-origin', tokens: ['--cloud-origin', '-u']},
       {name: '--credentials-file', tokens: ['--credentials-file', '-c']},
     ];
     return legacyFlags

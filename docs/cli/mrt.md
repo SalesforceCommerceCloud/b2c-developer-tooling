@@ -23,16 +23,18 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt save-credentials`     |                                                                  | Save MRT credentials to ~/.mobify      |
 | `mrt user`                 | `profile`, `api-key`, `email-prefs`                              | Manage user settings                   |
 
+> **`storefront` alias:** `mrt storefront` is an alias for `mrt project` (including the `member` and `notification` subtopics). For example, `b2c mrt storefront get my-storefront` is identical to `b2c mrt project get my-storefront`. The alias matches the terminology used by the SCAPI MRT API; `mrt project` continues to work unchanged.
+
 ## Global MRT Flags
 
 These flags are available on all MRT commands:
 
-| Flag                  | Environment Variable | Description                                                                                                                   |
-| --------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `--api-key`           | `MRT_API_KEY`        | MRT API key (legacy MRT Cloud API)                                                                                            |
-| `--project`, `-p`     | `MRT_PROJECT`        | MRT project slug. Alias: `--storefront` / `-s` (the SCAPI storefront ID — the same value).                                    |
-| `--environment`, `-e` | `MRT_ENVIRONMENT`    | Target environment (e.g., staging, production). `MRT_TARGET` also supported.                                                  |
-| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `auto` (default), `legacy`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends). |
+| Flag                  | Environment Variable | Description                                                                                                                              |
+| --------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `--api-key`           | `MRT_API_KEY`        | MRT API key (legacy MRT Cloud API)                                                                                                       |
+| `--project`, `-p`     | `MRT_PROJECT`        | MRT project slug — the SCAPI storefront ID (the same value). Aliases: `--storefront`, `-s` (interchangeable on every `mrt` command). `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` also supported. On `mrt project create`, this flag sets the new project's slug. |
+| `--environment`, `-e` | `MRT_ENVIRONMENT`    | Target environment (e.g., staging, production). `MRT_TARGET` also supported.                                                             |
+| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `auto` (default), `legacy`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends).            |
 
 The SCAPI backend also honors the standard OAuth flags (`--client-id`, `--client-secret`, `--short-code`, `--tenant-id`, and the JWT flags). See [MRT Backends](#mrt-backends).
 
@@ -40,8 +42,8 @@ The SCAPI backend also honors the standard OAuth flags (`--client-id`, `--client
 
 MRT commands resolve configuration in the following order of precedence:
 
-1. Command-line flags
-2. Environment variables (including `MRT_BACKEND` / `SFCC_MRT_BACKEND`)
+1. Command-line flags (`--project` / `--storefront`)
+2. Environment variables (`MRT_PROJECT`, then `SFCC_MRT_PROJECT`, then `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` as fallbacks; also `MRT_BACKEND` / `SFCC_MRT_BACKEND`)
 3. `dw.json` file (`mrtProject`, `mrtEnvironment`, `mrtBackend` fields)
 4. `~/.mobify` config file (for `api_key`)
 
@@ -114,7 +116,7 @@ The human-readable table is normalized across both backends, but `--json` is not
 
 ### Legacy-only flags are ignored on SCAPI
 
-`--api-key`, `--cloud-origin` / `-o`, and `--credentials-file` / `-c` configure only the legacy MRT Cloud API. When the SCAPI backend serves a request — explicit `--mrt-backend scapi`, or `auto` resolving to SCAPI — passing any of these flags prints a warning that they were ignored and suggests `--mrt-backend legacy` if you meant to use them.
+`--api-key`, `--cloud-origin` / `-u`, and `--credentials-file` / `-c` configure only the legacy MRT Cloud API. When the SCAPI backend serves a request — explicit `--mrt-backend scapi`, or `auto` resolving to SCAPI — passing any of these flags prints a warning that they were ignored and suggests `--mrt-backend legacy` if you meant to use them.
 
 ---
 
@@ -177,40 +179,42 @@ b2c mrt project list --json
 
 ### b2c mrt project create
 
-Create a new MRT project.
+Create a new MRT project. The name is a positional argument; the organization is required via `--organization` / `-o`. To choose the new project's slug, pass `--project` / `--storefront` (`-p` / `-s`) — when omitted, MRT auto-generates the slug from the name.
 
 ```bash
 b2c mrt project create "My Storefront" --organization my-org
-b2c mrt project create "My Storefront" -o my-org --slug my-storefront
+b2c mrt project create "My Storefront" -o my-org --storefront my-storefront
+b2c mrt project create "My Storefront" -o my-org -s my-storefront
 b2c mrt project create "My Storefront" -o my-org --region us-east-1
 ```
 
 ### b2c mrt project get
 
-Get details of an MRT project.
+Get details of an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`; `MRT_PROJECT` and `dw.json` also work).
 
 ```bash
 b2c mrt project get my-storefront
-b2c mrt project get my-storefront --json
+b2c mrt project get --project my-storefront
+b2c mrt project get --storefront my-storefront --json
 ```
 
 ### b2c mrt project update
 
-Update an MRT project. The project slug is provided as a positional argument; at least one of `--name`, `--url`, or `--region` must be supplied.
+Update an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`); at least one of `--name`, `--url`, or `--region` must be supplied.
 
 ```bash
 b2c mrt project update my-storefront --name "Updated Name"
-b2c mrt project update my-storefront --region us-east-1
+b2c mrt project update --project my-storefront --region us-east-1
 b2c mrt project update my-storefront --url https://www.example.com
 ```
 
 ### b2c mrt project delete
 
-Delete an MRT project. The project slug is provided as a positional argument.
+Delete an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`).
 
 ```bash
 b2c mrt project delete my-storefront
-b2c mrt project delete my-storefront --force
+b2c mrt project delete --project my-storefront --force
 ```
 
 ---
@@ -285,7 +289,7 @@ b2c mrt project notification list --project my-storefront
 
 ### b2c mrt project notification create
 
-Create a deployment notification.
+Create a deployment notification. The target environment(s) are given with `--target` (repeatable); `--environment` / `-e` are accepted as aliases (a notification's target _is_ an environment). These commands do not take the single-value `--environment` flag that other MRT commands do.
 
 ```bash
 # Notify on deployment failures
@@ -341,11 +345,14 @@ b2c mrt env list -p my-storefront --json
 
 ### b2c mrt env create
 
-Create a new environment.
+Create a new environment. Provide the new environment's slug as a positional argument **or** via `--environment` / `-e` (`MRT_ENVIRONMENT` and `dw.json` also work). An explicit positional wins if both are given.
 
 ```bash
 # Create a staging environment
 b2c mrt env create staging --project my-storefront --name "Staging Environment"
+
+# Slug via the --environment / -e flag instead of the positional
+b2c mrt env create -p my-storefront -e staging --name "Staging Environment"
 
 # Create a production environment in a specific region
 b2c mrt env create production -p my-storefront --name "Production" \
@@ -408,11 +415,14 @@ b2c mrt env update -p my-storefront -e production --allow-cookies
 
 ### b2c mrt env delete
 
-Delete an environment.
+Delete an environment. Provide the environment slug as a positional argument **or** via `--environment` / `-e` (`MRT_ENVIRONMENT` and `dw.json` also work). An explicit positional wins if both are given.
 
 ```bash
 b2c mrt env delete staging --project my-storefront
 b2c mrt env delete old-env -p my-storefront --force
+
+# Slug via the --environment / -e flag instead of the positional
+b2c mrt env delete -p my-storefront -e old-env --force
 ```
 
 ### b2c mrt env clone

@@ -6,7 +6,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import {BaseCommand, ERROR_CODE, classifyError} from '@salesforce/b2c-tooling-sdk/cli';
+import {BaseCommand, ERROR_CODE, augmentDuplicateFlagError, classifyError} from '@salesforce/b2c-tooling-sdk/cli';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -520,6 +520,39 @@ describe('cli/base-command', () => {
       it('returns "runtime" for non-error values', () => {
         expect(classifyError(undefined)).to.equal('runtime');
         expect(classifyError('a string')).to.equal('runtime');
+      });
+    });
+
+    describe('augmentDuplicateFlagError()', () => {
+      const projectFlag = {char: 'p', aliases: ['storefront'], charAliases: ['s']};
+
+      it('lists every long and short form for an aliased flag', () => {
+        const out = augmentDuplicateFlagError('Flag --project can only be specified once', {project: projectFlag});
+        expect(out).to.equal(
+          'Flag --project can only be specified once (--project, --storefront, -p, -s all refer to the same flag)',
+        );
+      });
+
+      it('handles a flag with only charAliases (no long aliases)', () => {
+        const out = augmentDuplicateFlagError('Flag --env can only be specified once', {
+          env: {char: 'e', charAliases: ['t']},
+        });
+        expect(out).to.equal('Flag --env can only be specified once (--env, -e, -t all refer to the same flag)');
+      });
+
+      it('leaves the message unchanged when the flag has no aliases', () => {
+        const msg = 'Flag --name can only be specified once';
+        expect(augmentDuplicateFlagError(msg, {name: {char: 'n'}})).to.equal(msg);
+      });
+
+      it('leaves the message unchanged for an unrelated error', () => {
+        const msg = 'Some other error';
+        expect(augmentDuplicateFlagError(msg, {project: projectFlag})).to.equal(msg);
+      });
+
+      it('leaves the message unchanged when the flag is not found', () => {
+        const msg = 'Flag --unknown can only be specified once';
+        expect(augmentDuplicateFlagError(msg, {project: projectFlag})).to.equal(msg);
       });
     });
 

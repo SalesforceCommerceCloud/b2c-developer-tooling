@@ -175,6 +175,15 @@
       "mrt:project:notification": {
         "description": "Configure email notifications for deployment events (start, success, failure)\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-notification-commands"
       },
+      "mrt:storefront": {
+        "description": "Alias for 'mrt project' commands.\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-commands"
+      },
+      "mrt:storefront:member": {
+        "description": "Alias for 'mrt project member' commands.\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-member-commands"
+      },
+      "mrt:storefront:notification": {
+        "description": "Alias for 'mrt project notification' commands.\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-notification-commands"
+      },
       "mrt:env:access-control": {
         "description": "Configure access control headers for environment security\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#access-control-commands"
       },

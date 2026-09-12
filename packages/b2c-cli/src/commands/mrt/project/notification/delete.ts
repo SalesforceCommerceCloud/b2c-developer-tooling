@@ -13,6 +13,8 @@ import {confirm} from '../../../../prompts.js';
  * Delete a notification from an MRT project.
  */
 export default class MrtNotificationDelete extends MrtCommand<typeof MrtNotificationDelete> {
+  static aliases = ['mrt:storefront:notification:delete'];
+
   static args = {
     id: Args.string({
       description: 'Notification ID to delete',
@@ -51,7 +53,9 @@ export default class MrtNotificationDelete extends MrtCommand<typeof MrtNotifica
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const {force} = this.flags;

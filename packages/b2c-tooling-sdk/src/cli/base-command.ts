@@ -89,6 +89,33 @@ export function classifyError(err: unknown): ErrorCategory {
 }
 
 /**
+ * oclif throws `Flag --<name> can only be specified once` when a non-multiple
+ * flag is passed more than once — including when the duplicate arrived through
+ * an alias (e.g. `-p my-store -s other`, where `-s` / `--storefront` are aliases
+ * of `--project`). The bare message names only the canonical flag, so a user who
+ * typed an alias can't tell what collided. When the offending flag has aliases,
+ * rewrite the message to list every long and short form it accepts.
+ */
+export function augmentDuplicateFlagError(message: string, flags: Record<string, unknown>): string {
+  const match = /^Flag --(.+) can only be specified once$/.exec(message);
+  if (!match) return message;
+
+  const flag = flags[match[1]] as {aliases?: string[]; char?: string; charAliases?: string[]} | undefined;
+  if (!flag) return message;
+
+  // Only clarify when the flag actually has aliases; a plain --name/-n pair
+  // needs no explanation.
+  if (!flag.aliases?.length && !flag.charAliases?.length) return message;
+
+  const forms = [
+    ...[match[1], ...(flag.aliases ?? [])].map((name) => `--${name}`),
+    ...[flag.char, ...(flag.charAliases ?? [])].filter((c): c is string => Boolean(c)).map((c) => `-${c}`),
+  ];
+
+  return `${message} (${forms.join(', ')} all refer to the same flag)`;
+}
+
+/**
  * Type for oclif pjson custom telemetry config.
  */
 interface TelemetryConfig {
@@ -643,6 +670,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Sends exception to telemetry if initialized.
    */
   protected async catch(err: Error & {exitCode?: number}): Promise<never> {
+    // Surface flag aliases in oclif's "can only be specified once" error so a
+    // user who passed, e.g., `-p x -s y` learns that `-s`/`--storefront` are the
+    // same flag as `-p`/`--project`.
+    err.message = augmentDuplicateFlagError(err.message, {...this.ctor.baseFlags, ...this.ctor.flags});
+
     const exitCode = err.exitCode ?? 1;
     const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
     const errorCategory = classifyError(err);

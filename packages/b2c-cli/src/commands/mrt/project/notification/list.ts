@@ -23,8 +23,8 @@ const COLUMNS: Record<string, ColumnDef<MrtNotification>> = {
     header: 'ID',
     get: (n) => n.id ?? '-',
   },
-  targets: {
-    header: 'Targets',
+  environments: {
+    header: 'Environments',
     get: (n) => n.targets?.join(', ') ?? '-',
   },
   recipients: {
@@ -43,14 +43,27 @@ const COLUMNS: Record<string, ColumnDef<MrtNotification>> = {
   },
 };
 
-const DEFAULT_COLUMNS = ['id', 'targets', 'recipients', 'events'];
+const DEFAULT_COLUMNS = ['id', 'environments', 'recipients', 'events'];
 
 const tableRenderer = new TableRenderer(COLUMNS);
+
+// This command filters by a single environment slug, not the base single-value
+// --environment config value. Drop the inherited flag so we can define our own
+// --environment filter (with --target / -t retained as aliases for back-compat)
+// without it colliding with the base flag or leaking MRT_ENVIRONMENT into the filter.
+const {environment: _omitEnvironment, ...baseFlagsWithoutEnvironment} = MrtCommand.baseFlags;
 
 /**
  * List notifications for an MRT project.
  */
 export default class MrtNotificationList extends MrtCommand<typeof MrtNotificationList> {
+  static aliases = ['mrt:storefront:notification:list'];
+
+  // Cast: the runtime object legitimately omits `environment`; MrtCommand's narrow
+  // baseFlags type still lists it (a required prop the static-side check enforces),
+  // but this command defines its own `--environment` filter instead.
+  static baseFlags = baseFlagsWithoutEnvironment as typeof MrtCommand.baseFlags;
+
   static description = withDocs(
     t('commands.mrt.notification.list.description', 'List notifications for a Managed Runtime project'),
     '/cli/mrt.html#b2c-mrt-project-notification-list',
@@ -60,20 +73,22 @@ export default class MrtNotificationList extends MrtCommand<typeof MrtNotificati
 
   static examples = [
     '<%= config.bin %> <%= command.id %> --project my-storefront',
-    '<%= config.bin %> <%= command.id %> -p my-storefront --target staging',
+    '<%= config.bin %> <%= command.id %> -p my-storefront --environment staging',
     '<%= config.bin %> <%= command.id %> -p my-storefront --json',
   ];
 
   static flags = {
-    ...MrtCommand.baseFlags,
     limit: Flags.integer({
       description: 'Maximum number of results to return',
     }),
     offset: Flags.integer({
       description: 'Offset for pagination',
     }),
-    target: Flags.string({
-      description: 'Filter by target slug',
+    environment: Flags.string({
+      char: 'e',
+      aliases: ['target'],
+      charAliases: ['t'],
+      description: 'Filter by environment slug (aliases: --target, -t)',
     }),
     ...columnFlagsFor(COLUMNS),
   };
@@ -84,10 +99,12 @@ export default class MrtNotificationList extends MrtCommand<typeof MrtNotificati
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
-    const {limit, offset, target} = this.flags;
+    const {limit, offset, environment} = this.flags;
 
     this.log(t('commands.mrt.notification.list.fetching', 'Fetching notifications for {{project}}...', {project}));
 
@@ -96,7 +113,7 @@ export default class MrtNotificationList extends MrtCommand<typeof MrtNotificati
         projectSlug: project,
         limit,
         offset,
-        targetSlug: target,
+        targetSlug: environment,
         origin: this.resolvedConfig.values.mrtOrigin,
       },
       this.getMrtAuth(),

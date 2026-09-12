@@ -111,7 +111,9 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
     const {mrtProject: project, mrtEnvironment: fromSlug} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
     if (!fromSlug) {
       this.error(

@@ -26,8 +26,8 @@ Most MRT commands run against the legacy MRT Cloud API (API key). Two commands �
 Notes:
 
 - Under `--json`, these commands emit the **serving backend's native shape** (legacy `{count, next, previous, deployments}` vs SCAPI `{limit, offset, total, data}`). The human table is normalized; `--json` is not. Pin `legacy` or `scapi` when a script needs a stable shape.
-- Legacy-only flags (`--api-key`, `--cloud-origin` / `-o`, `--credentials-file` / `-c`) are ignored — with a warning — when SCAPI serves the request.
-- `--storefront` / `-s` is an alias of `--project` / `-p` (the SCAPI storefront ID is the project slug).
+- Legacy-only flags (`--api-key`, `--cloud-origin` / `-u`, `--credentials-file` / `-c`) are ignored — with a warning — when SCAPI serves the request.
+- `--storefront` (long) and `-s` (short) are aliases of `--project` / `-p` — the SCAPI storefront ID is the project slug, so all four are interchangeable on every `mrt` command. On `mrt project create` this flag sets the new project's slug (auto-generated from the name if omitted); `mrt bundle save` uses `-d` for `--save-dir`, keeping `-s` free for the storefront alias.
 
 ## Command Structure
 
