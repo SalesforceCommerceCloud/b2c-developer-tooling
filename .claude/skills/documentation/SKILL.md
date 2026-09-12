@@ -351,7 +351,7 @@ pnpm run docs:preview
 ## Hosted Builds
 
 `.github/workflows/docs-preview.yml` publishes unreleased docs from `main` at
-`/next/` on the preview host after every push. PR previews use `/pr-<number>/` and
+`/pr-next/` on the preview host after every push. PR previews use `/pr-<number>/` and
 are removed when the PR closes. Both build packages and the docs site; neither
 refreshes published release history from GitHub.
 
