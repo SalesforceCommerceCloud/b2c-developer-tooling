@@ -5,12 +5,16 @@ on:
     paths:
       - 'action.yml'
       - 'actions/**'
+      - '.github/scripts/validate-action-release.mjs'
       - '.github/workflows/test-actions.yml'
   push:
-    branches: [main]
+    branches: [actions/v1]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
     paths:
       - 'action.yml'
       - 'actions/**'
+      - '.github/scripts/validate-action-release.mjs'
       - '.github/workflows/test-actions.yml'
 
 env:
@@ -18,9 +22,18 @@ env:
   SFCC_LOG_LEVEL: trace
 
 jobs:
+  action-metadata:
+    name: 'Action release metadata'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate version defaults and internal references
+        run: node .github/scripts/validate-action-release.mjs
+
   # Smoke test: install CLI and verify
   setup-latest:
-    name: 'Setup (latest)'
+    name: 'Setup (CLI 1.x)'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -29,7 +42,7 @@ jobs:
         id: setup
         uses: ./actions/setup
         with:
-          version: latest
+          version: '1'
           client-id: test-client-id
           server: test.example.com
           code-version: test_version
@@ -59,6 +72,7 @@ jobs:
       - name: Run setup action with shell-significant credentials
         uses: ./actions/setup
         with:
+          version: '1'
           # All single-quoted YAML scalars → passed to the action verbatim.
           # short-code and tenant-id are included so the renamed-input mapping
           # (short-code → SFCC_SHORTCODE) is exercised, not just same-name inputs.
@@ -121,6 +135,7 @@ jobs:
   # Root action: setup + command
   root-action:
     name: 'Root action'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -140,6 +155,7 @@ jobs:
   # Root action: setup only (no command)
   root-setup-only:
     name: 'Root action (setup only)'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
