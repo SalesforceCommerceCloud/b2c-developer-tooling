@@ -94,7 +94,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       this.error(
         t(
           'commands.mrt.env.var.push.missingProject',
-          'MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.',
+          'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
         ),
       );
     }

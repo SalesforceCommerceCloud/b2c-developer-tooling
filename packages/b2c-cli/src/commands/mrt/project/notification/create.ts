@@ -8,10 +8,24 @@ import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {createNotification, type MrtNotification} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
+// A notification's environments are a list of environment slugs — the same domain
+// as the base --environment flag, but multi-valued. This command never reads the
+// inherited single-value --environment, and its own multi-valued --environment flag
+// would collide with it, so drop the inherited one. The old --target / -t forms are
+// retained as aliases for back-compat.
+const {environment: _omitEnvironment, ...baseFlagsWithoutEnvironment} = MrtCommand.baseFlags;
+
 /**
  * Create a notification for an MRT project.
  */
 export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotificationCreate> {
+  static aliases = ['mrt:storefront:notification:create'];
+
+  // Cast: the runtime object legitimately omits `environment`; MrtCommand's narrow
+  // baseFlags type still lists it (a required prop the static-side check enforces),
+  // but this command never reads `this.flags.environment`.
+  static baseFlags = baseFlagsWithoutEnvironment as typeof MrtCommand.baseFlags;
+
   static description = withDocs(
     t('commands.mrt.notification.create.description', 'Create a notification for a Managed Runtime project'),
     '/cli/mrt.html#b2c-mrt-project-notification-create',
@@ -20,15 +34,16 @@ export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotifica
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> --project my-storefront --target staging --recipient team@example.com --on-start --on-failed',
-    '<%= config.bin %> <%= command.id %> -p my-storefront --target staging --target production --recipient ops@example.com',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --environment staging --recipient team@example.com --on-start --on-failed',
+    '<%= config.bin %> <%= command.id %> -p my-storefront --environment staging --environment production --recipient ops@example.com',
   ];
 
   static flags = {
-    ...MrtCommand.baseFlags,
-    target: Flags.string({
-      char: 't',
-      description: 'Target slug to associate with this notification (can be specified multiple times)',
+    environment: Flags.string({
+      char: 'e',
+      aliases: ['target'],
+      charAliases: ['t'],
+      description: 'Environment slug for this notification (aliases: --target, -t; can be specified multiple times)',
       multiple: true,
       required: true,
     }),
@@ -58,11 +73,13 @@ export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotifica
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const {
-      target: targets,
+      environment: environments,
       recipient: recipients,
       'on-start': onStart,
       'on-success': onSuccess,
@@ -75,7 +92,7 @@ export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotifica
       const result = await createNotification(
         {
           projectSlug: project,
-          targets,
+          targets: environments,
           recipients,
           deploymentStart: onStart || undefined,
           deploymentSuccess: onSuccess || undefined,
@@ -91,7 +108,11 @@ export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotifica
             id: result.id ?? 'unknown',
           }),
         );
-        this.log(t('commands.mrt.notification.create.targets', 'Targets: {{targets}}', {targets: targets.join(', ')}));
+        this.log(
+          t('commands.mrt.notification.create.environments', 'Environments: {{environments}}', {
+            environments: environments.join(', '),
+          }),
+        );
         this.log(
           t('commands.mrt.notification.create.recipients', 'Recipients: {{recipients}}', {
             recipients: recipients.join(', '),

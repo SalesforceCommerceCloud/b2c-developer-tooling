@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import crypto from 'node:crypto';
 import {getSharedContext, hasSharedSandbox} from './shared-context.js';
-import {parseJSONOutput, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
+import {parseJSONErrorOutput, parseJSONOutput, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
 import type {Result as ExecaReturnValue} from 'execa';
 
 /**
@@ -85,12 +85,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
     const exitCode = result.exitCode ?? -1;
     expect(exitCode).to.not.equal(0, `Expected command to fail but it succeeded: ${toString(result.stdout)}`);
 
-    const errorText = toString(result.stderr) || toString(result.stdout);
-    expect(errorText).to.not.be.empty;
-
-    const parsed = JSON.parse(errorText) as {
-      error?: {message?: string; detail?: string; status?: number; code?: string};
-    };
+    const parsed = parseJSONErrorOutput(result);
     expect(parsed.error, 'Expected JSON error object').to.exist;
 
     if (typeof options.status === 'number') {
@@ -108,17 +103,7 @@ describe('SLAS Lifecycle E2E Tests', function () {
   after(async function () {
     // Cleanup SLAS clients
     if (clientId) {
-      await runCLIWithRetry([
-        'slas',
-        'client',
-        'delete',
-        clientId,
-        '--short-code',
-        shortCode,
-        '--tenant-id',
-        tenantId,
-        '--force',
-      ]);
+      await runCLIWithRetry(['slas', 'client', 'delete', clientId, '--short-code', shortCode, '--tenant-id', tenantId]);
     }
 
     if (publicClientId) {
@@ -131,7 +116,6 @@ describe('SLAS Lifecycle E2E Tests', function () {
         shortCode,
         '--tenant-id',
         tenantId,
-        '--force',
       ]);
     }
 

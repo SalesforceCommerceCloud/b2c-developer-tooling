@@ -116,8 +116,8 @@ export {
 export type {AuthSession, AuthSessionBackend, AuthSessionFlow} from './session-store.js';
 
 // Resolution helpers
-export {resolveAuthStrategy, checkAvailableAuthMethods} from './resolve.js';
-export type {ResolveAuthStrategyOptions, AvailableAuthMethods} from './resolve.js';
+export {resolveAuthStrategy, checkAvailableAuthMethods, resolveSystemOAuthStrategy} from './resolve.js';
+export type {ResolveAuthStrategyOptions, AvailableAuthMethods, SystemOAuthCredentials} from './resolve.js';
 
 // Auth middleware
 export {

@@ -141,7 +141,7 @@ describe('MCP Server E2E', function () {
         type?: string;
         description?: string;
         properties?: Record<string, WireSchema>;
-        additionalProperties?: boolean;
+        additionalProperties?: boolean | WireSchema;
         items?: WireSchema;
         anyOf?: WireSchema[];
         oneOf?: WireSchema[];
@@ -157,7 +157,12 @@ describe('MCP Server E2E', function () {
       const second = (await client.call('tools/list')) as typeof first;
       const checkSchema = (schema: WireSchema, path: string): void => {
         if (schema.type === 'object') {
-          expect(schema.additionalProperties, `${path} must reject unknown fields`).to.be.false;
+          if (path === 'scapi_snippet_save.inputSchema') {
+            // Saved workflows accept arbitrary JSON Schema keywords.
+            expect(schema.additionalProperties).to.deep.equal({});
+          } else {
+            expect(schema.additionalProperties, `${path} must reject unknown fields`).to.be.false;
+          }
         }
         for (const [field, property] of Object.entries(schema.properties ?? {})) {
           const propertyPath = `${path}.${field}`;

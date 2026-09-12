@@ -70,18 +70,21 @@ describe('slas token', () => {
     it('returns guest token in JSON mode via PKCE flow', async () => {
       // Mock the SLAS authorize and token endpoints
       server.use(
-        http.get(`${BASE_URL}/oauth2/authorize`, () => {
+        http.get(`${BASE_URL}/oauth2/authorize`, ({request}) => {
+          expect(request.headers.get('x-mobify')).to.equal('true');
           return new HttpResponse(null, {
             status: 303,
             headers: {Location: 'http://localhost:3000/callback?code=test-code&usid=test-usid'},
           });
         }),
-        http.post(`${BASE_URL}/oauth2/token`, () => {
+        http.post(`${BASE_URL}/oauth2/token`, ({request}) => {
+          expect(request.headers.get('x-mobify')).to.equal('true');
           return HttpResponse.json(MOCK_TOKEN_RESPONSE);
         }),
       );
 
       const command: any = await createCommand({
+        'extra-headers': '{"x-mobify":"true"}',
         'tenant-id': 'abcd_123',
         'slas-client-id': 'my-client',
         'site-id': 'RefArch',

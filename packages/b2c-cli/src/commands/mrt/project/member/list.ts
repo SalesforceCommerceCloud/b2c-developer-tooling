@@ -42,6 +42,8 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * List members for an MRT project.
  */
 export default class MrtMemberList extends MrtCommand<typeof MrtMemberList> {
+  static aliases = ['mrt:storefront:member:list'];
+
   static description = withDocs(
     t('commands.mrt.member.list.description', 'List members for a Managed Runtime project'),
     '/cli/mrt.html#b2c-mrt-project-member-list',
@@ -80,7 +82,9 @@ export default class MrtMemberList extends MrtCommand<typeof MrtMemberList> {
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const {limit, offset, role, search} = this.flags;

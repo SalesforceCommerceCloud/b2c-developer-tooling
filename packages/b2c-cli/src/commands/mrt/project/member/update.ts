@@ -17,6 +17,8 @@ import {t, withDocs} from '../../../../i18n/index.js';
  * Update a member's role in an MRT project.
  */
 export default class MrtMemberUpdate extends MrtCommand<typeof MrtMemberUpdate> {
+  static aliases = ['mrt:storefront:member:update'];
+
   static args = {
     email: Args.string({
       description: 'Email address of the member to update',
@@ -53,7 +55,9 @@ export default class MrtMemberUpdate extends MrtCommand<typeof MrtMemberUpdate> 
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const {role} = this.flags;

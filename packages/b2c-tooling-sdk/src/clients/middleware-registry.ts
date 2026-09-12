@@ -68,7 +68,8 @@ export type HttpClientType =
   | 'scapi-merchant-roles'
   | 'scapi-sites'
   | 'scapi-catalogs'
-  | 'scapi';
+  | 'scapi'
+  | 'storefront-deployments';
 
 /**
  * Middleware interface compatible with openapi-fetch.

@@ -15,8 +15,8 @@ import {confirm} from '../../../prompts.js';
 export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
   static args = {
     slug: Args.string({
-      description: 'Environment slug/identifier to delete',
-      required: true,
+      description: 'Environment slug/identifier to delete (or provide it via --environment / -e)',
+      required: false,
     }),
   };
 
@@ -52,11 +52,13 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
 
     this.requireMrtCredentials();
 
-    const {slug} = this.args;
+    const slug = this.resolveEnvironmentSlug(this.args.slug);
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const {force} = this.flags;

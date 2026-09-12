@@ -7,6 +7,14 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
+import sinon from 'sinon';
+import {createHash} from 'node:crypto';
+import {
+  createExtraParamsMiddleware,
+  globalMiddlewareRegistry,
+  MiddlewareRegistry,
+} from '@salesforce/b2c-tooling-sdk/clients';
+import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {
   getGuestToken,
   getRegisteredToken,
@@ -47,10 +55,146 @@ describe('slas/token', () => {
 
   afterEach(() => {
     server.resetHandlers();
+    globalMiddlewareRegistry.clear();
+    sinon.restore();
   });
 
   after(() => {
     server.close();
+  });
+
+  for (const registered of [false, true]) {
+    for (const privateClient of [false, true]) {
+      it(`applies middleware throughout ${privateClient ? 'private' : 'public'} ${registered ? 'registered' : 'guest'} flow`, async () => {
+        const requests: Request[] = [];
+        const responses: number[] = [];
+        const middleware = createExtraParamsMiddleware({headers: {'x-mobify': 'true'}, query: {diagnostic: 'enabled'}});
+        globalMiddlewareRegistry.register({
+          name: 'slas-test',
+          getMiddleware(clientType) {
+            if (clientType !== 'slas') return undefined;
+            return {
+              ...middleware,
+              onResponse({response}) {
+                responses.push(response.status);
+              },
+            };
+          },
+        });
+
+        let challenge: string | null = null;
+        server.use(
+          http.all(`${BASE_URL}/oauth2/:endpoint`, async ({request, params}) => {
+            requests.push(request);
+            const url = new URL(request.url);
+            expect(request.headers.get('x-mobify')).to.equal('true');
+            expect(url.searchParams.get('diagnostic')).to.equal('enabled');
+            const body = new URLSearchParams(await request.text());
+            if (params.endpoint !== 'token') {
+              expect(request.redirect).to.equal('manual');
+              challenge = registered ? body.get('code_challenge') : url.searchParams.get('code_challenge');
+              if (registered) {
+                expect(request.headers.get('authorization')).to.equal(
+                  `Basic ${Buffer.from('user@example.com:pass123').toString('base64')}`,
+                );
+              }
+              return new HttpResponse(null, {
+                status: 303,
+                headers: {Location: 'http://localhost:3000/callback?code=code%2B%26%3D&usid=visitor'},
+              });
+            }
+            expect(request.headers.get('content-type')).to.equal('application/x-www-form-urlencoded');
+            expect(request.redirect).to.equal('error');
+            expect(body.get('channel_id')).to.equal('RefArch');
+            expect(request.headers.get('authorization')).to.equal(
+              privateClient ? `Basic ${Buffer.from('test-client-id:test-secret').toString('base64')}` : null,
+            );
+            if (registered || !privateClient) {
+              expect(body.get('code')).to.equal('code+&=');
+              expect(createHash('sha256').update(body.get('code_verifier')!).digest('base64url')).to.equal(challenge);
+            } else {
+              expect(body.get('grant_type')).to.equal('client_credentials');
+            }
+            return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+          }),
+        );
+        const config = baseConfig({slasClientSecret: privateClient ? 'test-secret' : undefined});
+        const result = registered
+          ? await getRegisteredToken({...config, shopperLogin: 'user@example.com', shopperPassword: 'pass123'})
+          : await getGuestToken(config);
+        expect(result).to.deep.equal(MOCK_TOKEN_RESPONSE);
+        expect(requests).to.have.length(registered || !privateClient ? 2 : 1);
+        expect(responses).to.deep.equal(registered || !privateClient ? [303, 200] : [200]);
+      });
+    }
+  }
+
+  it('uses an explicitly supplied registry instead of the global registry', async () => {
+    globalMiddlewareRegistry.register({
+      name: 'global',
+      getMiddleware: () => createExtraParamsMiddleware({headers: {'x-global': 'true'}}),
+    });
+    const middlewareRegistry = new MiddlewareRegistry();
+    middlewareRegistry.register({
+      name: 'custom',
+      getMiddleware: () => createExtraParamsMiddleware({headers: {'x-custom': 'true'}}),
+    });
+    server.use(
+      http.post(`${BASE_URL}/oauth2/token`, ({request}) => {
+        expect(request.headers.get('x-custom')).to.equal('true');
+        expect(request.headers.has('x-global')).to.equal(false);
+        return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+      }),
+    );
+    await getGuestToken(baseConfig({slasClientSecret: 'test-secret', middlewareRegistry}));
+  });
+
+  it('preserves network error context', async () => {
+    server.use(http.post(`${BASE_URL}/oauth2/token`, () => HttpResponse.error()));
+    try {
+      await getGuestToken(baseConfig({slasClientSecret: 'test-secret'}));
+      expect.fail('Expected a network error');
+    } catch (error) {
+      expect(error).to.include({
+        name: 'NetworkError',
+        operation: 'SLAS token request',
+        host: `${SHORT_CODE}.api.commercecloud.salesforce.com`,
+      });
+    }
+  });
+
+  it('preserves cancellation through request middleware', async () => {
+    const controller = new AbortController();
+    let requestAborted = false;
+    globalMiddlewareRegistry.register({
+      name: 'slas-cancellation',
+      getMiddleware: () => createExtraParamsMiddleware({headers: {'x-test': 'true'}, query: {test: 'true'}}),
+    });
+    server.use(
+      http.post(`${BASE_URL}/oauth2/token`, ({request}) => {
+        request.signal.addEventListener('abort', () => {
+          requestAborted = true;
+        });
+        controller.abort();
+        return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+      }),
+    );
+    try {
+      await getGuestToken(baseConfig({slasClientSecret: 'test-secret', signal: controller.signal}));
+      expect.fail('Expected cancellation');
+    } catch (error) {
+      expect((error as Error).message).to.match(/abort/i);
+    }
+    expect(requestAborted).to.equal(true);
+  });
+
+  it('logs request status without authentication headers or token bodies', async () => {
+    const trace = sinon.spy(getLogger(), 'trace');
+    const debug = sinon.spy(getLogger(), 'debug');
+    server.use(http.post(`${BASE_URL}/oauth2/token`, () => HttpResponse.json(MOCK_TOKEN_RESPONSE)));
+    await getGuestToken(baseConfig({slasClientSecret: 'test-secret'}));
+    expect(trace.called).to.equal(false);
+    expect(debug.args.some(([details]) => typeof details === 'object' && details?.status === 200)).to.equal(true);
   });
 
   describe('getGuestToken - public client (PKCE)', () => {
@@ -132,9 +276,13 @@ describe('slas/token', () => {
     });
 
     it('throws on token error', async () => {
+      const debug = sinon.stub(getLogger(), 'debug');
       server.use(
         http.post(`${BASE_URL}/oauth2/token`, () => {
-          return HttpResponse.json({error: 'invalid_client'}, {status: 401});
+          return HttpResponse.json(
+            {error: 'invalid_client'},
+            {status: 401, headers: {sfdc_correlation_id: 'test-correlation', 'set-cookie': 'session=sensitive-cookie'}},
+          );
         }),
       );
 
@@ -144,7 +292,13 @@ describe('slas/token', () => {
       } catch (error: unknown) {
         expect((error as Error).message).to.include('client_credentials');
         expect((error as Error).message).to.include('401');
+        expect((error as Error).message).to.include('invalid_client');
       }
+
+      const responseLog = debug.getCalls().find((call) => call.args[0]?.status === 401);
+      expect(responseLog?.args[0]).to.include({status: 401, correlationId: 'test-correlation'});
+      expect(JSON.stringify(debug.args)).not.to.include('sensitive-cookie');
+      expect(JSON.stringify(debug.args)).not.to.include('bad-secret');
     });
   });
 
