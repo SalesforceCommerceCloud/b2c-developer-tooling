@@ -13,7 +13,7 @@ jobs:
       - name: Build storefront
         run: npm run build
 
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/mrt-deploy@v2
         with:
           mrt-api-key: ${{ secrets.MRT_API_KEY }}
           project: ${{ vars.MRT_PROJECT }}

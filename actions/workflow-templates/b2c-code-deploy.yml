@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
           client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}

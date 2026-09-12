@@ -6,9 +6,9 @@ branding:
 
 inputs:
   version:
-    description: 'CLI version to install (e.g. "latest", "0.4.1", "nightly")'
+    description: 'CLI version to install (e.g. "2", "2.0.0", "latest", "nightly")'
     required: false
-    default: 'latest'
+    default: '2'
   skip-if-present:
     description: 'Reuse an already-installed CLI instead of installing. When true, the CLI is installed only if none is present (no version check, no upgrade). High-level actions set this so they reuse an existing install; a direct setup call leaves it false and always installs the requested version.'
     required: false

@@ -6,21 +6,21 @@ This document is a playbook for releasing the B2C CLI monorepo packages. It cove
 
 Three packages are published to npm, each versioned independently:
 
-| Package | npm |
-|---------|-----|
-| `@salesforce/b2c-cli` | [npm](https://www.npmjs.com/package/@salesforce/b2c-cli) |
+| Package                       | npm                                                              |
+| ----------------------------- | ---------------------------------------------------------------- |
+| `@salesforce/b2c-cli`         | [npm](https://www.npmjs.com/package/@salesforce/b2c-cli)         |
 | `@salesforce/b2c-tooling-sdk` | [npm](https://www.npmjs.com/package/@salesforce/b2c-tooling-sdk) |
-| `@salesforce/b2c-dx-mcp` | [npm](https://www.npmjs.com/package/@salesforce/b2c-dx-mcp) |
+| `@salesforce/b2c-dx-mcp`      | [npm](https://www.npmjs.com/package/@salesforce/b2c-dx-mcp)      |
 
 When a dependency is bumped (e.g., the SDK), dependent packages automatically receive a patch bump. The `@salesforce/b2c-dx-docs` workspace package is private and uses git tags to trigger documentation rebuilds — it is not published to npm.
 
 ## Release Types
 
-| Type | npm Tag | Trigger |
-|------|---------|---------|
-| **Stable** | `@latest` | Merge version PR on `main` |
-| **Release Branch** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
-| **Nightly** | `@nightly` | Scheduled weekdays 2 AM UTC, or manual |
+| Type               | npm Tag                     | Trigger                                |
+| ------------------ | --------------------------- | -------------------------------------- |
+| **Stable**         | `@latest`                   | Merge version PR on `main`             |
+| **Release Branch** | `@latest` or `@release-X.Y` | Push to `release/**` branch            |
+| **Nightly**        | `@nightly`                  | Scheduled weekdays 2 AM UTC, or manual |
 
 Publishing uses [npm OIDC trusted publishers](https://docs.npmjs.com/trusted-publishers) — no npm tokens are needed. Provenance attestations are generated automatically.
 
@@ -60,6 +60,41 @@ This is the normal release flow from `main`.
 
 No manual tagging or workflow dispatch is needed.
 
+This package workflow does not move GitHub Action tags. Actions have an independent release process so a CLI, SDK, MCP, or documentation release cannot silently change the Action major used by existing workflows.
+
+## GitHub Actions Releases
+
+GitHub Actions use their own semantic version in `actions/VERSION`:
+
+- `v2` follows backward-compatible Action 2.x releases and installs CLI 2.x by default.
+- `v1` follows the maintained Action 1.x line on the `actions/v1` branch and installs CLI 1.x by default.
+- Exact tags such as `v2.0.0` are immutable. The release workflow refuses to move an existing exact tag to another commit.
+
+The default CLI version must match the major in `actions/VERSION`. Every internal `actions/setup` or `actions/run` reference must use that exact `vX.Y.Z` release, keeping immutable outer tags reproducible. The validation script and Action CI enforce these relationships.
+
+### Establish the Action v1 Maintenance Branch
+
+Complete this once before publishing CLI 2.0:
+
+1. Create `actions/v1` from the current floating `v1` tag.
+2. Add `actions/VERSION` containing `1.0.0`.
+3. Change the `version` input default from `latest` to `1` in the root, setup, and five high-level Action manifests. Change their internal references to `@v1.0.0`.
+4. Review and push the compatibility commit to `actions/v1`.
+5. Run **Release GitHub Actions** with `ref` set to `actions/v1`. It creates immutable `v1.0.0` and moves floating `v1` to the compatibility commit.
+
+Do not publish CLI 2.0 until this is complete. The older v1 setup action defaults to npm `latest`; freezing the tag without changing that default would still let npm `latest` pull CLI 2.0.
+
+The stable package workflow enforces this ordering. Publishing a new CLI major fails unless the previous floating Action major exists, declares its own version, defaults to the previous CLI major, and pins its internal Action references to its exact release.
+
+### Release a New Action Version
+
+1. Update the Action manifests and documentation on the appropriate branch.
+2. Bump `actions/VERSION` using semantic versioning. Use a new major when inputs, outputs, defaults, or supported CLI behavior are incompatible.
+3. Confirm the compatible CLI major is already published to npm. For the initial v2 release, publish CLI 2.0 first.
+4. Run **Release GitHub Actions** and select the source ref. Prefer the corresponding immutable package tag, such as `@salesforce/b2c-cli@2.0.0`, over a moving branch.
+
+The workflow validates the Action metadata, installs the declared CLI major, runs a command smoke test, creates the immutable `vX.Y.Z` tag, and moves only the matching floating `vX` tag. Maintenance releases for Action v1 come from `actions/v1`; Action v2 releases normally come from the relevant release commit on `main`.
+
 ## Release Branches
 
 Use when you need to ship a fix independently of `main`. There are two scenarios:
@@ -69,7 +104,7 @@ Use when you need to ship a fix independently of `main`. There are two scenarios
 
 **Why:** Changesets consumes all pending changesets atomically — you can't release one package while holding others. Release branches let you version and publish independently of `main`.
 
-Branch naming convention: `release/<major.minor>` (e.g., `release/0.5`). This is self-documenting and allows reuse for multiple patches to the same minor.
+Package branch naming convention: `release/<major.minor>` (e.g., `release/0.5`). This is self-documenting and allows reuse for multiple patches to the same minor. The separate `actions/v1` branch is reserved for the GitHub Action compatibility line and does not trigger package publishing.
 
 ### Steps
 

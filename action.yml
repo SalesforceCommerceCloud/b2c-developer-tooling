@@ -9,9 +9,9 @@ inputs:
     description: 'CLI command to run (omit for setup-only)'
     required: false
   version:
-    description: 'CLI version to install (e.g. "latest", "0.4.1", "nightly")'
+    description: 'CLI version to install (e.g. "2", "2.0.0", "latest", "nightly")'
     required: false
-    default: 'latest'
+    default: '2'
   node-version:
     description: 'Node.js version to install'
     required: false
@@ -89,7 +89,7 @@ runs:
   steps:
     - name: Setup B2C CLI
       id: setup
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2.0.0
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
@@ -113,7 +113,7 @@ runs:
     - name: Run command
       id: command
       if: inputs.command != ''
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2.0.0
       with:
         command: ${{ inputs.command }}
         json: ${{ inputs.json }}

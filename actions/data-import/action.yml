@@ -60,7 +60,7 @@ inputs:
   version:
     description: 'CLI version to install if not already set up'
     required: false
-    default: 'latest'
+    default: '2'
   node-version:
     description: 'Node.js version'
     required: false
@@ -78,7 +78,7 @@ runs:
   using: 'composite'
   steps:
     - name: Ensure CLI is installed
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2.0.0
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
@@ -119,7 +119,7 @@ runs:
 
     - name: Import data
       id: import
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2.0.0
       with:
         command: ${{ steps.build-cmd.outputs.cmd }}
         json: 'true'
