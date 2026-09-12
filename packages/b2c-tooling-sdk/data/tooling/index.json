@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-11T20:10:11.271Z",
+  "generatedAt": "2026-09-11T21:18:11.224Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -395,8 +395,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.md",
-      "headings": "Quick Start • Safety Levels • Setting a Level • Safety Rules • Rule Actions • Rule Matchers • HTTP Method + Path • Job ID • CLI Command ID • Evaluation Order • Confirmation Mode • Per-Instance Configuration • Global Safety Config • Configuration Merge • Example • Environment Variables Reference • SDK Usage",
-      "preview": "Configure Safety Mode to prevent accidental destructive operations with safety levels, per-instance rules, confirmation mode, and global policies."
+      "headings": "Start with an instance policy {#quick-start} • Choose a safety level {#safety-levels} • Use it in your tools • CLI • MCP and AI assistants {#mcp} • IDE extension: VS Code and compatible editors {#ide-extension} • Add rules for specific tasks {#safety-rules} • Allow a search without enabling other writes • Rule matchers • Require confirmation {#confirmation-mode} • Use different policies per instance {#per-instance-configuration} • Share a safety file {#global-safety-config} • How settings combine {#configuration-merge} • When an operation is blocked • Environment variables reference • SDK usage",
+      "preview": "Control B2C Commerce changes from the CLI, MCP, and IDE extension with safety levels, confirmations, and per-instance rules."
     },
     {
       "id": "guide-scaffolding",
@@ -512,7 +512,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.md",
-      "headings": "Connecting to a B2C Instance • Per-feature requirements • Example `dw.json` • How the Extension Chooses a Project • Selecting an Instance • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
+      "headings": "Connecting to a B2C Instance • Per-feature requirements • Example `dw.json` • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
       "preview": "Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
     },
     {

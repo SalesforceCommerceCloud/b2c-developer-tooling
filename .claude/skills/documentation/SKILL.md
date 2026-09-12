@@ -27,6 +27,10 @@ This skill covers documentation for the Agentic B2C Developer Toolkit.
 - MCP exposes skill guidance through `skills_read`; it does not install those
   collections as native assistant skills. Separate skills installation is optional,
   supported alongside MCP or alone. Show collections before their install examples.
+- Safety Mode guidance leads with supported B2C operations and practical CLI,
+  MCP, and IDE examples. Distinguish blocked actions, supported confirmations,
+  and assistant approvals. Describe first-match rule precedence precisely; put
+  broader agent/tool boundaries in a short scope note, not the introduction.
 
 ## Shared Visual Patterns
 

@@ -70,23 +70,10 @@ Relative safety-file paths resolve from the selected project. The effective leve
 is the most restrictive of environment, global file, and instance settings;
 explicit rules still take precedence over the level.
 
-`READ_ONLY` uses HTTP methods, so it also blocks searches that use POST. To permit
-a specific search, add a narrow allow rule to your safety configuration. For example:
-
-```json
-{
-  "level": "READ_ONLY",
-  "rules": [
-    {
-      "method": "POST",
-      "path": "/operation/jobs/v1/organizations/*/job-execution-search",
-      "action": "allow"
-    }
-  ]
-}
-```
-
-This allows job execution searches while keeping other POST requests restricted.
+`READ_ONLY` uses HTTP methods, so it also blocks searches that use POST. See
+[allow a search without enabling other writes](../guide/safety#allow-a-search-without-enabling-other-writes)
+for a job-investigation example. An assistant's tool approval does not satisfy
+a Safety Mode confirmation or override a block.
 
 ## SCAPI code mode
 
