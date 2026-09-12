@@ -1,219 +1,125 @@
 ---
-description: Set up Storefront Next development environments using the B2C CLI to create sandboxes, SLAS clients, MRT environments, and deploy.
+description: Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Manage environment variables, tail logs, and work with deployments.
 ---
 
 # Storefront Next
 
-Set up Storefront Next development environments using the B2C CLI to create sandboxes, SLAS clients, MRT environments, and deploy.
+Develop and operate your Storefront Next storefront with the B2C CLI and your AI assistant. Manage environment variables together, investigate runtime errors, and get help with routing, data fetching, and Page Designer components.
 
-To learn more about Storefront Next, see the [Storefront Next](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-get-started.html) documentation.
+<span id="step-1-create-an-on-demand-sandbox-optional"></span>
+<span id="step-2-create-a-slas-client"></span>
+<span id="step-3-create-an-mrt-environment"></span>
+<span id="connect-the-b2c-commerce-instance"></span>
+
+## Start with Storefront Setup
+
+Use **storefront setup in Business Manager** to create your storefront and its API clients, Managed Runtime project, default environment, and initial configuration. Follow the Salesforce guide for your source-code workflow:
+
+- [Create Storefront Next with a GitHub repository](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm-github.html)
+- [Create Storefront Next with local code](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm.html)
+
+Use the generated configuration for local development and the existing MRT resources for the operations below. For additional environments and production launch, follow [Launch Your Storefront Next](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.html).
 
 ## Prerequisites
 
-- [B2C CLI installed](/guide/installation) or use `npx @salesforce/b2c-cli` to run commands without installing
-- Commerce Cloud realm access
-- A Storefront Next project
-- Appropriate Account Manager roles (detailed per step below)
+Use an existing Storefront Next project and an MRT API key with access to its project and target environment. See [CLI installation](/guide/installation) and [MRT configuration](/guide/configuration#mrt-api-key) for credentials and defaults. You can also replace `b2c` in these examples with `npx @salesforce/b2c-cli`.
 
-## Step 1: Create an On-Demand Sandbox (Optional)
+Replace `my-storefront` and `staging` with your MRT project and environment IDs.
 
-If you need a new sandbox instance for development, create one with the CLI.
+<span id="step-4-set-environment-variables"></span>
+<span id="variable-reference"></span>
+<span id="multi-site-configuration"></span>
 
-**Required Role:** Sandbox API User (see [Authentication Setup](/guide/authentication))
+## Manage Environment Variables
 
-```bash
-b2c sandbox create --realm <REALM> --wait
-```
+Storefront setup configures the initial MRT variables. Use the CLI to inspect or change selected values as your storefront evolves. Salesforce's [Environment Variables guide](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.html) covers naming, visibility, and supported configuration paths.
 
-Note the hostname from the output — you'll need it for later configuration.
-
-After creating a sandbox, you'll need to create or import sites. You can import SFRA in Business Manager under **Administration > Site Development > Site Import & Export**.
-
-See [Sandbox Commands](/cli/sandbox) for more options.
-
-## Step 2: Create a SLAS Client
-
-Create a SLAS client for your storefront to handle shopper authentication.
-
-**Required Role:** SLAS Organization Administrator with a tenant filter matching your tenant.
-
-Your tenant ID is found in Business Manager under **Administration > Site Development > Salesforce Commerce API Settings**. It is the organization ID without the `f_ecom_` prefix — for example, if your organization ID is `f_ecom_abcd_001`, your tenant ID is `abcd_001`. You can pass either form to the `--tenant-id` flag and the CLI will handle it.
+### Update Several Values Together
 
 ```bash
-b2c slas client create \
-  --tenant-id <TENANT_ID> \
-  --channels <SITE_ID> \
-  --redirect-uri "http://localhost:5173,https://*.exp-delivery.com/callback" \
-  --default-scopes
-```
+# Inspect the target environment's variables.
+b2c mrt env var list --project my-storefront --environment staging
 
-The client is created as a private client by default (no `--public` flag needed).
-
-::: warning
-Save the client ID and secret from the output — the secret is only shown once and cannot be retrieved later.
-:::
-
-See [SLAS Commands](/cli/slas) for more options.
-
-## Step 3: Create an MRT Environment
-
-Set up a Managed Runtime environment to host your storefront.
-
-**Prerequisites:**
-- An MRT API key from [runtime.commercecloud.com](https://runtime.commercecloud.com/)
-- An MRT project (see [`b2c mrt project create`](/cli/mrt#b2c-mrt-project-create) to create one)
-
-::: tip
-Configure your API key in `~/.mobify`, `dw.json`, or via the `MRT_API_KEY` environment variable so you don't need to pass it on every command. See [Configuration](/guide/configuration) for all available options.
-:::
-
-Find your short code in Business Manager under **Administration > Salesforce Commerce API Settings**.
-
-```bash
-b2c mrt env create <SLUG> \
-  --project <PROJECT> \
-  --name "<NAME>" \
-  --allow-cookies \
-  --proxy "api=<SHORT_CODE>.api.commercecloud.salesforce.com" \
-  --wait
-```
-
-### Connect the B2C Commerce Instance
-
-After creating the environment, link it to your B2C Commerce instance by setting the tenant and site IDs:
-
-```bash
-b2c mrt env b2c -p <PROJECT> -e <ENVIRONMENT> \
-  --instance-id <TENANT_ID> \
-  --sites <SITE_ID>
-```
-
-See [MRT Commands](/cli/mrt) for more options.
-
-## Step 4: Set Environment Variables
-
-Configure your MRT environment with the required Storefront Next variables.
-
-Your organization ID and short code are found in Business Manager under **Administration > Site Development > Salesforce Commerce API Settings**. The organization ID has the form `f_ecom_abcd_001`.
-
-```bash
+# Set locale defaults together in one update.
 b2c mrt env var set \
-  PUBLIC__app__commerce__api__clientId=<SLAS_CLIENT_ID> \
-  PUBLIC__app__commerce__api__organizationId=<ORG_ID> \
-  PUBLIC__app__commerce__api__siteId=<SITE_ID> \
-  PUBLIC__app__commerce__api__shortCode=<SHORT_CODE> \
-  PUBLIC__app__commerce__api__proxy=/mobify/proxy/api \
-  PUBLIC__app__commerce__api__callback=/callback \
-  PUBLIC__app__commerce__api__privateKeyEnabled=true \
-  PUBLIC__app__defaultSiteId=<SITE_ID> \
-  PUBLIC__app__i18n__fallbackLng="en-US" \
-  PUBLIC__app__i18n__supportedLngs='["en-US"]' \
-  PUBLIC__app__commerce__sites='[{"id": "<SITE_ID>", "defaultLocale": "en-US", "defaultCurrency": "USD", "supportedLocales": [{"id": "en-US", "preferredCurrency": "USD"}], "supportedCurrencies": ["USD"]}]' \
-  COMMERCE_API_SLAS_SECRET=<SLAS_CLIENT_SECRET> \
-  -p <PROJECT> -e <ENVIRONMENT>
+  PUBLIC__app__i18n__fallbackLng=en-US \
+  'PUBLIC__app__i18n__supportedLngs=["en-US","fr-FR"]' \
+  --project my-storefront --environment staging
 ```
 
-::: tip Push from a local `.env` file
-If you keep these values in a local `.env`, use [`b2c mrt env var push`](/cli/mrt#b2c-mrt-env-var-push) instead. It diffs the local file against the remote environment, shows what would change, and prompts before applying.
-:::
+Use locales supported by your storefront and sites. Variable changes redeploy the environment; wait for that deployment before checking the result. Keep secrets out of `PUBLIC__` variables, which are exposed to the browser.
 
-### Variable Reference
+### Apply an Environment File
 
-| Variable | Description |
-|----------|-------------|
-| `PUBLIC__app__commerce__api__clientId` | SLAS client ID from Step 2 |
-| `PUBLIC__app__commerce__api__organizationId` | Commerce Cloud organization ID (e.g., `f_ecom_aaaa_prd`) |
-| `PUBLIC__app__commerce__api__siteId` | Site ID (e.g., `RefArch`) |
-| `PUBLIC__app__commerce__api__shortCode` | Short code from Business Manager |
-| `PUBLIC__app__commerce__api__proxy` | Proxy path for API requests |
-| `PUBLIC__app__commerce__api__callback` | OAuth callback path |
-| `PUBLIC__app__commerce__api__privateKeyEnabled` | Must be `true` for private SLAS clients |
-| `PUBLIC__app__defaultSiteId` | Default site ID for the storefront |
-| `PUBLIC__app__i18n__fallbackLng` | Fallback locale (e.g., `en-US`) |
-| `PUBLIC__app__i18n__supportedLngs` | JSON array of supported locales (e.g., `["en-US"]`) |
-| `PUBLIC__app__commerce__sites` | JSON array of site configurations (see below) |
-| `COMMERCE_API_SLAS_SECRET` | SLAS client secret from Step 2 |
-
-Most of these values match what's in your project's `.env` file. The `privateKeyEnabled` variable must be set to `true` when using a private SLAS client.
-
-::: warning
-The `COMMERCE_API_SLAS_SECRET` contains sensitive credentials. Treat it accordingly and avoid committing it to source control.
-:::
-
-### Multi-Site Configuration
-
-The `PUBLIC__app__commerce__sites` variable defines the sites, locales, and currencies for your storefront. Each site entry includes:
-
-```json
-[
-  {
-    "id": "SiteID",
-    "defaultLocale": "en-US",
-    "defaultCurrency": "USD",
-    "supportedLocales": [
-      { "id": "en-US", "preferredCurrency": "USD" }
-    ],
-    "supportedCurrencies": ["USD"]
-  }
-]
-```
-
-Add additional objects to the array for multi-site setups.
-
-## Step 5: Deploy
-
-Deploy your Storefront Next project from the project directory.
-
-**Primary method** using the Storefront Next CLI:
+Keep the values intended for each MRT environment in a separate file. Review the proposed changes before applying them:
 
 ```bash
-pnpm sfnext push --project-slug <PROJECT> --target <ENVIRONMENT>
+b2c mrt env var push --file .env.staging \
+  --project my-storefront --environment staging
 ```
 
-This is run from your Storefront Next project directory.
+The command compares the file with the target, shows the differences, and asks for confirmation. It leaves remote variables absent from the file unchanged and excludes `MRT_` variables by default. Review local-only values and instance-specific credentials before sharing configuration across environments; keep files containing secrets out of source control.
 
-**Alternative** using the B2C CLI directly (builds and deploys):
+See [MRT environment variable commands](/cli/mrt#environment-variable-commands) for individual updates, removal, and file options.
+
+<span id="step-6-debugging-with-log-tailing"></span>
+
+## Tail Application Logs
+
+Stream logs while reproducing a server-rendering error or checking a deployment:
 
 ```bash
-b2c mrt bundle deploy -p <PROJECT> -e <ENVIRONMENT> \
-  --ssr-only '["server/**/*", "loader.js", "sfnext-server-*.mjs", "streamingHandler.{js,mjs,cjs}", "streamingHandler.{js,mjs,cjs}.map", "!static/**/*", "!**/*.stories.tsx", "!**/*.stories.ts", "!**/*-snapshot.tsx", "!.storybook/**/*", "!storybook-static/**/*", "!**/__mocks__/**/*", "!**/__snapshots__/**/*"]' \
-  --ssr-shared '["client/**/*", "static/**/*", "**/*.css", "**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.gif", "**/*.svg", "**/*.ico", "**/*.woff", "**/*.woff2", "**/*.ttf", "**/*.eot", "!**/*.stories.tsx", "!**/*.stories.ts", "!**/*-snapshot.tsx", "!.storybook/**/*", "!storybook-static/**/*", "!**/__mocks__/**/*", "!**/__snapshots__/**/*"]'
+b2c mrt tail-logs --project my-storefront --environment staging
+
+# Show errors and warnings.
+b2c mrt tail-logs --project my-storefront --environment staging \
+  --level ERROR --level WARN
+
+# Match an error or request pattern.
+b2c mrt tail-logs --project my-storefront --environment staging \
+  --search 'timeout|500'
 ```
 
-These patterns match the defaults used by `pnpm sfnext push`. The `--ssr-only` and `--ssr-shared` flags accept either a JSON array (for patterns with brace expansion) or a comma-separated string, and can be overridden if your project structure differs.
+Press Ctrl+C to stop. See [Logging in Storefront Next](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-logging.html) for application logging conventions. For historical investigation across MRT, SLAS, and eCDN, follow [Debug Your Storefront Next Site Using Log Center](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-debug-log-center.html).
 
-## Step 6: Debugging with Log Tailing
+<span id="step-5-deploy"></span>
 
-After deploying, you can tail application logs in real time to debug runtime issues.
+## Work with Deployments
+
+For source builds and uploads, follow the [Storefront Next deployment workflow](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-push-mrt-auto.html) using the template's `push` package script (`sfnext push`). It uses the MRT resources created during setup.
+
+Use the B2C CLI to inspect uploaded bundles or deploy an existing bundle to a selected environment:
 
 ```bash
-# Tail all logs from your environment
-b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT>
+b2c mrt bundle list --project my-storefront
 
-# Show only errors and warnings
-b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT> --level ERROR --level WARN
-
-# Search for specific patterns
-b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT> --search "timeout|500"
+# Deploy a reviewed bundle; replace 12345 with its ID.
+b2c mrt bundle deploy 12345 --project my-storefront --environment staging
 ```
 
-This is useful for diagnosing deployment failures, SSR errors, and API connectivity issues. See [MRT Commands](/cli/mrt#b2c-mrt-tail-logs) for all options.
+For release automation, see [MRT commands](/cli/mrt#bundle-commands) and [CI/CD with GitHub Actions](/guide/ci-cd). For vanity domains, routing, and access-control headers, use the [Storefront Next launch guide](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.html) alongside the [eCDN commands](/cli/ecdn).
 
-## Summary
+## Work with Your AI Assistant
 
-| Step | Command | Required? |
-|------|---------|-----------|
-| 1. Create Sandbox | `b2c sandbox create` | Optional |
-| 2. Create SLAS Client | `b2c slas client create` | Yes |
-| 3. Create MRT Environment | `b2c mrt env create` | Yes |
-| 4. Set Environment Variables | `b2c mrt env var set` | Yes |
-| 5. Deploy | `pnpm sfnext push` or `b2c mrt bundle deploy` | Yes |
-| 6. Debug with Log Tailing | `b2c mrt tail-logs` | Optional |
+The [B2C MCP](/mcp/) includes Storefront Next skills for routing, data fetching, configuration, Page Designer, testing, and deployment. Your assistant can use that guidance alongside documentation search and the toolkit's operations. No separate skills installation is needed; [standalone Agent Skills](/guide/agent-skills) are also available.
+
+<ExamplePrompt>
+
+> Review my Storefront Next project's configuration and the staging MRT environment. Identify differences relevant to this deployment and explain the proposed changes before applying them.
+
+</ExamplePrompt>
+
+<ExamplePrompt>
+
+> Add a Page Designer component with an editable heading, image, and link. Follow the patterns in this Storefront Next project and explain how to preview it.
+
+</ExamplePrompt>
+
+MRT environment-variable management and log tailing use the B2C CLI, so make it available when asking your assistant to perform those tasks.
 
 ## Next Steps
 
-- [Configuration](/guide/configuration) — configure CLI defaults and credentials
-- [Authentication Setup](/guide/authentication) — detailed auth setup for all commands
-- [Sandbox Commands](/cli/sandbox) — manage on-demand sandboxes
-- [SLAS Commands](/cli/slas) — manage SLAS clients and tenants
-- [MRT Commands](/cli/mrt) — manage MRT projects, environments, and deployments
+- [Storefront Next documentation](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-get-started.html) - Platform setup and development guides.
+- [Manage Sites for Storefront Next](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-manage-sites.html) - Site assignments in Business Manager.
+- [Deploy the Page Designer cartridge](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-pd-deploy-cartridge.html) - Publish component metadata to your B2C Commerce instance.
+- [Operations](/guide/operations) - Investigate job health and checkout incidents with your assistant.

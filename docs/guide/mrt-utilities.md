@@ -188,4 +188,4 @@ The development pseudo store keeps production parity for missing keys and throws
 ## Related
 
 - [MRT CLI commands](/cli/mrt) — manage MRT projects, environments, and bundles from the CLI.
-- [Storefront Next](/guide/storefront-next) — end-to-end setup including MRT and local development.
+- [Storefront Next](/guide/storefront-next) — environment variables, logs, deployments, and assistant support.

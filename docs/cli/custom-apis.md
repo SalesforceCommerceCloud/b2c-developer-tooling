@@ -6,6 +6,8 @@ description: Commands for managing SCAPI Custom API endpoints, checking registra
 
 Check which SCAPI Custom API endpoints are active and investigate registration failures.
 
+See Salesforce's [Custom API Status Reports](https://developer.salesforce.com/docs/commerce/commerce-api/guide/custom-api-status-report.html) for registration behavior and error explanations.
+
 ![B2C CLI showing Custom API names, HTTP methods, and registration status.](/cli-custom-api-status.png)
 
 ## Global Custom APIs Flags

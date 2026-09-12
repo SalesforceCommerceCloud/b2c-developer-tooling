@@ -6,6 +6,8 @@ description: Commands for managing eCDN (embedded Content Delivery Network) zone
 
 Commands for managing eCDN (embedded Content Delivery Network) for B2C Commerce storefronts.
 
+For zone setup, DNS, and certificate requirements, see Salesforce's [CDN Zones guide](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones.html).
+
 ## Global Flags
 
 All eCDN commands support these flags:
@@ -806,6 +808,8 @@ b2c ecdn page-shield scripts get --zone my-zone --script-id abc123
 
 ## MRT Rules
 
+For the routing sequence and Business Manager options, see [eCDN Rules for a Phased Headless Rollout](https://developer.salesforce.com/docs/commerce/commerce-api/guide/ecdn-rules-for-phased-headless-rollout.html).
+
 ### b2c ecdn mrt-rules get
 
 Get MRT ruleset for a zone.
@@ -960,6 +964,8 @@ b2c ecdn cipher-suites update --zone my-zone --suite-type Custom --ciphers "ECDH
 ---
 
 ## Origin Headers
+
+For setting the matching header in MRT and forwarding it from eCDN, follow [Send the Access Control Header from eCDN to the MRT Origin](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.html#send-the-access-control-header-from-ecdn-to-the-mrt-origin).
 
 ### b2c ecdn origin-headers get
 

@@ -4,7 +4,7 @@ description: Commands for creating, updating, and managing Shopper Login and API
 
 # SLAS Commands
 
-Commands for managing Shopper Login and API Security (SLAS) clients.
+Commands for managing Shopper Login and API Access Service (SLAS) clients. For client types, user roles, and shopper authentication flows, see Salesforce's [Authorization for Shopper APIs](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-shopper-apis.html).
 
 ## Global SLAS Flags
 

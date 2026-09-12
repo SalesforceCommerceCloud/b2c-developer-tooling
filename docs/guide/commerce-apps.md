@@ -6,7 +6,7 @@ description: Use the B2C CLI and agent skills to validate, package, install, uni
 
 Commerce App Packages (CAPs) are the standard format for distributing B2C Commerce integrations. A CAP bundles back-end cartridges, IMPEX configuration data, and Storefront Next UI extensions into a single installable unit, deployed to an instance with a platform job.
 
-This page covers what the **B2C CLI** does for CAPs and the **agent skills** we recommend. It is intentionally brief: the [Commerce Apps ISV Developer Guide](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/commerce-apps-overview.html) on Salesforce Developers is the authoritative source for the CAP format, manifest schema, architectures, domains and extension points, the installation state machine, and the submission/registry process. Use this page for the CLI workflow; follow the links for the spec.
+Use the CLI workflows below to work with CAPs. For the package format, platform requirements, and submission process, see the [Commerce Apps ISV Developer Guide](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/commerce-apps-overview.html).
 
 ## Develop CAPs with AI Agent Skills
 
@@ -81,7 +81,7 @@ The pull request contains the storefront changes the app provides, so a develope
 
 ### Inspecting Installed State
 
-After install, complete the setup wizard tasks in Business Manager or follow the deep links from `b2c cap tasks`. `b2c cap list` reports each installed app's **install status** and **configuration status** per site. For the full installation state machine (the `INSTALLING → INSTALLED → NOT_CONFIGURED → CONFIGURING → CONFIGURED` happy path plus the error and uninstall flows), see the [Architecture guide](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/architecture.html).
+After install, complete the setup wizard tasks in Business Manager or follow the deep links from `b2c cap tasks`. `b2c cap list` reports each installed app's **install status** and **configuration status** per site. For the full installation state machine (the `INSTALLING → INSTALLED → NOT_CONFIGURED → CONFIGURING → CONFIGURED` happy path plus the error and uninstall flows), see the [Architecture guide](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/architecture.html).
 
 ## VS Code Extension Integration
 
@@ -131,8 +131,8 @@ Because `validate` and `package` are local-only, a typical pipeline validates an
 ## Reference
 
 - [CAP CLI Commands](/cli/cap) — full `b2c cap` command and flag reference
-- [Commerce Apps ISV Developer Guide](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/commerce-apps-overview.html) — the authoritative CAP specification, covering:
-  - [Architecture](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/architecture.html) — the three app architectures, extension points (e.g. `sfcc.app.tax.calculate`), UI targets, CAP directory structure, and the installation state machine
-  - [Development environment](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/development-environment.html) — sandbox setup, the `cap-dev` Claude Code skills, and the end-to-end lifecycle
-  - [Packaging](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/packaging.html) — required files, the `commerce-app.json` manifest, and zip layout
-  - [Testing & validation](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/testing-validation.html) and [submission & review](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/submission-review.html) — the registry review checklist and submission process
+- [Commerce Apps ISV Developer Guide](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/commerce-apps-overview.html) — the authoritative CAP specification, covering:
+  - [Architecture](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/architecture.html) — the three app architectures, extension points (e.g. `sfcc.app.tax.calculate`), UI targets, CAP directory structure, and the installation state machine
+  - [Development environment](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/development-environment.html) — sandbox setup, the `cap-dev` Claude Code skills, and the end-to-end lifecycle
+  - [Packaging](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/packaging.html) — required files, the `commerce-app.json` manifest, and zip layout
+  - [Testing & validation](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/testing-validation.html) and [submission & review](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/submission-review.html) — the registry review checklist and submission process
