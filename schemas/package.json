@@ -1,8 +1,15 @@
 {
   "name": "@salesforce/b2c-api-schemas",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Language-neutral standard SCAPI OpenAPI contracts",
-  "files": ["manifest.json", "scapi", "README.md"],
-  "exports": {"./manifest.json": "./manifest.json", "./package.json": "./package.json"}
+  "files": [
+    "manifest.json",
+    "scapi",
+    "README.md"
+  ],
+  "exports": {
+    "./manifest.json": "./manifest.json",
+    "./package.json": "./package.json"
+  }
 }

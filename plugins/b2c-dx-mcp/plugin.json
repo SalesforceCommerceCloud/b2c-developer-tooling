@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "b2c-dx-mcp",
-  "version": "2.1.2",
+  "version": "3.0.0",
   "description": "Build, debug, and deploy Salesforce B2C Commerce with your AI assistant. Includes documentation, workflow skills, and Salesforce Commerce API tools.",
   "author": {
     "name": "Salesforce"
@@ -9,7 +9,14 @@
   "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
   "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
   "license": "Apache-2.0",
-  "keywords": ["salesforce", "b2c-commerce", "commerce-cloud", "mcp", "scapi", "ocapi"],
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "mcp",
+    "scapi",
+    "ocapi"
+  ],
   "extensions": {
     "com.openai": {
       "interface": {

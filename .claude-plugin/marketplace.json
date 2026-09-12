@@ -17,7 +17,7 @@
       "source": "./skills/b2c-cli",
       "category": "productivity",
       "strict": false,
-      "version": "1.8.5"
+      "version": "1.9.0"
     },
     {
       "name": "b2c",
@@ -29,7 +29,7 @@
       "source": "./skills/b2c",
       "category": "productivity",
       "strict": false,
-      "version": "1.8.5"
+      "version": "1.9.0"
     },
     {
       "name": "b2c-ops",
@@ -41,7 +41,7 @@
       "source": "./skills/b2c-ops",
       "category": "productivity",
       "strict": false,
-      "version": "1.8.5"
+      "version": "1.9.0"
     },
     {
       "name": "b2c-dx-mcp",
@@ -53,7 +53,7 @@
       "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
       "strict": false,
-      "version": "2.1.2"
+      "version": "3.0.0"
     },
     {
       "name": "storefront-next",
@@ -65,11 +65,11 @@
       "source": "./skills/storefront-next",
       "category": "productivity",
       "strict": false,
-      "version": "1.8.5"
+      "version": "1.9.0"
     },
     {
       "name": "storefront-next-figma",
-      "description": "Figma design-kit skills for Storefront Next verticals \u2014 duplicate the kit, sync brand variables, and publish Code Connect. Requires the Figma MCP server.",
+      "description": "Figma design-kit skills for Storefront Next verticals — duplicate the kit, sync brand variables, and publish Code Connect. Requires the Figma MCP server.",
       "author": {
         "name": "Salesforce"
       },
@@ -81,7 +81,7 @@
     },
     {
       "name": "figma-to-sfnext-pagedesigner",
-      "description": "Convert a Figma frame into live Storefront Next Page Designer blocks \u2014 React components with decorator metadata, brand-token reconciliation, and product data loaders. Requires the Figma MCP server.",
+      "description": "Convert a Figma frame into live Storefront Next Page Designer blocks — React components with decorator metadata, brand-token reconciliation, and product data loaders. Requires the Figma MCP server.",
       "author": {
         "name": "Salesforce"
       },

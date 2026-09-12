@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/b2c-agent-plugins",
-  "version": "1.8.5",
+  "version": "1.9.0",
   "description": "B2C Commerce agent skills plugins for development and operations. Private — distributed via GitHub release zips.",
   "private": true
 }
