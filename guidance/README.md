@@ -19,7 +19,7 @@ skill installation nor `--docs-topics` defines the skill catalog.
 chosen by the top-level `featuredResources` IDs in `collections.json`. Featuring
 an entry controls listing only. All available skills and references are readable
 through the resource template and `skills_read`, grouped into `b2c`, `b2c-cli`,
-`storefront-next`, and `mcp`. Every tool discovery/read result includes a URI. MCP resources are always registered.
+`b2c-ops`, `storefront-next`, and `mcp`. Every tool discovery/read result includes a URI. MCP resources are always registered.
 When `skills_read` is omitted from an individual tool selection, the index and
 resource template expose only the `mcp` collection; all other collections are
 excluded from discovery and direct reads.

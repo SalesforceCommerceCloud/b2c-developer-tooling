@@ -13,6 +13,10 @@ At most four requests, three concurrent. For the next page, reuse the returned
 `hasMore: true` needs investigation, not an endless retry. Records can still change
 between reads. If the query can be answered from search hits, omit detail calls.
 
-Read logs only for executions that need diagnosis, using dedicated log tools
-outside this function. The returned log path is evidence to guide lookup, not
+For routine health checks or incomplete business results, use
+`skill://b2c-ops/b2c-job-health/SKILL.md` when that collection is available; a
+failed-only search cannot establish health. Read logs for executions needing
+diagnosis with `logs_list_files` / `logs_get_recent`, passing the returned path
+relative to `Logs/` as a prefix. CLI fallback: `b2c job log JOB_ID EXECUTION_ID`.
+The returned log path is evidence to guide lookup, not
 permission to read an arbitrary local path. Do not infer root cause from ERROR alone.

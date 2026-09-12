@@ -78,16 +78,16 @@ export interface SystemJobSpec {
   /** System job ID, e.g. `sfcc-site-archive-import`. */
   jobId: string;
   /**
-   * OCAPI "shorthand" request body tried first on the OCAPI path (e.g.
+   * System-job configuration sent on both APIs (e.g.
    * `{file_name}`, `{export_file, data_units}`, or the CAP `{app_name, ...}`
-   * shape). When the instance rejects it with `UnknownPropertyException`, the
+   * shape). These system jobs retain snake_case fields on SCAPI. When the
+   * instance rejects it with `UnknownPropertyException`, the
    * OCAPI path retries with {@link parameters}.
    */
-  ocapiBody: Record<string, unknown>;
+  body: Record<string, unknown>;
   /**
-   * Job parameters (`[{name, value}]`). Used as the OCAPI internal-user retry
-   * body **and** as the SCAPI request body (SCAPI's `JobExecutionRequest`
-   * accepts exactly this shape).
+   * Job parameters (`[{name, value}]`) for the OCAPI internal-user retry.
+   * System jobs do not use the generic SCAPI JobExecutionRequest body.
    */
   parameters: Array<{name: string; value: string}>;
   /** Scopes named in the OCAPI-deprecation error (the rw jobs scope). */
@@ -173,7 +173,7 @@ async function runScapiSystemJob(
 }
 
 async function startScapiJob(client: ReturnType<typeof createScapiJobsClient>, tenantId: string, spec: SystemJobSpec) {
-  return scapiExecuteJob(client, spec.jobId, {parameters: spec.parameters, tenantId});
+  return scapiExecuteJob(client, spec.jobId, {body: spec.body, tenantId});
 }
 
 async function finishScapiJob(
@@ -214,7 +214,7 @@ async function runOcapiSystemJob(instance: B2CInstance, spec: SystemJobSpec): Pr
 
   const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
     params: {path: {job_id: spec.jobId}},
-    body: spec.ocapiBody as unknown as string,
+    body: spec.body as unknown as string,
   });
 
   if (

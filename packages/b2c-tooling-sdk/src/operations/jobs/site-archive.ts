@@ -216,7 +216,7 @@ export async function siteArchiveImport(
   // Execute the import job (SCAPI when configured, OCAPI fallback in auto).
   const execution: JobExecution = await runSystemJob(instance, {
     jobId: IMPORT_JOB_ID,
-    ocapiBody: {file_name: zipFilename},
+    body: {file_name: zipFilename},
     parameters: [{name: 'ImportFile', value: zipFilename}],
     deprecatedScopes: JOBS_RW_SCOPES,
     wait,
@@ -948,7 +948,7 @@ export async function siteArchiveExport(
   // Execute export job (SCAPI when configured, OCAPI fallback in auto).
   const execution: JobExecution = await runSystemJob(instance, {
     jobId: EXPORT_JOB_ID,
-    ocapiBody: {export_file: zipFilename, data_units: dataUnits},
+    body: {export_file: zipFilename, data_units: dataUnits},
     parameters: [
       {name: 'ExportFile', value: zipFilename},
       {name: 'DataUnits', value: JSON.stringify(dataUnits)},

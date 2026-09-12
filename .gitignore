@@ -22,6 +22,7 @@ package-lock.json
 # VitePress
 docs/.vitepress/dist
 docs/.vitepress/cache
+docs/.vitepress/.temp
 
 # TypeDoc generated API docs (regenerated on build)
 docs/api/
@@ -46,3 +47,8 @@ __pycache__/
 
 # Generated offline guidance; rebuilt from authored skills and MCP guides.
 /packages/b2c-dx-mcp/content/guidance/
+
+# Release notes: published history refresh and rendered Markdown (seed is committed).
+/docs/.vitepress/releases/live.json*
+/docs/_partials/releases.generated.md
+/docs/public/releases/

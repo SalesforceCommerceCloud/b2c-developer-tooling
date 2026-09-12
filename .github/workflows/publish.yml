@@ -650,7 +650,7 @@ jobs:
       - name: Trigger documentation deployment
         if: >-
           steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
-          && (steps.packages.outputs.tag_cli == 'latest' || steps.packages.outputs.tag_sdk == 'latest' || steps.packages.outputs.tag_mcp == 'latest' || steps.packages.outputs.publish_docs == 'true')
+          && (steps.packages.outputs.publish_cli == 'true' || steps.packages.outputs.publish_sdk == 'true' || steps.packages.outputs.publish_mcp == 'true' || steps.packages.outputs.publish_mrt == 'true' || steps.packages.outputs.publish_vsx == 'true' || steps.packages.outputs.publish_plugins == 'true' || steps.packages.outputs.publish_docs == 'true')
         run: gh workflow run deploy-docs.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

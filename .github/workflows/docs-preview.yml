@@ -1,14 +1,12 @@
 name: Docs Preview
 
-# Build the VitePress docs site for a pull request and publish it to a per-PR
-# preview location (S3 + CloudFront), then comment the preview URL on the PR.
-# The preview is rebuilt on every push and removed when the PR is closed.
+# Publish the VitePress docs site to S3 + CloudFront. Main has a persistent
+# /next/ preview; PR previews live at /pr-<n>/ and are removed when closed.
 #
 # Triggers:
+#   - push to main: refresh the unreleased documentation at /next/.
 #   - pull_request (docs/** changes): automatic preview build/refresh and cleanup.
-#   - workflow_dispatch (pr_number input): manually (re)build a preview for any PR
-#     in this repo, even one that didn't change docs/**. Dispatching a workflow
-#     already requires write access, so this is inherently maintainer-gated.
+#   - workflow_dispatch: rebuild main, or supply pr_number to rebuild a PR.
 #
 # Scope: previews run only for PRs raised from branches in this repository, not
 # from forks. The `resolve` job fetches the PR's head repo and refuses forks
@@ -22,6 +20,9 @@ name: Docs Preview
 # free text such as the branch name, PR title, or body.
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     # ready_for_review is included so a preview builds as soon as a draft PR is
     # marked ready (draft PRs are skipped in the resolve job below).
@@ -35,8 +36,8 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR number to build a docs preview for (must be a PR from a branch in this repo, not a fork)'
-        required: true
+        description: 'Optional PR number from this repo. Leave blank to build main at /next/.'
+        required: false
         type: string
 
 permissions:
@@ -44,18 +45,17 @@ permissions:
   pull-requests: write # upsert the preview comment
   id-token: write # AWS OIDC role assumption
 
-# One in-flight run per PR, across both triggers. A newer push (or the close
-# event) cancels an in-progress deploy; the cleanup job is idempotent so
-# cancellation is safe. inputs.pr_number covers the manual-dispatch case.
+# Main and each PR have independent concurrency groups. A newer push (or PR
+# close) cancels an in-progress deploy for that destination only.
 concurrency:
-  group: docs-preview-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+  group: docs-preview-${{ github.event.pull_request.number || github.event.inputs.pr_number || 'next' }}
   cancel-in-progress: true
 
 jobs:
   # Normalize both triggers into a single set of values and enforce the fork
   # guard up front. Read-only: no checkout of PR code, no deploy credentials.
   resolve:
-    name: Resolve PR context
+    name: Resolve preview context
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -66,20 +66,36 @@ jobs:
       action: ${{ steps.r.outputs.action }}
       same_repo: ${{ steps.r.outputs.same_repo }}
       is_draft: ${{ steps.r.outputs.is_draft }}
+      preview_path: ${{ steps.r.outputs.preview_path }}
     steps:
-      - name: Resolve PR number, head SHA, and same-repo status
+      - name: Resolve source commit and preview destination
         id: r
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const {owner, repo} = context.repo;
+            const input = context.payload.inputs?.pr_number?.trim() || '';
+            const isMain = context.eventName === 'push' ||
+              (context.eventName === 'workflow_dispatch' && !input);
+
+            if (isMain) {
+              const sha = context.eventName === 'push'
+                ? context.sha
+                : (await github.rest.repos.getCommit({owner, repo, ref: 'main'})).data.sha;
+              core.setOutput('head_sha', sha);
+              core.setOutput('action', 'main');
+              core.setOutput('same_repo', 'true');
+              core.setOutput('is_draft', 'false');
+              core.setOutput('preview_path', 'next');
+              return;
+            }
 
             let prNumber;
             let action;
             if (context.eventName === 'workflow_dispatch') {
               action = 'manual';
-              prNumber = Number.parseInt(context.payload.inputs.pr_number, 10);
-              if (!Number.isInteger(prNumber) || prNumber <= 0) {
+              prNumber = Number(input);
+              if (!/^\d+$/.test(input) || !Number.isSafeInteger(prNumber) || prNumber <= 0) {
                 core.setFailed(`Invalid pr_number input: "${context.payload.inputs.pr_number}" (expected a positive integer).`);
                 return;
               }
@@ -101,6 +117,7 @@ jobs:
             core.setOutput('action', action);
             core.setOutput('same_repo', sameRepo ? 'true' : 'false');
             core.setOutput('is_draft', isDraft ? 'true' : 'false');
+            core.setOutput('preview_path', `pr-${prNumber}`);
 
             if (!sameRepo) {
               core.notice(`PR #${prNumber} is from a fork (${pr.head.repo ? pr.head.repo.full_name : 'unknown'}); docs preview is skipped for forks.`);
@@ -123,6 +140,7 @@ jobs:
     environment: b2c-docs-preview
     env:
       PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
+      PREVIEW_PATH: ${{ needs.resolve.outputs.preview_path }}
       AWS_PREVIEW_ROLE_ARN: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
       DOCS_PREVIEW_BUCKET: ${{ secrets.DOCS_PREVIEW_BUCKET }}
       DOCS_PREVIEW_CLOUDFRONT_ID: ${{ secrets.DOCS_PREVIEW_CLOUDFRONT_ID }}
@@ -141,10 +159,8 @@ jobs:
             echo "::notice::Docs preview infrastructure not configured (AWS_PREVIEW_ROLE_ARN missing); skipping preview deploy."
           fi
 
-      # Check out the PR's head commit explicitly so the manual (workflow_dispatch)
-      # and automatic paths build the same thing. The SHA comes from the API and
-      # is safe to use as a ref.
-      - name: Checkout PR head
+      # Build the resolved commit, independent of the workflow's dispatch ref.
+      - name: Checkout preview source
         if: steps.cfg.outputs.enabled == 'true'
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -182,14 +198,13 @@ jobs:
         if: steps.cfg.outputs.enabled == 'true'
         run: pnpm -r run build # builds the SDK that TypeDoc reads for API docs
 
-      # DOCS_BASE_PATH makes VitePress bake in the /pr-<n>/ base so every asset
-      # and link URL is prefixed for the preview subdirectory (see config.mts).
+      # DOCS_BASE_PATH prefixes assets and links for /next/ or /pr-<n>/.
       # The uxstudio S3 assets used by the production build are intentionally
       # skipped — no docs source references them.
-      - name: Build documentation (per-PR base path)
+      - name: Build documentation (preview base path)
         if: steps.cfg.outputs.enabled == 'true'
         env:
-          DOCS_BASE_PATH: /pr-${{ env.PR_NUMBER }}/
+          DOCS_BASE_PATH: /${{ env.PREVIEW_PATH }}/
         run: pnpm run docs:build
 
       - name: Configure AWS credentials
@@ -202,20 +217,29 @@ jobs:
       - name: Publish to S3
         if: steps.cfg.outputs.enabled == 'true'
         run: |
-          aws s3 sync docs/.vitepress/dist "s3://${DOCS_PREVIEW_BUCKET}/pr-${PR_NUMBER}/" --delete
+          aws s3 sync docs/.vitepress/dist "s3://${DOCS_PREVIEW_BUCKET}/${PREVIEW_PATH}/" --delete
 
       - name: Invalidate CloudFront
         if: steps.cfg.outputs.enabled == 'true'
         run: |
           aws cloudfront create-invalidation \
             --distribution-id "${DOCS_PREVIEW_CLOUDFRONT_ID}" \
-            --paths "/pr-${PR_NUMBER}/*"
+            --paths "/${PREVIEW_PATH}/*"
+
+      - name: Record preview URL
+        if: steps.cfg.outputs.enabled == 'true'
+        env:
+          COMMIT_SHA: ${{ needs.resolve.outputs.head_sha }}
+        run: |
+          echo "### Documentation preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "${DOCS_PREVIEW_BASE_URL}/${PREVIEW_PATH}/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: ${COMMIT_SHA}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment preview URL on PR
-        if: steps.cfg.outputs.enabled == 'true'
+        if: steps.cfg.outputs.enabled == 'true' && needs.resolve.outputs.pr_number != ''
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          PREVIEW_URL: ${{ env.DOCS_PREVIEW_BASE_URL }}/pr-${{ env.PR_NUMBER }}/
+          PREVIEW_URL: ${{ env.DOCS_PREVIEW_BASE_URL }}/${{ env.PREVIEW_PATH }}/
           COMMIT_SHA: ${{ needs.resolve.outputs.head_sha }}
         with:
           script: |

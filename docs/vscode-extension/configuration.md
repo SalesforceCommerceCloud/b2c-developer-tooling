@@ -1,5 +1,5 @@
 ---
-description: Connect the Salesforce B2C Commerce VS Code Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference.
+description: Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference.
 ---
 
 # Configuration
@@ -11,6 +11,7 @@ This page covers:
 - [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
 - [How the Extension Chooses a Project](#how-the-extension-chooses-a-project) — parent folders and multi-root workspaces.
 - [Selecting an Instance](#selecting-an-instance) — workspace-specific and shared defaults.
+- [Safety Mode](#safety-mode) — restrict changes and require confirmation for selected actions.
 - [Settings Reference](#settings-reference) — the `b2c-dx.*` toggles and verbosity controls.
 
 ## Connecting to a B2C Instance
@@ -94,6 +95,17 @@ When your configuration defines multiple named instances (the recommended patter
 The picker distinguishes the instance **selected for this workspace** with a check mark and the shared **default instance** with a star. Use the star action on a row—or run **B2C DX: Set Default Instance**—to intentionally change the default used by other consumers. Run **B2C DX: Follow Default Instance** to remove the workspace-specific selection.
 
 For named entries, setting the default writes `active: true`; a root configuration without an explicit `active` value remains an implicit default. This is equivalent to running `b2c setup instance set-active <name>` and is separate from selecting an instance only for VS Code.
+
+## Safety Mode
+
+The extension honors the selected instance's `safety` settings in `dw.json`.
+You can block commands such as sandbox deletion or require a modal **Proceed**
+confirmation before stopping a sandbox. Request-level safety restrictions also
+apply; approving a command does not override them.
+
+See [Safety Mode for the IDE extension](../guide/safety#ide-extension) for
+configuration examples, supported confirmations, and shared safety files.
+There is no separate safety-level toggle in VS Code Settings.
 
 ## Settings Reference
 

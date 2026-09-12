@@ -66,6 +66,47 @@ as confirming the affected records and effective state; technical acceptance
 alone may not establish completion. Do not fabricate capabilities or imply
 permissions for bulk changes, publication, or deletion from permission to inspect.
 
+## Operational runbook structure
+
+Runbooks must teach toolkit-specific decisions, not restate general incident
+advice. For each check, name the shipped tool/snippet/CLI command, the returned
+evidence that drives the next action, known coverage limits, and the preferred
+fallback. Verify names/fields against code and contracts. Reuse existing snippets
+and skills; do not duplicate their full schemas or executable source. Keep generic
+process short and use it to organize concrete evidence paths. A runbook whose
+procedure would be unchanged without this toolkit needs more grounding.
+
+Give a recurring operational task its own discoverable runbook when it has a
+distinct outcome, access requirements, and evidence path. For example, finding
+FAILED order records differs from investigating broad checkout symptoms. Route
+between these conditionally; do not bury the targeted procedure in a broad
+incident skill or require reading both entrypoints.
+
+Use the same headings across `b2c-ops` entrypoints: **Scope and impact**, **Access
+and tools**, **Checks and decisions**, **Mitigation and recovery**, **Escalation
+and handoff**. Scale detail to the workflow. Routine health checks need not become
+declared incidents. Impact/severity and update cadence follow the customer's
+process; never invent severity definitions, SLAs, or a mandatory support contract.
+
+Checks name evidence, expected result, and the next branch. Preserve fixed time
+windows, sample/coverage limits, and failed stages. Hypotheses are not diagnoses;
+restore service under authorization without requiring a completed root-cause
+analysis. Separate mitigation from permanent remediation and follow-up prevention.
+Do not use a green job or missing recent log entries as proof of business health.
+
+Escalation is first-class: administrator, developer/implementation partner,
+integration provider, or Salesforce Support. Reuse the triage escalation reference
+for a sanitized case draft, business impact, target/window, reproduction, evidence,
+actions taken, unknowns, and next owner/update. Do not submit cases or messages
+without explicit authorization. Support may be the correct outcome, not a failure
+to finish. No source checkout or demo setup should be needed for operator work.
+
+Grounding: Google's [incident response](https://sre.google/workbook/incident-response/)
+and [troubleshooting](https://sre.google/sre-book/effective-troubleshooting/)
+patterns (impact, ownership, working record, hypothesis testing, recovery), plus
+[Reporting to B2C Commerce Support](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-reporting-to-support.html)
+for platform-versus-solution ownership, reproduction, logs, and cases.
+
 CLI-focused references apply when CLI work is requested or the chosen fallback
 requires them. Make MCP workflows self-contained. If a linked native collection
 can be disabled, offer an applicable public documentation link or conditional

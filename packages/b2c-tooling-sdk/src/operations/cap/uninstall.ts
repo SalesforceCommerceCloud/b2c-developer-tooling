@@ -73,7 +73,7 @@ export async function commerceAppUninstall(
   try {
     finalExecution = await runSystemJob(instance, {
       jobId: UNINSTALL_JOB_ID,
-      ocapiBody: {
+      body: {
         app_name: appName,
         app_domain: appDomain,
         site_id: siteId,

@@ -1,37 +1,26 @@
 ---
-description: Control MCP tool access, protect Commerce credentials, and understand deployment, debugging, and data access.
+description: Control MCP tool access, protect B2C Commerce credentials, and understand deployment, debugging, and data access.
 ---
 
 # Security and Access
 
 The MCP server runs locally with the permissions of the process that starts it.
-Connected tools use your configured Commerce or Managed Runtime credentials.
-Choose the tools and environment access appropriate to the work you want your
-assistant to perform.
+Connected tools use your configured B2C Commerce or Managed Runtime credentials.
+Start with a sandbox and grant only the access needed for your work. Review
+changes through your client's approval controls and use Safety Mode to restrict
+supported operations.
 
-## Limit available tools
-
-All toolsets are enabled by default. Use `--tools` for a small selection or
-`--toolsets` for a workflow group. For skills and documentation only:
-
-```bash
-npx -y @salesforce/b2c-dx-mcp@latest --tools skills_read,docs_search,docs_read,docs_list
-```
-
-This configuration exposes no deployment or debugger tools and needs no
-Commerce credentials. Some documentation is retrieved online. Check your
-client's active tool list after changing configuration. See
-[tool selection](./configuration#toolset-selection) for all options.
+## Review access and changes
 
 Use your client's tool approval controls for operations you want to review.
-Tools identify read-only operations and possible state changes to compatible
-clients. Configuration inspection and debugger session listing are read-only;
-debugger control can affect running requests. Your client decides when to ask
-for approval; these labels do not restrict credentials or enforce access.
-Selecting a tool enables all of its operations; for example, `debug_control`
-includes both stepping and continuing execution.
+Approval behavior varies by client. Approvals do not replace account permissions
+or Safety Mode restrictions.
 These controls apply within that client; your assistant may also have access to
 other MCP servers or a terminal.
+
+The default installation includes all toolsets, but connected operations still
+require credentials. To limit the available tools, see
+[advanced tool selection](./configuration#toolset-selection).
 
 ## Protect credentials and data
 
@@ -42,8 +31,7 @@ version control and avoid placing secrets directly in shared MCP launch argument
 Logs, debugger variables, and API responses can contain customer data, session
 identifiers, or secrets. Once returned to your assistant, that data is subject
 to the assistant provider's storage and data-use settings. Review those settings
-before connecting sensitive environments. Do not enable unredacted configuration
-inspection when sharing results.
+before connecting sensitive environments, and review results before sharing them.
 
 See [authentication setup](../guide/authentication) for API scopes and account
 permissions.
@@ -54,10 +42,6 @@ Cartridge deployment writes to the selected code version. MRT publishing uploads
 a bundle and can activate it in an environment. Confirm the project, instance, code version, and
 MRT environment before requesting these operations.
 
-Use `config_inspect` to check the current target. Tools that support per-task
-project or instance selection can use a different target from the launch default.
-A launch-time project path is a default, not a filesystem access restriction.
-
 ## Debugger access {#debugger}
 
 Debugging requires a Business Manager username/password or access key with
@@ -65,11 +49,8 @@ Debugging requires a Business Manager username/password or access key with
 development sandbox: breakpoints can pause application requests, and expression
 evaluation can change application state.
 
-End debugger sessions when finished. If a request remains paused or a session
-is lost, ask your assistant to list and end active sessions. If it cannot recover
-them, restart the MCP server. An orphaned remote session may need to time out
-on the instance before reconnecting. See [script debugging](../guide/script-debugger) for the available
-CLI and IDE alternatives.
+If debugging leaves a request paused, ask your assistant to disconnect the debugger.
+See [script debugging](../guide/script-debugger) for CLI and IDE alternatives.
 
 ## Safety settings
 
@@ -80,8 +61,8 @@ file writes or every debugger action.
 
 For a skills-only or documentation-only assistant, select those tools
 explicitly. Do not treat `READ_ONLY` as a complete MCP sandbox. SCAPI code mode
-stops confirmation-required requests; interactive confirmation is not supported.
-Changing the prompt does not bypass the restriction.
+stops requests that require Safety Mode confirmation; interactive confirmation
+is not supported.
 
 For SCAPI code mode, the selected project's `.env` can set `SFCC_SAFETY_LEVEL`, `SFCC_SAFETY_CONFIRM`,
 and `SFCC_SAFETY_CONFIG`. Launch environment values take precedence over `.env`.
@@ -89,78 +70,35 @@ Relative safety-file paths resolve from the selected project. The effective leve
 is the most restrictive of environment, global file, and instance settings;
 explicit rules still take precedence over the level.
 
-`READ_ONLY` uses HTTP methods, so it also blocks searches that use POST. To permit
-a specific search, add a narrow allow rule to your safety configuration. For example:
-
-```json
-{
-  "level": "READ_ONLY",
-  "rules": [
-    {
-      "method": "POST",
-      "path": "/operation/jobs/v1/organizations/*/job-execution-search",
-      "action": "allow"
-    }
-  ]
-}
-```
-
-This allows job execution searches while keeping other POST requests restricted.
+`READ_ONLY` uses HTTP methods, so it also blocks searches that use POST. See
+[allow a search without enabling other writes](../guide/safety#allow-a-search-without-enabling-other-writes)
+for a job-investigation example. An assistant's tool approval does not satisfy
+a Safety Mode confirmation or override a block.
 
 ## SCAPI code mode
 
-The preview `scapi_search` and `scapi_execute` tools use JavaScript for API
-discovery, Commerce requests, and result processing. Local file editing, builds,
-and shell commands belong in your assistant's terminal or file tools.
-Code mode restricts filesystem APIs, subprocesses, worker threads, and native
-addons, and disables built-in `fetch` and `WebSocket`. These guardrails prevent
-accidental misuse; they are not a security sandbox or network isolation.
+SCAPI code mode can create, update, or delete B2C Commerce records using your
+Account Manager credentials and granted API scopes. The configured
+[Safety Mode policy](../guide/safety) applies to its Salesforce Commerce API requests.
+Multi-step tasks can partially complete: review completed changes before
+retrying a failed or interrupted task.
 
-SCAPI execution uses the selected project's Account Manager credentials and
-API scopes. It can create, update, or delete Commerce records. The configured
-[Safety Mode policy](../guide/safety) applies to requests made through the SCAPI
-helper; it does not restrict arbitrary local JavaScript. Confirmation-required
-requests stop in this preview. Review any completed changes before retrying a
-failed or interrupted operation.
+Code mode runs generated JavaScript locally with restrictions on file and process
+access. It is not a security sandbox or network isolation; Safety Mode governs
+Salesforce Commerce API requests, not arbitrary JavaScript.
 
 Custom Admin APIs use the same safety policy. Grant `sfcc.scapi-schemas` for live
 contract discovery and the endpoint's declared `c_*` scope for execution. The
 `sfcc.custom-apis` scope grants registration visibility, not access to custom
 business logic.
 
-Admin and Shopper credentials serve different purposes. Admin operations use an
-Account Manager client and its granted scopes. Shopper flows use SLAS; configuring
-a SLAS client enables token export for external clients, but does not enable
-Shopper requests through the SCAPI helper in this preview. Authentication
-errors identify the relevant credentials or grants to check. A 403 can also mean
-missing instance access, rather than a missing API scope.
-
 Code mode can export Account Manager or SLAS access tokens when you need them
-for a separate HTTP client. Normal SCAPI requests authenticate automatically.
+for a separate HTTP client. Normal SCAPI requests authenticate automatically;
+no token export is needed. Configuring SLAS does not enable Shopper execution
+through code mode.
 Exported tokens are credentials and may appear in your assistant's conversation
 history. Requests made by an external client are outside MCP Safety Mode.
 
-Saved workflows execute local JavaScript with the same access as other code-mode
-programs. Save or install only source you trust. Saving retains source and metadata;
-it does not separately store execution inputs, responses, or credentials. Values
-written directly into the source remain in the saved file, so keep secrets out of
-workflow code. A workflow's read/write label describes its purpose; the selected
-project's safety policy still governs each SCAPI request, including POST searches.
-
-## Telemetry {#telemetry}
-
-Telemetry is enabled by default. It records usage and diagnostic information,
-including tool names, timing, lifecycle events, client/version information, and
-error messages. To disable it, set either `SFCC_DISABLE_TELEMETRY=true` or
-`SF_DISABLE_TELEMETRY=true` in the environment that launches the MCP server.
-
-For a directly configured server, add this alongside `command` and `args`:
-
-```json
-"env": {
-  "SFCC_DISABLE_TELEMETRY": "true"
-}
-```
-
-MCP diagnostic logs are separate from telemetry. Use debug logging temporarily
-and review logs before sharing them.
+Save or install only workflows you trust, and keep credentials out of their source.
+Saved workflows use the credentials and safety policy of the project where you
+run them.

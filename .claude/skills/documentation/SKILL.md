@@ -1,13 +1,96 @@
 ---
 name: documentation
-description: Updating user guides, CLI reference, and API documentation for the B2C CLI project. Use when adding or changing CLI command docs, writing JSDoc for TypeDoc generation, updating Vitepress sidebar config, or creating new guide pages.
+description: Update toolkit documentation, navigation, and shared site components. Use for user guides, MCP pages, CLI reference, VitePress styling, and JSDoc for TypeDoc generation.
 metadata:
   internal: true
 ---
 
 # Documentation
 
-This skill covers updating documentation for the B2C CLI project.
+This skill covers documentation for the Agentic B2C Developer Toolkit.
+
+## Audience and Framing
+
+- Public docs explain capabilities, installation, configuration, and security.
+  Describe outcomes people can request from their assistant; keep agent tool
+  choreography, runtime internals, and implementation rationale in agent skills
+  or contributor docs. Include technical details when they affect a user's choice.
+- Say "B2C Commerce" rather than "Commerce" alone. Use "IDE Extension" for the
+  editor product. The TypeScript SDK is a supporting foundation, not a primary
+  toolkit product alongside CLI, IDE, and AI tools.
+- MCP tool references use compact tool-name/capability tables, access requirements,
+  meaningful limits, and example requests. Link shared configuration/authentication;
+  MCP Configuration covers MCP-specific settings only.
+- Prefer plugin installation where supported; keep manual setup and toolset
+  customization secondary. A brief linked mention of the Agent Plugins standard
+  is useful; manifest/schema details are not installation guidance.
+- MCP exposes skill guidance through `skills_read`; it does not install those
+  collections as native assistant skills. Separate skills installation is optional,
+  supported alongside MCP or alone. Show collections before their install examples.
+- Safety Mode guidance leads with supported B2C operations and practical CLI,
+  MCP, and IDE examples. Distinguish blocked actions, supported confirmations,
+  and assistant approvals. Describe first-match rule precedence precisely; put
+  broader agent/tool boundaries in a short scope note, not the introduction.
+
+## Shared Visual Patterns
+
+Use the globally registered `ExamplePrompt` component for requests a reader can
+give their assistant:
+
+```markdown
+<ExamplePrompt>
+
+> Summarize this campaign's promotions and flag schedule conflicts.
+
+</ExamplePrompt>
+```
+
+Keep blank lines around the Markdown quote so VitePress parses it. The component
+provides the upright "Example prompt" label, chat icon, tinted background, and
+italic prompt text. Preserve the quote in Markdown exports. Ordinary quotations,
+notes, terminal commands, and agent instructions do not use this treatment.
+
+- Reuse `AssistantInstall` for client tabs and the shared MCP setup partials for
+  the MCP page and Install AI Tools dialog. Order: Claude, Codex, VS Code, Cursor,
+  OpenCode, Gemini. Keep full instructions in rendered HTML for search and no-JS
+  readers. Put supported install buttons inside their client tab, before instructions.
+- Use `DocCards` for capability links and `.workflow-feature` for an example
+  prompt paired with an image. Add screenshots or diagrams where they explain a
+  task, not to decorate every section. Use clearly labeled placeholders until real
+  captures are available. Research screenshots in `design-references/` stay uncommitted.
+- Preserve the site's Salesforce colors and shared typography. Verify visual
+  changes in the browser at desktop and mobile widths; source edits alone do not
+  establish that icons, wrapping, or spacing render correctly.
+- For clickable screenshots outside `public/`, import the image in the page's
+  `<script setup>` and bind the link's `:href` to that import. A plain Markdown
+  link to the source image can work in dev but 404 after Vite hashes the asset.
+  Check link targets in a production build with `DOCS_BASE_PATH=/pr-672/` (or
+  another subpath), not only in the dev server.
+
+### CLI Terminal Images
+
+Use Freeze for compact CLI output images beside the relevant command. Prefer
+read-only listings, searches, status checks, and local previews. Use real output;
+choose useful columns and supported result limits before capture. Local sample
+data is appropriate when labeled as a sample. Do not invent successful output or
+expose credentials, personal information, or customer data.
+
+Match the existing Custom API image: JetBrains Mono, 14px, `#171717` background,
+window controls, 12px corner radius, no outer background or shadow. Cyan prompts
+and restrained status colors are sufficient. Aim for a 700px logical frame and
+roughly 5-12 output lines. Freeze auto-sized PNGs render at 4x resolution; an
+explicit width disables that scaling, so use padding to keep shorter captures
+at a consistent width. Keep raw captures and render settings in the locally
+ignored `design-references/` directory.
+
+Publish reviewed PNGs under `docs/public/terminal/`. Link the image to its full
+size using `[![descriptive alt text](/terminal/name.png)](/terminal/name.png)`;
+describe the command's useful result and significant statuses in the alt text,
+not just "terminal screenshot." Identify sample data and consequential flags
+such as offline mode when needed to interpret the result. Avoid transcribing
+entire tables. The shared CSS limits display width to 680px. Keep copyable command examples in
+the page. Verify image readability and links on desktop, mobile, and a built
+site with a URL prefix.
 
 ## Documentation Structure
 
@@ -39,6 +122,7 @@ docs/
 Purpose: Help users get started and understand concepts.
 
 When to update:
+
 - New features that need explanation
 - Changes to installation or setup process
 - New authentication methods
@@ -73,6 +157,7 @@ pnpm install -g @salesforce/b2c-cli
 Purpose: Document command syntax, flags, and usage examples.
 
 When to update:
+
 - New commands added
 - Flags added, removed, or changed
 - Command behavior changes
@@ -97,29 +182,33 @@ b2c code deploy [PATH] [FLAGS]
 
 ### Arguments
 
-| Argument | Description | Required | Default |
-|----------|-------------|----------|---------|
-| PATH | Path to cartridges directory | No | . |
+| Argument | Description                  | Required | Default |
+| -------- | ---------------------------- | -------- | ------- |
+| PATH     | Path to cartridges directory | No       | .       |
 
 ### Flags
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| --server | -s | Instance hostname | - |
-| --code-version | -v | Code version name | - |
-| --cartridge | -c | Include specific cartridges | - |
-| --exclude-cartridge | -x | Exclude cartridges | - |
+| Flag                | Short | Description                 | Default |
+| ------------------- | ----- | --------------------------- | ------- |
+| --server            | -s    | Instance hostname           | -       |
+| --code-version      | -v    | Code version name           | -       |
+| --cartridge         | -c    | Include specific cartridges | -       |
+| --exclude-cartridge | -x    | Exclude cartridges          | -       |
 
 ### Examples
 
 \`\`\`bash
+
 # Deploy all cartridges in current directory
+
 b2c code deploy --server dev01.example.com --code-version v1
 
 # Deploy specific cartridges
+
 b2c code deploy ./cartridges -c app_storefront -c app_custom
 
 # Deploy excluding certain cartridges
+
 b2c code deploy -x test_cartridge -x bm_extensions
 \`\`\`
 
@@ -145,7 +234,7 @@ Never edit files in `docs/api/` directly. Instead:
 
 Add to barrel files (`index.ts`):
 
-```typescript
+````typescript
 /**
  * Authentication strategies for B2C Commerce APIs.
  *
@@ -166,11 +255,11 @@ Add to barrel files (`index.ts`):
  *
  * @module auth
  */
-```
+````
 
 ### Class Documentation
 
-```typescript
+````typescript
 /**
  * Client for WebDAV file operations on B2C Commerce instances.
  *
@@ -192,11 +281,11 @@ export class WebDavClient {
    */
   constructor(hostname: string, auth: AuthStrategy) {}
 }
-```
+````
 
 ### Function Documentation
 
-```typescript
+````typescript
 /**
  * Deploys cartridges to a B2C Commerce instance.
  *
@@ -221,9 +310,9 @@ export class WebDavClient {
 export async function deployCartridges(
   instance: B2CInstance,
   cartridgePath: string,
-  options?: DeployOptions
+  options?: DeployOptions,
 ): Promise<DeployResult> {}
-```
+````
 
 ### Type Documentation
 
@@ -258,6 +347,81 @@ pnpm run docs:build
 # Preview built site
 pnpm run docs:preview
 ```
+
+## Hosted Builds
+
+`.github/workflows/docs-preview.yml` publishes unreleased docs from `main` at
+`/next/` on the preview host after every push. PR previews use `/pr-<number>/` and
+are removed when the PR closes. Both build packages and the docs site; neither
+refreshes published release history from GitHub.
+
+To rebuild manually, dispatch the workflow with no inputs for `main`, or set
+`pr_number` for a PR (including drafts). The workflow always resolves the source
+commit explicitly. The preview URL is recorded in the workflow summary; PRs
+also receive a preview comment. Production docs remain tied to stable release
+tags through `deploy-docs.yml`.
+
+## Agent Discovery on the Docs Site
+
+`docs/public/llms.txt` is a curated agent entrypoint: CLI installation via `npx`,
+MCP/plugin setup, installed docs and skills tools, then selected Markdown references.
+Keep installation first and details terse; do not expand it into an exhaustive
+index or `llms-full.txt` bundle. Update it when setup or core capabilities change.
+
+The footer and HTML `rel="describedby"` link expose `llms.txt`. Each page has a
+`rel="alternate"` Markdown link matching View as Markdown. Source Markdown is
+exported at its existing path, with shared includes expanded; directory pages
+use `index.md`. Links in `llms.txt` are relative to its location so stable, dev,
+and PR previews stay self-contained. Check those references against built files.
+
+## Release Notes
+
+`/releases/` combines published product changes with optional authored Markdown.
+Documentation-only releases and Documentation sections do not appear. Shared
+changes appear once with product labels; dependency updates are expandable.
+Group changes with the same product labels into unordered lists. Authored
+highlights remain prose above the generated notes.
+Use one date heading per day for the right-side outline, followed by Older
+Releases. Keep the outline aligned with product filters. Do not show a total
+update count: this page covers a selected period, not the entire release history.
+Keep authored highlights human-facing: outcomes, relevant limits, and upgrade
+actions. Do not copy CI mechanics or package plumbing into public prose.
+
+- `docs/.vitepress/releases/seed.json` is the checked-in history since July 1,
+  2026, including related IDE and skills artifacts. Local and PR builds need no
+  GitHub access. Change the starting point deliberately with
+  `pnpm --filter @salesforce/b2c-dx-docs run releases:refresh --seed-since YYYY-MM-DD`.
+- `pnpm --filter @salesforce/b2c-dx-docs run releases:refresh` uses authenticated
+  `gh` to fetch stable product releases since that date into ignored `live.json`.
+  Production runs this on every deployment, including doc-only releases. A failed
+  refresh stops deployment. Removing local `live.json` restores the seed view.
+- Add optional entries under `docs/releases/_entries/<slug>.md`:
+
+  ```yaml
+  ---
+  title: Introducing SCAPI code mode
+  date: 2026-09-15
+  products: [mcp]
+  release: '@salesforce/b2c-dx-mcp@3.0.0'
+  ---
+  ```
+
+  Follow with ordinary Markdown (no Vue/HTML components). With `release`, the
+  entry adds a highlight above that release's generated changes; it stays hidden
+  until the exact tag is available. Omit `release` for a standalone announcement.
+  Product IDs: `cli`, `ide`, `mcp`, `skills`, `mrt`, `sdk`. SDK is secondary.
+  The VitePress dev server watches entry edits; restart it after an invalid entry.
+
+- Release rendering runs when VitePress loads its config, including direct
+  `vitepress build`. Generated partials and Markdown exports are ignored; never
+  hand-edit them. All notes are present in static HTML, local search, and the
+  `/releases/index.md` export. Filters enhance the static content in the browser.
+- Run `pnpm --filter @salesforce/b2c-dx-docs run test:releases` for parser, merge,
+  editorial, offline-generation, and strict TypeScript checks. The `.ts` scripts
+  run via `tsx` and use the repository's shared ESLint rules in `lint:agent`.
+  Run `pnpm --filter @salesforce/b2c-dx-docs run format:releases` after edits.
+  Also check the page on desktop and
+  mobile, product filters, Markdown export, and a build with a subpath base.
 
 ## Guides Search Corpus (`b2c docs`)
 
@@ -380,63 +544,26 @@ Located in `typedoc.json`:
     "packages/b2c-tooling-sdk/src/operations/code/index.ts"
   ],
   "out": "docs/api",
-  "plugin": [
-    "typedoc-plugin-markdown",
-    "typedoc-vitepress-theme"
-  ],
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
   "exclude": ["**/*.generated.ts"]
 }
 ```
 
 When adding new SDK modules, add their barrel file to `entryPoints`.
 
-## Vitepress Configuration
+## VitePress Configuration
 
-Located in `docs/.vitepress/config.mts`:
-
-```typescript
-export default defineConfig({
-  title: 'B2C CLI',
-  base: '/b2c-developer-tooling/',
-
-  themeConfig: {
-    nav: [
-      { text: 'Guide', link: '/guide/' },
-      { text: 'CLI Reference', link: '/cli/' },
-      { text: 'API Reference', link: '/api/' },
-    ],
-
-    sidebar: {
-      '/guide/': [
-        {
-          text: 'Getting Started',
-          items: [
-            { text: 'Installation', link: '/guide/installation' },
-            { text: 'Authentication', link: '/guide/authentication' },
-          ],
-        },
-      ],
-      '/cli/': [
-        {
-          text: 'Commands',
-          items: [
-            { text: 'code', link: '/cli/code' },
-            { text: 'webdav', link: '/cli/webdav' },
-          ],
-        },
-      ],
-    },
-  },
-});
-```
-
-When adding new CLI commands or guide pages, update the sidebar config.
+Edit `docs/.vitepress/config.mts` for navigation and sidebar routing. Update both
+sidebar selection and top-nav `activeMatch` when moving a page between sections.
+Use existing theme components in `docs/.vitepress/theme/` rather than duplicating
+styles or installation content.
 
 ## Claude Code Skills (Plugin)
 
 The `skills/b2c-cli/skills/` directory contains skills that teach Claude about using the CLI commands. These are distributed via the plugin.
 
 When to update:
+
 - New CLI commands added
 - Existing commands changed
 - New usage patterns
@@ -458,7 +585,9 @@ Overview of the command topic.
 ### <Use Case>
 
 \`\`\`bash
+
 # Comment explaining the command
+
 b2c <topic> <command> [args] [flags]
 \`\`\`
 
@@ -498,18 +627,33 @@ b2c <topic> <command> --flag value
 
 ## Navigation Structure
 
-**Top Navigation:**
-- Guide (`/guide/`)
-- CLI Reference (`/cli/`)
-- API Reference (`/api/`)
+Administrator/operator tasks live in Guides under Operations & Administration.
+The Operations guide introduces shipped runbooks with business outcomes, example
+prompts, required access, and useful escalation (including Salesforce Support).
+Organize it around user capabilities, not individual skills or runbook names.
+Keep skill selection/procedures agent-facing; a future cross-plugin skill catalog
+will own individual skill listings. Collection names belong in installation context.
+Keep agent procedures in `skills/b2c-ops`, not the human guide. Link new supported
+tasks from the homepage and MCP where relevant; do not present planned merchant
+workflows as available. Runbook installation follows the same Agent Skills/MCP
+patterns, with MCP bundling preferred and standalone skills still supported.
 
-**Sidebar:**
-- Contextual based on section
-- API reference sidebar auto-generated from TypeDoc
+- **Docs** (`/`): shared toolkit sidebar for getting started, CLI overview, IDE
+  Extension, and AI Tools. AI Tools contains MCP and Agent Skills; plugin setup
+  belongs on those pages, not a separate Plugins landing page.
+- **MCP** (`/mcp/`): overview and installation together; children are Configuration,
+  MCP Tools, and Security and Access, in that order.
+- **Guides** (`/guide/workflows`): task guides with their own expanded groups.
+- **Reference** (`/cli/`): CLI commands with their own sidebar.
+- **SDKs**: TypeScript SDK (`/api/`); TypeDoc generates its reference navigation.
+
+Keep sidebar labels aligned with page titles; concise entries such as MCP and
+Introduction are intentional. Preserve published URLs/anchors when reorganizing
+content. Unpublished branch-only pages need no redirect when removed.
 
 ## Style Guidelines
 
-- Use code blocks with language hints (```bash, ```typescript)
+- Use code blocks with language hints (`bash, `typescript)
 - Include practical examples for every command/function
 - Keep flag tables consistent across command docs
 - Use relative links for internal references

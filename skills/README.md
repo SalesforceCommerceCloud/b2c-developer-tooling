@@ -12,6 +12,7 @@ These skills follow the open [Agent Skills](https://agentskills.io/home) standar
 |--------|-------------|
 | [`b2c`](./b2c) | B2C Commerce development patterns — controllers, ISML, forms, hooks, localization, logging, metadata, web services, custom job steps, custom objects/caches, Page Designer, Business Manager extensions, SCAPI/Custom APIs, querying, ordering, and SLAS auth patterns |
 | [`b2c-cli`](./b2c-cli) | B2C CLI commands and operations — code deployment, jobs, site import/export, WebDAV, On-Demand Sandboxes, log streaming, MRT, SLAS, Account Manager, eCDN, CIP, and SCAPI custom APIs/schemas |
+| [`b2c-ops`](./b2c-ops) | Administrator and operator runbooks — job health, checkout failures, incident triage, recovery checks, and escalation |
 | [`storefront-next`](./storefront-next) | Storefront Next development — project setup, routing, data fetching, components, design-system component authoring, vertical/theme creation, Page Designer, authentication, hybrid storefronts, i18n, state management, extensions, performance, testing, and Managed Runtime deployment |
 | [`storefront-next-figma`](./storefront-next-figma) | Figma design-kit workflows for Storefront Next verticals — duplicate the kit, sync Brand variables from `brand.css`, edit components at the correct layer, and publish Code Connect. **Requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server).** |
 
@@ -30,6 +31,7 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 # Use --scope project to install for the current project only
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install b2c-ops
 claude plugin install storefront-next
 # Requires the Figma MCP server (see plugin note above)
 claude plugin install storefront-next-figma
@@ -55,6 +57,7 @@ skills/
 ├── plugins.json                    # Manifest of plugins packaged on release
 ├── b2c/skills/                     # B2C Commerce development skills
 ├── b2c-cli/skills/                 # B2C CLI operation skills
+├── b2c-ops/skills/                 # Administrator/operator runbooks
 ├── storefront-next/skills/         # Storefront Next skills
 └── storefront-next-figma/skills/   # Figma design-kit skill(s)
 ```
@@ -65,6 +68,10 @@ Plugins listed in [`plugins.json`](./plugins.json) are zipped to `<name>-skills.
 
 - When modifying CLI commands, update the corresponding skill in `b2c-cli/skills/b2c-<topic>/SKILL.md` to keep guidance in sync.
 - When changing development patterns, update the relevant `b2c/skills/<topic>/SKILL.md`.
+- Add runbooks under `b2c-ops/skills/` using the shared operational structure in
+  `.agents/skills/mcp-development/references/workflows.md`; link shipped outcomes
+  from the Operations guide. Register collections in `guidance/collections.json`
+  for MCP bundling and in both marketplaces for native installation.
 - To make a new plugin installable via the B2C CLI, add it to [`plugins.json`](./plugins.json) and register a source in `packages/b2c-tooling-sdk/src/skills/sources.ts` (plus the `SkillSet` type in `types.ts`).
 - Add a changeset targeting `@salesforce/b2c-agent-plugins` for any skill content changes.
 

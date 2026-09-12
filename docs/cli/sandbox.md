@@ -14,10 +14,10 @@ These commands were previously available as `b2c ods <command>`. The `ods` prefi
 
 Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `delete`, `operations list`, `operations get`) accept two ID formats:
 
-| Format | Example | Description |
-|--------|---------|-------------|
-| UUID | `abc12345-1234-1234-1234-abc123456789` | Full sandbox UUID |
-| Realm-instance | `zzzv-123` or `zzzv_123` | Realm-instance format |
+| Format         | Example                                | Description           |
+| -------------- | -------------------------------------- | --------------------- |
+| UUID           | `abc12345-1234-1234-1234-abc123456789` | Full sandbox UUID     |
+| Realm-instance | `zzzv-123` or `zzzv_123`               | Realm-instance format |
 
 The realm-instance format uses the 4-character realm code followed by a dash (`-`) or underscore (`_`) and the instance identifier. When using the realm-instance format, the CLI automatically looks up the corresponding sandbox UUID.
 
@@ -31,8 +31,8 @@ b2c sandbox get zzzv-123
 
 These flags are available on all sandbox commands:
 
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
+| Flag                 | Environment Variable    | Description                                                           |
+| -------------------- | ----------------------- | --------------------------------------------------------------------- |
 | `--sandbox-api-host` | `SFCC_SANDBOX_API_HOST` | Sandbox API hostname (default: admin.dx.commercecloud.salesforce.com) |
 
 ## Authentication
@@ -43,11 +43,11 @@ For automation or CI/CD, you can provide your own API client credentials.
 
 ### Required Roles
 
-| Auth Method | Role | Configured On |
-|-------------|------|---------------|
+| Auth Method               | Role               | Configured On     |
+| ------------------------- | ------------------ | ----------------- |
 | Built-in client (default) | `Sandbox API User` | Your user account |
-| User Authentication | `Sandbox API User` | Your user account |
-| Client Credentials | `Sandbox API User` | The API client |
+| User Authentication       | `Sandbox API User` | Your user account |
+| Client Credentials        | `Sandbox API User` | The API client    |
 
 The `Sandbox API User` role must have a **tenant filter** configured for the realm(s) you wish to manage.
 
@@ -74,6 +74,8 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 
 List all on-demand sandboxes accessible to your account.
 
+![Screenshot placeholder: B2C CLI listing sandboxes and their current states.](/placeholders/cli-sandbox-list.svg)
+
 ### Usage
 
 ```bash
@@ -82,13 +84,13 @@ b2c sandbox list
 
 ### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--realm`, `-r` | Filter by realm ID (four-letter ID) | |
-| `--filter-params` | Raw filter parameters (e.g., "realm=abcd&state=started") | |
-| `--show-deleted` | Include deleted sandboxes in the list | `false` |
-| `--columns`, `-c` | Columns to display (comma-separated) | |
-| `--extended`, `-x` | Show all columns including extended fields | `false` |
+| Flag               | Description                                              | Default |
+| ------------------ | -------------------------------------------------------- | ------- |
+| `--realm`, `-r`    | Filter by realm ID (four-letter ID)                      |         |
+| `--filter-params`  | Raw filter parameters (e.g., "realm=abcd&state=started") |         |
+| `--show-deleted`   | Include deleted sandboxes in the list                    | `false` |
+| `--columns`, `-c`  | Columns to display (comma-separated)                     |         |
+| `--extended`, `-x` | Show all columns including extended fields               | `false` |
 
 ### Available Columns
 
@@ -143,22 +145,22 @@ b2c sandbox create --realm <REALM>
 
 ### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--realm`, `-r` | (Required) Realm ID (four-letter ID) | |
-| `--ttl` | Time to live in hours (0 for infinite) | `24` |
-| `--profile` | Resource profile (medium, large, xlarge, xxlarge) | `medium` |
-| `--auto-scheduled` | Enable automatic start/stop scheduling | `false` |
-| `--emails` | Comma-separated list of notification email addresses | |
-| `--wait`, `-w` | Wait for sandbox to reach started or failed state | `false` |
-| `--poll-interval` | Polling interval in seconds when using --wait | `10` |
-| `--timeout` | Maximum wait time in seconds (0 for no timeout) | `600` |
-| `--set-permissions` | Automatically set OCAPI and WebDAV permissions for the client ID used to create the sandbox | `true` |
-| `--permissions-client-id` | Client ID to use for default OCAPI/WebDAV permissions (defaults to auth client ID) | |
-| `--ocapi-settings` | Custom OCAPI settings JSON array (replaces defaults) | |
-| `--webdav-settings` | Custom WebDAV settings JSON array (replaces defaults) | |
-| `--start-scheduler` | Start schedule JSON | |
-| `--stop-scheduler` | Stop schedule JSON | |
+| Flag                      | Description                                                                                 | Default  |
+| ------------------------- | ------------------------------------------------------------------------------------------- | -------- |
+| `--realm`, `-r`           | (Required) Realm ID (four-letter ID)                                                        |          |
+| `--ttl`                   | Time to live in hours (0 for infinite)                                                      | `24`     |
+| `--profile`               | Resource profile (medium, large, xlarge, xxlarge)                                           | `medium` |
+| `--auto-scheduled`        | Enable automatic start/stop scheduling                                                      | `false`  |
+| `--emails`                | Comma-separated list of notification email addresses                                        |          |
+| `--wait`, `-w`            | Wait for sandbox to reach started or failed state                                           | `false`  |
+| `--poll-interval`         | Polling interval in seconds when using --wait                                               | `10`     |
+| `--timeout`               | Maximum wait time in seconds (0 for no timeout)                                             | `600`    |
+| `--set-permissions`       | Automatically set OCAPI and WebDAV permissions for the client ID used to create the sandbox | `true`   |
+| `--permissions-client-id` | Client ID to use for default OCAPI/WebDAV permissions (defaults to auth client ID)          |          |
+| `--ocapi-settings`        | Custom OCAPI settings JSON array (replaces defaults)                                        |          |
+| `--webdav-settings`       | Custom WebDAV settings JSON array (replaces defaults)                                       |          |
+| `--start-scheduler`       | Start schedule JSON                                                                         |          |
+| `--stop-scheduler`        | Stop schedule JSON                                                                          |          |
 
 ### Examples
 
@@ -218,14 +220,14 @@ b2c sandbox get <SANDBOXID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
+| Flag              | Description                                                              | Default |
+| ----------------- | ------------------------------------------------------------------------ | ------- |
 | `--clone-details` | Include detailed clone information if the sandbox was created by cloning | `false` |
 
 ### Examples
@@ -255,10 +257,12 @@ Displays detailed information about the sandbox including:
 - Links to BM and storefront
 
 If the sandbox was created by cloning another sandbox, a "Clone Details" section is displayed showing:
+
 - Cloned From (realm-instance identifier)
 - Source Instance ID (UUID)
 
 When the `--clone-details` flag is used, additional clone metadata is included:
+
 - Clone ID
 - Status
 - Target Profile
@@ -311,8 +315,8 @@ b2c sandbox ips [--realm <REALM>]
 
 ### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
+| Flag            | Description                                                       | Default    |
+| --------------- | ----------------------------------------------------------------- | ---------- |
 | `--realm`, `-r` | Realm ID (four-letter ID) to scope IP details to a specific realm | All realms |
 
 ### Examples
@@ -349,9 +353,9 @@ b2c sandbox start <SANDBOXID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Examples
 
@@ -380,9 +384,9 @@ b2c sandbox stop <SANDBOXID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Examples
 
@@ -411,9 +415,9 @@ b2c sandbox restart <SANDBOXID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Examples
 
@@ -444,25 +448,25 @@ b2c sandbox operations list <SANDBOXID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Flags
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--from` | | Earliest operation time (ISO 8601). If omitted, the API defaults to roughly the last 30 days. | |
-| `--to` | | Latest operation time (ISO 8601). If omitted, the API defaults to now. | |
-| `--operation-state` | | Filter by lifecycle state: `pending`, `running`, or `finished` | |
-| `--status` | | Filter finished operations by outcome: `success` or `failure` | |
-| `--operation` | | Filter by operation type: `start`, `stop`, `restart`, `reset`, `create`, `delete`, `upgrade` | |
-| `--sort-order` | | Sort order: `asc` or `desc` | |
-| `--sort-by` | | Sort field: `created`, `operation_state`, `status`, or `operation` | |
-| `--page` | | Page index (0-based) | |
-| `--per-page` | | Page size (API default is typically 20) | |
-| `--columns`, `-c` | | Columns to display (comma-separated); see **Available columns** below | |
-| `--extended`, `-x` | | Include extended columns (for example `operationBy`) | `false` |
+| Flag                | Short | Description                                                                                   | Default |
+| ------------------- | ----- | --------------------------------------------------------------------------------------------- | ------- |
+| `--from`            |       | Earliest operation time (ISO 8601). If omitted, the API defaults to roughly the last 30 days. |         |
+| `--to`              |       | Latest operation time (ISO 8601). If omitted, the API defaults to now.                        |         |
+| `--operation-state` |       | Filter by lifecycle state: `pending`, `running`, or `finished`                                |         |
+| `--status`          |       | Filter finished operations by outcome: `success` or `failure`                                 |         |
+| `--operation`       |       | Filter by operation type: `start`, `stop`, `restart`, `reset`, `create`, `delete`, `upgrade`  |         |
+| `--sort-order`      |       | Sort order: `asc` or `desc`                                                                   |         |
+| `--sort-by`         |       | Sort field: `created`, `operation_state`, `status`, or `operation`                            |         |
+| `--page`            |       | Page index (0-based)                                                                          |         |
+| `--per-page`        |       | Page size (API default is typically 20)                                                       |         |
+| `--columns`, `-c`   |       | Columns to display (comma-separated); see **Available columns** below                         |         |
+| `--extended`, `-x`  |       | Include extended columns (for example `operationBy`)                                          | `false` |
 
 ### Available columns
 
@@ -507,10 +511,10 @@ b2c sandbox operations get <SANDBOXID> <OPERATIONID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
-| `OPERATIONID` | Operation UUID | Yes |
+| Argument      | Description                                           | Required |
+| ------------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID`   | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
+| `OPERATIONID` | Operation UUID                                        | Yes      |
 
 ### Examples
 
@@ -542,18 +546,18 @@ b2c sandbox delete <SANDBOXID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--force`, `-f` | Skip confirmation prompt | `false` |
-| `--wait`, `-w` | Wait for the sandbox to be fully deleted before returning | `false` |
-| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
-| `--timeout` | Maximum time to wait in seconds when using `--wait` (0 for no timeout) | `600` |
+| Flag              | Description                                                            | Default |
+| ----------------- | ---------------------------------------------------------------------- | ------- |
+| `--force`, `-f`   | Skip confirmation prompt                                               | `false` |
+| `--wait`, `-w`    | Wait for the sandbox to be fully deleted before returning              | `false` |
+| `--poll-interval` | Polling interval in seconds when using `--wait`                        | `10`    |
+| `--timeout`       | Maximum time to wait in seconds when using `--wait` (0 for no timeout) | `600`   |
 
 ### Examples
 
@@ -591,18 +595,18 @@ b2c sandbox reset <SANDBOXID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--wait`, `-w` | Wait for the sandbox to reach `started` state after reset | `false` |
-| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
-| `--timeout` | Maximum time to wait in seconds when using `--wait` (`0` for no timeout) | `600` |
-| `--force`, `-f` | Skip confirmation prompt | `false` |
+| Flag              | Description                                                              | Default |
+| ----------------- | ------------------------------------------------------------------------ | ------- |
+| `--wait`, `-w`    | Wait for the sandbox to reach `started` state after reset                | `false` |
+| `--poll-interval` | Polling interval in seconds when using `--wait`                          | `10`    |
+| `--timeout`       | Maximum time to wait in seconds when using `--wait` (`0` for no timeout) | `600`   |
+| `--force`, `-f`   | Skip confirmation prompt                                                 | `false` |
 
 ### Examples
 
@@ -642,23 +646,23 @@ b2c sandbox update <SANDBOXID> [FLAGS]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--ttl` | Number of hours to add to sandbox lifetime (0 or less for infinite). Must adhere to the maximum TTL configuration together with previous extensions. |
-| `--auto-scheduled` | Enable or disable automatic start/stop scheduling |
-| `--resource-profile` | Resource profile (`medium`, `large`, `xlarge`, `xxlarge`) |
-| `--tags` | Comma-separated list of tags |
-| `--emails` | Comma-separated list of notification email addresses |
-| `--start-scheduler` | Start schedule JSON |
-| `--stop-scheduler` | Stop schedule JSON |
-| `--clear-start-scheduler` | Remove existing start scheduler |
-| `--clear-stop-scheduler` | Remove existing stop scheduler |
+| Flag                      | Description                                                                                                                                          |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--ttl`                   | Number of hours to add to sandbox lifetime (0 or less for infinite). Must adhere to the maximum TTL configuration together with previous extensions. |
+| `--auto-scheduled`        | Enable or disable automatic start/stop scheduling                                                                                                    |
+| `--resource-profile`      | Resource profile (`medium`, `large`, `xlarge`, `xxlarge`)                                                                                            |
+| `--tags`                  | Comma-separated list of tags                                                                                                                         |
+| `--emails`                | Comma-separated list of notification email addresses                                                                                                 |
+| `--start-scheduler`       | Start schedule JSON                                                                                                                                  |
+| `--stop-scheduler`        | Stop schedule JSON                                                                                                                                   |
+| `--clear-start-scheduler` | Remove existing start scheduler                                                                                                                      |
+| `--clear-stop-scheduler`  | Remove existing stop scheduler                                                                                                                       |
 
 At least one flag is required.
 
@@ -718,16 +722,16 @@ b2c sandbox usage <SANDBOXID> [--from <DATE>] [--to <DATE>]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Flags
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description                                              |
+| -------- | -------------------------------------------------------- |
 | `--from` | Start date for usage data (ISO 8601, e.g., `2024-01-01`) |
-| `--to` | End date for usage data (ISO 8601, e.g., `2024-01-31`) |
+| `--to`   | End date for usage data (ISO 8601, e.g., `2024-01-31`)   |
 
 If `--from` / `--to` are omitted, the API will use its own defaults (typically a recent window).
 
@@ -768,9 +772,9 @@ b2c sandbox settings <SANDBOXID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Examples
 
@@ -804,9 +808,9 @@ b2c sandbox storage <SANDBOXID>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 ### Examples
 
@@ -852,18 +856,18 @@ b2c sandbox alias create <SANDBOXID> <HOSTNAME> [FLAGS]
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
-| `HOSTNAME` | Hostname alias to register (e.g., `my-store.example.com`) | Yes |
+| Argument    | Description                                               | Required |
+| ----------- | --------------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`)     | Yes      |
+| `HOSTNAME`  | Hostname alias to register (e.g., `my-store.example.com`) | Yes      |
 
 #### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--unique`, `-u` | Make the alias unique (required for Let’s Encrypt certificates) | `false` |
-| `--letsencrypt` | Request a Let’s Encrypt certificate (requires `--unique`) | `false` |
-| `--no-open` | Do not open the registration URL in a browser for non‑unique aliases | `false` |
+| Flag             | Description                                                          | Default |
+| ---------------- | -------------------------------------------------------------------- | ------- |
+| `--unique`, `-u` | Make the alias unique (required for Let’s Encrypt certificates)      | `false` |
+| `--letsencrypt`  | Request a Let’s Encrypt certificate (requires `--unique`)            | `false` |
+| `--no-open`      | Do not open the registration URL in a browser for non‑unique aliases | `false` |
 
 #### Examples
 
@@ -901,14 +905,14 @@ b2c sandbox alias list <SANDBOXID> [--alias-id <ALIASID>]
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
+| Flag         | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
 | `--alias-id` | Specific alias ID to retrieve; if omitted, lists all aliases |
 
 #### Examples
@@ -946,10 +950,10 @@ b2c sandbox alias get <SANDBOXID> <ALIASID>
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
-| `ALIASID` | Alias UUID | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
+| `ALIASID`   | Alias UUID                                            | Yes      |
 
 #### Examples
 
@@ -977,15 +981,15 @@ b2c sandbox alias delete <SANDBOXID> <ALIASID> [--force]
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
-| `ALIASID` | Alias ID to delete | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
+| `ALIASID`   | Alias ID to delete                                    | Yes      |
 
 #### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
+| Flag            | Description              | Default |
+| --------------- | ------------------------ | ------- |
 | `--force`, `-f` | Skip confirmation prompt | `false` |
 
 #### Examples
@@ -1040,20 +1044,20 @@ b2c sandbox clone list <SANDBOXID>
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--from` | Filter clones created on or after this date (ISO 8601 date format, e.g., `2024-01-01`) |
-| `--to` | Filter clones created on or before this date (ISO 8601 date format, e.g., `2024-12-31`) |
-| `--status` | Filter clones by status (`Pending`, `InProgress`, `Failed`, `Completed`) |
-| `--batch-id` | Filter clones belonging to a specific 1 to many cloning batch |
-| `--columns`, `-c` | Columns to display (comma-separated) |
-| `--extended`, `-x` | Show all columns |
+| Flag               | Description                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `--from`           | Filter clones created on or after this date (ISO 8601 date format, e.g., `2024-01-01`)  |
+| `--to`             | Filter clones created on or before this date (ISO 8601 date format, e.g., `2024-12-31`) |
+| `--status`         | Filter clones by status (`Pending`, `InProgress`, `Failed`, `Completed`)                |
+| `--batch-id`       | Filter clones belonging to a specific 1 to many cloning batch                           |
+| `--columns`, `-c`  | Columns to display (comma-separated)                                                    |
+| `--extended`, `-x` | Show all columns                                                                        |
 
 #### Available Columns
 
@@ -1109,21 +1113,21 @@ b2c sandbox clone create <SANDBOXID>
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) to clone from | Yes |
+| Argument    | Description                                                         | Required |
+| ----------- | ------------------------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) to clone from | Yes      |
 
 #### Flags
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--target-profile` | Resource profile for the cloned sandbox (`medium`, `large`, `xlarge`, `xxlarge`). Optional. | Source sandbox profile |
-| `--ttl` | Time to live in hours (0 or negative = infinite, minimum 24 hours). Values between 1-23 are not allowed. | `24` |
-| `--emails` | Comma-separated list of notification email addresses | |
-| `--target-count` | Number of clones to create from this source (1 to many cloning). Valid values are 1 to 5. | `1` |
-| `--wait`, `-w` | Wait for the clone (or all clones in the batch) to complete before returning | `false` |
-| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
-| `--timeout` | Maximum time to wait in seconds when using `--wait` (0 for no timeout) | `1800` |
+| Flag               | Description                                                                                              | Default                |
+| ------------------ | -------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `--target-profile` | Resource profile for the cloned sandbox (`medium`, `large`, `xlarge`, `xxlarge`). Optional.              | Source sandbox profile |
+| `--ttl`            | Time to live in hours (0 or negative = infinite, minimum 24 hours). Values between 1-23 are not allowed. | `24`                   |
+| `--emails`         | Comma-separated list of notification email addresses                                                     |                        |
+| `--target-count`   | Number of clones to create from this source (1 to many cloning). Valid values are 1 to 5.                | `1`                    |
+| `--wait`, `-w`     | Wait for the clone (or all clones in the batch) to complete before returning                             | `false`                |
+| `--poll-interval`  | Polling interval in seconds when using `--wait`                                                          | `10`                   |
+| `--timeout`        | Maximum time to wait in seconds when using `--wait` (0 for no timeout)                                   | `1800`                 |
 
 #### Examples
 
@@ -1196,10 +1200,10 @@ b2c sandbox clone get <SANDBOXID> <CLONEID>
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
-| `CLONEID` | Clone ID (e.g., `aaaa-002-1642780893121`) | Yes |
+| Argument    | Description                                           | Required |
+| ----------- | ----------------------------------------------------- | -------- |
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes      |
+| `CLONEID`   | Clone ID (e.g., `aaaa-002-1642780893121`)             | Yes      |
 
 #### Examples
 
@@ -1245,12 +1249,12 @@ For the complete response including all metadata, use the `--json` flag.
 
 #### Clone Status Values
 
-| Status | Description |
-|--------|-------------|
-| `PENDING` | Clone is queued and waiting to start |
+| Status        | Description                          |
+| ------------- | ------------------------------------ |
+| `PENDING`     | Clone is queued and waiting to start |
 | `IN_PROGRESS` | Clone operation is currently running |
-| `COMPLETED` | Clone finished successfully |
-| `FAILED` | Clone operation failed |
+| `COMPLETED`   | Clone finished successfully          |
+| `FAILED`      | Clone operation failed               |
 
 ---
 
@@ -1281,9 +1285,9 @@ b2c sandbox realm list [REALM]
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `REALM` | Optional realm ID filter (four-letter ID) | No |
+| Argument | Description                               | Required |
+| -------- | ----------------------------------------- | -------- |
+| `REALM`  | Optional realm ID filter (four-letter ID) | No       |
 
 #### Examples
 
@@ -1312,9 +1316,9 @@ b2c sandbox realm configuration <REALM>
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `REALM` | Realm ID (four-letter ID) | Yes |
+| Argument | Description               | Required |
+| -------- | ------------------------- | -------- |
+| `REALM`  | Realm ID (four-letter ID) | Yes      |
 
 #### Examples
 
@@ -1340,9 +1344,9 @@ b2c sandbox realm get <REALM>
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `REALM` | Realm ID (four-letter ID) | Yes |
+| Argument | Description               | Required |
+| -------- | ------------------------- | -------- |
+| `REALM`  | Realm ID (four-letter ID) | Yes      |
 
 #### Examples
 
@@ -1380,22 +1384,22 @@ b2c sandbox realm update <REALM> [FLAGS]
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `REALM` | Realm ID (four-letter ID) to update | Yes |
+| Argument | Description                         | Required |
+| -------- | ----------------------------------- | -------- |
+| `REALM`  | Realm ID (four-letter ID) to update | Yes      |
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--max-sandbox-ttl` | Maximum sandbox TTL in hours (`0` for unlimited, subject to quotas) |
-| `--default-sandbox-ttl` | Default sandbox TTL in hours when no TTL is specified at creation |
-| `--start-scheduler` | Start schedule JSON for sandboxes in this realm |
-| `--stop-scheduler` | Stop schedule JSON for sandboxes in this realm |
-| `--clear-start-scheduler` | Remove existing start scheduler for sandboxes in this realm |
-| `--clear-stop-scheduler` | Remove existing stop scheduler for sandboxes in this realm |
-| `--emails` | Comma-separated list of realm notification email addresses |
-| `--local-users-allowed` | Enable or disable local user management for sandboxes in realm configuration |
+| Flag                      | Description                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| `--max-sandbox-ttl`       | Maximum sandbox TTL in hours (`0` for unlimited, subject to quotas)          |
+| `--default-sandbox-ttl`   | Default sandbox TTL in hours when no TTL is specified at creation            |
+| `--start-scheduler`       | Start schedule JSON for sandboxes in this realm                              |
+| `--stop-scheduler`        | Stop schedule JSON for sandboxes in this realm                               |
+| `--clear-start-scheduler` | Remove existing start scheduler for sandboxes in this realm                  |
+| `--clear-stop-scheduler`  | Remove existing stop scheduler for sandboxes in this realm                   |
+| `--emails`                | Comma-separated list of realm notification email addresses                   |
+| `--local-users-allowed`   | Enable or disable local user management for sandboxes in realm configuration |
 
 The scheduler flags expect a JSON value; use the dedicated `--clear-*` flags to remove an existing scheduler:
 
@@ -1436,18 +1440,18 @@ b2c sandbox realm usage <REALM> [FLAGS]
 
 #### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `REALM` | Realm ID (four-letter ID) | Yes |
+| Argument | Description               | Required |
+| -------- | ------------------------- | -------- |
+| `REALM`  | Realm ID (four-letter ID) | Yes      |
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--from` | Earliest date to include in usage (ISO 8601; API defaults to ~30 days ago if omitted) |
-| `--to` | Latest date to include in usage (ISO 8601; API defaults to today if omitted) |
-| `--granularity` | Data granularity (`daily`, `weekly`, or `monthly`) |
-| `--detailed-report` | Include detailed usage information in the response |
+| Flag                | Description                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------- |
+| `--from`            | Earliest date to include in usage (ISO 8601; API defaults to ~30 days ago if omitted) |
+| `--to`              | Latest date to include in usage (ISO 8601; API defaults to today if omitted)          |
+| `--granularity`     | Data granularity (`daily`, `weekly`, or `monthly`)                                    |
+| `--detailed-report` | Include detailed usage information in the response                                    |
 
 #### Examples
 
@@ -1483,12 +1487,12 @@ b2c sandbox realm usages [FLAGS]
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--realm` | Realm IDs to include (repeat flag or provide comma-separated values) |
-| `--from` | Earliest date to include in usage (ISO 8601) |
-| `--to` | Latest date to include in usage (ISO 8601) |
-| `--detailed-report` | Include detailed usage information in the response |
+| Flag                | Description                                                          |
+| ------------------- | -------------------------------------------------------------------- |
+| `--realm`           | Realm IDs to include (repeat flag or provide comma-separated values) |
+| `--from`            | Earliest date to include in usage (ISO 8601)                         |
+| `--to`              | Latest date to include in usage (ISO 8601)                           |
+| `--detailed-report` | Include detailed usage information in the response                   |
 
 If `--realm` is omitted, the command auto-discovers realms from `/me` and queries usage for all discovered realms.
 
@@ -1513,4 +1517,3 @@ When not using `--json`, the command prints one row per realm with summary metri
 - Active / created / deleted sandbox counts
 - Minutes up / minutes down
 - Sandbox seconds
-

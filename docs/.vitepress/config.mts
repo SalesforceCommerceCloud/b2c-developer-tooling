@@ -1,25 +1,40 @@
 import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import {defineConfig} from 'vitepress';
+import {defineConfig, type DefaultTheme} from 'vitepress';
 import {groupIconMdPlugin, groupIconVitePlugin} from 'vitepress-plugin-group-icons';
 import typedocSidebar from '../api/typedoc-sidebar.json';
+import {generateReleaseNotes} from './releases/generate.js';
+
+const docsDirectory = path.resolve(import.meta.dirname, '..');
+const releaseNotes = generateReleaseNotes(docsDirectory);
 
 // Copy source .md files to the build output so pages can be fetched as raw
 // markdown (powers the "View as Markdown" / "Copy for LLM" buttons).
 function copyMarkdownSources(srcDir: string, outDir: string) {
   const entries = fs.readdirSync(srcDir, {withFileTypes: true});
   for (const entry of entries) {
-    if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+    if (entry.name.startsWith('.') || entry.name.startsWith('_') || entry.name === 'node_modules') continue;
     const src = path.join(srcDir, entry.name);
     const dest = path.join(outDir, entry.name);
     if (entry.isDirectory()) {
       fs.mkdirSync(dest, {recursive: true});
       copyMarkdownSources(src, dest);
     } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      fs.copyFileSync(src, dest);
+      fs.writeFileSync(dest, expandIncludes(src));
     }
   }
+}
+
+// Resolve the same plain-file includes used in authored pages for raw Markdown readers.
+function expandIncludes(file: string, ancestors = new Set<string>()): string {
+  if (ancestors.has(file)) throw new Error(`Circular Markdown include: ${file}`);
+  const next = new Set([...ancestors, file]);
+  return fs
+    .readFileSync(file, 'utf8')
+    .replace(/<!--@include:\s*(.+?)\s*-->/g, (_, relativePath: string) =>
+      expandIncludes(path.resolve(path.dirname(file), relativePath), next),
+    );
 }
 
 // Extract the committed Salesforce Help corpus tarball (docs/help-content.tar.gz)
@@ -47,101 +62,114 @@ const previewBasePath = process.env.DOCS_BASE_PATH
   ? `/${process.env.DOCS_BASE_PATH.replace(/^\/+|\/+$/g, '')}/`
   : undefined;
 
-// Public production docs URL — preview builds point their version switcher here because
-// relative links would otherwise resolve under the ephemeral /pr-N/ base.
-const prodDocsUrl = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/';
-
 // Base paths - dev build lives in /dev/ subdirectory, stable/release is at root
 const siteBase = '/b2c-developer-tooling';
 const basePath = previewBasePath ?? (isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`);
 
-// Build version dropdown items
-// VitePress prepends base path to links starting with /, so we use relative paths
-// that work correctly for each build context
-function getVersionItems() {
-  if (previewBasePath) {
-    // Preview build: docs live under an ephemeral /pr-N/ base with no sibling versions.
-    // Link out to the published docs with absolute URLs so the switcher works.
-    return [
-      {text: 'Latest Release', link: prodDocsUrl},
-      {text: 'Development (main)', link: `${prodDocsUrl}dev/`},
-    ];
-  }
-
-  if (isDevBuild) {
-    // Dev build: base is /b2c-developer-tooling/dev/
-    // Use ../ to navigate up to stable docs at root
-    return [
-      {text: 'Latest Release', link: '../'},
-      {text: 'Development (main)', link: '/'},
-    ];
-  }
-
-  // Stable build: base is /b2c-developer-tooling/
-  return [
-    {text: 'Latest Release', link: '/'},
-    {text: 'Development (main)', link: '/dev/'},
-  ];
-}
-
-const guidesSidebar = [
+const toolkitSidebar = [
+  {text: 'Overview', link: '/'},
   {
     text: 'Getting Started',
     items: [
       {text: 'Introduction', link: '/guide/'},
-      {text: 'Installation', link: '/guide/installation'},
+      {text: 'Authentication', link: '/guide/authentication'},
       {text: 'Configuration', link: '/guide/configuration'},
-      {text: 'Agent Skills & Plugins', link: '/guide/agent-skills'},
-    ],
-  },
-  {
-    text: 'How-To',
-    items: [
-      {text: 'Authentication Setup', link: '/guide/authentication'},
-      {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
-      {text: 'sfcc-ci Migration', link: '/guide/sfcc-ci-migration'},
-      {text: 'sfcc-ci SDK Migration', link: '/guide/sdk-migration'},
-      {text: 'Account Manager', link: '/guide/account-manager'},
-      {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
-      {text: 'Metrics', link: '/guide/metrics'},
-      {text: 'IDE Integration', link: '/guide/ide-integration'},
-      {text: 'Script Debugger', link: '/guide/script-debugger'},
-      {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Safety Mode', link: '/guide/safety'},
-      {text: 'Security', link: '/guide/security'},
-      {text: 'Storefront Next', link: '/guide/storefront-next'},
-      {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
-      {text: 'Commerce Apps (CAPs)', link: '/guide/commerce-apps'},
-      {text: 'Import Sets', link: '/guide/import-sets'},
     ],
   },
   {
-    text: 'VS Code Extension',
+    text: 'Developer Tools',
     items: [
-      {text: 'Overview', link: '/vscode-extension/'},
-      {text: 'Installation', link: '/vscode-extension/installation'},
-      {text: 'Configuration', link: '/vscode-extension/configuration'},
+      {
+        text: 'CLI',
+        link: '/cli/overview',
+        collapsed: true,
+        items: [{text: 'Installation', link: '/guide/installation'}],
+      },
+      {
+        text: 'IDE Extension',
+        link: '/vscode-extension/',
+        collapsed: true,
+        items: [
+          {text: 'Installation', link: '/vscode-extension/installation'},
+          {text: 'Configuration', link: '/vscode-extension/configuration'},
+        ],
+      },
     ],
   },
   {
-    text: 'MCP Server',
+    text: 'AI Tools',
     items: [
-      {text: 'Overview', link: '/mcp/'},
-      {text: 'Installation', link: '/mcp/installation'},
-      {text: 'Configuration', link: '/mcp/configuration'},
-      {text: 'Tools & Capabilities', link: '/mcp/toolsets'},
-      {text: 'Workflow Skills', link: '/mcp/skills'},
-      {text: 'Security & Access', link: '/mcp/security'},
+      {
+        text: 'MCP',
+        link: '/mcp/',
+        collapsed: true,
+        items: [
+          {text: 'Configuration', link: '/mcp/configuration'},
+          {text: 'MCP Tools', link: '/mcp/toolsets'},
+          {text: 'Security and Access', link: '/mcp/security'},
+        ],
+      },
+      {text: 'Agent Skills', link: '/guide/agent-skills'},
     ],
   },
   {
-    text: 'Extending',
+    text: 'Extend',
     items: [
-      {text: 'Custom Plugins', link: '/guide/extending'},
-      {text: '3rd Party Plugins', link: '/guide/third-party-plugins'},
+      {text: 'CLI Extensions', link: '/guide/third-party-plugins'},
+      {text: 'Build an Extension', link: '/guide/extending'},
     ],
   },
 ];
+
+const guidesSidebar: DefaultTheme.SidebarItem[] = [
+  {text: 'All Guides', link: '/guide/workflows'},
+  {
+    text: 'Development',
+    collapsed: false,
+    items: [
+      {text: 'Storefront Next', link: '/guide/storefront-next'},
+      {text: 'Scaffolding', link: '/guide/scaffolding'},
+      {text: 'Script Debugger', link: '/guide/script-debugger'},
+      {text: 'IDE Integration', link: '/guide/ide-integration'},
+      {text: 'Commerce Apps', link: '/guide/commerce-apps'},
+      {text: 'Security', link: '/guide/security'},
+    ],
+  },
+  {
+    text: 'Deployment & Automation',
+    collapsed: false,
+    items: [
+      {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
+      {text: 'Import Sets', link: '/guide/import-sets'},
+      {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
+    ],
+  },
+  {
+    text: 'Operations & Administration',
+    collapsed: false,
+    items: [
+      {text: 'Operations', link: '/guide/operations'},
+      {text: 'Account Manager', link: '/guide/account-manager'},
+      {text: 'Analytics Reports', link: '/guide/analytics-reports-cip-ccac'},
+      {text: 'Metrics', link: '/guide/metrics'},
+    ],
+  },
+  {
+    text: 'Migration',
+    collapsed: false,
+    items: [
+      {text: 'From sfcc-ci', link: '/guide/sfcc-ci-migration'},
+      {text: 'From the sfcc-ci SDK', link: '/guide/sdk-migration'},
+    ],
+  },
+];
+
+// Preserve existing guide URLs while assigning task guides their own navigation.
+const guidePaths = guidesSidebar
+  .flatMap(({link, items}) => [link, ...(items ?? []).map((item) => item.link)])
+  .filter((link): link is string => Boolean(link));
+const guidesActiveMatch = `(?:${guidePaths.join('|')})(?:\\.html)?/?$`;
 
 const referenceSidebar = [
   {
@@ -176,48 +204,22 @@ const referenceSidebar = [
       {text: 'Logging', link: '/cli/logging'},
     ],
   },
-  {
-    text: 'MCP Server',
-    items: [
-      {text: 'Tools & Capabilities', link: '/mcp/toolsets'},
-      {text: 'Installation', link: '/mcp/installation'},
-      {text: 'Configuration', link: '/mcp/configuration'},
-      {text: 'Security & Access', link: '/mcp/security'},
-    ],
-  },
 ];
 
-// Script to force hard navigation for version switching links
-// VitePress SPA router can't handle navigation between separate VitePress builds
-const versionSwitchScript = `
-document.addEventListener('click', (e) => {
-  const link = e.target.closest('a');
-  if (!link) return;
-  const href = link.getAttribute('href');
-  // Check if this is a version switch link
-  if (href && (href.includes('/dev/') || href === '../')) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (href === '../') {
-      // Navigate from /dev/ back to stable root - construct path explicitly
-      // to avoid relative path issues with trailing slashes
-      const path = window.location.pathname;
-      const stablePath = path.replace(/\\/dev\\/.*$/, '/').replace(/\\/dev$/, '/');
-      window.location.href = stablePath;
-    } else {
-      window.location.href = link.href;
-    }
-  }
-}, true);
-`;
-
 export default defineConfig({
-  title: 'B2C Developer Toolkit',
+  title: 'Agentic B2C Developer Toolkit',
   description:
-    'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and the B2C DX VS Code Extension for Salesforce B2C Commerce',
+    'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE Extension for Salesforce B2C Commerce',
   base: basePath,
+  srcExclude: ['_partials/**', 'releases/_entries/**', 'public/releases/**'],
 
-  head: [['script', {}, versionSwitchScript]],
+  head: [['link', {rel: 'describedby', type: 'text/plain', href: `${basePath}llms.txt`}]],
+
+  transformPageData(pageData, {siteConfig}) {
+    if (!fs.existsSync(path.join(siteConfig.srcDir, pageData.relativePath))) return;
+    const head = (pageData.frontmatter.head ??= []);
+    head.push(['link', {rel: 'alternate', type: 'text/markdown', href: `${basePath}${pageData.relativePath}`}]);
+  },
 
   // Git-based "Last updated" timestamps (overridable per-page via frontmatter)
   lastUpdated: true,
@@ -227,6 +229,7 @@ export default defineConfig({
 
   buildEnd(siteConfig) {
     copyMarkdownSources(siteConfig.srcDir, siteConfig.outDir);
+    fs.writeFileSync(path.join(siteConfig.outDir, 'releases/index.md'), releaseNotes.markdown);
     // Extract the Salesforce Help corpus straight into the build output (raw
     // .md served verbatim; fetched by `b2c docs read` via each entry's
     // sourceUrl). Done here — in buildEnd — because it only matters for the
@@ -246,7 +249,23 @@ export default defineConfig({
 
   vite: {
     plugins: [
+      {
+        name: 'release-notes',
+        configureServer(server) {
+          const entries = path.join(docsDirectory, 'releases/_entries');
+          const seed = path.join(docsDirectory, '.vitepress/releases/seed.json');
+          const live = path.join(docsDirectory, '.vitepress/releases/live.json');
+          server.watcher.add([entries, seed, live]);
+          server.watcher.on('all', (_event, file) => {
+            if (file === seed || file === live || file.startsWith(entries + path.sep)) {
+              generateReleaseNotes(docsDirectory);
+            }
+          });
+        },
+      },
       groupIconVitePlugin({
+        // Assistant tabs are Vue components, outside the plugin's Markdown scan.
+        defaultLabels: ['Claude Code', 'Codex', 'Copilot (VS Code)', 'Cursor', 'OpenCode', 'Gemini'],
         customIcon: {
           npx: 'vscode-icons:file-type-npm',
           homebrew: 'logos:homebrew',
@@ -256,6 +275,13 @@ export default defineConfig({
             dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 56" fill="#e8e8e8"><path d="M34 18h-7.9l6.8-15.2c0-.2.1-.5.1-.8 0-1.1-.9-2-2-2H9c-.9 0-1.7.6-1.9 1.5l-7 26c0 .2-.1.3-.1.5 0 1.1.9 2 2 2h7.5L4 53.5c0 .1-.1.3-.1.5 0 1.1.9 2 2 2 .6 0 1.2-.3 1.5-.7l28-34c.3-.4.5-.8.5-1.3.1-1.1-.8-2-1.9-2Z"/></svg>',
           },
           'claude code': 'logos:claude-icon',
+          gemini:
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#4285f4" d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68q.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58a12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68q-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96q2.19.93 3.81 2.55t2.55 3.81"/></svg>',
+          opencode: {
+            light:
+              '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#26251e" d="M22 24H2V0h20zM17 4.8H7v14.4h10z"/></svg>',
+            dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#edecec" d="M22 24H2V0h20zM17 4.8H7v14.4h10z"/></svg>',
+          },
           cursor: {
             light:
               '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 466.73 532.09" fill="#26251e"><path d="M457.43,125.94L244.42,2.96c-6.84-3.95-15.28-3.95-22.12,0L9.3,125.94c-5.75,3.32-9.3,9.46-9.3,16.11v247.99c0,6.65,3.55,12.79,9.3,16.11l213.01,122.98c6.84,3.95,15.28,3.95,22.12,0l213.01-122.98c5.75-3.32,9.3-9.46,9.3-16.11v-247.99c0-6.65-3.55-12.79-9.3-16.11h-.01ZM444.05,151.99l-205.63,356.16c-1.39,2.4-5.06,1.42-5.06-1.36v-233.21c0-4.66-2.49-8.97-6.53-11.31L24.87,145.67c-2.4-1.39-1.42-5.06,1.36-5.06h411.26c5.84,0,9.49,6.33,6.57,11.39h-.01Z"/></svg>',
@@ -277,7 +303,7 @@ export default defineConfig({
   },
 
   themeConfig: {
-    logo: '/logo-mark.svg',
+    logo: '/logo.svg',
     outline: {
       level: [2, 3],
     },
@@ -290,35 +316,38 @@ export default defineConfig({
       formatOptions: {dateStyle: 'medium'},
     },
     nav: [
-      {text: 'Guides', link: '/guide/'},
-      {text: 'Agent Plugins', link: '/guide/agent-skills'},
-      {text: 'VS Code', link: '/vscode-extension/'},
-      {text: 'MCP', link: '/mcp/'},
-      {text: 'Reference', link: '/cli/'},
-      {text: 'SDK', link: '/api/'},
+      {text: 'Docs', link: '/', activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/releases/|/cli/(?!overview))/`},
+      {text: 'Guides', link: '/guide/workflows', activeMatch: `^${guidesActiveMatch}`},
+      {text: 'Reference', link: '/cli/', activeMatch: '^/cli/(?!overview)'},
+      {text: 'Release Notes', link: '/releases/'},
       {
-        text: previewBasePath ? 'Preview' : isDevBuild ? 'Dev' : 'Latest',
-        items: getVersionItems(),
+        text: 'SDKs',
+        activeMatch: '^/api/',
+        items: [{text: 'TypeScript SDK', link: '/api/'}],
       },
     ],
 
     footer: {
-      message: 'Released under the Apache-2.0 License.',
-      copyright: `Copyright © ${new Date().getFullYear()} Salesforce, Inc.`,
+      message:
+        'Released under the <a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt">Apache-2.0 License</a>.' +
+        ` <a href="${basePath}releases/">Release notes</a>. LLM? Read <a href="${basePath}llms.txt">llms.txt</a>.`,
+      copyright: `Copyright © 2024-${new Date().getFullYear()} Salesforce, Inc.`,
     },
 
     sidebar: {
-      '/mcp/tools/': guidesSidebar,
-      '/mcp/': guidesSidebar,
-      '/vscode-extension/': guidesSidebar,
+      '/': toolkitSidebar,
+      '/mcp/': toolkitSidebar,
+      '/vscode-extension/': toolkitSidebar,
+      '/cli/overview': toolkitSidebar,
       '/cli/': referenceSidebar,
-      '/guide/': guidesSidebar,
+      ...Object.fromEntries(guidePaths.map((link) => [link, guidesSidebar])),
+      '/guide/': toolkitSidebar,
       '/api/': [
         {
-          text: 'SDK Reference',
+          text: 'SDK',
           items: [{text: 'Overview', link: '/api/'}],
         },
-        ...typedocSidebar,
+        ...typedocSidebar.map((section) => ({...section, collapsed: true})),
       ],
     },
 

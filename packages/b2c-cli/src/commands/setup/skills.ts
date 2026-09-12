@@ -70,7 +70,7 @@ interface SetupSkillsResponse {
 export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
   static args = {
     skillset: Args.string({
-      description: 'Skill set to install: b2c, b2c-cli, storefront-next, storefront-next-figma, or cap-dev',
+      description: 'Skill set to install: b2c, b2c-cli, b2c-ops, storefront-next, storefront-next-figma, or cap-dev',
       options: ALL_SKILL_SETS,
     }),
   };
@@ -144,7 +144,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       this.error(
         t(
           'commands.setup.skills.skillsetRequired',
-          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, storefront-next-figma, or cap-dev.',
+          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, b2c-ops, storefront-next, storefront-next-figma, or cap-dev.',
         ),
       );
     } else {

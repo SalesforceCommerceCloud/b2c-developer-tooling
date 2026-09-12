@@ -2,28 +2,51 @@
 description: B2C Commerce MCP tool names, capabilities, and required access.
 ---
 
-# Tools and Capabilities
+# MCP Tools
 
-All toolsets are enabled by default. Use exact names from these tables with
-`--tools` or your client's tool controls. Use `--toolsets` to select capability
-groups. See [tool selection](./configuration#toolset-selection).
+Use B2C Commerce documentation, deployment, debugging, and API tools from your
+assistant. The [plugin installation](./#setup) includes all toolsets;
+connected capabilities use your existing [B2C configuration](../guide/configuration).
 
-## Skills and documentation {#documentation}
+These tables list tool names for reference and for your client's tool controls.
+Optional [toolset customization](./configuration#toolset-selection) is covered
+at the end of this page.
 
-Available in every toolset. No Commerce credentials required; some documentation
-is retrieved online.
+## Documentation and skills {#documentation}
 
-| Tool                 | Capability                                                               |
-| -------------------- | ------------------------------------------------------------------------ |
-| `skills_read`        | Browse, search, and read Commerce, CLI, Storefront Next, and MCP skills. |
-| `docs_search`        | Find platform references, guides, Salesforce Help, and tooling docs.     |
-| `docs_read`          | Read a documentation article.                                            |
-| `docs_list`          | Browse documentation categories and titles.                              |
-| `docs_schema_search` | Find XML import/export schemas.                                          |
-| `docs_schema_read`   | Read an XML schema.                                                      |
-| `docs_schema_list`   | List available XML schemas.                                              |
+**Find answers across Salesforce B2C Commerce references and guides from your assistant.**
 
-See [included skills](./skills) and [documentation topic settings](./configuration#documentation-tools-restriction).
+Look up Script API behavior, storefront patterns, API setup, standard job steps,
+and XML import/export formats. Salesforce Help adds Business Manager guidance
+for administrators and merchants: jobs, replication, access, catalogs, pricing,
+promotions, search, and content. Ask for an explanation applied to your task and
+links to the source documentation.
+
+Included in every toolset. No B2C Commerce credentials required.
+
+| Tool                 | Capability                                                                   |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `skills_read`        | Find development, operations, CLI, Storefront Next, and MCP workflow skills. |
+| `docs_search`        | Find platform references, guides, Salesforce Help, and tooling docs.         |
+| `docs_read`          | Read a documentation article.                                                |
+| `docs_list`          | Browse documentation categories and titles.                                  |
+| `docs_schema_search` | Find XML import/export schemas.                                              |
+| `docs_schema_read`   | Read an XML schema.                                                          |
+| `docs_schema_list`   | List available XML schemas.                                                  |
+
+The included [skill collections](../guide/agent-skills) complement documentation
+with development patterns and operational workflows. No separate skills
+installation is needed.
+
+<ExamplePrompt>
+
+> Check this catalog import XML against the B2C Commerce schema and documented import behavior. Explain what would be replaced or preserved before I run the import, and link to the references.
+
+</ExamplePrompt>
+
+Documentation search is also available through the [B2C CLI](../cli/docs).
+See [documentation topic settings](./configuration#documentation-tools-restriction)
+to customize coverage.
 
 ## Deployment {#cartridges}
 
@@ -37,10 +60,14 @@ access. Check [deployment permissions](./security#deployments) before connecting
 
 ### Managed Runtime {#mrt}
 
-Bundle publishing requires an [MRT API key and project](./configuration#mrt-credentials),
+Bundle publishing requires an [MRT API key and project](../guide/authentication#managed-runtime-api-key),
 plus an environment when deploying.
 
 ## Debugging {#diagnostics}
+
+Let your assistant investigate what happens inside a running cartridge. It can
+pause at a breakpoint, inspect the call stack and variable values, and step
+through controllers, hooks, jobs, and custom API code to explain unexpected behavior.
 
 Available in DIAGNOSTICS, CARTRIDGES, and SCAPI. Requires a Business Manager user
 or access key with `WebDAV_Manage_Customization`; OAuth is unsupported.
@@ -60,6 +87,14 @@ or access key with `WebDAV_Manage_Customization`; OAuth is unsupported.
 Breakpoints pause requests; evaluation can change application state. Use a
 sandbox and end sessions when finished. See [debugger access](./security#debugger).
 
+<ExamplePrompt>
+
+> Pause at this line in my sandbox while I reproduce the request. Show which branch ran and the relevant variable values, then resume and disconnect. Don't modify the code.
+
+</ExamplePrompt>
+
+[See debugging with an assistant or IDE](../guide/script-debugger).
+
 ## Logs {#logs}
 
 | Tool                  | Capability                                   | Toolsets                           |
@@ -75,6 +110,13 @@ Instance logs require WebDAV log-read access. MRT logs require an API key,
 project, and environment; historical MRT logs are not available. Logs may
 contain sensitive data; see [data handling](./security#protect-credentials-and-data).
 
+<ExamplePrompt>
+
+> Watch my sandbox error logs while I reproduce this issue. Summarize new errors
+> and include the timestamps.
+
+</ExamplePrompt>
+
 ## SCAPI development {#scapi}
 
 Available in SCAPI, PWAV3, and STOREFRONTNEXT. Requires OAuth, the instance short
@@ -85,58 +127,71 @@ code, and tenant ID. See [authentication and scopes](../guide/authentication#con
 | `scapi_schemas_list`           | Browse and read standard and custom API schemas. | `sfcc.scapi-schemas` |
 | `scapi_custom_apis_get_status` | Check custom endpoint registration.              | `sfcc.custom-apis`   |
 
-### SCAPI code mode (preview)
+## B2C Commerce data and operations {#scapi-code-mode}
 
-**Discover nearly 600 Salesforce Commerce API operations through two MCP tools.**
+**Explore nearly 600 Salesforce Commerce API operations and work with your instance's data.**
 
 Explore products, catalogs, orders, customers, inventory, pricing, and more.
-The bundled reference covers 594 Admin and Shopper operations across 57 versioned
-API schemas. Discovery works offline without Commerce credentials.
+SCAPI code mode lets your assistant work across APIs in a single task: create a
+product and assign it to a category, review a campaign's promotions, or investigate
+failed jobs. Describe the outcome you want in your own words.
 
 Available in SCAPI, PWAV3, and STOREFRONTNEXT.
 
-| Tool                 | Capability                                                                             |
-| -------------------- | -------------------------------------------------------------------------------------- |
-| `scapi_search`       | Search bundled Admin and Shopper contracts by authentication; no credentials required. |
-| `scapi_execute`      | Compose Admin API requests, including creating, updating, and deleting records.        |
-| `scapi_snippet_save` | Save a completed workflow for reuse when requested.                                    |
+| Tool                 | Capability                                                                |
+| -------------------- | ------------------------------------------------------------------------- |
+| `scapi_search`       | Find Admin and Shopper API operations and their requirements.             |
+| `scapi_execute`      | Read and manage B2C Commerce data through standard and custom Admin APIs. |
+| `scapi_snippet_save` | Save a workflow for reuse across sessions.                                |
 
-Execution uses the selected project's OAuth credentials, short code, and tenant ID.
-Grant the scopes needed for your task; creating products requires `sfcc.products.rw`.
-This preview executes standard and custom Admin JSON requests; Shopper execution is not yet
-supported. Binary file uploads and downloads are not supported.
+The standard API reference works offline without credentials. Working with your
+instance's data requires [OAuth credentials and scopes](../guide/authentication#configuring-scopes)
+for the requested operations. Your account permissions and configured
+[Safety Mode](./security#scapi-code-mode) control access, including creating,
+updating, and deleting records.
 
-Tenant custom attributes are supported in standard Admin requests. The offline
-reference excludes tenant-specific definitions. Known custom fields work directly;
-the agent can discover unfamiliar fields from your live schema with `sfcc.scapi-schemas`
-access. `scapi_schemas_list` includes custom-property definitions by default.
+Custom attributes and custom Admin APIs are supported. Discovering your instance's
+custom definitions requires the `sfcc.scapi-schemas` scope; custom APIs also require
+their declared scopes. See [code mode access](./security#scapi-code-mode).
 
-Custom Admin APIs are available through live schema discovery. Grant
-`sfcc.scapi-schemas` for discovery and the custom API's declared `c_*` scope for
-execution. Custom APIs using Shopper authentication are not yet supported.
+**Current limits:** Shopper APIs are available for reference only. Code mode does
+not yet run Shopper API requests or upload and download binary files.
 
-You can also request Account Manager or SLAS tokens for a separate HTTP client.
-Normal Admin requests authenticate automatically; token export is optional.
-See [code mode access](./security#scapi-code-mode).
+<ExamplePrompt>
 
-For example: "Create an offline test product in my catalog, check that its ID is
-unused, and verify the saved product."
+> Create an offline test product in my catalog, check that its ID is unused,
+> and verify the saved product.
 
-Code mode includes reusable workflows for failed-job triage, campaign/promotion
-inspection, and basic product creation with an optional name, offline setting
-(offline by default), and storefront catalog category assignment. Assignment
-requires Catalogs API access, including `sfcc.catalogs.rw`. Shipped names use `builtin/`;
-your saved workflows use `user/`. You can ask: "Use the built-in failed-job triage
-workflow for September 1-8 and show the first three failures."
+</ExamplePrompt>
 
-After reviewing a useful run, ask your assistant to save a parameterized version
-for future use. Saved workflows remain available after restarting the MCP. They
-use the credentials and safety policy of the project selected for each run.
-See [workflow storage](./configuration#saved-workflows).
+Ready-to-use workflows cover product creation and category assignment, campaign
+reviews, and failed-job investigation. Products created with the built-in workflow
+start offline unless you request otherwise.
 
-### Observability metrics (closed beta) {#metrics}
+![Screenshot placeholder: Claude Code creating a product and verifying its storefront category assignment.](/placeholders/mcp-claude-product.svg)
 
-`metrics_get` reads Commerce metrics. Available in SCAPI; requires tenant access
+<ExamplePrompt>
+
+> Show failed job executions from the past week. Summarize the first three
+> failures and tell me whether there are more to investigate.
+
+</ExamplePrompt>
+
+<ExamplePrompt>
+
+> Summarize the promotions attached to this campaign, including enabled status
+> and schedules.
+
+</ExamplePrompt>
+
+Ask your assistant to save a useful workflow so you can repeat it for other products,
+campaigns, or dates. [Saved workflows](./configuration#saved-workflows) remain
+available across sessions and use the credentials and safety settings of the
+project where you run them.
+
+## Observability metrics (closed beta) {#metrics}
+
+`metrics_get` reads B2C Commerce metrics. Available in SCAPI; requires tenant access
 to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 
 ## Configuration inspection
@@ -157,4 +212,3 @@ to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 | `STOREFRONTNEXT` | Shared MRT and SCAPI tools for Storefront Next projects.     |
 
 Skills and documentation are included in every toolset. Shared tools appear once.
-For parameters, consult the installed tool details in your MCP client.

@@ -24,6 +24,23 @@ const repoRoot = resolve(packageRoot, '../..');
 const bundleRoot = join(packageRoot, 'content/guidance');
 
 describe('guidance distribution and result contracts', () => {
+  it('discovers operational runbooks without adding featured resources', () => {
+    const catalog = new GuidanceCatalog(bundleRoot);
+    const runbooks = ['b2c-production-triage', 'b2c-job-health', 'b2c-checkout-triage', 'b2c-order-failure-triage'];
+    const tool = createGuidanceTool();
+    expect(catalog.resources().some((resource) => resource.uri.startsWith('skill://b2c-ops/'))).to.equal(false);
+    return Promise.all(
+      runbooks.map(async (name) => {
+        const response = await tool.handler({collection: 'b2c-ops', query: name});
+        const result = (response.structuredContent as {result: {entries: {id: string}[]}}).result;
+        expect(result.entries.map((entry) => entry.id)).to.include(`b2c-ops/${name}`);
+        const uri = `skill://b2c-ops/${name}/SKILL.md`;
+        expect(catalog.readResource('skill://index')).to.include(uri);
+        expect(() => new GuidanceCatalog(bundleRoot, {collections: ['mcp']}).readResource(uri)).to.throw();
+      }),
+    );
+  });
+
   it('resolves every emitted skill reference to content in the MCP-only resource catalog', () => {
     const catalog = new GuidanceCatalog(bundleRoot, {collections: ['mcp']});
     for (const reference of Object.values(MCP_SKILL_REFERENCES)) {
@@ -38,7 +55,7 @@ describe('guidance distribution and result contracts', () => {
     const manifest = JSON.parse(readFileSync(join(bundleRoot, 'index.json'), 'utf8')) as GuidanceManifest;
     const catalog = new GuidanceCatalog(bundleRoot, {allowNonGa: true});
     expect(manifest.entries.map((entry) => entry.id)).not.to.include('mcp/pwa-kit');
-    for (const collection of ['b2c', 'b2c-cli', 'storefront-next']) {
+    for (const collection of ['b2c', 'b2c-cli', 'b2c-ops', 'storefront-next']) {
       const folders = readdirSync(join(repoRoot, 'skills', collection, 'skills'), {withFileTypes: true})
         .filter((entry) => entry.isDirectory())
         .map((entry) => `${collection}/${entry.name}`)
@@ -87,7 +104,7 @@ describe('guidance distribution and result contracts', () => {
     const tool = createGuidanceTool();
     expect(tool.inputSchema).not.to.have.property('projectDirectory');
     await Promise.all(
-      ['b2c', 'b2c-cli', 'storefront-next', 'mcp'].map(async (collection) => {
+      ['b2c', 'b2c-cli', 'b2c-ops', 'storefront-next', 'mcp'].map(async (collection) => {
         const response = await tool.handler({collection});
         expect(response.isError).not.to.equal(true);
         const page = (response.structuredContent as {result: {entries: {id: string}[]}}).result;

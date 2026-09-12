@@ -14,7 +14,7 @@ function pluginsTag(version: string): string {
 /**
  * Registry mapping skill sets to their source configurations.
  *
- * Each skill set (b2c, b2c-cli, storefront-next, storefront-next-figma, cap-dev)
+ * Each registered skill set
  * maps to its respective GitHub repository and download configuration for
  * artifact retrieval.
  */
@@ -33,6 +33,14 @@ export const SKILL_SOURCES: Record<SkillSet, SkillSourceConfig> = {
     type: 'release-artifact',
     repo: 'SalesforceCommerceCloud/b2c-developer-tooling',
     assetName: 'b2c-cli-skills.zip',
+    tagPattern: pluginsTag,
+  },
+  'b2c-ops': {
+    id: 'b2c-ops',
+    displayName: 'B2C Commerce operator and administrator runbooks',
+    type: 'release-artifact',
+    repo: 'SalesforceCommerceCloud/b2c-developer-tooling',
+    assetName: 'b2c-ops-skills.zip',
     tagPattern: pluginsTag,
   },
   'storefront-next': {
@@ -64,7 +72,7 @@ export const SKILL_SOURCES: Record<SkillSet, SkillSourceConfig> = {
 /**
  * Get the source configuration for a specific skill set.
  *
- * @param skillSet - The skill set identifier ('b2c', 'b2c-cli', 'storefront-next', 'storefront-next-figma', or 'cap-dev')
+ * @param skillSet - A registered skill set identifier
  * @returns The source configuration for the skill set
  * @throws Error if the skill set is not recognized
  */
