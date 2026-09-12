@@ -1,10 +1,10 @@
 name: Docs Preview
 
 # Publish the VitePress docs site to S3 + CloudFront. Main has a persistent
-# /next/ preview; PR previews live at /pr-<n>/ and are removed when closed.
+# /pr-next/ preview; PR previews live at /pr-<n>/ and are removed when closed.
 #
 # Triggers:
-#   - push to main: refresh the unreleased documentation at /next/.
+#   - push to main: refresh the unreleased documentation at /pr-next/.
 #   - pull_request (docs/** changes): automatic preview build/refresh and cleanup.
 #   - workflow_dispatch: rebuild main, or supply pr_number to rebuild a PR.
 #
@@ -36,7 +36,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'Optional PR number from this repo. Leave blank to build main at /next/.'
+        description: 'Optional PR number from this repo. Leave blank to build main at /pr-next/.'
         required: false
         type: string
 
@@ -86,7 +86,8 @@ jobs:
               core.setOutput('action', 'main');
               core.setOutput('same_repo', 'true');
               core.setOutput('is_draft', 'false');
-              core.setOutput('preview_path', 'next');
+              // Keep the main preview within the deployment role's pr-* namespace.
+              core.setOutput('preview_path', 'pr-next');
               return;
             }
 
@@ -198,7 +199,7 @@ jobs:
         if: steps.cfg.outputs.enabled == 'true'
         run: pnpm -r run build # builds the SDK that TypeDoc reads for API docs
 
-      # DOCS_BASE_PATH prefixes assets and links for /next/ or /pr-<n>/.
+      # DOCS_BASE_PATH prefixes assets and links for /pr-next/ or /pr-<n>/.
       # The uxstudio S3 assets used by the production build are intentionally
       # skipped — no docs source references them.
       - name: Build documentation (preview base path)

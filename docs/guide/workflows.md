@@ -9,7 +9,7 @@ New to the toolkit? Start with the [Introduction](./index) for installation and 
 
 ## Development
 
-- [Storefront Next](./storefront-next) - Set up a storefront development workflow.
+- [Storefront Next](./storefront-next) - Manage environment variables, tail logs, and develop with your AI assistant.
 - [Scaffolding](./scaffolding) - Generate projects, cartridges, and components.
 - [Script debugger](./script-debugger) - Inspect live cartridge code with your editor or AI assistant.
 - [IDE integration](./ide-integration) - Connect editor tooling and Script API IntelliSense.

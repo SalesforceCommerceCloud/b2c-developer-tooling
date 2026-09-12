@@ -6,15 +6,19 @@ description: Build, run, and deploy Storefront Next (SFNext) projects with B2C C
 
 The `b2c sfnext` commands help you scaffold, develop, and deploy Storefront Next (SFNext) projects. The commands are provided by the `@salesforce/storefront-next-dev` package and run under the B2C CLI.
 
-## Bootstrap a New Project
+For a storefront connected to your B2C Commerce instance, start with [storefront setup in Business Manager](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm.html). It creates the API and MRT resources along with your storefront configuration. See our [Storefront Next guide](/guide/storefront-next) for ongoing CLI and assistant workflows.
 
-To scaffold a new Storefront Next project from outside an existing project, use `npx` so you don't need to install the B2C CLI globally first:
+<span id="bootstrap-a-new-project"></span>
+
+## Explore a Project Locally
+
+To explore the template locally, use `npx` from outside an existing project:
 
 ```bash
 npx @salesforce/b2c-cli sfnext create-storefront
 ```
 
-This creates a new project directory with everything you need: a Storefront Next template, scripts for development and deployment, and the B2C CLI as a development dependency.
+This creates local project files; it does not provision the storefront's B2C Commerce and MRT resources. See [Explore Storefront Next Code Locally](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-sf.html) for the local workflow.
 
 ## In-Project Commands
 
@@ -22,16 +26,16 @@ Once you have a project, the scaffolded `package.json` includes scripts that wra
 
 ```bash
 pnpm run dev               # start the local dev server
-pnpm run push              # build and deploy a bundle to Managed Runtime
 pnpm run cartridge:generate
 pnpm run cartridge:deploy
 pnpm run config:inspect
 ```
 
-You can also invoke any command directly:
+For building and uploading bundles, use the template's `push` script and follow the [Storefront Next deployment guide](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-push-mrt-auto.html).
+
+You can also invoke development commands directly:
 
 ```bash
-b2c sfnext push
 b2c sfnext extensions list
 b2c sfnext scapi add
 b2c sfnext locales aggregate-extensions

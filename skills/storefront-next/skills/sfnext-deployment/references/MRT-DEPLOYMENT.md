@@ -12,14 +12,14 @@ MRT is the hosting platform for Storefront Next storefronts. It provides:
 ## Deployment Commands
 
 ```bash
-# Build and push in one step
-pnpm build && pnpm push
+# Build, then run the template's push script
+pnpm run build && pnpm run push
 
 # Push with deployment message
-pnpm sfnext push -m "Fix checkout flow"
+pnpm run push --message "Fix checkout flow"
 
 # Push to specific environment
-pnpm sfnext push --environment production --wait
+pnpm run push --environment production --wait
 
 # Create a bundle without deploying (inspection/custom pipelines)
 pnpm sfnext create-bundle -d . -o .bundle
@@ -31,16 +31,14 @@ pnpm sfnext create-bundle -d . -o .bundle
 
 Environment variables are set per-environment through:
 
-1. **MRT Dashboard** — UI for managing environment variables
-2. **CLI/.env values** — `SFCC_MRT_*` values used by `pnpm sfnext push`
+1. **Runtime Admin or `b2c mrt env var set/push`** — Application variables on the selected environment; changes redeploy it.
+2. **`MRT_PROJECT`, `MRT_TARGET`, `MRT_API_KEY`** — Deployment target and credentials for `pnpm sfnext push`; these do not upload application variables from `.env`.
 
 ### Variable Limits
 
-| Constraint              | Limit              |
-| ----------------------- | ------------------ |
-| Variable name length    | 512 characters max |
-| Total `PUBLIC__` values | 32KB max           |
-| Nesting depth           | 10 levels max      |
+See Salesforce's [Environment Variables constraints](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.html#constraints)
+for current limits. The 32 KB value-size limit covers all environment variables,
+not only `PUBLIC__` values. Public configuration paths must exist in `config.server.ts`.
 
 ### Production Configuration Example
 

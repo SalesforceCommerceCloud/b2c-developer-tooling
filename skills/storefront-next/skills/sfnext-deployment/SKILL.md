@@ -11,6 +11,12 @@ This skill covers building and deploying Storefront Next storefronts to Managed 
 
 Storefront Next storefronts are deployed to MRT as bundles. The `sfnext` CLI handles building and pushing bundles, while environment configuration is managed through MRT environment variables.
 
+Reuse the MRT project, environment, and credentials created by Business Manager
+storefront setup. Follow the [deployment guide](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-push-mrt-auto.html)
+for source deployments and the [launch guide](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.html)
+for staging/production rollout. Creating new SLAS clients or MRT resources is not
+a prerequisite to each deployment.
+
 ## Production Build
 
 ```bash
@@ -29,23 +35,26 @@ The production build:
 
 ## Deploying to MRT
 
-### Using sfnext CLI
+### Using the Template's Push Script
+
+Use the project's `push` script (`sfnext push --project-directory .`). Build first;
+the push command requires existing build output. With the template's pnpm setup:
 
 ```bash
 # Push the current build to MRT
-pnpm push
+pnpm run push
 
 # Push with a specific message
-pnpm sfnext push -m "Release v1.2.0"
+pnpm run push --message "Release v1.2.0"
 
 # Push to a specific environment
-pnpm sfnext push --environment staging --wait
+pnpm run push --environment staging --wait
 ```
 
 ### Deployment Flow
 
 ```
-pnpm build → pnpm push → MRT receives bundle → Deployed to environment
+pnpm run build → pnpm run push → MRT receives bundle → Deployed to environment
 ```
 
 See [MRT Deployment Reference](references/MRT-DEPLOYMENT.md) for detailed deployment options.
@@ -54,9 +63,15 @@ See [MRT Deployment Reference](references/MRT-DEPLOYMENT.md) for detailed deploy
 
 Environment variables for MRT are configured through:
 
-1. **MRT Dashboard** — Set `PUBLIC__` variables per environment (baked into the app at build time)
+1. **Runtime Admin or `b2c mrt env var set/push`** — Set application variables per environment; `PUBLIC__` values merge into runtime configuration and are browser-visible. Changes redeploy the environment.
 2. **CLI flags or `MRT_*` environment variables** — Control push/deploy targets
 3. **`.env` files** — Local development only (not deployed)
+
+Use `b2c mrt env var push --file .env.staging --project <project> --environment <environment>`
+to explicitly apply a reviewed file. It shows a diff and prompts; omit local-only
+values and use credentials for the target instance. See [Environment Variables](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.html)
+for visibility, naming, and limits. MRT variable management and log tailing use
+the B2C CLI; there are no equivalent dedicated MCP tools.
 
 ### MRT Deployment Variables
 

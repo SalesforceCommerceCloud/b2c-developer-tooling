@@ -15,6 +15,12 @@ This skill covers documentation for the Agentic B2C Developer Toolkit.
   Describe outcomes people can request from their assistant; keep agent tool
   choreography, runtime internals, and implementation rationale in agent skills
   or contributor docs. Include technical details when they affect a user's choice.
+- Link to canonical Salesforce Developer Center or Help pages for platform setup,
+  requirements, and behavior. Toolkit guides supplement those workflows with our
+  CLI, MCP, IDE, and skills capabilities; avoid maintaining a competing setup
+  sequence. For Storefront Next, lead with Business Manager storefront setup and
+  reuse its resources; link to the template's push workflow for source deployments.
+  Keep matching agent skills aligned with those recommendations.
 - Say "B2C Commerce" rather than "Commerce" alone. Use "IDE Extension" for the
   editor product. The TypeScript SDK is a supporting foundation, not a primary
   toolkit product alongside CLI, IDE, and AI tools.
@@ -351,7 +357,7 @@ pnpm run docs:preview
 ## Hosted Builds
 
 `.github/workflows/docs-preview.yml` publishes unreleased docs from `main` at
-`/next/` on the preview host after every push. PR previews use `/pr-<number>/` and
+`/pr-next/` on the preview host after every push. PR previews use `/pr-<number>/` and
 are removed when the PR closes. Both build packages and the docs site; neither
 refreshes published release history from GitHub.
 

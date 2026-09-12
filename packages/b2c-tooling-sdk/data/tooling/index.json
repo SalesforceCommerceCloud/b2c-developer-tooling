@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-12T00:57:43.925Z",
+  "generatedAt": "2026-09-12T03:40:30.210Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -224,7 +224,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sfnext.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sfnext.md",
-      "headings": "Bootstrap a New Project • In-Project Commands • Topics",
+      "headings": "Explore a Project Locally • In-Project Commands • Topics",
       "preview": "Build, run, and deploy Storefront Next (SFNext) projects with B2C CLI plugin commands for scaffolding new storefronts, generating cartridges, managing extensions, and pushing bundles to Managed Runtime."
     },
     {
@@ -449,8 +449,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.md",
-      "headings": "Prerequisites • Step 1: Create an On-Demand Sandbox (Optional) • Step 2: Create a SLAS Client • Step 3: Create an MRT Environment • Connect the B2C Commerce Instance • Step 4: Set Environment Variables • Variable Reference • Multi-Site Configuration • Step 5: Deploy • Step 6: Debugging with Log Tailing • Summary • Next Steps",
-      "preview": "Set up Storefront Next development environments using the B2C CLI to create sandboxes, SLAS clients, MRT environments, and deploy."
+      "headings": "Start with Storefront Setup • Prerequisites • Manage Environment Variables • Update Several Values Together • Apply an Environment File • Tail Application Logs • Work with Deployments • Work with Your AI Assistant • Next Steps",
+      "preview": "Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Manage environment variables, tail logs, and work with deployments."
     },
     {
       "id": "guide-third-party-plugins",
