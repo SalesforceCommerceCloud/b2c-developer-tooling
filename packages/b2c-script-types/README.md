@@ -56,4 +56,18 @@ in by the host extension via `tsApi.configurePlugin(...)`. Files outside the
 cartridge layout fall straight through to the unwrapped service — non-cartridge
 JavaScript and TypeScript in the same workspace see no behavior change.
 
-See [plugin/index.ts](./plugin/index.ts) for the implementation.
+See [src/index.ts](./src/index.ts) for the implementation.
+
+### Usage-based type inference (experimental, opt-in)
+
+An undocumented helper function (no JSDoc) gets its parameters and return
+value widened to `any` by plain TypeScript inference, and that `any`
+propagates to every caller. Passing `inferUsage: true` in the plugin config
+(off by default) makes the plugin infer a plausible type for these cases from
+how the value is actually used elsewhere in the project — see
+[src/usage-inference.ts](./src/usage-inference.ts) (barrel) and the engine
+modules under [src/inference/](./src/inference/) — and surface it as an
+"Inferred from usage" hover note plus synthesized member completions. It's
+heuristic and intentionally conservative: it only kicks in where the checker
+has already given up with `any`, never overriding a type TypeScript or JSDoc
+already resolved.

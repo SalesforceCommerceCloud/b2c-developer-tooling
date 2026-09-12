@@ -7,6 +7,7 @@ on:
       - develop
     paths:
       - 'packages/b2c-vs-extension/**'
+      - 'packages/b2c-script-types/**'
       - 'packages/b2c-tooling-sdk/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -17,6 +18,7 @@ on:
       - develop
     paths:
       - 'packages/b2c-vs-extension/**'
+      - 'packages/b2c-script-types/**'
       - 'packages/b2c-tooling-sdk/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
