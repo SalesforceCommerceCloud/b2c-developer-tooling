@@ -14,4 +14,6 @@ This is a major release because JSON/results can change shape during the migrati
 
 SCAPI currently requires client-credentials or JWT Bearer authentication. Browser-based user auth continues through OCAPI/WebDAV and is selected by `auto`; explicit SCAPI with user auth errors clearly until the platform adds support.
 
+GitHub Action v2 adopts CLI 2.x and its camelCase job results. Existing `@v1` workflows remain on the maintained CLI 1.x line until consumers update their Action references to `@v2`.
+
 The VS Code extension uses configured tenant IDs consistently in API Browser, keeps partial export discovery warnings in the output log instead of showing notifications, and supports JWT-authenticated OCAPI fallback equivalently to client credentials.
