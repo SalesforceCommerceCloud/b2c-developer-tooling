@@ -226,6 +226,27 @@ jobs:
           fi
           echo "@salesforce/b2c-agent-plugins: version=${PLUGINS_VERSION}"
 
+      - name: Verify previous Action major is protected
+        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_cli == 'true'
+        env:
+          CLI_VERSION: ${{ steps.packages.outputs.version_cli }}
+        run: |
+          CLI_MAJOR=${CLI_VERSION%%.*}
+          if [ "$CLI_MAJOR" -le 1 ]; then
+            echo "CLI $CLI_VERSION does not cross an existing Action major"
+            exit 0
+          fi
+
+          PREVIOUS_MAJOR=$((CLI_MAJOR - 1))
+          ACTION_TAG="v$PREVIOUS_MAJOR"
+          ACTION_SOURCE="$RUNNER_TEMP/b2c-actions-$ACTION_TAG"
+
+          git fetch origin "refs/tags/$ACTION_TAG:refs/tags/$ACTION_TAG" --force
+          mkdir -p "$ACTION_SOURCE"
+          git archive "$ACTION_TAG" | tar -x -C "$ACTION_SOURCE"
+          env -u GITHUB_OUTPUT node .github/scripts/validate-action-release.mjs "$ACTION_SOURCE"
+          echo "Verified $ACTION_TAG is bounded to CLI $PREVIOUS_MAJOR.x before publishing CLI $CLI_VERSION"
+
       - name: Create snapshot versions
         if: steps.release-type.outputs.type == 'nightly'
         id: snapshot-version
@@ -401,13 +422,6 @@ jobs:
           git tag -f b2c-vs-extension@latest
           git push origin b2c-vs-extension@latest --force
           echo "Updated b2c-vs-extension@latest tag to $(git rev-parse HEAD)"
-
-      - name: Update v1 Actions tag
-        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
-        run: |
-          git tag -f v1
-          git push origin v1 --force
-          echo "Updated v1 tag to $(git rev-parse HEAD)"
 
       - name: Create docs tag if version changed
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_docs == 'true'

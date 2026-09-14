@@ -56,7 +56,7 @@ inputs:
   version:
     description: 'CLI version to install if not already set up'
     required: false
-    default: 'latest'
+    default: '2'
   node-version:
     description: 'Node.js version'
     required: false
@@ -74,7 +74,7 @@ runs:
   using: 'composite'
   steps:
     - name: Ensure CLI is installed
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2.0.0
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
@@ -95,7 +95,7 @@ runs:
 
     - name: Upload via WebDAV
       id: upload
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v1
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2.0.0
       with:
-        command: "webdav put ${{ inputs.local-path }} ${{ inputs.remote-path }} --root ${{ inputs.root }}"
+        command: 'webdav put ${{ inputs.local-path }} ${{ inputs.remote-path }} --root ${{ inputs.root }}'
         json: 'true'
