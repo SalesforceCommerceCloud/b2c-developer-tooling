@@ -45,6 +45,8 @@ Work with remote WebDAV files as if they were local. Browse Page Designer pages 
 
 Browse the SCAPI schemas available to your instance and try requests in an integrated Swagger UI. The extension handles authentication with your configured credentials.
 
+Use **Setup Help** in the API Browser toolbar or any API tab for connection examples and Admin/Shopper access requirements. Shopper requests use your SLAS client and a guest shopper token.
+
 [![SCAPI API Explorer](https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/main/docs/vscode-extension/images/api-browser.png)](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
 
 ### Stay in the development flow
