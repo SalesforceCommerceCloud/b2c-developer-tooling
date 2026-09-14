@@ -43,11 +43,18 @@ Use launch arguments/environment for server settings, not project `.env` or `dw.
   masked. For resolution issues: [B2C config](skill://mcp/b2c-config/SKILL.md).
   CLI equivalent, when requested: `b2c setup inspect`.
 - Deploy cartridges: `cartridge_deploy`; CLI scripts/extra flags: `b2c code deploy`.
-  Confirm instance/version and preserve returned `resolution`.
+  Confirm instance/version and preserve returned `resolution`. Use `files` for
+  selected local files, `codeVersion` for an explicit target; omit `files` for
+  whole cartridges. Reload may activate the target.
+- Instance files: `webdav_list` gives directory entries/sizes; `webdav_get` reads
+  exact text by HTTP byte range or downloads to `outputPath`; `webdav_put` uploads
+  `content` or `sourcePath`. Prefer these over a terminal for supported transfers.
+  [File choices and limits](references/files.md).
 - Debug: [MCP debugger](skill://mcp/debugger/SKILL.md). CLI/IDE only when requested.
 - Prefer dedicated tools for their workflows. For other Commerce API tasks,
   use `scapi_search` / `scapi_execute`: products, campaigns, promotions, jobs,
-  and more. Read [the SCAPI skill](skill://mcp/scapi/SKILL.md) first.
+  code versions, site cartridge paths, and more. Read [the SCAPI skill](skill://mcp/scapi/SKILL.md)
+  first; its task map and built-in snippets cover recurring operations.
 - Custom API scaffold: `b2c scaffold generate custom-api`; no MCP equivalent.
 - API/product documentation: `docs_search` / `docs_read`.
 - Operations or incidents: look for `b2c-ops` runbooks in `skill://index` or

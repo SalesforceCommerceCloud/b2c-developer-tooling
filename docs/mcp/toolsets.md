@@ -52,16 +52,40 @@ to customize coverage.
 
 | Tool               | Capability                                                      | Toolsets                   |
 | ------------------ | --------------------------------------------------------------- | -------------------------- |
-| `cartridge_deploy` | Deploy selected cartridges; optionally reload the code version. | CARTRIDGES                 |
+| `cartridge_deploy` | Upload cartridges or selected files to a code version; optionally activate/reload it. | CARTRIDGES |
 | `mrt_bundle_push`  | Publish a pre-built storefront bundle; optionally deploy it.    | MRT, PWAV3, STOREFRONTNEXT |
 
-Cartridges require WebDAV write access; code-version reload also requires OCAPI
-access. Check [deployment permissions](./security#deployments) before connecting.
+Cartridges require WebDAV write access. Code-version discovery and reload use
+SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`) with OCAPI compatibility where available.
+Check [deployment permissions](./security#deployments) before connecting.
 
 ### Managed Runtime {#mrt}
 
 Bundle publishing requires an [MRT API key and project](../guide/authentication#managed-runtime-api-key),
 plus an environment when deploying.
+
+## Instance files {#webdav}
+
+Browse instance directories, read exact job logs, and upload or download files
+without installing the CLI separately. Upload text directly or transfer files
+from the machine running the MCP server.
+
+| Tool | Capability | Toolsets |
+| --- | --- | --- |
+| `webdav_list` | List a directory with file sizes and modification dates. | CARTRIDGES, DIAGNOSTICS, SCAPI |
+| `webdav_get` | Read part of a text file or download a whole file. | CARTRIDGES, DIAGNOSTICS, SCAPI |
+| `webdav_put` | Upload text or a local file; replace existing files only when requested. | CARTRIDGES, SCAPI |
+
+Requires WebDAV access to the selected directory. Whole-file transfers are limited
+to 64 MiB. Upload folders must already exist; local downloads require a new filename.
+Selected cartridge uploads support up to 100 files / 64 MiB total.
+See [file access](./security#instance-files).
+
+<ExamplePrompt>
+
+> Download the log for this failed job execution and identify the first error. Don't rerun the job.
+
+</ExamplePrompt>
 
 ## Debugging {#diagnostics}
 
@@ -165,7 +189,8 @@ not yet run Shopper API requests or upload and download binary files.
 </ExamplePrompt>
 
 Ready-to-use workflows cover product creation and category assignment, campaign
-reviews, and failed-job investigation. Products created with the built-in workflow
+reviews, job history and step inspection, code-version checks, and site cartridge
+path checks. Products created with the built-in workflow
 start offline unless you request otherwise.
 
 ![Screenshot placeholder: Claude Code creating a product and verifying its storefront category assignment.](/placeholders/mcp-claude-product.svg)

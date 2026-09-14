@@ -50,7 +50,7 @@ the [B2C CLI](../cli/docs).
 
 - **Build:** find platform documentation and apply B2C Commerce development patterns.
 - **Debug:** investigate logs and inspect live cartridge execution with breakpoints, variables, and call stacks.
-- **Deploy:** publish cartridges and Managed Runtime storefront bundles.
+- **Deploy:** upload whole cartridges or selected code files and publish Managed Runtime storefront bundles.
 
 <ExamplePrompt>
 
@@ -71,6 +71,9 @@ Review campaigns and promotions, investigate job failures, or create products an
 Included [operations runbooks](../guide/operations) help your assistant review
 scheduled work, investigate checkout failures, and prepare evidence for your
 administrator, developer, integration provider, or Salesforce Support.
+Review successful and failed job runs, inspect execution steps and logs, check
+active code versions and site cartridge paths, and [transfer instance files](./toolsets#webdav)
+without a separate CLI installation.
 
 <ExamplePrompt>
 

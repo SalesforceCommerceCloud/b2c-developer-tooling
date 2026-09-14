@@ -13,6 +13,7 @@
  */
 
 import {z} from 'zod';
+import {deploySelectedFiles} from './selected-files.js';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
@@ -28,7 +29,7 @@ import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 /** Reminder shown after deploy so users add cartridges to the site cartridge path. */
 const CARTRIDGE_PATH_REMINDER =
-  "If this is a new or updated cartridge, add it to your site's cartridge path in Business Manager: " +
+  "For a new cartridge, add it to your site's cartridge path in Business Manager: " +
   'Sites → Manage Sites → [your site] → Settings tab → Cartridges field.';
 
 /**
@@ -37,6 +38,8 @@ const CARTRIDGE_PATH_REMINDER =
 interface CartridgeDeployInput extends ProjectContextInput {
   /** Path to directory containing cartridges. */
   cartridgeDirectory?: string;
+  codeVersion?: string;
+  files?: string[];
   /** @deprecated Use cartridgeDirectory. */
   directory?: string;
   /** Only deploy these cartridge names */
@@ -97,12 +100,26 @@ function createCartridgeDeployTool(
       idempotent: false,
       openWorld: true,
       description:
-        'Find and deploy cartridges to B2C Commerce via WebDAV. Supports include/exclude filters and code-version reload. ' +
+        'Find and deploy cartridges or selected files to B2C Commerce via WebDAV; overwrites matching remote files. ' +
         "After deployment, add new cartridges to the site's cartridge path in Business Manager: Sites → Manage Sites → Settings tab → Cartridges.",
       toolsets: ['CARTRIDGES'],
       requiresInstance: true,
       usesProjectContext: true,
       inputSchema: {
+        codeVersion: z
+          .string()
+          .regex(/^(?!\.{1,2}$)[A-Za-z0-9_.-]+$/)
+          .max(256)
+          .optional()
+          .describe('Target version; defaults to configured, then active version.'),
+        files: z
+          .array(z.string().min(1))
+          .min(1)
+          .max(100)
+          .optional()
+          .describe(
+            'Files within selected cartridges, relative to projectDirectory. Max 64 MiB; preserves other remote files.',
+          ),
         cartridgeDirectory: z
           .string()
           .optional()
@@ -120,7 +137,12 @@ function createCartridgeDeployTool(
           .optional()
           .describe('Cartridge names to deploy; omit for all discovered cartridges.'),
         exclude: z.array(z.string()).optional().describe('Cartridge names to exclude after the include filter.'),
-        reload: z.boolean().optional().describe('Reload the code version after deployment. Default: false.'),
+        reload: z
+          .boolean()
+          .optional()
+          .describe(
+            'Activate/reload the target after upload, briefly toggling versions if already active. Default: false.',
+          ),
       },
       async execute(args, context) {
         // Get instance from context (guaranteed by adapter when requiresInstance is true)
@@ -130,7 +152,7 @@ function createCartridgeDeployTool(
         try {
           const scriptsBackend = createScriptsBackend({instance});
           // If no code version specified, get the active one
-          let codeVersion = instance.config.codeVersion;
+          let codeVersion = args.codeVersion ?? instance.config.codeVersion;
           if (!codeVersion) {
             logger.debug('No code version specified, getting active version...');
             const active = injections?.getActiveCodeVersion
@@ -145,8 +167,11 @@ function createCartridgeDeployTool(
               );
             }
             codeVersion = active.id;
-            instance.config.codeVersion = codeVersion;
           }
+
+          if (!/^(?!\.{1,2}$)[A-Za-z0-9_.-]+$/.test(codeVersion))
+            throw new Error('Invalid code version: use a version ID, not a path.');
+          instance.config.codeVersion = codeVersion;
 
           // Resolve directory path: relative paths are resolved relative to project directory, absolute paths are used as-is
           const projectDirectory = context.services.resolveProjectDirectory(args.projectDirectory);
@@ -178,22 +203,19 @@ function createCartridgeDeployTool(
           );
 
           // Deploy cartridges
-          const result = await findAndDeployCartridgesFn(instance, directory, options);
+          const result = args.files
+            ? await deploySelectedFiles(instance, directory, projectDirectory.path, args.files, options)
+            : await findAndDeployCartridgesFn(instance, directory, options);
 
           return {
             ...result,
             projectDirectory,
             resolvedDirectory: directory,
-            postInstructions: CARTRIDGE_PATH_REMINDER,
+            ...(args.files ? {} : {postInstructions: CARTRIDGE_PATH_REMINDER}),
           };
         } catch (error) {
-          // Handle communication and authentication errors
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          throw new Error(
-            `Failed to communicate with B2C instance. Check your authentication credentials and network connection. ` +
-              `If no code version is specified, ensure the instance is accessible and has an active code version. ` +
-              `Original error: ${errorMessage}`,
-          );
+          const message = error instanceof Error ? error.message : String(error);
+          throw new Error(`Cartridge deployment failed: ${message}`);
         }
       },
       formatOutput: (output) => jsonResult(output),

@@ -9,6 +9,18 @@ Use the `b2c` CLI to deploy, download, and manage code versions on Salesforce B2
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli code deploy`).
 
+## MCP equivalent
+
+Prefer `cartridge_deploy` for cartridge upload. Set `codeVersion` explicitly when
+needed; `files` selects up to 100 local files (64 MiB total), relative to
+`projectDirectory`, within discovered cartridges. Omit `files` for whole cartridges.
+Matching remote files are overwritten; selected-file mode preserves other files.
+`reload` may activate the target; keep upload success/warnings if reload fails.
+Code mode `builtin/code-version-inspect` reads active/rollback and activation metadata;
+`builtin/site-cartridge-inspect` reads site cartridge order and checks expected names.
+SCAPI `dx/scripts/v1` provides version management; `site/sites/v1` manages site paths.
+Use the CLI for watches, recursive downloads, and extra deployment flags.
+
 ## Configuration & Authentication
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.

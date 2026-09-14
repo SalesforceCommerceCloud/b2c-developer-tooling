@@ -17,6 +17,7 @@ import {createDiagnosticsTools} from './tools/diagnostics/index.js';
 import {createDocsTools} from './tools/docs/index.js';
 import {createMrtTools} from './tools/mrt/index.js';
 import {createScapiTools} from './tools/scapi/index.js';
+import {createWebDavTools} from './tools/webdav/index.js';
 import {createGuidanceTool, registerGuidanceResources} from './guidance.js';
 
 /**
@@ -51,6 +52,7 @@ export function createToolRegistry(
   // Collect all tools from all factories
   const allTools: McpTool[] = [
     ...createCartridgesTools(loadServices),
+    ...createWebDavTools(loadServices),
     ...createDiagnosticsTools(loadServices, serverContext),
     ...createDocsTools(loadServices, {detectedWorkspaces, enabledCategories: enabledDocCategories}),
     ...createMrtTools(loadServices),

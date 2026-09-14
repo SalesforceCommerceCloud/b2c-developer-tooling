@@ -79,6 +79,19 @@ Read [annotation semantics](references/tool-effects.md) when adding or changing
 operations. Verify emitted `tools/list` hints, including optional tools. Hints
 inform client approvals; they neither authorize calls nor enforce server policy.
 
+## File workflows
+
+Use managed SDK WebDAV requests for instance files; local paths refer to the MCP
+host. Prefer simple local-file and inline-text inputs over session file caches.
+Text file reads use bounded HTTP byte ranges, total byte size, and nextOffset at
+a complete UTF-8 boundary. Test ignored ranges, empty/truncated files, and binary
+downloads. Keep character paging for already-local documentation/skills.
+Selected cartridge uploads validate the entire selection before writing and use
+the shared SDK archive pipeline. Preserve upload success when cleanup/reload fails;
+never suggest replaying a write to fix a later stage. Simple file tools need no
+skill acknowledgment. Prefer task maps and reusable snippets over wrappers for
+already-supported SCAPI operations.
+
 ## Conditional result guidance
 
 Add guidance when an observed condition changes the next action: source warnings,

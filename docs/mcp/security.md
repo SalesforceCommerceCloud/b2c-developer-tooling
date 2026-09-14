@@ -41,6 +41,20 @@ permissions.
 Cartridge deployment writes to the selected code version. MRT publishing uploads
 a bundle and can activate it in an environment. Confirm the project, instance, code version, and
 MRT environment before requesting these operations.
+Selected cartridge uploads overwrite matching files and preserve other files.
+Code-version reload can briefly activate another version before activating the target.
+
+## Instance files
+
+File reads and transfers require WebDAV permissions for the requested directory,
+using configured Business Manager credentials/access keys or OAuth WebDAV access.
+Grant read access for log investigation and write access only where uploads are needed.
+See [WebDAV permissions](../guide/authentication#webdav-access).
+
+Remote uploads can replace files when explicitly requested. Downloads write a new
+file on the machine running the MCP server; they do not overwrite an existing file.
+The configured Safety Mode applies to remote WebDAV requests, including uploads.
+Local download destinations use that machine's filesystem permissions.
 
 ## Debugger access {#debugger}
 

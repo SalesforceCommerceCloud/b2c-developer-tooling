@@ -30,6 +30,8 @@ const groups = [
       'docs_read',
       'debug_inspect',
       'debug_wait_for_stop',
+      'webdav_list',
+      'webdav_get',
       'logs_list_files',
       'logs_get_recent',
       'scapi_schemas_list',
@@ -51,6 +53,10 @@ const groups = [
   {
     names: ['scapi_snippet_save'],
     annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false},
+  },
+  {
+    names: ['webdav_put'],
+    annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true},
   },
   {
     names: ['cartridge_deploy', 'scapi_execute'],
