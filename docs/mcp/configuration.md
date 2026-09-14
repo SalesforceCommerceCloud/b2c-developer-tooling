@@ -45,7 +45,7 @@ choose a subset:
 
 Explicit selection replaces the default of all toolsets. Combining `--toolsets`
 and `--tools` includes both selections. Valid toolsets are `CARTRIDGES`,
-`DIAGNOSTICS`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, and `all`.
+`DIAGNOSTICS`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, `CIP`, and `all`.
 
 Toolsets include shared skills and documentation. When selecting individual tools,
 include `skills_read` for the skill collections and the documentation tools you

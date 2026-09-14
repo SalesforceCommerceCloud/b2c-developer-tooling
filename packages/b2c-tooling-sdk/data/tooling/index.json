@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-14T01:34:02.508Z",
+  "generatedAt": "2026-09-14T19:44:38.294Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -314,8 +314,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md",
-      "headings": "CLI Flags • OAuth (SCAPI/OCAPI) • Client Credentials • JWT Bearer • User Authentication (Browser) • Basic Authentication (WebDAV) • Environment Variables • .env File • Configuration File • Configuration File Selection • Global Default Configuration • Single Instance • Multiple Instances • Managing Instances with the CLI • Quick Setup • Switching Instances • Listing and Removing • Supported Fields • Two-Factor Authentication (mTLS) • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • Resolution Priority • Credential Grouping • MRT API Key • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • Debugging Configuration • Next Steps",
-      "preview": "Configure the B2C developer tooling with environment variables, dw.json files, and multi-instance setups."
+      "headings": "Choose Your Connection • Configuration File • Single Instance • Shopper Authentication (SLAS) • Multiple Instances • Managing Instances with the CLI • Configuration File Selection • Global Default Configuration • Environment Variables • .env File • Check Your Configuration {#debugging-configuration} • Resolution Priority • Credential Grouping • Settings Reference {#supported-fields} • Instance and Site • Administrative Authentication {#oauth-scapi-ocapi} • Shopper Authentication • WebDAV and Certificates {#basic-authentication-webdav} • Code, Content, and Documentation • Sandboxes and Analytics • Managed Runtime • Other Environment Settings • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • CLI Flags • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • MRT API Key • Two-Factor Authentication (mTLS) • Troubleshooting • Next Steps",
+      "preview": "Configure B2C Commerce connections for the CLI, MCP, and IDE extension, including SLAS credentials, named instances, and shared project defaults."
     },
     {
       "id": "guide-extending",
@@ -512,7 +512,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.md",
-      "headings": "Connecting to a B2C Instance • Per-feature requirements • Example `dw.json` • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
+      "headings": "Connecting to a B2C Instance • Per-feature requirements • Example `dw.json` • API Browser Setup • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
       "preview": "Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
     },
     {

@@ -1,477 +1,468 @@
 ---
-description: Configure the B2C developer tooling with environment variables, dw.json files, and multi-instance setups.
+description: Configure B2C Commerce connections for the CLI, MCP, and IDE extension, including SLAS credentials, named instances, and shared project defaults.
 ---
 
 # Configuration
 
-The B2C CLI, B2C DX MCP server, and Salesforce B2C Commerce VS Code extension share the same configuration model. In this guide, **the tooling** refers to these surfaces collectively. The tooling automatically discovers available credentials and project settings from environment variables and configuration files, while each surface also supports its own explicit overrides.
+The B2C CLI, B2C MCP, and IDE Extension share connection settings. If you already use a `dw.json` or project `.env`, you can reuse it across all three. Configure the credentials needed for your tasks; documentation search and included skills need no B2C Commerce connection.
 
-::: tip
-For detailed setup instructions including Account Manager API client creation, role configuration, and OCAPI setup, see the [Authentication Setup](./authentication) guide.
-:::
+For help obtaining credentials and assigning access, see [Authentication](./authentication). For settings specific to your assistant or editor, see [MCP Configuration](/mcp/configuration) or [IDE Extension Configuration](/vscode-extension/configuration).
 
-## CLI Flags
+## Choose Your Connection
 
-### OAuth (SCAPI/OCAPI)
+| Task                                                 | What to configure                                                                                                                                                   |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Manage code versions, jobs, sites, or Admin API data | Account Manager `client-id` and `client-secret` (or JWT credentials). For SCAPI, add `short-code` and `tenant-id`; instance operations can also need `hostname`.    |
+| Upload cartridges, browse files, or read logs        | `hostname` plus `username` and `password` (a WebDAV access key), or [OAuth WebDAV access](./authentication#option-b-oauth-based-webdav-api-client-access).          |
+| Obtain shopper tokens                                | `short-code`, `tenant-id`, `slas-client-id`, and `site-id`. Add `slas-client-secret` for a private SLAS client.                                                     |
+| Work with Managed Runtime                            | An MRT API key and project/environment defaults. Supported SCAPI MRT operations can use Account Manager credentials instead. See [MRT configuration](#mrt-api-key). |
+| Analyze sales, searches, or performance with CIP     | Account Manager `client-id`, `client-secret`, and `tenant-id`, plus [CIP access](./analytics-reports-cip-ccac#authentication-and-access).                           |
+| Manage sandboxes, SLAS clients, or Account Manager   | These CLI commands support browser sign-in with a built-in public client. Your user still needs the appropriate roles and tenant access.                            |
 
-OAuth is required for API operations (code list/activate/delete, jobs, sites, SCAPI commands, SLAS, ODS) and can also be used for WebDAV file operations when basic auth credentials are not provided.
-
-#### Client Credentials
-
-OAuth client credentials uses a client ID and secret for non-interactive authentication:
-
-```bash
-b2c code deploy \
-  --server abcd-123.dx.commercecloud.salesforce.com \
-  --client-id your-client-id \
-  --client-secret your-client-secret
-```
-
-#### JWT Bearer
-
-JWT Bearer uses certificate-based authentication for enhanced security without storing client secrets:
-
-```bash
-b2c code deploy \
-  --server abcd-123.dx.commercecloud.salesforce.com \
-  --client-id your-client-id \
-  --jwt-cert ./cert.pem \
-  --jwt-key ./key.pem
-```
-
-See [JWT Authentication](./authentication#jwt-authentication-certificate-based) for setup instructions.
-
-#### User Authentication (Browser)
-
-For development without a client secret, use the browser-based user flow (Authorization Code + PKCE):
-
-```bash
-b2c code deploy \
-  --server abcd-123.dx.commercecloud.salesforce.com \
-  --client-id your-client-id \
-  --user-auth
-```
-
-`--user-auth` is shorthand for `--auth-methods user`. The legacy implicit flow is still selectable via `--auth-methods implicit` but emits a deprecation warning.
-
-### Basic Authentication (WebDAV)
-
-Basic authentication uses your B2C instance username and access key. This method is only used for WebDAV operations (code deployment, file uploads, log access).
-
-```bash
-b2c code deploy \
-  --server abcd-123.dx.commercecloud.salesforce.com \
-  --username your-username \
-  --password your-access-key
-```
-
-See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=cc.b2c_account_manager_sso_use_webdav_file_access.htm&type=5) for instructions on setting up your access key.
-
-## Environment Variables
-
-You can configure the tooling using environment variables:
-
-| Variable                      | Description                                                                                             |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `SFCC_PROJECT_DIRECTORY`      | Project directory                                                                                       |
-| `SFCC_CONFIG`                 | Path to config file (dw.json format)                                                                    |
-| `SFCC_INSTANCE`               | Instance name from config file                                                                          |
-| `SFCC_SERVER`                 | The B2C instance hostname                                                                               |
-| `SFCC_WEBDAV_SERVER`          | Separate hostname for WebDAV (if different from main hostname)                                          |
-| `SFCC_CODE_VERSION`           | Code version for deployments                                                                            |
-| `SFCC_CLIENT_ID`              | OAuth client ID                                                                                         |
-| `SFCC_CLIENT_SECRET`          | OAuth client secret                                                                                     |
-| `SFCC_JWT_CERT`               | Path to JWT certificate file (cert.pem) for JWT Bearer auth                                             |
-| `SFCC_JWT_KEY`                | Path to JWT private key file (key.pem) for JWT Bearer auth                                              |
-| `SFCC_JWT_PASSPHRASE`         | Passphrase for encrypted JWT private key                                                                |
-| `SFCC_OAUTH_SCOPES`           | OAuth scopes to request                                                                                 |
-| `SFCC_AUTH_METHODS`           | Comma-separated list of allowed auth methods                                                            |
-| `SFCC_SHORTCODE`              | SCAPI short code                                                                                        |
-| `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                                                                        |
-| `SFCC_API_BACKEND`            | API backend for migrated commands: `auto` (default), `scapi`, or `ocapi`                                |
-| `SFCC_SLAS_CLIENT_ID`         | SLAS shopper client ID                                                                                  |
-| `SFCC_SLAS_CLIENT_SECRET`     | SLAS private shopper client secret                                                                      |
-| `SFCC_SITE_ID`                | Site/channel ID                                                                                         |
-| `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                                                                      |
-| `SFCC_REDIRECT_URI`           | Override redirect URI for browser-based OAuth flows (e.g., when behind a proxy)                         |
-| `SFCC_OAUTH_LOCAL_PORT`       | Local port for the browser-based OAuth redirect server (default: `8080`)                                |
-| `SFCC_DISABLE_PKCE_FALLBACK`  | Disable the automatic PKCE→implicit fallback for clients not yet registered for PKCE (set to `1`)       |
-| `SFCC_USERNAME`               | Basic auth username                                                                                     |
-| `SFCC_PASSWORD`               | Basic auth password                                                                                     |
-| `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)                                                   |
-| `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the certificate                                                                          |
-| `SFCC_SELFSIGNED`             | Allow self-signed server certificates                                                                   |
-| `SFCC_SANDBOX_API_HOST`       | ODS (sandbox) API hostname                                                                              |
-| `SFCC_CIP_HOST`               | CIP analytics host override                                                                             |
-| `SFCC_CIP_STAGING`            | Use staging CIP analytics host (`true`/`false`)                                                         |
-| `SFCC_IMPORT_SET_EXCLUDE`     | Comma-separated project directories excluded from import sets                                           |
-| `MRT_API_KEY`                 | MRT API key (`SFCC_MRT_API_KEY` also supported)                                                         |
-| `MRT_PROJECT`                 | MRT project slug (`SFCC_MRT_PROJECT` also supported)                                                    |
-| `MRT_ENVIRONMENT`             | MRT environment name (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported)                              |
-| `MRT_CLOUD_ORIGIN`            | MRT API origin URL override (`SFCC_MRT_CLOUD_ORIGIN` also supported)                                    |
-| `MRT_BACKEND`                 | MRT backend: `auto` (default), `legacy`, or `scapi` (`SFCC_MRT_BACKEND` also supported)                 |
-| `SFCC_SAFETY_LEVEL`           | Safety mode: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` (see [Safety Mode](/guide/safety))           |
-| `SFCC_SAFETY_CONFIRM`         | Enable confirmation mode for safety: `true` or `1` (see [Safety Mode](/guide/safety#confirmation-mode)) |
-| `SFCC_SAFETY_CONFIG`          | Path to global safety config file (see [Safety Mode](/guide/safety#global-safety-config))               |
-
-## .env File
-
-The tooling automatically loads a `.env` file from the selected project directory if present. Use the same `SFCC_*` variable names as environment variables.
-
-```bash
-# .env
-SFCC_SERVER=abcd-123.dx.commercecloud.salesforce.com
-SFCC_CLIENT_ID=your-client-id
-SFCC_CLIENT_SECRET=your-client-secret
-```
-
-::: warning
-Add `.env` to your `.gitignore` to avoid committing credentials.
-:::
+Account Manager and SLAS clients serve different purposes. `client-id` / `client-secret` are for administrative access; `slas-client-id` / `slas-client-secret` are for shopper authentication. Configuring one does not configure the other.
 
 ## Configuration File
 
-You can create a `dw.json` file to store instance settings. By default, the tooling uses `dw.json` in the selected project directory.
-
-::: tip Flexible Field Names
-Both camelCase and kebab-case are accepted for all field names in `dw.json`. For example, `client-id` and `clientId` are equivalent, as are `code-version` and `codeVersion`. Legacy aliases like `server` (for `hostname`) and `passphrase` (for `certificatePassphrase`) are also still supported.
-:::
-
-### Configuration File Selection
-
-The tooling selects a primary configuration path in this order, then adds the global `dw.json` to the available instances:
-
-1. `--config` (or an MCP tool's `configPath`)
-2. `SFCC_CONFIG` from the process environment
-3. `SFCC_CONFIG` from the selected project's `.env`
-4. `dw.json` in the selected project directory
-5. The [global default configuration](#global-default-configuration)
-
-A relative `SFCC_CONFIG` in a project `.env` is resolved from that project directory.
-
-### Global Default Configuration
-
-If you use one `dw.json` across projects, set it once as the global `dw.json`:
-
-```bash
-b2c setup default-config set /Users/you/code/dw.json
-b2c setup default-config get
-```
-
-The tooling adds its instances after those from the primary file. A project's own `dw.json` therefore continues to take priority when both files contain the same instance name.
-
-The primary and global `dw.json` files form one instance catalog. `--instance` / `-i` looks in the primary file first and then the global file; a same-name primary instance shadows the global one. Each instance remains a complete configuration entry—fields are never merged between files.
-
-Without `-i`, the primary file's active instance or default entry wins. The global file's active instance or default entry is used only when the primary file does not provide one. Instance-management commands use the same catalog: list shows both files, create writes to the primary file when present (otherwise the global `dw.json`), and remove or set-active finds the primary instance before the global one.
-
-For a root-level configuration, omitting `active` makes it the file's implicit default. Setting the root to `"active": false` explicitly opts it out of default selection; if no child instance in that file is active, selection continues to the global `dw.json`. Run `b2c setup inspect` to see both catalog files and which one supplied the selected instance.
-
-To remove the global `dw.json` setting:
-
-```bash
-b2c setup default-config unset
-```
-
-The setting is shared in the B2C user configuration directory (`~/.config/b2c/settings.json` on macOS and Linux; the platform configuration directory on Windows). Use the commands above instead of editing that file directly.
-
-If the configuration file is stored beside `settings.json`, the setting can use a relative path such as `"./dw.json"`; relative paths are resolved from the settings directory. The `set` command writes this relative form automatically for files kept there.
+Save a `dw.json` in your project directory, or use [interactive setup](#managing-instances-with-the-cli). Examples use placeholder credentials: replace them with values for your instance.
 
 ### Single Instance
 
-```json
-{
-  "hostname": "abcd-123.dx.commercecloud.salesforce.com",
-  "code-version": "version1",
-  "client-id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  "client-secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  "username": "your-username",
-  "password": "your-access-key"
-}
-```
-
-Or with JWT Bearer authentication:
+This example supports Admin APIs and WebDAV on a sandbox:
 
 ```json
 {
-  "hostname": "abcd-123.dx.commercecloud.salesforce.com",
-  "code-version": "version1",
-  "client-id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  "jwt-cert-path": "./cert.pem",
-  "jwt-key-path": "./key.pem"
+  "hostname": "abcd-001.dx.commercecloud.salesforce.com",
+  "short-code": "kv7kzm78",
+  "tenant-id": "abcd_001",
+  "client-id": "your-account-manager-client-id",
+  "client-secret": "your-account-manager-client-secret",
+  "username": "username@example.com",
+  "password": "your-webdav-access-key",
+  "code-version": "version1"
 }
 ```
+
+Use your instance's short code and an existing code version. `tenant-id` accepts both the tenant form (`abcd_001`) and organization form (`f_ecom_abcd_001`). Staging and production tenants typically use `abcd_stg` and `abcd_prd`.
+
+::: warning Keep credentials out of version control
+Add `dw.json` and `.env` to `.gitignore`. These files store secrets as plain text. For encrypted credential storage, see the [macOS Keychain](./third-party-plugins#macos-keychain-plugin) and [Password Store](./third-party-plugins#password-store-plugin) plugins. Non-secret project defaults can go in [package.json](#project-configuration-package-json).
+:::
+
+### Shopper Authentication (SLAS)
+
+Add these fields to the same instance entry when you need shopper tokens:
+
+```json
+{
+  "short-code": "kv7kzm78",
+  "tenant-id": "abcd_001",
+  "slas-client-id": "your-slas-client-id",
+  "site-id": "RefArch"
+}
+```
+
+For a private client, also set `"slas-client-secret": "your-slas-client-secret"`. Omit the secret for a public client. The site must be allowed by that SLAS client's channel configuration, and the client needs scopes for the intended Shopper APIs. See [Salesforce SLAS setup](https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas.html) and [SLAS token commands](/cli/slas#b2c-slas-token).
+
+The IDE Extension's [API Browser](/vscode-extension/configuration#api-browser-setup) also uses these SLAS settings when you try requests in Shopper API families.
 
 ### Multiple Instances
 
-For projects that work with multiple instances, use the `configs` array:
+Use a `configs` array and give each entry a name. Each entry contains its own connection settings; root-level fields are not shared defaults for the entries.
 
 ```json
 {
   "configs": [
     {
-      "name": "dev",
+      "name": "sandbox",
       "active": true,
       "hostname": "abcd-001.dx.commercecloud.salesforce.com",
-      "code-version": "version1",
-      "client-id": "dev-client-id",
-      "username": "dev-username",
-      "password": "dev-access-key"
+      "short-code": "kv7kzm78",
+      "tenant-id": "abcd_001",
+      "client-id": "your-sandbox-client-id",
+      "client-secret": "your-sandbox-client-secret",
+      "username": "username@example.com",
+      "password": "your-webdav-access-key",
+      "code-version": "version1"
     },
     {
-      "name": "staging",
-      "hostname": "abcd-002.dx.commercecloud.salesforce.com",
-      "code-version": "version1",
-      "client-id": "staging-client-id",
-      "username": "staging-username",
-      "password": "staging-access-key"
+      "name": "dev",
+      "hostname": "dev.example.com",
+      "short-code": "kv7kzm78",
+      "tenant-id": "abcd_dev",
+      "client-id": "your-dev-client-id",
+      "client-secret": "your-dev-client-secret"
     }
   ]
 }
 ```
 
-Each instance can have its own `safety` configuration for per-instance operational safety. See [Safety Mode](/guide/safety#per-instance-configuration) for details.
+Here, `sandbox` is the default. The `dev` entry uses OAuth only; WebDAV access requires the corresponding API client permissions. Each entry can also define [Safety Mode](./safety#per-instance-configuration) restrictions.
 
-Use the `-i` or `--instance` flag to select a specific configuration:
+Select an instance for one CLI command:
 
 ```bash
-b2c code deploy -i staging
+b2c code list -i dev
 ```
 
-If no instance is specified, the config with `"active": true` is used.
+With the MCP, include the instance name in your request. In the IDE Extension, use the [instance picker](/vscode-extension/configuration#selecting-an-instance); its selection applies to that workspace.
 
 ### Managing Instances with the CLI
 
-Instead of editing `dw.json` by hand, you can use `b2c setup instance` commands to create, list, remove, and switch between instance configurations.
+<span id="quick-setup"></span>
+<span id="switching-instances"></span>
+<span id="listing-and-removing"></span>
 
-#### Quick Setup
-
-```bash
-# Interactive — prompts for hostname, auth, and code version
-b2c setup instance create staging
-
-# Non-interactive
-b2c setup instance create staging \
-  --hostname staging.example.com \
-  --client-id my-client-id \
-  --client-secret my-secret \
-  --force
-```
-
-The interactive mode auto-detects the active code version via OCAPI when OAuth credentials are provided, and the first instance you create is automatically set as active.
-
-#### Switching Instances
+Create or maintain entries without editing JSON:
 
 ```bash
-# Set a different instance as the default
-b2c setup instance set-active production
+# Interactive connection setup
+b2c setup instance create sandbox
 
-# Or pick interactively (shows a searchable list)
-b2c setup instance set-active
-
-# Commands now use the active instance by default
-b2c code list                  # Uses production
-b2c code list -i staging       # Override for one command
-```
-
-#### Listing and Removing
-
-```bash
-# See all configured instances
+# List configured instances
 b2c setup instance list
 
-# Remove an instance
-b2c setup instance remove staging
+# Change the shared default
+b2c setup instance set-active sandbox
+
+# Remove a saved connection (does not delete the B2C Commerce instance)
+b2c setup instance remove dev
 ```
 
-::: tip
-For the full command reference with all flags, see [Setup Commands](/cli/setup).
-:::
+Interactive creation can detect the active code version using the configured SCAPI/OCAPI backend when OAuth credentials are available. The first instance you create is set active automatically. See [Setup Commands](/cli/setup) for non-interactive options and all flags.
 
-### Supported Fields
+### Configuration File Selection
 
-| Field                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `hostname`               | B2C instance hostname. Also accepts `server`.                                                                                                                                                                                                                                                                                                                                                                                          |
-| `webdav-hostname`        | Separate hostname for WebDAV (if different from main hostname). Also accepts `webdav-server`, `secureHostname`, or `secure-server`.                                                                                                                                                                                                                                                                                                    |
-| `code-version`           | Code version for deployments                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `client-id`              | OAuth client ID                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `client-secret`          | OAuth client secret                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `jwt-cert-path`          | Path to JWT certificate file (cert.pem) for JWT Bearer authentication. Also accepts `jwtCertPath`.                                                                                                                                                                                                                                                                                                                                     |
-| `jwt-key-path`           | Path to JWT private key file (key.pem) for JWT Bearer authentication. Also accepts `jwtKeyPath`.                                                                                                                                                                                                                                                                                                                                       |
-| `jwt-passphrase`         | Passphrase for encrypted JWT private key. Also accepts `jwtPassphrase`.                                                                                                                                                                                                                                                                                                                                                                |
-| `username`               | Basic auth username (WebDAV)                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `password`               | Basic auth access key (WebDAV)                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `oauth-scopes`           | OAuth scopes (array of strings)                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `auth-methods`           | Authentication methods in priority order (array of strings)                                                                                                                                                                                                                                                                                                                                                                            |
-| `user-auth`              | Boolean shorthand for `"auth-methods": ["user"]`. Mutually exclusive with `auth-methods` — set one or the other.                                                                                                                                                                                                                                                                                                                       |
-| `account-manager-host`   | Account Manager hostname for OAuth                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `shortCode`              | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`.                                                                                                                                                                                                                                                                                                                                                                      |
-| `content-library`        | Default content library ID for `content export` and `content list` commands                                                                                                                                                                                                                                                                                                                                                            |
-| `libraries`              | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed                                                                                                                                                                                                                                                                                                     |
-| `asset-query`            | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`). Also accepts `assetQuery`                                                                                                                                                                                                                                                                                                  |
-| `import-set-exclude`     | Project-relative directories excluded recursively from import-set source discovery. Also accepts `importSetExclude`                                                                                                                                                                                                                                                                                                                    |
-| `tenant-id`              | Organization/tenant ID for SCAPI                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `sandbox-api-host`       | ODS (sandbox) API hostname                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `realm`                  | Default ODS realm for sandbox operations                                                                                                                                                                                                                                                                                                                                                                                               |
-| `cip-host`               | CIP analytics host override                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `mrtApiKey`              | MRT API key                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `mrtProject`             | MRT project slug                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `mrtEnvironment`         | MRT environment name                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `mrtOrigin`              | MRT API origin URL override. Also accepts `cloudOrigin`.                                                                                                                                                                                                                                                                                                                                                                               |
-| `mrtBackend`             | MRT backend for `mrt bundle history` / `deploy <id>`: `auto` (default), `legacy`, or `scapi`. See [MRT Backends](/cli/mrt#mrt-backends).                                                                                                                                                                                                                                                                                               |
-| `certificate`            | Path to PKCS12 certificate for two-factor auth (mTLS)                                                                                                                                                                                                                                                                                                                                                                                  |
-| `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`.                                                                                                                                                                                                                                                                                                                                                                             |
-| `self-signed`            | Allow self-signed server certificates. Also accepts `selfsigned`.                                                                                                                                                                                                                                                                                                                                                                      |
-| `api-backend`            | API backend for SCAPI-migrated commands: `scapi`, `auto` (default), or `ocapi`. `auto` tries SCAPI when its coordinates and supported authentication are detected, then temporarily falls back to deprecated OCAPI on a safe capability/auth/request rejection. Missing SCAPI coordinates do not make `auto` invalid; OCAPI is selected directly. Set `ocapi` to force the [deprecated](./authentication#ocapi-configuration) backend. |
+The CLI uses its current directory as the project directory unless you pass `--project-directory` or set `SFCC_PROJECT_DIRECTORY`. It reads that directory's `.env`, `dw.json`, and `package.json`; it does not search parent directories for these files. Your assistant can select the relevant project for each task, and the IDE Extension has its own [project selection](/vscode-extension/configuration#how-the-extension-chooses-a-project).
 
-### Two-Factor Authentication (mTLS)
+The primary `dw.json` path is selected in this order:
 
-For instances that require client certificate authentication:
+1. An explicit path, such as CLI `--config`.
+2. `SFCC_CONFIG` from the process environment.
+3. `SFCC_CONFIG` from the project's `.env`.
+4. `dw.json` in the project directory.
 
-```json
-{
-  "hostname": "cert.staging.example.demandware.net",
-  "code-version": "version1",
-  "username": "your-username",
-  "password": "your-access-key",
-  "certificate": "/path/to/client-cert.p12",
-  "certificate-passphrase": "cert-password",
-  "self-signed": true
-}
+A relative `SFCC_CONFIG` in `.env` is resolved from that project directory. The [global file](#global-default-configuration), when configured, also supplies available instances.
+
+```bash
+# Use another project directory
+b2c setup inspect --project-directory /path/to/storefront
+
+# Use an explicit connection file and named instance
+b2c setup inspect --config /path/to/connections.json -i sandbox
 ```
 
-The certificate must be in PKCS12 format (`.p12` or `.pfx`). The `self-signed` option is often needed for staging environments with internal certificates.
+### Global Default Configuration
 
-The same fields are available as CLI flags (`--webdav-server`, `--certificate`, `--passphrase`, `--selfsigned`) and as environment variables (`SFCC_WEBDAV_SERVER`, `SFCC_CERTIFICATE`, `SFCC_CERTIFICATE_PASSPHRASE`, `SFCC_SELFSIGNED`).
+To reuse one connection file across projects:
 
-::: tip Running staging deploys in CI/CD
-For GitHub Actions workflows that target staging — including how to handle the `.p12` certificate as a base64-encoded secret — see [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls).
+```bash
+b2c setup default-config set /path/to/dw.json
+b2c setup default-config get
+```
+
+The primary and global files supply one list of available instances:
+
+| Selection                                | Behavior                                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| An instance name is specified            | Look in the primary file first, then the global file. A same-name primary entry takes precedence.                               |
+| No instance name is specified            | Use the primary file's active entry or root configuration. Otherwise, use the global file's active entry or root configuration. |
+| Both files have settings for an instance | Select one complete entry; fields are not merged between the files.                                                             |
+
+Within each file, an active entry in `configs` takes precedence over the root configuration. A root configuration is an implicit default unless it has `"active": false`. If you use only a `configs` array, mark one entry active or select it by name.
+
+Instance-management commands use these same files. Creation writes to the primary file when present, otherwise the global file; removal and changing the default update the file that owns the entry. Use `b2c setup inspect` to check which file supplies your selected connection.
+
+To stop using the global file:
+
+```bash
+b2c setup default-config unset
+```
+
+This setting is shared by the CLI, MCP, and IDE Extension. Use these commands to manage it; you do not need to edit the toolkit's settings file.
+
+## Environment Variables
+
+Use the environment variable names in the [settings reference](#supported-fields) for shell sessions, CI, or an assistant's MCP server environment. Explicit CLI flags take priority over environment variables; process variables take priority over a project `.env`.
+
+### .env File
+
+The equivalent of the single-instance example is:
+
+```bash
+# .env
+SFCC_SERVER=abcd-001.dx.commercecloud.salesforce.com
+SFCC_SHORTCODE=kv7kzm78
+SFCC_TENANT_ID=abcd_001
+SFCC_CLIENT_ID=your-account-manager-client-id
+SFCC_CLIENT_SECRET=your-account-manager-client-secret
+SFCC_USERNAME=username@example.com
+SFCC_PASSWORD=your-webdav-access-key
+SFCC_CODE_VERSION=version1
+
+# Optional shopper authentication
+SFCC_SLAS_CLIENT_ID=your-slas-client-id
+SFCC_SITE_ID=RefArch
+# Private SLAS clients only:
+# SFCC_SLAS_CLIENT_SECRET=your-slas-client-secret
+```
+
+You do not need both file formats. Environment values override the selected `dw.json` entry, so keep instance-specific variables out of a shared shell environment if you regularly switch between named instances.
+
+## Check Your Configuration {#debugging-configuration}
+
+For the CLI, inspect the selected connection and the source of each value:
+
+```bash
+b2c setup inspect
+b2c setup inspect -i sandbox
+b2c setup inspect --json
+```
+
+Secrets are masked by default, including in JSON output. `--unmask` reveals them; use it only when needed and do not share that output. Inspection does not verify remote permissions. See [setup inspect](/cli/setup#b2c-setup-inspect) for details.
+
+With the MCP, ask your assistant:
+
+<ExamplePrompt>
+
+> Check the configuration for my sandbox instance without revealing secrets. Tell me what's missing for Admin API access and reading logs.
+
+</ExamplePrompt>
+
+### Resolution Priority
+
+With the built-in configuration sources, values take priority in this order:
+
+1. Explicit overrides, such as CLI flags.
+2. Process environment variables.
+3. The selected project's `.env`.
+4. The selected `dw.json` entry.
+5. `~/.mobify` for an MRT API key.
+6. `package.json` project defaults.
+
+Installed configuration plugins can supply values before or after the file sources. See [configuration plugins](./third-party-plugins) for available integrations or [Extending the CLI](./extending#custom-configuration-sources) for custom sources. Inspection shows which source supplied each value.
+
+### Credential Grouping
+
+File and plugin sources keep these credential pairs together: Account Manager client ID/secret, SLAS client ID/secret, and WebDAV username/password. Once a higher-priority source supplies either member of a pair, a lower-priority source cannot fill in the other. Keep each pair in the same source.
+
+Explicit overrides can replace individual fields. If an override changes the Account Manager or SLAS client ID, the stored secret for the old ID is discarded. Supply the matching secret, or choose an authentication flow that does not require one.
+
+::: warning Changing the hostname
+If a server override differs from the configured hostname, the lower-priority connection settings are ignored to avoid reusing another instance's credentials. Select a named instance instead, or provide the complete connection for the new server. Environment variables can also trigger this protection.
 :::
 
-::: tip MRT Configuration
-MRT API key can also be loaded from `~/.mobify`. See [MRT API Key](#mrt-api-key) below.
-:::
+## Settings Reference {#supported-fields}
 
-For multi-instance configurations, each config object also supports:
+`dw.json` accepts camelCase and kebab-case: `slasClientId` and `slas-client-id` are equivalent. Use one spelling per field. The tables pair each JSON field with its environment variable, where available. JSON field names use kebab-case consistently.
 
-| Field    | Description                                        |
-| -------- | -------------------------------------------------- |
-| `name`   | Instance name for selection with `-i`/`--instance` |
-| `active` | Set to `true` to use this config by default        |
+Settings apply to the features that use them. CLI flags and environment overrides can be command-specific; use `b2c <command> --help` for that command's options.
+
+### Instance and Site
+
+| Field / environment variable              | Purpose                                                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `hostname`<br>`SFCC_SERVER`               | Instance hostname, without a URL path. Also accepts `server` in JSON.                       |
+| `webdav-hostname`<br>`SFCC_WEBDAV_SERVER` | Separate WebDAV hostname. JSON aliases: `webdav-server`, `secureHostname`, `secure-server`. |
+| `code-version`<br>`SFCC_CODE_VERSION`     | Default code version for operations that accept one.                                        |
+| `short-code`<br>`SFCC_SHORTCODE`          | SCAPI short code. JSON also accepts `scapi-shortcode`.                                      |
+| `tenant-id`<br>`SFCC_TENANT_ID`           | Tenant or organization ID, such as `abcd_001` or `f_ecom_abcd_001`.                         |
+| `site-id`<br>`SFCC_SITE_ID`               | Default site/channel ID for supported site and shopper operations.                          |
+| `name`                                    | Connection name for instance selection.                                                     |
+| `active`                                  | Boolean: use this entry as the default.                                                     |
+| `configs`                                 | Root-level array of named instance entries.                                                 |
+| `api-backend`<br>`SFCC_API_BACKEND`       | `auto` (default), `scapi`, or `ocapi`, for operations supporting both backends.             |
+
+`auto` uses SCAPI when the required coordinates and supported authentication are available, with OCAPI fallback for supported rejection cases. Otherwise it selects OCAPI directly. See [API backend selection](/cli/code#api-backend) and [OCAPI access](./authentication#ocapi-configuration).
+
+### Administrative Authentication {#oauth-scapi-ocapi}
+
+<span id="client-credentials"></span>
+<span id="jwt-bearer"></span>
+<span id="user-authentication-browser"></span>
+
+| Field / environment variable                          | Purpose                                                                                                                          |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `client-id`<br>`SFCC_CLIENT_ID`                       | Account Manager API client ID.                                                                                                   |
+| `client-secret`<br>`SFCC_CLIENT_SECRET`               | Account Manager client secret.                                                                                                   |
+| `oauth-scopes`<br>`SFCC_OAUTH_SCOPES`                 | Requested OAuth scopes: a JSON string array or comma-separated environment value. Scope grants must be configured on the client. |
+| `jwt-cert-path`<br>`SFCC_JWT_CERT`                    | PEM certificate path for JWT authentication. CLI flag: `--jwt-cert`.                                                             |
+| `jwt-key-path`<br>`SFCC_JWT_KEY`                      | PEM private key path. CLI flag: `--jwt-key`.                                                                                     |
+| `jwt-passphrase`<br>`SFCC_JWT_PASSPHRASE`             | Passphrase for an encrypted private key.                                                                                         |
+| `auth-methods`<br>`SFCC_AUTH_METHODS`                 | Ordered JSON array or comma-separated environment value; see [authentication methods](#overriding-authentication-behavior).      |
+| `user-auth`                                           | Boolean shorthand for `"auth-methods": ["user"]`. Do not set both fields. CLI flag: `--user-auth`.                               |
+| `account-manager-host`<br>`SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname override.                                                                                               |
+
+For certificate setup, see [JWT Authentication](./authentication#jwt-authentication-certificate-based). When sharing configuration across projects or processes, absolute certificate paths avoid ambiguity about the working directory.
+
+### Shopper Authentication
+
+| Field / environment variable                      | Purpose                                                                                                                |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `slas-client-id`<br>`SFCC_SLAS_CLIENT_ID`         | Shopper Login and API Access Service client ID. Also selects an existing client in supported SLAS management commands. |
+| `slas-client-secret`<br>`SFCC_SLAS_CLIENT_SECRET` | Secret for a private SLAS client; omit for public clients.                                                             |
+
+Shopper authentication also uses `short-code`, `tenant-id`, and `site-id` from [Instance and Site](#instance-and-site).
+
+### WebDAV and Certificates {#basic-authentication-webdav}
+
+| Field / environment variable                              | Purpose                                                                                                                                                           |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `username`<br>`SFCC_USERNAME`                             | Business Manager username, typically an email address.                                                                                                            |
+| `password`<br>`SFCC_PASSWORD`                             | WebDAV access key. See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=cc.b2c_account_manager_sso_use_webdav_file_access.htm&type=5). |
+| `certificate`<br>`SFCC_CERTIFICATE`                       | PKCS12 (`.p12` / `.pfx`) client certificate for mTLS.                                                                                                             |
+| `certificate-passphrase`<br>`SFCC_CERTIFICATE_PASSPHRASE` | Client certificate passphrase. JSON alias: `passphrase`; CLI flag: `--passphrase`.                                                                                |
+| `self-signed`<br>`SFCC_SELFSIGNED`                        | Disable server certificate verification. Default is `false`; this is not required just because you use mTLS. JSON alias: `selfsigned`; CLI flag: `--selfsigned`.  |
+
+### Code, Content, and Documentation
+
+| Field / environment variable                      | Purpose                                                                                                                                                          |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cartridges`<br>`SFCC_CARTRIDGES`                 | Cartridge names for deployment/watch filtering and IDE discovery. JSON array or colon/comma-separated JSON string; explicit CLI cartridge filters take priority. |
+| `auto-upload`                                     | Boolean controlling automatic code upload in the IDE Extension.                                                                                                  |
+| `content-library`                                 | Default library for content list/export.                                                                                                                         |
+| `catalogs`<br>`SFCC_CATALOGS`                     | Catalog IDs for WebDAV browsing.                                                                                                                                 |
+| `libraries`<br>`SFCC_LIBRARIES`                   | Library IDs. JSON accepts strings or `{ "id": "RefArch", "siteLibrary": true }` entries; see [content libraries](#content-libraries-example).                    |
+| `asset-query`<br>`SFCC_ASSET_QUERY`               | JSON dot-paths for finding static asset URLs in content; default `["image.path"]`.                                                                               |
+| `import-set-exclude`<br>`SFCC_IMPORT_SET_EXCLUDE` | Project-relative directories to exclude recursively from import-set discovery.                                                                                   |
+| `docs-categories`<br>`SFCC_DOCS_CATEGORIES`       | Documentation category allowlist for supported searches.                                                                                                         |
+
+Use JSON arrays for list fields unless another format is noted. Environment list values are comma-separated; `SFCC_LIBRARIES` accepts IDs, not the JSON object form.
+
+### Sandboxes and Analytics
+
+| Field / environment variable                  | Purpose                                                                                                                                        |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `realm`                                       | Default realm for sandbox operations.                                                                                                          |
+| `sandbox-api-host`<br>`SFCC_SANDBOX_API_HOST` | On-Demand Sandbox API hostname override.                                                                                                       |
+| `cip-host`<br>`SFCC_CIP_HOST`                 | CIP analytics host override.                                                                                                                   |
+| `SFCC_CIP_STAGING`                            | Use the staging CIP host when `true` or `1`. Without an explicit host, production tenants (`*_prd`) use production; other tenants use staging. |
+| `safety`<br>See [Safety Mode](./safety)       | Per-instance restrictions and confirmation rules.                                                                                              |
+
+CIP requires client credentials and analytics access for the tenant; it does not use SLAS credentials, JWT, or browser login. See [Analytics and Reports](./analytics-reports-cip-ccac) for production/staging availability and setup. `cip-staging` is not a `dw.json` field, and setting `SFCC_CIP_STAGING=false` does not force a non-production tenant onto the production host.
+
+### Managed Runtime
+
+| Field / environment variable           | Purpose                                                          |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| `mrt-api-key`<br>`MRT_API_KEY`         | Managed Runtime API key.                                         |
+| `mrt-project`<br>`MRT_PROJECT`         | Project slug; storefront ID for SCAPI MRT operations.            |
+| `mrt-environment`<br>`MRT_ENVIRONMENT` | Target environment name.                                         |
+| `mrt-origin`<br>`MRT_CLOUD_ORIGIN`     | MRT API origin override. JSON also accepts `cloudOrigin`.        |
+| `mrt-backend`<br>`MRT_BACKEND`         | `auto` (default), `legacy`, or `scapi` for supported operations. |
+
+The `SFCC_`-prefixed forms of these variables are also supported, with the unprefixed names taking priority. `MRT_TARGET` is another environment-name alias. MRT CLI commands also accept `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` for the project. See [MRT backends](/cli/mrt#mrt-backends) for supported operations.
+
+### Other Environment Settings
+
+These are not `dw.json` fields:
+
+| Variable                     | Purpose                                                                                                         |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `SFCC_PROJECT_DIRECTORY`     | Project directory used for configuration lookup.                                                                |
+| `SFCC_CONFIG`                | Path to the primary connection file in `dw.json` format.                                                        |
+| `SFCC_INSTANCE`              | Named instance to select.                                                                                       |
+| `MRT_CREDENTIALS_FILE`       | MRT CLI override for the `~/.mobify` credentials file.                                                          |
+| `SFCC_REDIRECT_URI`          | Account Manager browser-login redirect URI override.                                                            |
+| `SFCC_OAUTH_LOCAL_PORT`      | Browser-login redirect server port; default `8080`.                                                             |
+| `SFCC_DISABLE_PKCE_FALLBACK` | Set to `1` to disable the transitional [PKCE-to-implicit fallback](./authentication#implicit-flow-deprecation). |
+| `SFCC_SAFETY_LEVEL`          | `NONE`, `NO_DELETE`, `NO_UPDATE`, or `READ_ONLY`.                                                               |
+| `SFCC_SAFETY_CONFIRM`        | Set to `true` or `1` to enable supported safety confirmations.                                                  |
+| `SFCC_SAFETY_CONFIG`         | Path to a shared safety configuration file.                                                                     |
+
+See [Safety Mode](./safety) for precedence and behavior across the CLI, MCP, and IDE Extension. MCP tool selection, documentation topics, and startup logging are covered in [MCP Configuration](/mcp/configuration).
 
 ## Project Configuration (package.json)
 
-You can store project-level defaults in your `package.json` file under the `b2c` key. This is useful for settings that are shared across your entire project and safe to commit to version control.
+Store non-secret defaults shared by your team under `package.json`'s `b2c` key:
 
 ```json
 {
   "name": "my-storefront",
-  "version": "1.0.0",
   "b2c": {
-    "shortCode": "abc123",
-    "clientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "shortCode": "kv7kzm78",
     "siteId": "RefArch",
     "contentLibrary": "RefArch",
     "libraries": [{"id": "RefArch", "siteLibrary": true}],
     "importSetExclude": ["fixtures", "test/integration"],
-    "mrtProject": "my-project",
-    "accountManagerHost": "account.demandware.com"
+    "mrtProject": "my-storefront"
   }
 }
 ```
 
 ### Allowed Fields
 
-Only non-sensitive, project-level fields can be configured in `package.json`. Both camelCase and kebab-case are accepted (e.g., `shortCode` or `short-code`):
+Only these fields are read from `package.json` (camelCase and kebab-case are accepted):
 
-| Field                | Description                                                                                                                        |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `shortCode`          | SCAPI short code                                                                                                                   |
-| `clientId`           | OAuth client ID (for browser login discovery)                                                                                      |
-| `siteId`             | Default site/channel ID for commands that operate on one site                                                                      |
-| `contentLibrary`     | Default content library ID for `content export` and `content list` commands                                                        |
-| `libraries`          | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed |
-| `assetQuery`         | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`)                         |
-| `importSetExclude`   | Project-relative directories excluded recursively from import-set source discovery                                                 |
-| `mrtProject`         | MRT project slug                                                                                                                   |
-| `mrtOrigin`          | MRT API origin URL override                                                                                                        |
-| `accountManagerHost` | Account Manager hostname for OAuth                                                                                                 |
-| `sandboxApiHost`     | ODS (sandbox) API hostname                                                                                                         |
-| `realm`              | Default ODS realm for sandbox operations                                                                                           |
+| Group                 | Fields                                                          |
+| --------------------- | --------------------------------------------------------------- |
+| API and site defaults | `shortCode`, `clientId`, `siteId`                               |
+| Content and imports   | `contentLibrary`, `libraries`, `assetQuery`, `importSetExclude` |
+| Managed Runtime       | `mrtProject`, `mrtOrigin`                                       |
+| Platform defaults     | `accountManagerHost`, `sandboxApiHost`, `realm`                 |
 
-::: warning Security Note
-Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `mrtApiKey` are intentionally **not** supported in `package.json`. These should be configured via `dw.json` (which should be in `.gitignore`), environment variables, or secure credential stores.
-:::
-
-::: tip Lowest Priority
-`package.json` has the lowest priority of all configuration sources. Values from `dw.json`, environment variables, or explicit surface overrides such as CLI flags will always override `package.json` settings. This makes it ideal for project defaults that can be overridden per-environment.
-:::
+Other fields, including credentials and instance-specific fields such as `hostname`, `tenantId`, and SLAS client settings, are ignored. Use `dw.json`, environment variables, or a credential plugin for those. `package.json` supplies defaults only when a higher-priority source has not supplied the value.
 
 ### Content Libraries Example
 
-The `libraries` field can list the content libraries your project works with so that the VS Code Content Libraries tree auto-loads them and `b2c content list/export` can default `--site-library` based on the entry.
-
-A bare string is treated as a shared library; an object can mark a library as site-private. Both forms can appear in the same array:
+A bare library ID denotes a shared library. An object with `siteLibrary: true` denotes a site-private library, whose ID is the site ID:
 
 ```json
 {
   "b2c": {
-    "libraries": ["RefArchSharedLibrary", {"id": "SiteGenesis", "siteLibrary": true}]
+    "libraries": ["RefArchSharedLibrary", {"id": "RefArch", "siteLibrary": true}]
   }
 }
 ```
 
-With this config:
+The IDE Extension can show both libraries. `b2c content list --library RefArch` selects the site-private library automatically; `--site-library` or `--no-site-library` can override that choice.
 
-- `b2c content list --library SiteGenesis` calls the site-library API automatically (no need to pass `--site-library`); the library ID is the site ID.
-- `b2c content list --library RefArchSharedLibrary` treats `RefArchSharedLibrary` as a shared library.
-- `--site-library` / `--no-site-library` on the command line still wins over the config default.
-- The VS Code Content Libraries tree shows both entries on activation, with `SiteGenesis` marked `[site]`.
+## CLI Flags
 
-### Resolution Priority
+For a one-off override, use the command's flags. Flag names do not always match JSON fields: `hostname` uses `--server`, for example.
 
-Configuration is resolved with the following precedence (highest to lowest):
+```bash
+b2c code list -i sandbox --api-backend scapi
+```
 
-1. **Explicit overrides and environment variables** - Explicit values always take priority (includes CLI flags and the `.env` file)
-2. **Plugin sources (high priority)** - Custom sources with `priority: 'before'` (or priority < 0)
-3. **dw.json** - Project configuration file (priority 0)
-4. **~/.mobify** - Home directory file for MRT API key (priority 0)
-5. **Plugin sources (low priority)** - Custom sources with `priority: 'after'` (or priority 1-999)
-6. **package.json** - Project-level defaults (priority 1000, lowest)
+Use `b2c <command> --help` for available flags, or the [CLI Reference](/cli/). For credentials, a project configuration or credential store usually avoids repeating secrets in shell commands.
 
-::: tip Extending Configuration
-Plugins can add custom configuration sources like secret managers or environment-specific files. Plugins can use numeric priorities for fine-grained control over ordering. See [Extending the CLI](./extending) for details.
-:::
+## Overriding Authentication Behavior
 
-### Credential Grouping
+For OAuth, the usual credential selection order is client credentials, JWT, then browser-based user authentication. Existing CLI login sessions can also be reused; see [Auth Commands](/cli/auth). This is credential selection, not a promise to retry a rejected request with every method.
 
-To prevent mixing credentials from different sources, certain fields are treated as atomic groups:
+### Available Auth Methods
 
-- **OAuth Client Credentials**: `clientId` and `clientSecret`
-- **OAuth JWT Bearer**: `clientId`, `jwtCertPath`, `jwtKeyPath`, and `jwtPassphrase`
-- **Basic Auth**: `username` and `password`
+| Value                | Use                                                                                                                               |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `client-credentials` | Account Manager client ID and secret; supported by SCAPI Admin, OCAPI, and OAuth WebDAV. Required for CIP.                        |
+| `jwt`                | Account Manager client ID and PEM certificate/private key; supported by SCAPI Admin, OCAPI, and OAuth WebDAV.                     |
+| `user`               | Browser-based Authorization Code + PKCE. Supported by applicable platform commands, OCAPI, and WebDAV; not SCAPI Admin execution. |
+| `implicit`           | Deprecated browser flow; explicit opt-in. See [PKCE migration](./authentication#implicit-flow-deprecation).                       |
+| `basic`              | WebDAV username and access key; not an OAuth method.                                                                              |
+| `api-key`            | MRT API key; not an OAuth method.                                                                                                 |
 
-If any field in a group is set by a higher-priority source, all fields in that group from lower-priority sources are ignored. This ensures credential pairs always come from the same source.
+### Specifying Auth Methods
 
-**Example:**
+```json
+{
+  "auth-methods": ["client-credentials", "jwt"]
+}
+```
 
-- dw.json provides `clientId` only
-- A plugin provides `clientSecret`
-- Result: Only `clientId` is used; the plugin's `clientSecret` is ignored to prevent mismatched credentials
+The equivalent environment value is `SFCC_AUTH_METHODS=client-credentials,jwt`; CLI flags accept `--auth-methods client-credentials,jwt` or repeated `--auth-methods` flags. Supported methods depend on the operation. These settings do not select SLAS shopper token flows.
 
-::: warning Hostname Mismatch Protection
-When you explicitly specify a hostname that differs from the `dw.json` hostname, the tooling ignores all other values from `dw.json` and only uses your explicit overrides. This prevents accidentally using credentials from one instance with a different server.
-:::
+For browser login only, use `"user-auth": true` or CLI `--user-auth`. Do not combine it with `auth-methods`. See [Authentication](./authentication) for client registration and access requirements.
 
 ## MRT API Key
 
-Managed Runtime (MRT) commands use an API key for authentication. The API key is resolved in this order:
+MRT Cloud API operations use an API key. For supported SCAPI MRT operations, configure Account Manager credentials, short code, and tenant ID instead; see [MRT backends](/cli/mrt#mrt-backends).
 
-1. `--api-key` flag
-2. `MRT_API_KEY` environment variable (also accepts `SFCC_MRT_API_KEY`)
-3. `~/.mobify` config file
+Without custom configuration plugins, MRT API key precedence is:
 
-The `~/.mobify` file format:
+1. CLI `--api-key`.
+2. `MRT_API_KEY` (or `SFCC_MRT_API_KEY`), including project `.env` values.
+3. `mrt-api-key` in the selected `dw.json` entry.
+4. `api_key` in `~/.mobify`.
 
 ```json
 {
@@ -479,67 +470,41 @@ The `~/.mobify` file format:
 }
 ```
 
-When using the `--cloud-origin` flag to specify a different MRT endpoint, the CLI looks for `~/.mobify--{hostname}` instead. For example, `--cloud-origin https://custom.example.com` loads from `~/.mobify--custom.example.com`.
+MRT CLI `--credentials-file` (or `MRT_CREDENTIALS_FILE`) selects an alternative credentials file. With `--cloud-origin https://custom.example.com`, the default file becomes `~/.mobify--custom.example.com`. See [Get an MRT API key](./authentication#getting-an-mrt-api-key) for setup.
 
-## Overriding Authentication Behavior
+## Two-Factor Authentication (mTLS)
 
-By default, the tooling automatically detects available credentials and tries authentication methods in this order: `client-credentials`, `jwt`, then `user` (Authorization Code + PKCE). You can override this behavior to control which methods are used.
+For WebDAV endpoints that require a client certificate, add the certificate settings to the connection:
 
-::: tip Default Public Client
-For platform-level commands (Sandbox, SLAS, and Account Manager), the CLI includes a built-in public client ID. If no `--client-id` is configured, these commands automatically use the built-in client with Authorization Code + PKCE, opening a browser for authentication. This means you can use these commands with zero configuration.
-:::
-
-### Available Auth Methods
-
-- `client-credentials` - OAuth 2.0 client credentials flow (requires client ID and secret). Used for SCAPI/OCAPI and WebDAV.
-- `jwt` - OAuth 2.0 JWT Bearer flow (requires client ID, certificate, and private key). Used for SCAPI/OCAPI and WebDAV. More secure than client credentials.
-- `user` - OAuth 2.0 Authorization Code + PKCE flow (requires client ID only, opens browser for login). Currently supported by OCAPI and WebDAV, but not by the SCAPI Admin APIs used in this migration. In `auto` mode these operations select OCAPI; explicit `scapi` reports the unsupported authentication flow. SCAPI user authentication may be supported by the platform in the future.
-- `implicit` - OAuth 2.0 implicit flow (deprecated — opt-in only). Selectable via `--auth-methods implicit` for backwards compatibility, but emits a deprecation warning. OAuth 2.1 deprecates implicit for public clients.
-- `basic` - Basic authentication with username and access key. Used for WebDAV operations only.
-- `api-key` - API key authentication. Used for MRT commands only.
-
-### Specifying Auth Methods
-
-You can specify allowed auth methods in priority order using comma-separated values or multiple flags:
-
-```bash
-# Comma-separated (preferred)
-b2c code deploy --auth-methods client-credentials,user
-
-# Multiple flags (also supported)
-b2c code deploy --auth-methods client-credentials --auth-methods user
-
-# Via environment variable
-SFCC_AUTH_METHODS=client-credentials,user b2c code deploy
+```json
+{
+  "hostname": "staging.example.demandware.net",
+  "webdav-hostname": "cert.staging.example.demandware.net",
+  "username": "username@example.com",
+  "password": "your-webdav-access-key",
+  "certificate": "/path/to/client-cert.p12",
+  "certificate-passphrase": "your-certificate-passphrase"
+}
 ```
 
-The tooling tries each method in order until one succeeds.
+Use a PKCS12 certificate (`.p12` or `.pfx`). Client certificate authentication and server certificate verification are separate: keep verification enabled unless you deliberately need to accept an untrusted server certificate. `self-signed: true` disables that verification; it is not a normal requirement for staging or mTLS.
 
-## Debugging Configuration
+For certificate handling in CI, see [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls).
 
-Use `b2c setup inspect` to view the resolved configuration and see which source provided each value:
+## Troubleshooting
 
-```bash
-# Display resolved configuration (sensitive values masked)
-b2c setup inspect
-
-# Show actual sensitive values
-b2c setup inspect --unmask
-
-# Output as JSON
-b2c setup inspect --json
-```
-
-This command helps troubleshoot issues like:
-
-- Verifying which configuration file is being used
-- Checking if environment variables are being read
-- Understanding credential source priority
-- Identifying hostname mismatch protection triggers
-
-See [setup inspect](/cli/setup#b2c-setup-inspect) for full documentation.
+| Symptom                                            | What to check                                                                                                                             |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| The wrong instance or old credentials are selected | Inspect the resolved connection. Shell variables and `.env` override `dw.json`; a same-name project entry overrides a global entry.       |
+| Changing `--server` makes credentials disappear    | Hostname mismatch protection discarded the previous connection. Select the intended named instance or supply its complete settings.       |
+| A client ID is present but its secret is missing   | Check credential-source grouping and whether an override changed the client ID. Public clients do not use a client secret.                |
+| Shopper authentication fails                       | Check the SLAS client, public/private client type, channel/site, and scopes. Account Manager credentials cannot replace SLAS credentials. |
+| Settings in `package.json` have no effect          | Check the allowed fields and higher-priority sources. Instance credentials belong elsewhere.                                              |
+| A connection resolves but an API denies access     | Check the client's roles, scopes, tenant filters, and API permissions in [Authentication](./authentication).                              |
 
 ## Next Steps
 
-- [CLI Reference](/cli/) - Browse available commands
-- [API Reference](/api/) - Explore the SDK API
+- [Authentication](./authentication) - obtain credentials and configure platform access.
+- [Safety Mode](./safety) - restrict changes by instance or workflow.
+- [MCP Configuration](/mcp/configuration) - customize the tools available to your assistant.
+- [IDE Extension Configuration](/vscode-extension/configuration) - select projects and connections in your editor.
