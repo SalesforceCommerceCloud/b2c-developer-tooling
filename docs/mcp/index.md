@@ -89,6 +89,16 @@ without a separate CLI installation.
 
 Standard and custom Admin APIs support live requests. Shopper APIs are available for reference.
 
+For reporting, [CIP analytics](./toolsets#cip) covers sales, products, promotions,
+search, payments, and technical trends. Run ready-to-use reports or ask for a
+custom analysis without setting up the CLI or a separate SQL client.
+
+<ExamplePrompt>
+
+> Compare daily sales and average order value for my site over the last two complete weeks. Explain the date range and any gaps in the data.
+
+</ExamplePrompt>
+
 ![Screenshot placeholder: a planned ChatGPT Work campaign review showing promotion schedules and findings.](/placeholders/mcp-chatgpt-campaign.svg)
 
 ## Configuration and access

@@ -201,7 +201,7 @@ export class OAuthStrategy implements AuthStrategy {
    * @returns The fetch response
    */
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {
-    const token = await this.getAccessToken();
+    const token = init.signal ? (await this.getTokenResponse(init.signal)).accessToken : await this.getAccessToken();
 
     const headers = new Headers(init.headers);
     headers.set('Authorization', `Bearer ${token}`);
@@ -219,7 +219,9 @@ export class OAuthStrategy implements AuthStrategy {
     // Skip retry on initial 401 to avoid retrying with bad credentials.
     if (res.status === 401 && this._hasHadSuccess) {
       this.invalidateToken();
-      const newToken = await this.getAccessToken();
+      const newToken = init.signal
+        ? (await this.getTokenResponse(init.signal)).accessToken
+        : await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);
       res = await dispatchFetch(url, {...init, headers});
     }

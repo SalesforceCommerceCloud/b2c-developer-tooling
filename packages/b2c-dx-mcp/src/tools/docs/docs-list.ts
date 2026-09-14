@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {TOOLSETS} from '../../utils/constants.js';
 import {z} from 'zod';
 import {listDocs, categoriesForWorkspace, type DocCategory, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
@@ -76,7 +77,7 @@ export function createDocsListTool(
         'Use docs_search for questions and docs_read for content.' +
         enabledCategoriesNote(enabledCategories) +
         detectedWorkspaceNote(detectedWorkspaces),
-      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: [...TOOLSETS],
       inputSchema: {
         ...workspaceInputSchema,
         category: z

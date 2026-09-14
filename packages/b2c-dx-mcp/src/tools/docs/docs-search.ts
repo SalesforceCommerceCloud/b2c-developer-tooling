@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {TOOLSETS} from '../../utils/constants.js';
 import {z} from 'zod';
 import {searchDocs, type DocCategory, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
@@ -91,7 +92,7 @@ export function createDocsSearchTool(
         'Use for natural-language queries or unknown IDs; call docs_read with a result ID.' +
         enabledCategoriesNote(enabledCategories) +
         detectedWorkspaceNote(detectedWorkspaces),
-      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: [...TOOLSETS],
       inputSchema: {
         ...workspaceInputSchema,
         query: z.string().min(1).describe('Search query (class name, topic, or natural-language phrase).'),

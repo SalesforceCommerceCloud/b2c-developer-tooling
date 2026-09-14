@@ -160,6 +160,9 @@ describe('MCP Server E2E', function () {
           if (path === 'scapi_snippet_save.inputSchema') {
             // Saved workflows accept arbitrary JSON Schema keywords.
             expect(schema.additionalProperties).to.deep.equal({});
+          } else if (path === 'cip_discover.params' || path === 'cip_query.params') {
+            // Parameter names come from the selected report's discovery metadata.
+            expect(schema.additionalProperties).to.deep.equal({type: 'string'});
           } else {
             expect(schema.additionalProperties, `${path} must reject unknown fields`).to.be.false;
           }

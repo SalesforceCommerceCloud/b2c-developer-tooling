@@ -99,6 +99,10 @@ export interface CipClientConfig {
   host?: string;
   /** Middleware registry to use for this client. Defaults to global registry. */
   middlewareRegistry?: MiddlewareRegistry;
+  /** Cancellation/deadline for this client's requests. */
+  signal?: AbortSignal;
+  /** Maximum bytes in a single response frame. */
+  maxResponseBytes?: number;
 }
 
 /** Column metadata for a CIP result set. */
@@ -145,6 +149,8 @@ export interface CipQueryResult {
   rows: Array<Record<string, unknown>>;
   /** Total number of rows returned. */
   rowCount: number;
+  /** True when a bounded query stopped before consuming its complete result. */
+  truncated?: boolean;
 }
 
 /** Options for high-level query execution. */
@@ -153,6 +159,8 @@ export interface CipQueryOptions {
   fetchSize?: number;
   /** Optional Avatica connection properties. */
   connectionProperties?: Record<string, string>;
+  /** Stop fetching after this many rows; reports truncation without retaining a cursor. */
+  maxRows?: number;
 }
 
 interface WireMessage {
@@ -230,7 +238,7 @@ export class CipClient {
   /**
    * Closes the current Avatica connection (no-op if not open).
    */
-  async closeConnection(): Promise<void> {
+  async closeConnection(signal?: AbortSignal): Promise<void> {
     if (!this.connectionId) {
       return;
     }
@@ -238,7 +246,7 @@ export class CipClient {
     const connectionId = this.connectionId;
 
     try {
-      await this.sendRequest('CloseConnectionRequest', {connectionId});
+      await this.sendRequest('CloseConnectionRequest', {connectionId}, signal);
     } finally {
       this.connectionId = undefined;
       this.sessionId = undefined;
@@ -266,14 +274,18 @@ export class CipClient {
   /**
    * Closes a statement.
    */
-  async closeStatement(statementId: number): Promise<void> {
+  async closeStatement(statementId: number, signal?: AbortSignal): Promise<void> {
     this.requireConnection();
 
     try {
-      await this.sendRequest('CloseStatementRequest', {
-        connectionId: this.connectionId,
-        statementId,
-      });
+      await this.sendRequest(
+        'CloseStatementRequest',
+        {
+          connectionId: this.connectionId,
+          statementId,
+        },
+        signal,
+      );
     } finally {
       this.signatureByStatementId.delete(statementId);
     }
@@ -282,7 +294,12 @@ export class CipClient {
   /**
    * Executes SQL and returns the first decoded frame.
    */
-  async execute(statementId: number, sql: string, firstFrameMaxSize: number = 1000): Promise<CipExecuteResponse> {
+  async execute(
+    statementId: number,
+    sql: string,
+    firstFrameMaxSize: number = 1000,
+    maxRowCount: number = firstFrameMaxSize,
+  ): Promise<CipExecuteResponse> {
     this.requireConnection();
     getLogger().debug({statementId, sql}, `[CIP SQL] statement=${statementId}`);
 
@@ -290,7 +307,7 @@ export class CipClient {
       connectionId: this.connectionId,
       statementId,
       sql,
-      maxRowCount: firstFrameMaxSize,
+      maxRowCount,
       firstFrameMaxSize,
     })) as {
       results?: Array<{
@@ -345,50 +362,77 @@ export class CipClient {
    * This helper opens and closes the connection automatically.
    */
   async query(sql: string, options: CipQueryOptions = {}): Promise<CipQueryResult> {
-    const fetchSize = options.fetchSize ?? 1000;
+    if (options.maxRows !== undefined && (!Number.isSafeInteger(options.maxRows) || options.maxRows < 1)) {
+      throw new Error('maxRows must be a positive safe integer.');
+    }
+    const fetchSize = Math.min(
+      options.fetchSize ?? 1000,
+      options.maxRows === undefined ? Infinity : options.maxRows + 1,
+    );
     const rows: Array<Record<string, unknown>> = [];
     let columns: string[] = [];
+    const appendRows = (frame: CipFrame) => {
+      for (const row of frame.rows) {
+        if (options.maxRows !== undefined && rows.length > options.maxRows) break;
+        rows.push(row);
+      }
+    };
 
-    await this.openConnection(options.connectionProperties);
-    const statementId = await this.createStatement();
+    let statementId: number | undefined;
+    let opened = false;
 
     try {
-      const executeResponse = await this.execute(statementId, sql, fetchSize);
+      await this.openConnection(options.connectionProperties);
+      opened = true;
+      statementId = await this.createStatement();
+      const executeResponse = await this.execute(
+        statementId,
+        sql,
+        fetchSize,
+        options.maxRows === undefined ? fetchSize : options.maxRows + 1,
+      );
+      statementId = executeResponse.statementId;
       let frame = executeResponse.frame;
 
       if (frame) {
-        rows.push(...frame.rows);
+        appendRows(frame);
         columns = frame.columns.map((column) => column.label);
       }
 
-      while (frame && !frame.done) {
+      while (frame && !frame.done && (options.maxRows === undefined || rows.length <= options.maxRows)) {
+        if (frame.rows.length === 0) throw new Error('CIP returned an empty nonterminal frame; query cannot advance.');
         const nextOffset = frame.offset + frame.rows.length;
         const fetchResponse = await this.fetch(executeResponse.statementId, nextOffset, fetchSize);
         frame = fetchResponse.frame;
+        if (!frame || frame.offset !== nextOffset)
+          throw new Error('CIP returned a missing or out-of-order frame; query is incomplete.');
 
-        if (frame) {
-          rows.push(...frame.rows);
-          if (columns.length === 0) {
-            columns = frame.columns.map((column) => column.label);
-          }
+        appendRows(frame);
+        if (columns.length === 0) {
+          columns = frame.columns.map((column) => column.label);
         }
       }
 
       return {
         columns,
-        rows,
-        rowCount: rows.length,
+        rows: options.maxRows === undefined ? rows : rows.slice(0, options.maxRows),
+        rowCount: Math.min(rows.length, options.maxRows ?? Infinity),
+        ...(options.maxRows === undefined
+          ? {}
+          : {truncated: rows.length > options.maxRows || Boolean(frame && !frame.done)}),
       };
     } finally {
-      await this.closeStatement(statementId).catch((error) => {
-        const message = error instanceof Error ? error.message : String(error);
-        getLogger().debug({error: message}, 'Failed to close CIP statement during cleanup');
-      });
+      if (statementId !== undefined)
+        await this.closeStatement(statementId, AbortSignal.timeout(2000)).catch((error) => {
+          const message = error instanceof Error ? error.message : String(error);
+          getLogger().debug({error: message}, 'Failed to close CIP statement during cleanup');
+        });
 
-      await this.closeConnection().catch((error) => {
-        const message = error instanceof Error ? error.message : String(error);
-        getLogger().debug({error: message}, 'Failed to close CIP connection during cleanup');
-      });
+      if (opened)
+        await this.closeConnection(AbortSignal.timeout(2000)).catch((error) => {
+          const message = error instanceof Error ? error.message : String(error);
+          getLogger().debug({error: message}, 'Failed to close CIP connection during cleanup');
+        });
     }
   }
 
@@ -410,7 +454,8 @@ export class CipClient {
     return this.protoRoot;
   }
 
-  private async sendRequest(requestTypeName: string, payload: object): Promise<unknown> {
+  private async sendRequest(requestTypeName: string, payload: object, signal = this.config.signal): Promise<unknown> {
+    signal?.throwIfAborted();
     const logger = getLogger();
     const root = await this.getProtoRoot();
 
@@ -434,6 +479,8 @@ export class CipClient {
         ...(this.sessionId ? {'x-session-id': this.sessionId} : {}),
       },
       body: serializedWireRequest,
+      signal,
+      redirect: 'error',
     });
 
     const middleware = this.getMiddleware();
@@ -482,6 +529,8 @@ export class CipClient {
       method: request.method,
       headers: request.headers,
       body,
+      signal: request.signal,
+      redirect: request.redirect,
     } as FetchInit);
     const duration = Date.now() - requestStartTime;
 
@@ -508,7 +557,7 @@ export class CipClient {
     }
 
     if (!response.ok) {
-      const bodyText = await response.text();
+      const bodyText = new TextDecoder().decode(await this.readResponse(response));
       logger.debug(
         {method: request.method, url: request.url, status: response.status, duration},
         `[CIP RESP] ${requestTypeName} ${response.status} ${duration}ms`,
@@ -526,7 +575,7 @@ export class CipClient {
       throw new Error(`CIP Avatica request failed (${response.status} ${response.statusText}): ${bodyText}`);
     }
 
-    const responseBytes = new Uint8Array(await response.arrayBuffer());
+    const responseBytes = await this.readResponse(response);
     const wireResponse = wireType.decode(responseBytes) as WireMessage;
 
     const responseClassName = wireResponse.name ?? '';
@@ -571,6 +620,32 @@ export class CipClient {
 
     const responseType = root.lookupType(responseTypeName);
     return responseType.decode(wrappedResponse);
+  }
+
+  private async readResponse(response: Response): Promise<Uint8Array> {
+    const limit = this.config.maxResponseBytes;
+    if (limit === undefined) return new Uint8Array(await response.arrayBuffer());
+    if (Number(response.headers.get('content-length')) > limit) {
+      await response.body?.cancel();
+      throw new Error('CIP response exceeds the byte limit. Select fewer columns or a smaller result.');
+    }
+    const reader = response.body?.getReader();
+    if (!reader) return new Uint8Array();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    try {
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > limit)
+          throw new Error('CIP response exceeds the byte limit. Select fewer columns or a smaller result.');
+        chunks.push(value);
+      }
+    } finally {
+      await reader.cancel();
+    }
+    return Buffer.concat(chunks, size);
   }
 
   private decodeFrame(signature: SignatureLike | undefined, frame: FrameLike | undefined): CipFrame | undefined {

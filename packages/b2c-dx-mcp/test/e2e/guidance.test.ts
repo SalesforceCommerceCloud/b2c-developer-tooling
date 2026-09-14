@@ -43,6 +43,7 @@ describe('guidance over real stdio', function () {
         'skill://mcp/b2c-config/SKILL.md',
         'skill://mcp/debugger/SKILL.md',
         'skill://mcp/scapi/SKILL.md',
+        'skill://mcp/cip/SKILL.md',
       ]);
       for (const resource of resources) {
         const {contents} = (await restricted.call('resources/read', {uri: resource.uri})) as {
@@ -130,6 +131,7 @@ describe('guidance over real stdio', function () {
   it('reads published MCP skills identically through resources and tools', async () => {
     for (const id of [
       'mcp/server',
+      'mcp/cip',
       'mcp/debugger',
       'mcp/b2c-config',
       'mcp/scapi',
@@ -193,6 +195,7 @@ describe('guidance over real stdio', function () {
     };
     expect(listed.resources.map((resource) => resource.name).sort()).to.deep.equal([
       'mcp/b2c-config',
+      'mcp/cip',
       'mcp/debugger',
       'mcp/scapi',
       'mcp/server',

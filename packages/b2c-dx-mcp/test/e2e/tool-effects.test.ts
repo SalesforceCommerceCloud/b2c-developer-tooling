@@ -28,6 +28,8 @@ const groups = [
   {
     names: [
       'docs_read',
+      'cip_discover',
+      'cip_query',
       'debug_inspect',
       'debug_wait_for_stop',
       'webdav_list',

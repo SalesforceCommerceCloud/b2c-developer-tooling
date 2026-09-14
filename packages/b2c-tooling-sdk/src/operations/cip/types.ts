@@ -109,7 +109,7 @@ export interface CipColumnMetadata {
 /**
  * Options for listing tables from metadata catalog.
  */
-export interface CipListTablesOptions extends Pick<CipQueryOptions, 'fetchSize'> {
+export interface CipListTablesOptions extends Pick<CipQueryOptions, 'fetchSize' | 'maxRows'> {
   schema?: string;
   tableNamePattern?: string;
   tableType?: string;
@@ -119,6 +119,7 @@ export interface CipListTablesOptions extends Pick<CipQueryOptions, 'fetchSize'>
  * Result for table listing operation.
  */
 export interface CipListTablesResult {
+  truncated?: boolean;
   schema?: string;
   tableCount: number;
   tables: CipTableMetadata[];
@@ -127,7 +128,7 @@ export interface CipListTablesResult {
 /**
  * Options for describing table columns from metadata catalog.
  */
-export interface CipDescribeTableOptions extends Pick<CipQueryOptions, 'fetchSize'> {
+export interface CipDescribeTableOptions extends Pick<CipQueryOptions, 'fetchSize' | 'maxRows'> {
   schema?: string;
 }
 
@@ -135,6 +136,7 @@ export interface CipDescribeTableOptions extends Pick<CipQueryOptions, 'fetchSiz
  * Result for table describe operation.
  */
 export interface CipDescribeTableResult {
+  truncated?: boolean;
   columnCount: number;
   columns: CipColumnMetadata[];
   tableName: string;

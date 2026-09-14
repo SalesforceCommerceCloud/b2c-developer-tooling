@@ -116,3 +116,19 @@ history. Requests made by an external client are outside MCP Safety Mode.
 Save or install only workflows you trust, and keep credentials out of their source.
 Saved workflows use the credentials and safety policy of the project where you
 run them.
+
+## Analytics access {#cip}
+
+CIP uses Account Manager client credentials with the **Salesforce Commerce API**
+role and a tenant filter for the selected instance. It does not require a SCAPI
+short code. Non-production analytics requires supported Reports & Dashboards
+data tracking; see the [analytics configuration guide](../guide/analytics-reports-cip-ccac).
+
+Reports and SQL can return business-sensitive data. Request only the sites,
+dates, and fields needed, and review your assistant provider's data-use settings.
+
+CIP uses POST even for analytics reads. `READ_ONLY` can therefore block report
+execution and live table discovery. Where appropriate, configure an explicit
+allow rule for POST requests to the selected CIP tenant path, such as `/abcd_prd`,
+instead of permitting POST everywhere. The [Safety Mode guide](../guide/safety)
+explains rule precedence and confirmation behavior.

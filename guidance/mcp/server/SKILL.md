@@ -31,7 +31,7 @@ When a task needs a tool outside the current selection:
    Verify the expected tools appear. Check the installed version if still absent;
    removed tools cannot be re-enabled. Avoid duplicate server registrations.
 
-Toolsets: `CARTRIDGES`, `DIAGNOSTICS`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`.
+Toolsets: `CARTRIDGES`, `DIAGNOSTICS`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, `CIP`.
 MCP skill resources are always available. Every toolset includes `skills_read`
 and docs. With only `--tools`, select `skills_read` to include the broader skill
 collections, and desired `docs_*` tools explicitly. `--docs-topics` restricts docs, not skills.
@@ -57,6 +57,9 @@ Use launch arguments/environment for server settings, not project `.env` or `dw.
   first; its task map and built-in snippets cover recurring operations.
 - Custom API scaffold: `b2c scaffold generate custom-api`; no MCP equivalent.
 - API/product documentation: `docs_search` / `docs_read`.
+- Warehouse analytics: `cip_discover` for reports/metadata, `cip_query` for report
+  or SQL execution. Read [CIP analytics](skill://mcp/cip/SKILL.md) before execution.
+  Prefer CIP for sales/merchandising/technical trends; SCAPI for current records.
 - Operations or incidents: look for `b2c-ops` runbooks in `skill://index` or
   `skills_read` with `collection: "b2c-ops"` and the task query. Start with the
   matching job-health, checkout-triage, order-failure-triage, or production-triage skill. Read only

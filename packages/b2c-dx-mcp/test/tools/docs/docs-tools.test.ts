@@ -137,7 +137,15 @@ describe('tools/docs', () => {
 
     it('registers tools to all toolsets', () => {
       const [search] = createDocsTools(loadServices);
-      expect(search.toolsets).to.have.members(['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
+      expect(search.toolsets).to.have.members([
+        'CARTRIDGES',
+        'DIAGNOSTICS',
+        'MRT',
+        'PWAV3',
+        'SCAPI',
+        'STOREFRONTNEXT',
+        'CIP',
+      ]);
     });
 
     it('keeps every tool description concise even with all workspaces detected', () => {

@@ -7,6 +7,8 @@ description: Discover standard and live custom SCAPI contracts, compose Admin re
 
 Prefer dedicated tools. Otherwise discover with `scapi_search`, compose with
 `scapi_execute`. Use JavaScript async arrow functions; no TypeScript or imports.
+Warehouse reports/SQL use `cip_discover` / `cip_query`, not code mode;
+see [CIP analytics](skill://mcp/cip/SKILL.md).
 Use code mode for API discovery, request composition, and result processing.
 Use terminal/file tools for local development, builds, and filesystem work.
 Filesystem APIs, subprocesses, worker threads, and native addons are restricted.

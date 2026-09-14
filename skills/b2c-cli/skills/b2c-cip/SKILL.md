@@ -9,6 +9,18 @@ Use `b2c cip` commands to query B2C Commerce Intelligence (CIP), also known as C
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli`.
 
+## MCP equivalent
+
+Prefer MCP `cip_discover` / `cip_query` when available for report discovery,
+SQL previews, metadata, and bounded analytics results. Read
+`skill://mcp/cip/SKILL.md` before execution and pass `skillRead: true`; discovery
+is ungated. Reuse project/instance configuration; no terminal or token export.
+The report catalog and SQL builders are shared with this CLI. MCP report dates
+must be supplied explicitly; CLI date flags default to the current month.
+MCP returns up to 500 rows / 24 KB; preserve `truncated` and `rowCount` (returned,
+not total matches). Use the CLI for larger local JSON/CSV exports when needed.
+General setup/host caveats: [analytics guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac).
+
 ## Command Structure
 
 ```text
@@ -194,7 +206,7 @@ The underlying JDBC analytics service has strict limits. Keep requests scoped:
 
 Limits can change over time. Use the official JDBC access guide for current NFR limits:
 
-- https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/jdbc_access_guide.html
+- https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/jdbc_access_guide.html
 
 ## Troubleshooting
 

@@ -92,6 +92,20 @@ never suggest replaying a write to fix a later stage. Simple file tools need no
 skill acknowledgment. Prefer task maps and reusable snippets over wrappers for
 already-supported SCAPI operations.
 
+## CIP analytics
+
+Reuse SDK reports, SQL builders, metadata, and the native CIP client. Keep offline
+report discovery ungated; require `skill://mcp/cip/SKILL.md` acknowledgment before
+query configuration/authentication. Link existing CLI CIP guidance conditionally
+for configuration, production/staging availability, and larger exports. Resolve
+tenant-scoped client credentials and per-project Safety Mode while retaining
+installed CIP middleware. Analytics tools are reads; HTTP POST still follows
+the shared safety policy. Do not bypass it or add a homegrown SQL parser.
+Bound rows, serialized output, transport responses, and request duration. Preserve
+cancellation through authentication; attempt bounded connection cleanup after
+failure. Report truncation and incomplete results explicitly. Teach warehouse
+site identifiers, date windows, freshness limits, and aggregation in SQL.
+
 ## Conditional result guidance
 
 Add guidance when an observed condition changes the next action: source warnings,

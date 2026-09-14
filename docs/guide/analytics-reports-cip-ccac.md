@@ -14,11 +14,26 @@ It’s based on the **B2C Commerce Intelligence JDBC Driver** and gives you thre
 
 Official JDBC reference:
 
-- [B2C Commerce Intelligence JDBC Driver](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/jdbc_intro.html)
+- [B2C Commerce Intelligence JDBC Driver](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/jdbc_intro.html)
 
 ::: warning Availability
 Reports and dashboards are typically used with production tenants (for example, `abcd_prd`) and require Commerce Cloud Analytics (CCAC) to be enabled.
 :::
+
+## Use Your AI Assistant
+
+The [B2C MCP](/mcp/) includes the same report library and supports custom SQL
+analysis, table discovery, and column inspection. No separate CLI or SQL client
+installation is needed. Account access and production/non-production requirements
+are shared with the CLI.
+
+<ExamplePrompt>
+
+> Which search terms returned no results on my site last week? Rank them by frequency and explain what the data covers.
+
+</ExamplePrompt>
+
+See [MCP analytics tools](/mcp/toolsets#cip) for capabilities and limits.
 
 ## Authentication and Access
 
@@ -27,8 +42,8 @@ Reports and dashboards are typically used with production tenants (for example, 
 Minimum requirements:
 
 - API client with **Salesforce Commerce API** role
-- role tenant filter includes your target production instance (for example `abcd_prd`)
-- client ID and client secret available to the CLI
+- role tenant filter includes your target instance (for example `abcd_prd`)
+- client ID and client secret in your toolkit configuration
 
 Recommended environment setup:
 
@@ -56,7 +71,7 @@ To enable non-production support, turn on **Enable Reports & Dashboards Data Tra
 
 Reports & Dashboards non-production URL:
 
-- `https://jdbc.stg.analytics.commercecloud.salesforce.com`
+- `https://ccac.stg.analytics.commercecloud.salesforce.com`
 
 For CLI commands, you can target the staging analytics host with `--staging`.
 
@@ -188,7 +203,7 @@ The JDBC analytics service enforces query timeout, quota, and rate limits, and t
 
 Always check the official documentation before designing high-volume workloads.
 
-- [B2C Commerce Intelligence JDBC Access Guide](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/jdbc_access_guide.html)
+- [B2C Commerce Intelligence JDBC Access Guide](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/jdbc_access_guide.html)
 - See the **Non-Functional Requirements (NFR)** section (Query Execution Timeout, Quota Limit, Rate Limit)
   :::
 
@@ -201,7 +216,7 @@ Practical guidance:
 
 Reference source for limits and best practices:
 
-- [Setting Up the B2C Commerce Intelligence JDBC Driver](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/jdbc_access_guide.html)
+- [Setting Up the B2C Commerce Intelligence JDBC Driver](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/jdbc_access_guide.html)
 
 ## Site ID Parameter Note
 
