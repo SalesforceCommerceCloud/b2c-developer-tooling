@@ -45,7 +45,7 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
       description:
         'Inspect resolved B2C configuration, sources, warnings, and paths; usually no need to read dw.json. ' +
         'Secrets are masked by default.',
-      toolsets: ['DIAGNOSTICS'],
+      toolsets: ['DIAGNOSTICS', 'CIP'],
       requiresInstance: false,
       usesConfigurationContext: true,
       inputSchema: {

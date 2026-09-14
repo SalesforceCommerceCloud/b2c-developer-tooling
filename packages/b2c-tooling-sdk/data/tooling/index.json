@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-12T04:21:51.087Z",
+  "generatedAt": "2026-09-14T01:34:02.508Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -278,8 +278,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac.md",
-      "headings": "Authentication and Access • Non-Production Support (26.1+) • Host Selection Behavior • Quick Start • Curated reports (`cip report`) • Raw SQL (`cip query`) • Metadata discovery (`cip tables`, `cip describe`) • Choosing Query vs Report • Rate Limits and Query Discipline • Site ID Parameter Note • JSON Output • SDK Support • VS Code IDE Integration • Available panels • Realm management • Saving queries • Telemetry • Safety mode • Next Steps",
-      "preview": "User guide for running CIP/CCAC analytics reports and SQL queries with the B2C CLI."
+      "headings": "Use Your AI Assistant • Authentication and Access • Non-Production Support (26.1+) • Host Selection Behavior • Use the B2C CLI {#quick-start} • Curated reports (`cip report`) • Raw SQL (`cip query`) • Metadata discovery (`cip tables`, `cip describe`) • Choosing Query vs Report • Rate Limits and Query Discipline • Site ID Parameter Note • JSON Output • Explore in Your IDE {#vs-code-ide-integration} • Available panels • Realm management • Saving queries • Safety mode • SDK Support • Next Steps",
+      "preview": "Explore B2C Commerce sales, search, promotions, and technical performance with your AI assistant, IDE, or CLI."
     },
     {
       "id": "guide-authentication",
@@ -386,7 +386,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations.md",
-      "headings": "Get started • Understand settings and procedures • Review job health • Investigate checkout and failed orders • Escalate with useful evidence • Verify recovery",
+      "headings": "Get started • Understand settings and procedures • Review job health • Investigate checkout and failed orders • Put trends in context • Escalate with useful evidence • Verify recovery",
       "preview": "Review job health, investigate checkout and failed orders, and prepare actionable handoffs with your AI assistant."
     },
     {
@@ -494,7 +494,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security.md",
-      "headings": "Review access and changes • Protect credentials and data • Deployments {#deployments} • Debugger access {#debugger} • Safety settings • SCAPI code mode",
+      "headings": "Review access and changes • Protect credentials and data • Deployments {#deployments} • Instance files • Debugger access {#debugger} • Safety settings • SCAPI code mode • Analytics access {#cip}",
       "preview": "Control MCP tool access, protect B2C Commerce credentials, and understand deployment, debugging, and data access."
     },
     {
@@ -503,7 +503,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Documentation and skills {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • B2C Commerce data and operations {#scapi-code-mode} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
+      "headings": "Documentation and skills {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Instance files {#webdav} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • B2C Commerce data and operations {#scapi-code-mode} • Observability metrics (closed beta) {#metrics} • Analytics reports {#cip} • Configuration inspection • Toolsets for customization",
       "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {

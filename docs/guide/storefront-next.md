@@ -115,7 +115,7 @@ The [B2C MCP](/mcp/) includes Storefront Next skills for routing, data fetching,
 
 </ExamplePrompt>
 
-MRT environment-variable management and log tailing use the B2C CLI, so make it available when asking your assistant to perform those tasks.
+Your assistant can stream live MRT logs through the MCP. MRT environment-variable management uses the B2C CLI, so make it available for those changes.
 
 ## Next Steps
 

@@ -1,4 +1,11 @@
-# Failed-job triage with continuation
+# Job review and investigation
+
+- Routine history: `builtin/job-execution-review` includes successes and unfinished
+  runs; fixed `from`/`to`, optional `jobId`, bounded `limit` and `nextOffset`.
+- Exact execution: `builtin/job-execution-inspect` returns a page of steps and the
+  exact `logFilePath`. Inspect processed item counts and expected business data.
+- Failure investigation: `builtin/failed-job-triage` joins search and details.
+  Its status summary omits steps; use execution inspection when those matter.
 
 Use to inspect failed executions in a chosen interval. This example selects the
 last seven days; adapt the window and query to the task. Discover search and
@@ -15,8 +22,9 @@ between reads. If the query can be answered from search hits, omit detail calls.
 
 For routine health checks or incomplete business results, use
 `skill://b2c-ops/b2c-job-health/SKILL.md` when that collection is available; a
-failed-only search cannot establish health. Read logs for executions needing
-diagnosis with `logs_list_files` / `logs_get_recent`, passing the returned path
-relative to `Logs/` as a prefix. CLI fallback: `b2c job log JOB_ID EXECUTION_ID`.
+failed-only search cannot establish health. Read the returned `logFilePath` with
+`webdav_get`; inspect size with `webdav_list` if needed. Continue using byte
+`nextOffset`, or download to `outputPath` for local analysis. Recent/filter/watch
+needs use `logs_*`. CLI fallback: `b2c job log JOB_ID EXECUTION_ID`.
 The returned log path is evidence to guide lookup, not
 permission to read an arbitrary local path. Do not infer root cause from ERROR alone.

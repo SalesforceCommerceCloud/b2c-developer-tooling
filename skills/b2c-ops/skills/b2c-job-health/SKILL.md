@@ -22,10 +22,10 @@ an incident. Do not invent impact from a red status alone.
 
 | Evidence                     | Preferred MCP path                                               | CLI fallback                                                 |
 | ---------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
-| Execution history and steps  | SCAPI Jobs through code mode                                     | `b2c job search`; check `--help` for filters                 |
-| Known execution log          | `logs_list_files` / `logs_get_recent` with its relative log path | `b2c job log JOB_ID EXECUTION_ID`                            |
+| Execution history and steps  | `builtin/job-execution-review` / `builtin/job-execution-inspect` in code mode                                     | `b2c job search`; check `--help` for filters                 |
+| Known execution log          | `webdav_get` with the returned `logFilePath` | `b2c job log JOB_ID EXECUTION_ID`                            |
 | Expected product/data change | Discover the relevant Admin operation and select affected fields | Relevant CLI/data workflow if supported                      |
-| Code-version clues           | Available deployment/history API, otherwise CLI                  | `b2c code list`; modification time is not activation history |
+| Code-version clues           | `builtin/code-version-inspect` in code mode                  | `b2c code list`; modification time is not activation history |
 
 Read `skill://mcp/scapi/SKILL.md` before code mode. Use its search/discovery
 contract; project/instance context belongs on tool calls. Authentication is
@@ -33,22 +33,21 @@ managed. Do not export tokens or use ambient fetch inside code mode.
 
 ## Checks and decisions
 
-1. Search a small page of executions in the interval. For routine review, include
+1. Describe/run `builtin/job-execution-review` for a small page in the interval. For routine review, include
    successful and unfinished runs, not only failures. Compare against the expected
    schedule; inspect relevant steps/duration and time zone before calling a run late.
 2. For failure-only review, reuse `builtin/failed-job-triage`: inspect with
    `codemode.describe`, then `codemode.run` with fixed `from`, `to`, and `limit`
    (maximum 3). Continue using its returned offset/window only as needed. Keep
    errors and partial results. The snippet returns selected execution fields,
-   not `stepExecutions`; fetch the selected execution's detail if steps matter.
+   not `stepExecutions`; use `builtin/job-execution-inspect` if steps matter.
    A POST search can be blocked by Safety Mode;
    explain the denied read operation rather than weakening policy.
-3. Read the log for the selected execution. Use its returned `logFilePath`;
-   for nested paths remove only an initial `Logs/` for MCP `prefixes`. Top-level
-   files need their discovered category prefix, not the filename. For a nested
-   directory use a trailing slash. Discover matching files, then request
-   bounded entries around the failure. Defaults only search error/customerror.
-   See [job-log details](references/job-logs.md) if the result is empty or incomplete.
+3. Read the selected execution's `logFilePath` with `webdav_get`; it accepts
+   `/Sites/LOGS/...` paths. Inspect size via `webdav_list`; read a bounded range
+   and continue via byte `nextOffset` only as needed. Download to `outputPath`
+   for local analysis. Use recent-log tools for filtering and watches, not an
+   exact raw-file read. [Job-log details](references/job-logs.md).
 4. Identify the first relevant fault, processed/skipped records, and which steps
    actually ran. Job transitions can continue after errors; do not assume every
    later step was skipped. Green status can also hide skipped or incomplete work.

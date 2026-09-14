@@ -79,6 +79,41 @@ Read [annotation semantics](references/tool-effects.md) when adding or changing
 operations. Verify emitted `tools/list` hints, including optional tools. Hints
 inform client approvals; they neither authorize calls nor enforce server policy.
 
+## File workflows
+
+Use managed SDK WebDAV requests for instance files; local paths refer to the MCP
+host. Prefer simple local-file and inline-text inputs over session file caches.
+Text file reads use bounded HTTP byte ranges, total byte size, and nextOffset at
+a complete UTF-8 boundary. Test ignored ranges, empty/truncated files, and binary
+downloads. Keep character paging for already-local documentation/skills.
+Selected cartridge uploads validate the entire selection before writing and use
+the shared SDK archive pipeline. Preserve upload success when cleanup/reload fails;
+never suggest replaying a write to fix a later stage. Simple file tools need no
+skill acknowledgment. Prefer task maps and reusable snippets over wrappers for
+already-supported SCAPI operations.
+
+## CIP analytics
+
+Reuse SDK reports, SQL builders, metadata, and the native CIP client. Keep offline
+report discovery ungated; require `skill://mcp/cip/SKILL.md` acknowledgment before
+query configuration/authentication. Link existing CLI CIP guidance conditionally
+for configuration, production/staging availability, and larger exports. Resolve
+tenant-scoped client credentials and per-project Safety Mode while retaining
+installed CIP middleware. Analytics tools are reads; HTTP POST still follows
+the shared safety policy. Do not bypass it or add a homegrown SQL parser.
+Bound rows, serialized output, transport responses, and request duration. Preserve
+cancellation through authentication; attempt bounded connection cleanup after
+failure. Report truncation and incomplete results explicitly. Teach warehouse
+site identifiers, date windows, freshness limits, and aggregation in SQL.
+Report details should include complete warehouse dependencies and concise metric
+definitions where needed, so ordinary execution needs no SQL preview. Return
+shared table/schema context once, with compact column details and useful page
+sizes. Route interpretation questions to a focused reference; do not send a
+successful report workflow through a general SQL tutorial. Keep source examples
+scoped by site/date; LIMIT bounds output, not database work. Public analytics docs
+lead with business/developer questions, example prompts, access, and exports;
+query mechanics and acknowledgment belong in agent skills.
+
 ## Conditional result guidance
 
 Add guidance when an observed condition changes the next action: source warnings,

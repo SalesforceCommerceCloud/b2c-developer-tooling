@@ -1,34 +1,56 @@
 ---
-description: User guide for running CIP/CCAC analytics reports and SQL queries with the B2C CLI.
+description: Explore B2C Commerce sales, search, promotions, and technical performance with your AI assistant, IDE, or CLI.
 ---
 
 # Analytics Reports (CIP/CCAC)
 
-The B2C CLI includes a `cip` command family for **B2C Commerce Intelligence (CIP)**, also known as **Commerce Cloud Analytics (CCAC)** reporting.
+Understand sales trends, find searches with no results, review promotion
+performance, and investigate slow or failing APIs. The toolkit connects to
+**B2C Commerce Intelligence (CIP)**, also known as **Commerce Cloud Analytics (CCAC)**,
+with ready-to-use reports and custom SQL analysis.
 
-It’s based on the **B2C Commerce Intelligence JDBC Driver** and gives you three practical workflows.
-
-- Curated report commands (`b2c cip report <report-command>`) for common analytics use cases
-- Raw SQL (`b2c cip query`) for custom exploration
-- Metadata discovery (`b2c cip tables`, `b2c cip describe`) for schema/table inspection
-
-Official JDBC reference:
-
-- [B2C Commerce Intelligence JDBC Driver](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/jdbc_intro.html)
+Ask your [AI assistant](#use-your-ai-assistant), explore reports in the
+[IDE Extension](#vs-code-ide-integration), or export results with the
+[B2C CLI](#quick-start). All three use your B2C Commerce analytics access.
 
 ::: warning Availability
 Reports and dashboards are typically used with production tenants (for example, `abcd_prd`) and require Commerce Cloud Analytics (CCAC) to be enabled.
 :::
 
+## Use Your AI Assistant
+
+Connect the [B2C MCP](/mcp/) and describe the question you want answered. Compare
+sales across periods, identify merchandising opportunities, or examine API and
+controller performance without writing SQL or installing a separate CLI.
+For questions beyond the included reports, your assistant can explore available
+analytics data and build a custom analysis.
+
+<ExamplePrompt>
+
+> Which search terms returned no results on my site last week? Rank them by frequency and explain what the data covers.
+
+</ExamplePrompt>
+
+<ExamplePrompt>
+
+> Compare daily sales and average order value for my site over the last two complete weeks. Explain any missing days and whether there's enough data to identify a trend.
+
+</ExamplePrompt>
+
+Tell your assistant which instance, site, and period to use. Analytics can lag
+storefront activity; a day without records does not necessarily mean zero sales.
+
+See [MCP analytics tools](/mcp/toolsets#cip) for capabilities and limits.
+
 ## Authentication and Access
 
-`cip` commands require an Account Manager API client configured for **client credentials** authentication.
+CIP requires an Account Manager API client configured for **client credentials** authentication.
 
 Minimum requirements:
 
 - API client with **Salesforce Commerce API** role
-- role tenant filter includes your target production instance (for example `abcd_prd`)
-- client ID and client secret available to the CLI
+- role tenant filter includes your target instance (for example `abcd_prd`)
+- client ID and client secret in your toolkit configuration
 
 Recommended environment setup:
 
@@ -56,7 +78,7 @@ To enable non-production support, turn on **Enable Reports & Dashboards Data Tra
 
 Reports & Dashboards non-production URL:
 
-- `https://jdbc.stg.analytics.commercecloud.salesforce.com`
+- `https://ccac.stg.analytics.commercecloud.salesforce.com`
 
 For CLI commands, you can target the staging analytics host with `--staging`.
 
@@ -67,7 +89,7 @@ For CLI commands, you can target the staging analytics host with `--staging`.
 - `--staging` forces staging host
 - `--cip-host` overrides host selection explicitly
 
-## Quick Start
+## Use the B2C CLI {#quick-start}
 
 ### Curated reports (`cip report`)
 
@@ -81,11 +103,11 @@ b2c cip report --help
 b2c cip report sales-analytics \
   --tenant-id abcd_prd \
   --site-id Sites-RefArch-Site \
-  --from 2025-01-01 \
-  --to 2025-01-31
+  --from 2026-02-03 \
+  --to 2026-02-04
 ```
 
-Example output:
+Illustrative output:
 
 ```text
 date        std_revenue  orders  std_aov  units  aos  std_tax  std_shipping
@@ -94,7 +116,7 @@ date        std_revenue  orders  std_aov  units  aos  std_tax  std_shipping
 2026-02-04  227.92       1       227.92   2      2    11.4     9.99
 ```
 
-Inspect generated SQL before running:
+To inspect or adapt a report, preview its SQL:
 
 ```bash
 b2c cip report sales-analytics --tenant-id abcd_prd --site-id Sites-RefArch-Site --sql
@@ -144,7 +166,7 @@ b2c cip query \
 
 If your SQL does not include these tokens, the query is sent unchanged.
 
-Example output:
+Illustrative output:
 
 ```text
 request_date  api_name  total_requests
@@ -169,39 +191,16 @@ b2c cip describe ccdw_aggr_ocapi_request --tenant-id abcd_prd
 
 ## Choosing Query vs Report
 
-Use `cip report` when you want:
-
-- stable, reusable report semantics
-- safer parameter handling
-- fast onboarding for common sales/search/payment analytics
-
-Use `cip query` when you need:
-
-- fully custom SQL
-- exploratory analysis over additional tables/joins
-- iterative SQL tuning
+Start with `cip report` for common sales, search, payment, and technical questions.
+Use `cip query` for custom filters, calculations, or datasets beyond those reports.
 
 ## Rate Limits and Query Discipline
 
-::: warning Tight Limits
-The JDBC analytics service enforces query timeout, quota, and rate limits, and these limits can change over time.
-
-Always check the official documentation before designing high-volume workloads.
-
-- [B2C Commerce Intelligence JDBC Access Guide](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/jdbc_access_guide.html)
-- See the **Non-Functional Requirements (NFR)** section (Query Execution Timeout, Quota Limit, Rate Limit)
-  :::
-
-Practical guidance:
-
-- Prefer aggregate tables over large fact tables when possible.
-- Avoid `SELECT *`; request only required columns.
-- Keep date ranges narrow and run incremental windows.
-- Test with smaller windows first, then scale up.
-
-Reference source for limits and best practices:
-
-- [Setting Up the B2C Commerce Intelligence JDBC Driver](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/jdbc_access_guide.html)
+CIP enforces query timeouts, quotas, and rate limits. Start with a narrow period,
+request only needed fields, and prefer summary tables for large analyses.
+For custom SQL, LIMIT controls returned rows; date and site filters constrain
+the data being analyzed. See the official
+[query limits](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/jdbc_access_guide.html).
 
 ## Site ID Parameter Note
 
@@ -220,59 +219,19 @@ For scripting and automation, use:
 - `--json` for standard CLI JSON mode
 - `--format json` to print JSON to stdout for query/report output paths
 
-## SDK Support
+## Explore in Your IDE {#vs-code-ide-integration}
 
-If you're building applications or automation directly in TypeScript/Node.js, the SDK exposes CIP support:
-
-- `createCipClient` for raw SQL execution
-- `listCipTables`, `describeCipTable` for table/column metadata discovery
-- `buildCipReportSql`, `listCipReports`, `executeCipReport` for curated report workflows
-
-Example:
-
-```ts
-import {OAuthStrategy, createCipClient, executeCipReport} from '@salesforce/b2c-tooling-sdk';
-
-const auth = new OAuthStrategy({
-  clientId: process.env.SFCC_CLIENT_ID!,
-  clientSecret: process.env.SFCC_CLIENT_SECRET!,
-});
-
-const cip = createCipClient({instance: 'abcd_prd'}, auth);
-
-// Raw SQL
-const raw = await cip.query('SELECT submit_date, num_orders FROM ccdw_aggr_sales_summary LIMIT 10');
-
-// Curated report
-const report = await executeCipReport(cip, 'sales-analytics', {
-  params: {
-    siteId: 'Sites-RefArch-Site',
-    from: '2025-01-01',
-    to: '2025-01-31',
-  },
-});
-```
-
-See the SDK API reference:
-
-- [API Reference](/api/)
-- [CipClient class](/api/clients/classes/CipClient)
-- [createCipClient helper](/api/clients/functions/createCipClient)
-- [CIP Operations API](/api/operations/cip/)
-
-## VS Code IDE Integration
-
-The Salesforce B2C Commerce VS Code extension exposes the same CIP analytics workflows as a graphical experience. Open the **Analytics** view in the activity bar to access them.
+The B2C Commerce IDE Extension provides visual query building, ready-to-use reports, and CSV/JSON exports. Open the **Analytics** view in the activity bar to access them.
 
 ::: tip
-You don't need to install or configure the CLI separately — the extension uses the same SDK under the hood and reads from your workspace `dw.json` (or environment variables).
+No separate CLI installation is needed. Use your existing [toolkit configuration](/guide/configuration) or configure an analytics connection in the extension.
 :::
 
 ### Available panels
 
 - **Query Builder** — visual SELECT / FROM / WHERE / ORDER BY / LIMIT composer with a "Saved Queries" library so you can bookmark frequently-used queries per tenant. Switch to **SQL** mode for raw query editing.
 - **Tables Browser** — schema explorer that lists every CIP warehouse table for the active tenant. Click a table to inspect its columns and types.
-- **Curated Reports** — opens any `cip report` command (sales analytics, top-selling products, etc.) in a parameter form with date pickers, validation, CSV/JSON export, and a sortable result grid.
+- **Curated Reports** — choose a report, select its site and dates, and explore a sortable result grid. Export results as CSV or JSON.
 
 ### Realm management
 
@@ -286,15 +245,20 @@ The sidebar tree groups tenants under named realms. Each realm can hold multiple
 
 Inside the Query Builder, the **Save** button persists the current SQL into a workspace-scoped library, tagged with the active tenant. Saved queries appear in the **Saved Queries** dropdown — those authored against the current tenant are listed first; queries from other tenants appear dimmed below a divider so you can still recall them after switching connections.
 
-The library is stored in VS Code workspace state (`b2c-dx.cipAnalytics.savedQueries`). It is not committed to source control.
-
-### Telemetry
-
-Opening any CIP Analytics panel records a single per-session usage event under the `cipAnalytics` feature category. No SQL text or query results are collected. To opt out, set `b2c-dx.telemetry.enabled` to `false` in VS Code settings (or disable VS Code's global telemetry). See the [VS Code extension configuration](/vscode-extension/configuration#verbosity-polling-telemetry) for details.
+Saved queries stay in your editor workspace; they are not committed to source control.
 
 ### Safety mode
 
-CIP commands flow through the same SafetyGuard as the rest of the extension. If your workspace defines a [safety policy](/guide/safety) that blocks or confirms a CIP command, the policy is enforced before the panel opens.
+Your [Safety Mode policy](/guide/safety) can block analytics actions or require confirmation. For analytics access and read-only policy exceptions, see [CIP access](/mcp/security#cip).
+
+Query text and results are not collected as telemetry. See [privacy settings](/vscode-extension/configuration#verbosity-polling-telemetry) for controls.
+
+## SDK Support
+
+For custom analytics tooling and integrations, the TypeScript SDK exposes
+[CIP queries](/api/clients/classes/CipClient) and
+[report and table operations](/api/operations/cip/). These support the same
+analytics workflows as the CLI, MCP, and IDE Extension.
 
 ## Next Steps
 

@@ -70,8 +70,8 @@ Environment variables for MRT are configured through:
 Use `b2c mrt env var push --file .env.staging --project <project> --environment <environment>`
 to explicitly apply a reviewed file. It shows a diff and prompts; omit local-only
 values and use credentials for the target instance. See [Environment Variables](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.html)
-for visibility, naming, and limits. MRT variable management and log tailing use
-the B2C CLI; there are no equivalent dedicated MCP tools.
+for visibility, naming, and limits. MRT variable management uses the B2C CLI. For live logs, prefer MCP
+`mrt_logs_watch` / `mrt_logs_watch_poll`; CLI alternative: `b2c mrt tail-logs`.
 
 ### MRT Deployment Variables
 

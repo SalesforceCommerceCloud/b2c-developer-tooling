@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {TOOLSETS} from '../../utils/constants.js';
 import {listSchemas, type SchemaEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
@@ -22,7 +23,7 @@ export function createDocsSchemaListTool(loadServices: () => Promise<Services> |
       idempotent: true,
       openWorld: false,
       description: 'List bundled B2C Commerce (SFCC/Demandware) XSD schema IDs for docs_schema_read.',
-      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: [...TOOLSETS],
       inputSchema: {},
       async execute() {
         const entries = listSchemas();

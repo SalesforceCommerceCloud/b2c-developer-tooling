@@ -38,10 +38,10 @@ Native assistants use the installed skill name; MCP can read these URIs or use
 | Symptom                                                   | Toolkit path                                                                                                                                | Decision / detail                                                                                                                                                            |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Error spike or integration errors                         | `logs_list_files` -> returned `prefix` -> `logs_get_recent` with `count: 20`, `since`, and a relevant `search`                              | Defaults cover error/customerror, not every `custom-*` integration log. CLI: `b2c logs list` / `b2c logs get`.                                                               |
-| Failed job or stale data                                  | Code mode `codemode.describe("builtin/failed-job-triage")`, then run with fixed `from`/`to` -> execution IDs and `logFilePath` -> log tools | [Job health](skill://b2c-ops/b2c-job-health/SKILL.md) covers continuation, step details, CLI job logs, and green-but-incomplete runs.                                        |
+| Failed job or stale data                                  | Code mode `codemode.describe("builtin/failed-job-triage")`, then run with fixed `from`/`to` -> execution IDs and `logFilePath` -> log tools | [Job health](skill://b2c-ops/b2c-job-health/SKILL.md) covers continuation, step details, exact WebDAV logs, and green-but-incomplete runs.                                        |
 | Checkout failures or orders down                          | Custom logs -> determine whether failures produce order records -> relevant data/traffic evidence                                           | [Checkout triage](skill://b2c-ops/b2c-checkout-triage/SKILL.md) distinguishes checkout symptoms from failed-order records.                                                   |
 | Find/count FAILED orders or investigate affected products | Verify Admin filter support; otherwise external OCAPI Shop order search -> safe IDs -> logs and selected Admin product reads                | [Failed-order triage](skill://b2c-ops/b2c-order-failure-triage/SKILL.md) owns enumeration, count/sample limits, and the workaround. No OCAPI helper exists inside code mode. |
-| Suspected code change                                     | CLI `b2c code list`: active/rollback version and `lastModified`                                                                             | No dedicated MCP code-version listing; modification is not activation history. Corroborate with release records.                                                             |
+| Suspected code change                                     | Code mode `builtin/code-version-inspect`: active/rollback versions and activation/modification timestamps                                                                             | Current metadata is not a complete activation history. Corroborate with release records.                                                             |
 | Runtime-only defect                                       | [MCP debugger](skill://mcp/debugger/SKILL.md) on an authorized reproduction target                                                          | Operator handoff is valid without source access. Do not halt production requests for routine triage.                                                                         |
 
 ## Checks and decisions
@@ -50,13 +50,12 @@ Native assistants use the installed skill name; MCP can read these URIs or use
    `config_inspect` stays masked; do not read `dw.json` or request tokens merely
    to make managed MCP calls. Pass the same project/instance context to CLI fallbacks.
 2. Join signals using execution IDs, log timestamps, and affected record IDs.
-   For nested job logs, pass the path relative to `Logs/`; for top-level logs,
-   use the discovered category prefix. A bounded recent-log result is a sample,
-   not full-interval coverage. CLI `b2c job log JOB_ID EXECUTION_ID` retrieves
-   a selected job log when recent parsing is insufficient.
+   For exact job logs, pass the returned `logFilePath` to `webdav_get`; use byte
+   continuation or download locally. Recent-log tools remain preferred for
+   filtered samples/watches. A bounded result is not full-interval coverage.
 3. Reuse code-mode snippet totals/window/`nextOffset`; do not return entire
    schemas or records. The failed-job snippet omits step details and healthy
-   runs: fetch those selectively when needed. Compare expected business data
+   runs: use `builtin/job-execution-inspect` / `builtin/job-execution-review` selectively. Compare expected business data
    with a healthy input before calling a green job healthy.
 4. Preserve failed stages: HTTP `ok`/`status` and diagnostics, or thrown
    auth/transport/safety errors. An OCAPI fallback error may mask an earlier

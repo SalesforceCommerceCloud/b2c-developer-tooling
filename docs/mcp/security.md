@@ -41,6 +41,20 @@ permissions.
 Cartridge deployment writes to the selected code version. MRT publishing uploads
 a bundle and can activate it in an environment. Confirm the project, instance, code version, and
 MRT environment before requesting these operations.
+Selected cartridge uploads overwrite matching files and preserve other files.
+Code-version reload can briefly activate another version before activating the target.
+
+## Instance files
+
+File reads and transfers require WebDAV permissions for the requested directory,
+using configured Business Manager credentials/access keys or OAuth WebDAV access.
+Grant read access for log investigation and write access only where uploads are needed.
+See [WebDAV permissions](../guide/authentication#webdav-access).
+
+Remote uploads can replace files when explicitly requested. Downloads write a new
+file on the machine running the MCP server; they do not overwrite an existing file.
+The configured Safety Mode applies to remote WebDAV requests, including uploads.
+Local download destinations use that machine's filesystem permissions.
 
 ## Debugger access {#debugger}
 
@@ -102,3 +116,19 @@ history. Requests made by an external client are outside MCP Safety Mode.
 Save or install only workflows you trust, and keep credentials out of their source.
 Saved workflows use the credentials and safety policy of the project where you
 run them.
+
+## Analytics access {#cip}
+
+CIP uses Account Manager client credentials with the **Salesforce Commerce API**
+role and a tenant filter for the selected instance. It does not require a SCAPI
+short code. Non-production analytics requires supported Reports & Dashboards
+data tracking; see the [analytics configuration guide](../guide/analytics-reports-cip-ccac).
+
+Reports and SQL can return business-sensitive data. Request only the sites,
+dates, and fields needed, and review your assistant provider's data-use settings.
+
+CIP uses POST even for analytics reads. `READ_ONLY` can therefore block report
+execution and live table discovery. Where appropriate, configure an explicit
+allow rule for POST requests to the selected CIP tenant path, such as `/abcd_prd`,
+instead of permitting POST everywhere. The [Safety Mode guide](../guide/safety)
+explains rule precedence and confirmation behavior.

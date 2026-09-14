@@ -5,6 +5,7 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
+import {randomUUID} from 'node:crypto';
 import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
@@ -26,6 +27,12 @@ export interface FileChange {
  * Callbacks for file upload/delete operations.
  */
 export interface UploadFilesOptions {
+  /** Reject missing/unreadable files instead of skipping them. */
+  strict?: boolean;
+  /** Maximum total uncompressed upload bytes. */
+  maxBytes?: number;
+  /** Report cleanup failures after a successful upload without replaying writes. */
+  onWarning?: (message: string) => void;
   /** Called after files are successfully uploaded */
   onUpload?: (files: string[]) => void;
   /** Called after files are successfully deleted */
@@ -42,14 +49,17 @@ export interface UploadFilesOptions {
  * @returns The file change with src and dest, or undefined if the path is not inside any cartridge
  */
 export function fileToCartridgePath(absolutePath: string, cartridges: CartridgeMapping[]): FileChange | undefined {
-  const cartridge = cartridges.find((c) => absolutePath.startsWith(c.src));
+  const cartridge = cartridges.find((c) => {
+    const relative = path.relative(c.src, absolutePath);
+    return relative !== '' && relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+  });
 
   if (!cartridge) {
     return undefined;
   }
 
-  const relativePath = absolutePath.substring(cartridge.src.length);
-  const destPath = path.join(cartridge.dest, relativePath);
+  const relativePath = path.relative(cartridge.src, absolutePath);
+  const destPath = path.join(cartridge.dest, relativePath).split(path.sep).join('/');
 
   return {
     src: absolutePath,
@@ -87,6 +97,7 @@ export async function uploadFiles(
 
   const validUploadFiles = uploads.filter((f) => {
     if (!fs.existsSync(f.src)) {
+      if (options?.strict) throw new Error(`Upload source does not exist: ${f.src}`);
       logger.debug({file: f.src}, 'Skipping missing file');
       return false;
     }
@@ -94,16 +105,42 @@ export async function uploadFiles(
   });
 
   if (validUploadFiles.length > 0) {
-    const uploadPath = `${webdavLocation}/_upload-${Date.now()}.zip`;
+    const uploadPath = `${webdavLocation}/_upload-${randomUUID()}.zip`;
+    let stage = 'preparing';
 
     try {
       const zip = new JSZip();
+      let totalBytes = 0;
 
       for (const f of validUploadFiles) {
         try {
-          const content = await fs.promises.readFile(f.src);
+          let content: Buffer;
+          if (options?.maxBytes !== undefined) {
+            const handle = await fs.promises.open(f.src, 'r');
+            try {
+              const stat = await handle.stat();
+              const remaining = options.maxBytes - totalBytes;
+              if (!stat.isFile() || stat.size > remaining) throw new Error('Upload exceeds the file/byte limit.');
+              // A bounded read detects growth after stat without allocating an unbounded file.
+              const buffer = Buffer.alloc(stat.size + 1);
+              let length = 0;
+              while (length < buffer.length) {
+                const {bytesRead} = await handle.read(buffer, length, buffer.length - length);
+                if (!bytesRead) break;
+                length += bytesRead;
+              }
+              if (length !== stat.size) throw new Error(`Upload source changed while reading: ${f.src}`);
+              content = buffer.subarray(0, length);
+            } finally {
+              await handle.close();
+            }
+          } else {
+            content = await fs.promises.readFile(f.src);
+          }
+          totalBytes += content.length;
           zip.file(f.dest, content);
         } catch (error) {
+          if (options?.strict) throw error;
           logger.warn({file: f.src, error}, 'Failed to add file to archive');
         }
       }
@@ -114,9 +151,11 @@ export async function uploadFiles(
         compressionOptions: {level: 5},
       });
 
+      stage = 'uploading';
       await webdav.put(uploadPath, buffer, 'application/zip');
       logger.debug({uploadPath}, 'Archive uploaded');
 
+      stage = 'extracting';
       const response = await webdav.request(uploadPath, {
         method: 'POST',
         body: UNZIP_BODY,
@@ -129,7 +168,13 @@ export async function uploadFiles(
         throw new Error(`Unzip failed: ${response.status}`);
       }
 
-      await webdav.delete(uploadPath);
+      stage = 'cleaning';
+      try {
+        await webdav.delete(uploadPath);
+      } catch (error) {
+        if (!options?.onWarning) throw error;
+        options.onWarning(`Files uploaded, but temporary archive cleanup failed at ${uploadPath}: ${String(error)}`);
+      }
 
       logger.debug(
         {fileCount: validUploadFiles.length, server: instance.config.hostname},
@@ -138,7 +183,14 @@ export async function uploadFiles(
 
       options?.onUpload?.(validUploadFiles.map((f) => f.dest));
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
+      const original = error instanceof Error ? error : new Error(String(error));
+      const err =
+        options?.strict && stage !== 'preparing'
+          ? new Error(
+              `Failed while ${stage} ${uploadPath}: ${original.message}. Remote files may have changed; inspect before retrying.`,
+              {cause: original},
+            )
+          : original;
       logger.error({error: err}, `Upload error: ${err.message}`);
       options?.onError?.(err);
       throw err;

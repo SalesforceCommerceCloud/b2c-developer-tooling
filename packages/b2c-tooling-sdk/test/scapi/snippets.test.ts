@@ -38,6 +38,101 @@ async function rejects(run: () => Promise<unknown>, message: string) {
 }
 
 describe('SCAPI snippets', () => {
+  it('reviews successful and failed runs in a stable window with continuation', async () => {
+    const result = (await runScapiCode({
+      input: {from: '2026-09-01T00:00:00Z', to: '2026-09-02T00:00:00Z', jobId: 'Import', limit: 1},
+      code: `async (input) => codemode.run('builtin/job-execution-review', input)`,
+      request: async (args) => {
+        const request = args as {path: string; body: {query: unknown; limit: number}};
+        expect(request.path).to.include('job-execution-search');
+        expect(request.body.query).to.deep.equal({
+          filteredQuery: {
+            query: {termQuery: {fields: ['jobId'], operator: 'is', values: ['Import']}},
+            filter: {rangeFilter: {field: 'startTime', from: '2026-09-01T00:00:00Z', to: '2026-09-02T00:00:00Z'}},
+          },
+        });
+        expect(request.body.limit).to.equal(1);
+        return {
+          ok: true,
+          data: {total: 2, hits: [{id: 'first', jobId: 'Import', status: 'OK', logFilePath: '/Sites/LOGS/run.log'}]},
+        };
+      },
+    })) as {total: number; nextOffset: number; executions: object[]};
+    expect(result).to.include({total: 2, nextOffset: 1});
+    expect(result.executions[0]).to.include({status: 'OK', logFilePath: '/Sites/LOGS/run.log'});
+  });
+
+  it('projects a bounded step page for an exact execution', async () => {
+    const result = (await runScapiCode({
+      input: {jobId: 'Import A', executionId: '123', offset: 1, limit: 1},
+      code: `async (input) => codemode.run('builtin/job-execution-inspect', input)`,
+      request: async (args) => {
+        expect((args as {path: string}).path).to.include('/jobs/Import%20A/executions/123');
+        return {
+          ok: true,
+          data: {
+            id: '123',
+            logFilePath: 'Logs/jobs/a.log',
+            stepExecutions: [
+              {stepId: 'first'},
+              {stepId: 'second', itemWriteCount: 4, executionScope: 'SiteA'},
+              {stepId: 'third'},
+            ],
+          },
+        };
+      },
+    })) as {steps: object[]};
+    expect(result).to.include({totalSteps: 3, returned: 1, nextOffset: 2, logFilePath: 'Logs/jobs/a.log'});
+    expect(result.steps).to.deep.equal([{stepId: 'second', itemWriteCount: 4, executionScope: 'SiteA'}]);
+  });
+
+  it('identifies active versions outside the returned page and preserves activation timestamps', async () => {
+    const result = (await runScapiCode({
+      input: {limit: 1},
+      code: `async (input) => codemode.run('builtin/code-version-inspect', input)`,
+      request: async () => ({
+        ok: true,
+        data: {
+          data: [
+            {id: 'old', rollback: true, activationTime: '2026-09-01T00:00:00Z'},
+            {id: 'current', active: true},
+          ],
+        },
+      }),
+    })) as {active: string[]; versions: object[]};
+    expect(result).to.include({total: 2, nextOffset: 1});
+    expect(result.active).to.deep.equal(['current']);
+    expect(result.versions[0]).to.include({activationTime: '2026-09-01T00:00:00Z'});
+  });
+
+  it('keeps site cartridge order and distinguishes omitted paths from missing cartridges', async () => {
+    for (const cartridges of ['custom:base', undefined]) {
+      const result = (await runScapiCode({
+        input: {siteId: 'SiteA', expectedCartridges: ['custom', 'missing']},
+        code: `async (input) => codemode.run('builtin/site-cartridge-inspect', input)`,
+        request: async () => ({ok: true, data: {id: 'SiteA', cartridges, siteCatalogId: 'storefront'}}),
+      })) as {cartridges?: string[]; missing: string[] | null};
+      expect(result.missing).to.deep.equal(cartridges ? ['missing'] : null);
+      if (cartridges) expect(result.cartridges).to.deep.equal(['custom', 'base']);
+    }
+  });
+
+  it('preserves upstream errors from operational snippets', async () => {
+    for (const [name, input] of [
+      ['job-execution-review', {from: '2026-09-01T00:00:00Z', to: '2026-09-02T00:00:00Z'}],
+      ['job-execution-inspect', {jobId: 'a', executionId: 'b'}],
+      ['code-version-inspect', {}],
+      ['site-cartridge-inspect', {siteId: 'a'}],
+    ] as const) {
+      const result = await runScapiCode({
+        input,
+        code: `async (input) => codemode.run('builtin/${name}', input)`,
+        request: async () => ({ok: false, status: 403, data: {detail: 'Access denied'}}),
+      });
+      expect(result).to.deep.include({ok: false, status: 403, data: {detail: 'Access denied'}});
+    }
+  });
+
   let directory: string;
   beforeEach(() => {
     directory = mkdtempSync(join(tmpdir(), 'b2c-snippets-'));
@@ -233,7 +328,7 @@ describe('SCAPI snippets', () => {
   });
 
   it('loads all built-in sources from the installed SDK data directory', () => {
-    expect(loadBuiltinScapiSnippets()).to.have.length(3);
+    expect(loadBuiltinScapiSnippets()).to.have.length(7);
     for (const item of loadBuiltinScapiSnippets()) expect(item.code).to.include('async (input)');
   });
 

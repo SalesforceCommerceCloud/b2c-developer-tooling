@@ -50,18 +50,42 @@ to customize coverage.
 
 ## Deployment {#cartridges}
 
-| Tool               | Capability                                                      | Toolsets                   |
-| ------------------ | --------------------------------------------------------------- | -------------------------- |
-| `cartridge_deploy` | Deploy selected cartridges; optionally reload the code version. | CARTRIDGES                 |
-| `mrt_bundle_push`  | Publish a pre-built storefront bundle; optionally deploy it.    | MRT, PWAV3, STOREFRONTNEXT |
+| Tool               | Capability                                                                            | Toolsets                   |
+| ------------------ | ------------------------------------------------------------------------------------- | -------------------------- |
+| `cartridge_deploy` | Upload cartridges or selected files to a code version; optionally activate/reload it. | CARTRIDGES                 |
+| `mrt_bundle_push`  | Publish a pre-built storefront bundle; optionally deploy it.                          | MRT, PWAV3, STOREFRONTNEXT |
 
-Cartridges require WebDAV write access; code-version reload also requires OCAPI
-access. Check [deployment permissions](./security#deployments) before connecting.
+Cartridges require WebDAV write access. Code-version discovery and reload use
+SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`) with OCAPI compatibility where available.
+Check [deployment permissions](./security#deployments) before connecting.
 
 ### Managed Runtime {#mrt}
 
 Bundle publishing requires an [MRT API key and project](../guide/authentication#managed-runtime-api-key),
 plus an environment when deploying.
+
+## Instance files {#webdav}
+
+Browse instance directories, read exact job logs, and upload or download files
+without installing the CLI separately. Upload text directly or transfer files
+from the machine running the MCP server.
+
+| Tool          | Capability                                                               | Toolsets                       |
+| ------------- | ------------------------------------------------------------------------ | ------------------------------ |
+| `webdav_list` | List a directory with file sizes and modification dates.                 | CARTRIDGES, DIAGNOSTICS, SCAPI |
+| `webdav_get`  | Read part of a text file or download a whole file.                       | CARTRIDGES, DIAGNOSTICS, SCAPI |
+| `webdav_put`  | Upload text or a local file; replace existing files only when requested. | CARTRIDGES, SCAPI              |
+
+Requires WebDAV access to the selected directory. Whole-file transfers are limited
+to 64 MiB. Upload folders must already exist; local downloads require a new filename.
+Selected cartridge uploads support up to 100 files / 64 MiB total.
+See [file access](./security#instance-files).
+
+<ExamplePrompt>
+
+> Download the log for this failed job execution and identify the first error. Don't rerun the job.
+
+</ExamplePrompt>
 
 ## Debugging {#diagnostics}
 
@@ -165,7 +189,8 @@ not yet run Shopper API requests or upload and download binary files.
 </ExamplePrompt>
 
 Ready-to-use workflows cover product creation and category assignment, campaign
-reviews, and failed-job investigation. Products created with the built-in workflow
+reviews, job history and step inspection, code-version checks, and site cartridge
+path checks. Products created with the built-in workflow
 start offline unless you request otherwise.
 
 ![Screenshot placeholder: Claude Code creating a product and verifying its storefront category assignment.](/placeholders/mcp-claude-product.svg)
@@ -194,21 +219,53 @@ project where you run them.
 `metrics_get` reads B2C Commerce metrics. Available in SCAPI; requires tenant access
 to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 
+## Analytics reports {#cip}
+
+**Turn B2C Commerce analytics into answers for your site.**
+
+Compare sales and average order value, find searches with no results, review
+promotions and payment methods, or identify slow and failing APIs. CIP/CCAC
+reports give your assistant a starting point; custom analysis supports questions
+that go beyond them. No separate CLI or SQL client is needed.
+
+<ExamplePrompt>
+
+> Which SCAPI endpoints had the highest 5xx error rates last week? Include request volume so I can distinguish recurring problems from isolated failures.
+
+</ExamplePrompt>
+
+| Tool           | Capability                                                                          |
+| -------------- | ----------------------------------------------------------------------------------- |
+| `cip_discover` | Find reports, inspect their inputs and SQL, or browse available tables and columns. |
+| `cip_query`    | Run sales, merchandising, and technical reports or custom SQL analyses.             |
+
+Available in CIP, included in the default installation. Requires Account Manager
+client credentials and the **Salesforce Commerce API** role for the selected tenant.
+Production and non-production availability, host selection, and setup are covered
+in the [analytics guide](../guide/analytics-reports-cip-ccac).
+
+Results contain up to 500 rows and may be limited further by response size.
+Use [CLI exports](../guide/analytics-reports-cip-ccac#quick-start) for larger local
+datasets. Keep queries focused on a chosen period; long-running analyses may time out.
+Analytics can lag storefront activity; use logs or live APIs for immediate state.
+See [analytics access](./security#cip).
+
 ## Configuration inspection
 
-| Tool             | Capability                                                               | Toolsets    |
-| ---------------- | ------------------------------------------------------------------------ | ----------- |
-| `config_inspect` | Check resolved configuration and targets; secrets are masked by default. | DIAGNOSTICS |
+| Tool             | Capability                                                               | Toolsets         |
+| ---------------- | ------------------------------------------------------------------------ | ---------------- |
+| `config_inspect` | Check resolved configuration and targets; secrets are masked by default. | DIAGNOSTICS, CIP |
 
 ## Toolsets for customization
 
-| Toolset          | Capabilities                                                 |
-| ---------------- | ------------------------------------------------------------ |
-| `CARTRIDGES`     | Cartridge deployment and instance diagnostics.               |
-| `DIAGNOSTICS`    | Debugging, instance/MRT logs, and configuration inspection.  |
-| `MRT`            | Managed Runtime bundle publishing and deployment.            |
-| `PWAV3`          | Shared MRT and SCAPI tools for PWA Kit projects.             |
-| `SCAPI`          | API development, instance diagnostics, and optional metrics. |
-| `STOREFRONTNEXT` | Shared MRT and SCAPI tools for Storefront Next projects.     |
+| Toolset          | Capabilities                                                     |
+| ---------------- | ---------------------------------------------------------------- |
+| `CARTRIDGES`     | Cartridge deployment and instance diagnostics.                   |
+| `DIAGNOSTICS`    | Debugging, instance/MRT logs, and configuration inspection.      |
+| `MRT`            | Managed Runtime bundle publishing and deployment.                |
+| `PWAV3`          | Shared MRT and SCAPI tools for PWA Kit projects.                 |
+| `SCAPI`          | API development, instance diagnostics, and optional metrics.     |
+| `STOREFRONTNEXT` | Shared MRT and SCAPI tools for Storefront Next projects.         |
+| `CIP`            | Analytics report discovery, warehouse metadata, and SQL queries. |
 
 Skills and documentation are included in every toolset. Shared tools appear once.

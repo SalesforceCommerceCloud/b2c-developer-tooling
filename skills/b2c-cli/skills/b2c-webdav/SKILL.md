@@ -9,6 +9,17 @@ Use the `b2c` CLI plugin to perform WebDAV file operations on Salesforce B2C Com
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli webdav ls`).
 
+## MCP equivalent
+
+Prefer `webdav_list`, `webdav_get`, and `webdav_put` when available for one-directory
+listings, exact text reads, and single-file transfers. `webdav_get` uses HTTP byte
+ranges (`offset`, `maxBytes`, returned `size`/`nextOffset`); `outputPath` downloads a
+whole file. `webdav_put` accepts `content` or `sourcePath`; parent must exist,
+replacement needs `overwrite: true`. Local paths are on the MCP host, relative to
+`projectDirectory`. Transfers cap at 64 MiB; no prerequisite skill read.
+Use `cartridge_deploy` for local cartridge selection/mapping. Keep the CLI for
+recursive transfers, mkdir, delete, ZIP/UNZIP, or extra flags not exposed by MCP.
+
 ## Configuration & Authentication
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.

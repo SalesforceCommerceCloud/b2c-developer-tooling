@@ -50,7 +50,7 @@ the [B2C CLI](../cli/docs).
 
 - **Build:** find platform documentation and apply B2C Commerce development patterns.
 - **Debug:** investigate logs and inspect live cartridge execution with breakpoints, variables, and call stacks.
-- **Deploy:** publish cartridges and Managed Runtime storefront bundles.
+- **Deploy:** upload whole cartridges or selected code files and publish Managed Runtime storefront bundles.
 
 <ExamplePrompt>
 
@@ -71,6 +71,9 @@ Review campaigns and promotions, investigate job failures, or create products an
 Included [operations runbooks](../guide/operations) help your assistant review
 scheduled work, investigate checkout failures, and prepare evidence for your
 administrator, developer, integration provider, or Salesforce Support.
+Review successful and failed job runs, inspect execution steps and logs, check
+active code versions and site cartridge paths, and [transfer instance files](./toolsets#webdav)
+without a separate CLI installation.
 
 <ExamplePrompt>
 
@@ -85,6 +88,16 @@ administrator, developer, integration provider, or Salesforce Support.
 </ExamplePrompt>
 
 Standard and custom Admin APIs support live requests. Shopper APIs are available for reference.
+
+[CIP analytics](./toolsets#cip) helps explain sales changes, uncover search and
+promotion opportunities, and investigate API performance. Ask for a ready-to-use
+report or a custom analysis without setting up the CLI or a separate SQL client.
+
+<ExamplePrompt>
+
+> Compare daily sales and average order value for my site over the last two complete weeks. Explain the date range and any gaps in the data.
+
+</ExamplePrompt>
 
 ![Screenshot placeholder: a planned ChatGPT Work campaign review showing promotion schedules and findings.](/placeholders/mcp-chatgpt-campaign.svg)
 

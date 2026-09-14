@@ -31,7 +31,7 @@ When a task needs a tool outside the current selection:
    Verify the expected tools appear. Check the installed version if still absent;
    removed tools cannot be re-enabled. Avoid duplicate server registrations.
 
-Toolsets: `CARTRIDGES`, `DIAGNOSTICS`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`.
+Toolsets: `CARTRIDGES`, `DIAGNOSTICS`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, `CIP`.
 MCP skill resources are always available. Every toolset includes `skills_read`
 and docs. With only `--tools`, select `skills_read` to include the broader skill
 collections, and desired `docs_*` tools explicitly. `--docs-topics` restricts docs, not skills.
@@ -43,13 +43,23 @@ Use launch arguments/environment for server settings, not project `.env` or `dw.
   masked. For resolution issues: [B2C config](skill://mcp/b2c-config/SKILL.md).
   CLI equivalent, when requested: `b2c setup inspect`.
 - Deploy cartridges: `cartridge_deploy`; CLI scripts/extra flags: `b2c code deploy`.
-  Confirm instance/version and preserve returned `resolution`.
+  Confirm instance/version and preserve returned `resolution`. Use `files` for
+  selected local files, `codeVersion` for an explicit target; omit `files` for
+  whole cartridges. Reload may activate the target.
+- Instance files: `webdav_list` gives directory entries/sizes; `webdav_get` reads
+  exact text by HTTP byte range or downloads to `outputPath`; `webdav_put` uploads
+  `content` or `sourcePath`. Prefer these over a terminal for supported transfers.
+  [File choices and limits](references/files.md).
 - Debug: [MCP debugger](skill://mcp/debugger/SKILL.md). CLI/IDE only when requested.
 - Prefer dedicated tools for their workflows. For other Commerce API tasks,
   use `scapi_search` / `scapi_execute`: products, campaigns, promotions, jobs,
-  and more. Read [the SCAPI skill](skill://mcp/scapi/SKILL.md) first.
+  code versions, site cartridge paths, and more. Read [the SCAPI skill](skill://mcp/scapi/SKILL.md)
+  first; its task map and built-in snippets cover recurring operations.
 - Custom API scaffold: `b2c scaffold generate custom-api`; no MCP equivalent.
 - API/product documentation: `docs_search` / `docs_read`.
+- Warehouse analytics: `cip_discover` for reports/metadata, `cip_query` for report
+  or SQL execution. Read [CIP analytics](skill://mcp/cip/SKILL.md) before execution.
+  Prefer CIP for sales/merchandising/technical trends; SCAPI for current records.
 - Operations or incidents: look for `b2c-ops` runbooks in `skill://index` or
   `skills_read` with `collection: "b2c-ops"` and the task query. Start with the
   matching job-health, checkout-triage, order-failure-triage, or production-triage skill. Read only

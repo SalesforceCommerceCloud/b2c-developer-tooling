@@ -7,6 +7,8 @@ description: Discover standard and live custom SCAPI contracts, compose Admin re
 
 Prefer dedicated tools. Otherwise discover with `scapi_search`, compose with
 `scapi_execute`. Use JavaScript async arrow functions; no TypeScript or imports.
+Warehouse reports/SQL use `cip_discover` / `cip_query`, not code mode;
+see [CIP analytics](skill://mcp/cip/SKILL.md).
 Use code mode for API discovery, request composition, and result processing.
 Use terminal/file tools for local development, builds, and filesystem work.
 Filesystem APIs, subprocesses, worker threads, and native addons are restricted.
@@ -25,6 +27,29 @@ can be huge. Return only what the next decision needs:
 
 Local refs expand; recursive/deep refs retain `$ref`. `op.auth.executable` means
 runtime support, not configured access; `op.security` gives scopes.
+
+### Task map
+
+Use these API IDs to narrow discovery; inspect the operation's inputs before calling.
+Snippet names below have the `builtin/` prefix. Describe only the relevant snippet.
+
+| Task | API / starting point |
+| --- | --- |
+| Review runs, including successes | `operation/jobs/v1`: `searchJobExecutions`; `job-execution-review` snippet |
+| Inspect steps and exact log path | `operation/jobs/v1`: `getJobExecution`; `job-execution-inspect` snippet |
+| Investigate failures with detail reads | `failed-job-triage` snippet; [jobs](references/jobs.md) |
+| Start a job / stop an execution | `operation/jobs/v1`: `createJobExecution` / `deleteJobExecution`; confirm intent and active runs first |
+| Active/rollback versions, activation metadata | `dx/scripts/v1`: `getCodeVersions`; `code-version-inspect` snippet |
+| Activate/create/delete a code version | `dx/scripts/v1`: `updateCodeVersion` / `createCodeVersion` / `deleteCodeVersion` |
+| Site status, catalog, ordered cartridge path | `site/sites/v1`: `getSiteById`; `site-cartridge-inspect` snippet |
+| Change a site's custom cartridge path | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries |
+| Basic product + optional category assignment | `create-product` snippet; [products](references/products.md) |
+| Campaign assignments and promotion details | `campaign-promotions` snippet; [promotions](references/promotions.md) |
+
+File content is WebDAV: `webdav_list` / `webdav_get` / `webdav_put`.
+Deploy local cartridge files with `cartridge_deploy`. Job schedules/definitions
+are not execution history; obtain expected schedules from Business Manager/user.
+Do not fall back to a terminal merely because there is no dedicated job/site tool.
 
 ### Tenant custom properties and APIs
 
@@ -93,8 +118,9 @@ These are conditional setup references, not additional prerequisite reads.
 - Limits: 20 calls, four concurrent, 30 seconds, 24 KB returned. Narrow oversized
   discovery; reduce live pages/projections.
 - SDK safety applies per request, including POST searches. Use only authorized
-  targeted exceptions. Confirmation-required requests stop. Binary transfers
-  need a file-capable client.
+  targeted exceptions. Confirmation-required requests stop. Code mode does not
+  transfer binaries; use WebDAV tools for instance files, an external client for
+  binary SCAPI endpoints.
 - `fetch` and `WebSocket` are disabled. Use `scapi.request()` inside programs;
   direct HTTP belongs in an external client, outside MCP Safety Mode. Do not use
   imports or other Node networking APIs to bypass this boundary.
@@ -116,7 +142,7 @@ execution may still contain HTTP errors or partial failures.
 
 - [Products](references/products.md): create, optionally assign a storefront category, verify both.
 - [Promotions](references/promotions.md): join assignments/details in bounded batches.
-- [Jobs](references/jobs.md): search failures, inspect a page, return continuation.
+- [Jobs](references/jobs.md): review runs, inspect steps/logs, investigate failures.
 
 For explicit save requests, see [saving](references/saving.md).
 

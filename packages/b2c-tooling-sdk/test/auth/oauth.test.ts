@@ -54,6 +54,30 @@ describe('auth/oauth', () => {
   });
 
   describe('OAuthStrategy', () => {
+    it('propagates request cancellation through token acquisition', async () => {
+      const controller = new AbortController();
+      let apiCalls = 0;
+      server.use(
+        http.post(AM_URL, () => {
+          controller.abort(new Error('cancel token acquisition'));
+          return HttpResponse.json({access_token: 'late-token', token_type: 'Bearer', expires_in: 3600});
+        }),
+        http.get(TEST_API_URL, () => {
+          apiCalls++;
+          return HttpResponse.json({ok: true});
+        }),
+      );
+      const strategy = new OAuthStrategy({clientId: 'test-client', clientSecret: 'test-secret'});
+      let error;
+      try {
+        await strategy.fetch(TEST_API_URL, {signal: controller.signal});
+      } catch (caught) {
+        error = caught;
+      }
+      expect(error).to.be.instanceOf(Error);
+      expect(apiCalls).to.equal(0);
+    });
+
     describe('constructor', () => {
       it('should create strategy with default account manager host', () => {
         const strategy = new OAuthStrategy({
