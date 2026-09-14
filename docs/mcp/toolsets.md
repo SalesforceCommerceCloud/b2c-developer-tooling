@@ -221,14 +221,23 @@ to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 
 ## Analytics reports {#cip}
 
-Use CIP/CCAC warehouse data to investigate sales trends, promotion performance,
-searches with no results, payment methods, and API or controller performance.
-Start with a ready-to-use report or ask for a custom SQL analysis.
+**Turn B2C Commerce analytics into answers for your site.**
+
+Compare sales and average order value, find searches with no results, review
+promotions and payment methods, or identify slow and failing APIs. CIP/CCAC
+reports give your assistant a starting point; custom analysis supports questions
+that go beyond them. No separate CLI or SQL client is needed.
+
+<ExamplePrompt>
+
+> Which SCAPI endpoints had the highest 5xx error rates last week? Include request volume so I can distinguish recurring problems from isolated failures.
+
+</ExamplePrompt>
 
 | Tool           | Capability                                                                          |
 | -------------- | ----------------------------------------------------------------------------------- |
 | `cip_discover` | Find reports, inspect their inputs and SQL, or browse available tables and columns. |
-| `cip_query`    | Run a report or custom analytics query with bounded results.                        |
+| `cip_query`    | Run sales, merchandising, and technical reports or custom SQL analyses.             |
 
 Available in CIP, included in the default installation. Requires Account Manager
 client credentials and the **Salesforce Commerce API** role for the selected tenant.
@@ -236,8 +245,9 @@ Production and non-production availability, host selection, and setup are covere
 in the [analytics guide](../guide/analytics-reports-cip-ccac).
 
 Results contain up to 500 rows and may be limited further by response size.
-Queries default to a 60-second timeout, configurable up to 120 seconds. Warehouse
-analytics can lag storefront activity; use logs or live APIs for immediate state.
+Use [CLI exports](../guide/analytics-reports-cip-ccac#quick-start) for larger local
+datasets. Keep queries focused on a chosen period; long-running analyses may time out.
+Analytics can lag storefront activity; use logs or live APIs for immediate state.
 See [analytics access](./security#cip).
 
 ## Configuration inspection

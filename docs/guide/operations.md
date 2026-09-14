@@ -72,6 +72,19 @@ state the gap. Failed-order counts are not the same as checkout conversion.
 [Metrics](./metrics) and [analytics reports](./analytics-reports-cip-ccac) can add
 context where enabled.
 
+## Put trends in context
+
+Use [CIP analytics](./analytics-reports-cip-ccac) through your assistant to compare
+sales, checkout activity, or API performance over a chosen period. Reports can
+help show whether a symptom is isolated or part of a wider trend. Analytics can
+lag live activity, so use current logs and order records for an active incident.
+
+<ExamplePrompt>
+
+> Compare checkout activity and payment-method performance for my site this week versus last week, using the same completed weekdays. Highlight changes worth investigating and any data gaps.
+
+</ExamplePrompt>
+
 ## Escalate with useful evidence
 
 A useful handoff identifies the affected instance/site, business impact and time

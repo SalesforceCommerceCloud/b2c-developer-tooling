@@ -49,10 +49,12 @@ export interface CipReportDefinition {
   parameters: CipReportParamDefinition[];
   buildSql: (params: Record<string, string>) => string;
   /**
-   * Optional list of warehouse tables the report reads, for discoverability in
-   * `--describe` output and the report listing command. Does not affect SQL.
+   * Warehouse dependencies for discovery, including conditionally joined tables.
+   * Does not affect SQL.
    */
   tablesUsed?: string[];
+  /** Concise definitions and interpretation limits for the report's results. */
+  resultNotes?: string[];
 }
 
 /**

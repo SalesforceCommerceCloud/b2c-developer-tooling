@@ -105,6 +105,14 @@ Bound rows, serialized output, transport responses, and request duration. Preser
 cancellation through authentication; attempt bounded connection cleanup after
 failure. Report truncation and incomplete results explicitly. Teach warehouse
 site identifiers, date windows, freshness limits, and aggregation in SQL.
+Report details should include complete warehouse dependencies and concise metric
+definitions where needed, so ordinary execution needs no SQL preview. Return
+shared table/schema context once, with compact column details and useful page
+sizes. Route interpretation questions to a focused reference; do not send a
+successful report workflow through a general SQL tutorial. Keep source examples
+scoped by site/date; LIMIT bounds output, not database work. Public analytics docs
+lead with business/developer questions, example prompts, access, and exports;
+query mechanics and acknowledgment belong in agent skills.
 
 ## Conditional result guidance
 

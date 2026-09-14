@@ -45,6 +45,8 @@ describe('CIP', () => {
       const detail = json(await tools[0].handler({action: 'report', name: 'sales-analytics'}));
       expect(detail.parameters.map((p: {name: string}) => p.name)).to.include('siteId');
       expect(detail).not.to.have.property('buildSql');
+      expect(detail.tablesUsed).to.have.members(['ccdw_aggr_sales_summary', 'ccdw_dim_site']);
+      expect(detail.resultNotes).to.be.an('array').and.not.empty;
       const preview = json(
         await tools[0].handler({
           action: 'report',
@@ -124,6 +126,33 @@ describe('CIP', () => {
       expect(json(response).tables[0].tableName).to.equal('second');
       expect(query.firstCall.args[1].maxRows).to.equal(2);
       expect(query.firstCall.args[0]).to.include("LIKE 'ccdw_aggr_%'");
+      expect(json(response).schema).to.equal('warehouse');
+      expect(json(response).tables[0]).to.have.all.keys('tableName', 'tableType');
+    });
+
+    it('returns a typical table in one compact page with explicit shared context', async () => {
+      query.resolves({
+        columns: [],
+        rowCount: 21,
+        truncated: false,
+        rows: Array.from({length: 21}, (_, i) => ({
+          COLUMN_NAME: `column_${i}`,
+          TYPE_NAME: 'BIGINT',
+          IS_NULLABLE: 'NO',
+          ORDINAL_POSITION: i + 1,
+          TABLE_NAME: 'ccdw_aggr_sales_summary',
+          TABLE_SCHEM: 'warehouse',
+        })),
+      });
+      const response = await tools[0].handler({action: 'table', name: 'ccdw_aggr_sales_summary'});
+      const data = json(response);
+      expect(response.isError).not.to.equal(true);
+      expect(data).to.include({schema: 'warehouse', table: 'ccdw_aggr_sales_summary', returned: 21, nextOffset: null});
+      expect(data.columns[0]).to.deep.equal({columnName: 'column_0', dataType: 'BIGINT', isNullable: false});
+      expect(query.firstCall.args[1].maxRows).to.equal(50);
+      query.resetHistory();
+      await tools[0].handler({action: 'table', name: 'ccdw_aggr_sales_summary', limit: 10, offset: 10});
+      expect(query.firstCall.args[1].maxRows).to.equal(20);
     });
 
     it('bounds serialized output without silently claiming complete results', async () => {

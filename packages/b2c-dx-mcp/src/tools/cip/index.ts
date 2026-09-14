@@ -79,7 +79,13 @@ export function createCipTools(
     params,
     schema: z.string().min(1).max(200).default('warehouse'),
     offset: z.number().int().min(0).max(1000).default(0),
-    limit: z.number().int().min(1).max(100).default(20),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe('Maximum results; default 50 columns, 20 reports/tables.'),
   };
   const execution = {
     ...connection,
@@ -111,6 +117,7 @@ export function createCipTools(
         try {
           const input = z.object(discovery).strict().parse(args) as ProjectContextInput &
             z.infer<z.ZodObject<typeof discovery>>;
+          const limit = input.limit ?? (input.action === 'table' ? 50 : 20);
           if ((input.action === 'report' || input.action === 'table') && !input.name)
             throw new Error('name is required for report/table details.');
           if (input.params && input.action !== 'report') throw new Error('params applies only to report SQL previews.');
@@ -125,7 +132,7 @@ export function createCipTools(
             const reports = listCipReports().filter((r) =>
               terms.every((term) => `${r.name} ${r.category} ${r.description}`.toLowerCase().includes(term)),
             );
-            const selected = reports.slice(input.offset, input.offset + input.limit);
+            const selected = reports.slice(input.offset, input.offset + limit);
             return result({
               total: reports.length,
               reports: selected.map(({name, description, category}) => ({name, description, category})),
@@ -142,16 +149,21 @@ export function createCipTools(
           );
           const {client} = resolved;
           target = resolved.target;
-          const options = {schema: input.schema, maxRows: input.offset + input.limit};
+          const options = {schema: input.schema, maxRows: input.offset + limit};
           const data =
             input.action === 'tables'
               ? await listCipTables(client, {...options, tableType: 'TABLE', tableNamePattern: input.query})
               : await describeCipTable(client, input.name!, options);
-          const rows = 'tables' in data ? data.tables : data.columns;
+          const rows =
+            'tables' in data
+              ? data.tables.map(({tableName, tableType}) => ({tableName, tableType}))
+              : data.columns.map(({columnName, dataType, isNullable}) => ({columnName, dataType, isNullable}));
           const selected = rows.slice(input.offset);
           const response = result(
             {
               target,
+              schema: input.schema,
+              ...(input.action === 'table' ? {table: input.name} : {}),
               [input.action === 'tables' ? 'tables' : 'columns']: selected,
               returned: selected.length,
               truncated: data.truncated ?? false,

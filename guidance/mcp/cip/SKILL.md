@@ -6,20 +6,22 @@ description: Discover and run CIP reports or analytics SQL for sales, merchandis
 # CIP analytics
 
 Use CIP for warehouse analytics: sales, products, promotions, search, payments,
-traffic, inventory, and API/controller trends. Use SCAPI for current records and
-operations; logs/metrics for immediate diagnosis. CIP is not SCAPI.
+traffic, inventory, and API/controller trends. Use SCAPI for current records;
+logs/metrics for immediate diagnosis.
 Read this skill once through resources or `skills_read` (`mcp/cip`), then pass
 `skillRead: true` to `cip_query`. Discovery needs no acknowledgment.
 
 ## Choose and discover
 
 1. `cip_discover` defaults to report search; use `query` for task terms, then
-   `action: "report", name` for parameters and tables used. The catalog is offline.
+   `action: "report", name` for parameters, tables used, and available result notes. The catalog is offline.
 2. Prefer a curated report when its dimensions/filters answer the question.
-   Supply `params` on report discovery to preview its SQL without executing.
+   Preview SQL with `params` only when adapting the report or checking a definition
+   absent from its notes; a standard report does not need a preview before running.
 3. For custom analysis, `action: "tables", query: "ccdw_aggr_%"` lists live metadata;
    `action: "table", name` returns columns. Narrow names/schema and reuse findings.
-   These calls require CIP access. Metadata pages return `nextOffset`.
+   These calls require CIP access. Columns default to 50 per page (lists: 20).
+   Follow `nextOffset` only for needed columns, not to exhaust unrelated metadata.
 4. `cip_query` accepts either `report` plus string-valued `params`, or `sql`.
    Do not invent parameters or use a narrower report that omits requested evidence.
 
@@ -68,9 +70,17 @@ Official [JDBC setup and limits](https://developer.salesforce.com/docs/commerce/
 - Warehouse freshness, reporting timezone, currency, and status definitions affect
   comparisons. Query time is not data freshness. Explain unknown freshness rather
   than treating warehouse values as live storefront truth.
-- SDK middleware and Safety Mode apply. CIP uses POST even for metadata and SELECT;
+- For period AOV, divide summed revenue by summed orders; never average daily AOVs.
+  Zero orders means undefined AOV; missing dates mean no returned rows, not proven
+  zero sales. Fix complete calendar-week boundaries in the chosen timezone.
+- Safety Mode applies. CIP uses POST even for metadata and SELECT;
   READ_ONLY can block these calls. Explain the specific restriction and use only
   authorized, narrowly scoped exceptions. Skill acknowledgment is not authorization.
 
-Further SQL/table patterns: [CIP skill references](skill://b2c-cli/b2c-cip/references/STARTER_QUERIES.md).
+Read further only for an unresolved question:
+- Sales gaps, period comparisons, or latest activity:
+  [sales interpretation](skill://b2c-cli/b2c-cip/references/SALES_ANALYSIS.md).
+- Adapting custom SQL beyond a report: read the matching section in
+  [starter queries](skill://b2c-cli/b2c-cip/references/STARTER_QUERIES.md), not the whole file.
+Stop when the report and evidence answer the task; no follow-up skill read is required.
 For incidents, correlate trends with logs and the relevant `b2c-ops` runbook.
