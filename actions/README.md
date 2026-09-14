@@ -160,9 +160,15 @@ When `json: true` (default), the `result` output contains the parsed JSON from t
 - **CLI version:** Action v2 defaults to the latest CLI 2.x release; Action v1 defaults to the latest CLI 1.x release
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling@v2
+- name: Pin the CLI while following compatible Action v2 updates
+  uses: SalesforceCommerceCloud/b2c-developer-tooling@v2
   with:
     version: '2.0.0' # Pin an exact CLI version
+
+- name: Pin both the Action suite and CLI
+  uses: SalesforceCommerceCloud/b2c-developer-tooling@v2.0.0
+  with:
+    version: '2.0.0'
 ```
 
 Set `version: latest` explicitly only when the workflow should cross future CLI major versions automatically.
@@ -171,6 +177,6 @@ Set `version: latest` explicitly only when the workflow should cross future CLI 
 
 Change every B2C Action reference in the workflow from `@v1` to `@v2`; do not mix majors in one job because high-level actions reuse an already-installed CLI. Then update consumers of structured job output from snake_case to camelCase. For example, use `executionStatus` and `exitStatus.code` instead of `execution_status` and `exit_status.code`. Review other commands whose JSON output the workflow parses before upgrading.
 
-To remain on the maintained CLI 1.x line, keep `@v1`. You can also set `version: '1'` explicitly or use an exact CLI version such as `1.23.2`.
+> **Staying with Action v1:** Keep `@v1` to remain on the maintained CLI 1.x line. For the operations migrated in CLI 2—`job`, `code`, `bm users`, `bm roles`, `sites`, and catalog discovery—this preserves the CLI 1.x OCAPI implementations and legacy result shapes. CLI 1.x is not globally OCAPI-only: commands designed specifically for SCAPI continue to use SCAPI. You can also set `version: '1'` explicitly or use an exact CLI version such as `1.23.2`.
 
 > **Reproducibility:** Each released high-level or root action internally references its matching immutable `actions/setup@v2.x.y` and `actions/run@v2.x.y` release. Pin the outer action to an exact release tag for a fixed Action suite. Use direct `actions/setup` and `actions/run` references pinned to full commit SHAs when organizational policy requires SHA pins for every action.

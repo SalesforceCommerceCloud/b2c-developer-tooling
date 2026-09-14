@@ -12,6 +12,10 @@ The official actions handle CLI installation, credential configuration, and Node
 
 Action v2 installs CLI 2.x by default. Action v1 remains on CLI 1.x, so a workflow only adopts breaking CLI changes when its `uses:` references move from `@v1` to `@v2`.
 
+::: tip Staying with Action v1
+Keep `@v1` when a workflow must retain CLI 1.x behavior. For the operations migrated in CLI 2—`job`, `code`, `bm users`, `bm roles`, `sites`, and catalog discovery—Action v1 continues to use the CLI 1.x OCAPI implementations and legacy result shapes. CLI 1.x is not globally OCAPI-only: commands designed specifically for SCAPI continue to use SCAPI.
+:::
+
 The actions are available from the `SalesforceCommerceCloud/b2c-developer-tooling` repository and support:
 
 - **Code deployment** — deploy and activate cartridges
@@ -530,9 +534,15 @@ Actions exit with the CLI's exit code, so a failed job will fail the step. Use `
 Use the floating Action major to receive backward-compatible Action updates. Action v2 selects the latest CLI 2.x release by default; Action v1 selects the latest CLI 1.x release.
 
 ```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling@v2
+- name: Pin the CLI while following compatible Action v2 updates
+  uses: SalesforceCommerceCloud/b2c-developer-tooling@v2
   with:
     version: '2.0.0' # Pin an exact CLI version
+
+- name: Pin both the Action suite and CLI
+  uses: SalesforceCommerceCloud/b2c-developer-tooling@v2.0.0
+  with:
+    version: '2.0.0'
 ```
 
 Use an immutable Action tag such as `@v2.0.0`, or a full commit SHA, when the workflow must not receive automatic Action updates. Set `version: latest` explicitly only when it should cross future CLI major versions automatically.
@@ -541,7 +551,7 @@ Use an immutable Action tag such as `@v2.0.0`, or a full commit SHA, when the wo
 
 Change every B2C Action reference in the workflow from `@v1` to `@v2`; do not mix majors in one job because high-level actions reuse an already-installed CLI. CLI 2 normalizes structured job results to camelCase, so update parsed fields such as `execution_status` and `exit_status.code` to `executionStatus` and `exitStatus.code`. Review any other command JSON consumed by the workflow before upgrading.
 
-Keep `@v1` to remain on the maintained CLI 1.x line. An explicit `version: '1'` follows the newest published CLI 1.x maintenance release; an exact value such as `1.23.2` freezes the CLI as well.
+Keep `@v1` to remain on the maintained CLI 1.x line. For operations migrated to SCAPI-first in CLI 2, this also preserves their CLI 1.x OCAPI behavior and legacy result shapes. An explicit `version: '1'` follows the newest published CLI 1.x maintenance release; an exact value such as `1.23.2` freezes the CLI as well.
 
 > **Reproducibility:** Each released high-level or root action internally references its matching immutable `actions/setup@v2.x.y` and `actions/run@v2.x.y` release. Pin the outer action to an exact release tag for a fixed Action suite. Use direct `actions/setup` and `actions/run` references pinned to full commit SHAs when organizational policy requires SHA pins for every action.
 
