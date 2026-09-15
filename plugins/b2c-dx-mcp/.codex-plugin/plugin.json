@@ -1,6 +1,6 @@
 {
   "name": "b2c-dx-mcp",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Build, debug, and deploy Salesforce B2C Commerce with your AI assistant. Includes documentation, workflow skills, and Salesforce Commerce API tools.",
   "author": {
     "name": "Salesforce",
