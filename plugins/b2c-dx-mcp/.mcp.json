@@ -2,7 +2,10 @@
   "mcpServers": {
     "b2c-dx-mcp": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp@2.1.2"]
+      "args": [
+        "-y",
+        "@salesforce/b2c-dx-mcp@3.0.0"
+      ]
     }
   }
 }

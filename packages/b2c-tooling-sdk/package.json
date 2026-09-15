@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
-  "version": "1.24.2",
+  "version": "2.0.0",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -265,7 +265,9 @@
     "generate:help-corpus": "tsx scripts/generate-help-corpus.ts",
     "enrich:docs": "tsx scripts/enrich-docs.ts"
   },
-  "bundledDependencies": ["@salesforce/b2c-api-schemas"],
+  "bundledDependencies": [
+    "@salesforce/b2c-api-schemas"
+  ],
   "devDependencies": {
     "@eslint/compat": "catalog:",
     "@oclif/core": "catalog:",
