@@ -6,6 +6,7 @@ description: Practical guides for developing, deploying, and administering Sales
 
 Practical guides for building, deploying, and operating B2C Commerce.
 New to the toolkit? Start with the [Introduction](./index) for installation and setup.
+See [Project Setup](./project-setup) for optional assistant instructions and team conventions.
 
 ## Development
 

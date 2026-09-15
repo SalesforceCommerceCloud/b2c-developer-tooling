@@ -425,7 +425,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
               'resources/read': {ttlMs: 300_000, cacheScope: 'private'},
             },
             instructions:
-              'Prefer dedicated tools. Otherwise use scapi_search/scapi_execute for Commerce APIs; first read skill://mcp/scapi/SKILL.md. ' +
+              'Discover tool schemas before calling. Prefer dedicated tools; otherwise scapi_search/scapi_execute for Commerce APIs. ' +
+              'Read skill:// URIs as MCP resources, or skill files with skills_read({uri: "<URI>"}) when enabled; not native skill commands. ' +
+              'SCAPI: first read skill://mcp/scapi/SKILL.md. ' +
               'Analytics: cip_discover/cip_query; skill://mcp/cip/SKILL.md. ' +
               'Skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
               'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index (look for b2c-ops runbooks for operations and incidents).',

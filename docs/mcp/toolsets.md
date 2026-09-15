@@ -193,7 +193,7 @@ reviews, job history and step inspection, code-version checks, and site cartridg
 path checks. Products created with the built-in workflow
 start offline unless you request otherwise.
 
-![Screenshot placeholder: Claude Code creating a product and verifying its storefront category assignment.](/placeholders/mcp-claude-product.svg)
+[![ChatGPT creating an offline test product after checking its ID is unused, then verifying the saved product and its storefront catalog category assignment.](/screenshots/mcp-product-creation.png)](/screenshots/mcp-product-creation.png)
 
 <ExamplePrompt>
 
