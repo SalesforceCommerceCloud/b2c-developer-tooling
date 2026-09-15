@@ -39,6 +39,7 @@ import {
   dataStoreTest,
   secretsManagerTest,
   proxyTransformationTest,
+  tracerTest,
 } from './reference-routes.js';
 
 describe('reference-routes', () => {
@@ -844,6 +845,40 @@ describe('reference-routes', () => {
         errorCode: 'UnknownError',
         secretId: 'test-secret',
       });
+    });
+  });
+
+  describe('tracerTest', () => {
+    let infoStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      infoStub = sinon.stub(console, 'info');
+    });
+
+    it('emits OpenTelemetry spans and returns their identifiers', async () => {
+      app.get('/tracer-test', tracerTest);
+      const response = await request(app).get('/tracer-test').expect(200);
+
+      expect(response.body).to.have.property('message', 'Emitted OpenTelemetry spans via MrtConsoleSpanExporter');
+      expect(response.body.traceId).to.match(/^[0-9a-f]{32}$/);
+      expect(response.body.parentSpanId).to.match(/^[0-9a-f]{16}$/);
+      expect(response.body.childSpanId).to.match(/^[0-9a-f]{16}$/);
+      expect(response.body.childSpan2Id).to.match(/^[0-9a-f]{16}$/);
+
+      // Outbound W3C traceparent header is built from the span we created
+      // (server -> client correlation), matching storefront-next.
+      expect(response.headers.traceparent).to.equal(`00-${response.body.traceId}-${response.body.parentSpanId}-01`);
+
+      // Every span is printed as a JSON line via the MrtConsoleSpanExporter.
+      const emitted = infoStub.getCalls().map((call) => JSON.parse(call.args[0] as string));
+      expect(emitted).to.have.lengthOf(3);
+      expect(emitted.map((s) => s.name)).to.have.members(['tracer-test', 'tracer-test.work', 'tracer-test.loaded']);
+      // Both child spans share the parent's trace and are parented to it.
+      for (const childName of ['tracer-test.work', 'tracer-test.loaded']) {
+        const child = emitted.find((s) => s.name === childName);
+        expect(child.parentId).to.equal(response.body.parentSpanId);
+        expect(child.traceId).to.equal(response.body.traceId);
+      }
     });
   });
 

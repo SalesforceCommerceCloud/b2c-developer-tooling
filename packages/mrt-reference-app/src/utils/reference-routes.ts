@@ -17,6 +17,8 @@ import {
   DataStoreServiceError,
   DataStoreUnavailableError,
 } from '@salesforce/mrt-utilities';
+import {context, trace, SpanKind, SpanStatusCode} from '@opentelemetry/api';
+import {getTracer, getTracerProvider} from '../otel/setup.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -423,6 +425,87 @@ export const traceLogging = (req: Request, res: Response) => {
   };
   console.log(JSON.stringify(trace));
   res.json(trace);
+};
+
+/**
+ * Emits a real OpenTelemetry trace via the {@link MrtConsoleSpanExporter},
+ * which prints each span as a single JSON line to stdout in the format MRT's
+ * log infrastructure parses (the same format used by the storefront-next dev
+ * tooling). A parent server span wraps a child span carrying placeholder
+ * attributes and an event, so the emitted output exercises the full span
+ * shape (attributes, events, status, parent/child linkage).
+ */
+export const tracerTest = async (req: Request, res: Response) => {
+  const tracer = getTracer();
+
+  const parentSpan = tracer.startSpan('tracer-test', {
+    kind: SpanKind.SERVER,
+    attributes: {
+      'http.request.method': req.method,
+      'url.path': req.path,
+      'mrt.reference.route': 'tracer-test',
+    },
+  });
+
+  // Inject the W3C traceparent response header (server -> client) so the caller
+  // can correlate this request with the emitted trace. Mirrors storefront-next:
+  // it is built from the span we just created, not from any inbound traceparent
+  // header (which is intentionally not read — every request is a new root trace).
+  try {
+    const spanContext = parentSpan.spanContext();
+    const traceFlags = spanContext.traceFlags.toString(16).padStart(2, '0');
+    res.setHeader('traceparent', `00-${spanContext.traceId}-${spanContext.spanId}-${traceFlags}`);
+  } catch {
+    // traceparent header is non-essential — skip on failure.
+  }
+
+  // Thread the parent context explicitly so the child span is correctly
+  // parented without needing a globally registered context manager.
+  const parentContext = trace.setSpan(context.active(), parentSpan);
+  const childSpan = tracer.startSpan(
+    'tracer-test.work',
+    {
+      attributes: {
+        'placeholder.long': 'x'.repeat(1100),
+        'placeholder.xxs': "<body onload=alert('test1')>",
+        'placeholder.sql': 'DROP TABLE traces;',
+      },
+    },
+    parentContext,
+  );
+  childSpan.addEvent('placeholder-event', {detail: 'did some placeholder work'});
+  childSpan.setStatus({code: SpanStatusCode.OK});
+  childSpan.end();
+
+  const loaded: Record<string, string> = {};
+  for (let i = 1; i < 52; i++) {
+    loaded[i.toString()] = `${i}`.repeat(i);
+  }
+
+  const childSpan2 = tracer.startSpan(
+    'tracer-test.loaded',
+    {
+      attributes: loaded,
+    },
+    parentContext,
+  );
+  childSpan2.setStatus({code: SpanStatusCode.OK});
+  childSpan2.end();
+
+  parentSpan.setStatus({code: SpanStatusCode.OK});
+  parentSpan.end();
+
+  // SimpleSpanProcessor exports on span end, but flush explicitly so the spans
+  // are guaranteed on stdout before the response is sent.
+  await getTracerProvider().forceFlush();
+
+  res.json({
+    message: 'Emitted OpenTelemetry spans via MrtConsoleSpanExporter',
+    traceId: parentSpan.spanContext().traceId,
+    parentSpanId: parentSpan.spanContext().spanId,
+    childSpanId: childSpan.spanContext().spanId,
+    childSpan2Id: childSpan2.spanContext().spanId,
+  });
 };
 
 export const dataStoreTest = async (req: Request, res: Response) => {

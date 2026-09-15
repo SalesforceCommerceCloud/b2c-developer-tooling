@@ -39,6 +39,7 @@ import {
   delayedLogging,
   largeLogging,
   traceLogging,
+  tracerTest,
   dataStoreTest,
   secretsManagerTest,
   proxyTransformationTest,
@@ -142,6 +143,7 @@ export const createApp = (): AppWithMetrics => {
   app.get('/mass-logging', massLogging);
   app.get('/large-logging', largeLogging);
   app.get('/trace-logging', traceLogging);
+  app.get('/tracer-test', tracerTest);
   app.get('/data-store/:key', dataStoreTest);
   app.get('/secrets-manager', secretsManagerTest);
   app.get('/proxy-transformation', proxyTransformationTest);
