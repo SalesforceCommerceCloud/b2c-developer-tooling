@@ -74,6 +74,7 @@ const toolkitSidebar = [
       {text: 'Introduction', link: '/guide/'},
       {text: 'Authentication', link: '/guide/authentication'},
       {text: 'Configuration', link: '/guide/configuration'},
+      {text: 'Project Setup', link: '/guide/project-setup'},
       {text: 'Safety Mode', link: '/guide/safety'},
     ],
   },

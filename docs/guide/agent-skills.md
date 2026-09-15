@@ -23,14 +23,14 @@ The Figma plugins are optional additions and require the Figma MCP server.
 
 ## Skill Collections {#available-plugins}
 
-| Collection                                                                                                                                              | What it covers                                                                                             |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [`b2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c/skills)                                                   | B2C Commerce development: controllers, ISML, logging, services, jobs, Page Designer, and Custom APIs.      |
-| [`b2c-cli`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-cli/skills)                                           | CLI workflows for deployment, jobs, site archives, WebDAV, and sandboxes.                                  |
-| [`b2c-ops`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-ops/skills)                                           | Administrator and operator runbooks: job health, checkout and failed orders, incident triage, and escalation.       |
-| [`storefront-next`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/storefront-next/skills)                           | Storefront development: routing, data, components, Page Designer, authentication, testing, and deployment. |
-| [`storefront-next-figma`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/storefront-next-figma/skills)               | Customize Storefront Next Figma design kits and apply your brand. Requires the Figma MCP server.           |
-| [`figma-to-sfnext-pagedesigner`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/figma-to-sfnext-pagedesigner/skills) | Turn Figma frames into Storefront Next Page Designer components. Requires the Figma MCP server.            |
+| Collection                                                                                                                                              | What it covers                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [`b2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c/skills)                                                   | B2C Commerce development: controllers, ISML, logging, services, jobs, Page Designer, and Custom APIs.         |
+| [`b2c-cli`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-cli/skills)                                           | CLI workflows for deployment, jobs, site archives, WebDAV, and sandboxes.                                     |
+| [`b2c-ops`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-ops/skills)                                           | Administrator and operator runbooks: job health, checkout and failed orders, incident triage, and escalation. |
+| [`storefront-next`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/storefront-next/skills)                           | Storefront development: routing, data, components, Page Designer, authentication, testing, and deployment.    |
+| [`storefront-next-figma`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/storefront-next-figma/skills)               | Customize Storefront Next Figma design kits and apply your brand. Requires the Figma MCP server.              |
+| [`figma-to-sfnext-pagedesigner`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/figma-to-sfnext-pagedesigner/skills) | Turn Figma frames into Storefront Next Page Designer components. Requires the Figma MCP server.               |
 
 ## Install skills {#quick-start}
 
@@ -264,6 +264,9 @@ individual skills. See [Setup Commands](/cli/setup) for all options.
 </details>
 
 ## Skills in action
+
+Optional [project instructions](./project-setup#give-your-assistant-project-context)
+can help your assistant apply B2C skills to your team's workflows, with or without the MCP.
 
 ### Investigate an operational incident
 

@@ -56,6 +56,10 @@ enrichment. Sessions retain their original target. Skills never resolve a projec
 All tools are enabled by default; explicit selection customizes availability.
 Do not gate tool or skill availability behind release-maturity launch flags.
 Client tool discovery may be deferred: discover before recommending reconfiguration.
+Startup instructions must identify skill URIs as MCP resources and show the
+`skills_read({uri: "<URI>"})` fallback when enabled. Do not imply URI paths or MCP
+server names map to native client skill commands. Keep read parameter names
+explicit in tool descriptions; discover schemas before invoking deferred tools.
 
 MCP skill resources and their index/template access remain available independently
 of `skills_read`. That tool's selection enables the broader native collections.

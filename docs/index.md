@@ -58,23 +58,23 @@ Connect your assistant to B2C Commerce documentation, live tools, nearly 600 API
 
 <div>
 
-### Build with B2C Commerce skills
+### Find the cause of a storefront bug
 
-Give your assistant the development patterns for your next storefront change.
+Let your assistant inspect live cartridge execution and connect what it finds to your source code.
 
 <ExamplePrompt>
 
-> Create a Page Designer component for my Storefront Next project with an editable heading, image, and link.
+> This controller returns the wrong result in my sandbox. Inspect the variables while I reproduce the request, explain the cause, and recommend a fix. Don't change the code yet.
 
 </ExamplePrompt>
 
-[See Agent Skills in action](./guide/agent-skills#skills-in-action) &middot; [Storefront Next guide](./guide/storefront-next)
+[Debug with your assistant](./guide/script-debugger#debug-with-your-assistant) &middot; [Explore the MCP](./mcp/)
 
 </div>
 
 <figure>
 
-![Screenshot placeholder: a Page Designer component built with Storefront Next skills.](/placeholders/skills-page-designer.svg)
+[![Claude Code using the B2C MCP debugger to investigate why a loyalty controller returns before calling its service, with breakpoints in loyalty.js.](/terminal/mcp-claude-debugging.png)](/terminal/mcp-claude-debugging.png)
 
 </figure>
 
@@ -82,8 +82,8 @@ Give your assistant the development patterns for your next storefront change.
 
 <DocCards>
 
-[Debug cartridge code](./guide/script-debugger#debug-with-your-assistant)
-Let your assistant inspect live variables and trace a failing request, or use your editor's debugger.
+[Search Salesforce documentation](./mcp/toolsets#documentation)
+Get answers grounded in B2C Commerce documentation, with examples and links to the sources.
 
 [Deploy code and metadata](./guide/import-sets)
 Apply project configuration and metadata changes with import sets.
@@ -117,7 +117,7 @@ can help.
 
 <figure>
 
-![Screenshot placeholder: an assistant investigating failed orders, identifying affected products and payment errors, and preparing an evidence-based handoff.](/placeholders/mcp-order-investigation.svg)
+[![ChatGPT investigating order failures, identifying affected products and payment rejections, and correlating them with a tax-class import failure.](/screenshots/mcp-order-investigation.png)](/screenshots/mcp-order-investigation.png)
 
 </figure>
 

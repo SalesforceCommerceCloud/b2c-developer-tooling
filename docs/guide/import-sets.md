@@ -102,7 +102,9 @@ Preview the complete plan without importing or changing import history:
 b2c job import-set --dry-run
 ```
 
-![Screenshot placeholder: B2C CLI import preview showing pending and completed imports in order.](/placeholders/cli-import-preview.svg)
+[![B2C CLI import-set dry run listing three sample loyalty migrations in order, with three pending and none already applied.](/terminal/cli-import-preview.png)](/terminal/cli-import-preview.png)
+
+Example using sample migration archives; the instance hostname is anonymized.
 
 Apply pending archives:
 

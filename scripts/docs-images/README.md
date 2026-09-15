@@ -78,3 +78,19 @@ Keep prose, installation commands, and reference tables readable without images.
 
 These are authored B2C documentation assets. Downloaded reference images and
 design research stay outside this directory and remain excluded from Git.
+
+## Additional captures
+
+Captured September 15, 2026, using this checkout's CLI and the shared Freeze configuration:
+
+- `docs/public/terminal/cli-sandbox-list.png`: live `sandbox list --realm ... --user-auth
+--columns realm,instance,state,profile` output. Seven rows are shown with an
+  explicit ellipsis; realm and instance identifiers are anonymized. States and
+  resource profiles are unchanged. Authentication logs are omitted.
+- `docs/public/terminal/cli-import-preview.png`: live `job import-set --dry-run`
+  against three local sample migration archives. All three were pending; no
+  imports or history changes were performed. The hostname is anonymized and
+  repetitive `INFO:` prefixes are omitted.
+
+Both use cyan command prompts and restrained status colors. Raw captures and
+sample archives remain under the ignored `design-references/captures/` directory.
