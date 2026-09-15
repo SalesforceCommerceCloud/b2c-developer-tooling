@@ -1,6 +1,6 @@
 {
   "name": "b2c-dx-mcp",
-  "version": "2.1.2",
+  "version": "3.0.0",
   "description": "Build, debug, and deploy Salesforce B2C Commerce with your AI assistant. Includes documentation, workflow skills, and Salesforce Commerce API tools.",
   "author": {
     "name": "Salesforce",
@@ -9,14 +9,23 @@
   "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
   "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
   "license": "Apache-2.0",
-  "keywords": ["salesforce", "b2c-commerce", "commerce-cloud", "mcp", "developer-tools"],
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "mcp",
+    "developer-tools"
+  ],
   "interface": {
     "displayName": "B2C DX MCP",
     "shortDescription": "Build, debug, deploy, and manage B2C Commerce.",
     "longDescription": "B2C Commerce tools and expertise for your AI assistant: build storefronts, deploy cartridges, debug scripts, inspect logs, investigate failed jobs, and work with products and promotions through SCAPI code mode.",
     "developerName": "Salesforce",
     "category": "Developer Tools",
-    "capabilities": ["Read", "Write"],
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
     "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
     "brandColor": "#0D9DDA",
     "defaultPrompt": [
