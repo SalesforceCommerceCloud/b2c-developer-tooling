@@ -93,6 +93,9 @@ explicit width disables that scaling, so use padding to keep shorter captures
 at a consistent width. Keep raw captures and render settings in the locally
 ignored `design-references/` directory.
 
+Keep capture scripts and instructions reusable across machines. Do not commit
+capture-session diaries, personal paths, or machine-specific activity notes.
+
 Publish reviewed PNGs under `docs/public/terminal/`. Link the image to its full
 size using `[![descriptive alt text](/terminal/name.png)](/terminal/name.png)`;
 describe the command's useful result and significant statuses in the alt text,

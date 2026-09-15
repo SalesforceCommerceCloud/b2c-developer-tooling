@@ -12,7 +12,7 @@ node scripts/docs-images/render.mjs
 ```
 
 Set `FREEZE_BIN` if Freeze is outside your PATH. Outputs are PNGs under
-`docs/public/`. The Markdoc comparison copies those same assets.
+`docs/public/`.
 
 ## Refresh a capture
 
@@ -52,7 +52,7 @@ actual layout. Review the saved ANSI snapshot before publishing the image.
 This captures terminal text and colors, not graphical terminal images or desktop
 application chrome. Use native screenshots for Codex desktop and ChatGPT Work.
 Keep raw captures local; copy only reviewed images into `docs/public/` and add
-their captions, alt text, client version, and capture date to the asset notes.
+descriptive alt text and a link to the full-size image on the documentation page.
 
 ### CLI command output
 
@@ -65,8 +65,8 @@ b2c scapi custom status -c apiName,httpMethod,status --log-level silent
 
 Review the output before replacing the corresponding `.txt` file here. Keep
 credentials, hostnames, personal paths, and customer data out of public assets.
-The saved tables currently come from a test sandbox. Logging is suppressed in
-captures; the displayed commands omit that presentation-only flag.
+Suppress incidental logging in captures. Label sample data and mark excerpts
+with an ellipsis.
 
 The homepage combines both commands and marks the shortened Custom API output
 with an ellipsis. Individual images show full captured output. Commands remain
@@ -78,19 +78,3 @@ Keep prose, installation commands, and reference tables readable without images.
 
 These are authored B2C documentation assets. Downloaded reference images and
 design research stay outside this directory and remain excluded from Git.
-
-## Additional captures
-
-Captured September 15, 2026, using this checkout's CLI and the shared Freeze configuration:
-
-- `docs/public/terminal/cli-sandbox-list.png`: live `sandbox list --realm ... --user-auth
---columns realm,instance,state,profile` output. Seven rows are shown with an
-  explicit ellipsis; realm and instance identifiers are anonymized. States and
-  resource profiles are unchanged. Authentication logs are omitted.
-- `docs/public/terminal/cli-import-preview.png`: live `job import-set --dry-run`
-  against three local sample migration archives. All three were pending; no
-  imports or history changes were performed. The hostname is anonymized and
-  repetitive `INFO:` prefixes are omitted.
-
-Both use cyan command prompts and restrained status colors. Raw captures and
-sample archives remain under the ignored `design-references/captures/` directory.
