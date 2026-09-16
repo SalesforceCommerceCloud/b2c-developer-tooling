@@ -210,7 +210,7 @@ You do not need both file formats. Environment values override the selected `dw.
 
 ### Storefront Next Compatibility
 
-When you run the toolkit from a Storefront Next project, its existing environment variables can supply the equivalent B2C Commerce settings. Toolkit-specific variables remain the default names and take priority when both forms are set.
+When you run the toolkit from a [Storefront Next](./storefront-next) project, its existing environment variables can supply the equivalent B2C Commerce settings. Toolkit-specific variables remain the default names and take priority when both forms are set.
 
 | Storefront Next variable                     | `dw.json` field      | Default toolkit environment variable |
 | -------------------------------------------- | -------------------- | ------------------------------------ |
