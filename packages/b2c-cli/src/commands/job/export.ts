@@ -262,6 +262,13 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
       return result;
     } catch (error) {
+      const storefrontNote =
+        dataUnits.storefronts && Object.keys(dataUnits.storefronts).length > 0
+          ? `\n${t(
+              'commands.job.export.storefrontVersionNote',
+              'Note: The storefronts export data unit requires B2C Commerce 26.10 or later. Check the target instance version if this data unit is rejected.',
+            )}`
+          : '';
       // Run afterOperation hooks with failure
       await this.runAfterHooks(context, {
         success: false,
@@ -277,14 +284,14 @@ export default class JobExport extends JobCommand<typeof JobExport> {
         this.error(
           t('commands.job.export.failed', 'Export failed: {{status}}', {
             status: error.execution.exit_status?.code || 'ERROR',
-          }),
+          }) + storefrontNote,
         );
       }
       if (error instanceof Error) {
         this.error(
           t('commands.job.export.error', 'Export error: {{message}}', {
             message: error.message,
-          }),
+          }) + storefrontNote,
         );
       }
       throw error;

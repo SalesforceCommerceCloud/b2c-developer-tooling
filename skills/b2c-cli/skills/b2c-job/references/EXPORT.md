@@ -117,3 +117,5 @@ Do not require a temporary directory and copy step for export-based migrations. 
 `access_roles`, `all`, `csc_settings`, `csrf_whitelists`, `custom_preference_groups`, `custom_quota_settings`, `custom_types`, `event_routing`, `geolocations`, `global_custom_objects`, `job_schedules`, `job_schedules_deprecated`, `locales`, `meta_data`, `oauth_providers`, `ocapi_settings`, `page_meta_tags`, `preferences`, `price_adjustment_limits`, `services`, `sorting_rules`, `static_resources`, `system_type_definitions`, `users`, `webdav_client_permissions`
 
 For full control over the export configuration (including `assignments`, `catalog_static_resources`, `library_static_resources`, and `customer_lists`), use `--data-units` with a JSON string matching the `ExportDataUnitsConfiguration` shape. The `storefronts` object is keyed by storefront name and may select only one storefront.
+
+The `storefronts` export data unit requires B2C Commerce 26.10 or later. Failed storefront exports include a version note alongside the original error; check the instance version when the server rejects this data unit.

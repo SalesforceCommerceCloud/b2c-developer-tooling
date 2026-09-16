@@ -122,6 +122,35 @@ describe('job export', () => {
     expect(exportStub.getCall(0).args[1]).to.deep.equal({storefronts: {'my-storefront': true}});
   });
 
+  for (const scenario of ['storefront flag', 'storefront JSON', 'other data', 'job failure']) {
+    it(`preserves export errors and scopes the version note for ${scenario}`, async () => {
+      const flags =
+        scenario === 'other data'
+          ? {'global-data': 'meta_data'}
+          : scenario === 'storefront JSON'
+            ? {'data-units': '{"storefronts":{"demo":true}}'}
+            : {storefront: 'demo'};
+      const command: any = await createCommand({...flags, json: true});
+      stubCommon(command);
+      sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+      sinon.stub(command, 'runAfterHooks').resolves();
+      sinon.stub(command, 'showJobLog').resolves();
+      const error =
+        scenario === 'job failure'
+          ? new JobExecutionError('failed', {execution_status: 'finished', exit_status: {code: 'ERROR'}} as any)
+          : new Error("Unknown property 'storefronts' in document 'ExportDataUnitsConfiguration'");
+      command.operations = {...command.operations, siteArchiveExportToPath: sinon.stub().rejects(error)};
+      let message = '';
+      try {
+        await command.run();
+      } catch (error_) {
+        message = (error_ as Error).message;
+      }
+      expect(message).to.include(scenario === 'job failure' ? 'Export failed: ERROR' : error.message);
+      expect(message.includes('requires B2C Commerce 26.10 or later')).to.equal(scenario !== 'other data');
+    });
+  }
+
   it('returns early when before hooks skip', async () => {
     const command: any = await createCommand({'global-data': 'meta_data'});
     stubCommon(command);

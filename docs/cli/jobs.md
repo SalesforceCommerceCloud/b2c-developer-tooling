@@ -645,6 +645,8 @@ The export is configured using "data units" which specify what data to export. Y
 
 A composable storefront is selected by its storefront name and is serialized as `{"storefronts":{"my-storefront":true}}`. B2C Commerce supports one storefront per export operation.
 
+The `storefronts` export data unit requires B2C Commerce 26.10 or later. If an export containing storefront data fails, the CLI includes this version requirement alongside the original error.
+
 #### Site Data Types
 
 When using `--site-data`, available types include:
