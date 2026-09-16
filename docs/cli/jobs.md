@@ -368,15 +368,17 @@ b2c job import TARGET [PATHS...]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag                   | Description                                                                                      | Default    |
-| ---------------------- | ------------------------------------------------------------------------------------------------ | ---------- |
-| `--keep-archive`, `-k` | Keep archive on instance after import                                                            | `false`    |
-| `--remote`, `-r`       | Target is a filename already on the instance (in Impex/src/instance/)                            | `false`    |
-| `--split`, `-s`        | Split a large directory import into multiple archive parts to stay under the instance size limit | `false`    |
-| `--max-size`           | Per-archive size limit for `--split` (e.g. `190`, `190mb`, `512kb`; a bare number is MiB)        | `190mb`    |
-| `--timeout`, `-t`      | Timeout in seconds                                                                               | No timeout |
-| `--wait`, `-w`         | Wait for import job to complete                                                                  | `true`     |
-| `--show-log`           | Show job log on failure                                                                          | `true`     |
+| Flag                    | Description                                                                                      | Default    |
+| ----------------------- | ------------------------------------------------------------------------------------------------ | ---------- |
+| `--keep-archive`, `-k`  | Keep archive on instance after import                                                            | `false`    |
+| `--remote`, `-r`        | Target is a filename already on the instance (in Impex/src/instance/)                            | `false`    |
+| `--split`, `-s`         | Split a large directory import into multiple archive parts to stay under the instance size limit | `false`    |
+| `--max-size`            | Per-archive size limit for `--split` (e.g. `190`, `190mb`, `512kb`; a bare number is MiB)        | `190mb`    |
+| `--timeout`, `-t`       | Timeout in seconds                                                                               | No timeout |
+| `--wait`, `-w`          | Wait for import job to complete                                                                  | `true`     |
+| `--poll-interval`       | Polling interval in seconds when waiting for import and storefront setup jobs                    | `3`        |
+| `--wait-for-storefront` | After a successful import, wait for the Storefront Next post-import setup job                    | `false`    |
+| `--show-log`            | Show job log on failure                                                                          | `true`     |
 
 ### Examples
 
@@ -395,6 +397,9 @@ b2c job import existing-archive.zip --remote
 
 # With timeout
 b2c job import ./my-site-data --timeout 300
+
+# Import a composable storefront and wait for its post-import setup
+b2c job import ./storefront-export.zip --wait-for-storefront
 
 # Import only specific parts of a site export
 b2c job import ./my-site-data sites/RefArch libraries/mylib
@@ -418,6 +423,9 @@ b2c job import ./big-site-data --split --max-size 150mb
 - The archive is uploaded to `Impex/src/instance/` on the instance
 - By default, the archive is deleted after successful import (use `--keep-archive` to retain)
 - When `PATHS` are given, only those files/directories are included in the archive — their location under `TARGET` is preserved (e.g. `sites/RefArch/...` stays at `sites/RefArch/...`).
+- `--wait-for-storefront` first waits for a successful site archive import. It then allows up to 60 seconds for the automatically triggered `sfcc-post-import-setup-storefront` execution to appear and waits for that execution to finish. It cannot be combined with `--no-wait`.
+- With `--json`, ordinary imports retain their existing result shape. When `--wait-for-storefront` is used, the result contains `importResult` and `storefrontSetupExecution` so both executions can be inspected.
+- If no storefront setup execution appears within 60 seconds, the CLI checks available import logs and includes `[DATAERROR]` entries in the timeout error. This diagnostic download happens only on discovery timeout; unavailable logs do not replace the original error.
 
 ### Importing archives larger than the instance limit
 
@@ -590,6 +598,7 @@ In addition to [global flags](./index#global-flags):
 | `--output`, `-o`       | Output path for the export                         | `./export` |
 | `--data-units`         | Data units JSON configuration                      |            |
 | `--site`               | Site ID(s) to export (comma-separated, repeatable) |            |
+| `--storefront`         | Composable storefront name to export               |            |
 | `--site-data`          | Site data types to export (comma-separated)        |            |
 | `--global-data`        | Global data types to export (comma-separated)      |            |
 | `--catalog`            | Catalog ID(s) to export (comma-separated)          |            |
@@ -611,6 +620,9 @@ b2c job export --global-data meta_data
 # Export a site's content and preferences
 b2c job export --site RefArch --site-data content,site_preferences
 
+# Export one composable storefront by storefront name
+b2c job export --storefront my-storefront
+
 # Export catalogs
 b2c job export --catalog storefront-catalog
 
@@ -630,6 +642,8 @@ b2c job export --global-data meta_data --json
 ### Data Units
 
 The export is configured using "data units" which specify what data to export. You can use convenience flags (`--site`, `--global-data`, etc.) or provide a full JSON configuration with `--data-units`.
+
+A composable storefront is selected by its storefront name and is serialized as `{"storefronts":{"my-storefront":true}}`. B2C Commerce supports one storefront per export operation.
 
 #### Site Data Types
 

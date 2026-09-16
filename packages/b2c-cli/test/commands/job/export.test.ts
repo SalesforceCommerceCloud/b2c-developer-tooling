@@ -98,6 +98,30 @@ describe('job export', () => {
     expect(result.archiveFilename).to.equal('a.zip');
   });
 
+  it('exports one composable storefront by storefront name', async () => {
+    const command: any = await createCommand({
+      storefront: 'my-storefront',
+      'no-download': true,
+      json: true,
+    });
+    const instance = stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const exportStub = sinon.stub().resolves({
+      execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
+      archiveFilename: 'storefront.zip',
+    });
+    command.operations = {...command.operations, siteArchiveExport: exportStub};
+
+    await command.run();
+
+    expect(exportStub.calledOnce).to.equal(true);
+    expect(exportStub.getCall(0).args[0]).to.equal(instance);
+    expect(exportStub.getCall(0).args[1]).to.deep.equal({storefronts: {'my-storefront': true}});
+  });
+
   it('returns early when before hooks skip', async () => {
     const command: any = await createCommand({'global-data': 'meta_data'});
     stubCommon(command);

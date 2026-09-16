@@ -39,6 +39,9 @@ b2c job export --site RefArch
 # export a site with specific site data units
 b2c job export --site RefArch --site-data content,site_preferences
 
+# export one composable storefront by storefront name
+b2c job export --storefront my-storefront
+
 # export multiple sites
 b2c job export --site RefArch --site SiteGenesis --site-data campaigns_and_promotions
 
@@ -98,6 +101,7 @@ Do not require a temporary directory and copy step for export-based migrations. 
 | Flag               | Description                                                                    |
 | ------------------ | ------------------------------------------------------------------------------ |
 | `--site`           | Site IDs to export (use `--site-data` to pick specific units, defaults to all) |
+| `--storefront`     | One composable storefront name                                                 |
 | `--catalog`        | Catalog IDs                                                                    |
 | `--library`        | Library IDs                                                                    |
 | `--inventory-list` | Inventory list IDs                                                             |
@@ -106,10 +110,10 @@ Do not require a temporary directory and copy step for export-based migrations. 
 
 **Site data units** (use with `--site-data`):
 
-`ab_tests`, `active_data_feeds`, `all`, `cache_settings`, `campaigns_and_promotions`, `content`, `coupons`, `custom_objects`, `customer_cdn_settings`, `customer_groups`, `distributed_commerce_extensions`, `dynamic_file_resources`, `gift_certificates`, `ocapi_settings`, `payment_methods`, `payment_processors`, `redirect_urls`, `search_settings`, `shipping`, `site_descriptor`, `site_preferences`, `sitemap_settings`, `slots`, `sorting_rules`, `source_codes`, `static_dynamic_alias_mappings`, `stores`, `tax`, `url_rules`
+`ab_tests`, `active_data_feeds`, `all`, `cache_settings`, `campaigns_and_promotions`, `channels`, `commerce_feature_states`, `content`, `coupons`, `custom_objects`, `customer_cdn_settings`, `customer_groups`, `distributed_commerce_extensions`, `dynamic_file_resources`, `gift_certificates`, `ocapi_settings`, `payment_methods`, `payment_processors`, `point_of_sale_channels`, `redirect_urls`, `search_settings`, `shipping`, `site_descriptor`, `site_preferences`, `sitemap_settings`, `slots`, `sorting_rules`, `source_codes`, `static_dynamic_alias_mappings`, `stores`, `tax`, `url_rules`
 
 **Global data units** (use with `--global-data`):
 
-`access_roles`, `all`, `csc_settings`, `csrf_whitelists`, `custom_preference_groups`, `custom_quota_settings`, `custom_types`, `geolocations`, `global_custom_objects`, `job_schedules`, `job_schedules_deprecated`, `locales`, `meta_data`, `oauth_providers`, `ocapi_settings`, `page_meta_tags`, `preferences`, `price_adjustment_limits`, `services`, `sorting_rules`, `static_resources`, `system_type_definitions`, `users`, `webdav_client_permissions`
+`access_roles`, `all`, `csc_settings`, `csrf_whitelists`, `custom_preference_groups`, `custom_quota_settings`, `custom_types`, `event_routing`, `geolocations`, `global_custom_objects`, `job_schedules`, `job_schedules_deprecated`, `locales`, `meta_data`, `oauth_providers`, `ocapi_settings`, `page_meta_tags`, `preferences`, `price_adjustment_limits`, `services`, `sorting_rules`, `static_resources`, `system_type_definitions`, `users`, `webdav_client_permissions`
 
-For full control over the export configuration (including `catalog_static_resources`, `library_static_resources`, and `customer_lists`), use `--data-units` with a JSON string matching the `ExportDataUnitsConfiguration` shape.
+For full control over the export configuration (including `assignments`, `catalog_static_resources`, `library_static_resources`, and `customer_lists`), use `--data-units` with a JSON string matching the `ExportDataUnitsConfiguration` shape. The `storefronts` object is keyed by storefront name and may select only one storefront.
