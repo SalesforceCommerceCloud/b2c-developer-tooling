@@ -219,8 +219,8 @@ When you run the toolkit from a Storefront Next project, its existing environmen
 | `PUBLIC__app__commerce__api__shortCode`      | `short-code` / `SFCC_SHORTCODE`                  |
 | `COMMERCE_API_SLAS_SECRET`                   | `slas-client-secret` / `SFCC_SLAS_CLIENT_SECRET` |
 | `PUBLIC__app__defaultSiteId`                 | `site-id` / `SFCC_SITE_ID`                       |
-| `MRT_PROJECT`                                | `mrt-project`                                    |
-| `MRT_TARGET`                                 | `mrt-environment`                                |
+| `MRT_PROJECT`                                | `mrt-project` / `MRT_PROJECT`                    |
+| `MRT_TARGET`                                 | `mrt-environment` / `MRT_ENVIRONMENT`            |
 
 Storefront Next commonly uses the full organization ID, such as `f_ecom_bjgk_005`. The toolkit normalizes it to the tenant form `bjgk_005` internally and restores the `f_ecom_` prefix for SCAPI requests. `MRT_PROJECT` and `MRT_TARGET` are already native toolkit aliases for the Managed Runtime project and environment.
 
