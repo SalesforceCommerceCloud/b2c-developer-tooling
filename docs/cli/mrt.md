@@ -51,7 +51,7 @@ MRT commands resolve configuration in the following order of precedence:
 
 MRT commands use API key authentication against the legacy MRT Cloud API. The API key is configured in the Managed Runtime dashboard.
 
-Two commands — `mrt bundle history` and `mrt bundle deploy <bundleId>` — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
+Several commands — `mrt bundle history`, `mrt bundle deploy <bundleId>`, and the `mrt env var` family (`list` / `set` / `push` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
 
 ### Getting an API Key
 
@@ -76,7 +76,7 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 MRT is served by two backends:
 
 - **legacy** — the MRT Cloud API (`cloud.mobify.com`), authenticated with a per-user API key (`--api-key` / `~/.mobify`). This is the backend for every MRT command.
-- **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. Each supported command requires the SCAPI scopes for the API it maps to — today the deployment commands (`bundle history` / `deploy`) need `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw`.
+- **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. Each supported command requires the SCAPI scopes for the API it maps to — the deployment commands (`bundle history` / `deploy`) need `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw`, and the `env var` commands need `sfcc.storefront.environments` / `sfcc.storefront.environments.rw` (reads accept either scope; writes require `.rw`).
 
 Select the backend with `--mrt-backend` (or `MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
@@ -88,12 +88,18 @@ Select the backend with `--mrt-backend` (or `MRT_BACKEND` / `SFCC_MRT_BACKEND`, 
 
 ### SCAPI-supported commands
 
-Only two commands implement the SCAPI backend today:
+These commands implement the SCAPI backend today:
 
 - `b2c mrt bundle history` — list deployments
 - `b2c mrt bundle deploy <bundleId>` — deploy an existing bundle
+- `b2c mrt env var list` — list environment variables
+- `b2c mrt env var set` — set/update environment variables (merge)
+- `b2c mrt env var push` — sync a local `.env` file
+- `b2c mrt env var delete` — delete an environment variable
 
 Every other MRT command — and `mrt bundle deploy` **without** a bundle ID (the local-build push path) — runs on the legacy MRT Cloud API. On those, `--mrt-backend scapi` errors with an actionable message, and `--mrt-backend auto` warns (only when SCAPI is actually configured) before using legacy.
+
+Over SCAPI, `env var set` / `push` / `delete` use a single merge-PATCH: keys you send are created or replaced, a delete sends a `null` value, and keys you don't mention are left untouched. `env var push` resolves the backend once when it reads the current remote values, then pins every write to that same backend so a push never crosses backends mid-operation.
 
 ### Auto-detection criteria
 
@@ -109,8 +115,8 @@ Otherwise `auto` uses legacy. Run a supported command with `-D` / `--debug` to s
 
 Under `--json`, the supported commands return the serving backend's **native** response verbatim:
 
-- **legacy** — the raw MRT Cloud API shape (e.g. `history` returns `{count, next, previous, deployments}`).
-- **scapi** — the serving SCAPI API's native shape (e.g. `history` returns `{limit, offset, total, data}` from Storefront Deployments).
+- **legacy** — the raw MRT Cloud API shape (e.g. `history` returns `{count, next, previous, deployments}`; `env var list` returns `{count, variables}`).
+- **scapi** — the serving SCAPI API's native shape (e.g. `history` returns `{limit, offset, total, data}` from Storefront Deployments; `env var list` returns the Storefront Environments map keyed by variable name).
 
 The human-readable table is normalized across both backends, but `--json` is not. Under `--mrt-backend auto` the `--json` shape therefore depends on which backend actually served the request — pin `--mrt-backend legacy` or `--mrt-backend scapi` if a script needs a stable shape.
 
@@ -485,6 +491,8 @@ b2c mrt env b2c -p my-storefront -e production --instance-id aaaa_prd --sites Re
 
 ## Environment Variable Commands
 
+The `mrt env var` commands are [backend-aware](#mrt-backends): they honor `--mrt-backend` and, over SCAPI, use the Storefront Environments API (scopes `sfcc.storefront.environments` / `.rw`). Values are always masked by both backends. Under `--json`, `list` returns the serving backend's native shape (legacy `{count, variables}` vs the SCAPI environment-variables map — see [JSON output is backend-specific](#json-output-is-backend-specific)); `set` and `delete` return the same backend-agnostic summary regardless of backend.
+
 ### b2c mrt env var list
 
 List environment variables.
@@ -492,11 +500,14 @@ List environment variables.
 ```bash
 b2c mrt env var list --project my-storefront --environment production
 b2c mrt env var list -p my-storefront -e staging --json
+
+# Force the SCAPI backend
+b2c mrt env var list -p my-storefront -e staging --mrt-backend scapi
 ```
 
 ### b2c mrt env var set
 
-Set environment variables.
+Set environment variables. Setting is a merge: only the keys you pass are created or updated; other variables are left untouched.
 
 ```bash
 # Set a single variable
@@ -507,6 +518,9 @@ b2c mrt env var set API_KEY=secret DEBUG=true -p my-storefront -e staging
 
 # Set value with spaces
 b2c mrt env var set "MESSAGE=hello world" -p my-storefront -e production
+
+# Force the SCAPI backend
+b2c mrt env var set API_KEY=secret -p my-storefront -e staging --mrt-backend scapi
 ```
 
 ### b2c mrt env var push
@@ -528,10 +542,21 @@ b2c mrt env var push -p my-storefront -e staging --file config/.env --yes
 
 # Exclude additional prefixes (MRT_ is always excluded by default)
 b2c mrt env var push -p my-storefront -e staging --exclude-prefix INTERNAL_
+
+# Force the SCAPI backend
+b2c mrt env var push -p my-storefront -e staging --mrt-backend scapi --yes
 ```
 
 ::: tip
 The `MRT_` prefix is excluded by default because those variables (`MRT_PROJECT`, `MRT_ENVIRONMENT`, `MRT_API_KEY`) configure the CLI itself rather than the environment.
+:::
+
+::: tip
+`push` resolves the backend once (from the initial read) and pins every write to it, so a single `push` never crosses backends. Over SCAPI the changed variables are applied as one merge-PATCH rather than one request per key.
+:::
+
+::: tip
+Under `--json`, `push` is non-interactive and emits only the result object on stdout. Pass `--yes` to skip the confirmation prompt — running `--json` without `--yes` when there are changes to apply errors instead of prompting.
 :::
 
 ### b2c mrt env var delete
@@ -540,6 +565,9 @@ Delete an environment variable.
 
 ```bash
 b2c mrt env var delete MY_VAR -p my-storefront -e production
+
+# Force the SCAPI backend
+b2c mrt env var delete MY_VAR -p my-storefront -e production --mrt-backend scapi
 ```
 
 ---
