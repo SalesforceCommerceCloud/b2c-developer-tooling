@@ -12,6 +12,7 @@
  * @module config/resolver
  */
 import type {AuthCredentials} from '../auth/types.js';
+import {normalizeTenantId} from '../clients/custom-apis.js';
 import type {B2CInstance} from '../instance/index.js';
 import {getLogger} from '../logging/logger.js';
 import {
@@ -329,6 +330,12 @@ export class ConfigResolver {
     // Normalize mrtOrigin to ensure it always has an https:// prefix.
     // Users may provide a bare hostname (e.g., "cloud.mobify.com") or a full URL.
     config.mrtOrigin = normalizeOriginUrl(config.mrtOrigin);
+
+    // Keep the resolved representation consistent even when a source provides a
+    // full SCAPI organization ID (for example, Storefront Next configuration).
+    if (config.tenantId) {
+      config.tenantId = normalizeTenantId(config.tenantId);
+    }
 
     // Combine source warnings with merge warnings
     const warnings = [...sourceWarnings, ...mergeWarnings];

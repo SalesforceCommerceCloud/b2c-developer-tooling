@@ -15,6 +15,7 @@ import type {AuthMethod} from '../auth/types.js';
 import {ALL_AUTH_METHODS} from '../auth/types.js';
 import {resolveConfig, type NormalizedConfig, type ConfigSource, type ResolvedB2CConfig} from '../config/index.js';
 import {findDwJson} from '../config/dw-json.js';
+import {getStorefrontNextEnvironmentConfig} from '../config/sources/env-source.js';
 import {getLogger} from '../logging/logger.js';
 
 // Re-export for convenience
@@ -250,9 +251,15 @@ export async function loadConfig(
 ): Promise<ResolvedB2CConfig> {
   const logger = getLogger();
 
+  // oclif has already populated `flags` from explicit arguments and canonical
+  // toolkit environment variables. Add Storefront Next names only where those
+  // higher-priority values are absent.
+  const definedFlags = Object.fromEntries(Object.entries(flags).filter(([, value]) => value !== undefined));
+
   // Preserve instanceName and projectDirectory from options if not already in flags
   const effectiveFlags = {
-    ...flags,
+    ...getStorefrontNextEnvironmentConfig(),
+    ...definedFlags,
     instanceName: flags.instanceName ?? options.instance,
     projectDirectory: flags.projectDirectory ?? options.projectDirectory,
     workingDirectory: flags.workingDirectory ?? options.workingDirectory,

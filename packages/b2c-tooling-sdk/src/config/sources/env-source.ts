@@ -16,10 +16,21 @@ import {getPopulatedFields} from '../mapping.js';
 import type {ConfigSource, ConfigLoadResult, NormalizedConfig, ResolveConfigOptions} from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
+/** Storefront Next variables accepted as fallbacks for equivalent toolkit settings. */
+const STOREFRONT_NEXT_ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
+  PUBLIC__app__commerce__api__clientId: 'slasClientId',
+  PUBLIC__app__commerce__api__organizationId: 'tenantId',
+  PUBLIC__app__commerce__api__shortCode: 'shortCode',
+  COMMERCE_API_SLAS_SECRET: 'slasClientSecret',
+  PUBLIC__app__defaultSiteId: 'siteId',
+};
+
 /**
  * Mapping of CLI environment variable names and aliases to NormalizedConfig fields.
  */
 const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
+  // Storefront Next aliases — listed first so toolkit-specific names win
+  ...STOREFRONT_NEXT_ENV_VAR_MAP,
   // sfcc-ci legacy aliases — listed first so canonical names below take precedence
   SFCC_OAUTH_CLIENT_ID: 'clientId',
   SFCC_OAUTH_CLIENT_SECRET: 'clientSecret',
@@ -69,6 +80,28 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_MRT_BACKEND: 'mrtBackend',
   MRT_BACKEND: 'mrtBackend',
 };
+
+/**
+ * Reads only the Storefront Next compatibility variables.
+ *
+ * Used by the CLI as a lower-priority fallback after oclif has resolved explicit
+ * flags and the toolkit's canonical environment variables.
+ *
+ * @internal
+ */
+export function getStorefrontNextEnvironmentConfig(
+  env: Record<string, string | undefined> = process.env,
+): Partial<NormalizedConfig> {
+  const config: Partial<NormalizedConfig> = {};
+  for (const [envVar, configField] of Object.entries(STOREFRONT_NEXT_ENV_VAR_MAP)) {
+    const value = env[envVar];
+    if (value !== undefined && value !== '') {
+      (config as Record<string, unknown>)[configField] = value;
+    }
+  }
+
+  return config;
+}
 
 /** Fields that should be parsed as comma-separated arrays. */
 const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
@@ -157,7 +190,7 @@ export class EnvSource implements ConfigSource {
 
     const fields = getPopulatedFields(config);
     if (fields.length === 0) {
-      logger.trace('[EnvSource] No SFCC_* environment variables found');
+      logger.trace('[EnvSource] No supported B2C environment variables found');
       return undefined;
     }
 
