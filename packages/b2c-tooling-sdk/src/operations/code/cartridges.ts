@@ -10,7 +10,7 @@ import path from 'node:path';
  * Represents a discovered cartridge in the local filesystem.
  */
 export interface CartridgeMapping {
-  /** Cartridge name (directory name containing .project) */
+  /** Cartridge name (directory name containing .project or cartridge/*.properties) */
   name: string;
   /** Absolute path to the cartridge directory */
   src: string;
@@ -27,13 +27,15 @@ export interface FindCartridgesOptions {
   /** Cartridge names to exclude */
   exclude?: string[];
   /**
-   * Maximum directory depth to recurse when searching for `.project` files,
-   * counted in path segments relative to the search directory (so a cartridge
-   * at `cartridges/<name>/.project` is depth 3). When omitted the search is
-   * unbounded (default), preserving behavior for callers that expect a full
-   * recursive walk. Bound this for untrusted/broad roots (e.g. an MCP server
-   * that may be launched from a home directory) to avoid scanning the whole
-   * filesystem tree.
+   * Maximum directory depth to recurse when searching for cartridges,
+   * expressed as the number of path segments to the marker file relative to
+   * the search directory. A cartridge at `cartridges/<name>/.project` is
+   * depth 3; the equivalent `cartridge/*.properties` marker at
+   * `cartridges/<name>/cartridge/<name>.properties` is automatically adjusted
+   * to depth 4 (maxDepth + 1) so both discovery methods honour the same
+   * logical cartridge-nesting bound. When omitted the search is unbounded
+   * (default). Bound this for untrusted/broad roots (e.g. an MCP server
+   * launched from a home directory) to avoid scanning the whole filesystem.
    */
   maxDepth?: number;
   /**
@@ -49,8 +51,15 @@ export interface FindCartridgesOptions {
 /**
  * Find cartridges recursively in a directory.
  *
- * Cartridges are identified by the presence of a `.project` file
- * (Eclipse project marker commonly used in SFCC development).
+ * Cartridges are identified by two markers, tried in order:
+ * 1. `.project` — Eclipse project marker (primary, used by UX Studio / SFRA).
+ * 2. `cartridge/<name>.properties` — SFCC structural marker (fallback, used by
+ *    pwa-kit, storefront-next, and cartridge packages that omit the Eclipse marker).
+ *
+ * The fallback is only attempted when **no** `.project` files are found under
+ * the search directory. If `.project` files exist but are all filtered out by
+ * `include`/`exclude`, the function returns an empty array rather than
+ * switching to the properties marker.
  *
  * @param directory - Directory to search for cartridges (defaults to cwd)
  * @param options - Filter options for including/excluding cartridges
@@ -92,8 +101,21 @@ export function findCartridges(directory?: string, options: FindCartridgesOption
     ...(options.maxDepth === undefined ? {} : {maxDepth: options.maxDepth}),
   };
 
+  // The properties file sits one extra level inside the cartridge root
+  // (<name>/cartridge/<name>.properties vs <name>/.project), so add 1 to the
+  // depth bound so both markers honour the same logical cartridge-nesting limit.
+  const propertiesGlobOptions =
+    options.maxDepth === undefined ? globOptions : {...globOptions, maxDepth: options.maxDepth + 1};
+
   const toCartridge = (f: string): CartridgeMapping => {
     const dirname = path.resolve(searchDir, path.dirname(f));
+    const cartridgeName = path.basename(dirname);
+    return {name: cartridgeName, dest: cartridgeName, src: dirname};
+  };
+
+  const toCartridgeFromProperties = (f: string): CartridgeMapping => {
+    // f = "<name>/cartridge/<name>.properties" — cartridge root is two levels up
+    const dirname = path.resolve(searchDir, path.dirname(path.dirname(f)));
     const cartridgeName = path.basename(dirname);
     return {name: cartridgeName, dest: cartridgeName, src: dirname};
   };
@@ -111,15 +133,31 @@ export function findCartridges(directory?: string, options: FindCartridgesOption
   // Existence-check fast path: stream matches and stop at the first one that
   // passes the filters, so a large tree isn't fully enumerated.
   if (options.firstMatchOnly) {
+    let hasProjectFiles = false;
     for (const f of globIterateSync('**/.project', globOptions)) {
+      hasProjectFiles = true;
       const cartridge = toCartridge(f);
       if (matches(cartridge)) {
         return [cartridge];
       }
     }
+    if (!hasProjectFiles) {
+      for (const f of globIterateSync('**/cartridge/*.properties', propertiesGlobOptions)) {
+        const cartridge = toCartridgeFromProperties(f);
+        if (matches(cartridge)) {
+          return [cartridge];
+        }
+      }
+    }
     return [];
   }
 
-  // Find all .project files (Eclipse project markers).
-  return globSync('**/.project', globOptions).map(toCartridge).filter(matches);
+  // Primary: .project (Eclipse marker).
+  const projectFiles = globSync('**/.project', globOptions);
+  if (projectFiles.length > 0) {
+    return projectFiles.map(toCartridge).filter(matches);
+  }
+
+  // Fallback: cartridge/<name>.properties (SFCC structural marker).
+  return globSync('**/cartridge/*.properties', propertiesGlobOptions).map(toCartridgeFromProperties).filter(matches);
 }

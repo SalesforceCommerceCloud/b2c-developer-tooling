@@ -7,7 +7,8 @@
  * Cartridge project detection pattern.
  *
  * Detects any project containing cartridges by looking for .project files
- * (Eclipse project markers used in SFCC development).
+ * (Eclipse project marker, primary) or cartridge/<name>.properties files
+ * (SFCC structural marker, fallback used by pwa-kit and storefront-next).
  *
  * @module discovery/patterns/cartridges
  */
@@ -18,7 +19,8 @@ import {findCartridges} from '../../operations/code/cartridges.js';
  * Detection pattern for cartridge-based projects.
  *
  * Uses the SDK's findCartridges function to detect any cartridges in the workspace.
- * This covers SFRA, custom APIs, and any other cartridge-based development.
+ * This covers SFRA, pwa-kit, storefront-next, custom cartridges, and any other
+ * cartridge-based development.
  */
 export const cartridgesPattern: DetectionPattern = {
   name: 'cartridges',
