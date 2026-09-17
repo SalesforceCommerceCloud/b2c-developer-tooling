@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.0.1
+
+### Patch Changes
+
+- [#684](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/684) [`d3da83c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d3da83c6f918e70bc3df2166a9f025a88d97f745) - Restore `--allow-non-ga-tools` as a deprecated no-op so existing MCP configurations continue to start after upgrading. The server logs a warning that the flag can be removed; tool availability is unchanged. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 3.0.0
 
 ### Major Changes

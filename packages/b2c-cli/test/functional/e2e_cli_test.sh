@@ -121,10 +121,22 @@ if [ -z "$ODS_ID" ] || [ "$ODS_ID" == "null" ]; then
     exit 1
 fi
 
+# Derive the tenant ID from the hostname used by the CLI
+# (for example, zzzz-006.unified.demandware.net -> zzzz_006) and export it
+# before code/job commands so auto backend selection can use SCAPI.
+SANDBOX_HOST_ID="${SERVER%%.*}"
+if [[ ! "$SANDBOX_HOST_ID" =~ ^([[:alnum:]]{4})-([[:alnum:]]+)$ ]]; then
+    echo "FAILED: Could not derive tenant ID from sandbox hostname: $SERVER"
+    exit 1
+fi
+TENANT_ID="${BASH_REMATCH[1]}_${BASH_REMATCH[2]}"
+export SFCC_TENANT_ID="$TENANT_ID"
+
 echo "SUCCESS: Created sandbox"
 echo "  ID: $ODS_ID"
 echo "  Server: $SERVER"
 echo "  Instance: $INSTANCE_NUM"
+echo "  Tenant ID: $TENANT_ID"
 echo ""
 
 ################################################################################
@@ -191,9 +203,6 @@ echo ""
 # 6. Create SLAS Client
 ################################################################################
 echo "Step 6: Creating SLAS client..."
-
-# Construct tenant ID from realm and instance number
-TENANT_ID="${TEST_REALM}_${INSTANCE_NUM}"
 
 # Let the CLI auto-generate a UUID4 client ID
 SLAS_CREATE_RESULT=$($CLI slas client create \
