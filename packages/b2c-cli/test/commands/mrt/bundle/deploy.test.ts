@@ -74,7 +74,7 @@ describe('mrt bundle deploy', () => {
       }
     });
 
-    it('calls pushBundle with correct parameters and returns result', async () => {
+    it('calls pushMrtBundle with correct parameters and returns the raw legacy result under --json', async () => {
       const command = createCommand();
 
       stubParse(
@@ -95,6 +95,7 @@ describe('mrt bundle deploy', () => {
       await command.init();
 
       stubCommonAuth(command);
+      stubBackendContext(command);
       sinon.stub(command, 'jsonEnabled').returns(true);
       sinon.stub(command, 'log').returns(void 0);
       sinon
@@ -102,28 +103,106 @@ describe('mrt bundle deploy', () => {
         .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
 
       const pushStub = sinon.stub().resolves({
+        backend: 'legacy',
         bundleId: 123,
-        deployed: true,
         message: 'Test push',
-        projectSlug: 'my-project',
-        target: 'staging',
+        deployed: true,
+        raw: {bundleId: 123, projectSlug: 'my-project', target: 'staging', deployed: true, message: 'Test push'},
       } as any);
-      command.operations = {...command.operations, pushBundle: pushStub};
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
 
       const result = await command.run();
 
       expect(pushStub.calledOnce).to.equal(true);
       const [input] = pushStub.firstCall.args;
+      expect(input.preference).to.equal('auto');
       expect(input.projectSlug).to.equal('my-project');
-      expect(input.target).to.equal('staging');
+      expect(input.targetSlug).to.equal('staging');
       expect(input.buildDirectory).to.equal('dist');
       expect(input.ssrParameters.SSRProxyPath).to.equal('/api');
       expect(input.ssrParameters.Foo).to.equal('bar');
       expect(input.ssrParameters.SSRFunctionNodeVersion).to.equal('20.x');
+      // --json emits the backend's native push result verbatim.
       expect(result.bundleId).to.equal(123);
+      expect(result.projectSlug).to.equal('my-project');
     });
 
-    it('prints warnings returned by pushBundle', async () => {
+    it('pushes via SCAPI when the backend resolves to scapi', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {project: 'my-project', environment: 'staging', 'mrt-backend': 'scapi', 'ssr-param': [], wait: false},
+        {},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+      stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
+
+      const pushStub = sinon.stub().resolves({
+        backend: 'scapi',
+        bundleId: 170,
+        message: 'auto',
+        deployed: true,
+        deploymentId: 'dep-xyz',
+        status: 'queued',
+        raw: {bundle: {bundleId: 170}, deployment: {deploymentId: 'dep-xyz', status: 'queued'}},
+      } as any);
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
+
+      const result = await command.run();
+
+      const [input] = pushStub.firstCall.args;
+      expect(input.preference).to.equal('scapi');
+      expect(input.scapiConnection).to.equal(scapiConnection);
+      expect(input.projectSlug).to.equal('my-project');
+      expect(input.targetSlug).to.equal('staging');
+      // --json emits the native SCAPI upload + deployment responses verbatim.
+      expect(result.bundle.bundleId).to.equal(170);
+      expect(result.deployment.deploymentId).to.equal('dep-xyz');
+    });
+
+    it('uploads only (no environment) via SCAPI and returns the raw upload response', async () => {
+      const command = createCommand();
+
+      stubParse(command, {project: 'my-project', 'mrt-backend': 'scapi', 'ssr-param': [], wait: false}, {});
+      await command.init();
+
+      stubCommonAuth(command);
+      const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+      stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: undefined, mrtBackend: 'scapi'}}));
+
+      const pushStub = sinon.stub().resolves({
+        backend: 'scapi',
+        bundleId: 170,
+        message: 'auto',
+        deployed: false,
+        raw: {bundle: {bundleId: 170}},
+      } as any);
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
+
+      const result = await command.run();
+
+      const [input] = pushStub.firstCall.args;
+      expect(input.targetSlug).to.equal(undefined);
+      // No deployment portion in raw for an upload-only push.
+      expect(result.bundle.bundleId).to.equal(170);
+      expect(result.deployment).to.equal(undefined);
+    });
+
+    it('prints warnings returned by pushMrtBundle', async () => {
       const command = createCommand();
       const warning = 'x86 support ends January 31, 2027. Switch to ARM in environment settings to avoid disruptions';
 
@@ -135,6 +214,7 @@ describe('mrt bundle deploy', () => {
       await command.init();
 
       stubCommonAuth(command);
+      stubBackendContext(command);
       sinon.stub(command, 'jsonEnabled').returns(true);
       sinon.stub(command, 'log').returns(void 0);
       const warnStub = sinon.stub(command, 'warn').returns(void 0);
@@ -143,14 +223,14 @@ describe('mrt bundle deploy', () => {
         .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
 
       const pushStub = sinon.stub().resolves({
+        backend: 'legacy',
         bundleId: 123,
-        deployed: true,
         message: 'Test push',
-        projectSlug: 'my-project',
-        target: 'staging',
+        deployed: true,
         warnings: [warning],
+        raw: {bundleId: 123, deployed: true},
       } as any);
-      command.operations = {...command.operations, pushBundle: pushStub};
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
 
       await command.run();
 
@@ -164,6 +244,7 @@ describe('mrt bundle deploy', () => {
       await command.init();
 
       stubCommonAuth(command);
+      stubBackendContext(command);
       sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
 
       try {
@@ -171,35 +252,6 @@ describe('mrt bundle deploy', () => {
         expect.fail('Expected error');
       } catch (error) {
         expect(error).to.be.instanceOf(Error);
-      }
-    });
-
-    it('errors on --mrt-backend scapi (local build is legacy-pinned)', async () => {
-      const command = createCommand();
-
-      stubParse(command, {project: 'my-project', 'mrt-backend': 'scapi', 'ssr-param': [], wait: false}, {});
-      await command.init();
-
-      stubCommonAuth(command);
-      sinon.stub(command, 'jsonEnabled').returns(true);
-      sinon.stub(command, 'log').returns(void 0);
-      sinon
-        .stub(command, 'resolvedConfig')
-        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
-
-      const pushStub = sinon.stub().resolves({} as any);
-      command.operations = {...command.operations, pushBundle: pushStub};
-
-      const errorStub = stubErrorToThrow(command);
-
-      try {
-        await command.run();
-        expect.fail('Expected error');
-      } catch {
-        expect(errorStub.calledOnce).to.equal(true);
-        const [message] = errorStub.firstCall.args;
-        expect(message).to.include('pushing a local build');
-        expect(pushStub.notCalled).to.equal(true);
       }
     });
   });
@@ -477,7 +529,7 @@ describe('mrt bundle deploy', () => {
       expect(result.status).to.equal('queued');
     });
 
-    it('calls waitForEnv after push with environment', async () => {
+    it('polls the legacy environment after a legacy push with environment', async () => {
       const command = createCommand();
 
       stubParse(
@@ -498,6 +550,7 @@ describe('mrt bundle deploy', () => {
       await command.init();
 
       stubCommonAuth(command);
+      stubBackendContext(command);
       sinon.stub(command, 'jsonEnabled').returns(true);
       sinon.stub(command, 'log').returns(void 0);
       sinon
@@ -505,23 +558,88 @@ describe('mrt bundle deploy', () => {
         .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
 
       const pushStub = sinon.stub().resolves({
+        backend: 'legacy',
         bundleId: 123,
-        deployed: true,
         message: 'auto',
-        projectSlug: 'my-project',
-        target: 'staging',
+        deployed: true,
+        raw: {bundleId: 123, projectSlug: 'my-project', target: 'staging', deployed: true},
       } as any);
       const waitStub = sinon.stub().resolves({slug: 'staging', state: 'ACTIVE', name: 'staging'} as any);
-      command.operations = {...command.operations, pushBundle: pushStub, waitForEnv: waitStub};
+      const scapiWaitStub = sinon.stub().resolves({} as any);
+      command.operations = {
+        ...command.operations,
+        pushMrtBundle: pushStub,
+        waitForEnv: waitStub,
+        waitForDeploymentScapi: scapiWaitStub,
+      };
 
       const result = await command.run();
 
       expect(pushStub.calledOnce).to.equal(true);
       expect(waitStub.calledOnce).to.equal(true);
+      expect(scapiWaitStub.notCalled).to.equal(true);
       expect(result.state).to.equal('ACTIVE');
     });
 
-    it('skips waitForEnv when push has no target', async () => {
+    it('polls the SCAPI deployment by ID after a SCAPI push with environment', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {
+          project: 'my-project',
+          environment: 'staging',
+          'mrt-backend': 'scapi',
+          wait: true,
+          'poll-interval': 10,
+          timeout: 600,
+          'build-dir': 'build',
+          'ssr-param': [],
+        },
+        {},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+      stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
+
+      const pushStub = sinon.stub().resolves({
+        backend: 'scapi',
+        bundleId: 170,
+        message: 'auto',
+        deployed: true,
+        deploymentId: 'dep-xyz',
+        status: 'queued',
+        raw: {bundle: {bundleId: 170}, deployment: {deploymentId: 'dep-xyz', status: 'queued'}},
+      } as any);
+      const waitStub = sinon.stub().resolves({} as any);
+      const scapiWaitStub = sinon.stub().resolves({deploymentId: 'dep-xyz', status: 'finished'} as any);
+      command.operations = {
+        ...command.operations,
+        pushMrtBundle: pushStub,
+        waitForEnv: waitStub,
+        waitForDeploymentScapi: scapiWaitStub,
+      };
+
+      const result = await command.run();
+
+      expect(scapiWaitStub.calledOnce).to.equal(true);
+      const [conn, waitOpts] = scapiWaitStub.firstCall.args;
+      expect(conn).to.equal(scapiConnection);
+      expect(waitOpts.storefrontId).to.equal('my-project');
+      expect(waitOpts.environmentId).to.equal('staging');
+      expect(waitOpts.deploymentId).to.equal('dep-xyz');
+      expect(waitStub.notCalled).to.equal(true);
+      expect(result.status).to.equal('finished');
+    });
+
+    it('skips wait when push has no target', async () => {
       const command = createCommand();
 
       stubParse(
@@ -541,6 +659,7 @@ describe('mrt bundle deploy', () => {
       await command.init();
 
       stubCommonAuth(command);
+      stubBackendContext(command);
       sinon.stub(command, 'jsonEnabled').returns(false);
       sinon.stub(command, 'log').returns(void 0);
       sinon.stub(command, 'warn').returns(void 0);
@@ -549,13 +668,14 @@ describe('mrt bundle deploy', () => {
         .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: undefined}}));
 
       const pushStub = sinon.stub().resolves({
+        backend: 'legacy',
         bundleId: 123,
-        deployed: false,
         message: 'auto',
-        projectSlug: 'my-project',
+        deployed: false,
+        raw: {bundleId: 123, projectSlug: 'my-project', deployed: false},
       } as any);
       const waitStub = sinon.stub().resolves({} as any);
-      command.operations = {...command.operations, pushBundle: pushStub, waitForEnv: waitStub};
+      command.operations = {...command.operations, pushMrtBundle: pushStub, waitForEnv: waitStub};
 
       const result = await command.run();
 
@@ -624,6 +744,7 @@ describe('mrt bundle deploy', () => {
       stubParse(command, {project: 'wrong-project', 'build-dir': 'build', 'ssr-param': [], wait: false}, {});
       await command.init();
       stubCommonAuth(command);
+      stubBackendContext(command);
       sinon.stub(command, 'jsonEnabled').returns(true);
       sinon.stub(command, 'log').returns(void 0);
       sinon.stub(command, 'resolvedConfig').get(() => ({
@@ -631,7 +752,7 @@ describe('mrt bundle deploy', () => {
       }));
 
       const pushStub = sinon.stub().rejects(new Error('403 Forbidden'));
-      command.operations = {...command.operations, pushBundle: pushStub};
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
 
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -706,11 +827,46 @@ describe('mrt bundle deploy', () => {
       }
     });
 
+    it('does not show the legacy project-list suggestion when a SCAPI push fails with 403', async () => {
+      const command = createCommand();
+      stubParse(
+        command,
+        {project: 'my-project', environment: 'staging', 'mrt-backend': 'scapi', 'ssr-param': [], wait: false},
+        {},
+      );
+      await command.init();
+      stubCommonAuth(command);
+      const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+      stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon.stub(command, 'resolvedConfig').get(() => ({
+        values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'},
+      }));
+
+      const pushStub = sinon.stub().rejects(new Error('403 Forbidden'));
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        await command.run();
+        expect.fail('Expected error');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
+        const [message] = errorStub.firstCall.args;
+        // The suggestion points at the legacy `b2c mrt project list`; under explicit
+        // scapi the failure is a SCAPI 403, so it must not be appended.
+        expect(message).to.not.include('b2c mrt project list');
+      }
+    });
+
     it('does not show suggestion when push fails with non-403 error', async () => {
       const command = createCommand();
       stubParse(command, {project: 'my-project', 'build-dir': 'build', 'ssr-param': [], wait: false}, {});
       await command.init();
       stubCommonAuth(command);
+      stubBackendContext(command);
       sinon.stub(command, 'jsonEnabled').returns(true);
       sinon.stub(command, 'log').returns(void 0);
       sinon.stub(command, 'resolvedConfig').get(() => ({
@@ -718,7 +874,7 @@ describe('mrt bundle deploy', () => {
       }));
 
       const pushStub = sinon.stub().rejects(new Error('Connection timeout'));
-      command.operations = {...command.operations, pushBundle: pushStub};
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
 
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 

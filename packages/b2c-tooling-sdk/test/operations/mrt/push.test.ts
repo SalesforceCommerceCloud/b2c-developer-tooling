@@ -4,6 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {createMrtClient, DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
@@ -13,11 +16,30 @@ import {
   listBundles,
   deleteBundle,
   bulkDeleteBundles,
+  listBundlesScapi,
+  uploadBundleScapi,
+  listMrtBundles,
+  pushMrtBundle,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import type {Bundle, BundleV2} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import type {Bundle, BundleV2, ScapiMrtConnection} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {ScapiRequestError} from '../../../src/clients/scapi-backend-utils.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 const DEFAULT_BASE_URL = DEFAULT_MRT_ORIGIN;
+
+const SHORT_CODE = 'kv7kzm78';
+const TENANT_ID = 'zzxy_prd';
+const ORGANIZATION_ID = 'f_ecom_zzxy_prd';
+const STOREFRONT_ID = 'my-project';
+const SCAPI_BASE = `https://${SHORT_CODE}.api.commercecloud.salesforce.com/storefront/deployments/v1`;
+const SCAPI_BUNDLES = `${SCAPI_BASE}/organizations/:organizationId/storefronts/:storefrontId/bundles`;
+const SCAPI_DEPLOYMENTS = `${SCAPI_BASE}/organizations/:organizationId/storefronts/:storefrontId/environments/:environmentId/deployments`;
+const LEGACY_BUNDLES = `${DEFAULT_BASE_URL}/api/projects/:projectSlug/bundles/`;
+const LEGACY_BUILDS_TARGET = `${DEFAULT_BASE_URL}/api/projects/:projectSlug/builds/:targetSlug/`;
+
+function scapiConn(): ScapiMrtConnection {
+  return {shortCode: SHORT_CODE, tenantId: TENANT_ID, auth: new MockAuthStrategy()};
+}
 
 describe('operations/mrt/push', () => {
   const server = setupServer();
@@ -517,6 +539,454 @@ describe('operations/mrt/push', () => {
       expect(result.queued).to.deep.equal([1, 3]);
       expect(result.rejected).to.have.lengthOf(1);
       expect(result.rejected[0]).to.deep.equal({bundleId: 2, reason: 'Bundle in use'});
+    });
+  });
+
+  describe('listBundlesScapi', () => {
+    it('lists and normalizes SCAPI bundles', async () => {
+      server.use(
+        http.get(SCAPI_BUNDLES, ({request, params}) => {
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
+          expect(params.organizationId).to.equal(ORGANIZATION_ID);
+          expect(params.storefrontId).to.equal(STOREFRONT_ID);
+          return HttpResponse.json({
+            limit: 25,
+            offset: 0,
+            total: 1,
+            data: [
+              {
+                bundleId: 170,
+                description: 'my bundle',
+                status: 'ok',
+                createdBy: 'user@example.com',
+                creationDate: '2026-01-01T00:00:00Z',
+              },
+            ],
+          });
+        }),
+      );
+
+      const result = await listBundlesScapi(scapiConn(), {storefrontId: STOREFRONT_ID});
+
+      expect(result.count).to.equal(1);
+      expect(result.bundles).to.have.length(1);
+      expect(result.bundles[0]).to.deep.include({
+        id: 170,
+        message: 'my bundle',
+        status: 'ok',
+        user: 'user@example.com',
+        created: '2026-01-01T00:00:00Z',
+        backend: 'scapi',
+      });
+    });
+
+    it('forwards limit/offset as SCAPI pagination query params and reports the full total', async () => {
+      let captured: URLSearchParams | undefined;
+      server.use(
+        http.get(SCAPI_BUNDLES, ({request}) => {
+          captured = new URL(request.url).searchParams;
+          return HttpResponse.json({limit: 50, offset: 100, total: 250, data: []});
+        }),
+      );
+
+      const result = await listBundlesScapi(scapiConn(), {storefrontId: STOREFRONT_ID, limit: 50, offset: 100});
+
+      expect(captured?.get('limit')).to.equal('50');
+      expect(captured?.get('offset')).to.equal('100');
+      expect(result.count).to.equal(250);
+    });
+
+    it('throws a ScapiRequestError carrying the status on failure', async () => {
+      server.use(
+        http.get(SCAPI_BUNDLES, () =>
+          HttpResponse.json(
+            {title: 'Forbidden', type: 'about:blank', detail: 'nope'},
+            {status: 403, headers: {'Content-Type': 'application/problem+json'}},
+          ),
+        ),
+      );
+
+      let threw: unknown;
+      try {
+        await listBundlesScapi(scapiConn(), {storefrontId: STOREFRONT_ID});
+      } catch (error) {
+        threw = error;
+      }
+      expect(threw).to.be.instanceOf(ScapiRequestError);
+      expect((threw as ScapiRequestError).status).to.equal(403);
+    });
+  });
+
+  describe('uploadBundleScapi', () => {
+    const testBundleV2: BundleV2 = {
+      message: 'v2 message',
+      archive: Buffer.from('fake-gzip-tar-bytes'),
+      rootDir: 'bld',
+      configPath: '.mrt/config.json',
+      matchMode: 'strict',
+      config: {
+        ssrOnly: ['ssr.js'],
+        ssrShared: ['static/**/*'],
+        ssrParameters: {SSRFunctionNodeVersion: '22.x'},
+      },
+    };
+
+    // The SCAPI multipart payload must mirror the legacy uploadBundleV2 shape
+    // exactly (same field names/values) so the two backends stay in sync.
+    it('uploads a v2 bundle as multipart mirroring the legacy field shape and maps the response', async () => {
+      let received: {
+        bundleName?: string;
+        bundleSize?: number;
+        message?: string;
+        rootDir?: string;
+        configPath?: string;
+        matchMode?: string;
+      } = {};
+      server.use(
+        http.post(SCAPI_BUNDLES, async ({request, params}) => {
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
+          expect(params.organizationId).to.equal(ORGANIZATION_ID);
+          expect(params.storefrontId).to.equal(STOREFRONT_ID);
+          const form = await request.formData();
+          const bundlePart = form.get('bundle');
+          const isBlob = bundlePart instanceof Blob;
+          received = {
+            bundleName: isBlob ? (bundlePart as {name?: string}).name : undefined,
+            bundleSize: isBlob ? (bundlePart as Blob).size : undefined,
+            message: form.get('message') as string,
+            rootDir: form.get('rootDir') as string,
+            configPath: form.get('configPath') as string,
+            matchMode: form.get('matchMode') as string,
+          };
+          return HttpResponse.json({bundleId: 42, warnings: [], matches: {ssrOnly: ['ssr.js']}}, {status: 201});
+        }),
+      );
+
+      const result = await uploadBundleScapi(scapiConn(), {storefrontId: STOREFRONT_ID, bundle: testBundleV2});
+
+      expect(result.bundleId).to.equal(42);
+      expect(result.warnings).to.deep.equal([]);
+      expect(result.matches).to.deep.equal({ssrOnly: ['ssr.js']});
+      expect(result.raw).to.deep.equal({bundleId: 42, warnings: [], matches: {ssrOnly: ['ssr.js']}});
+
+      // Payload parity with the legacy v2 upload: same field names + values.
+      expect(received.bundleName).to.equal('bundle.tar.gz');
+      expect(received.bundleSize).to.be.greaterThan(0);
+      expect(received.message).to.equal('v2 message');
+      expect(received.rootDir).to.equal('bld');
+      expect(received.configPath).to.equal('.mrt/config.json');
+      expect(received.matchMode).to.equal('strict');
+    });
+
+    it('accepts a gzip-compressed archive with the same multipart shape', async () => {
+      // A gzip tar starts with the gzip magic bytes (0x1f 0x8b); the wrapper
+      // treats the archive as opaque bytes, so both uncompressed and gzip work.
+      const gzipBundle: BundleV2 = {...testBundleV2, archive: Buffer.from([0x1f, 0x8b, 0x08, 0x00, 0x01, 0x02])};
+      let bundleSize = 0;
+
+      server.use(
+        http.post(SCAPI_BUNDLES, async ({request}) => {
+          const form = await request.formData();
+          bundleSize = (form.get('bundle') as Blob).size;
+          return HttpResponse.json({bundleId: 43}, {status: 201});
+        }),
+      );
+
+      const result = await uploadBundleScapi(scapiConn(), {storefrontId: STOREFRONT_ID, bundle: gzipBundle});
+
+      expect(result.bundleId).to.equal(43);
+      expect(bundleSize).to.equal(gzipBundle.archive.length);
+    });
+
+    it('defaults warnings and matches when omitted', async () => {
+      server.use(http.post(SCAPI_BUNDLES, () => HttpResponse.json({bundleId: 7}, {status: 201})));
+
+      const result = await uploadBundleScapi(scapiConn(), {storefrontId: STOREFRONT_ID, bundle: testBundleV2});
+
+      expect(result.bundleId).to.equal(7);
+      expect(result.warnings).to.deep.equal([]);
+      expect(result.matches).to.deep.equal({});
+    });
+
+    it('throws when the response omits a bundle id', async () => {
+      server.use(http.post(SCAPI_BUNDLES, () => HttpResponse.json({warnings: []}, {status: 201})));
+
+      let threw: unknown;
+      try {
+        await uploadBundleScapi(scapiConn(), {storefrontId: STOREFRONT_ID, bundle: testBundleV2});
+      } catch (error) {
+        threw = error;
+      }
+      expect((threw as Error).message).to.include('omitted a bundle id');
+    });
+
+    it('throws a ScapiRequestError carrying the status on failure', async () => {
+      server.use(
+        http.post(SCAPI_BUNDLES, () =>
+          HttpResponse.json(
+            {title: 'Forbidden', type: 'about:blank', detail: 'nope'},
+            {status: 403, headers: {'Content-Type': 'application/problem+json'}},
+          ),
+        ),
+      );
+
+      let threw: unknown;
+      try {
+        await uploadBundleScapi(scapiConn(), {storefrontId: STOREFRONT_ID, bundle: testBundleV2});
+      } catch (error) {
+        threw = error;
+      }
+      expect(threw).to.be.instanceOf(ScapiRequestError);
+      expect((threw as ScapiRequestError).status).to.equal(403);
+    });
+  });
+
+  describe('listMrtBundles (backend-aware)', () => {
+    it('routes to SCAPI when preference is scapi and surfaces the raw response', async () => {
+      const raw = {limit: 25, offset: 0, total: 1, data: [{bundleId: 170, description: 'scapi bundle', status: 'ok'}]};
+      server.use(http.get(SCAPI_BUNDLES, () => HttpResponse.json(raw)));
+
+      const result = await listMrtBundles({
+        preference: 'scapi',
+        scapiConnection: scapiConn(),
+        legacyAuth: new MockAuthStrategy(),
+        projectSlug: STOREFRONT_ID,
+      });
+
+      expect(result.backend).to.equal('scapi');
+      expect(result.count).to.equal(1);
+      expect(result.bundles[0]).to.deep.include({id: 170, message: 'scapi bundle', backend: 'scapi'});
+      expect(result.raw).to.deep.equal(raw);
+    });
+
+    it('routes to legacy when preference is legacy and keeps the legacy raw shape', async () => {
+      server.use(
+        http.get(LEGACY_BUNDLES, () =>
+          HttpResponse.json({
+            count: 1,
+            next: null,
+            previous: null,
+            results: [
+              {id: 5, message: 'legacy bundle', status: 1, user: 'u@example.com', created_at: '2026-01-01T00:00:00Z'},
+            ],
+          }),
+        ),
+      );
+
+      const result = await listMrtBundles({
+        preference: 'legacy',
+        scapiConnection: scapiConn(),
+        legacyAuth: new MockAuthStrategy(),
+        projectSlug: STOREFRONT_ID,
+      });
+
+      expect(result.backend).to.equal('legacy');
+      expect(result.bundles[0]).to.deep.include({id: 5, message: 'legacy bundle', status: 1, backend: 'legacy'});
+      expect(result.raw).to.deep.include({count: 1, next: null, previous: null});
+    });
+
+    it('auto falls back from SCAPI to legacy on a safe status', async () => {
+      server.use(
+        http.get(SCAPI_BUNDLES, () =>
+          HttpResponse.json(
+            {title: 'Not Found', type: 'about:blank', detail: 'no storefront'},
+            {status: 404, headers: {'Content-Type': 'application/problem+json'}},
+          ),
+        ),
+        http.get(LEGACY_BUNDLES, () => HttpResponse.json({count: 0, next: null, previous: null, results: []})),
+      );
+
+      const fallbacks: string[] = [];
+      const result = await listMrtBundles({
+        preference: 'auto',
+        scapiConnection: scapiConn(),
+        legacyAuth: new MockAuthStrategy(),
+        projectSlug: STOREFRONT_ID,
+        onFallback: (reason) => fallbacks.push(reason),
+      });
+
+      expect(result.backend).to.equal('legacy');
+      expect(fallbacks).to.have.length(1);
+    });
+
+    it('does NOT fall back on an unsafe SCAPI status (409)', async () => {
+      server.use(
+        http.get(SCAPI_BUNDLES, () =>
+          HttpResponse.json(
+            {title: 'Conflict', type: 'about:blank', detail: 'conflict'},
+            {status: 409, headers: {'Content-Type': 'application/problem+json'}},
+          ),
+        ),
+      );
+
+      let threw: unknown;
+      try {
+        await listMrtBundles({
+          preference: 'auto',
+          scapiConnection: scapiConn(),
+          legacyAuth: new MockAuthStrategy(),
+          projectSlug: STOREFRONT_ID,
+        });
+      } catch (error) {
+        threw = error;
+      }
+      expect(threw).to.be.instanceOf(ScapiRequestError);
+      expect((threw as ScapiRequestError).status).to.equal(409);
+    });
+  });
+
+  describe('pushMrtBundle (backend-aware local build)', () => {
+    let tempDir: string;
+    let buildDir: string;
+
+    beforeEach(() => {
+      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-sdk-push-'));
+      buildDir = path.join(tempDir, 'build');
+      fs.mkdirSync(path.join(buildDir, 'static'), {recursive: true});
+      fs.writeFileSync(path.join(buildDir, 'ssr.js'), 'console.log("ssr");');
+      fs.writeFileSync(path.join(buildDir, 'static', 'index.html'), '<html></html>');
+    });
+
+    afterEach(() => {
+      if (tempDir) fs.rmSync(tempDir, {recursive: true, force: true});
+    });
+
+    function pushOptions(overrides: Record<string, unknown> = {}) {
+      return {
+        preference: 'scapi' as const,
+        scapiConnection: scapiConn(),
+        legacyAuth: new MockAuthStrategy(),
+        projectSlug: STOREFRONT_ID,
+        buildDirectory: buildDir,
+        ssrOnly: ['ssr.js'],
+        ssrShared: ['static/**/*'],
+        message: 'local build',
+        ...overrides,
+      };
+    }
+
+    it('uploads then deploys over SCAPI and surfaces both native responses under raw', async () => {
+      let deployBody: unknown;
+      server.use(
+        http.post(SCAPI_BUNDLES, () => HttpResponse.json({bundleId: 170, warnings: []}, {status: 201})),
+        http.post(SCAPI_DEPLOYMENTS, async ({request, params}) => {
+          expect(params.environmentId).to.equal('production');
+          deployBody = await request.json();
+          return HttpResponse.json({deploymentId: 'dep-uuid', status: 'queued'}, {status: 201});
+        }),
+      );
+
+      const result = await pushMrtBundle(pushOptions({targetSlug: 'production'}));
+
+      expect(result.backend).to.equal('scapi');
+      expect(result.bundleId).to.equal(170);
+      expect(result.deployed).to.be.true;
+      expect(result.deploymentId).to.equal('dep-uuid');
+      expect(result.status).to.equal('queued');
+      expect(deployBody).to.deep.equal({bundleId: 170});
+      expect(result.raw).to.deep.equal({
+        bundle: {bundleId: 170, warnings: []},
+        deployment: {deploymentId: 'dep-uuid', status: 'queued'},
+      });
+    });
+
+    it('uploads only (no target) and does not call the deployment endpoint', async () => {
+      let deployCalled = false;
+      server.use(
+        http.post(SCAPI_BUNDLES, () => HttpResponse.json({bundleId: 42, warnings: ['heads up']}, {status: 201})),
+        http.post(SCAPI_DEPLOYMENTS, () => {
+          deployCalled = true;
+          return HttpResponse.json({deploymentId: 'x'}, {status: 201});
+        }),
+      );
+
+      const result = await pushMrtBundle(pushOptions());
+
+      expect(result.backend).to.equal('scapi');
+      expect(result.bundleId).to.equal(42);
+      expect(result.deployed).to.be.false;
+      expect(result.deploymentId).to.be.undefined;
+      expect(result.warnings).to.deep.equal(['heads up']);
+      expect(result.raw).to.deep.equal({bundle: {bundleId: 42, warnings: ['heads up']}});
+      expect(deployCalled).to.be.false;
+    });
+
+    it('auto falls back to legacy when the SCAPI upload fails with a safe status', async () => {
+      let legacyBuildBody: unknown;
+      server.use(
+        http.post(SCAPI_BUNDLES, () =>
+          HttpResponse.json(
+            {title: 'Forbidden', type: 'about:blank', detail: 'nope'},
+            {status: 403, headers: {'Content-Type': 'application/problem+json'}},
+          ),
+        ),
+        http.post(LEGACY_BUILDS_TARGET, async ({request}) => {
+          legacyBuildBody = await request.json();
+          return HttpResponse.json({bundle_id: 999, message: 'ok', warnings: []});
+        }),
+      );
+
+      const fallbacks: string[] = [];
+      const result = await pushMrtBundle(
+        pushOptions({preference: 'auto', targetSlug: 'production', onFallback: (r: string) => fallbacks.push(r)}),
+      );
+
+      expect(result.backend).to.equal('legacy');
+      expect(result.bundleId).to.equal(999);
+      expect(result.deployed).to.be.true;
+      expect(fallbacks).to.have.length(1);
+      expect(legacyBuildBody).to.have.property('message', 'local build');
+    });
+
+    it('does NOT fall back when the post-upload deploy fails (avoids a double upload)', async () => {
+      let legacyCalled = false;
+      let uploadCount = 0;
+      server.use(
+        http.post(SCAPI_BUNDLES, () => {
+          uploadCount += 1;
+          return HttpResponse.json({bundleId: 55, warnings: []}, {status: 201});
+        }),
+        http.post(SCAPI_DEPLOYMENTS, () =>
+          HttpResponse.json(
+            {title: 'Conflict', type: 'about:blank', detail: 'a deployment is already in progress'},
+            {status: 409, headers: {'Content-Type': 'application/problem+json'}},
+          ),
+        ),
+        http.post(LEGACY_BUILDS_TARGET, () => {
+          legacyCalled = true;
+          return HttpResponse.json({bundle_id: 1, message: 'ok', warnings: []});
+        }),
+      );
+
+      let threw: unknown;
+      try {
+        await pushMrtBundle(pushOptions({preference: 'auto', targetSlug: 'production'}));
+      } catch (error) {
+        threw = error;
+      }
+
+      // The upload succeeded once; the deploy failure is re-thrown as a plain
+      // Error (not a ScapiRequestError), so auto does not retry on legacy.
+      expect(threw).to.be.instanceOf(Error);
+      expect(threw).to.not.be.instanceOf(ScapiRequestError);
+      expect((threw as Error).message).to.include('uploaded successfully but the deployment to production failed');
+      expect(uploadCount).to.equal(1);
+      expect(legacyCalled).to.be.false;
+    });
+
+    it('routes to legacy when preference is legacy (v1 combined upload+deploy)', async () => {
+      server.use(
+        http.post(LEGACY_BUILDS_TARGET, () =>
+          HttpResponse.json({bundle_id: 321, message: 'legacy push', warnings: []}),
+        ),
+      );
+
+      const result = await pushMrtBundle(pushOptions({preference: 'legacy', targetSlug: 'production'}));
+
+      expect(result.backend).to.equal('legacy');
+      expect(result.bundleId).to.equal(321);
+      expect(result.deployed).to.be.true;
+      expect(result.raw).to.deep.include({bundleId: 321, projectSlug: STOREFRONT_ID, deployed: true});
     });
   });
 });

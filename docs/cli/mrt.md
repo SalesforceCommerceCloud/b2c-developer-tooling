@@ -29,12 +29,12 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 
 These flags are available on all MRT commands:
 
-| Flag                  | Environment Variable | Description                                                                                                                              |
-| --------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `--api-key`           | `MRT_API_KEY`        | MRT API key (legacy MRT Cloud API)                                                                                                       |
+| Flag                  | Environment Variable | Description                                                                                                                                                                                                                                                   |
+| --------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--api-key`           | `MRT_API_KEY`        | MRT API key (legacy MRT Cloud API)                                                                                                                                                                                                                            |
 | `--project`, `-p`     | `MRT_PROJECT`        | MRT project slug — the SCAPI storefront ID (the same value). Aliases: `--storefront`, `-s` (interchangeable on every `mrt` command). `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` also supported. On `mrt project create`, this flag sets the new project's slug. |
-| `--environment`, `-e` | `MRT_ENVIRONMENT`    | Target environment (e.g., staging, production). `MRT_TARGET` also supported.                                                             |
-| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `auto` (default), `legacy`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends).            |
+| `--environment`, `-e` | `MRT_ENVIRONMENT`    | Target environment (e.g., staging, production). `MRT_TARGET` also supported.                                                                                                                                                                                  |
+| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `auto` (default), `legacy`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends).                                                                                                                                 |
 
 The SCAPI backend also honors the standard OAuth flags (`--client-id`, `--client-secret`, `--short-code`, `--tenant-id`, and the JWT flags). See [MRT Backends](#mrt-backends).
 
@@ -51,7 +51,7 @@ MRT commands resolve configuration in the following order of precedence:
 
 MRT commands use API key authentication against the legacy MRT Cloud API. The API key is configured in the Managed Runtime dashboard.
 
-Two commands — `mrt bundle history` and `mrt bundle deploy <bundleId>` — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
+Several commands — `mrt bundle history`, `mrt bundle list`, and `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
 
 ### Getting an API Key
 
@@ -76,7 +76,7 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 MRT is served by two backends:
 
 - **legacy** — the MRT Cloud API (`cloud.mobify.com`), authenticated with a per-user API key (`--api-key` / `~/.mobify`). This is the backend for every MRT command.
-- **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. Each supported command requires the SCAPI scopes for the API it maps to — today the deployment commands (`bundle history` / `deploy`) need `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw`.
+- **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. Each supported command requires the SCAPI scopes for the API it maps to — today the bundle commands (`bundle history`, `bundle list`, `bundle deploy`) map to the Storefront Deployments API and need `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw`.
 
 Select the backend with `--mrt-backend` (or `MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
@@ -88,12 +88,14 @@ Select the backend with `--mrt-backend` (or `MRT_BACKEND` / `SFCC_MRT_BACKEND`, 
 
 ### SCAPI-supported commands
 
-Only two commands implement the SCAPI backend today:
+These commands implement the SCAPI backend today:
 
 - `b2c mrt bundle history` — list deployments
+- `b2c mrt bundle list` — list bundles
 - `b2c mrt bundle deploy <bundleId>` — deploy an existing bundle
+- `b2c mrt bundle deploy` (no bundle ID) — upload a local build and optionally deploy it
 
-Every other MRT command — and `mrt bundle deploy` **without** a bundle ID (the local-build push path) — runs on the legacy MRT Cloud API. On those, `--mrt-backend scapi` errors with an actionable message, and `--mrt-backend auto` warns (only when SCAPI is actually configured) before using legacy.
+Every other MRT command runs on the legacy MRT Cloud API. On those, `--mrt-backend scapi` errors with an actionable message, and `--mrt-backend auto` warns (only when SCAPI is actually configured) before using legacy.
 
 ### Auto-detection criteria
 
@@ -616,7 +618,7 @@ b2c mrt env access-control list -p my-storefront -e staging --json
 
 Push a local build or deploy an existing bundle.
 
-Deploying an existing bundle (with a bundle ID) is [backend-aware](#mrt-backends) — it honors `--mrt-backend`. Pushing a local build (no bundle ID) is legacy-pinned: bundle upload is not part of the SCAPI MRT surface, so `--mrt-backend scapi` errors on that path and `auto` uses legacy.
+Both paths are [backend-aware](#mrt-backends) — they honor `--mrt-backend`. Deploying an existing bundle (with a bundle ID) uploads nothing and deploys over the selected backend. Pushing a local build (no bundle ID) uploads the bundle — and, when `--environment` is given, deploys it — over SCAPI or the legacy MRT Cloud API. Under `auto`, if the SCAPI upload fails on a safe pre-execution error it falls back to legacy; once a bundle has been uploaded, a later deploy failure is not retried on legacy (so a bundle is never uploaded twice).
 
 When pushing a local build, the SSR configuration is read from `config.server.ts` in the project directory (`--project-directory`, default the current directory), and the project's `package.json` dependencies (`dependencies` + `devDependencies`) are recorded as the bundle's `bundle_metadata` — both best-effort.
 
@@ -641,6 +643,9 @@ b2c mrt bundle deploy -p my-storefront -e staging --wait
 
 # Deploy an existing bundle via the SCAPI backend and wait for completion
 b2c mrt bundle deploy 12345 -p my-storefront -e production --mrt-backend scapi --wait
+
+# Push a local build and deploy it via the SCAPI backend
+b2c mrt bundle deploy -p my-storefront -e staging --mrt-backend scapi
 ```
 
 **Flags:**
@@ -703,12 +708,15 @@ b2c mrt bundle upload-v2 -p my-storefront --cloud-origin https://cloud.mobify.co
 
 ### b2c mrt bundle list
 
-List bundles in a project.
+List bundles in a project. This command is [backend-aware](#mrt-backends): under `--json` it returns the serving backend's native response verbatim.
 
 ```bash
 b2c mrt bundle list --project my-storefront
 b2c mrt bundle list -p my-storefront --limit 10
 b2c mrt bundle list -p my-storefront --json
+
+# Force the SCAPI backend
+b2c mrt bundle list -p my-storefront --mrt-backend scapi
 ```
 
 ### b2c mrt bundle history

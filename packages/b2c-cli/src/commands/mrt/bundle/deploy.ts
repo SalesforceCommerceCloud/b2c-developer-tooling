@@ -6,13 +6,13 @@
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
-  pushBundle,
+  pushMrtBundle,
   deployMrtBundle,
   waitForEnv,
   waitForDeploymentScapi,
   DEFAULT_SSR_PARAMETERS,
-  type PushResult,
   type MrtEnvironment,
+  type MrtBackendPreference,
   type ScapiMrtConnection,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
@@ -30,9 +30,9 @@ type ScapiDeploymentResult = Awaited<ReturnType<typeof waitForDeploymentScapi>>;
  * Deploy a bundle to Managed Runtime.
  *
  * Without bundleId: Creates a bundle from the local build directory and uploads it.
- * Optionally deploys to an environment if --environment is specified.
- * The local-build path is legacy-pinned (bundle upload is not part of the SCAPI
- * MRT surface yet), so it runs against the MRT Cloud API regardless of backend.
+ * Optionally deploys to an environment if --environment is specified. This path
+ * is backend-aware — it honors `--mrt-backend` (auto/legacy/scapi), uploading
+ * (and optionally deploying) via SCAPI or the legacy MRT Cloud API.
  *
  * With bundleId: Deploys an existing bundle to the specified environment. This
  * path is backend-aware — it honors `--mrt-backend` (auto/legacy/scapi).
@@ -108,7 +108,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
   };
 
   protected operations = {
-    pushBundle,
+    pushMrtBundle,
     deployMrtBundle,
     waitForEnv,
     waitForDeploymentScapi,
@@ -216,29 +216,51 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         const message = t('commands.mrt.bundle.deploy.deployFailed', 'Failed to create deployment: {{message}}', {
           message: error.message,
         });
-        // `MRT_PROJECT_SUGGESTION` points at `b2c mrt project list`, a legacy MRT
-        // Cloud API command — only relevant when the legacy backend served the
-        // request. Under explicit `--mrt-backend scapi` the failure is a SCAPI
-        // one, so appending it would send the user down the wrong path.
-        if (isMrtAuthError(error) && preference !== 'scapi') {
-          this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
-        }
-        this.error(message);
+        this.failWithMrtError(error, message, preference, scapiConnection);
       }
       throw error;
     }
   }
 
   /**
-   * Push a local build to create a new bundle. Legacy-pinned: bundle upload is
-   * not part of the SCAPI MRT surface, so a single command never mixes
-   * backends. Explicit `--mrt-backend scapi` errors here; `auto` warns and
-   * proceeds on the legacy MRT Cloud API.
+   * Fail a push/deploy with the appropriate message, appending the legacy
+   * `b2c mrt project list` suggestion only when the legacy backend served (or
+   * could have served) the request.
+   *
+   * `MRT_PROJECT_SUGGESTION` points at `b2c mrt project list`, a legacy MRT
+   * Cloud API command — only relevant when the legacy backend served the
+   * request. The command can't tell post-hoc which backend threw (the router
+   * only reports `backend` on success), so suggest it only when legacy is the
+   * serving backend: an explicit `legacy` preference, or `auto` with no SCAPI
+   * connection configured. Under `scapi` (or `auto` with SCAPI configured) the
+   * failure is almost always a SCAPI one, so appending a legacy hint would send
+   * the user down the wrong path.
    */
-  private async pushLocalBuild(): Promise<MrtEnvironment | PushResult> {
-    this.guardUnsupportedByScapiMrt('pushing a local build');
-    this.requireMrtCredentials();
+  private failWithMrtError(
+    error: Error,
+    message: string,
+    preference: MrtBackendPreference,
+    scapiConnection?: ScapiMrtConnection,
+  ): never {
+    const legacyServed = preference === 'legacy' || !scapiConnection;
+    if (isMrtAuthError(error) && legacyServed) {
+      this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
+    }
+    this.error(message);
+  }
 
+  /**
+   * Push a local build to create a new bundle. Backend-aware: honors
+   * `--mrt-backend` and uploads (then optionally deploys, when `--environment`
+   * is given) via SCAPI or the legacy MRT Cloud API, with safe `auto` fallback.
+   * On `--wait`, polls whichever backend served the push.
+   *
+   * Returns the backend's native response so `--json` stays backend-specific:
+   * without `--wait`, the raw push result (legacy MRT Cloud API push result, or
+   * the SCAPI upload — plus create-deployment — responses); with `--wait`, the
+   * polled environment (legacy) or completed deployment (SCAPI).
+   */
+  private async pushLocalBuild(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: target} = this.resolvedConfig.values;
     const {message} = this.flags;
 
@@ -247,6 +269,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
       );
     }
+
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
     const buildDir = this.flags['build-dir'];
     const ssrOnly = this.flags['ssr-only'] ? parseGlobPatterns(this.flags['ssr-only']) : undefined;
@@ -273,33 +297,34 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     }
 
     try {
-      const result = await this.operations.pushBundle(
-        {
-          projectSlug: project,
-          target,
-          message,
-          buildDirectory: buildDir,
-          projectDirectory: this.resolvedConfig.values.projectDirectory,
-          ssrOnly,
-          ssrShared,
-          ssrParameters,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+      const result = await this.operations.pushMrtBundle({
+        preference,
+        scapiConnection,
+        legacyAuth,
+        projectSlug: project,
+        targetSlug: target,
+        message,
+        buildDirectory: buildDir,
+        projectDirectory: this.resolvedConfig.values.projectDirectory,
+        ssrOnly,
+        ssrShared,
+        ssrParameters,
+        origin: this.resolvedConfig.values.mrtOrigin,
+        onResolve: (backend) => this.logger.debug({backend}, '[MRT] Pushing local build via backend'),
+      });
 
       // Consolidated success output
       if (!this.jsonEnabled()) {
-        const deployedMsg = result.deployed && result.target ? ` and deployed to ${result.target}` : '';
+        const deployedMsg = result.deployed && target ? ` and deployed to ${target}` : '';
         this.log(
           t(
             'commands.mrt.bundle.deploy.pushSuccess',
             'Bundle #{{bundleId}} pushed to {{project}}{{deployed}} ({{message}})',
             {
               bundleId: String(result.bundleId),
-              project: result.projectSlug,
+              project,
               deployed: deployedMsg,
-              message: result.message,
+              message: result.message ?? '',
             },
           ),
         );
@@ -310,21 +335,27 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       if (this.flags.wait) {
         if (!target) {
           this.warn('--wait was specified but no environment was provided. Skipping wait.');
-          return result;
+          return result.raw;
+        }
+        if (result.backend === 'scapi') {
+          if (result.deploymentId) {
+            return this.waitForScapiDeploymentById(scapiConnection!, project, target, result.deploymentId);
+          }
+          this.warn(
+            '--wait was specified but the SCAPI deployment did not return a deployment ID; cannot poll for completion.',
+          );
+          return result.raw;
         }
         return this.waitForDeployment(project, target);
       }
 
-      return result;
+      return result.raw;
     } catch (error) {
       if (error instanceof Error) {
         const message = t('commands.mrt.bundle.deploy.pushFailed', 'Push failed: {{message}}', {
           message: error.message,
         });
-        if (isMrtAuthError(error)) {
-          this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
-        }
-        this.error(message);
+        this.failWithMrtError(error, message, preference, scapiConnection);
       }
       throw error;
     }
