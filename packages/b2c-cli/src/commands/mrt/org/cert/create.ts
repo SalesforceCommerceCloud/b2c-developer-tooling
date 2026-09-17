@@ -41,22 +41,20 @@ export default class MrtOrgCertCreate extends MrtCommand<typeof MrtOrgCertCreate
       this.getMrtAuth(),
     );
 
-    if (!this.jsonEnabled()) {
+    this.log(
+      t('commands.mrt.org.cert.create.success', 'Certificate created (id={{id}}) for {{domain}}.', {
+        id: String(cert.id ?? '?'),
+        domain,
+      }),
+    );
+    if (cert.validation_record) {
       this.log(
-        t('commands.mrt.org.cert.create.success', 'Certificate created (id={{id}}) for {{domain}}.', {
-          id: String(cert.id ?? '?'),
-          domain,
-        }),
+        t(
+          'commands.mrt.org.cert.create.validationRecord',
+          'Add the following DNS record to validate this certificate:\n  {{record}}',
+          {record: cert.validation_record},
+        ),
       );
-      if (cert.validation_record) {
-        this.log(
-          t(
-            'commands.mrt.org.cert.create.validationRecord',
-            'Add the following DNS record to validate this certificate:\n  {{record}}',
-            {record: cert.validation_record},
-          ),
-        );
-      }
     }
 
     return cert;

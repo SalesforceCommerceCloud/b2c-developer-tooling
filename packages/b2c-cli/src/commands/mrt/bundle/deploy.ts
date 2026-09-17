@@ -152,15 +152,13 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
 
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.deploying', 'Deploying bundle {{bundleId}} to {{project}}/{{environment}}...', {
-          bundleId,
-          project,
-          environment,
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.deploying', 'Deploying bundle {{bundleId}} to {{project}}/{{environment}}...', {
+        bundleId,
+        project,
+        environment,
+      }),
+    );
 
     try {
       const result = await this.operations.deployMrtBundle({
@@ -174,25 +172,23 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         onResolve: (backend) => this.logger.debug({backend}, '[MRT] Deploying bundle via backend'),
       });
 
-      if (!this.jsonEnabled()) {
+      this.log(
+        t(
+          'commands.mrt.bundle.deploy.deploySuccess',
+          'Deployment started. Bundle {{bundleId}} is being deployed to {{environment}}.',
+          {
+            bundleId,
+            environment,
+          },
+        ),
+      );
+      if (!this.flags.wait) {
         this.log(
           t(
-            'commands.mrt.bundle.deploy.deploySuccess',
-            'Deployment started. Bundle {{bundleId}} is being deployed to {{environment}}.',
-            {
-              bundleId,
-              environment,
-            },
+            'commands.mrt.bundle.deploy.note',
+            'Note: Deployments are asynchronous. Use "b2c mrt env get" or the Runtime Admin dashboard to check status.',
           ),
         );
-        if (!this.flags.wait) {
-          this.log(
-            t(
-              'commands.mrt.bundle.deploy.note',
-              'Note: Deployments are asynchronous. Use "b2c mrt env get" or the Runtime Admin dashboard to check status.',
-            ),
-          );
-        }
       }
 
       for (const w of result.warnings ?? []) this.warn(w);
@@ -260,16 +256,14 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       ssrParameters.SSRFunctionNodeVersion = this.flags['node-version'];
     }
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.mrt.bundle.deploy.pushing', 'Pushing bundle to {{project}}...', {project}));
+    this.log(t('commands.mrt.bundle.deploy.pushing', 'Pushing bundle to {{project}}...', {project}));
 
-      if (target) {
-        this.log(
-          t('commands.mrt.bundle.deploy.willDeploy', 'Bundle will be deployed to {{environment}}', {
-            environment: target,
-          }),
-        );
-      }
+    if (target) {
+      this.log(
+        t('commands.mrt.bundle.deploy.willDeploy', 'Bundle will be deployed to {{environment}}', {
+          environment: target,
+        }),
+      );
     }
 
     try {
@@ -289,21 +283,19 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       );
 
       // Consolidated success output
-      if (!this.jsonEnabled()) {
-        const deployedMsg = result.deployed && result.target ? ` and deployed to ${result.target}` : '';
-        this.log(
-          t(
-            'commands.mrt.bundle.deploy.pushSuccess',
-            'Bundle #{{bundleId}} pushed to {{project}}{{deployed}} ({{message}})',
-            {
-              bundleId: String(result.bundleId),
-              project: result.projectSlug,
-              deployed: deployedMsg,
-              message: result.message,
-            },
-          ),
-        );
-      }
+      const deployedMsg = result.deployed && result.target ? ` and deployed to ${result.target}` : '';
+      this.log(
+        t(
+          'commands.mrt.bundle.deploy.pushSuccess',
+          'Bundle #{{bundleId}} pushed to {{project}}{{deployed}} ({{message}})',
+          {
+            bundleId: String(result.bundleId),
+            project: result.projectSlug,
+            deployed: deployedMsg,
+            message: result.message,
+          },
+        ),
+      );
 
       for (const w of result.warnings ?? []) this.warn(w);
 
@@ -334,13 +326,11 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
    * Wait for a legacy deployment to complete by polling the environment state.
    */
   private async waitForDeployment(project: string, environment: string): Promise<MrtEnvironment> {
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.waiting', 'Waiting for deployment to complete on {{environment}}...', {
-          environment,
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.waiting', 'Waiting for deployment to complete on {{environment}}...', {
+        environment,
+      }),
+    );
 
     const envResult = await this.operations.waitForEnv(
       {
@@ -350,26 +340,22 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         pollIntervalSeconds: this.flags['poll-interval'],
         timeoutSeconds: this.flags.timeout,
         onPoll: (info) => {
-          if (!this.jsonEnabled()) {
-            this.log(
-              t('commands.mrt.bundle.deploy.state', '[{{elapsed}}s] State: {{state}}', {
-                elapsed: String(info.elapsedSeconds),
-                state: info.state,
-              }),
-            );
-          }
+          this.log(
+            t('commands.mrt.bundle.deploy.state', '[{{elapsed}}s] State: {{state}}', {
+              elapsed: String(info.elapsedSeconds),
+              state: info.state,
+            }),
+          );
         },
       },
       this.getMrtAuth(),
     );
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.deployComplete', 'Deployment complete. Environment is {{state}}.', {
-          state: envResult.state ?? 'unknown',
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.deployComplete', 'Deployment complete. Environment is {{state}}.', {
+        state: envResult.state ?? 'unknown',
+      }),
+    );
 
     return envResult;
   }
@@ -384,13 +370,11 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     environmentId: string,
     deploymentId: string,
   ): Promise<ScapiDeploymentResult> {
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.waiting', 'Waiting for deployment to complete on {{environment}}...', {
-          environment: environmentId,
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.waiting', 'Waiting for deployment to complete on {{environment}}...', {
+        environment: environmentId,
+      }),
+    );
 
     const deployment = await this.operations.waitForDeploymentScapi(conn, {
       storefrontId,
@@ -399,27 +383,23 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       pollIntervalSeconds: this.flags['poll-interval'],
       timeoutSeconds: this.flags.timeout,
       onPoll: (info) => {
-        if (!this.jsonEnabled()) {
-          const pct = typeof info.percentage === 'number' ? ` (${info.percentage}%)` : '';
-          const desc = info.description ? ` — ${info.description}` : '';
-          this.log(
-            t('commands.mrt.bundle.deploy.scapiState', '[{{elapsed}}s] Status: {{status}}{{detail}}', {
-              elapsed: String(info.elapsedSeconds),
-              status: info.status,
-              detail: `${pct}${desc}`,
-            }),
-          );
-        }
+        const pct = typeof info.percentage === 'number' ? ` (${info.percentage}%)` : '';
+        const desc = info.description ? ` — ${info.description}` : '';
+        this.log(
+          t('commands.mrt.bundle.deploy.scapiState', '[{{elapsed}}s] Status: {{status}}{{detail}}', {
+            elapsed: String(info.elapsedSeconds),
+            status: info.status,
+            detail: `${pct}${desc}`,
+          }),
+        );
       },
     });
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.scapiDeployComplete', 'Deployment complete. Status: {{status}}.', {
-          status: deployment.status ?? 'unknown',
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.scapiDeployComplete', 'Deployment complete. Status: {{status}}.', {
+        status: deployment.status ?? 'unknown',
+      }),
+    );
 
     return deployment;
   }

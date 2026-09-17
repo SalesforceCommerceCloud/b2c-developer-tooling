@@ -89,23 +89,21 @@ export default class MrtTailLogs extends MrtCommand<typeof MrtTailLogs> {
       // Non-fatal: proceed without user email
     }
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.tail-logs.connecting', 'Connecting to {{project}}/{{environment}} logs...', {
-          project,
-          environment,
-        }),
-      );
+    this.log(
+      t('commands.mrt.tail-logs.connecting', 'Connecting to {{project}}/{{environment}} logs...', {
+        project,
+        environment,
+      }),
+    );
 
-      // Log active filters
-      if (upperLevels) {
-        const levels = useColor ? [...upperLevels].map((l) => colorLevel(l)).join(', ') : [...upperLevels].join(', ');
-        this.log(t('commands.mrt.tail-logs.filterLevel', 'Filtering by level: {{levels}}', {levels}));
-      }
-      if (searchFilter) {
-        const pattern = useColor ? colorHighlight(searchFilter) : searchFilter;
-        this.log(t('commands.mrt.tail-logs.filterSearch', 'Filtering by pattern: {{pattern}}', {pattern}));
-      }
+    // Log active filters
+    if (upperLevels) {
+      const levels = useColor ? [...upperLevels].map((l) => colorLevel(l)).join(', ') : [...upperLevels].join(', ');
+      this.log(t('commands.mrt.tail-logs.filterLevel', 'Filtering by level: {{levels}}', {levels}));
+    }
+    if (searchFilter) {
+      const pattern = useColor ? colorHighlight(searchFilter) : searchFilter;
+      this.log(t('commands.mrt.tail-logs.filterSearch', 'Filtering by pattern: {{pattern}}', {pattern}));
     }
 
     const {stop, done} = await tailMrtLogs(
@@ -132,18 +130,14 @@ export default class MrtTailLogs extends MrtCommand<typeof MrtTailLogs> {
           }
         },
         onConnect: () => {
-          if (!this.jsonEnabled()) {
-            this.log(t('commands.mrt.tail-logs.connected', 'Connected. Waiting for log entries...'));
-            this.log(t('commands.mrt.tail-logs.interrupt', 'Press Ctrl+C to stop.\n'));
-          }
+          this.log(t('commands.mrt.tail-logs.connected', 'Connected. Waiting for log entries...'));
+          this.log(t('commands.mrt.tail-logs.interrupt', 'Press Ctrl+C to stop.\n'));
         },
         onError: (error: Error) => {
           this.warn(t('commands.mrt.tail-logs.error', 'WebSocket error: {{message}}', {message: error.message}));
         },
         onClose: (_code: number, _reason: string) => {
-          if (!this.jsonEnabled()) {
-            this.log(t('commands.mrt.tail-logs.disconnected', '\nDisconnected from log stream.'));
-          }
+          this.log(t('commands.mrt.tail-logs.disconnected', '\nDisconnected from log stream.'));
         },
       },
       auth,

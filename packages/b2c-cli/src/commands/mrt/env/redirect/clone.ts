@@ -88,19 +88,13 @@ export default class MrtRedirectClone extends MrtCommand<typeof MrtRedirectClone
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t(
-            'commands.mrt.redirect.clone.success',
-            'Cloned {{count}} redirect(s) from {{fromTarget}} to {{toTarget}}.',
-            {
-              count: result.count,
-              fromTarget,
-              toTarget,
-            },
-          ),
-        );
-      }
+      this.log(
+        t('commands.mrt.redirect.clone.success', 'Cloned {{count}} redirect(s) from {{fromTarget}} to {{toTarget}}.', {
+          count: result.count,
+          fromTarget,
+          toTarget,
+        }),
+      );
 
       return result;
     } catch (error) {
