@@ -45,6 +45,10 @@ function parseDependencies(value: string): Record<string, unknown> {
  *
  * This command is upload-only: it does not deploy the bundle. Deploy separately
  * with `b2c mrt bundle deploy <bundleId> --environment <env>`.
+ *
+ * Note: `b2c mrt bundle deploy --v2` covers the same v2 upload (and can also
+ * deploy in one step with `--environment`). Prefer it going forward; this
+ * command remains for the dedicated upload-only workflow.
  */
 export default class MrtBundleUploadV2 extends MrtCommand<typeof MrtBundleUploadV2> {
   static description = withDocs(
@@ -191,6 +195,13 @@ export default class MrtBundleUploadV2 extends MrtCommand<typeof MrtBundleUpload
           t(
             'commands.mrt.bundle.uploadV2.matches',
             'Server reported SSR file matches for this bundle. Run with --json to inspect them.',
+          ),
+        );
+
+        this.warn(
+          t(
+            'commands.mrt.bundle.uploadV2.pushV2Hint',
+            '"b2c mrt bundle deploy --v2" performs the same v2 upload and can build, upload, and deploy in one step.',
           ),
         );
       }
