@@ -111,7 +111,7 @@ For named entries, setting the default writes `active: true`; a root configurati
 
 The extension makes the **B2C Commerce MCP server** available in VS Code and Cursor without creating an MCP configuration file. In a trusted workspace, enable the server and its tools in your editor's chat settings. The default launcher requires Node.js 22 or later and `npx` on the extension host's PATH; it downloads the MCP version matched to the extension. Remote workspaces need these prerequisites on the remote host.
 
-In VS Code, attach **#b2cContext** to ask about the selected instance or code-sync status. In Cursor, the registered **salesforce-b2c-commerce** server exposes the same context through an optional connection to the extension. Context is read live from the editor window and includes connection metadata, never credentials.
+Chat can check the selected instance and live code-sync status in your editor window. Shared context includes connection details, never credentials.
 
 <ExamplePrompt>
 
@@ -121,7 +121,12 @@ In VS Code, attach **#b2cContext** to ask about the selected instance or code-sy
 
 Assistants can use the current IDE selection unless you specify another target. The context includes the project root, configuration file, instance name, hostname, configured code version, and whether code sync is actually running. When active, code sync reports its upload hostname and code version separately.
 
-This is guidance for the assistant, not an enforced binding of every operation to the status bar. Server launch defaults reflect the IDE selection at discovery/startup. After switching instances, the context tool reports the new selection; refresh/restart the Commerce MCP server if you need its launch defaults refreshed. Updating registration in Cursor can restart its server. Existing debug and log sessions do not move to the newly selected instance; a server restart ends those sessions. Environment overrides and credentials available only in the editor can also cause MCP resolution to differ.
+Both editors let your assistant check the current selection and code-sync status:
+
+- **VS Code:** attach **#b2cContext** to your chat.
+- **Cursor:** ask your assistant to check the selected B2C instance; the extension-provided MCP server includes this capability without additional setup.
+
+After switching instances, ask the assistant to check your selection again. Explicit targets in your request take precedence. Existing debug and log sessions stay on their original instance; restarting MCP ends those sessions. In VS Code, restart MCP if it still uses the previous default instance. Cursor may restart it when you change instances.
 
 The native context tool is specific to VS Code chat integrations that consume extension tools. Cursor uses its own MCP registration API. Other assistants sharing the directory do not automatically inherit editor context. In remote workspaces, the MCP process and extension host must run on the same host.
 
