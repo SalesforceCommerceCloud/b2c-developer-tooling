@@ -41,8 +41,15 @@ connection for reading the selected instance and live code-sync status. VS Code
 provides the same context through the extension's native chat tool.
 
 The optional `--ide-context-url` launch flag and `SFCC_IDE_CONTEXT_TOKEN`
-environment variable are supplied together by the extension. They identify one
-running editor window and are not project configuration to save or share. The
+environment variable are supplied together by the extension. It starts a private
+HTTP endpoint on an OS-assigned loopback port inside the extension host, then
+passes that endpoint's URL and a generated authentication token when registering
+the Commerce MCP process with Cursor. This is one MCP server with a connection
+back to the extension, not a second MCP registration. You do not generate the URL
+or add it to your MCP configuration yourself.
+
+The URL and token identify one running editor window and are not project
+configuration to save or share. The
 MCP process must run on the same host as the extension. Without that connection,
 the MCP server does not expose IDE context. Restarting the editor requires a new
 connection; a failed connection never substitutes the shared default instance.
