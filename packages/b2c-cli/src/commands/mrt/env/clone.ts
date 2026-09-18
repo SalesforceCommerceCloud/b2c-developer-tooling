@@ -172,14 +172,12 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
             pollIntervalSeconds: pollInterval,
             timeoutSeconds: timeout,
             onPoll: (info) => {
-              if (!this.jsonEnabled()) {
-                this.log(
-                  t('commands.mrt.env.clone.state', '[{{elapsed}}s] State: {{state}}', {
-                    elapsed: String(info.elapsedSeconds),
-                    state: info.state,
-                  }),
-                );
-              }
+              this.log(
+                t('commands.mrt.env.clone.state', '[{{elapsed}}s] State: {{state}}', {
+                  elapsed: String(info.elapsedSeconds),
+                  state: info.state,
+                }),
+              );
             },
           },
           this.getMrtAuth(),

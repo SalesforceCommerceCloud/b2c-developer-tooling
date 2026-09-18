@@ -107,11 +107,9 @@ export default class MrtBundleDelete extends MrtCommand<typeof MrtBundleDelete> 
           this.getMrtAuth(),
         );
 
-        if (!this.jsonEnabled()) {
-          this.log(
-            t('commands.mrt.bundle.delete.queuedOne', 'Bundle {{id}} queued for deletion.', {id: String(bundleId)}),
-          );
-        }
+        this.log(
+          t('commands.mrt.bundle.delete.queuedOne', 'Bundle {{id}} queued for deletion.', {id: String(bundleId)}),
+        );
 
         return {queued: [bundleId], rejected: []};
       }
@@ -125,17 +123,15 @@ export default class MrtBundleDelete extends MrtCommand<typeof MrtBundleDelete> 
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.bundle.delete.queuedMany', '{{n}} bundle(s) queued for deletion.', {
-            n: String(result.queued.length),
-          }),
-        );
-        if (result.rejected.length > 0) {
-          this.log(t('commands.mrt.bundle.delete.rejectedHeader', 'Rejected bundles:'));
-          for (const r of result.rejected) {
-            this.log(`  - ${r.bundleId ?? '?'}: ${r.reason}`);
-          }
+      this.log(
+        t('commands.mrt.bundle.delete.queuedMany', '{{n}} bundle(s) queued for deletion.', {
+          n: String(result.queued.length),
+        }),
+      );
+      if (result.rejected.length > 0) {
+        this.log(t('commands.mrt.bundle.delete.rejectedHeader', 'Rejected bundles:'));
+        for (const r of result.rejected) {
+          this.log(`  - ${r.bundleId ?? '?'}: ${r.reason}`);
         }
       }
 

@@ -650,4 +650,54 @@ describe('cli/mrt-command', () => {
       expect(warnStub.calledOnce).to.be.true;
     });
   });
+
+  describe('log() - suppressed in --json mode', () => {
+    // The override swallows human-readable this.log() progress/status lines when
+    // --json is set so they never corrupt the machine-readable payload. It routes
+    // through BaseCommand.log(), which writes to the pino logger's info() — so
+    // asserting on that sink verifies the whole path, not just an early return.
+    function stubLoggerInfo(cmd: TestMrtCommand) {
+      return sinon.stub((cmd as unknown as {logger: {info: (...args: unknown[]) => void}}).logger, 'info');
+    }
+
+    function stubLoggerWarn(cmd: TestMrtCommand) {
+      return sinon.stub((cmd as unknown as {logger: {warn: (...args: unknown[]) => void}}).logger, 'warn');
+    }
+
+    beforeEach(async () => {
+      stubParse(command, {'credentials-file': '/dev/null'});
+      await command.init();
+    });
+
+    it('does not emit any log output when --json is enabled', () => {
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      const infoStub = stubLoggerInfo(command);
+
+      command.log('Fetching remote env vars...');
+      command.log('  ✓ SOME_VAR');
+
+      expect(infoStub.called).to.be.false;
+    });
+
+    it('emits log output normally when --json is not enabled', () => {
+      sinon.stub(command, 'jsonEnabled').returns(false);
+      const infoStub = stubLoggerInfo(command);
+
+      command.log('Fetching remote env vars...');
+
+      expect(infoStub.calledOnce).to.be.true;
+      expect(infoStub.firstCall.args[0]).to.equal('Fetching remote env vars...');
+    });
+
+    it('still emits warnings when --json is enabled (only log() is suppressed)', () => {
+      // Warnings and errors are diagnostics on stderr that must surface even in
+      // --json mode; the suppression is scoped to human-readable progress logs.
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      const warnStub = stubLoggerWarn(command);
+
+      command.warn('Batch push failed, retrying variables individually...');
+
+      expect(warnStub.calledOnce).to.be.true;
+    });
+  });
 });

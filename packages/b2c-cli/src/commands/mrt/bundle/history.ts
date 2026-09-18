@@ -103,14 +103,12 @@ export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
     const {limit, offset} = this.flags;
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.history.fetching', 'Fetching deployment history for {{project}}/{{environment}}...', {
-          project,
-          environment,
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.history.fetching', 'Fetching deployment history for {{project}}/{{environment}}...', {
+        project,
+        environment,
+      }),
+    );
 
     const result = await this.operations.listMrtDeployments({
       preference,
