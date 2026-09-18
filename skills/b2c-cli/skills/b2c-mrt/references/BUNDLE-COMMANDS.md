@@ -34,7 +34,15 @@ b2c mrt bundle deploy -p my-storefront \
 
 # Push a local build and deploy it via the SCAPI backend
 b2c mrt bundle deploy -p my-storefront -e staging --mrt-backend scapi
+
+# Push via SCAPI with a custom v2 archive layout
+b2c mrt bundle deploy -p my-storefront --mrt-backend scapi --root-dir bld --match-mode ignore_missing
+
+# Push via the legacy v2 endpoint (opt in with --v2)
+b2c mrt bundle deploy -p my-storefront --mrt-backend legacy --v2 --match-mode ignore_missing
 ```
+
+**Bundle format:** SCAPI always uploads the v2 format. The legacy backend defaults to v1; pass `--v2` to upload through the legacy v2 endpoint (upload, plus a separate deploy when `-e` is given). `--root-dir`, `--config-path`, and `--match-mode` control the v2 archive layout and only take effect on a v2 upload — on a legacy v1 push they are ignored and the command warns (pass `--v2` to enable them). `b2c mrt bundle deploy --v2` performs the same v2 upload as `b2c mrt bundle upload-v2` and can also deploy in one step.
 
 ### Deploy Existing Bundle
 
@@ -58,6 +66,10 @@ b2c mrt bundle deploy 12345 -p my-storefront -e production --mrt-backend scapi -
 | `--build-dir`, `-b` | Path to build directory | `build` |
 | `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
+| `--v2` | Use the v2 bundle format/endpoint (SCAPI always uses v2; opt in on legacy) | `false` |
+| `--root-dir` | Archive path prefix for built files and the config file (v2 uploads only) | `bld` |
+| `--config-path` | In-archive config file path, relative to `--root-dir` (v2 uploads only) | `.mrt/config.json` |
+| `--match-mode` | Handling of SSR patterns matching no files — `strict` or `ignore_missing` (v2 uploads only) | `strict` |
 | `--node-version`, `-n` | Node.js version for SSR | `24.x` |
 | `--ssr-param` | SSR parameters (key=value, can repeat) | |
 

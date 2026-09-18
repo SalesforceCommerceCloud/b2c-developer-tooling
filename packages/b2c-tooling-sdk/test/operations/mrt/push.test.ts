@@ -988,5 +988,55 @@ describe('operations/mrt/push', () => {
       expect(result.deployed).to.be.true;
       expect(result.raw).to.deep.include({bundleId: 321, projectSlug: STOREFRONT_ID, deployed: true});
     });
+
+    it('routes a legacy push through the v2 endpoint then deploys when v2 + a target are given', async () => {
+      let v2UploadCalled = false;
+      let deployBody: unknown;
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, () => {
+          v2UploadCalled = true;
+          return HttpResponse.json({id: 654, message: 'legacy v2', warnings: []}, {status: 201});
+        }),
+        http.post(
+          `${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/deploy/`,
+          async ({request, params}) => {
+            expect(params.targetSlug).to.equal('production');
+            deployBody = await request.json();
+            return HttpResponse.json({warnings: []});
+          },
+        ),
+        // The v1 combined endpoint must NOT be used on the v2 path.
+        http.post(LEGACY_BUILDS_TARGET, () => HttpResponse.json({bundle_id: -1, message: 'v1', warnings: []})),
+      );
+
+      const result = await pushMrtBundle(pushOptions({preference: 'legacy', v2: true, targetSlug: 'production'}));
+
+      expect(v2UploadCalled).to.be.true;
+      expect(result.backend).to.equal('legacy');
+      expect(result.bundleId).to.equal(654);
+      expect(result.deployed).to.be.true;
+      expect(deployBody).to.deep.equal({bundle_id: 654});
+    });
+
+    it('routes a legacy push through the v2 endpoint and uploads only when v2 + no target', async () => {
+      let deployCalled = false;
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, () =>
+          HttpResponse.json({id: 655, message: 'legacy v2', warnings: ['heads up']}, {status: 201}),
+        ),
+        http.post(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/deploy/`, () => {
+          deployCalled = true;
+          return HttpResponse.json({warnings: []});
+        }),
+      );
+
+      const result = await pushMrtBundle(pushOptions({preference: 'legacy', v2: true}));
+
+      expect(result.backend).to.equal('legacy');
+      expect(result.bundleId).to.equal(655);
+      expect(result.deployed).to.be.false;
+      expect(result.warnings).to.deep.equal(['heads up']);
+      expect(deployCalled).to.be.false;
+    });
   });
 });

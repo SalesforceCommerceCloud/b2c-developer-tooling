@@ -237,6 +237,176 @@ describe('mrt bundle deploy', () => {
       expect(warnStub.calledWith(warning)).to.equal(true);
     });
 
+    it('forwards --root-dir/--config-path/--match-mode to pushMrtBundle on the SCAPI backend', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {
+          project: 'my-project',
+          'mrt-backend': 'scapi',
+          'root-dir': 'bld',
+          'config-path': '.mrt/config.json',
+          'match-mode': 'ignore_missing',
+          'ssr-param': [],
+          wait: false,
+        },
+        {},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+      stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      const warnStub = sinon.stub(command, 'warn').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: undefined, mrtBackend: 'scapi'}}));
+
+      const pushStub = sinon.stub().resolves({
+        backend: 'scapi',
+        bundleId: 170,
+        message: 'auto',
+        deployed: false,
+        raw: {bundle: {bundleId: 170}},
+      } as any);
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
+
+      await command.run();
+
+      const [input] = pushStub.firstCall.args;
+      expect(input.rootDir).to.equal('bld');
+      expect(input.configPath).to.equal('.mrt/config.json');
+      expect(input.matchMode).to.equal('ignore_missing');
+      // On the SCAPI backend the flags take effect, so no "ignored" warning.
+      expect(warnStub.called).to.equal(false);
+    });
+
+    it('warns that v2 archive flags were ignored when the legacy backend serves the push', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {
+          project: 'my-project',
+          environment: 'staging',
+          'root-dir': 'bld',
+          'match-mode': 'ignore_missing',
+          'ssr-param': [],
+          wait: false,
+        },
+        {},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      stubBackendContext(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      const warnStub = sinon.stub(command, 'warn').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+      const pushStub = sinon.stub().resolves({
+        backend: 'legacy',
+        bundleId: 123,
+        message: 'auto',
+        deployed: true,
+        raw: {bundleId: 123, deployed: true},
+      } as any);
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
+
+      await command.run();
+
+      expect(warnStub.called).to.equal(true);
+      const message = warnStub.getCalls().map((c) => String(c.args[0]));
+      expect(message.some((m) => m.includes('--root-dir') && m.includes('--match-mode'))).to.equal(true);
+      expect(message.some((m) => m.includes('v2 uploads') && m.includes('--v2'))).to.equal(true);
+    });
+
+    it('forwards --v2 and the layout flags to pushMrtBundle on the legacy backend without warning', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {
+          project: 'my-project',
+          'mrt-backend': 'legacy',
+          v2: true,
+          'root-dir': 'bld',
+          'match-mode': 'ignore_missing',
+          'ssr-param': [],
+          wait: false,
+        },
+        {},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      stubBackendContext(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      const warnStub = sinon.stub(command, 'warn').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: undefined, mrtOrigin: 'https://example.com'}}));
+
+      const pushStub = sinon.stub().resolves({
+        backend: 'legacy',
+        bundleId: 200,
+        message: 'auto',
+        deployed: false,
+        raw: {bundleId: 200},
+      } as any);
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
+
+      await command.run();
+
+      const [input] = pushStub.firstCall.args;
+      expect(input.v2).to.equal(true);
+      expect(input.rootDir).to.equal('bld');
+      expect(input.matchMode).to.equal('ignore_missing');
+      // With --v2 the legacy push uses the v2 endpoint, so the flags take effect
+      // and there is no "ignored" warning.
+      expect(warnStub.called).to.equal(false);
+    });
+
+    it('does not warn about v2 archive flags on a legacy push when none were set', async () => {
+      const command = createCommand();
+
+      stubParse(
+        command,
+        {project: 'my-project', environment: 'staging', 'build-dir': 'dist', 'ssr-param': [], wait: false},
+        {},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      stubBackendContext(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      const warnStub = sinon.stub(command, 'warn').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+      const pushStub = sinon.stub().resolves({
+        backend: 'legacy',
+        bundleId: 123,
+        message: 'auto',
+        deployed: true,
+        raw: {bundleId: 123, deployed: true},
+      } as any);
+      command.operations = {...command.operations, pushMrtBundle: pushStub};
+
+      await command.run();
+
+      expect(warnStub.called).to.equal(false);
+    });
+
     it('throws error when ssr-param has invalid format', async () => {
       const command = createCommand();
 

@@ -11,9 +11,13 @@ import {
   waitForEnv,
   waitForDeploymentScapi,
   DEFAULT_SSR_PARAMETERS,
+  DEFAULT_V2_ROOT_DIR,
+  DEFAULT_V2_CONFIG_PATH,
+  DEFAULT_V2_MATCH_MODE,
   type MrtEnvironment,
   type MrtBackendPreference,
   type ScapiMrtConnection,
+  type BundleV2MatchMode,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 import {
@@ -59,6 +63,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     '<%= config.bin %> <%= command.id %> --project my-storefront --build-dir ./dist',
     '<%= config.bin %> <%= command.id %> --project my-storefront --node-version 20.x',
     '<%= config.bin %> <%= command.id %> --project my-storefront --ssr-param SSRProxyPath=/api',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --mrt-backend scapi --root-dir bld --match-mode ignore_missing',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --mrt-backend legacy --v2 --match-mode ignore_missing',
     '<%= config.bin %> <%= command.id %> 12345 --project my-storefront --environment staging',
     '<%= config.bin %> <%= command.id %> 12345 --project my-storefront --environment staging --wait',
     '<%= config.bin %> <%= command.id %> 12345 -p my-storefront -e staging --mrt-backend scapi --wait',
@@ -80,6 +86,21 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     }),
     'ssr-shared': Flags.string({
       description: 'Glob patterns for shared files (comma-separated or JSON array, only for local builds)',
+    }),
+    v2: Flags.boolean({
+      description:
+        'Use the v2 bundle format/endpoint. SCAPI always uses v2; on the legacy backend this routes the upload through the v2 endpoint (default: v1)',
+      default: false,
+    }),
+    'root-dir': Flags.string({
+      description: `Archive path prefix under which built files and the config file live (v2 uploads only; default: ${DEFAULT_V2_ROOT_DIR})`,
+    }),
+    'config-path': Flags.string({
+      description: `Path to the in-archive config file, relative to --root-dir (v2 uploads only; default: ${DEFAULT_V2_CONFIG_PATH})`,
+    }),
+    'match-mode': Flags.string({
+      description: `How ssr-only/ssr-shared patterns that match no files are handled (v2 uploads only; default: ${DEFAULT_V2_MATCH_MODE})`,
+      options: ['strict', 'ignore_missing'],
     }),
     'node-version': Flags.string({
       char: 'n',
@@ -284,6 +305,19 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       ssrParameters.SSRFunctionNodeVersion = this.flags['node-version'];
     }
 
+    // v2 archive layout flags — only meaningful for a v2 upload (SCAPI always,
+    // or legacy with --v2). Left undefined here so createBundleV2 supplies the
+    // DEFAULT_V2_* values; the legacy v1 upload ignores them. Track which were
+    // explicitly set so we can warn if the push runs on legacy v1.
+    const v2 = this.flags.v2;
+    const rootDir = this.flags['root-dir'];
+    const configPath = this.flags['config-path'];
+    const matchMode = this.flags['match-mode'] as BundleV2MatchMode | undefined;
+    const v2LayoutFlagsUsed: string[] = [];
+    if (rootDir !== undefined) v2LayoutFlagsUsed.push('--root-dir');
+    if (configPath !== undefined) v2LayoutFlagsUsed.push('--config-path');
+    if (matchMode !== undefined) v2LayoutFlagsUsed.push('--match-mode');
+
     if (!this.jsonEnabled()) {
       this.log(t('commands.mrt.bundle.deploy.pushing', 'Pushing bundle to {{project}}...', {project}));
 
@@ -309,9 +343,22 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         ssrOnly,
         ssrShared,
         ssrParameters,
+        rootDir,
+        configPath,
+        matchMode,
+        v2,
         origin: this.resolvedConfig.values.mrtOrigin,
         onResolve: (backend) => this.logger.debug({backend}, '[MRT] Pushing local build via backend'),
       });
+
+      // --root-dir/--config-path/--match-mode only affect a v2 upload. If the
+      // legacy backend served this push as v1 (no --v2 — explicit `legacy`, or
+      // `auto` resolving/falling back to legacy), warn that they had no effect.
+      if (result.backend === 'legacy' && !v2 && v2LayoutFlagsUsed.length > 0) {
+        this.warn(
+          `${v2LayoutFlagsUsed.join(', ')} apply only to v2 uploads and were ignored (this push used the legacy v1 endpoint; pass --v2 to enable them).`,
+        );
+      }
 
       // Consolidated success output
       if (!this.jsonEnabled()) {

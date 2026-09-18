@@ -25,6 +25,7 @@ import {createBundle, createBundleV2} from './bundle.js';
 import type {CreateBundleOptions, Bundle, BundleV2, CreateBundleV2Options} from './bundle.js';
 import {
   buildScapiDeploymentsClient,
+  createDeployment,
   createDeploymentScapi,
   LEGACY_AUTH_REQUIRED_MESSAGE,
   READ_HEADERS,
@@ -991,12 +992,19 @@ export interface PushMrtBundleBackendOptions {
   buildDirectory?: string;
   /** Directory to read `config.server.{ts,js}` from. */
   projectDirectory?: string;
-  /** SCAPI v2 archive root directory. */
+  /** v2 archive root directory (v2 uploads only). */
   rootDir?: string;
-  /** SCAPI v2 in-archive config path. */
+  /** v2 in-archive config path (v2 uploads only). */
   configPath?: string;
-  /** SCAPI v2 match mode. */
+  /** v2 match mode (v2 uploads only). */
   matchMode?: BundleV2['matchMode'];
+  /**
+   * Use the v2 bundle format/endpoint. SCAPI is always v2 (this flag is
+   * redundant there). Legacy defaults to v1; set this to route the legacy push
+   * through the v2 endpoint so the `rootDir`/`configPath`/`matchMode` options
+   * take effect.
+   */
+  v2?: boolean;
   /** Legacy MRT API origin. */
   origin?: string;
   /** Invoked when `auto` falls back from SCAPI to legacy. */
@@ -1036,6 +1044,11 @@ export interface MrtPushResultView {
  * `targetSlug` is given the bundle is also deployed; otherwise it is uploaded
  * only. The returned `backend` pins which `--wait` strategy the caller uses.
  *
+ * **Bundle format:** SCAPI always uploads the v2 format. Legacy defaults to the
+ * v1 combined upload+deploy; set `v2` to route the legacy push through the v2
+ * endpoint instead (upload, then a separate deploy when a target is given), so
+ * the `rootDir`/`configPath`/`matchMode` options take effect on legacy too.
+ *
  * **Fallback safety:** only the SCAPI *upload* is fallback-eligible — if it
  * fails with a safe pre-execution error nothing was created, so `auto` retries
  * on legacy. Once the upload succeeds a bundle exists on SCAPI, so a failure of
@@ -1058,6 +1071,7 @@ export async function pushMrtBundle(options: PushMrtBundleBackendOptions): Promi
     rootDir,
     configPath,
     matchMode,
+    v2,
     origin,
     onFallback,
     onResolve,
@@ -1130,8 +1144,66 @@ export async function pushMrtBundle(options: PushMrtBundleBackendOptions): Promi
         if (!legacyAuth) {
           throw new Error(LEGACY_AUTH_REQUIRED_MESSAGE);
         }
-        // Delegate to the existing v1 combined upload+deploy. Its PushResult is
-        // the shape legacy `--json` emitted before the backend split.
+
+        // Legacy v2 opt-in: build+upload via the v2 endpoint (same as the
+        // `upload-v2` command), then deploy the resulting bundle separately —
+        // the v2 endpoint is upload-only, so a target requires a follow-up
+        // deploy call. `rootDir`/`configPath`/`matchMode` take effect here.
+        if (v2) {
+          const bundle = await createBundleV2({
+            message,
+            ssrParameters,
+            ssrOnly,
+            ssrShared,
+            buildDirectory,
+            projectDirectory,
+            rootDir,
+            configPath,
+            matchMode,
+          });
+          const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, legacyAuth);
+          const uploaded = await uploadBundleV2(client, projectSlug, bundle);
+
+          if (!targetSlug) {
+            return {
+              backend: 'legacy',
+              bundleId: uploaded.bundleId,
+              message: uploaded.message,
+              deployed: false,
+              warnings: uploaded.warnings,
+              raw: uploaded,
+            };
+          }
+
+          // The upload succeeded, so a bundle now exists. Wrap a deploy failure
+          // with a clear message (legacy is terminal here — there is no further
+          // backend to fall back to, so this bundle is simply left undeployed).
+          let deployment;
+          try {
+            deployment = await createDeployment(
+              {projectSlug, targetSlug, bundleId: uploaded.bundleId, origin},
+              legacyAuth,
+            );
+          } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            throw new Error(
+              `Bundle ${uploaded.bundleId} uploaded successfully but the deployment to ${targetSlug} failed: ${reason}`,
+            );
+          }
+
+          return {
+            backend: 'legacy',
+            bundleId: uploaded.bundleId,
+            message: uploaded.message,
+            deployed: true,
+            warnings: [...uploaded.warnings, ...(deployment.warnings ?? [])],
+            raw: {bundle: uploaded, deployment},
+          };
+        }
+
+        // Default v1: delegate to the existing combined upload+deploy. Its
+        // PushResult is the shape legacy `--json` emitted before the backend
+        // split. `rootDir`/`configPath`/`matchMode` do not apply to v1.
         const result = await pushBundle(
           {
             projectSlug,
