@@ -153,6 +153,7 @@ import {registerToolsets} from '../registry.js';
 import {TOOLSETS, type StartupFlags} from '../utils/index.js';
 import type {ProjectContextInput} from '../tools/project-context.js';
 import type {ServicesLoader} from '../tools/adapter.js';
+import {validateIdeContextConnection} from '../tools/ide-context.js';
 
 /**
  * oclif Command that starts the B2C DX MCP server.
@@ -193,6 +194,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
   ];
 
   static flags = {
+    'ide-context-url': Flags.string({
+      description: 'Private IDE context endpoint supplied by the extension; requires SFCC_IDE_CONTEXT_TOKEN',
+    }),
     // Inherit MRT flags (api-key, cloud-origin, project, environment)
     // Also includes BaseCommand flags (config, debug, log-level, etc.) - safe to re-spread
     ...MrtCommand.baseFlags,
@@ -395,6 +399,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     // Parse toolsets and tools from comma-separated strings
     // Note: toolsets are uppercased, tools are lowercased by their parse functions
     const startupFlags: StartupFlags = {
+      ideContext: this.flags['ide-context-url']
+        ? {url: this.flags['ide-context-url'], token: process.env.SFCC_IDE_CONTEXT_TOKEN ?? ''}
+        : undefined,
       toolsets: this.flags.toolsets ? this.flags.toolsets.split(',').map((s) => s.trim()) : undefined,
       tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
       configPath: this.flags.config,
@@ -407,6 +414,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     };
 
     // Add toolsets to telemetry attributes
+    if (startupFlags.ideContext) validateIdeContextConnection(startupFlags.ideContext);
     if (this.telemetry && startupFlags.toolsets) {
       this.telemetry.addAttributes({toolsets: startupFlags.toolsets.join(', ')});
     }
@@ -437,6 +445,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
             },
             instructions:
               'Discover tool schemas before calling. Prefer dedicated tools; otherwise scapi_search/scapi_execute for Commerce APIs. ' +
+              'If b2c_get_ide_context is available and the user has not specified a target, read it before configuration-dependent tools; ' +
+              'pass its projectDirectory, configPath, and instanceName. Explicit user targets take precedence. ' +
+              'Refresh IDE context after selection changes; do not guess unavailable selections or retarget existing sessions. ' +
               'Read skill:// URIs as MCP resources, or skill files with skills_read({uri: "<URI>"}) when enabled; not native skill commands. ' +
               'SCAPI: first read skill://mcp/scapi/SKILL.md. ' +
               'Analytics: cip_discover/cip_query; skill://mcp/cip/SKILL.md. ' +

@@ -11,6 +11,7 @@ This page covers:
 - [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
 - [How the Extension Chooses a Project](#how-the-extension-chooses-a-project) — parent folders and multi-root workspaces.
 - [Selecting an Instance](#selecting-an-instance) — workspace-specific and shared defaults.
+- [AI Chat](#ai-chat) — MCP setup and the current IDE context.
 - [Safety Mode](#safety-mode) — restrict changes and require confirmation for selected actions.
 - [Settings Reference](#settings-reference) — the `b2c-dx.*` toggles and verbosity controls.
 
@@ -29,7 +30,7 @@ For the selected project, the extension loads all variables from its `.env` and 
 
 The global default is the same fallback used by the CLI and MCP server. The extension automatically refreshes when that shared setting changes.
 
-The extension's instance picker combines instances from the primary and global files. Same-name primary entries shadow global entries, and each instance remains a complete entry rather than having fields merged across files. Switching an instance updates the file that owns it and clears the previous active selection across the catalog.
+The extension's instance picker combines instances from the primary and global files. Same-name primary entries shadow global entries, and each instance remains a complete entry rather than having fields merged across files. Setting the shared default updates the file that owns it and clears the previous active selection across the catalog. Selecting an instance only for this workspace leaves those files unchanged.
 
 ### Per-feature requirements
 
@@ -100,11 +101,37 @@ To keep a particular project directory selected, right-click that folder in Expl
 
 ## Selecting an Instance
 
-When your configuration defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to open a quick pick. Selecting an instance applies it only to the current VS Code workspace and refreshes every extension view. Other VS Code workspaces, the CLI, and MCP continue using their own selection or the shared default.
+When your configuration defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to open a quick pick. Selecting an instance applies it only to the current VS Code workspace and refreshes every extension view. Other editor workspaces and the CLI continue using their own selection or the shared default. See [AI Chat](#ai-chat) for how assistants use the IDE selection.
 
 The picker distinguishes the instance **selected for this workspace** with a check mark and the shared **default instance** with a star. Use the star action on a row—or run **B2C DX: Set Default Instance**—to intentionally change the default used by other consumers. Run **B2C DX: Follow Default Instance** to remove the workspace-specific selection.
 
 For named entries, setting the default writes `active: true`; a root configuration without an explicit `active` value remains an implicit default. This is equivalent to running `b2c setup instance set-active <name>` and is separate from selecting an instance only for VS Code.
+
+## AI Chat
+
+The extension makes the **B2C Commerce MCP server** available in VS Code and Cursor without creating an MCP configuration file. In a trusted workspace, enable the server and its tools in your editor's chat settings. The default launcher requires Node.js 22 or later and `npx` on the extension host's PATH; it downloads the MCP version matched to the extension. Remote workspaces need these prerequisites on the remote host.
+
+In VS Code, attach **#b2cContext** to ask about the selected instance or code-sync status. In Cursor, the registered **salesforce-b2c-commerce** server exposes the same context through an optional connection to the extension. Context is read live from the editor window and includes connection metadata, never credentials.
+
+<ExamplePrompt>
+
+> Check the logs on my selected B2C instance. Is code sync currently active for that instance?
+
+</ExamplePrompt>
+
+Assistants can use the current IDE selection unless you specify another target. The context includes the project root, configuration file, instance name, hostname, configured code version, and whether code sync is actually running. When active, code sync reports its upload hostname and code version separately.
+
+This is guidance for the assistant, not an enforced binding of every operation to the status bar. Server launch defaults reflect the IDE selection at discovery/startup. After switching instances, the context tool reports the new selection; refresh/restart the Commerce MCP server if you need its launch defaults refreshed. Updating registration in Cursor can restart its server. Existing debug and log sessions do not move to the newly selected instance; a server restart ends those sessions. Environment overrides and credentials available only in the editor can also cause MCP resolution to differ.
+
+The native context tool is specific to VS Code chat integrations that consume extension tools. Cursor uses its own MCP registration API. Other assistants sharing the directory do not automatically inherit editor context. In remote workspaces, the MCP process and extension host must run on the same host.
+
+| Setting              | Default | Purpose                                                                                                                                                                           |
+| -------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b2c-dx.mcp.enabled` | `true`  | Register MCP servers with the editor. Disable when managing the Commerce server yourself to avoid duplicate registrations. In Cursor this also closes the IDE-context connection. |
+| `b2c-dx.mcp.command` | `npx`   | MCP executable on the extension host.                                                                                                                                             |
+| `b2c-dx.mcp.args`    | `null`  | Optional replacement launcher arguments. By default, uses the MCP package version matched to the extension. The extension appends project, configuration, and instance flags.     |
+
+The command and argument settings are machine-scoped. For local MCP development, set the command to `node` and the arguments to the absolute path of the built MCP package's `bin/run.js`.
 
 ## Safety Mode
 
@@ -119,11 +146,13 @@ There is no separate safety-level toggle in VS Code Settings.
 
 ## Settings Reference
 
+Standalone configuration and CLI setup commands are beta features, disabled by default. Enable `b2c-dx.features.setup` and reload the window to use them from the Command Palette. The retired guided walkthrough and role-based onboarding panel are no longer included.
+
 These VS Code settings live under the `b2c-dx.*` namespace. **You usually don't need to change any of them** — they exist for niche cases like disabling a feature you don't use, or quieting the log channel for a bug report. To browse: **Settings** (Cmd+,) → search for `b2c-dx`.
 
 ### Feature toggles
 
-Each feature is enabled by default. Set to `false` to skip its activation entirely (no tree views, no commands, no context-menu entries). Useful for trimming the UI, isolating activation issues, or running in a project where a feature isn't applicable.
+Most features are enabled by default; beta setup commands are off by default. Set a feature to `false` to skip its activation entirely (no tree views, no commands, no context-menu entries). Useful for trimming the UI, isolating activation issues, or running in a project where a feature isn't applicable.
 
 | Setting                            | Default |
 | ---------------------------------- | ------- |
@@ -135,6 +164,7 @@ Each feature is enabled by default. Set to `false` to skip its activation entire
 | `b2c-dx.features.scaffold`         | `true`  |
 | `b2c-dx.features.apiBrowser`       | `true`  |
 | `b2c-dx.features.cap`              | `true`  |
+| `b2c-dx.features.setup`            | `false` |
 
 The B2C Script Debugger registers regardless of these toggles — it activates only when a `b2c-script` launch configuration is used.
 

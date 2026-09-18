@@ -50,25 +50,8 @@ const DW_JSON_MULTI_INSTANCE_TEMPLATE = {
   ],
 };
 
-/**
- * Register walkthrough-related commands.
- * These commands support the getting started walkthrough experience.
- */
-export function registerWalkthroughCommands(context: vscode.ExtensionContext): void {
-  // Command: Open the getting started walkthrough.
-  // The new onboarding panel replaces the built-in walkthrough surface; we
-  // redirect this legacy command to keep existing menu entries working.
-  context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.walkthrough.open', async () => {
-      try {
-        await vscode.commands.executeCommand('b2c-dx.onboarding.open');
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        vscode.window.showErrorMessage(`Failed to open walkthrough: ${message}`);
-      }
-    }),
-  );
-
+/** Register standalone configuration and credential setup commands. */
+export function registerSetupCommands(context: vscode.ExtensionContext): void {
   // Command: Create dw.json template file
   context.subscriptions.push(
     vscode.commands.registerCommand('b2c-dx.walkthrough.createDwJson', async () => {
@@ -1571,55 +1554,12 @@ async function addToGitignore(workspaceRoot: string): Promise<void> {
   }
 }
 
-/**
- * Defensive per-workspace cleanup of onboarding session state. Runs on every
- * activation: if the current workspace has no dw.json, treat it as a fresh
- * onboarding context — drop any stale `setup.activeInstance` (which would
- * otherwise leak the previous workspace's instance name into chips/tooltips)
- * and clear the auto-opened seen flag so the deep-dive panel triggers again.
- *
- * The OnboardingStateStore itself uses workspaceState and resets naturally
- * per workspace; this function only mops up loose keys that aren't covered.
- */
-export async function resetWorkspaceOnboardingIfFresh(context: vscode.ExtensionContext): Promise<void> {
-  const folders = vscode.workspace.workspaceFolders ?? [];
-  if (folders.length === 0) return;
-  if (await workspaceHasDwJson()) return;
+/** Clear the setup target when the current workspace has no configuration. */
+export async function resetSetupSessionIfFresh(context: vscode.ExtensionContext): Promise<void> {
+  if (!vscode.workspace.workspaceFolders?.length || (await workspaceHasDwJson())) return;
   await context.workspaceState.update('b2c-dx.setup.activeInstance', undefined);
-  await context.workspaceState.update('b2c-dx.gettingStarted.autoOpened', undefined);
   void vscode.commands.executeCommand('setContext', 'b2c-dx.setupSessionActive', false);
   void vscode.commands.executeCommand('setContext', 'b2c-dx.setupInstance', undefined);
-}
-
-/**
- * Open the native VS Code walkthrough automatically on first activation, but
- * only when no dw.json exists in the workspace — i.e. the user hasn't set the
- * extension up yet. Users can re-open it any time via "B2C DX: Open Getting
- * Started Guide", and the role-based deep-dive panel via "B2C DX: Open
- * Onboarding Panel".
- */
-export async function showWalkthroughOnFirstActivation(context: vscode.ExtensionContext): Promise<void> {
-  const SEEN_KEY = 'b2c-dx.gettingStarted.autoOpened';
-  // Per-workspace flag: each workspace gets its own first-run experience.
-  if (context.workspaceState.get<boolean>(SEEN_KEY, false)) return;
-  const folders = vscode.workspace.workspaceFolders;
-  if (!folders || folders.length === 0) return;
-
-  // Skip auto-open when the workspace already has a dw.json — the user is
-  // returning, not starting fresh.
-  if (await workspaceHasDwJson()) {
-    await context.workspaceState.update(SEEN_KEY, true);
-    return;
-  }
-
-  setTimeout(() => {
-    void vscode.commands.executeCommand(
-      'workbench.action.openWalkthrough',
-      'Salesforce.b2c-vs-extension#b2c-dx.gettingStarted',
-      false,
-    );
-    void context.workspaceState.update(SEEN_KEY, true);
-  }, 1000);
 }
 
 // ─── Per-step setup commands + session ──────────────────

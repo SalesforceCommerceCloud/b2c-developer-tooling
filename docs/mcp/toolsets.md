@@ -252,9 +252,10 @@ See [analytics access](./security#cip).
 
 ## Configuration inspection
 
-| Tool             | Capability                                                               | Toolsets         |
-| ---------------- | ------------------------------------------------------------------------ | ---------------- |
-| `config_inspect` | Check resolved configuration and targets; secrets are masked by default. | DIAGNOSTICS, CIP |
+| Tool                  | Capability                                                                                     | Toolsets            |
+| --------------------- | ---------------------------------------------------------------------------------------------- | ------------------- |
+| `config_inspect`      | Check resolved configuration and targets; secrets are masked by default.                       | DIAGNOSTICS, CIP    |
+| `b2c_get_ide_context` | Read the selected IDE instance and live code-sync status when launched with an IDE connection. | All, when connected |
 
 ## Toolsets for customization
 

@@ -42,16 +42,9 @@ import {
   isWorkspaceInstanceSelected,
   triggerInstancePickerButton,
 } from './instance-selection.js';
-import {
-  registerWalkthroughCommands,
-  resetWorkspaceOnboardingIfFresh,
-  showWalkthroughOnFirstActivation,
-  initializeTelemetry,
-  validateWalkthroughCommand,
-  checkWalkthroughAccessibilityCommand,
-  OnboardingStateStore,
-  OnboardingPanel,
-} from './walkthrough/index.js';
+import {registerSetupCommands, resetSetupSessionIfFresh} from './setup/commands.js';
+import {registerAiIntegration} from './ai/index.js';
+import type {CodeSyncManager} from './code-sync/code-sync-manager.js';
 
 let authSessionBackend: VsCodeSecretsAuthSessionBackend | undefined;
 
@@ -299,190 +292,120 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // before the first resolveConfig() call. Failures are non-fatal.
   await initializePlugins();
 
-  // Initialize walkthrough telemetry
-  const walkthroughTelemetry = initializeTelemetry(log);
+  const setupEnabled = vscode.workspace.getConfiguration('b2c-dx').get<boolean>('features.setup', false);
+  if (setupEnabled) {
+    runActivationStep(log, 'Setup command registration', () => {
+      registerSetupCommands(context);
+    });
 
-  // Register walkthrough commands early so they're available for first-time users
-  runActivationStep(log, 'Walkthrough command registration', () => {
-    registerWalkthroughCommands(context);
-  });
+    // "Verify CLI" — runs `b2c --version`, queries npm for the latest, and
+    // reports back. Flips two context keys:
+    //   b2c-dx.cliInstalled  — indicates CLI availability.
+    //   b2c-dx.cliOutdated   — surfaces the "Update CLI" action when true.
+    context.subscriptions.push(
+      vscode.commands.registerCommand('b2c-dx.cli.verify', async () => {
+        const result = await detectB2cCli(context);
+        await vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', result.installed);
+        await vscode.commands.executeCommand('setContext', 'b2c-dx.cliOutdated', !!result.isOutdated);
 
-  // Onboarding (next-gen walkthrough) state + panel.
-  // The configProvider is created later (line ~480), so we expose a lazy getter
-  // that the panel calls at refresh time — by then the provider is resolved.
-  const onboardingStore = new OnboardingStateStore(context);
-  context.subscriptions.push(onboardingStore);
-  // Forward declare; the actual configProvider is assigned below once created.
-  let lateConfigProvider: B2CExtensionConfig | null = null;
-  const getConfigProvider = (): B2CExtensionConfig | null => lateConfigProvider;
-  context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.onboarding.open', () => {
-      OnboardingPanel.show(context, onboardingStore, log, getConfigProvider);
-    }),
-    vscode.commands.registerCommand('b2c-dx.onboarding.reset', async () => {
-      await onboardingStore.reset();
-      OnboardingPanel.show(context, onboardingStore, log, getConfigProvider);
-    }),
-    vscode.commands.registerCommand('b2c-dx.onboarding.changePersona', async () => {
-      await onboardingStore.setPersona(null);
-      OnboardingPanel.show(context, onboardingStore, log, getConfigProvider);
-    }),
-  );
-
-  // Register walkthrough validation commands (for development/testing)
-  context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.walkthrough.validate', async () => {
-      await validateWalkthroughCommand(context.extensionPath, log);
-    }),
-    vscode.commands.registerCommand('b2c-dx.walkthrough.checkAccessibility', async () => {
-      await checkWalkthroughAccessibilityCommand(context.extensionPath, log);
-    }),
-    vscode.commands.registerCommand('b2c-dx.walkthrough.showTelemetry', () => {
-      walkthroughTelemetry.logSummary();
-      log.show();
-    }),
-  );
-
-  // "Verify CLI" — runs `b2c --version`, queries npm for the latest, and
-  // reports back. Flips two context keys:
-  //   b2c-dx.cliInstalled  — auto-completes the install-cli walkthrough step.
-  //   b2c-dx.cliOutdated   — surfaces the "Update CLI" action when true.
-  context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.cli.verify', async () => {
-      const result = await detectB2cCli(context);
-      await vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', result.installed);
-      await vscode.commands.executeCommand('setContext', 'b2c-dx.cliOutdated', !!result.isOutdated);
-
-      if (!result.installed) {
-        const action = await vscode.window.showWarningMessage(
-          'B2C CLI not found on PATH. Install with `npm install -g @salesforce/b2c-cli` or `brew install salesforcecommercecloud/tools/b2c-cli`.',
-          'Open Install Guide',
-        );
-        if (action === 'Open Install Guide') {
-          await vscode.env.openExternal(
-            vscode.Uri.parse('https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation.html'),
+        if (!result.installed) {
+          const action = await vscode.window.showWarningMessage(
+            'B2C CLI not found on PATH. Install with `npm install -g @salesforce/b2c-cli` or `brew install salesforcecommercecloud/tools/b2c-cli`.',
+            'Open Install Guide',
           );
+          if (action === 'Open Install Guide') {
+            await vscode.env.openExternal(
+              vscode.Uri.parse(
+                'https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation.html',
+              ),
+            );
+          }
+          return;
         }
-        return;
-      }
 
-      if (result.isOutdated && result.latestVersion) {
-        const action = await vscode.window.showInformationMessage(
-          `B2C CLI ${result.version} detected — newer version ${result.latestVersion} available.`,
-          'Update now',
-          'Copy update command',
-          'Later',
+        if (result.isOutdated && result.latestVersion) {
+          const action = await vscode.window.showInformationMessage(
+            `B2C CLI ${result.version} detected — newer version ${result.latestVersion} available.`,
+            'Update now',
+            'Copy update command',
+            'Later',
+          );
+          if (action === 'Update now') {
+            await vscode.commands.executeCommand('b2c-dx.cli.update');
+          } else if (action === 'Copy update command') {
+            await vscode.env.clipboard.writeText('npm install -g @salesforce/b2c-cli@latest');
+            vscode.window.showInformationMessage('Update command copied to clipboard.');
+          }
+          return;
+        }
+
+        const suffix = result.latestVersion ? ` (latest)` : '';
+        vscode.window.showInformationMessage(`B2C CLI detected: ${result.version}${suffix}`);
+      }),
+    );
+
+    // "Install CLI via npm" — opens a terminal with the install command.
+    context.subscriptions.push(
+      vscode.commands.registerCommand('b2c-dx.cli.installNpm', async () => {
+        const term = vscode.window.createTerminal({name: 'B2C DX — CLI install'});
+        term.show();
+        term.sendText('npm install -g @salesforce/b2c-cli', false);
+      }),
+    );
+
+    // "Install CLI via Homebrew" — opens a terminal with the brew install command.
+    context.subscriptions.push(
+      vscode.commands.registerCommand('b2c-dx.cli.installBrew', async () => {
+        const term = vscode.window.createTerminal({name: 'B2C DX — CLI install'});
+        term.show();
+        term.sendText('brew install salesforcecommercecloud/tools/b2c-cli', false);
+      }),
+    );
+
+    // "Re-check CLI" — re-runs the CLI detection and refreshes state.
+    context.subscriptions.push(
+      vscode.commands.registerCommand('b2c-dx.cli.recheck', async () => {
+        const result = await detectB2cCli(context);
+        await vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', result.installed);
+        await vscode.commands.executeCommand('setContext', 'b2c-dx.cliOutdated', !!result.isOutdated);
+        if (result.installed) {
+          const suffix =
+            result.isOutdated && result.latestVersion ? ` (v${result.latestVersion} available)` : ' (latest)';
+          vscode.window.showInformationMessage(`B2C CLI detected: ${result.version}${suffix}`);
+        } else {
+          vscode.window.showWarningMessage('B2C CLI still not found on PATH. Install it and try again.');
+        }
+      }),
+    );
+
+    // "Update CLI" — opens a terminal preloaded with the npm update command.
+    // We never auto-execute: a global npm install can prompt for credentials
+    // or hit privilege errors, so the user runs it themselves.
+    context.subscriptions.push(
+      vscode.commands.registerCommand('b2c-dx.cli.update', async () => {
+        const cmd = 'npm install -g @salesforce/b2c-cli@latest';
+        const choice = await vscode.window.showInformationMessage(
+          'Update the B2C CLI to the latest version? This runs an npm global install — you may be prompted for permissions.',
+          {modal: true},
+          'Run in terminal',
+          'Copy command',
+          'Cancel',
         );
-        if (action === 'Update now') {
-          await vscode.commands.executeCommand('b2c-dx.cli.update');
-        } else if (action === 'Copy update command') {
-          await vscode.env.clipboard.writeText('npm install -g @salesforce/b2c-cli@latest');
+        if (!choice || choice === 'Cancel') return;
+        if (choice === 'Run in terminal') {
+          const term = vscode.window.createTerminal({name: 'B2C DX — CLI update'});
+          term.show();
+          // Don't auto-execute — user presses Enter so they see the command first.
+          term.sendText(cmd, false);
+        } else {
+          await vscode.env.clipboard.writeText(cmd);
           vscode.window.showInformationMessage('Update command copied to clipboard.');
         }
-        return;
-      }
-
-      const suffix = result.latestVersion ? ` (latest)` : '';
-      vscode.window.showInformationMessage(`B2C CLI detected: ${result.version}${suffix}`);
-    }),
-  );
-
-  // "Install CLI via npm" — opens a terminal with the install command.
-  context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.cli.installNpm', async () => {
-      const term = vscode.window.createTerminal({name: 'B2C DX — CLI install'});
-      term.show();
-      term.sendText('npm install -g @salesforce/b2c-cli', false);
-    }),
-  );
-
-  // "Install CLI via Homebrew" — opens a terminal with the brew install command.
-  context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.cli.installBrew', async () => {
-      const term = vscode.window.createTerminal({name: 'B2C DX — CLI install'});
-      term.show();
-      term.sendText('brew install salesforcecommercecloud/tools/b2c-cli', false);
-    }),
-  );
-
-  // "Re-check CLI" — re-runs the CLI detection and refreshes state.
-  context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.cli.recheck', async () => {
-      const result = await detectB2cCli(context);
-      await vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', result.installed);
-      await vscode.commands.executeCommand('setContext', 'b2c-dx.cliOutdated', !!result.isOutdated);
-      if (result.installed) {
-        const suffix =
-          result.isOutdated && result.latestVersion ? ` (v${result.latestVersion} available)` : ' (latest)';
-        vscode.window.showInformationMessage(`B2C CLI detected: ${result.version}${suffix}`);
-      } else {
-        vscode.window.showWarningMessage('B2C CLI still not found on PATH. Install it and try again.');
-      }
-    }),
-  );
-
-  // "Update CLI" — opens a terminal preloaded with the npm update command.
-  // We never auto-execute: a global npm install can prompt for credentials
-  // or hit privilege errors, so the user runs it themselves.
-  context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.cli.update', async () => {
-      const cmd = 'npm install -g @salesforce/b2c-cli@latest';
-      const choice = await vscode.window.showInformationMessage(
-        'Update the B2C CLI to the latest version? This runs an npm global install — you may be prompted for permissions.',
-        {modal: true},
-        'Run in terminal',
-        'Copy command',
-        'Cancel',
-      );
-      if (!choice || choice === 'Cancel') return;
-      if (choice === 'Run in terminal') {
-        const term = vscode.window.createTerminal({name: 'B2C DX — CLI update'});
-        term.show();
-        // Don't auto-execute — user presses Enter so they see the command first.
-        term.sendText(cmd, false);
-      } else {
-        await vscode.env.clipboard.writeText(cmd);
-        vscode.window.showInformationMessage('Update command copied to clipboard.');
-      }
-      // Invalidate the cached "latest" so the next verify makes a fresh check.
-      await context.globalState.update(LATEST_CACHE_KEY, undefined);
-    }),
-  );
-
-  // "Mark all as done" — fires a single onCommand event that every walkthrough
-  // step lists in its completionEvents, ticking the entire walkthrough at once.
-  context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.walkthrough.markAllDone', async () => {
-      // Re-open the walkthrough so the user sees the freshly-ticked steps.
-      await vscode.commands.executeCommand(
-        'workbench.action.openWalkthrough',
-        'Salesforce.b2c-vs-extension#b2c-dx.gettingStarted',
-        false,
-      );
-      vscode.window.showInformationMessage('B2C DX: Getting Started marked as complete.');
-    }),
-    // "Reset Getting Started Progress" — clears both surfaces:
-    //   • our per-workspace OnboardingStateStore (deep-dive panel)
-    //   • VS Code's per-installation native walkthrough ticks
-    // VS Code stores native walkthrough completion in user-global state and
-    // does not expose a per-workspace API to clear it; this command lets the
-    // user trigger a clean slate manually when switching workspaces.
-    vscode.commands.registerCommand('b2c-dx.walkthrough.resetProgress', async () => {
-      await onboardingStore.reset();
-      await context.workspaceState.update('b2c-dx.gettingStarted.autoOpened', undefined);
-      try {
-        await vscode.commands.executeCommand('resetGettingStartedProgress');
-      } catch {
-        // built-in command not available in older VS Code releases; no-op
-      }
-      await vscode.commands.executeCommand(
-        'workbench.action.openWalkthrough',
-        'Salesforce.b2c-vs-extension#b2c-dx.gettingStarted',
-        false,
-      );
-      vscode.window.showInformationMessage('B2C DX: Getting Started progress reset.');
-    }),
-  );
+        // Invalidate the cached "latest" so the next verify makes a fresh check.
+        await context.globalState.update(LATEST_CACHE_KEY, undefined);
+      }),
+    );
+  }
 
   // Theme toggle — flips between the user's preferred light + dark themes.
   // Persists the last-seen pair so a developer who customised their theme
@@ -518,17 +441,19 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }),
   );
 
-  // Initialize the cliInstalled context key once (best-effort, non-blocking).
-  void detectB2cCli(context).then((r) => {
-    void vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', r.installed);
-    void vscode.commands.executeCommand('setContext', 'b2c-dx.cliOutdated', !!r.isOutdated);
-  });
+  if (setupEnabled) {
+    // Initialize the cliInstalled context key once (best-effort, non-blocking).
+    void detectB2cCli(context).then((r) => {
+      void vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', r.installed);
+      void vscode.commands.executeCommand('setContext', 'b2c-dx.cliOutdated', !!r.isOutdated);
+    });
 
-  // Initialize the setup-session context keys from workspaceState so welcome
-  // views can react on first frame.
-  const sessionInstance = context.workspaceState.get<string>('b2c-dx.setup.activeInstance');
-  void vscode.commands.executeCommand('setContext', 'b2c-dx.setupSessionActive', !!sessionInstance);
-  void vscode.commands.executeCommand('setContext', 'b2c-dx.setupInstance', sessionInstance);
+    // Initialize the setup-session context keys from workspaceState so welcome
+    // views can react on first frame.
+    const sessionInstance = context.workspaceState.get<string>('b2c-dx.setup.activeInstance');
+    void vscode.commands.executeCommand('setContext', 'b2c-dx.setupSessionActive', !!sessionInstance);
+    void vscode.commands.executeCommand('setContext', 'b2c-dx.setupInstance', sessionInstance);
+  }
 
   registerJobLogViewer(context);
 
@@ -541,7 +466,6 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   setAuthSessionBackend(authSessionBackend);
 
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
-  lateConfigProvider = configProvider;
   context.subscriptions.push(configProvider);
   await configProvider.ensureResolved();
 
@@ -557,9 +481,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   const cartridgeService = new CartridgeService(configProvider);
   context.subscriptions.push(cartridgeService);
 
-  // Walkthrough context keys: drive auto-completion of the native walkthrough
-  // steps. dwJsonExists tracks the per-workspace dw.json file; instanceConnected
-  // mirrors whether the config provider successfully resolved a config.
+  // Context keys used by the instance and setup commands.
   const updateInstanceConnectedContext = () => {
     const connected = !!configProvider.getConfig();
     void vscode.commands.executeCommand('setContext', 'b2c-dx.instanceConnected', connected);
@@ -947,11 +869,19 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       registerCap(context, configProvider, log);
     });
   }
+  let codeSyncManager: CodeSyncManager | undefined;
   if (settings.get<boolean>('features.codeSync', true)) {
     runActivationStep(log, 'Code Sync registration', () => {
-      registerCodeSync(context, configProvider, cartridgeService, log);
+      codeSyncManager = registerCodeSync(context, configProvider, cartridgeService, log);
     });
   }
+  runActivationStep(log, 'AI integration registration', () => {
+    registerAiIntegration(context, configProvider, () => ({
+      available: codeSyncManager !== undefined,
+      ...(codeSyncManager?.getStatus() ?? {active: false}),
+    }));
+  });
+
   if (settings.get<boolean>('features.scriptTypes', true)) {
     runActivationStep(log, 'Script Types registration', () => {
       registerScriptTypes(context, cartridgeService, log);
@@ -1017,30 +947,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   );
   log.appendLine('B2C DX extension activated.');
 
-  // Workspace-only reset: clear stale setup-session keys when the current
-  // workspace has no dw.json, so a fresh workspace doesn't inherit the
-  // previous one's onboarding chips/tooltips.
-  await resetWorkspaceOnboardingIfFresh(context).catch((err) => {
-    log.appendLine(
-      `Warning: Failed to reset onboarding for fresh workspace: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  });
-
-  // Drop the per-workspace onboarding panel state (persona + step records)
-  // when the workspace has no dw.json, so the deep-dive panel reopens with no
-  // selection. Cheap to call: workspaceState writes are local.
-  if (!(await workspaceHasDwJson())) {
-    await onboardingStore.reset();
-  }
-
-  // Show walkthrough on first activation (optional, non-blocking)
-  // This runs asynchronously after activation is complete. Gated behind the
-  // onboarding feature flag (Preview, off by default) so it does not surface
-  // until the walkthrough is ready to ship.
-  const onboardingEnabled = vscode.workspace.getConfiguration('b2c-dx').get<boolean>('features.onboarding', false);
-  if (onboardingEnabled) {
-    showWalkthroughOnFirstActivation(context).catch((err) => {
-      log.appendLine(`Warning: Failed to show walkthrough: ${err instanceof Error ? err.message : String(err)}`);
+  if (setupEnabled) {
+    await resetSetupSessionIfFresh(context).catch((err) => {
+      log.appendLine(`Warning: Failed to reset setup session: ${formatErrorMessage(err)}`);
     });
   }
 }

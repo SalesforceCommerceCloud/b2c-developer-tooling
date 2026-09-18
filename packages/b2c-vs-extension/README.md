@@ -51,7 +51,7 @@ Use **Setup Help** in the API Browser toolbar or any API tab for connection exam
 
 ### Stay in the development flow
 
-Tail sandbox logs into a VS Code output channel, install Commerce App Packages, manage jobs, and keep the selected B2C instance visible in the status bar. Preview features such as Job History, site export, analytics, and guided onboarding can be enabled from the `b2c-dx.features.*` settings.
+Tail sandbox logs into a VS Code output channel, install Commerce App Packages, manage jobs, and keep the selected B2C instance visible in the status bar. Preview features such as Job History, site export, and analytics can be enabled from the `b2c-dx.features.*` settings.
 
 ## Get started
 
@@ -89,3 +89,9 @@ Development, testing, and packaging instructions are available in [DEVELOPMENT.m
 ## License
 
 Copyright (c) 2026, Salesforce, Inc. Licensed under the [Apache License 2.0](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt).
+
+## AI Chat
+
+The extension registers the B2C Commerce MCP server with VS Code and Cursor. The default launcher requires Node.js 22+ and npx. VS Code chat can read the selected instance and live code-sync status through `#b2cContext`; Cursor gets the same information through the Commerce MCP server connected to the editor.
+
+Explicit user targets take precedence over IDE-context guidance. Context is read on demand; switching instances does not retarget existing debugger/log sessions. Set `b2c-dx.mcp.enabled` to `false` if you configure MCP separately. See [AI Chat configuration](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration#ai-chat).
