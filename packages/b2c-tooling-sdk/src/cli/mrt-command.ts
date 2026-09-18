@@ -119,6 +119,26 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     );
   }
 
+  /**
+   * Suppress human-readable logging in `--json` mode.
+   *
+   * MRT commands emit progress/status lines via {@link BaseCommand.log}, which
+   * routes to the structured logger on stderr. When `--json` is set the caller
+   * wants machine-readable output only, so these lines are swallowed centrally
+   * here instead of guarding every call site with `if (!this.jsonEnabled())`.
+   *
+   * This only affects `this.log()` (stderr diagnostics). Structured stdout
+   * output — tables and detail views written via `ux.stdout` — is untouched and
+   * must still be guarded by `jsonEnabled()` at its call site so it never
+   * corrupts the JSON payload on stdout.
+   */
+  public log(message?: string, ...args: unknown[]): void {
+    if (this.jsonEnabled()) {
+      return;
+    }
+    super.log(message, ...args);
+  }
+
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     const mrt = extractMrtFlags(this.flags as Record<string, unknown>);
     const options: LoadConfigOptions = {

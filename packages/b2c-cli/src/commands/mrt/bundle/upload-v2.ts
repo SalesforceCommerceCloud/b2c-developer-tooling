@@ -179,32 +179,22 @@ export default class MrtBundleUploadV2 extends MrtCommand<typeof MrtBundleUpload
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.bundle.uploadV2.success', 'Bundle #{{bundleId}} uploaded to {{project}} ({{message}})', {
-            bundleId: String(result.bundleId),
-            project: result.projectSlug,
-            message: result.message,
-          }),
-        );
+      this.log(
+        t('commands.mrt.bundle.uploadV2.success', 'Bundle #{{bundleId}} uploaded to {{project}} ({{message}})', {
+          bundleId: String(result.bundleId),
+          project: result.projectSlug,
+          message: result.message,
+        }),
+      );
 
-        // The server returns a `matches` object describing how SSR patterns
-        // resolved. Its internal shape is not part of the stable contract, so
-        // report it generically here and expose the raw object via --json.
-        if (Object.keys(result.matches).length > 0) {
-          this.log(
-            t(
-              'commands.mrt.bundle.uploadV2.matches',
-              'Server reported SSR file matches for this bundle. Run with --json to inspect them.',
-            ),
-          );
-        }
-
+      // The server returns a `matches` object describing how SSR patterns
+      // resolved. Its internal shape is not part of the stable contract, so
+      // report it generically here and expose the raw object via --json.
+      if (Object.keys(result.matches).length > 0) {
         this.log(
           t(
-            'commands.mrt.bundle.uploadV2.deployHint',
-            'To deploy this bundle: b2c mrt bundle deploy {{bundleId}} --environment <environment>',
-            {bundleId: String(result.bundleId)},
+            'commands.mrt.bundle.uploadV2.matches',
+            'Server reported SSR file matches for this bundle. Run with --json to inspect them.',
           ),
         );
 
@@ -215,6 +205,14 @@ export default class MrtBundleUploadV2 extends MrtCommand<typeof MrtBundleUpload
           ),
         );
       }
+
+      this.log(
+        t(
+          'commands.mrt.bundle.uploadV2.deployHint',
+          'To deploy this bundle: b2c mrt bundle deploy {{bundleId}} --environment <environment>',
+          {bundleId: String(result.bundleId)},
+        ),
+      );
 
       for (const w of result.warnings ?? []) this.warn(w);
 

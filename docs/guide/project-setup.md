@@ -31,7 +31,8 @@ Use available B2C Commerce skills and MCP tools for relevant tasks:
 
 Consult relevant skills and operational runbooks. When the B2C MCP is
 connected, discover its tools before using shell commands, direct HTTP
-requests, or browser automation. Prefer dedicated tools. For other supported
+requests, or browser automation. Prefer dedicated tools. For documentation,
+runbooks and skills use `skills_read`, and the `docs_*` tools. For other supported
 API operations, use `scapi_search` to discover APIs and inspect schemas, then
 `scapi_execute` to call APIs, compose workflows, and filter results. If the
 MCP is unavailable or lacks a capability, follow available skills and use

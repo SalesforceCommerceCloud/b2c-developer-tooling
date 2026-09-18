@@ -83,9 +83,7 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(t('commands.mrt.project.delete.success', 'Project "{{slug}}" deleted successfully.', {slug}));
-      }
+      this.log(t('commands.mrt.project.delete.success', 'Project "{{slug}}" deleted successfully.', {slug}));
 
       return {slug, deleted: true};
     } catch (error) {

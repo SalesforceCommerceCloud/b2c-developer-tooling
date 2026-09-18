@@ -53,9 +53,7 @@ export default class MrtOrgCertDelete extends MrtCommand<typeof MrtOrgCertDelete
       this.getMrtAuth(),
     );
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.mrt.org.cert.delete.success', 'Certificate {{id}} deleted.', {id: String(certId)}));
-    }
+    this.log(t('commands.mrt.org.cert.delete.success', 'Certificate {{id}} deleted.', {id: String(certId)}));
 
     return {certId, deleted: true};
   }

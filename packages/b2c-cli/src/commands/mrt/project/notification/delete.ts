@@ -83,9 +83,7 @@ export default class MrtNotificationDelete extends MrtCommand<typeof MrtNotifica
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(t('commands.mrt.notification.delete.success', 'Notification {{id}} deleted.', {id}));
-      }
+      this.log(t('commands.mrt.notification.delete.success', 'Notification {{id}} deleted.', {id}));
 
       return {id, deleted: true};
     } catch (error) {
