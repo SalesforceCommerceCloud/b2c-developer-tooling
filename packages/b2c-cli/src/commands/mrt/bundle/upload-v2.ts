@@ -208,10 +208,10 @@ export default class MrtBundleUploadV2 extends MrtCommand<typeof MrtBundleUpload
           ),
         );
 
-        this.log(
+        this.warn(
           t(
             'commands.mrt.bundle.uploadV2.pushV2Hint',
-            'Note: "b2c mrt bundle deploy --v2" performs the same v2 upload and can build, upload, and deploy in one step.',
+            '"b2c mrt bundle deploy --v2" performs the same v2 upload and can build, upload, and deploy in one step.',
           ),
         );
       }
