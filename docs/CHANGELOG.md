@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.1
+
+### Patch Changes
+
+- [`eaf789a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/eaf789a2d7f879630cef772a48c3a31f122a2b41) - Clarified project guidance for using MCP skills, runbooks, and documentation tools. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.0
 
 ### Minor Changes
