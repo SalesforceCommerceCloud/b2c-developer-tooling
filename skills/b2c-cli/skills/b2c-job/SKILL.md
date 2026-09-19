@@ -39,7 +39,9 @@ Deletion removes completed execution records; it does not cancel jobs.
 
 ```bash
 b2c job import ./archive --show-log
+b2c job import ./storefront-export.zip --wait-for-storefront
 b2c job export --site MySite --site-data campaigns_and_promotions --output ./export
+b2c job export --storefront my-storefront --output ./export
 ```
 
 Import/export wait by default and transfer files over WebDAV. Jobs prefer SCAPI

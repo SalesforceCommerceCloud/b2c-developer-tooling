@@ -34,11 +34,20 @@ export function registerExportCommands(
     );
     if (!picked) return;
 
+    const singularLabels: Partial<Record<SimpleCategory, string>> = {
+      assignments: 'Assignment',
+      customer_lists: 'Customer List',
+      libraries: 'Library',
+      price_books: 'Price Book',
+      storefronts: 'Storefront',
+    };
+    const singularLabel = singularLabels[picked.key] ?? picked.label;
+    const identifierLabel = picked.key === 'storefronts' ? 'name' : 'ID';
     const id = await vscode.window.showInputBox({
-      title: `Add ${picked.label} by ID`,
-      prompt: `Enter the ${picked.label.replace(/s$/, '')} ID to include in the export`,
-      placeHolder: 'e.g., my-library',
-      validateInput: (value) => (value.trim() ? undefined : 'ID cannot be empty'),
+      title: `Add ${singularLabel} by ${identifierLabel}`,
+      prompt: `Enter the ${singularLabel.toLowerCase()} ${identifierLabel} to include in the export`,
+      placeHolder: picked.key === 'storefronts' ? 'e.g., my-storefront' : 'e.g., my-library',
+      validateInput: (value) => (value.trim() ? undefined : `${identifierLabel} cannot be empty`),
     });
     if (!id?.trim()) return;
 

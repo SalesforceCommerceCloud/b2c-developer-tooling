@@ -64,6 +64,14 @@ Find Page Designer pages and components fast, with one-click export (with assets
 
 </a>
 
+### Site Archive Export
+
+Build site archive exports interactively from the **Export** view. Select site,
+global, catalog, inventory, assignment, and composable storefront data units,
+then download and extract the generated archive. Storefront exports are selected
+by storefront name and limited to one storefront per export, matching the B2C
+Commerce platform contract.
+
 ### Cartridge Management and Code Watch/Upload
 
 Edit cartridges locally and have changes show up on your sandbox automatically. Deploy on demand, diff against the active code version, and manage code versions without leaving the editor.
