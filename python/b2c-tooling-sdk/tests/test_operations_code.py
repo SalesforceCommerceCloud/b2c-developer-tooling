@@ -1003,6 +1003,37 @@ async def test_download_single_cartridge_zip_failure_raises() -> None:
         await download_single_cartridge(instance, "version1", "app_custom", "/tmp/out/app_custom")  # type: ignore[arg-type]
 
 
+def _malicious_full_code_version_zip(code_version: str) -> bytes:
+    """A "code version" archive with an entry that tries to escape via ``../``."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zip_file:
+        zip_file.writestr(f"{code_version}/../../../etc/evil.js", b"pwned")
+    return buffer.getvalue()
+
+
+async def test_download_cartridges_rejects_path_traversal(tmp_path: Path) -> None:
+    archive = _malicious_full_code_version_zip("version1")
+    auth = _FakeWebDavAuth(httpx.Response(200), httpx.Response(200, content=archive), httpx.Response(204))
+    instance = _FakeInstance(webdav_auth=auth)
+
+    with pytest.raises(ValueError, match="escapes extraction directory"):
+        await download_cartridges(instance, str(tmp_path))  # type: ignore[arg-type]
+
+
+async def test_download_single_cartridge_rejects_path_traversal(tmp_path: Path) -> None:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zip_file:
+        zip_file.writestr("../../../etc/evil.js", b"pwned")
+    archive = buffer.getvalue()
+
+    auth = _FakeWebDavAuth(httpx.Response(200), httpx.Response(200, content=archive), httpx.Response(204))
+    instance = _FakeInstance(webdav_auth=auth)
+    output_path = tmp_path / "output" / "app_custom"
+
+    with pytest.raises(ValueError, match="escapes extraction directory"):
+        await download_single_cartridge(instance, "version1", "app_custom", str(output_path))  # type: ignore[arg-type]
+
+
 # --- watch.py --------------------------------------------------------------------------
 
 

@@ -16,6 +16,26 @@ import os
 import zipfile
 
 
+def resolve_zip_entry_path(base_dir: str, *parts: str) -> str:
+    """Join ``parts`` (from a ZIP entry name) onto ``base_dir``, guarding against zip-slip.
+
+    A malicious archive entry name containing ``..`` segments or an absolute
+    path could otherwise make ``os.path.join`` resolve outside ``base_dir``
+    when extracting. Raises :class:`ValueError` if the resolved path would
+    escape ``base_dir``.
+    """
+    base = os.path.abspath(base_dir)
+    target = os.path.abspath(os.path.join(base, *parts))
+    try:
+        is_within = os.path.commonpath([base, target]) == base
+    except ValueError:
+        # Raised e.g. on Windows when paths are on different drives.
+        is_within = False
+    if not is_within:
+        raise ValueError(f"Zip entry path escapes extraction directory: {os.path.join(*parts)!r}")
+    return target
+
+
 def add_directory_to_zip(zip_file: zipfile.ZipFile, dir_path: str, zip_path: str = "") -> None:
     """Recursively add the contents of ``dir_path`` to ``zip_file`` under ``zip_path``.
 
@@ -34,4 +54,4 @@ def add_directory_to_zip(zip_file: zipfile.ZipFile, dir_path: str, zip_path: str
             zip_file.write(entry_path, entry_zip_path)
 
 
-__all__ = ["add_directory_to_zip"]
+__all__ = ["add_directory_to_zip", "resolve_zip_entry_path"]

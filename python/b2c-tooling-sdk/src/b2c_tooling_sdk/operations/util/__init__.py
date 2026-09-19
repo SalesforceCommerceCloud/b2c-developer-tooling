@@ -8,6 +8,6 @@ Mirrors ``src/operations/util`` in the TypeScript SDK.
 
 from __future__ import annotations
 
-from b2c_tooling_sdk.operations.util.zip import add_directory_to_zip
+from b2c_tooling_sdk.operations.util.zip import add_directory_to_zip, resolve_zip_entry_path
 
-__all__ = ["add_directory_to_zip"]
+__all__ = ["add_directory_to_zip", "resolve_zip_entry_path"]

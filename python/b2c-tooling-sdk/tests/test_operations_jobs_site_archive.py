@@ -266,3 +266,12 @@ async def test_export_to_path_extracts_directory(recorded_job: _RecordedJob, tmp
     assert result.local_path == str(out)
     assert (out / "meta" / "x.txt").read_text() == "hi"
     assert (out / "libraries" / "y.txt").read_text() == "yo"
+
+
+async def test_export_to_path_rejects_path_traversal(recorded_job: _RecordedJob, tmp_path: Path) -> None:
+    archive = zip_bytes({"../../../etc/evil.txt": b"pwned"})
+    instance = FakeInstance(webdav=FakeWebDav(default_get_content=archive))
+    out = tmp_path / "extracted"
+
+    with pytest.raises(ValueError, match="escapes extraction directory"):
+        await site_archive_export_to_path(instance, {"sites": {}}, str(out))  # type: ignore[arg-type]

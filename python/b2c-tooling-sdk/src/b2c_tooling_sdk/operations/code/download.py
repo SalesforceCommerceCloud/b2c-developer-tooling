@@ -22,6 +22,7 @@ from urllib.parse import urlencode
 from b2c_tooling_sdk.logging import get_logger
 from b2c_tooling_sdk.operations.code.constants import LONG_OPERATION_TIMEOUT_SECONDS
 from b2c_tooling_sdk.operations.code.ocapi_scripts_backend import OcapiScriptsBackend
+from b2c_tooling_sdk.operations.util.zip import resolve_zip_entry_path
 
 if TYPE_CHECKING:
     from b2c_tooling_sdk.instance import B2CInstance
@@ -141,9 +142,9 @@ def _extract_zip(
             continue
 
         if mirror and entry_cartridge_name in mirror:
-            target_path = os.path.join(mirror[entry_cartridge_name], relative_path)
+            target_path = resolve_zip_entry_path(mirror[entry_cartridge_name], relative_path)
         else:
-            target_path = os.path.join(output_directory, entry_cartridge_name, relative_path)
+            target_path = resolve_zip_entry_path(output_directory, entry_cartridge_name, relative_path)
 
         # Preserve existing file permissions.
         existing_mode: int | None = None

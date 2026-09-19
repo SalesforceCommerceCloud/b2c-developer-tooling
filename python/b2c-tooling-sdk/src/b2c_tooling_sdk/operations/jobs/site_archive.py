@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from b2c_tooling_sdk.clients.scapi_jobs import SCAPI_JOBS_CASCADE
 from b2c_tooling_sdk.operations.jobs.run import JobExecution, WaitForJobOptions
 from b2c_tooling_sdk.operations.jobs.run_system_job import SystemJobSpec, run_system_job
-from b2c_tooling_sdk.operations.util.zip import add_directory_to_zip
+from b2c_tooling_sdk.operations.util.zip import add_directory_to_zip, resolve_zip_entry_path
 
 if TYPE_CHECKING:
     from b2c_tooling_sdk.instance import B2CInstance
@@ -886,7 +886,7 @@ async def site_archive_export_to_path(
         os.makedirs(output_path, exist_ok=True)
         with zipfile.ZipFile(io.BytesIO(result.data)) as archive:
             for info in archive.infolist():
-                full_path = os.path.join(output_path, info.filename)
+                full_path = resolve_zip_entry_path(output_path, info.filename)
                 if info.is_dir():
                     os.makedirs(full_path, exist_ok=True)
                 else:
