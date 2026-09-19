@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import json as json_module
 import random
+import weakref
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -45,7 +46,11 @@ class _AuthMiddleware:
         self._auth = auth
         self._logger = get_logger("clients.middleware")
         self._has_had_success = False
-        self._retried: set[bytes] = set()
+        # Keyed by request *object identity* (mirrors the TS `WeakSet<Request>`),
+        # not by method+URL: a fresh httpx.Request is built per outer call, so
+        # this only prevents retrying the same in-flight request twice and
+        # never blocks a later, unrelated call to the same endpoint.
+        self._retried: weakref.WeakSet[httpx.Request] = weakref.WeakSet()
 
     def _get_authorization_header(self) -> Any:
         return getattr(self._auth, "get_authorization_header", None)
@@ -68,16 +73,15 @@ class _AuthMiddleware:
 
         get_header = self._get_authorization_header()
         invalidate = self._invalidate_token()
-        key = _request_identity(request)
         if (
             response.status_code == 401
             and self._has_had_success
-            and key not in self._retried
+            and request not in self._retried
             and invalidate is not None
             and get_header is not None
         ):
             self._logger.debug("[AuthMiddleware] Received 401, invalidating token and retrying")
-            self._retried.add(key)
+            self._retried.add(request)
             invalidate()
             new_header = await get_header()
             retry_request = _rebuild_request(request, _headers_with_auth(request, new_header))
@@ -128,8 +132,12 @@ class _ScapiAuthMiddleware:
         self._cascade = cascade
         self._logger = get_logger("clients.middleware")
         self._has_had_success = False
-        self._retried: set[bytes] = set()
-        self._scope_modes: dict[bytes, str] = {}
+        # Keyed by request *object identity* (mirrors the TS `WeakSet<Request>`),
+        # not by method+URL: a fresh httpx.Request is built per outer call, so
+        # this only prevents retrying the same in-flight request twice and
+        # never blocks a later, unrelated call to the same endpoint.
+        self._retried: weakref.WeakSet[httpx.Request] = weakref.WeakSet()
+        self._scope_modes: weakref.WeakKeyDictionary[httpx.Request, str] = weakref.WeakKeyDictionary()
 
     async def _authorize(self, request: httpx.Request) -> None:
         mode = request.headers.get(SCOPE_MODE_HEADER)
@@ -138,7 +146,7 @@ class _ScapiAuthMiddleware:
 
         for_cascade = getattr(self._auth, "get_access_token_for_cascade", None)
         if mode and for_cascade is not None:
-            self._scope_modes[_request_identity(request)] = mode
+            self._scope_modes[request] = mode
             candidates = self._cascade.read if mode == "read" else self._cascade.write
             token = await for_cascade(candidates)
             request.headers["Authorization"] = f"Bearer {token}"
@@ -159,22 +167,21 @@ class _ScapiAuthMiddleware:
             self._has_had_success = True
 
         invalidate = getattr(self._auth, "invalidate_token", None)
-        key = _request_identity(request)
         if (
             response.status_code == 401
             and self._has_had_success
-            and key not in self._retried
+            and request not in self._retried
             and invalidate is not None
         ):
             self._logger.debug("[ScapiAuthMiddleware] Received 401, invalidating token and retrying")
-            self._retried.add(key)
+            self._retried.add(request)
             invalidate()
 
             retry_request = _rebuild_request(request, httpx.Headers(request.headers))
             for_cascade = getattr(self._auth, "get_access_token_for_cascade", None)
             get_header = getattr(self._auth, "get_authorization_header", None)
             if for_cascade is not None:
-                original_mode = self._scope_modes.get(key, "write")
+                original_mode = self._scope_modes.get(request, "write")
                 candidates = self._cascade.read if original_mode == "read" else self._cascade.write
                 token = await for_cascade(candidates)
                 retry_request.headers["Authorization"] = f"Bearer {token}"
@@ -456,11 +463,6 @@ def create_extra_params_middleware(
     Useful for internal/power-user parameters not present in the typed schema.
     """
     return _ExtraParamsMiddleware(query=query, body=body, headers=headers)
-
-
-def _request_identity(request: httpx.Request) -> bytes:
-    """A stable per-request key (method + URL) for retry de-duplication."""
-    return f"{request.method} {request.url}".encode()
 
 
 __all__ = [

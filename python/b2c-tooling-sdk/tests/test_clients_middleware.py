@@ -103,6 +103,33 @@ async def test_auth_middleware_does_not_retry_401_without_prior_success() -> Non
     assert fetch.requests == []
 
 
+async def test_auth_middleware_retries_later_401_on_same_url_after_earlier_retry() -> None:
+    """A later, independent call to the same URL must retry on its own 401.
+
+    Retry de-duplication must key on the specific request object, not on
+    method+URL - otherwise a fresh call reusing the same endpoint would be
+    permanently blocked from retrying once any earlier call to that endpoint
+    had already retried once.
+    """
+    auth = _FakeAuth()
+    middleware = mw.create_auth_middleware(auth)
+
+    first_request = _req({"Authorization": "Bearer t1"})
+    fetch1 = _Recorder([httpx.Response(200, json={"ok": True})])
+    await middleware.on_response(_resp_ctx(first_request, httpx.Response(200), fetch=fetch1))
+    await middleware.on_response(_resp_ctx(first_request, httpx.Response(401), fetch=fetch1))
+    assert auth.invalidated == 1
+
+    # A later call to the same method+URL (a distinct Request object - the
+    # token has since expired again) must still be eligible for its own retry.
+    second_request = _req({"Authorization": "Bearer t2"})
+    fetch2 = _Recorder([httpx.Response(200, json={"ok": True})])
+    result = await middleware.on_response(_resp_ctx(second_request, httpx.Response(401), fetch=fetch2))
+
+    assert auth.invalidated == 2
+    assert result is not None and result.status_code == 200
+
+
 # --- SCAPI scope-cascade auth ---------------------------------------------------
 
 
