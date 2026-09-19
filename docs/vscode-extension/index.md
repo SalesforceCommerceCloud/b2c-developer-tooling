@@ -24,6 +24,10 @@ Available on the [Visual Studio Marketplace](https://marketplace.visualstudio.co
 
 ## Highlights
 
+### AI Chat Context
+
+Use B2C Commerce tools in VS Code and Cursor chat with MCP registration supplied by the extension. Assistants can read the selected instance, project root, and live code-sync status. In VS Code, reference **#b2cContext** explicitly; Cursor receives the same context through the Commerce MCP server. See [AI Chat configuration](./configuration#ai-chat) for setup and targeting behavior.
+
 ### ISML and Script API Editor Support
 
 Write storefront code with ISML syntax highlighting, snippets, formatting, tag completion, diagnostics, and Emmet support. Cartridge JavaScript files automatically provide autocomplete and hover documentation for `dw/*` modules without writing a `jsconfig.json` into your project. See the [Script API IntelliSense guide](../guide/ide-integration#script-api-intellisense) for more detail.

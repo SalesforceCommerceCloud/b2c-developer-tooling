@@ -37,6 +37,7 @@ const scriptTypesRoot = path.join(pkgRoot, '..', 'b2c-script-types');
 const watchMode = process.argv.includes('--watch');
 
 const extPkg = JSON.parse(fs.readFileSync(path.join(pkgRoot, 'package.json'), 'utf8'));
+const mcpPkg = JSON.parse(fs.readFileSync(path.join(pkgRoot, '..', 'b2c-dx-mcp', 'package.json'), 'utf8'));
 
 // Resolve vscode-html-languageservice's ESM entry (its `module` field). We alias
 // the bare import to this so esbuild bundles the statically-importable ESM build
@@ -247,6 +248,7 @@ const buildOptions = {
   // Build-time constants — read once at bundle time so the runtime doesn't readFileSync(package.json).
   define: {
     __EXT_VERSION__: JSON.stringify(extPkg.version),
+    __MCP_VERSION__: JSON.stringify(mcpPkg.version),
     __TELEMETRY_CONNECTION_STRING__: JSON.stringify(extPkg.telemetry?.connectionString ?? ''),
   },
   minify: !watchMode,

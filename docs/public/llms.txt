@@ -25,8 +25,10 @@ version constraints; use `@latest` for a new installation rather than a memorize
 
 ## Connect the MCP
 
-Use the existing B2C MCP connection when available. For a new connection, prefer
-the plugin on compatible clients:
+Use the existing B2C MCP connection when available. In VS Code and Cursor, the
+B2C IDE Extension registers the server and provides live editor context; do not
+add a duplicate plugin or manual MCP entry. See [AI Chat settings](vscode-extension/configuration.md#ai-chat).
+For other compatible clients, prefer the plugin:
 
 - Marketplace source: `SalesforceCommerceCloud/b2c-developer-tooling`
 - Marketplace name: `b2c-developer-tooling`

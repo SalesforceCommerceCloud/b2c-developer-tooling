@@ -22,7 +22,7 @@ export function registerCodeSync(
   configProvider: B2CExtensionConfig,
   cartridgeService: CartridgeService,
   log: vscode.OutputChannel,
-): void {
+): CodeSyncManager {
   const manager = new CodeSyncManager(context.workspaceState, configProvider);
   const treeProvider = new CartridgeTreeProvider(cartridgeService);
   const treeView = vscode.window.createTreeView('b2cCartridgeExplorer', {treeDataProvider: treeProvider});
@@ -210,4 +210,5 @@ export function registerCodeSync(
     cartridgesSub,
     ...cartridgeCmdDisposables,
   );
+  return manager;
 }

@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {fileURLToPath} from 'url';
 import * as vscode from 'vscode';
+import {getCursorMcpApi} from '../../ai/cursor-mcp.js';
 
 const EXTENSION_ID = 'Salesforce.b2c-vs-extension';
 
@@ -56,6 +57,14 @@ suite('extension activation', () => {
   test('extension activates without throwing', () => {
     const ext = vscode.extensions.getExtension(EXTENSION_ID);
     assert.ok(ext?.isActive, 'extension should be active after suiteSetup activate()');
+  });
+
+  test('AI integration uses the editor-supported API', () => {
+    if (vscode.env.appName.toLowerCase().includes('cursor')) {
+      assert.ok(getCursorMcpApi(), 'Cursor must expose its MCP registration API');
+    } else {
+      assert.ok(vscode.lm.tools.some((tool) => tool.name === 'b2c_get_ide_context'));
+    }
   });
 
   test('API Browser setup help opens the bundled guide without credentials', async () => {
@@ -111,6 +120,9 @@ suite('extension activation', () => {
       {prefix: 'b2c-dx.jobs.', feature: 'features.jobsExplorer'},
       {prefix: 'b2c-dx.export.', feature: 'features.exportExplorer'},
       {prefix: 'b2c-dx.cipAnalytics.', feature: 'features.cipAnalytics'},
+      {prefix: 'b2c-dx.setup.', feature: 'features.setup'},
+      {prefix: 'b2c-dx.walkthrough.', feature: 'features.setup'},
+      {prefix: 'b2c-dx.cli.', feature: 'features.setup'},
     ];
     const disabledPrefixes = featureGatedPrefixes
       .filter(({feature}) => !config.get<boolean>(feature, false))
@@ -131,6 +143,22 @@ suite('extension activation', () => {
   test('declared debug type matches the script debugger', () => {
     const types = pkg.contributes.debuggers.map((d) => d.type);
     assert.ok(types.includes('b2c-script'), 'b2c-script debug type must be declared');
+  });
+
+  test('beta setup commands stay hidden and unregistered by default', async () => {
+    assert.strictEqual(vscode.workspace.getConfiguration('b2c-dx').get('features.setup'), false);
+    const registered = new Set(await vscode.commands.getCommands(true));
+    const setupCommands = pkg.contributes.commands.filter((entry) =>
+      /b2c-dx\.(setup|walkthrough|cli)\./.test(entry.command),
+    );
+    for (const {command} of setupCommands) {
+      assert.strictEqual(registered.has(command), false, command);
+      assert.strictEqual(
+        pkg.contributes.menus?.commandPalette.find((entry) => entry.command === command)?.when,
+        'config.b2c-dx.features.setup',
+      );
+    }
+    assert.strictEqual(pkg.contributes.walkthroughs, undefined);
   });
 
   // Preview features are gated so they are invisible (no view, no palette
@@ -158,21 +186,10 @@ suite('extension activation', () => {
       ['b2c-dx.jobs.refresh', 'config.b2c-dx.features.jobsExplorer'],
       ['b2c-dx.export.run', 'config.b2c-dx.features.exportExplorer'],
       ['b2c-dx.cipAnalytics.queryBuilder', 'config.b2c-dx.features.cipAnalytics'],
-      ['b2c-dx.onboarding.open', 'config.b2c-dx.features.onboarding'],
     ];
     for (const [cmd, expected] of cases) {
       assert.strictEqual(whenFor(cmd), expected, `${cmd} must be palette-gated by ${expected}`);
     }
-  });
-
-  test('onboarding walkthrough is gated by its feature setting', () => {
-    const walkthrough = (pkg.contributes.walkthroughs ?? []).find((w) => w.id === 'b2c-dx.gettingStarted');
-    assert.ok(walkthrough, 'the b2c-dx.gettingStarted walkthrough must exist');
-    assert.strictEqual(
-      walkthrough!.when,
-      'config.b2c-dx.features.onboarding',
-      'the onboarding walkthrough must be gated by config.b2c-dx.features.onboarding',
-    );
   });
 
   test('every contributed view has an auto-registered focus command', async () => {
