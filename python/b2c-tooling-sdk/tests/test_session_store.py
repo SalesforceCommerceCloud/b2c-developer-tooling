@@ -163,6 +163,34 @@ def test_file_and_dir_permissions(file_store: Path) -> None:
     assert file_mode == 0o600
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX permission bits")
+def test_temp_file_created_with_restrictive_mode_up_front(file_store: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The temp file must never be briefly world/group-readable before a later chmod.
+
+    Wraps ``os.open`` to capture the mode bits the temp file actually has right
+    after creation (before any content is written), proving the restrictive mode
+    is passed to the initial ``open()`` call itself rather than applied via a
+    separate ``os.chmod`` after the fact.
+    """
+    real_open = os.open
+    observed_modes: list[int] = []
+
+    def _spy_open(path: object, flags: int, mode: int = 0o777) -> int:
+        fd = real_open(path, flags, mode)
+        if str(path).endswith(".tmp"):
+            observed_modes.append(os.stat(fd).st_mode & 0o777)
+        return fd
+
+    monkeypatch.setattr(os, "open", _spy_open)
+    old_umask = os.umask(0o022)
+    try:
+        save_auth_session(AuthSession(client_id="a", flow="pkce", access_token="1", refresh_token="secret"))
+    finally:
+        os.umask(old_umask)
+
+    assert observed_modes == [0o600]
+
+
 def test_no_temp_files_left_behind(file_store: Path) -> None:
     save_auth_session(AuthSession(client_id="a", flow="pkce", access_token="1"))
     leftovers = [p.name for p in file_store.iterdir() if p.name != _SESSION_FILE]

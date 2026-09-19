@@ -26,7 +26,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
@@ -113,7 +113,7 @@ class AuthSessionBackend(Protocol):
 
 
 def _now_iso() -> str:
-    return datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(tz=UTC).isoformat().replace("+00:00", "Z")
 
 
 def get_default_data_dir(
@@ -190,9 +190,18 @@ class FileAuthSessionBackend:
         store = {"version": 1, "sessions": [s.to_json() for s in sessions]}
         tmp_path = self.data_dir / f"{_SESSION_FILE}.{os.getpid()}.{time.time_ns()}.tmp"
         # JSON.stringify(store, null, 2) — 2-space indent, no trailing newline.
-        tmp_path.write_text(json.dumps(store, indent=2), encoding="utf-8")
-        with contextlib.suppress(OSError):
-            os.chmod(tmp_path, 0o600)
+        # Open with mode 0o600 up front (matching the TS backend's writeFileSync
+        # mode option) so the file is never briefly world/group-readable between
+        # creation and a later chmod - the umask does not affect an explicit
+        # os.open mode argument.
+        fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(json.dumps(store, indent=2))
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.remove(tmp_path)
+            raise
         os.replace(tmp_path, self._file_path())
 
     def find(self, client_id: str) -> AuthSession | None:
