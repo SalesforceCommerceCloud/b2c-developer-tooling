@@ -12,7 +12,7 @@ enrichment.
 from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -49,7 +49,7 @@ from b2c_tooling_sdk.operations.metrics import (
 
 SHORT_CODE = "kv7kzm78"
 TENANT_ID = "bdpx_prd"
-FIXED_NOW = datetime(2026, 1, 25, 12, 0, 0, tzinfo=timezone.utc)
+FIXED_NOW = datetime(2026, 1, 25, 12, 0, 0, tzinfo=UTC)
 
 
 class _FakeAuth:
@@ -261,7 +261,7 @@ def test_parse_metrics_bound_relative() -> None:
 
 
 def test_parse_metrics_bound_iso() -> None:
-    assert parse_metrics_bound("2026-01-20T00:00:00Z", FIXED_NOW) == datetime(2026, 1, 20, 0, 0, 0, tzinfo=timezone.utc)
+    assert parse_metrics_bound("2026-01-20T00:00:00Z", FIXED_NOW) == datetime(2026, 1, 20, 0, 0, 0, tzinfo=UTC)
 
 
 def test_parse_metrics_bound_epoch_ms() -> None:
@@ -270,7 +270,7 @@ def test_parse_metrics_bound_epoch_ms() -> None:
 
 
 def test_parse_metrics_bound_datetime_passthrough() -> None:
-    dt = datetime(2025, 6, 1, tzinfo=timezone.utc)
+    dt = datetime(2025, 6, 1, tzinfo=UTC)
     assert parse_metrics_bound(dt, FIXED_NOW) is dt
 
 

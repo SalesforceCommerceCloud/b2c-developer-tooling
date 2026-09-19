@@ -13,7 +13,7 @@ from __future__ import annotations
 import base64
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from b2c_tooling_sdk.auth.types import DecodedJWT
@@ -57,7 +57,7 @@ def decode_jwt_token_info(token: str) -> tuple[datetime, list[str]]:
     decoded = decode_jwt(token)
     exp = decoded.payload.get("exp")
     exp_seconds = exp if isinstance(exp, (int, float)) else 0
-    expires = datetime.fromtimestamp(exp_seconds, tz=timezone.utc)
+    expires = datetime.fromtimestamp(exp_seconds, tz=UTC)
     return expires, extract_jwt_scopes(decoded.payload)
 
 

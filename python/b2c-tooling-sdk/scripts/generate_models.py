@@ -111,7 +111,7 @@ def generate_one(spec: Path, module: str) -> None:
         "--output-model-type",
         "pydantic_v2.BaseModel",
         "--target-python-version",
-        "3.10",
+        "3.11",
         # Use the dependency-free builtin formatter here; the project's ruff does
         # the real formatting in _fixup_generated (see module docstring).
         "--formatters",

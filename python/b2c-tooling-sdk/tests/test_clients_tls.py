@@ -27,8 +27,8 @@ def _make_pkcs12(passphrase: str | None) -> bytes:
     """Build a self-signed cert + key and serialize it as a PKCS12 bundle."""
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "test-client")])
-    not_before = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
-    not_after = datetime.datetime(2030, 1, 1, tzinfo=datetime.timezone.utc)
+    not_before = datetime.datetime(2020, 1, 1, tzinfo=datetime.UTC)
+    not_after = datetime.datetime(2030, 1, 1, tzinfo=datetime.UTC)
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)

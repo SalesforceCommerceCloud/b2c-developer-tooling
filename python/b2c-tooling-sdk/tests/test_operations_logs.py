@@ -15,7 +15,7 @@ from __future__ import annotations
 import codecs
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from email.utils import format_datetime
 from pathlib import Path
 from typing import Any
@@ -137,7 +137,7 @@ def _propfind_xml(
 
 
 def _t(hour: int, minute: int = 0) -> datetime:
-    return datetime(2025, 1, 25, hour, minute, 0, tzinfo=timezone.utc)
+    return datetime(2025, 1, 25, hour, minute, 0, tzinfo=UTC)
 
 
 # --- extract_prefix -----------------------------------------------------------------
@@ -795,19 +795,19 @@ def test_parse_relative_time_returns_none_for_invalid_format() -> None:
 
 
 def test_parse_since_time_relative_uses_injected_now() -> None:
-    now = datetime(2026, 1, 25, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 25, tzinfo=UTC)
     result = parse_since_time("5m", now)
     assert result == now - timedelta(minutes=5)
 
 
 def test_parse_since_time_iso8601_with_timezone() -> None:
-    now = datetime(2026, 1, 25, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 25, tzinfo=UTC)
     result = parse_since_time("2026-01-24T12:00:00+00:00", now)
-    assert result == datetime(2026, 1, 24, 12, 0, 0, tzinfo=timezone.utc)
+    assert result == datetime(2026, 1, 24, 12, 0, 0, tzinfo=UTC)
 
 
 def test_parse_since_time_iso8601_without_timezone_assumes_utc() -> None:
-    now = datetime(2026, 1, 25, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 25, tzinfo=UTC)
     result = parse_since_time("2026-01-24T12:00:00", now)
     assert result.year == 2026
     assert result.month == 1
@@ -816,32 +816,32 @@ def test_parse_since_time_iso8601_without_timezone_assumes_utc() -> None:
 
 
 def test_parse_since_time_defaults_now_to_current_time() -> None:
-    before = datetime.now(timezone.utc)
+    before = datetime.now(UTC)
     result = parse_since_time("5m")
-    after = datetime.now(timezone.utc)
+    after = datetime.now(UTC)
     assert before - timedelta(minutes=5) <= result <= after - timedelta(minutes=5)
 
 
 def test_parse_since_time_raises_value_error_for_invalid_input() -> None:
-    now = datetime(2026, 1, 25, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 25, tzinfo=UTC)
     with pytest.raises(ValueError, match='Invalid --since value: "garbage"'):
         parse_since_time("garbage", now)
 
 
 def test_parse_since_time_raises_for_empty_string() -> None:
-    now = datetime(2026, 1, 25, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 25, tzinfo=UTC)
     with pytest.raises(ValueError):
         parse_since_time("", now)
 
 
 def test_parse_log_timestamp_with_milliseconds() -> None:
     result = parse_log_timestamp("2025-01-25 10:30:45.123 GMT")
-    assert result == datetime(2025, 1, 25, 10, 30, 45, 123000, tzinfo=timezone.utc)
+    assert result == datetime(2025, 1, 25, 10, 30, 45, 123000, tzinfo=UTC)
 
 
 def test_parse_log_timestamp_without_milliseconds() -> None:
     result = parse_log_timestamp("2025-01-25 10:30:45 GMT")
-    assert result == datetime(2025, 1, 25, 10, 30, 45, tzinfo=timezone.utc)
+    assert result == datetime(2025, 1, 25, 10, 30, 45, tzinfo=UTC)
 
 
 def test_parse_log_timestamp_returns_none_for_invalid() -> None:

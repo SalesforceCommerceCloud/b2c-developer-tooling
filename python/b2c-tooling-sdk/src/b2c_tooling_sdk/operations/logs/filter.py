@@ -15,7 +15,7 @@ callers get deterministic behavior in tests without needing to patch
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from b2c_tooling_sdk.operations.logs.types import LogEntry
 
@@ -61,7 +61,7 @@ def parse_since_time(since_str: str, now: datetime | None = None) -> datetime:
     :raises ValueError: if ``since_str`` is neither a valid relative time nor a
         valid ISO 8601 timestamp.
     """
-    reference = now if now is not None else datetime.now(timezone.utc)
+    reference = now if now is not None else datetime.now(UTC)
 
     relative_ms = parse_relative_time(since_str)
     if relative_ms is not None:
@@ -79,7 +79,7 @@ def parse_since_time(since_str: str, now: datetime | None = None) -> datetime:
     # 8601 input the same way to keep comparisons (e.g. in filter_by_since)
     # well-defined.
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        parsed = parsed.replace(tzinfo=UTC)
 
     return parsed
 

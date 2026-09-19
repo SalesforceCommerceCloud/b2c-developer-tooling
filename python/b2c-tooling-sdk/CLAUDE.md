@@ -113,7 +113,7 @@ generator and run `make generate-models`.
 
 - Copyright header on every source and test file (Python `#`-comment block,
   `SPDX-License-Identifier: Apache-2.0`).
-- `from __future__ import annotations` everywhere (so `X | None` works on 3.10,
+- `from __future__ import annotations` everywhere (so `X | None` works on 3.11,
   the minimum supported version).
 - Ruff selects `E,F,I,UP,B,W,C4,SIM` (E501 ignored); line length 120. mypy strict.
 - Tests: pytest (`asyncio_mode=auto`) + `respx` for httpx mocking + `freezegun`.

@@ -25,7 +25,7 @@ import zipfile
 import zlib
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from b2c_tooling_sdk.clients.scapi_jobs import SCAPI_JOBS_CASCADE
@@ -326,7 +326,7 @@ def _assert_archive_has_files(archive: zipfile.ZipFile, source: str) -> None:
 
 
 def _now_millis() -> int:
-    return int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+    return int(datetime.now(tz=UTC).timestamp() * 1000)
 
 
 @dataclass
@@ -808,7 +808,7 @@ async def site_archive_export(
     payload = _coerce_data_units(data_units)
 
     # Generate archive filename (strip ``:``, ``.``, ``-`` from the ISO timestamp).
-    timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3] + "Z"
+    timestamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%S%f")[:-3] + "Z"
     archive_dir_name = f"{timestamp}_export"
     zip_filename = f"{archive_dir_name}.zip"
 

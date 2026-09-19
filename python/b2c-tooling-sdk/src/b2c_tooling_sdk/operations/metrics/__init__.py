@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 from b2c_tooling_sdk.clients import MetricsClient, get_api_error_message
@@ -196,7 +196,7 @@ class ResolvedMetricsWindow:
 
 def _now_or_default(now: datetime | None) -> datetime:
     """Return ``now`` if supplied, else the current timezone-aware UTC time."""
-    return now if now is not None else datetime.now(timezone.utc)
+    return now if now is not None else datetime.now(UTC)
 
 
 def parse_metrics_bound(value: MetricsBoundInput, now: datetime | None = None) -> datetime:
@@ -219,7 +219,7 @@ def parse_metrics_bound(value: MetricsBoundInput, now: datetime | None = None) -
     if isinstance(value, bool):  # pragma: no cover - defensive; bool is an int subclass
         raise TypeError("Metrics bound cannot be a bool")
     if isinstance(value, (int, float)):
-        return datetime.fromtimestamp(value / 1000, tz=timezone.utc)
+        return datetime.fromtimestamp(value / 1000, tz=UTC)
     return parse_since_time(value, reference)
 
 

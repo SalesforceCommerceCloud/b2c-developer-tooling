@@ -26,7 +26,7 @@ import re
 import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from b2c_tooling_sdk.errors.http_error import HttpError
@@ -865,11 +865,11 @@ def _validate_state_root(state_root: str) -> None:
 
 
 def _now_iso() -> str:
-    return datetime.now(tz=timezone.utc).isoformat()
+    return datetime.now(tz=UTC).isoformat()
 
 
 def _now_millis() -> float:
-    return datetime.now(tz=timezone.utc).timestamp() * 1000
+    return datetime.now(tz=UTC).timestamp() * 1000
 
 
 def _parse_iso_millis(value: str) -> float | None:

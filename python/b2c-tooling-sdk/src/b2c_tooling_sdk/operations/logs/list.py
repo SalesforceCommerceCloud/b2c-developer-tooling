@@ -9,7 +9,7 @@ Mirrors ``src/operations/logs/list.ts``.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from b2c_tooling_sdk.logging import get_logger
@@ -52,7 +52,7 @@ _CUSTOM_NAME_RE = re.compile(r"^(custom-[a-zA-Z0-9_]+)-")
 _FALLBACK_PREFIX_RE = re.compile(r"^([a-zA-Z]+)[-_]")
 
 #: Epoch fallback used when a WebDAV entry has no ``getlastmodified`` value.
-_EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
+_EPOCH = datetime.fromtimestamp(0, tz=UTC)
 
 
 def extract_prefix(filename: str) -> str:

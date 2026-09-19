@@ -49,7 +49,7 @@ pip install "git+https://github.com/SalesforceCommerceCloud/b2c-developer-toolin
 ```
 
 The importable package is `b2c_tooling_sdk`; the distribution name is
-`salesforce-b2c-tooling-sdk`. Python 3.10+ is required.
+`salesforce-b2c-tooling-sdk`. Python 3.11+ is required.
 
 ## 30-second quickstart (async)
 

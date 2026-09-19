@@ -25,7 +25,7 @@ import json
 import os
 import secrets
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import urlencode
 
@@ -162,9 +162,7 @@ class PkceOAuthStrategy:
             self._sub = stored.sub or ""
             self._refresh_token = stored.refresh_token
             if self._config.client_id not in _ACCESS_TOKEN_CACHE and stored.access_token:
-                expires = (
-                    _parse_iso(stored.expires_at) if stored.expires_at else datetime.fromtimestamp(0, tz=timezone.utc)
-                )
+                expires = _parse_iso(stored.expires_at) if stored.expires_at else datetime.fromtimestamp(0, tz=UTC)
                 _ACCESS_TOKEN_CACHE[self._config.client_id] = AccessTokenResponse(
                     access_token=stored.access_token,
                     expires=expires,
@@ -482,18 +480,18 @@ def _first(query: dict[str, list[str]], key: str) -> str | None:
 
 
 def _now() -> datetime:
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 def _to_iso(value: datetime) -> str:
-    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _parse_iso(value: str) -> datetime:
     normalized = value.replace("Z", "+00:00")
     parsed = datetime.fromisoformat(normalized)
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        parsed = parsed.replace(tzinfo=UTC)
     return parsed
 
 

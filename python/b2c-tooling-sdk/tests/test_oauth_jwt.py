@@ -52,8 +52,8 @@ def _write_key_pair(directory: Path, *, passphrase: str | None = None) -> KeyPai
         .issuer_name(issuer)
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc))
-        .not_valid_after(datetime.datetime(2040, 1, 1, tzinfo=datetime.timezone.utc))
+        .not_valid_before(datetime.datetime(2020, 1, 1, tzinfo=datetime.UTC))
+        .not_valid_after(datetime.datetime(2040, 1, 1, tzinfo=datetime.UTC))
         .sign(key, hashes.SHA256())
     )
     cert_pem = cert.public_bytes(serialization.Encoding.PEM)
@@ -258,7 +258,7 @@ async def test_default_expires_in_when_omitted(key_pair: KeyPair) -> None:
     token_response = await strategy.get_token_response()
 
     # ~1800s default lifetime.
-    remaining = (token_response.expires - datetime.datetime.now(tz=datetime.timezone.utc)).total_seconds()
+    remaining = (token_response.expires - datetime.datetime.now(tz=datetime.UTC)).total_seconds()
     assert 1700 < remaining <= 1800
 
 

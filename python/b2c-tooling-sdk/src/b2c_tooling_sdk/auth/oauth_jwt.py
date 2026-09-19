@@ -14,7 +14,7 @@ from __future__ import annotations
 import base64
 import json
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
@@ -305,7 +305,7 @@ class JwtOAuthStrategy:
             raise RuntimeError("No access token in response from Account Manager")
 
         expires_in = data.get("expires_in") or _DEFAULT_EXPIRES_IN
-        expiry = datetime.now(tz=timezone.utc) + timedelta(seconds=expires_in)
+        expiry = datetime.now(tz=UTC) + timedelta(seconds=expires_in)
 
         decoded = decode_jwt(access_token)
         scope = decoded.payload.get("scope")

@@ -16,7 +16,7 @@ import asyncio
 import json as json_module
 import random
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any
 
@@ -225,8 +225,8 @@ def _parse_retry_after(header_value: str | None) -> float | None:
     if parsed is None:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    diff_ms = (parsed - datetime.now(timezone.utc)).total_seconds() * 1000
+        parsed = parsed.replace(tzinfo=UTC)
+    diff_ms = (parsed - datetime.now(UTC)).total_seconds() * 1000
     return diff_ms if diff_ms > 0 else 0.0
 
 

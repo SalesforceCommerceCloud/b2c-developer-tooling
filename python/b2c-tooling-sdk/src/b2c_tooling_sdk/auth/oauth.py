@@ -15,7 +15,7 @@ instances sharing a client id reuse the same tokens, exactly as the TS SDK does.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import urlencode
 
@@ -88,7 +88,7 @@ def get_cached_oauth_token(cache_key: str, required_scopes: list[str] | None = N
     cached = _ACCESS_TOKEN_CACHE.get(cache_key)
     if cached is None:
         return None
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     has_all_scopes = all(scope in cached.scopes for scope in required_scopes)
     if not has_all_scopes or now > cached.expires:
         _ACCESS_TOKEN_CACHE.pop(cache_key, None)
@@ -110,7 +110,7 @@ def find_cached_token_satisfying(
     Used by cascade resolution: a token granted with broader scopes automatically
     satisfies a later request needing a narrower scope, with no extra AM round trip.
     """
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     for key in list(_ACCESS_TOKEN_CACHE.keys()):
         if not key.startswith(identity_prefix):
             continue
@@ -354,7 +354,7 @@ class OAuthStrategy:
         jwt = decode_jwt(data["access_token"])
         logger.debug("[Auth] JWT payload sub=%s", jwt.payload.get("sub"))
 
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         expiration = now + timedelta(seconds=data["expires_in"])
         # AM normally echoes granted scopes; some configs omit `scope`. Fall back to
         # what we requested so cache satisfies-checks (cascade resolution) still work.
