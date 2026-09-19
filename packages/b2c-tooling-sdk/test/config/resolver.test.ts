@@ -69,6 +69,15 @@ describe('config/resolver', () => {
         expect(config.tenantId).to.equal('test_prd');
       });
 
+      it('normalizes a full organization ID from a source to tenantId', async () => {
+        const source = new MockSource('test', {tenantId: 'f_ecom_bjgk_005'});
+        const resolver = new ConfigResolver([source]);
+
+        const {config} = await resolver.resolve();
+
+        expect(config.tenantId).to.equal('bjgk_005');
+      });
+
       it('allows overrides to take precedence for tenantId', async () => {
         const source = new MockSource('test', {
           hostname: 'example.demandware.net',
@@ -79,6 +88,14 @@ describe('config/resolver', () => {
         const {config} = await resolver.resolve({tenantId: 'override_prd'});
 
         expect(config.tenantId).to.equal('override_prd');
+      });
+
+      it('normalizes a full organization ID supplied as an override', async () => {
+        const resolver = new ConfigResolver([]);
+
+        const {config} = await resolver.resolve({tenantId: 'f_ecom_bjgk_005'});
+
+        expect(config.tenantId).to.equal('bjgk_005');
       });
 
       it('applies overrides with highest priority', async () => {

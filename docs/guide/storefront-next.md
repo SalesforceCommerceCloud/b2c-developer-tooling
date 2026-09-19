@@ -34,6 +34,8 @@ Replace `my-storefront` and `staging` with your MRT project and environment IDs.
 
 Storefront setup configures the initial MRT variables. Use the CLI to inspect or change selected values as your storefront evolves. Salesforce's [Environment Variables guide](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.html) covers naming, visibility, and supported configuration paths.
 
+The toolkit can also use common Storefront Next project variables as local CLI, MCP, and IDE configuration. See [Storefront Next configuration compatibility](./configuration#storefront-next-compatibility) for the supported mappings and precedence.
+
 ### Update Several Values Together
 
 ```bash

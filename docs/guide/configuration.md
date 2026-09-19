@@ -208,6 +208,20 @@ SFCC_SITE_ID=RefArch
 
 You do not need both file formats. Environment values override the selected `dw.json` entry, so keep instance-specific variables out of a shared shell environment if you regularly switch between named instances.
 
+### Storefront Next Compatibility
+
+When you run the toolkit from a [Storefront Next](./storefront-next) project, its existing environment variables can supply the equivalent B2C Commerce settings. Toolkit-specific variables remain the default names and take priority when both forms are set.
+
+| Storefront Next variable                     | `dw.json` field      | Default toolkit environment variable |
+| -------------------------------------------- | -------------------- | ------------------------------------ |
+| `PUBLIC__app__commerce__api__clientId`       | `slas-client-id`     | `SFCC_SLAS_CLIENT_ID`                |
+| `PUBLIC__app__commerce__api__organizationId` | `tenant-id`          | `SFCC_TENANT_ID`                     |
+| `PUBLIC__app__commerce__api__shortCode`      | `short-code`         | `SFCC_SHORTCODE`                     |
+| `COMMERCE_API_SLAS_SECRET`                   | `slas-client-secret` | `SFCC_SLAS_CLIENT_SECRET`            |
+| `PUBLIC__app__defaultSiteId`                 | `site-id`            | `SFCC_SITE_ID`                       |
+| `MRT_PROJECT`                                | `mrt-project`        | `MRT_PROJECT`                        |
+| `MRT_TARGET`                                 | `mrt-environment`    | `MRT_ENVIRONMENT`                    |
+
 ## Check Your Configuration {#debugging-configuration}
 
 For the CLI, inspect the selected connection and the source of each value:

@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-15T13:55:15.255Z",
+  "generatedAt": "2026-09-16T18:06:38.047Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -314,7 +314,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md",
-      "headings": "Choose Your Connection • Configuration File • Single Instance • Shopper Authentication (SLAS) • Multiple Instances • Managing Instances with the CLI • Configuration File Selection • Global Default Configuration • Environment Variables • .env File • Check Your Configuration {#debugging-configuration} • Resolution Priority • Credential Grouping • Settings Reference {#supported-fields} • Instance and Site • Administrative Authentication {#oauth-scapi-ocapi} • Shopper Authentication • WebDAV and Certificates {#basic-authentication-webdav} • Code, Content, and Documentation • Sandboxes and Analytics • Managed Runtime • Other Environment Settings • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • CLI Flags • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • MRT API Key • Two-Factor Authentication (mTLS) • Troubleshooting • Next Steps",
+      "headings": "Choose Your Connection • Configuration File • Single Instance • Shopper Authentication (SLAS) • Multiple Instances • Managing Instances with the CLI • Configuration File Selection • Global Default Configuration • Environment Variables • .env File • Storefront Next Compatibility • Check Your Configuration {#debugging-configuration} • Resolution Priority • Credential Grouping • Settings Reference {#supported-fields} • Instance and Site • Administrative Authentication {#oauth-scapi-ocapi} • Shopper Authentication • WebDAV and Certificates {#basic-authentication-webdav} • Code, Content, and Documentation • Sandboxes and Analytics • Managed Runtime • Other Environment Settings • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • CLI Flags • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • MRT API Key • Two-Factor Authentication (mTLS) • Troubleshooting • Next Steps",
       "preview": "Configure B2C Commerce connections for the CLI, MCP, and IDE extension, including SLAS credentials, named instances, and shared project defaults."
     },
     {
