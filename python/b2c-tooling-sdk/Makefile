@@ -1,4 +1,4 @@
-.PHONY: install test test-agent lint lint-agent format typecheck typecheck-agent generate-models build-sync docs clean
+.PHONY: install test test-agent lint lint-agent format typecheck typecheck-agent generate-models docs clean
 
 install:
 	pip install -e ".[dev,docs]"
@@ -34,10 +34,6 @@ typecheck-agent:
 # Regenerate Pydantic models from specs/ (mirrors the TS `generate:types`)
 generate-models:
 	python scripts/generate_models.py
-
-# Derive the synchronous client layer from the async source (unasync)
-build-sync:
-	python scripts/build_sync.py
 
 docs:
 	mkdocs serve

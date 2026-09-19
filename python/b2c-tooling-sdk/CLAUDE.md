@@ -90,9 +90,8 @@ The SDK is **async-first**. Every public callable also has a blocking twin under
 runs all coroutines on one persistent background event loop (preserving token
 caching / single-flight); `sync/_proxy.py` syncifies returned objects so their
 methods block; `sync/__init__.py` dynamically mirrors the top-level barrel.
-Do **not** look for a codegen step — the `make build-sync` Makefile target
-references a `scripts/build_sync.py` that does not exist (stale; earlier plans
-considered unasync but the runtime facade was chosen instead). The sync facade
+Do **not** look for a codegen step — earlier plans considered generating this
+layer with `unasync`, but the runtime facade was chosen instead. The sync facade
 mirrors only the **top-level** barrel, so submodule-only APIs (e.g.
 `operations.sites`, streaming/async-generator APIs) are not in `sync`.
 
