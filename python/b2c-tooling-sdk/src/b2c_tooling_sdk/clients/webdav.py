@@ -111,7 +111,7 @@ class WebDavClient:
                 str(request.url),
                 method=request.method,
                 headers=dict(request.headers),
-                content=content,
+                content=request.content,
                 dispatcher=self._transport,
             )
         except Exception as err:  # noqa: BLE001 - wrapped with WebDAV context

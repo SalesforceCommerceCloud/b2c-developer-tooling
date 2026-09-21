@@ -54,7 +54,7 @@ async def run_callback_server(
 ) -> Any:
     """Run a localhost HTTP server on ``port`` until ``handler`` signals completion.
 
-    :param port: TCP port to listen on (``127.0.0.1``).
+    :param port: TCP port to listen on (``localhost``, both IPv4 and IPv6 loopback).
     :param handler: Per-request callback. When it returns a response with
         ``done=True``, the server resolves with ``result`` (or raises ``error``).
     :param on_listening: Optional coroutine invoked *after* the socket is bound —
@@ -109,7 +109,10 @@ async def run_callback_server(
                 writer.close()
 
     try:
-        server = await asyncio.start_server(_handle, host="127.0.0.1", port=port)
+        # "localhost" (not "127.0.0.1") so we bind both loopback families, matching
+        # Node's dual-stack `server.listen(port)` default the redirect URI relies on —
+        # some systems resolve "localhost" to ::1 first.
+        server = await asyncio.start_server(_handle, host="localhost", port=port)
     except OSError as error:
         hint = ""
         if error.errno in _ADDR_IN_USE_ERRNOS:

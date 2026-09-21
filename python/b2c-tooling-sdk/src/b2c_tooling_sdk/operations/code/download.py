@@ -256,9 +256,6 @@ async def download_single_cartridge(
     logger.debug("Downloaded cartridge %s (code version %s)", cartridge_name, code_version)
 
 
-_ZIP_HEADERS = {"Content-Type": "application/x-www-form-urlencoded"}
-
-
 async def download_cartridges(
     instance: B2CInstance, output_directory: str, options: DownloadOptions | None = None
 ) -> DownloadResult:

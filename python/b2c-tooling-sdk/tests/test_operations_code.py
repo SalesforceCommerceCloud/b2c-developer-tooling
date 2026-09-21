@@ -719,7 +719,7 @@ async def test_upload_cartridges_happy_path(tmp_path: Path) -> None:
     methods = [c["method"] for c in auth.calls]
     assert methods == ["PUT", "POST", "DELETE"]
     assert auth.calls[0]["url"].endswith(".zip")
-    assert auth.calls[1]["content"] == "method=UNZIP"
+    assert auth.calls[1]["content"] == b"method=UNZIP"
     phases = [phase for phase, _elapsed in progress_events]
     assert phases == ["archiving", "uploading", "unzipping", "cleanup"]
 

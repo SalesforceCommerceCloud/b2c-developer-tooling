@@ -111,7 +111,7 @@ async def test_put_success_sets_content_type() -> None:
 async def test_put_string_content() -> None:
     client, auth = _client(httpx.Response(200))
     await client.put("file.txt", "hello")
-    assert auth.calls[0]["content"] == "hello"
+    assert auth.calls[0]["content"] == b"hello"
 
 
 async def test_put_413_includes_sandbox_hint() -> None:
