@@ -29,4 +29,13 @@ export default [
       ...sharedRules,
     },
   },
+  {
+    // Tests run directly via `node --test` (no bundler/loader), so they're
+    // plain CommonJS .js files using require() rather than the src/ package's
+    // ESM-style import syntax.
+    files: ['test/**/*.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 ];

@@ -1,0 +1,17 @@
+{
+  // One configured project spanning every cartridge file, so tsserver's
+  // reference search can see call sites across files — the setup
+  // `b2c setup ide vscode-types` recommends. Without this, each open file
+  // gets its own inferred project and cross-file inference has nothing to
+  // search. dw/* and ~/* requires are resolved by the bundled tsserver
+  // plugin, not by paths mappings.
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true
+  },
+  "include": ["cartridges/**/cartridge/**/*.js"]
+}

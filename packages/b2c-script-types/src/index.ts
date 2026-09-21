@@ -7,30 +7,64 @@ import path from 'node:path';
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-interface ConfiguredCartridge {
-  name: string;
-  src: string;
+import {
+  collectSuperModuleAugmentedMembers,
+  traceSuperModuleAccess,
+  createInferenceContext,
+  describeTypes,
+  findEnclosingPropertyAccess,
+  getMemberOfType,
+  getNodeAtPosition,
+  INFERRED_COMPLETION_SOURCE,
+  inferTypeForExpression,
+  inferTypeForNode,
+  isOpenForUsageInference,
+  typesToCompletionEntries,
+} from './usage-inference';
+import {PLUGIN_NAME} from './resolver/constants';
+import type {ConfiguredCartridge, NormalizedCartridge, PluginConfig} from './resolver/constants';
+import {
+  discoverCartridgesOnDisk,
+  orderCartridges,
+  parseDeclareModuleRanges,
+  readDwJsonCartridges,
+} from './resolver/cartridge-discovery';
+import {
+  createPathContainment,
+  ownerCartridge as ownerCartridgeImpl,
+  resolveCartridgeModule as resolveCartridgeModuleImpl,
+  resolveModulesCartridge as resolveModulesCartridgeImpl,
+} from './resolver/module-resolution';
+
+// Rich hover data borrowed from a real ambient declaration (e.g. the `custom`
+// property on `dw.object.ExtensibleObject`) once usage inference has resolved
+// which one an undocumented value's usage matches. Plain data only — see the
+// caching note where this is produced for why.
+interface HoverInferenceResult {
+  readonly description: string;
+  readonly documentation?: readonly tsserver.SymbolDisplayPart[];
+  readonly tags?: readonly tsserver.JSDocTagInfo[];
 }
 
-interface PluginConfig {
-  /** @deprecated use cartridges; kept for backward compatibility */
-  cartridgeRoots?: string[];
-  cartridges?: ConfiguredCartridge[];
-  enabled?: boolean;
-  /**
-   * Disable filesystem auto-discovery when no cartridges are pushed in. Defaults
-   * to false — i.e. auto-discovery runs unless the host explicitly opts out.
-   */
-  autoDiscover?: boolean;
+/**
+ * Swaps the trailing `any` keyword part of a QuickInfo's display parts (the
+ * shape TS renders for an undocumented parameter/property, e.g. `(parameter)
+ * shipment: any`) for the inferred type's description, so the bolded hover
+ * header reads `(parameter) shipment: Shipment` instead of `... : any` —
+ * while leaving everything else (the `(parameter) shipment: ` prefix TS
+ * already rendered) untouched. Only ever touches a display exactly ending in
+ * that keyword; any other shape is returned as-is rather than guessed at.
+ */
+function replaceTrailingAnyDisplayPart(
+  displayParts: tsserver.SymbolDisplayPart[] | undefined,
+  description: string,
+): tsserver.SymbolDisplayPart[] | undefined {
+  if (!displayParts || displayParts.length === 0) return displayParts;
+  const last = displayParts[displayParts.length - 1];
+  if (last.kind !== 'keyword' || last.text !== 'any') return displayParts;
+  return [...displayParts.slice(0, -1), {kind: 'text', text: description}];
 }
 
-interface NormalizedCartridge {
-  name: string;
-  /** Forward-slash path with trailing '/'. Lowercased on case-insensitive filesystems. */
-  root: string;
-}
-
-const PLUGIN_NAME = '@salesforce/b2c-script-types';
 const TYPES_DIR = path.resolve(__dirname, '..', 'types').replace(/\\/g, '/');
 // Ambient declarations for SFCC globals (`session`, `request`, `response`,
 // `customer`, `empty(...)`, the `dw.*` namespace alias, etc.). The plugin
@@ -41,52 +75,18 @@ const GLOBAL_DTS = path.join(TYPES_DIR, 'global.d.ts').replace(/\\/g, '/');
 // and friends so cartridge code works under `checkJs: true` despite the dynamic
 // property assignments in modules/server.js that TS can't infer.
 const SFRA_SERVER_DTS = path.join(TYPES_DIR, 'sfra', 'server.d.ts').replace(/\\/g, '/');
-// Bare-name requires that the SFRA server.d.ts ambient declaration covers.
-// We deliberately do NOT redirect these to modules/<name>.js, so TS uses the
-// ambient declaration's types instead of the inferred .js types (which can't
-// see the dynamic `server.middleware = ...` assignments in modules/server.js).
-const SFRA_AMBIENT_MODULES = new Set([
-  'server',
-  'server/server',
-  'server/middleware',
-  'server/render',
-  'server/route',
-  'server/request',
-  'server/response',
-  'server/queryString',
-  'server/forms',
-  'server/forms/forms',
-]);
-
-// Candidate suffixes appended when resolving a SFCC-style relative require to
-// a cartridge file. SFRA convention is to omit the .js extension, so .js wins
-// first; .json captures the occasional resource bundle import.
-const CANDIDATE_EXTENSIONS = ['.js', '.json', '/index.js'];
-
-// Cartridges that conventionally sit at the bottom of the cartridge path when
-// the user hasn't told us otherwise (no `cartridges` in dw.json/SFCC_CARTRIDGES).
-// Higher rank = lower in the cartridge path. SFRA's runtime path ends with
-// `app_storefront_base:modules`, so `modules` sorts strictly last.
-// Mirrors BASE_CARTRIDGE_RANK in packages/b2c-vs-extension/src/cartridges/cartridge-service.ts.
-const BASE_CARTRIDGE_RANK: Record<string, number> = {
-  app_storefront_base: 1,
-  modules: 2,
-};
-
-// Directories skipped during recursive .project discovery. Mirrors the ignore
-// list in @salesforce/b2c-tooling-sdk's findCartridges() so plain LSP usage
-// matches CLI/extension discovery.
-const DISCOVERY_IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.cache', 'tmp', 'temp']);
-
-const DISCOVERY_MAX_DEPTH = 8;
 
 function init({typescript: ts}: {typescript: typeof tsserver}) {
-  // Module-scoped state shared across all projects in the TS server. The host
-  // calls onConfigurationChanged() on this module when configurePlugin() runs;
-  // each project's wrapped resolver reads from these variables.
+  // tsserver calls this factory function fresh for every project that loads
+  // the plugin (once per tsconfig/jsconfig root), so these variables are a
+  // private closure per project, not shared state across a multi-root
+  // workspace. configurePlugin() broadcasts the same config to every open
+  // project, but each project's own onConfigurationChanged() call only
+  // updates its own copy of these variables.
   let cartridges: NormalizedCartridge[] = [];
   let enabled = true;
   let autoDiscoverEnabled = true;
+  let inferUsageEnabled = false;
   // Whether the most recent applyConfig() received an explicit cartridges list.
   // When true, we skip auto-discovery; when false, create() may auto-populate.
   let cartridgesFromHost = false;
@@ -97,16 +97,21 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
   // backslashes on Windows — we have to normalize to match. We also fold case on
   // case-insensitive filesystems (Windows + default macOS HFS+/APFS) so a path
   // like "C:/Proj" matches a cartridge root of "c:/proj".
-  const caseSensitive = ts.sys.useCaseSensitiveFileNames;
-  const normalize = (p: string): string => {
-    const slashed = p.replace(/\\/g, '/');
-    return caseSensitive ? slashed : slashed.toLowerCase();
-  };
+  //
+  // isWithinRoot is the trust boundary for every resolver below — see its
+  // doc comment in resolver/module-resolution.ts for the full rationale and
+  // known limitations.
+  const {normalize, isWithinRoot} = createPathContainment(ts, ts.sys.useCaseSensitiveFileNames);
 
   const setCartridges = (list: ConfiguredCartridge[]) => {
     cartridges = list.map(({name, src}) => {
       const n = normalize(src);
-      return {name, root: n.endsWith('/') ? n : n + '/'};
+      const raw = src.replace(/\\/g, '/');
+      return {
+        name,
+        root: n.endsWith('/') ? n : n + '/',
+        rawRoot: raw.endsWith('/') ? raw : raw + '/',
+      };
     });
   };
 
@@ -114,6 +119,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     const c = (config ?? {}) as PluginConfig;
     enabled = c.enabled !== false;
     autoDiscoverEnabled = c.autoDiscover !== false;
+    inferUsageEnabled = c.inferUsage === true;
 
     // Only touch the cartridge list if the host explicitly provided one.
     // This lets onConfigurationChanged() update flags (enabled, autoDiscover)
@@ -137,102 +143,6 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     setCartridges(list);
   };
 
-  // Recursively walk projectRoot for `.project` markers. Stops descending into
-  // a cartridge once found (cartridges don't nest). Depth-limited to keep
-  // tsserver startup snappy on huge monorepos.
-  const discoverCartridgesOnDisk = (projectRoot: string): ConfiguredCartridge[] => {
-    const found: ConfiguredCartridge[] = [];
-    const stack: {dir: string; depth: number}[] = [{dir: projectRoot, depth: 0}];
-    while (stack.length > 0) {
-      const {dir, depth} = stack.pop()!;
-      if (fileExists(path.join(dir, '.project'))) {
-        found.push({name: path.basename(dir), src: dir});
-        continue;
-      }
-      if (depth >= DISCOVERY_MAX_DEPTH) continue;
-      let subdirs: readonly string[] = [];
-      try {
-        subdirs = ts.sys.getDirectories(dir);
-      } catch {
-        subdirs = [];
-      }
-      for (const sub of subdirs) {
-        if (DISCOVERY_IGNORE.has(sub)) continue;
-        stack.push({dir: path.join(dir, sub), depth: depth + 1});
-      }
-    }
-    // Stable ordering for deterministic auto-discovery output.
-    found.sort((a, b) => a.src.localeCompare(b.src));
-    return found;
-  };
-
-  // Read the top-level dw.json `cartridges` field (string with comma/colon
-  // separators OR array of names) for an explicit cartridge-path order.
-  // Mirrors what the b2c CLI's resolved config exposes; we don't try to honor
-  // SFCC_CARTRIDGES / .env / plugins here — hosts that need that complexity
-  // should push the resolved list in via configurePlugin().
-  const readDwJsonCartridges = (projectRoot: string): string[] | undefined => {
-    const dwJsonPath = path.join(projectRoot, 'dw.json');
-    if (!fileExists(dwJsonPath)) return undefined;
-    let content: string | undefined;
-    try {
-      content = ts.sys.readFile(dwJsonPath);
-    } catch {
-      return undefined;
-    }
-    if (!content) return undefined;
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      return undefined;
-    }
-    const value = (parsed as {cartridges?: unknown})?.cartridges;
-    if (typeof value === 'string') {
-      return value
-        .split(/[,:]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-    if (Array.isArray(value)) {
-      return value.filter((s): s is string => typeof s === 'string' && s.length > 0);
-    }
-    return undefined;
-  };
-
-  // Apply cartridge ordering: if `configured` is set, named-first then any
-  // remaining discovered cartridges in their original order; otherwise
-  // discovery order with KNOWN_BASE_CARTRIDGES sorted last.
-  const orderCartridges = (
-    discovered: ConfiguredCartridge[],
-    configured: string[] | undefined,
-  ): ConfiguredCartridge[] => {
-    if (configured && configured.length > 0) {
-      const byName = new Map(discovered.map((c) => [c.name, c]));
-      const ordered: ConfiguredCartridge[] = [];
-      const seen = new Set<string>();
-      for (const name of configured) {
-        const found = byName.get(name);
-        if (found && !seen.has(name)) {
-          ordered.push(found);
-          seen.add(name);
-        }
-      }
-      for (const c of discovered) {
-        if (!seen.has(c.name)) ordered.push(c);
-      }
-      return ordered;
-    }
-    const indexed = discovered.map((c, i) => ({c, i}));
-    indexed.sort((a, b) => {
-      const ar = BASE_CARTRIDGE_RANK[a.c.name] ?? 0;
-      const br = BASE_CARTRIDGE_RANK[b.c.name] ?? 0;
-      if (ar !== br) return ar - br;
-      return a.i - b.i;
-    });
-    return indexed.map((x) => x.c);
-  };
-
   const isCartridgeFile = (filePath: string): boolean => {
     if (!enabled || cartridges.length === 0) return false;
     const f = normalize(filePath);
@@ -247,7 +157,11 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     // tsserver keys its internal file map on forward-slash paths, so normalize
     // the return value here — path.join produces backslashes on Windows.
     if (moduleName.startsWith('dw/')) {
-      return path.join(TYPES_DIR, moduleName + '.d.ts').replace(/\\/g, '/');
+      const resolved = path.join(TYPES_DIR, moduleName + '.d.ts').replace(/\\/g, '/');
+      // A crafted name like `dw/../../../etc/passwd` would otherwise join to a
+      // path outside the bundled types dir. Reject anything that escapes it.
+      if (!isWithinRoot(resolved, TYPES_DIR)) return undefined;
+      return resolved;
     }
     return undefined;
   };
@@ -260,113 +174,8 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     }
   };
 
-  // Resolve a SFCC cartridge-style require relative to the configured cartridge
-  // path. Returns the absolute path to the resolved JS file, or undefined if no
-  // cartridge contains the target.
-  //
-  //   ~/cartridge/scripts/foo   -> only the cartridge that owns containingFile
-  //   * /cartridge/scripts/foo  -> walks the cartridge path, owner-first
-  //   bar/cartridge/scripts/foo -> only the cartridge named "bar"
-  const resolveCartridgeModule = (
-    moduleName: string,
-    containingFile: string,
-  ): {resolved: string; source: string} | undefined => {
-    if (cartridges.length === 0) return undefined;
-
-    let subpath: string | undefined;
-    let order: NormalizedCartridge[] | undefined;
-
-    if (moduleName.startsWith('~/')) {
-      // ~ is the current cartridge — restrict to the cartridge that owns the
-      // calling file. If the containing file isn't inside any known cartridge,
-      // there is no current cartridge, so the require can't be resolved.
-      subpath = moduleName.slice(2);
-      const owner = ownerCartridge(containingFile);
-      if (!owner) return undefined;
-      order = [owner];
-    } else if (moduleName.startsWith('*/')) {
-      // * walks the cartridge path. Owner-first matches SFRA-style overrides
-      // (the requesting cartridge wins before falling through to others).
-      subpath = moduleName.slice(2);
-      order = reorderForContainingFile(cartridges, containingFile);
-    } else {
-      // <cartridgeName>/cartridge/... — only treat as a cartridge require if the
-      // first segment matches a known cartridge name. Otherwise pass through so
-      // node_modules and other resolutions still work.
-      const slash = moduleName.indexOf('/');
-      if (slash <= 0) return undefined;
-      const head = moduleName.slice(0, slash);
-      const known = cartridges.find((c) => c.name === head);
-      if (!known) return undefined;
-      subpath = moduleName.slice(slash + 1);
-      order = [known];
-    }
-
-    if (!subpath) return undefined;
-
-    for (const c of order) {
-      const baseAbs = c.root + subpath;
-      for (const ext of CANDIDATE_EXTENSIONS) {
-        const candidate = baseAbs + ext;
-        if (fileExists(candidate)) {
-          return {resolved: candidate, source: c.name};
-        }
-      }
-    }
-    return undefined;
-  };
-
-  // Resolve a bare `require('server')`-style import against the SFRA `modules`
-  // cartridge. Unlike normal cartridges (which expose files under
-  // `cartridge/scripts/...`), the `modules` cartridge exposes its entire tree
-  // at the root, so `require('server')` -> `<modules>/server[.js|/index.js]`
-  // and `require('server/middleware')` -> `<modules>/server/middleware[.js]`.
-  // Falls through unless a cartridge literally named `modules` is in the list.
-  const resolveModulesCartridge = (moduleName: string): {resolved: string; source: string} | undefined => {
-    if (cartridges.length === 0) return undefined;
-    if (moduleName.startsWith('.') || moduleName.startsWith('/')) return undefined;
-    if (moduleName.startsWith('~/') || moduleName.startsWith('*/') || moduleName.startsWith('dw/')) return undefined;
-    // Let the bundled SFRA ambient declarations win for these names. If we
-    // resolved them to the .js file here, TS would infer types from the JS
-    // (which misses dynamic property assignments in modules/server.js) and
-    // ignore the ambient `declare module 'server' { ... }` shape.
-    if (SFRA_AMBIENT_MODULES.has(moduleName)) return undefined;
-    const modulesCart = cartridges.find((c) => c.name === 'modules');
-    if (!modulesCart) return undefined;
-
-    const baseAbs = modulesCart.root + moduleName;
-    for (const ext of CANDIDATE_EXTENSIONS) {
-      const candidate = baseAbs + ext;
-      if (fileExists(candidate)) {
-        return {resolved: candidate, source: modulesCart.name};
-      }
-    }
-
-    // package.json `main` fallback for directories without an index.js.
-    const pkgPath = baseAbs + '/package.json';
-    if (fileExists(pkgPath)) {
-      try {
-        const content = ts.sys.readFile(pkgPath);
-        if (content) {
-          const main = (JSON.parse(content) as {main?: string}).main;
-          if (typeof main === 'string' && main.length > 0) {
-            const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
-            if (fileExists(resolved)) {
-              return {resolved, source: modulesCart.name};
-            }
-          }
-        }
-      } catch {
-        // best-effort
-      }
-    }
-    return undefined;
-  };
-
-  const ownerCartridge = (containingFile: string): NormalizedCartridge | undefined => {
-    const f = normalize(containingFile);
-    return cartridges.find((c) => f.startsWith(c.root));
-  };
+  const ownerCartridge = (containingFile: string): NormalizedCartridge | undefined =>
+    ownerCartridgeImpl(cartridges, normalize, containingFile);
 
   // Cached map of byte ranges in types/sfra/server.d.ts to the SFRA module
   // declared by their enclosing `declare module 'X' { ... }` block. Used to
@@ -382,31 +191,6 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     }
     return undefined;
   };
-  const parseDeclareModuleRanges = (content: string): Array<{start: number; end: number; module: string}> => {
-    const ranges: Array<{start: number; end: number; module: string}> = [];
-    const re = /declare module ['"]([^'"]+)['"]\s*\{/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(content)) !== null) {
-      const start = m.index;
-      // Walk forward from the opening brace to find the matching close.
-      let depth = 1;
-      let i = m.index + m[0].length;
-      while (i < content.length && depth > 0) {
-        const ch = content[i];
-        if (ch === '{') depth++;
-        else if (ch === '}') depth--;
-        i++;
-      }
-      ranges.push({start, end: i, module: m[1]});
-    }
-    return ranges;
-  };
-
-  const reorderForContainingFile = (list: NormalizedCartridge[], containingFile: string): NormalizedCartridge[] => {
-    const owner = ownerCartridge(containingFile);
-    if (!owner) return list;
-    return [owner, ...list.filter((c) => c !== owner)];
-  };
 
   function create(info: tsserver.server.PluginCreateInfo): tsserver.LanguageService {
     const log = (msg: string) => info.project.projectService.logger.info(`[${PLUGIN_NAME}] ${msg}`);
@@ -420,8 +204,8 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       const projectRoot = info.project.getCurrentDirectory();
       if (projectRoot) {
         try {
-          const discovered = discoverCartridgesOnDisk(projectRoot);
-          const configured = readDwJsonCartridges(projectRoot);
+          const discovered = discoverCartridgesOnDisk(ts, projectRoot, fileExists);
+          const configured = readDwJsonCartridges(ts, projectRoot, fileExists);
           const ordered = orderCartridges(discovered, configured);
           setCartridges(ordered);
           log(
@@ -435,6 +219,56 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     }
 
     const host = info.languageServiceHost;
+
+    // What `module.superModule` refers to at runtime: the same-subpath file
+    // in the next cartridge down the cartridge path that has one. Powers the
+    // usage-inference engine's handling of SFRA overlay modules. Probes
+    // existence through the language-service host (not ts.sys) so it sees
+    // the same filesystem view as the rest of this project.
+    const hostFileExists = (p: string): boolean => {
+      try {
+        return host.fileExists ? host.fileExists(p) : ts.sys.fileExists(p);
+      } catch {
+        return false;
+      }
+    };
+    // Prefer the language-service host's view of the filesystem for require()
+    // resolution (not ts.sys): in-memory / virtualized hosts (tests, some LSP
+    // setups) otherwise never see cartridge files, and `~/` / `*/` requires
+    // silently stay unresolved. Auto-discovery above still uses ts.sys because
+    // it walks the real project root on disk.
+    const resolveCartridgeModuleOnHost = (
+      moduleName: string,
+      containingFile: string,
+    ): {resolved: string; source: string} | undefined =>
+      resolveCartridgeModuleImpl(cartridges, moduleName, containingFile, {
+        normalize,
+        isWithinRoot,
+        fileExists: hostFileExists,
+      });
+    const resolveModulesCartridgeOnHost = (moduleName: string): {resolved: string; source: string} | undefined =>
+      resolveModulesCartridgeImpl(ts, cartridges, moduleName, {
+        isWithinRoot,
+        fileExists: hostFileExists,
+      });
+    const resolveSuperModulePath = (containingFile: string): string | undefined => {
+      const owner = ownerCartridge(containingFile);
+      if (!owner) return undefined;
+      // Slice from the slash-normalized-but-original-case form (not
+      // normalize()'s case-folded one) so the candidate built below from
+      // rawRoot doesn't get a folded-case tail spliced onto a real-case
+      // root — case folding never changes string length, so `owner.root`'s
+      // length is safe to reuse here.
+      const rawSubpath = containingFile.replace(/\\/g, '/').slice(owner.root.length);
+      for (let i = cartridges.indexOf(owner) + 1; i < cartridges.length; i++) {
+        const candidate = cartridges[i].rawRoot + rawSubpath;
+        // `subpath` is derived from an editor-supplied file path; contain the
+        // next-cartridge-down candidate so a crafted path or an overlapping
+        // cartridge root can't point it at a file outside that cartridge.
+        if (hostFileExists(candidate) && isWithinRoot(candidate, cartridges[i].root)) return candidate;
+      }
+      return undefined;
+    };
 
     // Inject ambient declarations into the TS program when the project
     // contains at least one cartridge file:
@@ -461,6 +295,40 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       return additions.length > 0 ? [...list, ...additions] : list;
     };
 
+    // Shared by both host resolution hooks below (the modern
+    // resolveModuleNameLiterals and the legacy TS 4.x resolveModuleNames):
+    // tries dw/* types, then SFCC cartridge-relative requires, then the SFRA
+    // `modules` cartridge, in that priority order. Each hook only differs in
+    // the shape TS expects the result wrapped in.
+    const resolveOne = (
+      text: string,
+      containingFile: string,
+    ): {resolvedFileName: string; extension: tsserver.Extension; isExternalLibraryImport: boolean} | undefined => {
+      const dw = resolveDwModule(text);
+      // Bundled dw/* types live on the real disk next to the plugin — ts.sys
+      // (via fileExists) is the right probe there, not the project host.
+      if (dw && fileExists(dw)) {
+        return {resolvedFileName: dw, extension: ts.Extension.Dts, isExternalLibraryImport: true};
+      }
+      const cart = resolveCartridgeModuleOnHost(text, containingFile);
+      if (cart) {
+        return {
+          resolvedFileName: cart.resolved,
+          extension: cart.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
+          isExternalLibraryImport: false,
+        };
+      }
+      const mod = resolveModulesCartridgeOnHost(text);
+      if (mod) {
+        return {
+          resolvedFileName: mod.resolved,
+          extension: mod.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
+          isExternalLibraryImport: false,
+        };
+      }
+      return undefined;
+    };
+
     const origResolveModuleNameLiterals = host.resolveModuleNameLiterals?.bind(host);
     if (origResolveModuleNameLiterals) {
       host.resolveModuleNameLiterals = (
@@ -482,41 +350,11 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
         if (!isCartridgeFile(containingFile)) return original;
         return original.map((res, i) => {
           if (res.resolvedModule) return res;
-          const text = moduleLiterals[i].text;
-          const dw = resolveDwModule(text);
-          if (dw && fileExists(dw)) {
-            return {
-              resolvedModule: {
-                resolvedFileName: dw,
-                extension: ts.Extension.Dts,
-                isExternalLibraryImport: true,
-                packageId: undefined,
-              },
-            } satisfies tsserver.ResolvedModuleWithFailedLookupLocations;
-          }
-          const cart = resolveCartridgeModule(text, containingFile);
-          if (cart) {
-            return {
-              resolvedModule: {
-                resolvedFileName: cart.resolved,
-                extension: cart.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-                isExternalLibraryImport: false,
-                packageId: undefined,
-              },
-            } satisfies tsserver.ResolvedModuleWithFailedLookupLocations;
-          }
-          const mod = resolveModulesCartridge(text);
-          if (mod) {
-            return {
-              resolvedModule: {
-                resolvedFileName: mod.resolved,
-                extension: mod.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-                isExternalLibraryImport: false,
-                packageId: undefined,
-              },
-            } satisfies tsserver.ResolvedModuleWithFailedLookupLocations;
-          }
-          return res;
+          const resolved = resolveOne(moduleLiterals[i].text, containingFile);
+          if (!resolved) return res;
+          return {
+            resolvedModule: {...resolved, packageId: undefined},
+          } satisfies tsserver.ResolvedModuleWithFailedLookupLocations;
         });
       };
     }
@@ -543,32 +381,8 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
         if (!isCartridgeFile(containingFile)) return original;
         return original.map((res, i) => {
           if (res) return res;
-          const text = moduleNames[i];
-          const dw = resolveDwModule(text);
-          if (dw && fileExists(dw)) {
-            return {
-              resolvedFileName: dw,
-              extension: ts.Extension.Dts,
-              isExternalLibraryImport: true,
-            } as tsserver.ResolvedModuleFull;
-          }
-          const cart = resolveCartridgeModule(text, containingFile);
-          if (cart) {
-            return {
-              resolvedFileName: cart.resolved,
-              extension: cart.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-              isExternalLibraryImport: false,
-            } as tsserver.ResolvedModuleFull;
-          }
-          const mod = resolveModulesCartridge(text);
-          if (mod) {
-            return {
-              resolvedFileName: mod.resolved,
-              extension: mod.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-              isExternalLibraryImport: false,
-            } as tsserver.ResolvedModuleFull;
-          }
-          return res;
+          const resolved = resolveOne(moduleNames[i], containingFile);
+          return resolved ? (resolved as tsserver.ResolvedModuleFull) : res;
         });
       };
     }
@@ -593,7 +407,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       if (!modulesCart) return def;
       const moduleName = sfraModuleAtOffset(def.textSpan.start);
       if (!moduleName) return def;
-      const candidates = [modulesCart.root + moduleName + '.js', modulesCart.root + moduleName + '/index.js'];
+      const candidates = [modulesCart.rawRoot + moduleName + '.js', modulesCart.rawRoot + moduleName + '/index.js'];
       for (const candidate of candidates) {
         if (fileExists(candidate)) {
           return {...def, fileName: candidate, textSpan: {start: 0, length: 0}};
@@ -618,6 +432,234 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     proxy.getImplementationAtPosition = (fileName, position) => {
       const result = info.languageService.getImplementationAtPosition(fileName, position);
       return result?.map(remapDefinition);
+    };
+
+    // Usage-based inference (opt-in, `inferUsage`): when hover/completion hits
+    // a type the checker has already given up on (`any` — typically an
+    // undocumented helper function), infer a better answer from call sites
+    // elsewhere in the project instead of leaving the editor with nothing.
+    //
+    // Cached per (file, node position). Entries are finished DISPLAY products
+    // (the hover note string, the synthesized completion entries) rather than
+    // checker Type objects: a Type pins its checker and, through it, the whole
+    // program it came from, so caching types would keep an entire stale
+    // program graph alive from the last edit until the next inference-eligible
+    // request — potentially forever if the user stops hovering. Strings and
+    // plain completion entries retain nothing.
+    //
+    // HoverInferenceResult is likewise plain data only: `documentation` and
+    // `tags` are copied out of a real Symbol's own getDocumentationComment()/
+    // getJsDocTags() (SymbolDisplayPart[] / JSDocTagInfo[] are just text —
+    // they don't reference the Symbol, Type, or Node they came from), never
+    // the Symbol/Type/Node itself.
+    //
+    // The whole cache is invalidated when the language service hands back a
+    // different Program instance (TS builds a new Program object for any
+    // semantic change, and reuses the same instance otherwise), rather than
+    // tracking per-entry validity. Program identity is more precise than the
+    // previously-used project version string, which also bumps on events that
+    // don't produce a new program — each such bump needlessly re-ran a full
+    // inference (measured ~13ms per hover on an SFRA-sized project) that the
+    // cache should have answered.
+    let inferenceCacheProgram: tsserver.Program | undefined;
+    const inferenceCache = new Map<string, string | tsserver.CompletionEntry[] | HoverInferenceResult | undefined>();
+    // Bounds the cache during a long no-edit session (e.g. hours of hovering
+    // around at the same program): entries are small (strings / plain entry
+    // arrays), so this is belt-and-braces, and a wholesale clear is honest —
+    // no LRU bookkeeping for a cache this cheap to refill.
+    const MAX_INFERENCE_CACHE_ENTRIES = 512;
+    const getCachedInference = <T extends string | tsserver.CompletionEntry[] | HoverInferenceResult | undefined>(
+      cacheKey: string,
+      program: tsserver.Program,
+      compute: () => T,
+    ): T => {
+      if (program !== inferenceCacheProgram) {
+        inferenceCache.clear();
+        inferenceCacheProgram = program;
+      }
+      if (inferenceCache.has(cacheKey)) return inferenceCache.get(cacheKey) as T;
+      const result = compute();
+      if (inferenceCache.size >= MAX_INFERENCE_CACHE_ENTRIES) inferenceCache.clear();
+      inferenceCache.set(cacheKey, result);
+      return result;
+    };
+
+    // Runs our own inference logic and degrades to `fallback` (the untouched
+    // underlying result) if it throws, so a bug in this plugin's additions
+    // can't take the whole tsserver request down with it. Deliberately wraps
+    // ONLY the inference augmentation, never the underlying language-service
+    // call itself: an exception from vanilla TS must keep propagating to
+    // tsserver's own error reporting exactly as it would without this plugin
+    // installed — swallowing it here would turn a real TS crash into a
+    // silent "hover stopped working" for every file in the project.
+    // `ts.OperationCanceledException` is exempted and always rethrown: TS
+    // throws it cooperatively whenever the host's CancellationToken fires
+    // (e.g. the user kept typing while this hover or completion request was
+    // still in flight), which is ordinary, frequent behavior, not a real
+    // failure — tsserver's request pipeline handles a propagated
+    // cancellation very differently from a completed-but-empty response, so
+    // swallowing it here would misreport "cancelled" as "resolved to
+    // nothing" every time.
+    const guarded = <T>(label: string, fn: () => T, fallback: T): T => {
+      try {
+        return fn();
+      } catch (e) {
+        if (e instanceof ts.OperationCanceledException) throw e;
+        log(`usage-inference ${label} failed: ${(e as Error).message}`);
+        return fallback;
+      }
+    };
+
+    proxy.getQuickInfoAtPosition = (fileName, position, maximumLength) => {
+      const original = info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength);
+      if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName) || !original) return original;
+      return guarded(
+        'hover',
+        () => {
+          const program = info.languageService.getProgram();
+          const sourceFile = program?.getSourceFile(fileName);
+          if (!program || !sourceFile) return original;
+          const node = getNodeAtPosition(sourceFile, ts, position);
+          if (!node || !ts.isIdentifier(node)) return original;
+          const checker = program.getTypeChecker();
+          // superModule-derived expressions get past the open-type gate: the
+          // checker's type for them is garbage either way (any or an opaque
+          // circular typeof), never something worth leaving untouched. Weak
+          // placeholder types (`object` / `{}`) are open too — see
+          // isOpenForUsageInference.
+          if (
+            !isOpenForUsageInference(ts, checker.getTypeAtLocation(node)) &&
+            !traceSuperModuleAccess(ts, checker, node)
+          ) {
+            return original;
+          }
+          // `undefined` (inference found nothing) is a cached answer too —
+          // re-deriving "nothing" costs the same reference searches as
+          // re-deriving something.
+          const inferred = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, program, () => {
+            const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath, position);
+            if (!ctx) return undefined;
+            // Hovering the member name of a property access
+            // (`shipment.productLineItems`, cursor on `productLineItems`) has
+            // no declaration of its own to look up — `productLineItems` isn't
+            // a symbol anywhere until the receiver's type is known. Resolve
+            // the whole access expression the same way completions do,
+            // rather than restricting to inferTypeForNode's bare-identifier
+            // (parameter/variable/function) cases.
+            const propAccess = findEnclosingPropertyAccess(node, ts);
+            const isMemberName = !!propAccess && propAccess.name === node;
+            const types = isMemberName ? inferTypeForExpression(ctx, propAccess) : inferTypeForNode(ctx, node);
+            if (types.length === 0) return undefined;
+            const description = describeTypes(checker, types);
+            // The receiver's type was undocumented, but the *member itself*
+            // (or the inferred type's own declaration) is real and usually
+            // documented — borrow its doc comment/tags so hover reads like a
+            // native, fully-resolved hover instead of just a bare type name.
+            let symbol: tsserver.Symbol | undefined;
+            if (isMemberName && propAccess) {
+              for (const baseType of inferTypeForExpression(ctx, propAccess.expression)) {
+                symbol = getMemberOfType(checker, baseType, node.text);
+                if (symbol) break;
+              }
+            } else {
+              symbol = types[0].getSymbol();
+            }
+            const documentation = symbol?.getDocumentationComment(checker);
+            const tags = symbol?.getJsDocTags(checker);
+            return {
+              description,
+              documentation: documentation && documentation.length > 0 ? documentation : undefined,
+              tags: tags && tags.length > 0 ? tags : undefined,
+            };
+          });
+          if (!inferred) return original;
+          const note: tsserver.SymbolDisplayPart = {
+            text: `\n\nInferred from usage: ${inferred.description}`,
+            kind: 'text',
+          };
+          return {
+            ...original,
+            displayParts: replaceTrailingAnyDisplayPart(original.displayParts, inferred.description),
+            documentation: [...(inferred.documentation ?? []), ...(original.documentation ?? []), note],
+            tags: inferred.tags && inferred.tags.length > 0 ? [...inferred.tags] : original.tags,
+          };
+        },
+        original,
+      );
+    };
+
+    proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
+      const original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
+      if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName)) return original;
+      return guarded(
+        'completions',
+        () => {
+          const program = info.languageService.getProgram();
+          const sourceFile = program?.getSourceFile(fileName);
+          if (!program || !sourceFile) return original;
+          const node = getNodeAtPosition(sourceFile, ts, Math.max(position - 1, 0));
+          if (!node) return original;
+          const propAccess = findEnclosingPropertyAccess(node, ts);
+          if (!propAccess) return original;
+          const checker = program.getTypeChecker();
+          // See the hover gate above for the superModule / weak-type exception.
+          if (
+            !isOpenForUsageInference(ts, checker.getTypeAtLocation(propAccess.expression)) &&
+            !traceSuperModuleAccess(ts, checker, propAccess.expression)
+          ) {
+            return original;
+          }
+          // The receiver can be any expression, not just a plain identifier:
+          // `product.getPriceModel().|` needs the chain resolved the same way
+          // hover-driven return inference already resolves it.
+          const baseNode = propAccess.expression;
+          const typeEntries = getCachedInference(
+            `completions:${fileName}:${baseNode.getStart(sourceFile)}`,
+            program,
+            () => {
+              const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath, position);
+              const types = ctx ? inferTypeForExpression(ctx, baseNode) : [];
+              return typesToCompletionEntries(ts, checker, types);
+            },
+          );
+          // Members added by pass-through superModule overlay levels
+          // (`module.exports = base; module.exports.extra = fn;`) can't be
+          // carried by any candidate type — collect them separately. Cheap
+          // (statement scans only, no reference search), so uncached.
+          const augmentedCtx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
+          const augmentedEntries: tsserver.CompletionEntry[] = (
+            augmentedCtx ? collectSuperModuleAugmentedMembers(augmentedCtx, baseNode) : []
+          ).map((m) => ({
+            name: m.name,
+            kind: m.isMethod ? ts.ScriptElementKind.memberFunctionElement : ts.ScriptElementKind.memberVariableElement,
+            kindModifiers: '',
+            sortText: '11',
+            source: INFERRED_COMPLETION_SOURCE,
+          }));
+          const inferredEntries = [...typeEntries, ...augmentedEntries];
+          if (inferredEntries.length === 0) return original;
+          // Dedupe against the original entries AND within the inferred set
+          // (a name can come from both a candidate type and an overlay
+          // augmentation).
+          const seenNames = new Set((original?.entries ?? []).map((e) => e.name));
+          const merged = [
+            ...(original?.entries ?? []),
+            ...inferredEntries.filter((e) => !seenNames.has(e.name) && (seenNames.add(e.name), true)),
+          ];
+          // Preserve every other field TS set on the original result (isIncomplete,
+          // optionalReplacementSpan, metadata, defaultCommitCharacters, flags) —
+          // only entries actually changed. Only synthesize a fresh CompletionInfo
+          // in the rare case TS returned nothing at all for this position.
+          if (original) return {...original, entries: merged};
+          return {
+            isGlobalCompletion: false,
+            isMemberCompletion: true,
+            isNewIdentifierLocation: false,
+            entries: merged,
+          };
+        },
+        original,
+      );
     };
 
     log(`plugin initialized (cartridges=${cartridges.length}, enabled=${enabled})`);
