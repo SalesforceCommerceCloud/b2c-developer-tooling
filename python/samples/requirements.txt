@@ -1,0 +1,8 @@
+# Salesforce B2C Tooling SDK — installed straight from `main`.
+# (Temporary during development; once published to PyPI this becomes
+#  `salesforce-b2c-tooling-sdk`.) Pin to a release tag by replacing `@main` with
+#  e.g. `@<tag>`.
+salesforce-b2c-tooling-sdk @ git+https://github.com/SalesforceCommerceCloud/b2c-developer-tooling.git@main#subdirectory=python/b2c-tooling-sdk
+
+# Needed only to run the notebooks (VS Code / Jupyter kernel).
+ipykernel
