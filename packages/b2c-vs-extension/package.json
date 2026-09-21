@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "Salesforce B2C Commerce",
   "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "publisher": "Salesforce",
   "icon": "media/icon.png",
   "license": "Apache-2.0",
@@ -453,7 +453,7 @@
       },
       {
         "view": "b2cApiBrowser",
-        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (`client-id`, `client-secret`, `short-code`, `tenant-id`) in dw.json.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
+        "contents": "Browse and try B2C Commerce APIs using your configured connection.\n\nLoad schemas with Account Manager access. Shopper requests also use SLAS credentials.\n\n[Setup Help](command:b2c-dx.apiBrowser.help)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",
@@ -574,6 +574,12 @@
         "command": "b2c-dx.apiBrowser.refresh",
         "title": "Refresh",
         "icon": "$(refresh)",
+        "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.apiBrowser.help",
+        "title": "Setup Help",
+        "icon": "$(question)",
         "category": "B2C DX - API Browser"
       },
       {
@@ -1451,9 +1457,14 @@
           "group": "navigation@4"
         },
         {
+          "command": "b2c-dx.apiBrowser.help",
+          "when": "view == b2cApiBrowser",
+          "group": "navigation@1"
+        },
+        {
           "command": "b2c-dx.apiBrowser.refresh",
           "when": "view == b2cApiBrowser",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "b2c-dx.sandbox.refresh",

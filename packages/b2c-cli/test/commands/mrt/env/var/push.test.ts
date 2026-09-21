@@ -356,14 +356,18 @@ describe('mrt env var push', () => {
   });
 
   it('emits no human progress under --json (with --yes)', async () => {
-    const command = createCommand();
+    // Build the command WITHOUT stubbing log() so the real MrtCommand.log()
+    // --json suppression runs. Progress lines (fetch notice, diff summary,
+    // per-var ticks, final summary) all go through this.log, which routes to
+    // the pino logger's info() — so asserting on that sink proves nothing leaks
+    // alongside the JSON result. (The suppression itself is unit-tested in
+    // mrt-command.test.ts.)
+    const command: any = new MrtEnvVarPush([], config);
     stubParse(command, {file: '.env', 'exclude-prefix': ['MRT_'], yes: true});
     await command.init();
 
-    // --json + --yes: the push still happens, but every progress line (fetch
-    // notice, diff summary, per-var ticks, final summary) is suppressed so
-    // stdout carries only the JSON result.
     sinon.stub(command, 'jsonEnabled').returns(true);
+    const infoStub = sinon.stub(command.logger, 'info');
     stubBackendContext(command);
     stubResolvedConfig(command);
     stubEnvFile(command, 'NEW_VAR=value\n');
@@ -373,7 +377,7 @@ describe('mrt env var push', () => {
     const result = await command.run();
 
     expect(setBatchStub.calledOnce).to.be.true;
-    expect((command.log as sinon.SinonStub).called, 'no human progress under --json').to.be.false;
+    expect(infoStub.called, 'no human progress reaches the logger under --json').to.be.false;
     expect(result.pushed).to.equal(1);
   });
 

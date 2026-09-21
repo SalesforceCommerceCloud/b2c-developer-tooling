@@ -17,6 +17,9 @@ import {NetworkError, describeNetworkErrorKind} from '../../errors/network-error
 
 const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
 
+/** Directory names never archived into the cartridge deploy zip (mirrors the cartridge discovery ignore list). */
+const ARCHIVE_IGNORE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.cache', 'tmp', 'temp']);
+
 /**
  * Options for deploying cartridges.
  */
@@ -74,6 +77,7 @@ async function addDirectoryToZip(zip: JSZip, dirPath: string, zipPath: string): 
     const entryZipPath = path.join(zipPath, entry.name);
 
     if (entry.isDirectory()) {
+      if (ARCHIVE_IGNORE_DIRS.has(entry.name)) continue;
       await addDirectoryToZip(zip, fullPath, entryZipPath);
     } else if (entry.isFile()) {
       const content = await fs.promises.readFile(fullPath);

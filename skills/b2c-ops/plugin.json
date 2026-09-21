@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "b2c-ops",
-  "version": "1.8.5",
+  "version": "1.9.0",
   "description": "B2C Commerce operator and administrator runbooks for job health, checkout and failed orders, and incident triage.",
   "author": {
     "name": "Salesforce"
@@ -9,7 +9,14 @@
   "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
   "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
   "license": "Apache-2.0",
-  "keywords": ["salesforce", "b2c-commerce", "operations", "administration", "runbooks", "incident-triage"],
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "operations",
+    "administration",
+    "runbooks",
+    "incident-triage"
+  ],
   "extensions": {
     "com.openai": {
       "interface": {
@@ -18,7 +25,9 @@
         "longDescription": "Review scheduled work, investigate checkout and failed orders, and prepare evidence-backed handoffs using B2C Commerce tools.",
         "developerName": "Salesforce",
         "category": "Productivity",
-        "capabilities": ["Read"],
+        "capabilities": [
+          "Read"
+        ],
         "logo": "./assets/logo.svg",
         "composerIcon": "./assets/logo.svg",
         "brandColor": "#0D9DDA",

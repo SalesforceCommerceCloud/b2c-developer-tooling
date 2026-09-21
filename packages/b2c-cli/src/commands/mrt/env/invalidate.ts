@@ -74,15 +74,13 @@ export default class MrtCacheInvalidate extends MrtCommand<typeof MrtCacheInvali
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(t('commands.mrt.cache.invalidate.success', '{{result}}', {result: result.result}));
-        this.log(
-          t(
-            'commands.mrt.cache.invalidate.note',
-            'Note: Cache invalidations are asynchronous and usually complete within two minutes.',
-          ),
-        );
-      }
+      this.log(t('commands.mrt.cache.invalidate.success', '{{result}}', {result: result.result}));
+      this.log(
+        t(
+          'commands.mrt.cache.invalidate.note',
+          'Note: Cache invalidations are asynchronous and usually complete within two minutes.',
+        ),
+      );
 
       return result;
     } catch (error) {

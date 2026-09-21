@@ -119,20 +119,14 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
     const {mrtOrigin: origin} = this.resolvedConfig.values;
 
-    // Under --json the command emits only its result object. Human progress
-    // (this.log) routes through the logger to stderr and would otherwise
-    // interleave with the JSON, so gate every progress line on the mode —
-    // matching `mrt env var list` / `mrt bundle deploy`.
-    const jsonEnabled = this.jsonEnabled();
-
-    if (!jsonEnabled) {
-      this.log(
-        t('commands.mrt.env.var.push.fetching', 'Fetching remote env vars for {{project}}/{{environment}}...', {
-          project,
-          environment,
-        }),
-      );
-    }
+    // Human progress goes through this.log, which MrtCommand.log() suppresses
+    // centrally under --json — so these lines need no per-call --json guard.
+    this.log(
+      t('commands.mrt.env.var.push.fetching', 'Fetching remote env vars for {{project}}/{{environment}}...', {
+        project,
+        environment,
+      }),
+    );
     const {backend, variables: remoteVariables} = await this.operations.listEnvVarsWithBackend({
       preference,
       scapiConnection,
@@ -151,10 +145,8 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     const toSync = [...diff.add, ...diff.update];
 
     // Step 6: Display summary
-    if (!jsonEnabled) {
-      this.log('');
-      this.log(formatEnvVarDiffSummary(diff));
-    }
+    this.log('');
+    this.log(formatEnvVarDiffSummary(diff));
 
     if (toSync.length === 0) {
       return {pushed: 0, failed: 0, skipped: diff.remoteOnly.length};
@@ -165,7 +157,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       // Under --json the command is non-interactive: a machine consumer can't
       // answer a prompt (and stdout must stay clean JSON), so require --yes
       // rather than hang on stdin.
-      if (jsonEnabled) {
+      if (this.jsonEnabled()) {
         this.error(
           t(
             'commands.mrt.env.var.push.jsonRequiresYes',
@@ -209,10 +201,8 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     try {
       const variables = Object.fromEntries(toSync.map(({key, value}) => [key, value]));
       await this.operations.setEnvVarsWithBackend({...pinnedContext, variables});
-      if (!jsonEnabled) {
-        for (const {key} of toSync) {
-          this.log(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
-        }
+      for (const {key} of toSync) {
+        this.log(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
       }
       pushed = toSync.length;
     } catch (batchError) {
@@ -238,9 +228,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
         for (const [index, result] of results.entries()) {
           const {key} = toSync[index];
           if (result.status === 'fulfilled') {
-            if (!jsonEnabled) {
-              this.log(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
-            }
+            this.log(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
             pushed++;
           } else {
             this.warn(
@@ -256,20 +244,18 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     }
 
     // Step 9: Summary
-    if (!jsonEnabled) {
-      this.log('');
-      this.log(
-        t(
-          'commands.mrt.env.var.push.summary',
-          'Summary: {{pushed}} pushed, {{failed}} failed, {{skipped}} remote-only (not deleted)',
-          {
-            pushed,
-            failed,
-            skipped: diff.remoteOnly.length,
-          },
-        ),
-      );
-    }
+    this.log('');
+    this.log(
+      t(
+        'commands.mrt.env.var.push.summary',
+        'Summary: {{pushed}} pushed, {{failed}} failed, {{skipped}} remote-only (not deleted)',
+        {
+          pushed,
+          failed,
+          skipped: diff.remoteOnly.length,
+        },
+      ),
+    );
 
     return {pushed, failed, skipped: diff.remoteOnly.length};
   }

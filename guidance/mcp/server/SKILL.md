@@ -75,7 +75,10 @@ retrying after missing output.
 Browse `skill://index` or, when enabled, search `skills_read`: `b2c` (platform/cartridges),
 `b2c-cli` (CLI), `b2c-ops` (operator/admin runbooks), `storefront-next` (storefronts),
 `mcp` (server/tool workflows).
-Read the relevant URI or returned ID. Result `skillReferences` point to optional
+Read `skill://` URIs through MCP resources, or use `skills_read({uri: "skill://mcp/debugger/SKILL.md"})`
+for a file when enabled. These URIs are not native skill commands; do not derive
+client skill names from the server name or URI. Use `id` for a discovered skill ID.
+Result `skillReferences` point to optional
 detail for observed conditions: read the URI, or pass its URI and `section` to
 `skills_read`. Skills are directory-agnostic.
 

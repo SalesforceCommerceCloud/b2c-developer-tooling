@@ -201,6 +201,11 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     // These provide B2C instance configuration for tools like cartridge_deploy
     ...InstanceCommand.baseFlags,
 
+    'allow-non-ga-tools': Flags.boolean({
+      description: 'Deprecated compatibility flag; has no effect',
+      hidden: true,
+    }),
+
     // MCP-specific toolset selection flags
     toolsets: Flags.string({
       description: `Toolsets to enable (comma-separated; default: all). Options: all, ${TOOLSETS.join(', ')}`,
@@ -380,6 +385,12 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * These can be exposed to Services if needed for features like telemetry or caching.
    */
   async run(): Promise<void> {
+    if (this.flags['allow-non-ga-tools']) {
+      this.logger.warn(
+        '--allow-non-ga-tools is deprecated and has no effect. You can remove it from your MCP configuration.',
+      );
+    }
+
     // Flags are already parsed by BaseCommand.init()
     // Parse toolsets and tools from comma-separated strings
     // Note: toolsets are uppercased, tools are lowercased by their parse functions
@@ -425,7 +436,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
               'resources/read': {ttlMs: 300_000, cacheScope: 'private'},
             },
             instructions:
-              'Prefer dedicated tools. Otherwise use scapi_search/scapi_execute for Commerce APIs; first read skill://mcp/scapi/SKILL.md. ' +
+              'Discover tool schemas before calling. Prefer dedicated tools; otherwise scapi_search/scapi_execute for Commerce APIs. ' +
+              'Read skill:// URIs as MCP resources, or skill files with skills_read({uri: "<URI>"}) when enabled; not native skill commands. ' +
+              'SCAPI: first read skill://mcp/scapi/SKILL.md. ' +
               'Analytics: cip_discover/cip_query; skill://mcp/cip/SKILL.md. ' +
               'Skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
               'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index (look for b2c-ops runbooks for operations and incidents).',

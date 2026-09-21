@@ -61,7 +61,7 @@ the [B2C CLI](../cli/docs).
 [Debug with your assistant](../guide/script-debugger#debug-with-your-assistant).
 Breakpoints pause requests; use a sandbox for debugging.
 
-![Screenshot placeholder: Codex inspecting a paused sandbox request, its call stack, and live cartridge variables.](/placeholders/mcp-codex-debugging.svg)
+[![Claude Code using the B2C MCP debugger to investigate why a loyalty controller returns before calling its service, with breakpoints in loyalty.js.](/terminal/mcp-claude-debugging.png)](/terminal/mcp-claude-debugging.png)
 
 ## Administrator and Merchant Tasks
 
@@ -87,6 +87,8 @@ without a separate CLI installation.
 
 </ExamplePrompt>
 
+[![ChatGPT reviewing MarketStreet promotions, summarizing four campaigns, and highlighting disabled promotions and potential schedule conflicts.](/screenshots/mcp-promotions-review.png)](/screenshots/mcp-promotions-review.png)
+
 Standard and custom Admin APIs support live requests. Shopper APIs are available for reference.
 
 [CIP analytics](./toolsets#cip) helps explain sales changes, uncover search and
@@ -98,8 +100,6 @@ report or a custom analysis without setting up the CLI or a separate SQL client.
 > Compare daily sales and average order value for my site over the last two complete weeks. Explain the date range and any gaps in the data.
 
 </ExamplePrompt>
-
-![Screenshot placeholder: a planned ChatGPT Work campaign review showing promotion schedules and findings.](/placeholders/mcp-chatgpt-campaign.svg)
 
 ## Configuration and access
 
@@ -114,6 +114,9 @@ lets you choose specific tools or toolsets for manual installations.
 
 Browse [MCP Tools](./toolsets) for capabilities and tool names, or [Agent Skills](../guide/agent-skills)
 for the included collections, optional additions, and standalone installation.
+
+Optional [project instructions](../guide/project-setup#give-your-assistant-project-context)
+can help your assistant recognize when to use B2C tools and skills.
 
 ## Other clients {#other-clients}
 

@@ -17,11 +17,22 @@
       body {
         margin: 0;
         padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
         background: var(--vscode-editor-background, #1e1e1e);
         color: var(--vscode-editor-foreground, #d4d4d4);
       }
+      /* Swagger's bundled stylesheet uses a light palette, including in dark editor themes. */
+      #swagger-ui {
+        flex: 1;
+        background: #fff;
+        color: #3b4151;
+        color-scheme: light;
+      }
       .token-bar {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: 10px;
         padding: 8px 16px;
@@ -39,6 +50,8 @@
       }
       .token-bar .token-status {
         flex: 1;
+        min-width: 160px;
+        overflow-wrap: anywhere;
       }
       .token-bar .token-status.ok {
         color: var(--vscode-testing-iconPassed, #73c991);
@@ -61,6 +74,17 @@
       .token-bar button:hover {
         background: var(--vscode-button-hoverBackground, #1177bb);
       }
+      .token-bar button:focus-visible {
+        outline: 1px solid var(--vscode-focusBorder, #007fd4);
+        outline-offset: 2px;
+      }
+      .token-bar .help-button {
+        background: var(--vscode-button-secondaryBackground, #3a3d41);
+        color: var(--vscode-button-secondaryForeground, #fff);
+      }
+      .token-bar .help-button:hover {
+        background: var(--vscode-button-secondaryHoverBackground, #45494e);
+      }
       /* Reset VS Code's vscode-default layer styles that bleed into Swagger UI.
        These unlayered rules beat the layered VS Code defaults. */
       .swagger-ui,
@@ -82,8 +106,9 @@
   <body>
     <div class="token-bar">
       <span class="api-type" id="apiTypeLabel">__API_TYPE__</span>
-      <span class="token-status pending" id="tokenStatus">Acquiring token...</span>
-      <button id="refreshTokenBtn">Refresh Token</button>
+      <span class="token-status pending" id="tokenStatus" role="status" aria-live="polite">Checking token...</span>
+      <button id="refreshTokenBtn" type="button">Refresh Token</button>
+      <button id="setupHelpBtn" class="help-button" type="button">Setup Help</button>
     </div>
     <div id="swagger-ui"></div>
 
@@ -94,6 +119,11 @@
         var vscode = acquireVsCodeApi();
         var initialToken = '__INITIAL_TOKEN__';
         var currentToken = initialToken;
+        var initialTokenError = __INITIAL_TOKEN_ERROR__;
+        setTokenStatus(
+          currentToken ? 'Token acquired' : 'Token error: ' + initialTokenError,
+          currentToken ? 'ok' : 'error',
+        );
 
         var spec = __SPEC_JSON__;
 
@@ -152,7 +182,6 @@
             }
           } else if (msg.type === 'updateToken') {
             currentToken = msg.token;
-            preauthorize(msg.token);
             setTokenStatus('Token acquired', 'ok');
           } else if (msg.type === 'tokenError') {
             currentToken = '';
@@ -220,51 +249,35 @@
         };
         // --- End proxy fetch ---
 
-        var ui = SwaggerUIBundle({
+        SwaggerUIBundle({
           spec: spec,
           dom_id: '#swagger-ui',
           presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
           layout: 'StandaloneLayout',
           deepLinking: false,
           validatorUrl: null,
+          // Authentication belongs to the extension, not Swagger's OAuth dialog.
+          plugins: [
+            function () {
+              function hiddenAuthorization() {
+                return null;
+              }
+              return {
+                components: {
+                  authorizeBtn: hiddenAuthorization,
+                  authorizeOperationBtn: hiddenAuthorization,
+                  authorizationPopup: hiddenAuthorization,
+                },
+              };
+            },
+          ],
           requestInterceptor: function (req) {
             if (currentToken) {
               req.headers['Authorization'] = 'Bearer ' + currentToken;
             }
             return req;
           },
-          onComplete: function () {
-            if (initialToken) {
-              preauthorize(initialToken);
-              setTokenStatus('Token acquired', 'ok');
-            }
-          },
         });
-
-        /**
-         * Pre-authorize all security schemes so the lock icons turn green.
-         * OAuth2 schemes require { access_token, token_type } while http/bearer takes a plain string.
-         */
-        function preauthorize(token) {
-          var schemes = (spec.components && spec.components.securitySchemes) || {};
-          var authPayload = {};
-          for (var name in schemes) {
-            if (!schemes.hasOwnProperty(name)) continue;
-            var scheme = schemes[name];
-            if (scheme.type === 'oauth2') {
-              authPayload[name] = {
-                name: name,
-                schema: scheme,
-                value: {access_token: token, token_type: 'Bearer'},
-              };
-            } else {
-              authPayload[name] = {name: name, schema: scheme, value: token};
-            }
-          }
-          if (Object.keys(authPayload).length > 0) {
-            ui.authActions.authorize(authPayload);
-          }
-        }
 
         function setTokenStatus(text, status) {
           var el = document.getElementById('tokenStatus');
@@ -275,6 +288,9 @@
         document.getElementById('refreshTokenBtn').addEventListener('click', function () {
           setTokenStatus('Refreshing token...', 'pending');
           vscode.postMessage({type: 'refreshToken'});
+        });
+        document.getElementById('setupHelpBtn').addEventListener('click', function () {
+          vscode.postMessage({type: 'showSetupHelp'});
         });
       })();
     </script>

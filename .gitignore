@@ -45,6 +45,9 @@ skills/eval/results-*.json
 # Python bytecode
 __pycache__/
 
+# Salesforce CLI local state
+.sf/
+
 # Generated offline guidance; rebuilt from authored skills and MCP guides.
 /packages/b2c-dx-mcp/content/guidance/
 

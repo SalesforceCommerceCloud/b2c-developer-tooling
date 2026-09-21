@@ -74,7 +74,9 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 
 List all on-demand sandboxes accessible to your account.
 
-![Screenshot placeholder: B2C CLI listing sandboxes and their current states.](/placeholders/cli-sandbox-list.svg)
+[![B2C CLI listing seven sandboxes with started and stopped states and medium or large resource profiles; realm and instance identifiers are anonymized.](/terminal/cli-sandbox-list.png)](/terminal/cli-sandbox-list.png)
+
+Excerpt from a sandbox listing; identifiers are anonymized.
 
 ### Usage
 

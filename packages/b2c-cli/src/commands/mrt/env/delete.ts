@@ -82,11 +82,9 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
       }
     }
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.env.delete.deleting', 'Deleting environment "{{slug}}" from {{project}}...', {slug, project}),
-      );
-    }
+    this.log(
+      t('commands.mrt.env.delete.deleting', 'Deleting environment "{{slug}}" from {{project}}...', {slug, project}),
+    );
 
     try {
       await this.operations.deleteEnv(
@@ -98,14 +96,12 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.env.delete.success', 'Environment "{{slug}}" deleted from {{project}}.', {
-            slug,
-            project,
-          }),
-        );
-      }
+      this.log(
+        t('commands.mrt.env.delete.success', 'Environment "{{slug}}" deleted from {{project}}.', {
+          slug,
+          project,
+        }),
+      );
 
       return {slug, project};
     } catch (error) {

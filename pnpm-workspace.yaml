@@ -2,6 +2,7 @@ packages:
   - packages/*
   - docs
   - skills
+  - python/b2c-tooling-sdk
   - schemas
 
 catalog:

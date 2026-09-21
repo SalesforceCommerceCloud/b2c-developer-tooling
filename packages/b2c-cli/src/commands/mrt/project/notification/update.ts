@@ -109,9 +109,7 @@ export default class MrtNotificationUpdate extends MrtCommand<typeof MrtNotifica
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(t('commands.mrt.notification.update.success', 'Notification {{id}} updated.', {id}));
-      }
+      this.log(t('commands.mrt.notification.update.success', 'Notification {{id}} updated.', {id}));
 
       return result;
     } catch (error) {

@@ -4,6 +4,10 @@ description: Review job health, investigate checkout and failed orders, and prep
 
 # Operations
 
+::: warning Beta
+B2C Ops skills and tooling for administrators are currently in beta testing. Some tools are not yet available or fully developed.
+:::
+
 Use your AI assistant to review scheduled work, investigate checkout failures,
 and assemble evidence for the right team. The toolkit's operations runbooks
 support administrators, operators, and developers working together. You do not

@@ -17,11 +17,11 @@ Run `b2c setup inspect` to see the resolved configuration and which source provi
 
 ### MRT Backends (legacy vs SCAPI)
 
-Most MRT commands run against the legacy MRT Cloud API (API key). Several commands can also run over the SCAPI MRT backend: `mrt bundle history`, `mrt bundle deploy <bundleId>`, and the `mrt env var` family (`list` / `set` / `push` / `delete`). Choose with `--mrt-backend` (`MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
+Most MRT commands run against the legacy MRT Cloud API (API key). Several commands can also run over the SCAPI MRT backend: `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), and the `mrt env var` family (`list` / `set` / `push` / `delete`). Choose with `--mrt-backend` (`MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
 - `auto` (default) — use SCAPI when it's configured (`--short-code` + `--tenant-id` + client-credentials or JWT Bearer auth), otherwise legacy. Falls back to legacy on safe pre-execution errors. Each command requests its own scopes: bundle commands use `sfcc.storefront.deployments[.rw]`; env var commands use `sfcc.storefront.environments[.rw]` (reads accept either tier, writes require `.rw`).
 - `legacy` — always the MRT Cloud API.
-- `scapi` — always SCAPI, with no fallback; errors if prerequisites are missing. Also errors on unsupported commands and on the local-build push path (`deploy` with no bundle ID).
+- `scapi` — always SCAPI, with no fallback; errors if prerequisites are missing. Also errors on unsupported commands (every MRT command except the bundle and env var commands above).
 
 Notes:
 
