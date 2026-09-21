@@ -44,7 +44,9 @@ const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', '
  * For B2C instance specific operations, use InstanceCommand instead.
  */
 export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand<T> {
-  private readonly _rawArgv: string[];
+  // Snapshot of the raw argv taken before oclif parse can mutate `this.argv`.
+  // `protected` so subclasses (e.g. MrtCommand) can detect explicitly-typed flags.
+  protected readonly _rawArgv: string[];
 
   constructor(argv: string[], config: ConstructorParameters<typeof Command>[1]) {
     super(argv, config);

@@ -7,6 +7,8 @@ import {expect} from 'chai';
 import {
   kebabToCamelCase,
   mapDwJsonToNormalizedConfig,
+  mapNormalizedConfigToDwJson,
+  mergeConfigsWithProtection,
   normalizeConfigKeys,
   normalizeOriginUrl,
   resolveLibraryEntries,
@@ -87,6 +89,11 @@ describe('config/mapping', () => {
 
     it('maps oauth-scopes to oauthScopes', () => {
       expect(CONFIG_KEY_ALIASES['oauth-scopes']).to.equal('oauthScopes');
+    });
+
+    it('maps api-backend and mrt-backend to their camelCase fields', () => {
+      expect(CONFIG_KEY_ALIASES['api-backend']).to.equal('apiBackend');
+      expect(CONFIG_KEY_ALIASES['mrt-backend']).to.equal('mrtBackend');
     });
   });
 
@@ -228,6 +235,42 @@ describe('config/mapping', () => {
 
     it('throws when both userAuth and authMethods are set', () => {
       expect(() => mapDwJsonToNormalizedConfig({userAuth: true, authMethods: ['user']})).to.throw(/mutually exclusive/);
+    });
+  });
+
+  describe('mrtBackend mapping', () => {
+    for (const value of ['auto', 'legacy', 'scapi'] as const) {
+      it(`maps dw.json mrtBackend=${value} through to normalized config`, () => {
+        const result = mapDwJsonToNormalizedConfig({mrtBackend: value});
+        expect(result.mrtBackend).to.equal(value);
+      });
+
+      it(`round-trips mrtBackend=${value} back to dw.json`, () => {
+        const result = mapNormalizedConfigToDwJson({mrtBackend: value});
+        expect(result.mrtBackend).to.equal(value);
+      });
+    }
+
+    it('omits mrtBackend from dw.json when unset', () => {
+      const result = mapNormalizedConfigToDwJson({mrtProject: 'proj'});
+      expect(result.mrtBackend).to.be.undefined;
+      expect('mrtBackend' in result).to.be.false;
+    });
+
+    it('lets an override mrtBackend win over the base value in merge', () => {
+      const {config} = mergeConfigsWithProtection({mrtBackend: 'scapi'}, {mrtBackend: 'legacy'});
+      expect(config.mrtBackend).to.equal('scapi');
+    });
+
+    it('falls back to the base mrtBackend when no override is given', () => {
+      const {config} = mergeConfigsWithProtection({}, {mrtBackend: 'legacy'});
+      expect(config.mrtBackend).to.equal('legacy');
+    });
+
+    it('keeps mrtBackend and apiBackend independent through merge', () => {
+      const {config} = mergeConfigsWithProtection({mrtBackend: 'scapi'}, {apiBackend: 'ocapi', mrtBackend: 'legacy'});
+      expect(config.mrtBackend).to.equal('scapi');
+      expect(config.apiBackend).to.equal('ocapi');
     });
   });
 

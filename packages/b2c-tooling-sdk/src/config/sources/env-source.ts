@@ -66,6 +66,8 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   MRT_ENVIRONMENT: 'mrtEnvironment',
   SFCC_MRT_CLOUD_ORIGIN: 'mrtOrigin',
   MRT_CLOUD_ORIGIN: 'mrtOrigin',
+  SFCC_MRT_BACKEND: 'mrtBackend',
+  MRT_BACKEND: 'mrtBackend',
 };
 
 /** Fields that should be parsed as comma-separated arrays. */
@@ -90,6 +92,7 @@ const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned']);
  */
 const ENUM_FIELDS: Partial<Record<keyof NormalizedConfig, readonly string[]>> = {
   apiBackend: ['ocapi', 'scapi', 'auto'],
+  mrtBackend: ['auto', 'legacy', 'scapi'],
 };
 
 /**

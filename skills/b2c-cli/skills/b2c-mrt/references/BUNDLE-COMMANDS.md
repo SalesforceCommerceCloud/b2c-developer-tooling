@@ -35,12 +35,17 @@ b2c mrt bundle deploy -p my-storefront \
 
 ### Deploy Existing Bundle
 
+Deploying an existing bundle (with a bundle ID) is backend-aware — it honors `--mrt-backend` (`auto` / `legacy` / `scapi`). Pushing a local build is legacy-pinned. See the "MRT Backends" section in the skill overview.
+
 ```bash
 # Deploy existing bundle by ID
 b2c mrt bundle deploy 12345 -p my-storefront -e production
 
 # Deploy with JSON output
 b2c mrt bundle deploy 12345 -p my-storefront -e staging --json
+
+# Deploy via the SCAPI backend and wait for completion
+b2c mrt bundle deploy 12345 -p my-storefront -e production --mrt-backend scapi --wait
 ```
 
 **Flags:**
@@ -110,12 +115,13 @@ b2c mrt bundle list -p my-storefront --json
 
 ## Bundle History
 
-View deployment history for an environment.
+View deployment history for an environment. Backend-aware (`--mrt-backend`); under `--json` it returns the serving backend's native response verbatim (legacy vs SCAPI shapes differ).
 
 ```bash
 b2c mrt bundle history -p my-storefront -e production
 b2c mrt bundle history -p my-storefront -e staging --limit 5
 b2c mrt bundle history -p my-storefront -e production --json
+b2c mrt bundle history -p my-storefront -e staging --mrt-backend scapi
 ```
 
 **Output columns:** Bundle ID, Message, Status, Type, Created

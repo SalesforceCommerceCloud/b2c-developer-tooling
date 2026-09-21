@@ -189,6 +189,43 @@ describe('config/EnvSource', () => {
     });
   });
 
+  describe('mrtBackend (MRT_BACKEND / SFCC_MRT_BACKEND)', () => {
+    for (const value of ['auto', 'legacy', 'scapi']) {
+      it(`maps MRT_BACKEND=${value} to mrtBackend`, () => {
+        const source = new EnvSource({MRT_BACKEND: value});
+        const result = source.load({});
+        expect(result!.config.mrtBackend).to.equal(value);
+      });
+
+      it(`maps SFCC_MRT_BACKEND=${value} to mrtBackend`, () => {
+        const source = new EnvSource({SFCC_MRT_BACKEND: value});
+        const result = source.load({});
+        expect(result!.config.mrtBackend).to.equal(value);
+      });
+    }
+
+    it('MRT_BACKEND takes precedence over SFCC_MRT_BACKEND', () => {
+      const source = new EnvSource({SFCC_MRT_BACKEND: 'legacy', MRT_BACKEND: 'scapi'});
+      const result = source.load({});
+      expect(result!.config.mrtBackend).to.equal('scapi');
+    });
+
+    it('ignores an invalid MRT_BACKEND value', () => {
+      const source = new EnvSource({MRT_BACKEND: 'bogus'});
+      const result = source.load({});
+      // No valid fields → source contributes nothing.
+      expect(result).to.be.undefined;
+    });
+
+    it('rejects an OCAPI/SCAPI apiBackend value (mrtBackend enum is distinct)', () => {
+      // `ocapi` is valid for apiBackend but NOT for mrtBackend.
+      const source = new EnvSource({MRT_BACKEND: 'ocapi', SFCC_MRT_PROJECT: 'my-project'});
+      const result = source.load({});
+      expect(result!.config.mrtBackend).to.be.undefined;
+      expect(result!.config.mrtProject).to.equal('my-project');
+    });
+  });
+
   describe('boolean parsing', () => {
     it('parses SFCC_SELFSIGNED=true as boolean true', () => {
       const source = new EnvSource({SFCC_SELFSIGNED: 'true'});
