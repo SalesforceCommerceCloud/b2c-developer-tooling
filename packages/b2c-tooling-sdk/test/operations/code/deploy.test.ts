@@ -190,7 +190,7 @@ describe('operations/code/deploy', () => {
 
       expect(uploadedZip).to.not.be.null;
       const zip = await JSZip.loadAsync(uploadedZip!);
-      const entryPaths = Object.keys(zip.files);
+      const entryPaths = Object.keys(zip.files).map((p) => p.replaceAll('\\', '/'));
       expect(entryPaths.some((p) => p.endsWith('cartridge/scripts/a.js'))).to.be.true;
       expect(entryPaths.some((p) => p.includes('node_modules/'))).to.be.false;
     });
