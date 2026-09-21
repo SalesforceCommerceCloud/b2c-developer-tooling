@@ -1,0 +1,327 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Shopper Configurations",
+    "version": "1.4.0",
+    "x-api-type": "Shopper",
+    "x-api-family": "Configuration"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/configuration/shopper-configurations/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/configurations": {
+      "get": {
+        "operationId": "getConfigurations",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved configurations successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteConfiguration"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid parameters provided.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your shopper JWT is invalid and cannot be used to identify the API client.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Application context not found for the specified organization and site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-configurations",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-configurations",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Configuration": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "value": {
+            "maxLength": 255
+          },
+          "configurationType": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "id",
+          "value"
+        ]
+      },
+      "SiteConfiguration": {
+        "type": "object",
+        "properties": {
+          "configurations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Configuration"
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "configurations"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "sfdcUsid": {
+        "name": "sfdc_usid",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "sfdcDwDnt": {
+        "name": "sfdc_dw_dnt",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "0",
+            "1"
+          ]
+        }
+      },
+      "personalized": {
+        "name": "personalized",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "none"
+          ]
+        }
+      },
+      "sfdcShopperContext": {
+        "name": "sfdc_shopper_context",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "ShopperToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-configurations": "Shopper Configurations READONLY"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/authorize",
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-configurations": "Shopper Configurations READONLY"
+            }
+          }
+        }
+      },
+      "ShopperClientContextToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token?hint=client_context",
+            "scopes": {
+              "sfcc.shopper-configurations": "Shopper Configurations READONLY"
+            }
+          }
+        }
+      }
+    }
+  }
+}

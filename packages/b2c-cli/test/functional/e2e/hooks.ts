@@ -5,6 +5,7 @@
  */
 
 import type {Context} from 'mocha';
+import {parseFriendlySandboxId} from '@salesforce/b2c-tooling-sdk/operations/ods';
 import {setSharedContext, clearSharedContext, isSharedSandboxEnabled} from './shared-context.js';
 import {runCLIWithRetry, parseJSONOutput, sleep, TIMEOUTS} from './test-utils.js';
 
@@ -16,6 +17,8 @@ import {runCLIWithRetry, parseJSONOutput, sleep, TIMEOUTS} from './test-utils.js
  */
 
 let createdSandboxId: null | string = null;
+let firstSandboxId: null | string = null;
+const originalTenantId = process.env.SFCC_TENANT_ID;
 
 export const mochaHooks = {
   /**
@@ -66,6 +69,19 @@ export const mochaHooks = {
     ]);
 
     try {
+      // Temporary workaround for SLAS 401s on instance 001. Only wait on the second sandbox.
+      const firstResult = await runCLIWithRetry(['ods', 'create', '--realm', realm, '--ttl', '24', '--json'], {
+        maxRetries: 0,
+        verbose: true,
+      });
+      if (firstResult.exitCode !== 0) {
+        throw new Error(`Failed to create first sandbox: ${firstResult.stderr || firstResult.stdout}`);
+      }
+      firstSandboxId = (parseJSONOutput(firstResult) as {id: string}).id;
+      if (!firstSandboxId) throw new Error('First sandbox response missing ID');
+      console.log(`First sandbox ${firstSandboxId} requested; giving it 10 seconds to begin starting.`);
+      await sleep(10_000);
+
       // Create sandbox with long TTL (24 hours to cover all tests) + retry for transient errors
       const result = await runCLIWithRetry(
         [
@@ -97,8 +113,14 @@ export const mochaHooks = {
       const sandbox = parseJSONOutput(result) as {id: string; hostName: string; instance: string};
       createdSandboxId = sandbox.id;
 
-      // Derive tenant ID from realm + instance
-      const tenantId = `${realm}_${sandbox.instance}`;
+      // Derive the tenant ID from the hostname used by every instance command
+      // (for example, zzzz-006.unified.demandware.net -> zzzz_006).
+      const parsedSandboxId = parseFriendlySandboxId(sandbox.hostName.split('.')[0]);
+      if (!parsedSandboxId) {
+        throw new Error(`Could not derive tenant ID from sandbox hostname: ${sandbox.hostName}`);
+      }
+      const tenantId = `${parsedSandboxId.realm}_${parsedSandboxId.instance}`;
+      process.env.SFCC_TENANT_ID = tenantId;
 
       // Store in shared context
       setSharedContext({
@@ -133,33 +155,44 @@ export const mochaHooks = {
    */
   async afterAll(this: Context) {
     // Set timeout for cleanup
-    this.timeout(180_000); // 3 minutes
+    this.timeout(600_000); // Allow cleanup attempts for both sandboxes
 
     // Skip if no sandbox was created
-    if (!createdSandboxId) {
+    if (!createdSandboxId && !firstSandboxId) {
       return;
     }
 
     console.log('\n🧹 Cleaning up shared sandbox...\n');
 
-    try {
-      const result = await runCLIWithRetry(['ods', 'delete', createdSandboxId, '--force'], {
-        timeout: 120_000, // 2 minutes
-        maxRetries: 2,
-        verbose: true,
-      });
+    await Promise.all(
+      [createdSandboxId, firstSandboxId].map(async (sandboxId) => {
+        if (!sandboxId) return;
+        try {
+          const result = await runCLIWithRetry(['ods', 'delete', sandboxId, '--force'], {
+            timeout: 120_000, // 2 minutes
+            maxRetries: 2,
+            verbose: true,
+          });
 
-      if (result.exitCode === 0) {
-        console.log(`Shared sandbox ${createdSandboxId} deleted successfully\n`);
-      } else {
-        console.warn(`Failed to delete sandbox ${createdSandboxId}: ${result.stderr || result.stdout}`);
-        console.warn('You may need to manually delete it via the CLI or UI\n');
-      }
-    } catch (error) {
-      console.error(`Error during sandbox cleanup: ${error}`);
-    } finally {
-      clearSharedContext();
-      createdSandboxId = null;
+          if (result.exitCode === 0) {
+            console.log(`Sandbox ${sandboxId} deleted successfully\n`);
+          } else {
+            console.warn(`Failed to delete sandbox ${sandboxId}: ${result.stderr || result.stdout}`);
+            console.warn('You may need to manually delete it via the CLI or UI\n');
+          }
+        } catch (error) {
+          console.error(`Error during sandbox cleanup: ${error}`);
+        }
+      }),
+    );
+    clearSharedContext();
+    createdSandboxId = null;
+    firstSandboxId = null;
+
+    if (originalTenantId === undefined) {
+      delete process.env.SFCC_TENANT_ID;
+    } else {
+      process.env.SFCC_TENANT_ID = originalTenantId;
     }
   },
 };

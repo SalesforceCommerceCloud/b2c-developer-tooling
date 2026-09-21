@@ -51,7 +51,9 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
     if (!environment) {
       this.error(
@@ -87,9 +89,7 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(t('commands.mrt.redirect.delete.success', 'Redirect {{fromPath}} deleted.', {fromPath}));
-      }
+      this.log(t('commands.mrt.redirect.delete.success', 'Redirect {{fromPath}} deleted.', {fromPath}));
 
       return {fromPath, deleted: true};
     } catch (error) {

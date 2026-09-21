@@ -287,8 +287,16 @@ export async function createDeployment(
 // Backend-neutral deployment view + SCAPI MRT operations
 // ---------------------------------------------------------------------------
 
-const READ_HEADERS = {[SCOPE_MODE_HEADER]: 'read'};
-const WRITE_HEADERS = {[SCOPE_MODE_HEADER]: 'write'};
+/**
+ * SCAPI scope-mode header for reads. Shared with the bundle operations in
+ * `push.ts` so both modules request the same read scope.
+ */
+export const READ_HEADERS = {[SCOPE_MODE_HEADER]: 'read'};
+/**
+ * SCAPI scope-mode header for writes. Shared with the bundle operations in
+ * `push.ts` so both modules request the same write scope.
+ */
+export const WRITE_HEADERS = {[SCOPE_MODE_HEADER]: 'write'};
 
 /**
  * Thrown when a backend-aware operation resolves to the legacy backend but no
@@ -296,7 +304,7 @@ const WRITE_HEADERS = {[SCOPE_MODE_HEADER]: 'write'};
  * aren't forced to configure a `~/.mobify` API key; this guards the case where
  * legacy is actually needed (explicit `legacy`, or `auto` falling back).
  */
-const LEGACY_AUTH_REQUIRED_MESSAGE =
+export const LEGACY_AUTH_REQUIRED_MESSAGE =
   'Legacy MRT credentials are required for this backend but none were provided. ' +
   'Provide an API key (--api-key / MRT_API_KEY / ~/.mobify) or use the SCAPI MRT backend.';
 
@@ -358,7 +366,12 @@ export function normalizeDeploymentScapi(deployment: DeploymentScapi): MrtDeploy
   };
 }
 
-function buildScapiDeploymentsClient(conn: ScapiMrtConnection): StorefrontDeploymentsClient {
+/**
+ * Builds a SCAPI Storefront Deployments client from a {@link ScapiMrtConnection}.
+ * Shared with the bundle operations in `push.ts` so both modules construct the
+ * client identically.
+ */
+export function buildScapiDeploymentsClient(conn: ScapiMrtConnection): StorefrontDeploymentsClient {
   return createStorefrontDeploymentsClient({shortCode: conn.shortCode, tenantId: conn.tenantId}, conn.auth);
 }
 

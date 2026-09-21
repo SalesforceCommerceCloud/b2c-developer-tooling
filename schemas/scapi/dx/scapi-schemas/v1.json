@@ -1,0 +1,517 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SCAPI Schemas",
+    "version": "1.0.2",
+    "x-api-type": "Admin",
+    "x-api-family": "DX"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/schemas": {
+      "get": {
+        "operationId": "getSchemaList",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "apiFamily",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/ApiFamily"
+            }
+          },
+          {
+            "name": "apiName",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/ApiName"
+            }
+          },
+          {
+            "name": "apiVersion",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/ApiVersion"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "current",
+                "deprecated"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of known SCAPI schema definitions successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaListResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Value constraint violation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.scapi-schemas"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}": {
+      "get": {
+        "operationId": "getSchemaDetails",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "apiFamily",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ApiFamily"
+            }
+          },
+          {
+            "name": "apiName",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ApiName"
+            }
+          },
+          {
+            "name": "apiVersion",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ApiVersion"
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "custom_properties"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SCAPI schema specifications successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Value constraint violation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.scapi-schemas"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "ApiFamily": {
+        "type": "string",
+        "maxLength": 50,
+        "pattern": "^[a-z0-9-]+$"
+      },
+      "ApiName": {
+        "type": "string",
+        "maxLength": 200,
+        "pattern": "^[a-z0-9-]+$"
+      },
+      "ApiVersion": {
+        "type": "string",
+        "pattern": "^v\\d+$"
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "ScapiSchemaFilter": {
+        "type": "object",
+        "properties": {
+          "apiFamily": {
+            "$ref": "#/components/schemas/ApiFamily"
+          },
+          "apiName": {
+            "$ref": "#/components/schemas/ApiName"
+          },
+          "apiVersion": {
+            "$ref": "#/components/schemas/ApiVersion"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "current",
+              "deprecated"
+            ]
+          }
+        }
+      },
+      "SchemaListItem": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "apiFamily": {
+            "type": "string",
+            "maxLength": 50,
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "apiName": {
+            "type": "string",
+            "maxLength": 200,
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "apiVersion": {
+            "type": "string",
+            "pattern": "^v\\d+$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "current",
+              "deprecated"
+            ]
+          },
+          "link": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "SchemaListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/ScapiSchemaFilter"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaListItem"
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "apiFamily": {
+        "name": "apiFamily",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/ApiFamily"
+        }
+      },
+      "apiName": {
+        "name": "apiName",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/ApiName"
+        }
+      },
+      "apiVersion": {
+        "name": "apiVersion",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/ApiVersion"
+        }
+      },
+      "status": {
+        "name": "status",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "current",
+            "deprecated"
+          ]
+        }
+      },
+      "parameters-apiFamily": {
+        "name": "apiFamily",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ApiFamily"
+        }
+      },
+      "parameters-apiName": {
+        "name": "apiName",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ApiName"
+        }
+      },
+      "parameters-apiVersion": {
+        "name": "apiVersion",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ApiVersion"
+        }
+      },
+      "expand": {
+        "name": "expand",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "custom_properties"
+            ]
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.scapi-schemas": "SCAPI schema READONLY scope"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.scapi-schemas": "SCAPI schema READONLY scope"
+            }
+          }
+        }
+      }
+    }
+  }
+}

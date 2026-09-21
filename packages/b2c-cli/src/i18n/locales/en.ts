@@ -197,7 +197,7 @@ export const en = {
         skippedCount: 'Skipped {{count}} skill(s):',
         errorsCount: 'Failed to install {{count}} skill(s):',
         skillsetRequired:
-          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, storefront-next-figma, or cap-dev.',
+          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, b2c-ops, storefront-next, storefront-next-figma, or cap-dev.',
         selectSkillset: 'Select skill set(s) to install:',
         noSkillsetsSelected: 'No skill sets selected.',
         selectIdes: 'Select target IDEs:',

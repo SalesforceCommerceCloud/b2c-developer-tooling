@@ -1,0 +1,1418 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Stores",
+    "version": "1.2.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Store"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/store/stores/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/stores": {
+      "get": {
+        "operationId": "getStores",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a paginated list of stores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.stores",
+              "sfcc.stores.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/stores/{id}": {
+      "get": {
+        "operationId": "getStore",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/StoreId"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the store document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Store"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Store Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.stores",
+              "sfcc.stores.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "createOrReplaceStore",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/StoreId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the replaced store document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Store"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Returns the newly created store document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.stores.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteStore",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/StoreId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Store successfully deleted. No content returned."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Store Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.stores.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateStore",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/StoreId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the updated store document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Store Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.stores.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/store-search": {
+      "post": {
+        "operationId": "searchStores",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Returns store search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.stores",
+              "sfcc.stores.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Select": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[(].*[)]$"
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "StoreId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "CountryCode": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z]$"
+      },
+      "InventoryId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "MarkupText": {
+        "type": "object",
+        "properties": {
+          "markup": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "markup",
+          "source"
+        ]
+      },
+      "Email": {
+        "type": "string",
+        "format": "email",
+        "maxLength": 256
+      },
+      "MediaFile": {
+        "type": "object",
+        "properties": {
+          "absUrl": {
+            "type": "string"
+          },
+          "alt": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "disBaseUrl": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "title": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "Store": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StoreId"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "address1": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "address2": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "countryCode": {
+            "$ref": "#/components/schemas/CountryCode"
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "stateCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "fax": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 180,
+            "minimum": -180
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 90,
+            "minimum": -90
+          },
+          "inventoryId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InventoryId"
+              }
+            ]
+          },
+          "storeHours": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MarkupText"
+            }
+          },
+          "storeEvents": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MarkupText"
+            }
+          },
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Email"
+              }
+            ]
+          },
+          "image": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaFile"
+              }
+            ]
+          },
+          "storeLocatorEnabled": {
+            "type": "boolean"
+          },
+          "posEnabled": {
+            "type": "boolean"
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "StoreResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Store"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "StoreRequest": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StoreId"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "address1": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "address2": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "countryCode": {
+            "$ref": "#/components/schemas/CountryCode"
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "stateCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "fax": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 180,
+            "minimum": -180
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 90,
+            "minimum": -90
+          },
+          "inventoryId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InventoryId"
+              }
+            ]
+          },
+          "storeHours": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MarkupText"
+            }
+          },
+          "storeEvents": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MarkupText"
+            }
+          },
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Email"
+              }
+            ]
+          },
+          "image": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaFile"
+              }
+            ]
+          },
+          "storeLocatorEnabled": {
+            "type": "boolean"
+          },
+          "posEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Query": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolQuery": {
+            "$ref": "#/components/schemas/BoolQuery"
+          },
+          "filteredQuery": {
+            "$ref": "#/components/schemas/FilteredQuery"
+          },
+          "matchAllQuery": {
+            "$ref": "#/components/schemas/MatchAllQuery"
+          },
+          "nestedQuery": {
+            "$ref": "#/components/schemas/NestedQuery"
+          },
+          "termQuery": {
+            "$ref": "#/components/schemas/TermQuery"
+          },
+          "textQuery": {
+            "$ref": "#/components/schemas/TextQuery"
+          }
+        }
+      },
+      "BoolQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "must": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "mustNot": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "should": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolFilter": {
+            "$ref": "#/components/schemas/BoolFilter"
+          },
+          "queryFilter": {
+            "$ref": "#/components/schemas/QueryFilter"
+          },
+          "range2Filter": {
+            "$ref": "#/components/schemas/Range2Filter"
+          },
+          "rangeFilter": {
+            "$ref": "#/components/schemas/RangeFilter"
+          },
+          "termFilter": {
+            "$ref": "#/components/schemas/TermFilter"
+          }
+        }
+      },
+      "BoolFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            }
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or",
+              "not"
+            ]
+          }
+        },
+        "required": [
+          "operator"
+        ]
+      },
+      "QueryFilter": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Field": {
+        "type": "string",
+        "maxLength": 260
+      },
+      "Range2Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filterMode": {
+            "type": "string",
+            "default": "overlap",
+            "enum": [
+              "overlap",
+              "containing",
+              "contained"
+            ]
+          },
+          "fromField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "fromValue": {},
+          "toField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "toValue": {}
+        },
+        "required": [
+          "fromField",
+          "toField"
+        ]
+      },
+      "RangeFilter": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "from": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "to": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "TermFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "field",
+          "operator"
+        ]
+      },
+      "FilteredQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/Filter"
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "filter",
+          "query"
+        ]
+      },
+      "MatchAllQuery": {
+        "type": "object"
+      },
+      "NestedQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "scoreMode": {
+            "type": "string",
+            "enum": [
+              "avg",
+              "total",
+              "max",
+              "none"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "query"
+        ]
+      },
+      "TermQuery": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "fields",
+          "operator"
+        ]
+      },
+      "TextQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "searchPhrase": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fields",
+          "searchPhrase"
+        ]
+      },
+      "Sort": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "sortOrder": {
+            "type": "string",
+            "default": "asc",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "StoreSearchRequest": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SearchRequest"
+          }
+        ]
+      },
+      "PaginatedSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "hits": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "StoreSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Store"
+            }
+          }
+        },
+        "required": [
+          "hits",
+          "query"
+        ]
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "select": {
+        "name": "select",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/Select"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dw/oauth2/access_token",
+            "scopes": {
+              "sfcc.stores": "Read access to store resources",
+              "sfcc.stores.rw": "Read and write access to store resources"
+            }
+          }
+        }
+      }
+    }
+  }
+}

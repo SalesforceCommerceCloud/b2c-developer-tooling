@@ -44,8 +44,8 @@ const MRT_STATUS_URL = 'https://status.salesforce.com/instances/MANAGEDRUNTIMEAD
  * 3. ~/.mobify config file (api_key field), or ~/.mobify--[hostname] if --cloud-origin is set
  *
  * Project/environment resolution order:
- * 1. --project (alias --storefront / -s) / --environment flags
- * 2. MRT_PROJECT / MRT_ENVIRONMENT environment variables (SFCC_-prefixed and MRT_TARGET also supported)
+ * 1. --project (alias: --storefront) / --environment flags
+ * 2. MRT_PROJECT / MRT_ENVIRONMENT environment variables (SFCC_-prefixed, MRT_STOREFRONT / SFCC_MRT_STOREFRONT, and MRT_TARGET also supported)
  * 3. dw.json (mrtProject / mrtEnvironment fields)
  *
  * Cloud origin resolution:
@@ -71,9 +71,10 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       aliases: ['storefront'],
       charAliases: ['s'],
       description:
-        'MRT project slug — the SCAPI MRT storefront ID (or set mrtProject in dw.json); alias: --storefront/-s',
+        'MRT project slug — the SCAPI MRT storefront ID (or set mrtProject in dw.json); aliases: -s, --storefront',
       env: 'MRT_PROJECT',
-      default: async () => process.env.SFCC_MRT_PROJECT || undefined,
+      default: async () =>
+        process.env.SFCC_MRT_PROJECT || process.env.MRT_STOREFRONT || process.env.SFCC_MRT_STOREFRONT || undefined,
     }),
     environment: Flags.string({
       char: 'e',
@@ -83,7 +84,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       default: async () => process.env.SFCC_MRT_ENVIRONMENT || process.env.MRT_TARGET || undefined,
     }),
     'cloud-origin': Flags.string({
-      char: 'o',
+      char: 'u',
       description: `MRT cloud origin URL (or set mrtOrigin in dw.json; default: ${DEFAULT_MRT_ORIGIN})`,
       env: 'MRT_CLOUD_ORIGIN',
       default: async () => process.env.SFCC_MRT_CLOUD_ORIGIN || undefined,
@@ -116,6 +117,26 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       () => this.warnReadOnlyOnce(),
       () => super._run<R>(),
     );
+  }
+
+  /**
+   * Suppress human-readable logging in `--json` mode.
+   *
+   * MRT commands emit progress/status lines via {@link BaseCommand.log}, which
+   * routes to the structured logger on stderr. When `--json` is set the caller
+   * wants machine-readable output only, so these lines are swallowed centrally
+   * here instead of guarding every call site with `if (!this.jsonEnabled())`.
+   *
+   * This only affects `this.log()` (stderr diagnostics). Structured stdout
+   * output — tables and detail views written via `ux.stdout` — is untouched and
+   * must still be guarded by `jsonEnabled()` at its call site so it never
+   * corrupts the JSON payload on stdout.
+   */
+  public log(message?: string, ...args: unknown[]): void {
+    if (this.jsonEnabled()) {
+      return;
+    }
+    super.log(message, ...args);
   }
 
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
@@ -177,6 +198,50 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
   }
 
   /**
+   * Resolve the target MRT project slug for a command that accepts it either as
+   * a positional argument or via the `--project` / `--storefront` flag.
+   *
+   * An explicit positional wins; otherwise the resolved `--project` /
+   * `--storefront` flag value is used (which also covers `MRT_PROJECT`,
+   * `SFCC_MRT_PROJECT`, `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT`, and the
+   * `mrtProject` field in dw.json). Errors when neither yields a value.
+   */
+  protected resolveProjectSlug(positional?: string): string {
+    const slug = positional ?? this.resolvedConfig.values.mrtProject;
+    if (!slug) {
+      this.error(
+        t(
+          'error.mrtProjectRequired',
+          'MRT project is required. Provide it as an argument or via --project/--storefront (-p/-s) (or set MRT_PROJECT, or mrtProject in dw.json).',
+        ),
+      );
+    }
+    return slug;
+  }
+
+  /**
+   * Resolve the target MRT environment slug for a command that accepts it either
+   * as a positional argument or via the `--environment` / `--target` (`-e`) flag.
+   *
+   * An explicit positional wins; otherwise the resolved `--environment` /
+   * `--target` flag value is used (which also covers `MRT_ENVIRONMENT`,
+   * `SFCC_MRT_ENVIRONMENT`, `MRT_TARGET`, and the `mrtEnvironment` field in
+   * dw.json). Errors when neither yields a value.
+   */
+  protected resolveEnvironmentSlug(positional?: string): string {
+    const slug = positional ?? this.resolvedConfig.values.mrtEnvironment;
+    if (!slug) {
+      this.error(
+        t(
+          'error.mrtEnvironmentRequired',
+          'MRT environment is required. Provide it as an argument or via --environment/-e (or set MRT_ENVIRONMENT, or mrtEnvironment in dw.json).',
+        ),
+      );
+    }
+    return slug;
+  }
+
+  /**
    * SCAPI MRT connection bundle (shortCode + tenantId + a SCAPI-capable OAuth
    * strategy), or `undefined` when this command cannot reach the SCAPI
    * Storefront APIs.
@@ -220,7 +285,8 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
 
   /**
    * Whether this command implements the SCAPI MRT backend. Defaults to `false`;
-   * the supported commands (`mrt bundle history`, `mrt bundle deploy <bundleId>`)
+   * the supported commands (`mrt bundle history`, `mrt bundle list`, and
+   * `mrt bundle deploy` — both the local-build push and `<bundleId>` deploy)
    * override it to `true`. Used by {@link init} to reject an explicit
    * `--mrt-backend scapi` on commands that would otherwise silently fall back to
    * legacy — an explicit SCAPI request must never be quietly downgraded.
@@ -237,7 +303,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     if (!this.supportsScapiMrt() && this.mrtBackendPreference === 'scapi') {
       this.error(
         '--mrt-backend scapi is not supported by this command yet. The SCAPI MRT backend currently supports only ' +
-          '"mrt bundle history" and "mrt bundle deploy <bundleId>". Re-run with --mrt-backend legacy or auto.',
+          '"mrt bundle history", "mrt bundle list", and "mrt bundle deploy". Re-run with --mrt-backend legacy or auto.',
       );
     }
   }
@@ -354,7 +420,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     const rawArgs = this._rawArgv;
     const legacyFlags: {name: string; tokens: string[]}[] = [
       {name: '--api-key', tokens: ['--api-key']},
-      {name: '--cloud-origin', tokens: ['--cloud-origin', '-o']},
+      {name: '--cloud-origin', tokens: ['--cloud-origin', '-u']},
       {name: '--credentials-file', tokens: ['--credentials-file', '-c']},
     ];
     return legacyFlags

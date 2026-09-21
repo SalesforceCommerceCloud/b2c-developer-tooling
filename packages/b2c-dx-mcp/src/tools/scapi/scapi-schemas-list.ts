@@ -68,6 +68,7 @@ interface SchemasListInput {
   includeSchemas?: boolean;
   /** If true, return full schema without collapsing (only works when includeSchemas=true) */
   expandAll?: boolean;
+  expandCustomProperties?: boolean;
 }
 
 /**
@@ -149,6 +150,7 @@ async function fetchSpecificSchema(params: {
     {
       params: {
         path: {organizationId, apiFamily: apiFamily!, apiName: apiName!, apiVersion: apiVersion!},
+        query: args.expandCustomProperties === false ? undefined : {expand: 'custom_properties'},
       },
     },
   );
@@ -304,10 +306,12 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'List SCAPI schema metadata or fetch an OpenAPI schema. Fetch requires includeSchemas, apiFamily, apiName, and apiVersion. Use scapi_custom_apis_get_status for endpoint status.',
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
-      isGA: true,
       requiresInstance: false, // SCAPI uses OAuth directly, doesn't need B2CInstance (hostname)
       usesConfigurationContext: true,
       inputSchema: {
@@ -326,6 +330,10 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
           .boolean()
           .default(false)
           .describe('Return full uncompressed schema. Only when includeSchemas=true. Default: false.'),
+        expandCustomProperties: z
+          .boolean()
+          .default(true)
+          .describe('Include tenant custom property definitions when fetching a schema.'),
       },
       async execute(args, {services: svc}) {
         // Get client and organization ID

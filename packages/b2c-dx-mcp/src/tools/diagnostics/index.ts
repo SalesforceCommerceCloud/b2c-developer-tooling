@@ -13,22 +13,16 @@ import {createDebugStartSessionTool} from './debug-start-session.js';
 import {createDebugEndSessionTool} from './debug-end-session.js';
 import {createDebugSetBreakpointsTool} from './debug-set-breakpoints.js';
 import {createDebugWaitForStopTool} from './debug-wait-for-stop.js';
-import {createDebugGetStackTool} from './debug-get-stack.js';
-import {createDebugGetVariablesTool} from './debug-get-variables.js';
+import {createDebugInspectTool} from './debug-inspect.js';
 import {createDebugEvaluateTool} from './debug-evaluate.js';
-import {createDebugContinueTool} from './debug-continue.js';
-import {createDebugStepTools} from './debug-step.js';
+import {createDebugControlTool} from './debug-control.js';
 import {createDebugCaptureAtBreakpointTool} from './debug-capture-at-breakpoint.js';
 import {createLogsListFilesTool, type LogsListFilesInjections} from './logs-list-files.js';
 import {createLogsGetRecentTool, type LogsGetRecentInjections} from './logs-get-recent.js';
-import {createLogsWatchStartTool, type LogsWatchStartInjections} from './logs-watch-start.js';
+import {createLogsWatchTool, type LogsWatchStartInjections} from './logs-watch.js';
 import {createLogsWatchPollTool} from './logs-watch-poll.js';
-import {createLogsWatchStopTool} from './logs-watch-stop.js';
-import {createLogsWatchListTool} from './logs-watch-list.js';
-import {createMrtLogsWatchStartTool, type MrtLogsWatchStartInjections} from './mrt-logs-watch-start.js';
+import {createMrtLogsWatchTool, type MrtLogsWatchStartInjections} from './mrt-logs-watch.js';
 import {createMrtLogsWatchPollTool} from './mrt-logs-watch-poll.js';
-import {createMrtLogsWatchStopTool} from './mrt-logs-watch-stop.js';
-import {createMrtLogsWatchListTool} from './mrt-logs-watch-list.js';
 
 export interface DiagnosticsToolInjections
   extends LogsGetRecentInjections, LogsListFilesInjections, LogsWatchStartInjections, MrtLogsWatchStartInjections {}
@@ -45,21 +39,15 @@ export function createDiagnosticsTools(
     createDebugEndSessionTool(loadServices, serverContext),
     createDebugSetBreakpointsTool(loadServices, serverContext),
     createDebugWaitForStopTool(loadServices, serverContext),
-    createDebugGetStackTool(loadServices, serverContext),
-    createDebugGetVariablesTool(loadServices, serverContext),
+    createDebugInspectTool(loadServices, serverContext),
     createDebugEvaluateTool(loadServices, serverContext),
-    createDebugContinueTool(loadServices, serverContext),
-    ...createDebugStepTools(loadServices, serverContext),
+    createDebugControlTool(loadServices, serverContext),
     createDebugCaptureAtBreakpointTool(loadServices, serverContext),
     createLogsListFilesTool(loadServices, serverContext, injections),
     createLogsGetRecentTool(loadServices, serverContext, injections),
-    createLogsWatchStartTool(loadServices, serverContext, injections),
+    createLogsWatchTool(loadServices, serverContext, injections),
     createLogsWatchPollTool(loadServices, serverContext),
-    createLogsWatchStopTool(loadServices, serverContext),
-    createLogsWatchListTool(loadServices, serverContext),
-    createMrtLogsWatchStartTool(loadServices, serverContext, injections),
+    createMrtLogsWatchTool(loadServices, serverContext, injections),
     createMrtLogsWatchPollTool(loadServices, serverContext),
-    createMrtLogsWatchStopTool(loadServices, serverContext),
-    createMrtLogsWatchListTool(loadServices, serverContext),
   ];
 }

@@ -1,0 +1,40 @@
+/* Font families used by Salesforce Developer documentation, served by Salesforce. */
+@font-face {
+  font-family: 'Salesforce Sans';
+  src: url('https://a.sfdcstatic.com/shared/fonts/salesforce-sans/SalesforceSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Salesforce Sans';
+  src: url('https://a.sfdcstatic.com/shared/fonts/salesforce-sans/SalesforceSans-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Salesforce Sans';
+  src: url('https://a.sfdcstatic.com/shared/fonts/salesforce-sans/SalesforceSans-Semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Salesforce Sans';
+  src: url('https://a.sfdcstatic.com/shared/fonts/salesforce-sans/SalesforceSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ITC Avant Garde';
+  src: url('https://a.sfdcstatic.com/shared/fonts/avant-garde/AvantGardeForSalesforceW05-Dm.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}

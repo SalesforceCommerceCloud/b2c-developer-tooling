@@ -1,0 +1,2961 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Shopper Products",
+    "version": "1.12.0",
+    "x-api-type": "Shopper",
+    "x-api-family": "Product"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/product/shopper-products/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/products": {
+      "get": {
+        "operationId": "getProducts",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ProductId"
+                  }
+                ]
+              },
+              "maxItems": 100
+            }
+          },
+          {
+            "name": "inventoryIds",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/InventoryId"
+                  }
+                ]
+              },
+              "maxItems": 5
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "availability",
+                  "bundled_products",
+                  "links",
+                  "promotions",
+                  "options",
+                  "images",
+                  "prices",
+                  "variations",
+                  "set_products",
+                  "recommendations",
+                  "shipping_methods",
+                  "page_meta_tags",
+                  "primary_category"
+                ]
+              }
+            }
+          },
+          {
+            "name": "allImages",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "imgTypes",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "perPricebook",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/CurrencyCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-products",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-products",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/products/{id}": {
+      "get": {
+        "operationId": "getProduct",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          },
+          {
+            "name": "inventoryIds",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/InventoryId"
+                  }
+                ]
+              },
+              "maxItems": 5
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "availability",
+                  "bundled_products",
+                  "links",
+                  "promotions",
+                  "options",
+                  "images",
+                  "prices",
+                  "variations",
+                  "set_products",
+                  "recommendations",
+                  "shipping_methods",
+                  "page_meta_tags",
+                  "primary_category"
+                ]
+              }
+            }
+          },
+          {
+            "name": "allImages",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "imgTypes",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "perPricebook",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/CurrencyCode"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "404": {
+            "description": "Product Not Found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-products",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-products",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/products/{productId}/images": {
+      "get": {
+        "operationId": "getProductImages",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          },
+          {
+            "name": "imgTypes",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "allImages",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "variationAttribute",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 256,
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductImages"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "404": {
+            "description": "Product Not Found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-products"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-products"
+            ]
+          }
+        ],
+        "x-extensionPoints": [
+          {
+            "phase": "before",
+            "name": "sfcc.product.shopper-products.v1.products.productId.images.beforeGET",
+            "description": "Called before retrieving product images.",
+            "arguments": [
+              {
+                "$ref": "#/components/parameters/productId"
+              },
+              {
+                "$ref": "#/components/parameters/imgTypes"
+              },
+              {
+                "$ref": "#/components/parameters/allImages"
+              },
+              {
+                "$ref": "#/components/parameters/variationAttribute"
+              }
+            ]
+          },
+          {
+            "phase": "modifyResponse",
+            "name": "sfcc.product.shopper-products.v1.products.productId.images.modifyGETResponse",
+            "description": "Called to modify the product images response.",
+            "arguments": [
+              {
+                "$ref": "#/components/schemas/ProductImages"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/products/{productId}/prices": {
+      "get": {
+        "operationId": "getProductPrices",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/CurrencyCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricesResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "404": {
+            "description": "Product Not Found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-products"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-products"
+            ]
+          }
+        ],
+        "x-extensionPoints": [
+          {
+            "phase": "before",
+            "name": "sfcc.product.shopper-products.v1.products.productId.prices.beforeGET",
+            "description": "called before retrieving product price details.",
+            "arguments": [
+              {
+                "$ref": "#/components/parameters/productId"
+              },
+              {
+                "$ref": "#/components/parameters/siteId"
+              },
+              {
+                "$ref": "#/components/parameters/locale"
+              },
+              {
+                "$ref": "#/components/parameters/currency"
+              }
+            ]
+          },
+          {
+            "phase": "modifyResponse",
+            "name": "sfcc.product.shopper-products.v1.products.productId.prices.modifyGETResponse",
+            "description": "called to modify the product price details response.",
+            "arguments": [
+              {
+                "$ref": "#/components/schemas/PricesResult"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/products/{productId}/promotions": {
+      "get": {
+        "operationId": "getProductPromotions",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/CurrencyCode"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "404": {
+            "description": "Product Not Found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-products"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-products"
+            ]
+          }
+        ],
+        "x-extensionPoints": [
+          {
+            "phase": "before",
+            "name": "sfcc.product.shopper-products.v1.products.productId.promotions.beforeGET",
+            "description": "called before retrieving product promotion details.",
+            "arguments": [
+              {
+                "$ref": "#/components/parameters/productId"
+              },
+              {
+                "$ref": "#/components/parameters/siteId"
+              },
+              {
+                "$ref": "#/components/parameters/locale"
+              },
+              {
+                "$ref": "#/components/parameters/currency"
+              }
+            ]
+          },
+          {
+            "phase": "modifyResponse",
+            "name": "sfcc.product.shopper-products.v1.products.productId.promotions.modifyGETResponse",
+            "description": "called to modify the product promotions response.",
+            "arguments": [
+              {
+                "$ref": "#/components/schemas/PromotionsResult"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/categories": {
+      "get": {
+        "operationId": "getCategories",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/CategoryId"
+                  }
+                ]
+              },
+              "maxItems": 50
+            }
+          },
+          {
+            "name": "levels",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "enum": [
+                0,
+                1,
+                2
+              ],
+              "minimum": 0
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-categories",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-categories",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/categories/{id}": {
+      "get": {
+        "operationId": "getCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/CategoryId"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "levels",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "enum": [
+                0,
+                1,
+                2
+              ],
+              "minimum": 0
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "404": {
+            "description": "No online or offline category was found with the specified ID.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-categories",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-categories",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "ProductId": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "InventoryId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Select": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[(].*[)]$"
+      },
+      "LanguageCountry": {
+        "type": "string",
+        "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
+      },
+      "LanguageCode": {
+        "type": "string",
+        "pattern": "^[a-z][a-z]$"
+      },
+      "DefaultFallback": {
+        "type": "string",
+        "default": "default",
+        "pattern": "^default$"
+      },
+      "LocaleCode": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/LanguageCountry"
+          },
+          {
+            "$ref": "#/components/schemas/LanguageCode"
+          },
+          {
+            "$ref": "#/components/schemas/DefaultFallback"
+          }
+        ]
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "pattern": "^([A-Z][A-Z][A-Z]|N/A)$"
+      },
+      "Product": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "bundledProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BundledProduct"
+            }
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "ean": {
+            "type": "string"
+          },
+          "fetchDate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "imageGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageGroup"
+            }
+          },
+          "inventories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Inventory"
+            }
+          },
+          "inventory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Inventory"
+              }
+            ]
+          },
+          "longDescription": {
+            "type": "string"
+          },
+          "manufacturerName": {
+            "type": "string"
+          },
+          "manufacturerSku": {
+            "type": "string"
+          },
+          "master": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Master"
+              }
+            ]
+          },
+          "minOrderQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "name": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            }
+          },
+          "pageDescription": {
+            "type": "string"
+          },
+          "pageKeywords": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "pageMetaTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageMetaTag"
+            }
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "pricePerUnit": {
+            "type": "number",
+            "format": "double"
+          },
+          "pricePerUnitMax": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceMax": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceRanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceRange"
+            }
+          },
+          "prices": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "primaryCategoryId": {
+            "type": "string"
+          },
+          "primaryCategory": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 256,
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 256,
+                "minLength": 1
+              },
+              "parentCategoryTree": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 256,
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "maxLength": 256,
+                      "minLength": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "productLinks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductLink"
+            }
+          },
+          "productPromotions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPromotion"
+            }
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Recommendation"
+            }
+          },
+          "setProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
+          },
+          "shortDescription": {
+            "type": "string"
+          },
+          "slugUrl": {
+            "type": "string"
+          },
+          "stepQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "tieredPrices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPriceTable"
+            }
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductType"
+              }
+            ]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "upc": {
+            "type": "string"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            }
+          },
+          "variationAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationAttribute"
+            }
+          },
+          "variationGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationGroup"
+            }
+          },
+          "variationValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "shippingMethods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShippingMethod"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "BundledProduct": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "product": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Product"
+              }
+            ]
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "id",
+          "product",
+          "quantity"
+        ]
+      },
+      "Image": {
+        "type": "object",
+        "properties": {
+          "alt": {
+            "type": "string"
+          },
+          "disBaseLink": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "link"
+        ]
+      },
+      "VariationAttributeValue": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "image": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ]
+          },
+          "imageSwatch": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "orderable": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "VariationAttribute": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationAttributeValue"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ImageGroup": {
+        "type": "object",
+        "properties": {
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Image"
+            }
+          },
+          "variationAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationAttribute"
+            }
+          },
+          "viewType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "images",
+          "viewType"
+        ]
+      },
+      "Inventory": {
+        "type": "object",
+        "properties": {
+          "ats": {
+            "type": "number",
+            "format": "double"
+          },
+          "backorderable": {
+            "type": "boolean"
+          },
+          "id": {
+            "$ref": "#/components/schemas/InventoryId"
+          },
+          "inStockDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "orderable": {
+            "type": "boolean"
+          },
+          "preorderable": {
+            "type": "boolean"
+          },
+          "stockLevel": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Price": {
+        "type": "number",
+        "format": "double"
+      },
+      "Master": {
+        "type": "object",
+        "properties": {
+          "masterId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ]
+          },
+          "orderable": {
+            "type": "boolean"
+          },
+          "price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              }
+            ]
+          },
+          "priceMax": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              }
+            ]
+          },
+          "prices": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        },
+        "required": [
+          "masterId"
+        ]
+      },
+      "OptionValue": {
+        "type": "object",
+        "properties": {
+          "default": {
+            "type": "boolean"
+          },
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Option": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ]
+          },
+          "image": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionValue"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "PageMetaTag": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
+      },
+      "PriceRange": {
+        "type": "object",
+        "properties": {
+          "maxPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              }
+            ]
+          },
+          "minPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              }
+            ]
+          },
+          "pricebook": {
+            "type": "string"
+          }
+        }
+      },
+      "ProductLink": {
+        "type": "object",
+        "properties": {
+          "sourceProductId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ]
+          },
+          "sourceProductLink": {
+            "type": "string"
+          },
+          "targetProductId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ]
+          },
+          "targetProductLink": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "cross_sell",
+              "replacement",
+              "up_sell",
+              "accessory",
+              "newer_version",
+              "alt_orderunit",
+              "spare_part",
+              "other"
+            ]
+          }
+        },
+        "required": [
+          "sourceProductId",
+          "sourceProductLink",
+          "targetProductId",
+          "targetProductLink",
+          "type"
+        ]
+      },
+      "ProductPromotion": {
+        "type": "object",
+        "properties": {
+          "calloutMsg": {
+            "type": "string"
+          },
+          "promotionId": {
+            "type": "string"
+          },
+          "promotionalPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calloutMsg",
+          "promotionId",
+          "promotionalPrice"
+        ]
+      },
+      "RecommendationType": {
+        "type": "object",
+        "properties": {
+          "displayValue": {
+            "type": "string"
+          },
+          "value": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "displayValue",
+          "value"
+        ]
+      },
+      "Recommendation": {
+        "type": "object",
+        "properties": {
+          "calloutMsg": {
+            "type": "string"
+          },
+          "image": {
+            "$ref": "#/components/schemas/Image"
+          },
+          "longDescription": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "recommendationType": {
+            "$ref": "#/components/schemas/RecommendationType"
+          },
+          "recommendedItemId": {
+            "type": "string"
+          },
+          "shortDescription": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "recommendationType"
+        ]
+      },
+      "ProductPriceTable": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              }
+            ]
+          },
+          "pricebook": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ProductType": {
+        "type": "object",
+        "properties": {
+          "bundle": {
+            "type": "boolean"
+          },
+          "item": {
+            "type": "boolean"
+          },
+          "master": {
+            "type": "boolean"
+          },
+          "option": {
+            "type": "boolean"
+          },
+          "set": {
+            "type": "boolean"
+          },
+          "variant": {
+            "type": "boolean"
+          },
+          "variationGroup": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Variant": {
+        "type": "object",
+        "properties": {
+          "orderable": {
+            "type": "boolean"
+          },
+          "price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              }
+            ]
+          },
+          "productId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ]
+          },
+          "tieredPrices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPriceTable"
+            }
+          },
+          "variationValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "VariationGroup": {
+        "type": "object",
+        "properties": {
+          "orderable": {
+            "type": "boolean"
+          },
+          "price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              }
+            ]
+          },
+          "productId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ]
+          },
+          "variationValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "orderable",
+          "price",
+          "productId",
+          "variationValues"
+        ]
+      },
+      "ShippingPromotion": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "calloutMsg": {
+            "type": "string"
+          },
+          "promotionId": {
+            "type": "string"
+          },
+          "promotionName": {
+            "type": "string"
+          }
+        }
+      },
+      "ShippingMethod": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "externalShippingMethod": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "shippingPromotions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShippingPromotion"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ProductResult": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "data",
+          "limit",
+          "total"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "ProductImages": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "imageGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageGroup"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ProductPriceRange": {
+        "type": "object",
+        "properties": {
+          "pricebook": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "minPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxPrice": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "PricesResult": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceMax": {
+            "type": "number",
+            "format": "double"
+          },
+          "pricePerUnit": {
+            "type": "number",
+            "format": "double"
+          },
+          "pricePerUnitMax": {
+            "type": "number",
+            "format": "double"
+          },
+          "pricePerUnitUnit": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "tieredPrices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPriceTable"
+            }
+          },
+          "prices": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "priceRanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPriceRange"
+            }
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "schemas-ProductPromotion": {
+        "type": "object",
+        "properties": {
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "calloutMsg": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "promotionalPrice": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "calloutMsg",
+          "promotionId"
+        ]
+      },
+      "PromotionsResult": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "productPromotions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/schemas-ProductPromotion"
+            }
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "CategoryId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Category": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "$ref": "#/components/schemas/CategoryId"
+          },
+          "image": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "onlineSubCategoriesCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pageDescription": {
+            "type": "string"
+          },
+          "pageKeywords": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "parentCategoryId": {
+            "type": "string"
+          },
+          "parentCategoryTree": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathRecord"
+            }
+          },
+          "thumbnail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "PathRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "CategoryResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "ids": {
+        "name": "ids",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ]
+          },
+          "maxItems": 100
+        }
+      },
+      "inventoryIds": {
+        "name": "inventoryIds",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InventoryId"
+              }
+            ]
+          },
+          "maxItems": 5
+        }
+      },
+      "expand_multiId": {
+        "name": "expand",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "none",
+              "availability",
+              "bundled_products",
+              "links",
+              "promotions",
+              "options",
+              "images",
+              "prices",
+              "variations",
+              "set_products",
+              "recommendations",
+              "shipping_methods",
+              "page_meta_tags",
+              "primary_category"
+            ]
+          }
+        }
+      },
+      "allImages": {
+        "name": "allImages",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "imgTypes": {
+        "name": "imgTypes",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "perPricebook": {
+        "name": "perPricebook",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "select": {
+        "name": "select",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/Select"
+        }
+      },
+      "locale": {
+        "name": "locale",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/LocaleCode"
+        }
+      },
+      "currency": {
+        "name": "currency",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/CurrencyCode"
+        }
+      },
+      "id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ProductId"
+        }
+      },
+      "expand_singleId": {
+        "name": "expand",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "none",
+              "availability",
+              "bundled_products",
+              "links",
+              "promotions",
+              "options",
+              "images",
+              "prices",
+              "variations",
+              "set_products",
+              "recommendations",
+              "shipping_methods",
+              "page_meta_tags",
+              "primary_category"
+            ]
+          }
+        }
+      },
+      "productId": {
+        "name": "productId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ProductId"
+        }
+      },
+      "parameters-imgTypes": {
+        "name": "imgTypes",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 50
+        }
+      },
+      "parameters-allImages": {
+        "name": "allImages",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "variationAttribute": {
+        "name": "variationAttribute",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        }
+      },
+      "parameters-productId": {
+        "name": "productId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ProductId"
+        }
+      },
+      "components-parameters-productId": {
+        "name": "productId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ProductId"
+        }
+      },
+      "parameters-ids": {
+        "name": "ids",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
+          },
+          "maxItems": 50
+        }
+      },
+      "levels": {
+        "name": "levels",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "enum": [
+            0,
+            1,
+            2
+          ],
+          "minimum": 0
+        }
+      },
+      "parameters-id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/CategoryId"
+        }
+      },
+      "sfdcUsid": {
+        "name": "sfdc_usid",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "sfdcDwDnt": {
+        "name": "sfdc_dw_dnt",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "0",
+            "1"
+          ]
+        }
+      },
+      "personalized": {
+        "name": "personalized",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "none"
+          ]
+        }
+      },
+      "sfdcShopperContext": {
+        "name": "sfdc_shopper_context",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "ShopperToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-products": "scope granting read-access to product endpoints",
+              "sfcc.shopper-categories": "scope granting read-access to category endpoints"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/authorize",
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-products": "scope granting read-access to product endpoints",
+              "sfcc.shopper-categories": "scope granting read-access to category endpoints"
+            }
+          }
+        }
+      },
+      "ShopperClientContextToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token?hint=client_context",
+            "scopes": {
+              "sfcc.shopper-products": "scope granting read-access to product endpoints",
+              "sfcc.shopper-categories": "scope granting read-access to category endpoints"
+            }
+          }
+        }
+      }
+    }
+  }
+}

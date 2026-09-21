@@ -69,6 +69,8 @@ On instances where OCAPI is still enabled, these commands also work with OCAPI `
 
 List all code versions on a B2C Commerce instance.
 
+[![B2C CLI listing code versions with the active and rollback versions identified.](/cli-code-versions.png)](/cli-code-versions.png)
+
 ### Usage
 
 ```bash

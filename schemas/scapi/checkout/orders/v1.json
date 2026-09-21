@@ -1,0 +1,3589 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Orders",
+    "version": "1.5.3",
+    "x-api-type": "Admin",
+    "x-api-family": "Checkout"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/checkout/orders/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/orders": {
+      "get": {
+        "operationId": "getOrders",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "creation_date",
+              "enum": [
+                "creation_date",
+                "last_modified_date"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exportStatus",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OrderExportStatus"
+                  }
+                ]
+              },
+              "maxItems": 3
+            }
+          },
+          {
+            "name": "externalStatus",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "confirmationStatus",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "confirmed",
+                "not_confirmed"
+              ]
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OrderPaymentStatus"
+                  }
+                ]
+              },
+              "maxItems": 3
+            }
+          },
+          {
+            "name": "shippingStatus",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OrderShippingStatus"
+                  }
+                ]
+              },
+              "maxItems": 3
+            }
+          },
+          {
+            "name": "creationDateFrom",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "creationDateTo",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "lastModifiedDateFrom",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "lastModifiedDateTo",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdersResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given site ID does not reference an existing site.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders",
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createOrders",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created successfully. No content returned.\n",
+            "headers": {
+              "Location": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The passed taxTotal is not equal to the calculated taxTotal.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given shipment ID does not reference an existing shipment.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperTokenTsob": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}": {
+      "get": {
+        "operationId": "getOrder",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given site ID does not reference an existing site.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders",
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateOrder",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Order updated successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given site ID does not reference an existing site.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          },
+          {
+            "ShopperTokenTsob": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/confirmation-status": {
+      "put": {
+        "operationId": "updateOrderConfirmationStatus",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderConfirmationStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Order confirmation status updated successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given site ID does not reference an existing site.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/export-status": {
+      "put": {
+        "operationId": "updateOrderExportStatus",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderExportStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Order export status updated successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given site ID does not reference an existing site.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/external-status": {
+      "put": {
+        "operationId": "updateOrderExternalStatus",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderExternalStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Order external status updated successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given site ID does not reference an existing site.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/payment-status": {
+      "put": {
+        "operationId": "updateOrderPaymentStatus",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderPaymentStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Order payment status updated successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given site ID does not reference an existing site.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/shipping-status": {
+      "put": {
+        "operationId": "updateOrderShippingStatus",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderShippingStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Order shipping status updated successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given site ID does not reference an existing site.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/oms-status-events": {
+      "post": {
+        "operationId": "createOmsStatusEvent",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmsStatusEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "The status event was accepted and queued for forwarding to order event subscribers. No content returned.\n"
+          },
+          "400": {
+            "description": "The request body or path violates required syntax (for example, neither or both event objects present,\nor a required field/enum constraint is violated).\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Order Management (OMS) is not active for this site. The site does not have an OMS integration enabled, so\nthe status event cannot be forwarded.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/status": {
+      "put": {
+        "operationId": "updateOrderStatus",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order status updated successfully. No content returned.\n",
+            "headers": {
+              "Location": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Order status updated successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given site ID does not reference an existing site.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The failed order can't be reopened.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/payment-instruments/{paymentInstrumentId}": {
+      "patch": {
+        "operationId": "updateOrderPaymentInstrument",
+        "parameters": [
+          {
+            "name": "paymentInstrumentId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentInstrumentUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Order payment instrument updated successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given payment instrument ID does not reference an existing payment instrument.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/payment-instruments/{paymentInstrumentId}/transaction": {
+      "patch": {
+        "operationId": "updateOrderPaymentTransaction",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "paymentInstrumentId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentTransactionUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Payment instrument transaction updated successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given payment instrument ID does not reference an existing payment instrument.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/orders/{orderNo}/shipments/{shipmentId}/shipping-address": {
+      "put": {
+        "operationId": "updateOrderShippingAddress",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "shipmentId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "orderNo",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrderNo"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShippingAddressUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Shipping address created or replaced successfully. No content returned.\n"
+          },
+          "400": {
+            "description": "Request body or path violate required syntax.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given shipment ID does not reference an existing shipment.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.orders.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "OrderExportStatus": {
+        "type": "string",
+        "enum": [
+          "exported",
+          "not_exported",
+          "ready",
+          "failed"
+        ]
+      },
+      "OrderPaymentStatus": {
+        "type": "string",
+        "enum": [
+          "paid",
+          "part_paid",
+          "not_paid"
+        ]
+      },
+      "OrderShippingStatus": {
+        "type": "string",
+        "enum": [
+          "shipped",
+          "part_shipped",
+          "not_shipped"
+        ]
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "CountryCode": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z]$"
+      },
+      "Address": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "address1": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "address2": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "companyName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "countryCode": {
+            "$ref": "#/components/schemas/CountryCode"
+          },
+          "firstName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "fullName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "jobTitle": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "lastName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "postBox": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "salutation": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "secondName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "stateCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "suffix": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "suite": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "ProductId": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "ProductReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "productName": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        }
+      },
+      "BonusDiscountLineItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "bonusProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductReference"
+            }
+          },
+          "couponCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "maxBonusItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "OrderConfirmationStatus": {
+        "type": "string",
+        "enum": [
+          "confirmed",
+          "not_confirmed"
+        ]
+      },
+      "CouponItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "couponItemId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "statusCode": {
+            "type": "string",
+            "enum": [
+              "coupon_code_already_in_basket",
+              "coupon_code_already_redeemed",
+              "coupon_code_unknown",
+              "coupon_disabled",
+              "redemption_limit_exceeded",
+              "customer_redemption_limit_exceeded",
+              "timeframe_redemption_limit_exceeded",
+              "no_active_promotion",
+              "coupon_already_in_basket",
+              "no_applicable_promotion",
+              "applied",
+              "adhoc"
+            ]
+          },
+          "valid": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "pattern": "^([A-Z][A-Z][A-Z]|N/A)$"
+      },
+      "CustomerInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "customerName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "customerNo": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "guest": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GiftCertificateItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "grossPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemText": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "giftCertificateMerchantId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "giftCertificateItemId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "recipientEmail": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "recipientName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "senderName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "shipmentId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        }
+      },
+      "OrderNo": {
+        "type": "string",
+        "maxLength": 50,
+        "minLength": 1
+      },
+      "ABTestSegment": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "testId": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1
+          },
+          "segmentId": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "segmentId",
+          "testId"
+        ]
+      },
+      "Discount": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "percentage": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceBookId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percentage",
+              "fixed_price",
+              "amount",
+              "free",
+              "price_book_price",
+              "bonus",
+              "total_fixed_price",
+              "bonus_choice",
+              "percentage_off_options"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "PriceAdjustment": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "grossPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemText": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "abTestSegment": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ABTestSegment"
+              }
+            ]
+          },
+          "appliedDiscount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Discount"
+              }
+            ]
+          },
+          "campaignId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "couponCode": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "custom": {
+            "type": "boolean"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "manual": {
+            "type": "boolean"
+          },
+          "priceAdjustmentId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "promotionId"
+        ]
+      },
+      "PaymentCard": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "cardType": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "creditCardExpired": {
+            "type": "boolean"
+          },
+          "creditCardToken": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "expirationMonth": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 12,
+            "minimum": 1
+          },
+          "expirationYear": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "holder": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "issueNumber": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "maskedNumber": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "numberLastDigits": {
+            "type": "string",
+            "maxLength": 4
+          },
+          "validFromMonth": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 12,
+            "minimum": 1
+          },
+          "validFromYear": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "Status": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2,
+            "minimum": 0
+          }
+        }
+      },
+      "PaymentTransaction": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "authorizationStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Status"
+              }
+            ]
+          },
+          "transactionId": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "PaymentInstrument": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "bankRoutingNumber": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "maskedGiftCertificateCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "paymentCard": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentCard"
+              }
+            ]
+          },
+          "paymentInstrumentId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "paymentMethodId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "paymentTransaction": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentTransaction"
+              }
+            ]
+          }
+        }
+      },
+      "ProductItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "grossPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemText": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "adjustedTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "bonusDiscountLineItemId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "bonusProductLineItem": {
+            "type": "boolean"
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "bundledProductItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductItem"
+            }
+          },
+          "externalLineItemStatus": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "externalLineItemText": {
+            "type": "string"
+          },
+          "gift": {
+            "type": "boolean"
+          },
+          "giftMessage": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "inventoryId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "itemId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "minOrderQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "optionItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionItem"
+            }
+          },
+          "position": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceAdjustment"
+            }
+          },
+          "priceAfterItemDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceAfterOrderDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "productListItem": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductListItemReference"
+              }
+            ]
+          },
+          "productName": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "shipmentId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "shippingItemId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "stepQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxItem"
+            },
+            "maxItems": 10
+          },
+          "taxRate": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "productId",
+          "shipmentId",
+          "taxRate"
+        ]
+      },
+      "OptionItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "grossPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "gift": {
+            "type": "boolean"
+          },
+          "itemText": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "optionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "optionValueId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "priceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceAdjustment"
+            }
+          },
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "ProductListReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "wish_list",
+              "gift_registry",
+              "shopping_list",
+              "custom_1",
+              "custom_2",
+              "custom_3"
+            ]
+          }
+        }
+      },
+      "ProductListItemReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "product": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductReference"
+              }
+            ]
+          },
+          "productList": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductListReference"
+              }
+            ]
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "purchasedQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "product",
+              "gift_certificate"
+            ]
+          }
+        },
+        "required": [
+          "purchasedQuantity"
+        ]
+      },
+      "TaxItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "rate": {
+            "type": "number",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "id",
+          "rate"
+        ]
+      },
+      "ShippingMethodReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "Shipment": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "adjustedMerchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "adjustedShippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "gift": {
+            "type": "boolean"
+          },
+          "giftMessage": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "merchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "productSubTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "productTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shipmentId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "shipmentNo": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "shipmentTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shippingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Address"
+              }
+            ]
+          },
+          "shippingMethod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ShippingMethodReference"
+              }
+            ]
+          },
+          "shippingStatus": {
+            "type": "string",
+            "enum": [
+              "not_shipped",
+              "shipped"
+            ]
+          },
+          "shippingTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "trackingNumber": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "shipmentId",
+          "shipmentNo"
+        ]
+      },
+      "ShippingItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "grossPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemText": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "adjustedTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "priceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceAdjustment"
+            }
+          },
+          "priceAfterItemDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "shipmentId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "taxRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "type": {
+            "type": "string",
+            "default": "fixed_price",
+            "enum": [
+              "fixed_price",
+              "surcharge"
+            ]
+          }
+        },
+        "required": [
+          "taxRate"
+        ]
+      },
+      "OrderStatus": {
+        "type": "string",
+        "enum": [
+          "created",
+          "new",
+          "completed",
+          "cancelled",
+          "failed"
+        ]
+      },
+      "Order": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "adjustedMerchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "adjustedShippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "affiliatePartnerId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "affiliatePartnerName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "billingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Address"
+              }
+            ]
+          },
+          "bonusDiscountLineItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BonusDiscountLineItem"
+            }
+          },
+          "businessType": {
+            "type": "string",
+            "enum": [
+              "b2c",
+              "b2b"
+            ]
+          },
+          "cancelCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "cancelDescription": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "channelType": {
+            "type": "string",
+            "enum": [
+              "storefront",
+              "callcenter",
+              "marketplace",
+              "dss",
+              "store",
+              "pinterest",
+              "twitter",
+              "facebookads",
+              "subscriptions",
+              "onlinereservation",
+              "customerservicecenter",
+              "instagramcommerce",
+              "tiktok",
+              "snapchat",
+              "google",
+              "whatsapp",
+              "youtube"
+            ]
+          },
+          "confirmationStatus": {
+            "$ref": "#/components/schemas/OrderConfirmationStatus"
+          },
+          "couponItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponItem"
+            }
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customerLocale": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "customerInfo": {
+            "$ref": "#/components/schemas/CustomerInfo"
+          },
+          "customerOrderReference": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "exportStatus": {
+            "$ref": "#/components/schemas/OrderExportStatus"
+          },
+          "externalOrderNo": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "externalOrderStatus": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "externalOrderText": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "giftCertificateItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GiftCertificateItem"
+            }
+          },
+          "globalPartyId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "invoiceNo": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "merchandizeTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "orderNo": {
+            "$ref": "#/components/schemas/OrderNo"
+          },
+          "orderPriceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceAdjustment"
+            }
+          },
+          "orderTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "paymentInstruments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentInstrument"
+            }
+          },
+          "paymentStatus": {
+            "$ref": "#/components/schemas/OrderPaymentStatus"
+          },
+          "placeDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "productItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductItem"
+            }
+          },
+          "productSubTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "productTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "remoteHost": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "shipments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Shipment"
+            }
+          },
+          "shippingItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShippingItem"
+            }
+          },
+          "shippingStatus": {
+            "$ref": "#/components/schemas/OrderShippingStatus"
+          },
+          "shippingTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "shippingTotalTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          },
+          "sourceCode": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "sourceCodeGroupId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "taxTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxation": {
+            "type": "string",
+            "enum": [
+              "gross",
+              "net"
+            ]
+          }
+        },
+        "required": [
+          "orderNo"
+        ]
+      },
+      "OrdersResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "CreateOrderPriceAdjustment": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "grossPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemText": {
+            "type": "string"
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "reasonCode": {
+            "type": "string"
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "grossPrice",
+          "netPrice",
+          "tax"
+        ]
+      },
+      "CreateOrderPaymentTransaction": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "authorizationStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Status"
+              }
+            ]
+          },
+          "transactionId": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "amount",
+          "transactionId"
+        ]
+      },
+      "CreateOrderPaymentInstrument": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "paymentMethodId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "paymentTransaction": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreateOrderPaymentTransaction"
+              }
+            ]
+          }
+        },
+        "required": [
+          "paymentMethodId"
+        ]
+      },
+      "CreateOrderOptionItem": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "grossPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemText": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "optionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "optionValueId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "priceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderPriceAdjustment"
+            },
+            "maxItems": 20
+          },
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          }
+        },
+        "required": [
+          "basePrice",
+          "grossPrice",
+          "netPrice",
+          "optionId",
+          "optionValueId",
+          "productId",
+          "tax"
+        ]
+      },
+      "CreateOrderProductItems": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "basePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "grossPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "itemText": {
+            "type": "string"
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "optionItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderOptionItem"
+            },
+            "maxItems": 10
+          },
+          "priceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderPriceAdjustment"
+            },
+            "maxItems": 20
+          },
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "productName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "shipmentId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxBasis": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxItem"
+            },
+            "maxItems": 10
+          },
+          "taxRate": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "basePrice",
+          "grossPrice",
+          "netPrice",
+          "productId",
+          "quantity",
+          "shipmentId",
+          "tax"
+        ]
+      },
+      "CreateOrderShipment": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "shipmentId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "shippingMethod": {
+            "type": "string"
+          },
+          "shippingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Address"
+              }
+            ]
+          },
+          "shippingTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxTotal": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "shipmentId",
+          "shippingAddress",
+          "shippingMethod",
+          "shippingTotal",
+          "taxTotal"
+        ]
+      },
+      "CreateOrderRequest": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "billingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Address"
+              }
+            ]
+          },
+          "businessType": {
+            "type": "string",
+            "enum": [
+              "b2c",
+              "b2b"
+            ]
+          },
+          "channelType": {
+            "type": "string",
+            "enum": [
+              "storefront",
+              "callcenter",
+              "marketplace",
+              "dss",
+              "store",
+              "pinterest",
+              "twitter",
+              "facebookads",
+              "subscriptions",
+              "onlinereservation",
+              "customerservicecenter",
+              "instagramcommerce",
+              "tiktok",
+              "snapchat",
+              "google",
+              "whatsapp",
+              "youtube"
+            ]
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "customerLocale": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "orderNo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderNo"
+              }
+            ]
+          },
+          "orderPriceAdjustments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderPriceAdjustment"
+            },
+            "maxItems": 20
+          },
+          "orderTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "paymentInstruments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderPaymentInstrument"
+            },
+            "maxItems": 20
+          },
+          "paymentStatus": {
+            "type": "string",
+            "enum": [
+              "paid",
+              "not_paid"
+            ]
+          },
+          "productItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderProductItems"
+            },
+            "maxItems": 200,
+            "minItems": 1
+          },
+          "shipments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderShipment"
+            },
+            "maxItems": 10,
+            "minItems": 1
+          },
+          "taxTotal": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "billingAddress",
+          "currency",
+          "orderTotal",
+          "paymentInstruments",
+          "productItems",
+          "shipments",
+          "taxTotal"
+        ]
+      },
+      "OrderUpdateRequest": {
+        "type": "object",
+        "additionalProperties": {}
+      },
+      "OrderConfirmationStatusUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/OrderConfirmationStatus"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "OrderExportStatusUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/OrderExportStatus"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "OrderExternalStatusUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "OrderPaymentStatusUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/OrderPaymentStatus"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "OrderShippingStatusUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/OrderShippingStatus"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "OmsLineItemReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "quantity"
+        ]
+      },
+      "OmsFulfillmentEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "lineItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmsLineItemReference"
+            },
+            "maxItems": 200,
+            "minItems": 1
+          },
+          "trackingNumber": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "trackingUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "minLength": 1
+          },
+          "carrier": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "lineItems",
+          "occurredAt",
+          "type"
+        ]
+      },
+      "OmsAdjustmentLineItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "quantity": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "quantity"
+        ]
+      },
+      "OmsAdjustmentTotal": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "amount": {
+            "type": "integer"
+          },
+          "displayText": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "amount",
+          "type"
+        ]
+      },
+      "OmsAdjustment": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "failed"
+            ]
+          },
+          "lineItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmsAdjustmentLineItem"
+            },
+            "maxItems": 200
+          },
+          "totals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmsAdjustmentTotal"
+            },
+            "maxItems": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "occurredAt",
+          "status",
+          "type"
+        ]
+      },
+      "OmsStatusEventRequest": {
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "fulfillmentEvent"
+            ]
+          },
+          {
+            "required": [
+              "adjustment"
+            ]
+          }
+        ],
+        "properties": {
+          "omsOrderId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "fulfillmentEvent": {
+            "$ref": "#/components/schemas/OmsFulfillmentEvent"
+          },
+          "adjustment": {
+            "$ref": "#/components/schemas/OmsAdjustment"
+          }
+        }
+      },
+      "OrderStatusUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "new",
+              "completed",
+              "cancelled",
+              "failed",
+              "failed_with_reopen"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "PaymentInstrumentUpdateRequest": {
+        "type": "object",
+        "additionalProperties": {}
+      },
+      "PaymentTransactionUpdateRequest": {
+        "type": "object",
+        "additionalProperties": {}
+      },
+      "ShippingAddressUpdateRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Address"
+          }
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "sortBy": {
+        "name": "sortBy",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "default": "creation_date",
+          "enum": [
+            "creation_date",
+            "last_modified_date"
+          ]
+        }
+      },
+      "sortOrder": {
+        "name": "sortOrder",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "default": "desc",
+          "enum": [
+            "asc",
+            "desc"
+          ]
+        }
+      },
+      "status": {
+        "name": "status",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "exportStatus": {
+        "name": "exportStatus",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderExportStatus"
+              }
+            ]
+          },
+          "maxItems": 3
+        }
+      },
+      "externalStatus": {
+        "name": "externalStatus",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "confirmationStatus": {
+        "name": "confirmationStatus",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "not_confirmed"
+          ]
+        }
+      },
+      "paymentStatus": {
+        "name": "paymentStatus",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderPaymentStatus"
+              }
+            ]
+          },
+          "maxItems": 3
+        }
+      },
+      "shippingStatus": {
+        "name": "shippingStatus",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderShippingStatus"
+              }
+            ]
+          },
+          "maxItems": 3
+        }
+      },
+      "creationDateFrom": {
+        "name": "creationDateFrom",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "creationDateTo": {
+        "name": "creationDateTo",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "lastModifiedDateFrom": {
+        "name": "lastModifiedDateFrom",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "lastModifiedDateTo": {
+        "name": "lastModifiedDateTo",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "orderNo": {
+        "name": "orderNo",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrderNo"
+        }
+      },
+      "paymentInstrumentId": {
+        "name": "paymentInstrumentId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "shipmentId": {
+        "name": "shipmentId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.orders": "Scope granting read access to order endpoints",
+              "sfcc.orders.rw": "Scope granting read and write access to order endpoints"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.orders": "Scope granting read access to order endpoints",
+              "sfcc.orders.rw": "Scope granting read and write access to order endpoints"
+            }
+          }
+        }
+      },
+      "ShopperTokenTsob": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/trusted-system/token",
+            "scopes": {
+              "sfcc.orders": "Scope granting read access to order endpoints",
+              "sfcc.orders.rw": "Scope granting read and write access to order endpoints"
+            }
+          }
+        }
+      }
+    }
+  }
+}

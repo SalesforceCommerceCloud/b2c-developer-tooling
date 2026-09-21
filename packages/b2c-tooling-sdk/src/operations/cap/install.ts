@@ -120,7 +120,7 @@ export async function commerceAppInstall(
   try {
     finalExecution = await runSystemJob(instance, {
       jobId: INSTALL_JOB_ID,
-      ocapiBody: {
+      body: {
         app_name: manifest.id,
         app_source: 'WebDAV',
         app_domain: manifest.domain,

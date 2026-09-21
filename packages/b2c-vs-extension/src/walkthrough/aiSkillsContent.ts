@@ -50,8 +50,7 @@ export const AI_SKILL_TARGETS: AiSkillsTarget[] = [
     projectSkillsDir: path.join('.claude', 'skills'),
     marketplaceCommand:
       'claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling && claude plugin install b2c-cli',
-    mcpCommand:
-      'claude mcp add --transport stdio --scope project b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools',
+    mcpCommand: 'claude mcp add --transport stdio --scope project b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest',
   },
   {
     id: 'cursor',
@@ -61,7 +60,7 @@ export const AI_SKILL_TARGETS: AiSkillsTarget[] = [
     globalSkillsDir: path.join(home, '.cursor', 'skills'),
     projectSkillsDir: path.join('.cursor', 'skills'),
     mcpCommand:
-      'mkdir -p .cursor && printf \'%s\' \'{"mcpServers":{"b2c-dx-mcp":{"command":"npx","args":["-y","@salesforce/b2c-dx-mcp@latest","--allow-non-ga-tools"]}}}\' > .cursor/mcp.json',
+      'mkdir -p .cursor && printf \'%s\' \'{"mcpServers":{"b2c-dx-mcp":{"command":"npx","args":["-y","@salesforce/b2c-dx-mcp@latest"]}}}\' > .cursor/mcp.json',
   },
   {
     id: 'windsurf',
@@ -79,7 +78,7 @@ export const AI_SKILL_TARGETS: AiSkillsTarget[] = [
     globalSkillsDir: path.join(home, '.copilot', 'skills'),
     projectSkillsDir: path.join('.github', 'skills'),
     mcpCommand:
-      'mkdir -p .vscode && printf \'%s\' \'{"servers":{"b2c-dx-mcp":{"type":"stdio","command":"npx","args":["-y","@salesforce/b2c-dx-mcp@latest","--allow-non-ga-tools"]}}}\' > .vscode/mcp.json',
+      'mkdir -p .vscode && printf \'%s\' \'{"servers":{"b2c-dx-mcp":{"type":"stdio","command":"npx","args":["-y","@salesforce/b2c-dx-mcp@latest"]}}}\' > .vscode/mcp.json',
   },
   {
     id: 'codex',

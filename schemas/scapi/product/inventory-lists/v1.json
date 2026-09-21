@@ -1,0 +1,866 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Inventory Lists",
+    "version": "1.1.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Product"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/product/inventory-lists/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/inventory-lists/{inventoryListId}/product-inventory-records/{productId}": {
+      "get": {
+        "operationId": "getProductInventoryRecord",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product inventory record retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInventoryRecord"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified product inventory record or inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists",
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "createOrUpdateProductInventoryRecord",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInventoryRecord"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Product inventory record updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInventoryRecord"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Product inventory record created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInventoryRecord"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteProductInventoryRecord",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Product inventory record deleted successfully. No content returned."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified product inventory record or inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateProductInventoryRecord",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInventoryRecord"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Product inventory record updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInventoryRecord"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified product inventory record or inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/inventory-lists/{inventoryListId}": {
+      "get": {
+        "operationId": "getInventoryList",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inventory list retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryList"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists",
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "createOrUpdateInventoryList",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryList"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Inventory list updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryList"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Inventory list created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryList"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteInventoryList",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Inventory list deleted successfully. No content returned."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateInventoryList",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryList"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Inventory list updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryList"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "ProductId": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "Select": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[(].*[)]$"
+      },
+      "ProductInventoryRecordAllocation": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "resetDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PreorderBackorderHandling": {
+        "type": "string",
+        "enum": [
+          "none",
+          "preorder",
+          "backorder"
+        ]
+      },
+      "ProductInventoryRecord": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "productName": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "inventoryListId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "perpetualFlag": {
+            "type": "boolean"
+          },
+          "allocation": {
+            "$ref": "#/components/schemas/ProductInventoryRecordAllocation"
+          },
+          "inStockDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ats": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "stockLevel": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "quantityOnOrder": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "inventoryTurnover": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "preOrderBackOrderHandling": {
+            "$ref": "#/components/schemas/PreorderBackorderHandling"
+          },
+          "preOrderBackOrderAllocation": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "InventoryList": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "defaultInStock": {
+            "type": "boolean"
+          },
+          "useBundleInventoryOnly": {
+            "type": "boolean"
+          },
+          "onOrderInventoryEnabled": {
+            "type": "boolean"
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "assignedSites": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "inventoryListId": {
+        "name": "inventoryListId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      },
+      "productId": {
+        "name": "productId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ProductId"
+        }
+      },
+      "select": {
+        "name": "select",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/Select"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dw/oauth2/access_token",
+            "scopes": {
+              "sfcc.inventory-lists": "",
+              "sfcc.inventory-lists.rw": ""
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-sdk-classname": "InventoryListsV1"
+}

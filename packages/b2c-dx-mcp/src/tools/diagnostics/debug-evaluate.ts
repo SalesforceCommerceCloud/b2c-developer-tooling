@@ -30,15 +30,17 @@ export function createDebugEvaluateTool(
   return createToolAdapter<EvaluateInput, EvaluateOutput>(
     {
       name: 'debug_evaluate',
+      effect: 'write',
+      idempotent: false,
+      openWorld: true,
       description:
-        'Evaluate a JavaScript expression in the context of a halted thread and stack frame. ' +
-        'WARNING: Expressions may have side effects (modify variables, call functions). Use with care.',
+        'Evaluate JavaScript in a halted thread/frame. Expressions can call functions and change remote state.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        session_id: z.string().describe('Session ID returned by debug_start_session.'),
-        thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop or debug_list_sessions.'),
-        frame_index: z.number().int().min(0).optional().describe('Stack frame index (0 = top frame). Defaults to 0.'),
-        expression: z.string().describe('JavaScript expression to evaluate in the frame context.'),
+        session_id: z.string(),
+        thread_id: z.number().int(),
+        frame_index: z.number().int().min(0).optional().describe('Default: 0 (top frame).'),
+        expression: z.string().describe('JavaScript expression.'),
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);

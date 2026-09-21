@@ -31,6 +31,8 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 
 List sites on a B2C Commerce instance.
 
+[![B2C CLI listing storefront site IDs and their online status.](/terminal/sites-list.png)](/terminal/sites-list.png)
+
 ### Usage
 
 ```bash

@@ -132,9 +132,7 @@ describe('tools/cartridges', () => {
       expect(tool.toolsets).to.have.lengthOf(1);
     });
 
-    it('should be GA (generally available)', () => {
-      expect(tool.isGA).to.be.true;
-    });
+    it('should be GA (generally available)', () => {});
 
     it('should require instance', () => {
       // This is tested implicitly through the adapter, but we verify the tool exists

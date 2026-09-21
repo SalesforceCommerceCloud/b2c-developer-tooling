@@ -111,6 +111,8 @@ Use `--no-normalize` to disable this feature, or `--cartridge-path` to specify a
 
 List log files available on a B2C Commerce instance.
 
+[![B2C CLI filtering custom error logs and showing their sizes and modification times.](/terminal/log-files.png)](/terminal/log-files.png)
+
 ### Usage
 
 ```bash

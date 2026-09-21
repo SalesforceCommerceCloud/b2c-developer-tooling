@@ -90,7 +90,9 @@ export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
     if (!environment) {
       this.error(
@@ -101,14 +103,12 @@ export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
     const {limit, offset} = this.flags;
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.history.fetching', 'Fetching deployment history for {{project}}/{{environment}}...', {
-          project,
-          environment,
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.history.fetching', 'Fetching deployment history for {{project}}/{{environment}}...', {
+        project,
+        environment,
+      }),
+    );
 
     const result = await this.operations.listMrtDeployments({
       preference,

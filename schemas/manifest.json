@@ -1,0 +1,576 @@
+{
+  "formatVersion": 1,
+  "customProperties": false,
+  "schemas": [
+    {
+      "id": "cdn/zones/v1",
+      "apiFamily": "cdn",
+      "apiName": "zones",
+      "apiVersion": "v1",
+      "schemaVersion": "1.3.0",
+      "status": "current",
+      "file": "scapi/cdn/zones/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/cdn/zones/v1"
+    },
+    {
+      "id": "checkout/orders/v1",
+      "apiFamily": "checkout",
+      "apiName": "orders",
+      "apiVersion": "v1",
+      "schemaVersion": "1.5.3",
+      "status": "current",
+      "file": "scapi/checkout/orders/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/checkout/orders/v1"
+    },
+    {
+      "id": "checkout/shopper-baskets/v1",
+      "apiFamily": "checkout",
+      "apiName": "shopper-baskets",
+      "apiVersion": "v1",
+      "schemaVersion": "1.12.0",
+      "status": "deprecated",
+      "file": "scapi/checkout/shopper-baskets/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/checkout/shopper-baskets/v1"
+    },
+    {
+      "id": "checkout/shopper-baskets/v2",
+      "apiFamily": "checkout",
+      "apiName": "shopper-baskets",
+      "apiVersion": "v2",
+      "schemaVersion": "2.12.0",
+      "status": "current",
+      "file": "scapi/checkout/shopper-baskets/v2.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/checkout/shopper-baskets/v2"
+    },
+    {
+      "id": "checkout/shopper-orders/v1",
+      "apiFamily": "checkout",
+      "apiName": "shopper-orders",
+      "apiVersion": "v1",
+      "schemaVersion": "1.20.1",
+      "status": "current",
+      "file": "scapi/checkout/shopper-orders/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/checkout/shopper-orders/v1"
+    },
+    {
+      "id": "checkout/shopper-payments/v1",
+      "apiFamily": "checkout",
+      "apiName": "shopper-payments",
+      "apiVersion": "v1",
+      "schemaVersion": "1.6.0",
+      "status": "current",
+      "file": "scapi/checkout/shopper-payments/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/checkout/shopper-payments/v1"
+    },
+    {
+      "id": "configuration/cors/v1",
+      "apiFamily": "configuration",
+      "apiName": "cors",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.0",
+      "status": "current",
+      "file": "scapi/configuration/cors/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/configuration/cors/v1"
+    },
+    {
+      "id": "configuration/preferences/v1",
+      "apiFamily": "configuration",
+      "apiName": "preferences",
+      "apiVersion": "v1",
+      "schemaVersion": "1.2.2",
+      "status": "current",
+      "file": "scapi/configuration/preferences/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/configuration/preferences/v1"
+    },
+    {
+      "id": "configuration/shopper-configurations/v1",
+      "apiFamily": "configuration",
+      "apiName": "shopper-configurations",
+      "apiVersion": "v1",
+      "schemaVersion": "1.4.0",
+      "status": "current",
+      "file": "scapi/configuration/shopper-configurations/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/configuration/shopper-configurations/v1"
+    },
+    {
+      "id": "configuration/timeouts/v1",
+      "apiFamily": "configuration",
+      "apiName": "timeouts",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.6",
+      "status": "current",
+      "file": "scapi/configuration/timeouts/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/configuration/timeouts/v1"
+    },
+    {
+      "id": "custom-object/custom-objects/v1",
+      "apiFamily": "custom-object",
+      "apiName": "custom-objects",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.0",
+      "status": "current",
+      "file": "scapi/custom-object/custom-objects/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/custom-object/custom-objects/v1"
+    },
+    {
+      "id": "custom-object/shopper-custom-objects/v1",
+      "apiFamily": "custom-object",
+      "apiName": "shopper-custom-objects",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.0",
+      "status": "current",
+      "file": "scapi/custom-object/shopper-custom-objects/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/custom-object/shopper-custom-objects/v1"
+    },
+    {
+      "id": "customer/customers/v1",
+      "apiFamily": "customer",
+      "apiName": "customers",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.3",
+      "status": "current",
+      "file": "scapi/customer/customers/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/customer/customers/v1"
+    },
+    {
+      "id": "customer/shopper-customers/v1",
+      "apiFamily": "customer",
+      "apiName": "shopper-customers",
+      "apiVersion": "v1",
+      "schemaVersion": "1.9.0",
+      "status": "current",
+      "file": "scapi/customer/shopper-customers/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/customer/shopper-customers/v1"
+    },
+    {
+      "id": "dx/custom-apis/v1",
+      "apiFamily": "dx",
+      "apiName": "custom-apis",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.2",
+      "status": "current",
+      "file": "scapi/dx/custom-apis/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/dx/custom-apis/v1"
+    },
+    {
+      "id": "dx/object-definitions/v1",
+      "apiFamily": "dx",
+      "apiName": "object-definitions",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.2",
+      "status": "current",
+      "file": "scapi/dx/object-definitions/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/dx/object-definitions/v1"
+    },
+    {
+      "id": "dx/scapi-schemas/v1",
+      "apiFamily": "dx",
+      "apiName": "scapi-schemas",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.2",
+      "status": "current",
+      "file": "scapi/dx/scapi-schemas/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/dx/scapi-schemas/v1"
+    },
+    {
+      "id": "dx/scripts/v1",
+      "apiFamily": "dx",
+      "apiName": "scripts",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.0",
+      "status": "current",
+      "file": "scapi/dx/scripts/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/dx/scripts/v1"
+    },
+    {
+      "id": "experience/experiences/v1",
+      "apiFamily": "experience",
+      "apiName": "experiences",
+      "apiVersion": "v1",
+      "schemaVersion": "1.2.0",
+      "status": "current",
+      "file": "scapi/experience/experiences/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/experience/experiences/v1"
+    },
+    {
+      "id": "experience/shopper-experience/v1",
+      "apiFamily": "experience",
+      "apiName": "shopper-experience",
+      "apiVersion": "v1",
+      "schemaVersion": "1.7.0",
+      "status": "current",
+      "file": "scapi/experience/shopper-experience/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/experience/shopper-experience/v1"
+    },
+    {
+      "id": "intelligence/analytics/v1",
+      "apiFamily": "intelligence",
+      "apiName": "analytics",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.0",
+      "status": "current",
+      "file": "scapi/intelligence/analytics/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/intelligence/analytics/v1"
+    },
+    {
+      "id": "inventory/availability/v1",
+      "apiFamily": "inventory",
+      "apiName": "availability",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.31",
+      "status": "current",
+      "file": "scapi/inventory/availability/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/inventory/availability/v1"
+    },
+    {
+      "id": "inventory/impex/v1",
+      "apiFamily": "inventory",
+      "apiName": "impex",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.30",
+      "status": "current",
+      "file": "scapi/inventory/impex/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/inventory/impex/v1"
+    },
+    {
+      "id": "inventory/reservation/v1",
+      "apiFamily": "inventory",
+      "apiName": "reservation",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.23",
+      "status": "current",
+      "file": "scapi/inventory/reservation/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/inventory/reservation/v1"
+    },
+    {
+      "id": "merchant/roles/v1",
+      "apiFamily": "merchant",
+      "apiName": "roles",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.0",
+      "status": "current",
+      "file": "scapi/merchant/roles/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/merchant/roles/v1"
+    },
+    {
+      "id": "merchant/users/v1",
+      "apiFamily": "merchant",
+      "apiName": "users",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.0",
+      "status": "current",
+      "file": "scapi/merchant/users/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/merchant/users/v1"
+    },
+    {
+      "id": "observability/metrics/v1",
+      "apiFamily": "observability",
+      "apiName": "metrics",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.0",
+      "status": "current",
+      "file": "scapi/observability/metrics/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/observability/metrics/v1"
+    },
+    {
+      "id": "operation/jobs/v1",
+      "apiFamily": "operation",
+      "apiName": "jobs",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.0",
+      "status": "current",
+      "file": "scapi/operation/jobs/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/operation/jobs/v1"
+    },
+    {
+      "id": "operation/replications/v1",
+      "apiFamily": "operation",
+      "apiName": "replications",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.7",
+      "status": "current",
+      "file": "scapi/operation/replications/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/operation/replications/v1"
+    },
+    {
+      "id": "pricing/assignments/v1",
+      "apiFamily": "pricing",
+      "apiName": "assignments",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.38",
+      "status": "current",
+      "file": "scapi/pricing/assignments/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/pricing/assignments/v1"
+    },
+    {
+      "id": "pricing/campaigns/v1",
+      "apiFamily": "pricing",
+      "apiName": "campaigns",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.0",
+      "status": "current",
+      "file": "scapi/pricing/campaigns/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/pricing/campaigns/v1"
+    },
+    {
+      "id": "pricing/coupons/v1",
+      "apiFamily": "pricing",
+      "apiName": "coupons",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.43",
+      "status": "current",
+      "file": "scapi/pricing/coupons/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/pricing/coupons/v1"
+    },
+    {
+      "id": "pricing/gift-certificates/v1",
+      "apiFamily": "pricing",
+      "apiName": "gift-certificates",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.42",
+      "status": "current",
+      "file": "scapi/pricing/gift-certificates/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/pricing/gift-certificates/v1"
+    },
+    {
+      "id": "pricing/promotions/v1",
+      "apiFamily": "pricing",
+      "apiName": "promotions",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.36",
+      "status": "current",
+      "file": "scapi/pricing/promotions/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/pricing/promotions/v1"
+    },
+    {
+      "id": "pricing/shopper-gift-certificates/v1",
+      "apiFamily": "pricing",
+      "apiName": "shopper-gift-certificates",
+      "apiVersion": "v1",
+      "schemaVersion": "1.3.0",
+      "status": "current",
+      "file": "scapi/pricing/shopper-gift-certificates/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/pricing/shopper-gift-certificates/v1"
+    },
+    {
+      "id": "pricing/shopper-promotions/v1",
+      "apiFamily": "pricing",
+      "apiName": "shopper-promotions",
+      "apiVersion": "v1",
+      "schemaVersion": "1.4.0",
+      "status": "current",
+      "file": "scapi/pricing/shopper-promotions/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/pricing/shopper-promotions/v1"
+    },
+    {
+      "id": "pricing/source-code-groups/v1",
+      "apiFamily": "pricing",
+      "apiName": "source-code-groups",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.40",
+      "status": "current",
+      "file": "scapi/pricing/source-code-groups/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/pricing/source-code-groups/v1"
+    },
+    {
+      "id": "product/catalogs/v1",
+      "apiFamily": "product",
+      "apiName": "catalogs",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.46",
+      "status": "current",
+      "file": "scapi/product/catalogs/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/catalogs/v1"
+    },
+    {
+      "id": "product/inventory-lists/v1",
+      "apiFamily": "product",
+      "apiName": "inventory-lists",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.0",
+      "status": "current",
+      "file": "scapi/product/inventory-lists/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/inventory-lists/v1"
+    },
+    {
+      "id": "product/price-books/v1",
+      "apiFamily": "product",
+      "apiName": "price-books",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.2",
+      "status": "current",
+      "file": "scapi/product/price-books/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/price-books/v1"
+    },
+    {
+      "id": "product/products/v1",
+      "apiFamily": "product",
+      "apiName": "products",
+      "apiVersion": "v1",
+      "schemaVersion": "1.2.0",
+      "status": "current",
+      "file": "scapi/product/products/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/products/v1"
+    },
+    {
+      "id": "product/shopper-availability/v1",
+      "apiFamily": "product",
+      "apiName": "shopper-availability",
+      "apiVersion": "v1",
+      "schemaVersion": "1.4.0",
+      "status": "current",
+      "file": "scapi/product/shopper-availability/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/shopper-availability/v1"
+    },
+    {
+      "id": "product/shopper-delivery-estimates/v1",
+      "apiFamily": "product",
+      "apiName": "shopper-delivery-estimates",
+      "apiVersion": "v1",
+      "schemaVersion": "1.2.0",
+      "status": "current",
+      "file": "scapi/product/shopper-delivery-estimates/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/shopper-delivery-estimates/v1"
+    },
+    {
+      "id": "product/shopper-products/v1",
+      "apiFamily": "product",
+      "apiName": "shopper-products",
+      "apiVersion": "v1",
+      "schemaVersion": "1.12.0",
+      "status": "current",
+      "file": "scapi/product/shopper-products/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/shopper-products/v1"
+    },
+    {
+      "id": "search/shopper-search/v1",
+      "apiFamily": "search",
+      "apiName": "shopper-search",
+      "apiVersion": "v1",
+      "schemaVersion": "1.14.0",
+      "status": "current",
+      "file": "scapi/search/shopper-search/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/search/shopper-search/v1"
+    },
+    {
+      "id": "shopper/auth-admin/v1",
+      "apiFamily": "shopper",
+      "apiName": "auth-admin",
+      "apiVersion": "v1",
+      "schemaVersion": "1.18.0",
+      "status": "current",
+      "file": "scapi/shopper/auth-admin/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/shopper/auth-admin/v1"
+    },
+    {
+      "id": "shopper/auth/v1",
+      "apiFamily": "shopper",
+      "apiName": "auth",
+      "apiVersion": "v1",
+      "schemaVersion": "1.50.0",
+      "status": "current",
+      "file": "scapi/shopper/auth/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/shopper/auth/v1"
+    },
+    {
+      "id": "shopper/consents/v1",
+      "apiFamily": "shopper",
+      "apiName": "consents",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.4",
+      "status": "current",
+      "file": "scapi/shopper/consents/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/shopper/consents/v1"
+    },
+    {
+      "id": "shopper/shopper-agents/v1",
+      "apiFamily": "shopper",
+      "apiName": "shopper-agents",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.4",
+      "status": "current",
+      "file": "scapi/shopper/shopper-agents/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/shopper/shopper-agents/v1"
+    },
+    {
+      "id": "shopper/shopper-consents/v1",
+      "apiFamily": "shopper",
+      "apiName": "shopper-consents",
+      "apiVersion": "v1",
+      "schemaVersion": "1.2.0",
+      "status": "current",
+      "file": "scapi/shopper/shopper-consents/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/shopper/shopper-consents/v1"
+    },
+    {
+      "id": "shopper/shopper-context/v1",
+      "apiFamily": "shopper",
+      "apiName": "shopper-context",
+      "apiVersion": "v1",
+      "schemaVersion": "1.1.3",
+      "status": "current",
+      "file": "scapi/shopper/shopper-context/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/shopper/shopper-context/v1"
+    },
+    {
+      "id": "site/seo/v1",
+      "apiFamily": "site",
+      "apiName": "seo",
+      "apiVersion": "v1",
+      "schemaVersion": "1.0.11",
+      "status": "current",
+      "file": "scapi/site/seo/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/site/seo/v1"
+    },
+    {
+      "id": "site/shopper-seo/v1",
+      "apiFamily": "site",
+      "apiName": "shopper-seo",
+      "apiVersion": "v1",
+      "schemaVersion": "1.3.0",
+      "status": "current",
+      "file": "scapi/site/shopper-seo/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/site/shopper-seo/v1"
+    },
+    {
+      "id": "site/sites/v1",
+      "apiFamily": "site",
+      "apiName": "sites",
+      "apiVersion": "v1",
+      "schemaVersion": "1.3.0",
+      "status": "current",
+      "file": "scapi/site/sites/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/site/sites/v1"
+    },
+    {
+      "id": "store/shopper-stores/v1",
+      "apiFamily": "store",
+      "apiName": "shopper-stores",
+      "apiVersion": "v1",
+      "schemaVersion": "1.4.0",
+      "status": "current",
+      "file": "scapi/store/shopper-stores/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/store/shopper-stores/v1"
+    },
+    {
+      "id": "store/store-redirect-mappings/v1",
+      "apiFamily": "store",
+      "apiName": "store-redirect-mappings",
+      "apiVersion": "v1",
+      "schemaVersion": "1.2.0",
+      "status": "current",
+      "file": "scapi/store/store-redirect-mappings/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/store/store-redirect-mappings/v1"
+    },
+    {
+      "id": "store/stores/v1",
+      "apiFamily": "store",
+      "apiName": "stores",
+      "apiVersion": "v1",
+      "schemaVersion": "1.2.0",
+      "status": "current",
+      "file": "scapi/store/stores/v1.json",
+      "source": "https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/store/stores/v1"
+    }
+  ]
+}

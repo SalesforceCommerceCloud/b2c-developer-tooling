@@ -14,18 +14,18 @@ Use the `b2c am` commands to manage Account Manager resources: API clients, user
 Account Manager commands work out of the box with no configuration. The CLI uses a built-in public client and opens a browser for login.
 
 - **Zero-config (browser login):** Default. Just run the commands -- the CLI opens a browser for login.
-- **Client credentials:** For CI/CD and automation. The CLI auto-discovers `clientId`/`clientSecret` from `SFCC_*` env vars, `dw.json` (in the current or a parent directory), `package.json`, or configuration plugins — **passing `--client-id`/`--client-secret` flags is usually unnecessary**.
+- **Client credentials:** For CI/CD and automation. The CLI auto-discovers `clientId`/`clientSecret` from `SFCC_*` env vars (including project `.env`), the selected project-local or shared `dw.json`, or configuration plugins — **passing `--client-id`/`--client-secret` flags is usually unnecessary**.
 - **Force browser login (`--user-auth`):** When client credentials are configured but you need browser-based login (required for org and client management).
 
 > Run `b2c setup inspect` to confirm which credentials the CLI sees and where they came from. For precedence and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ### Role Requirements
 
-| Operations | Client Credentials (roles on API client) | User Auth (roles on user account) |
-|---|---|---|
-| AM Users & Roles | User Administrator | Account Administrator or User Administrator |
-| AM Organizations | Not supported -- use `--user-auth` | Account Administrator |
-| AM API Clients | Not supported -- use `--user-auth` | Account Administrator or API Administrator |
+| Operations       | Client Credentials (roles on API client) | User Auth (roles on user account)           |
+| ---------------- | ---------------------------------------- | ------------------------------------------- |
+| AM Users & Roles | User Administrator                       | Account Administrator or User Administrator |
+| AM Organizations | Not supported -- use `--user-auth`       | Account Administrator                       |
+| AM API Clients   | Not supported -- use `--user-auth`       | Account Administrator or API Administrator  |
 
 Organization and API client management are only available with user authentication. For Business Manager administration (BM roles, users, access keys, whoami), see the `b2c-cli:b2c-bm-users-roles` skill.
 

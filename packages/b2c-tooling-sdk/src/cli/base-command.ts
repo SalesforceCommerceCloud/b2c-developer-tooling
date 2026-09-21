@@ -34,6 +34,7 @@ import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
 import {initializeFileAuthSessionStore} from '../auth/session-store.js';
 import {initializeContentCache} from '../docs/content-cache.js';
+import {initializeScapiSnippetStore} from '../scapi/snippets.js';
 import {setUserAgent} from '../clients/user-agent.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
 
@@ -86,6 +87,33 @@ export function classifyError(err: unknown): ErrorCategory {
   if (name === 'SafetyBlockedError' || name === 'SafetyConfirmationRequired') return 'guardrail';
 
   return 'runtime';
+}
+
+/**
+ * oclif throws `Flag --<name> can only be specified once` when a non-multiple
+ * flag is passed more than once — including when the duplicate arrived through
+ * an alias (e.g. `-p my-store -s other`, where `-s` / `--storefront` are aliases
+ * of `--project`). The bare message names only the canonical flag, so a user who
+ * typed an alias can't tell what collided. When the offending flag has aliases,
+ * rewrite the message to list every long and short form it accepts.
+ */
+export function augmentDuplicateFlagError(message: string, flags: Record<string, unknown>): string {
+  const match = /^Flag --(.+) can only be specified once$/.exec(message);
+  if (!match) return message;
+
+  const flag = flags[match[1]] as {aliases?: string[]; char?: string; charAliases?: string[]} | undefined;
+  if (!flag) return message;
+
+  // Only clarify when the flag actually has aliases; a plain --name/-n pair
+  // needs no explanation.
+  if (!flag.aliases?.length && !flag.charAliases?.length) return message;
+
+  const forms = [
+    ...[match[1], ...(flag.aliases ?? [])].map((name) => `--${name}`),
+    ...[flag.char, ...(flag.charAliases ?? [])].filter((c): c is string => Boolean(c)).map((c) => `-${c}`),
+  ];
+
+  return `${message} (${forms.join(', ')} all refer to the same flag)`;
 }
 
 /**
@@ -218,6 +246,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Tests may override the path via B2C_TEST_DATA_DIR to isolate the auth-sessions.json
     // file (e.g. per mocha worker) so they don't race on the developer's real session file.
     initializeFileAuthSessionStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
+    initializeScapiSnippetStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
 
     // Point the docs online-content cache at oclif's cacheDir (e.g. ~/.cache/b2c)
     // so cached docs live alongside other CLI cache data and honor oclif dir
@@ -643,6 +672,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Sends exception to telemetry if initialized.
    */
   protected async catch(err: Error & {exitCode?: number}): Promise<never> {
+    // Surface flag aliases in oclif's "can only be specified once" error so a
+    // user who passed, e.g., `-p x -s y` learns that `-s`/`--storefront` are the
+    // same flag as `-p`/`--project`.
+    err.message = augmentDuplicateFlagError(err.message, {...this.ctor.baseFlags, ...this.ctor.flags});
+
     const exitCode = err.exitCode ?? 1;
     const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
     const errorCategory = classifyError(err);

@@ -67,7 +67,9 @@ export default class MrtEnvList extends MrtCommand<typeof MrtEnvList> {
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     this.log(t('commands.mrt.env.list.fetching', 'Fetching environments for {{project}}...', {project}));

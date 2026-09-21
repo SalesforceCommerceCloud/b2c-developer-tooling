@@ -1,0 +1,2103 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Inventory Reservation",
+    "version": "1.1.23",
+    "x-api-type": "Admin",
+    "x-api-family": "Inventory"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/inventory/reservation/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/reservation-documents/{reservationId}": {
+      "put": {
+        "operationId": "createReservations",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "reservationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 36,
+              "pattern": "^[0-9a-fA-F\\-]{36}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceReservationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully received and processed the request. The consumer is responsible for validating the returned data to ensure that the specified quantity was reserved as requested.",
+            "headers": {
+              "Location": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string",
+                  "maxLength": 255
+                }
+              },
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceReservationResponseBody"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestLocOrGroupDoesNotExist"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A reservation with the specified ID is in an invalid state.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationInvalidState"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.reservations.rw",
+              "sfcc_inventory_reservations_rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateReservation",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "reservationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 36,
+              "pattern": "^[0-9a-fA-F\\-]{36}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReservationRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Reservation update request was received and processed successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateReservationResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Reservation marked as cancelled. Inventory levels updated asynchronously.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Reservation cancelled successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity not found.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A reservation with the specified ID is in an invalid state.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.reservations.rw",
+              "sfcc_inventory_reservations_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/transfers": {
+      "post": {
+        "operationId": "moveReservationQuantity",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveReservationBatchPostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Batch reservation transfer partially succeeded with errors reported.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoveReservationErrorsResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Reservation quantities moved successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.reservations.rw",
+              "sfcc_inventory_reservations_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/releases": {
+      "post": {
+        "operationId": "unreserveReservations",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnreserveRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The request was received and processed successfully. The consumer is responsible for validating the returned data to ensure that the specified quantity was released as requested.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreserveResponseBody"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Reservations for specified items removed successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.reservations.rw",
+              "sfcc_inventory_reservations_rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/fulfillments": {
+      "post": {
+        "operationId": "fulfillQuantity",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfillQuantityRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Fulfillment partially succeeded with errors reported.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FulfillQuantityResponseErrors"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Quantity adjusted successfully.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Organization not authorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Reservation ID invalid.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The user has sent too many requests in a given amount of time (\"rate limiting\")",
+            "headers": {
+              "Retry-After": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory.reservations.rw",
+              "sfcc_inventory_reservations_rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "ExternalRefId": {
+        "type": "string",
+        "maxLength": 128,
+        "pattern": "^[a-zA-Z0-9\\-]*$"
+      },
+      "ExpirationSeconds": {
+        "type": "integer",
+        "maximum": 14400,
+        "minimum": 1
+      },
+      "AllowPartialReservations": {
+        "type": "boolean"
+      },
+      "FulfillOnlyReservations": {
+        "type": "boolean"
+      },
+      "ReservationTime": {
+        "type": "string",
+        "format": "date-time",
+        "maxLength": 30
+      },
+      "GroupId": {
+        "type": "string",
+        "maxLength": 128,
+        "minLength": 2,
+        "pattern": "^[a-zA-Z0-9-_]*$"
+      },
+      "SkuId": {
+        "type": "string",
+        "maxLength": 250,
+        "minLength": 1,
+        "pattern": "^[^\\\\<>;%/\\s]*$"
+      },
+      "ReservedQuantity": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0.001,
+        "multipleOf": 0.001
+      },
+      "ReservationRequestRecord": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/ReservedQuantity"
+          }
+        },
+        "required": [
+          "quantity",
+          "sku"
+        ]
+      },
+      "ReservationRequestGroup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/GroupId"
+          },
+          "reservations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReservationRequestRecord"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "reservations"
+        ]
+      },
+      "LocationId": {
+        "type": "string",
+        "maxLength": 128,
+        "minLength": 2,
+        "pattern": "^[a-zA-Z0-9-_]*$"
+      },
+      "AllOrNothingId": {
+        "type": "string",
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[a-zA-Z0-9-_]*$"
+      },
+      "ReservationRequestLocation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/LocationId"
+          },
+          "reservations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReservationRequestRecord"
+            }
+          },
+          "allOrNothingReservations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/AllOrNothingId"
+                },
+                "reservations": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationRequestRecord"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "reservations"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "reservations"
+        ]
+      },
+      "PlaceReservationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "externalRefId": {
+            "$ref": "#/components/schemas/ExternalRefId"
+          },
+          "expirationSeconds": {
+            "$ref": "#/components/schemas/ExpirationSeconds"
+          },
+          "allowPartialReservations": {
+            "$ref": "#/components/schemas/AllowPartialReservations"
+          },
+          "fulfillOnly": {
+            "$ref": "#/components/schemas/FulfillOnlyReservations"
+          },
+          "reservationTime": {
+            "$ref": "#/components/schemas/ReservationTime"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReservationRequestGroup"
+            }
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReservationRequestLocation"
+            }
+          }
+        }
+      },
+      "ExpirationTime": {
+        "type": "string",
+        "format": "date-time",
+        "maxLength": 30
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "InsufficientQuantity",
+          "Unknown"
+        ],
+        "maxLength": 128,
+        "pattern": "^[a-zA-Z0-9\\-]*$"
+      },
+      "ReservationResponseErrorRecord2": {
+        "maxLength": 250,
+        "properties": {
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "errorCode": {
+            "$ref": "#/components/schemas/ErrorCode"
+          }
+        },
+        "required": [
+          "errorCode",
+          "sku"
+        ]
+      },
+      "ReservedReservationRecord": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/ReservedQuantity"
+          }
+        },
+        "required": [
+          "quantity",
+          "sku"
+        ]
+      },
+      "PlaceReservationResponseBody": {
+        "type": "object",
+        "properties": {
+          "reservationTime": {
+            "type": "string",
+            "format": "date-time",
+            "maxLength": 30
+          },
+          "expirationTime": {
+            "$ref": "#/components/schemas/ExpirationTime"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/GroupId"
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationResponseErrorRecord2"
+                  }
+                },
+                "details": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservedReservationRecord"
+                  }
+                }
+              },
+              "required": [
+                "id"
+              ]
+            }
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/LocationId"
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationResponseErrorRecord2"
+                  }
+                },
+                "details": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservedReservationRecord"
+                  }
+                }
+              },
+              "required": [
+                "id"
+              ]
+            }
+          }
+        },
+        "required": [
+          "reservationTime",
+          "success"
+        ]
+      },
+      "InvalidRequestLocOrGroupDoesNotExistEnum": {
+        "type": "string",
+        "enum": [
+          "InvalidRequest",
+          "LocationDoesNotExist",
+          "GroupDoesNotExist"
+        ]
+      },
+      "InvalidRequestLocOrGroupDoesNotExist": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "$ref": "#/components/schemas/InvalidRequestLocOrGroupDoesNotExistEnum"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "parameterName": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "group": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 250
+          }
+        },
+        "required": [
+          "errorCode",
+          "message",
+          "type"
+        ]
+      },
+      "InventoryResponseErrorSchema": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "parameterName": {
+            "type": "string",
+            "maxLength": 250
+          }
+        },
+        "required": [
+          "errorCode",
+          "message",
+          "type"
+        ]
+      },
+      "ReservationInvalidState": {
+        "maxLength": 1,
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "enum": [
+              "ReservationInvalidState",
+              "ReservationAlreadyFinalized",
+              "ReservationCancelled",
+              "ReservationOperationInProcess",
+              "EntityExists",
+              "ConcurrentModification",
+              "PreviousRequestAborted",
+              "PreviousRequestCancelled"
+            ],
+            "maxLength": 32
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "parameterName": {
+            "type": "string",
+            "maxLength": 250
+          }
+        },
+        "required": [
+          "errorCode",
+          "message",
+          "type"
+        ]
+      },
+      "IdempotenceId": {
+        "type": "string",
+        "maxLength": 128,
+        "pattern": "^[a-zA-Z0-9\\-]*$"
+      },
+      "Reservations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "sku": {
+              "$ref": "#/components/schemas/SkuId"
+            },
+            "quantity": {
+              "$ref": "#/components/schemas/ReservedQuantity"
+            }
+          },
+          "required": [
+            "quantity",
+            "sku"
+          ]
+        }
+      },
+      "UpdateReservationLocationType": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/components/schemas/LocationId"
+            },
+            "reservations": {
+              "$ref": "#/components/schemas/Reservations"
+            },
+            "allOrNothingReservations": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                "reservations": {
+                  "$ref": "#/components/schemas/Reservations"
+                }
+              },
+              "required": [
+                "id",
+                "reservations"
+              ]
+            }
+          },
+          "required": [
+            "allOrNothingReservations",
+            "id",
+            "reservations"
+          ]
+        }
+      },
+      "UpdateReservationGroupType": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/components/schemas/GroupId"
+            },
+            "reservations": {
+              "$ref": "#/components/schemas/Reservations"
+            },
+            "allOrNothingReservations": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                "reservations": {
+                  "$ref": "#/components/schemas/Reservations"
+                }
+              },
+              "required": [
+                "id",
+                "reservations"
+              ]
+            }
+          },
+          "required": [
+            "allOrNothingReservations",
+            "id",
+            "reservations"
+          ]
+        }
+      },
+      "UpdateReservationRequestBody": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "CANCELLED"
+            ]
+          },
+          "externalRefId": {
+            "$ref": "#/components/schemas/ExternalRefId"
+          },
+          "allowPartialReservations": {
+            "type": "boolean"
+          },
+          "reservationTime": {
+            "$ref": "#/components/schemas/ReservationTime"
+          },
+          "id": {
+            "$ref": "#/components/schemas/IdempotenceId"
+          },
+          "locations": {
+            "$ref": "#/components/schemas/UpdateReservationLocationType"
+          },
+          "groups": {
+            "$ref": "#/components/schemas/UpdateReservationGroupType"
+          }
+        }
+      },
+      "GenericErrorsArray": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "sku": {
+              "$ref": "#/components/schemas/SkuId"
+            },
+            "errorCode": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        }
+      },
+      "UpdateReservationResponse": {
+        "type": "object",
+        "properties": {
+          "reservationTime": {
+            "$ref": "#/components/schemas/ReservationTime"
+          },
+          "expirationTime": {
+            "$ref": "#/components/schemas/ExpirationTime"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/GroupId"
+                },
+                "errors": {
+                  "$ref": "#/components/schemas/GenericErrorsArray"
+                },
+                "details": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "sku": {
+                        "$ref": "#/components/schemas/SkuId"
+                      },
+                      "quantity": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "adjustment": {
+                        "type": "number",
+                        "format": "float"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/LocationId"
+                },
+                "errors": {
+                  "$ref": "#/components/schemas/GenericErrorsArray"
+                },
+                "details": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "sku": {
+                        "$ref": "#/components/schemas/SkuId"
+                      },
+                      "quantity": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "adjustment": {
+                        "type": "number",
+                        "format": "float"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MoveReservationFromLocation": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/LocationId"
+          }
+        },
+        "required": [
+          "location"
+        ]
+      },
+      "MoveReservationFromGroup": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        "required": [
+          "group"
+        ]
+      },
+      "MoveReservationToLocation": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/LocationId"
+          }
+        },
+        "required": [
+          "location"
+        ]
+      },
+      "MoveReservationToGroup": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        "required": [
+          "group"
+        ]
+      },
+      "MoveReservationBodyRecords": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdempotenceId"
+          },
+          "externalRefId": {
+            "$ref": "#/components/schemas/ExternalRefId"
+          },
+          "from": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MoveReservationFromLocation"
+              },
+              {
+                "$ref": "#/components/schemas/MoveReservationFromGroup"
+              }
+            ]
+          },
+          "to": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MoveReservationToLocation"
+              },
+              {
+                "$ref": "#/components/schemas/MoveReservationToGroup"
+              }
+            ]
+          },
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.001,
+            "multipleOf": 0.001
+          },
+          "ignoreAvailabilityCheck": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "from",
+          "id",
+          "quantity",
+          "sku",
+          "to"
+        ]
+      },
+      "MoveReservationBatchPostBody": {
+        "type": "object",
+        "properties": {
+          "allOrNothingTransferId": {
+            "$ref": "#/components/schemas/AllOrNothingId"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MoveReservationBodyRecords"
+            }
+          }
+        },
+        "required": [
+          "allOrNothingTransferId",
+          "records"
+        ]
+      },
+      "MoveReservationErrorDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdempotenceId"
+          },
+          "externalRefId": {
+            "$ref": "#/components/schemas/ExternalRefId"
+          },
+          "from": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MoveReservationFromGroup"
+              },
+              {
+                "$ref": "#/components/schemas/MoveReservationFromLocation"
+              }
+            ]
+          },
+          "to": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MoveReservationToGroup"
+              },
+              {
+                "$ref": "#/components/schemas/MoveReservationToLocation"
+              }
+            ]
+          },
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.001,
+            "multipleOf": 0.001
+          }
+        },
+        "required": [
+          "externalRefId",
+          "from",
+          "id",
+          "quantity",
+          "sku",
+          "to"
+        ]
+      },
+      "Message": {
+        "type": "string",
+        "maxLength": 128,
+        "pattern": "^[a-zA-Z0-9\\- ]*$"
+      },
+      "MoveReservationError": {
+        "type": "object",
+        "properties": {
+          "details": {
+            "$ref": "#/components/schemas/MoveReservationErrorDetail"
+          },
+          "message": {
+            "$ref": "#/components/schemas/Message"
+          },
+          "errorCode": {
+            "$ref": "#/components/schemas/ErrorCode"
+          }
+        },
+        "required": [
+          "details",
+          "errorCode",
+          "message"
+        ]
+      },
+      "MoveReservationErrorsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MoveReservationError"
+            }
+          }
+        },
+        "required": [
+          "errors"
+        ]
+      },
+      "QuantityOnHand": {
+        "type": "number",
+        "format": "double",
+        "minimum": 0,
+        "multipleOf": 0.001
+      },
+      "UnreserveRequestBody": {
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/IdempotenceId"
+                },
+                "externalRefId": {
+                  "$ref": "#/components/schemas/ExternalRefId"
+                },
+                "location": {
+                  "$ref": "#/components/schemas/LocationId"
+                },
+                "group": {
+                  "$ref": "#/components/schemas/GroupId"
+                },
+                "sku": {
+                  "$ref": "#/components/schemas/SkuId"
+                },
+                "quantity": {
+                  "$ref": "#/components/schemas/QuantityOnHand"
+                }
+              },
+              "required": [
+                "id",
+                "quantity",
+                "sku"
+              ]
+            }
+          }
+        },
+        "required": [
+          "records"
+        ]
+      },
+      "UnreservedDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdempotenceId"
+          },
+          "externalRefId": {
+            "$ref": "#/components/schemas/ExternalRefId"
+          },
+          "location": {
+            "$ref": "#/components/schemas/LocationId"
+          },
+          "group": {
+            "$ref": "#/components/schemas/GroupId"
+          },
+          "sku": {
+            "$ref": "#/components/schemas/SkuId"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "externalRefId",
+          "id",
+          "quantity",
+          "sku"
+        ]
+      },
+      "UnreserveResponseBody": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "details": {
+                  "$ref": "#/components/schemas/UnreservedDetail"
+                },
+                "errorCode": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                },
+                "message": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              },
+              "required": [
+                "details"
+              ]
+            }
+          }
+        },
+        "required": [
+          "errors"
+        ]
+      },
+      "FulfillmentTime": {
+        "type": "string",
+        "format": "date-time",
+        "maxLength": 30
+      },
+      "FulfillQuantityRequestBody": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/IdempotenceId"
+                },
+                "externalRefId": {
+                  "$ref": "#/components/schemas/ExternalRefId"
+                },
+                "location": {
+                  "$ref": "#/components/schemas/LocationId"
+                },
+                "sku": {
+                  "$ref": "#/components/schemas/SkuId"
+                },
+                "quantity": {
+                  "$ref": "#/components/schemas/QuantityOnHand"
+                },
+                "fulfillmentTime": {
+                  "$ref": "#/components/schemas/FulfillmentTime"
+                }
+              },
+              "required": [
+                "id",
+                "location",
+                "quantity",
+                "sku"
+              ]
+            }
+          }
+        },
+        "required": [
+          "records"
+        ]
+      },
+      "FulfillQuantityResponseErrors": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "details": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "$ref": "#/components/schemas/IdempotenceId"
+                    },
+                    "externalRefId": {
+                      "$ref": "#/components/schemas/ExternalRefId"
+                    },
+                    "location": {
+                      "$ref": "#/components/schemas/LocationId"
+                    },
+                    "sku": {
+                      "$ref": "#/components/schemas/SkuId"
+                    },
+                    "quantity": {
+                      "$ref": "#/components/schemas/QuantityOnHand"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "location",
+                    "quantity",
+                    "sku"
+                  ]
+                },
+                "message": {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                "errorCode": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              },
+              "required": [
+                "details",
+                "errorCode",
+                "message"
+              ]
+            }
+          }
+        },
+        "required": [
+          "errors"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "reservationId": {
+        "name": "reservationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 36,
+          "pattern": "^[0-9a-fA-F\\-]{36}$"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.inventory.reservations.rw": "Inventory Reservation scope",
+              "sfcc_inventory_reservations_rw": "Inventory Reservation scope"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.inventory.reservations.rw": "Inventory Reservation scope",
+              "sfcc_inventory_reservations_rw": "Inventory Reservation scope"
+            }
+          }
+        }
+      }
+    }
+  }
+}

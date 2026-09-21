@@ -15,8 +15,8 @@ import {confirm} from '../../../prompts.js';
 export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
   static args = {
     slug: Args.string({
-      description: 'Environment slug/identifier to delete',
-      required: true,
+      description: 'Environment slug/identifier to delete (or provide it via --environment / -e)',
+      required: false,
     }),
   };
 
@@ -52,11 +52,13 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
 
     this.requireMrtCredentials();
 
-    const {slug} = this.args;
+    const slug = this.resolveEnvironmentSlug(this.args.slug);
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const {force} = this.flags;
@@ -80,11 +82,9 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
       }
     }
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.env.delete.deleting', 'Deleting environment "{{slug}}" from {{project}}...', {slug, project}),
-      );
-    }
+    this.log(
+      t('commands.mrt.env.delete.deleting', 'Deleting environment "{{slug}}" from {{project}}...', {slug, project}),
+    );
 
     try {
       await this.operations.deleteEnv(
@@ -96,14 +96,12 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.env.delete.success', 'Environment "{{slug}}" deleted from {{project}}.', {
-            slug,
-            project,
-          }),
-        );
-      }
+      this.log(
+        t('commands.mrt.env.delete.success', 'Environment "{{slug}}" deleted from {{project}}.', {
+          slug,
+          project,
+        }),
+      );
 
       return {slug, project};
     } catch (error) {

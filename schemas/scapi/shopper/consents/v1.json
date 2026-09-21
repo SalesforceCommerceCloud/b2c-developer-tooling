@@ -1,0 +1,622 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Consents",
+    "version": "1.1.4",
+    "x-api-type": "Admin",
+    "x-api-family": "Shopper"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/consents/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/subscriptions": {
+      "get": {
+        "operationId": "getSubscriptions",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved subscriptions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- The Marketing Consent feature is not enabled for this organization.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.consents"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/subscriptions/{subscriptionId}": {
+      "put": {
+        "operationId": "createSubscription",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SubscriptionId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionPutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Subscription created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- The Marketing Consent feature is not enabled for this organization.\n- The request format is invalid or malformed JSON.\n- Required fields (title, channels) are missing.\n- The siteId in the request body does not match the siteId parameter.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - Subscription already exists",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.consents.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteSubscription",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SubscriptionId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Subscription deleted successfully."
+          },
+          "400": {
+            "description": "Possible reasons:\n- The Marketing Consent feature is not enabled for this organization.\n- The siteId parameter is invalid or does not exist.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.consents.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateSubscription",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SubscriptionId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- The Marketing Consent feature is not enabled for this organization.\n- The request format is invalid or malformed JSON.\n- The subscriptionId in the request body does not match the subscriptionId URL parameter.\n- The siteId in the request body does not match the siteId parameter.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.consents.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "SubscriptionId": {
+        "type": "string",
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "MarkupText": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "markup": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "markup",
+          "source"
+        ]
+      },
+      "SubscriptionTitle": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/MarkupText"
+        }
+      },
+      "SubscriptionSubtitle": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/MarkupText"
+        }
+      },
+      "Tag": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "Channel": {
+        "type": "string",
+        "enum": [
+          "email",
+          "sms",
+          "whatsapp"
+        ]
+      },
+      "ConsentType": {
+        "type": "string",
+        "default": "marketing",
+        "enum": [
+          "marketing",
+          "legal"
+        ]
+      },
+      "ConsentRequired": {
+        "type": "boolean",
+        "default": false
+      },
+      "Enabled": {
+        "type": "boolean",
+        "default": true
+      },
+      "Subscription": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "$ref": "#/components/schemas/SubscriptionId"
+          },
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          },
+          "title": {
+            "$ref": "#/components/schemas/SubscriptionTitle"
+          },
+          "subtitle": {
+            "$ref": "#/components/schemas/SubscriptionSubtitle"
+          },
+          "tags": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            },
+            "maxItems": 10,
+            "minItems": 0
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Channel"
+            },
+            "maxItems": 10,
+            "minItems": 1
+          },
+          "umaSubscriptionId": {
+            "type": "string",
+            "maxLength": 18,
+            "minLength": 15
+          },
+          "consentType": {
+            "$ref": "#/components/schemas/ConsentType"
+          },
+          "consentRequired": {
+            "$ref": "#/components/schemas/ConsentRequired"
+          },
+          "defaultStatus": {
+            "type": "string",
+            "default": "opt_out",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ]
+          },
+          "enabled": {
+            "$ref": "#/components/schemas/Enabled"
+          }
+        },
+        "required": [
+          "channels",
+          "subscriptionId",
+          "title"
+        ]
+      },
+      "SubscriptionsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Subscription"
+            },
+            "maxItems": 50,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "SubscriptionPutRequest": {
+        "type": "object",
+        "properties": {
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          },
+          "subscriptionId": {
+            "$ref": "#/components/schemas/SubscriptionId"
+          },
+          "title": {
+            "$ref": "#/components/schemas/SubscriptionTitle"
+          },
+          "subtitle": {
+            "$ref": "#/components/schemas/SubscriptionSubtitle"
+          },
+          "tags": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            },
+            "maxItems": 10,
+            "minItems": 0
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Channel"
+            }
+          },
+          "consentType": {
+            "$ref": "#/components/schemas/ConsentType"
+          },
+          "consentRequired": {
+            "$ref": "#/components/schemas/ConsentRequired"
+          },
+          "defaultStatus": {
+            "type": "string",
+            "default": "opt_out",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ]
+          },
+          "enabled": {
+            "$ref": "#/components/schemas/Enabled"
+          }
+        },
+        "required": [
+          "channels",
+          "title"
+        ]
+      },
+      "SubscriptionPatchRequest": {
+        "type": "object",
+        "properties": {
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          },
+          "subscriptionId": {
+            "$ref": "#/components/schemas/SubscriptionId"
+          },
+          "title": {
+            "$ref": "#/components/schemas/SubscriptionTitle"
+          },
+          "subtitle": {
+            "$ref": "#/components/schemas/SubscriptionSubtitle"
+          },
+          "tags": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            },
+            "maxItems": 10,
+            "minItems": 0
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Channel"
+            }
+          },
+          "consentType": {
+            "$ref": "#/components/schemas/ConsentType"
+          },
+          "consentRequired": {
+            "$ref": "#/components/schemas/ConsentRequired"
+          },
+          "defaultStatus": {
+            "type": "string",
+            "default": "opt_out",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ]
+          },
+          "enabled": {
+            "$ref": "#/components/schemas/Enabled"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.consents": "Consents READONLY",
+              "sfcc.consents.rw": "Consents"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.consents": "Consents READONLY",
+              "sfcc.consents.rw": "Consents"
+            }
+          }
+        }
+      }
+    }
+  }
+}

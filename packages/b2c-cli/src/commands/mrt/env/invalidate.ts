@@ -42,7 +42,9 @@ export default class MrtCacheInvalidate extends MrtCommand<typeof MrtCacheInvali
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
     if (!environment) {
       this.error(
@@ -72,15 +74,13 @@ export default class MrtCacheInvalidate extends MrtCommand<typeof MrtCacheInvali
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(t('commands.mrt.cache.invalidate.success', '{{result}}', {result: result.result}));
-        this.log(
-          t(
-            'commands.mrt.cache.invalidate.note',
-            'Note: Cache invalidations are asynchronous and usually complete within two minutes.',
-          ),
-        );
-      }
+      this.log(t('commands.mrt.cache.invalidate.success', '{{result}}', {result: result.result}));
+      this.log(
+        t(
+          'commands.mrt.cache.invalidate.note',
+          'Note: Cache invalidations are asynchronous and usually complete within two minutes.',
+        ),
+      );
 
       return result;
     } catch (error) {

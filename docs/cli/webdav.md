@@ -78,6 +78,8 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 
 List files and directories in a WebDAV location.
 
+[![B2C CLI listing import and export archives in WebDAV with their file sizes.](/terminal/webdav-list.png)](/terminal/webdav-list.png)
+
 ### Usage
 
 ```bash

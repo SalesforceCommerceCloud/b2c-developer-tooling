@@ -69,6 +69,79 @@ describe('operations/jobs/site-archive', () => {
     server.close();
   });
 
+  describe('system-job request contracts', () => {
+    for (const operation of ['import', 'export'] as const) {
+      const jobId = `sfcc-site-archive-${operation}`;
+      const dataUnits = {libraries: {'MarketStreet-SharedLibrary': true}};
+      const scapiUrl = `https://test.api.commercecloud.salesforce.com/operation/jobs/v1/organizations/f_ecom_test_001/jobs/${jobId}/executions`;
+
+      for (const mode of ['scapi', 'auto', 'ocapi', 'ocapi-retry', 'fallback-retry'] as const) {
+        it(`${operation}: preserves the configuration and compatibility retry in ${mode} mode`, async () => {
+          mockInstance.apiBackend = mode === 'fallback-retry' ? 'auto' : mode === 'ocapi-retry' ? 'ocapi' : mode;
+          mockInstance.scapiClientConfig = {
+            shortCode: 'test',
+            tenantId: 'test_001',
+            auth: new MockAuthStrategy(),
+          };
+          const scapiBodies: unknown[] = [];
+          const ocapiBodies: unknown[] = [];
+          server.use(
+            http.post(scapiUrl, async ({request}) => {
+              scapiBodies.push(await request.json());
+              if (mode === 'fallback-retry') {
+                return HttpResponse.json({title: 'Forbidden'}, {status: 403});
+              }
+              return HttpResponse.json({id: 'exec-contract', jobId, executionStatus: 'pending'});
+            }),
+            http.get(`${scapiUrl}/exec-contract`, () =>
+              HttpResponse.json({id: 'exec-contract', jobId, executionStatus: 'finished', exitStatus: {code: 'OK'}}),
+            ),
+            http.post(`${OCAPI_BASE}/jobs/${jobId}/executions`, async ({request}) => {
+              ocapiBodies.push(await request.json());
+              if ((mode === 'ocapi-retry' || mode === 'fallback-retry') && ocapiBodies.length === 1) {
+                return HttpResponse.json(
+                  {fault: {type: 'UnknownPropertyException', arguments: {document: 'job_execution_request'}}},
+                  {status: 400},
+                );
+              }
+              return HttpResponse.json({id: 'exec-contract', execution_status: 'pending'});
+            }),
+            http.get(`${OCAPI_BASE}/jobs/${jobId}/executions/exec-contract`, () =>
+              HttpResponse.json({id: 'exec-contract', execution_status: 'finished', exit_status: {code: 'OK'}}),
+            ),
+          );
+
+          const result =
+            operation === 'import'
+              ? await siteArchiveImport(mockInstance, {remoteFilename: 'content.zip'}, {waitOptions: FAST_WAIT_OPTIONS})
+              : await siteArchiveExport(mockInstance, dataUnits, {waitOptions: FAST_WAIT_OPTIONS});
+          const expectedBody =
+            operation === 'import'
+              ? {file_name: 'content.zip'}
+              : {export_file: result.archiveFilename, data_units: dataUnits};
+          const expectedParameters =
+            operation === 'import'
+              ? [{name: 'ImportFile', value: 'content.zip'}]
+              : [
+                  {name: 'ExportFile', value: result.archiveFilename},
+                  {name: 'DataUnits', value: JSON.stringify(dataUnits)},
+                ];
+
+          expect(scapiBodies).to.deep.equal(mode.startsWith('ocapi') ? [] : [expectedBody]);
+          expect(ocapiBodies).to.deep.equal(
+            mode === 'scapi' || mode === 'auto'
+              ? []
+              : mode === 'ocapi'
+                ? [expectedBody]
+                : [expectedBody, {parameters: expectedParameters}],
+          );
+          expect(result.execution.execution_status).to.equal('finished');
+          expect(result.execution.exit_status?.code).to.equal('OK');
+        });
+      }
+    }
+  });
+
   describe('siteArchiveImport', () => {
     it('should import from a local directory', async () => {
       // Create a test directory structure

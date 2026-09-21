@@ -30,7 +30,12 @@ b2c mrt env create prod -p my-storefront --name "Production" \
 # With cookie forwarding and source maps
 b2c mrt env create dev -p my-storefront --name "Development" \
   --allow-cookies --enable-source-maps
+
+# The new environment's slug may be given as the positional OR via --environment / -e
+b2c mrt env create -p my-storefront -e staging --name "Staging Environment"
 ```
+
+> **Slug as positional or flag:** the environment slug can be supplied as the positional argument **or** via `-e` / `--environment` (also honoring `MRT_ENVIRONMENT` / `dw.json`). An explicit positional wins if both are given.
 
 **Flags:**
 | Flag | Description |
@@ -64,7 +69,12 @@ b2c mrt env update -p my-storefront -e dev --no-enable-source-maps
 ```bash
 b2c mrt env delete staging --project my-storefront
 b2c mrt env delete old-env -p my-storefront --force
+
+# The env slug may be given as the positional OR via --environment / -e
+b2c mrt env delete -p my-storefront -e old-env --force
 ```
+
+> **Slug as positional or flag:** the environment slug can be supplied as the positional argument **or** via `-e` / `--environment` (also honoring `MRT_ENVIRONMENT` / `dw.json`). An explicit positional wins if both are given.
 
 ### Invalidate Cache
 

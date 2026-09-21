@@ -6,7 +6,7 @@
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {parseEnv} from 'node:util';
-import {Flags, ux} from '@oclif/core';
+import {Flags} from '@oclif/core';
 import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {listEnvVars, setEnvVar, setEnvVars} from '@salesforce/b2c-tooling-sdk/operations/mrt';
@@ -94,7 +94,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       this.error(
         t(
           'commands.mrt.env.var.push.missingProject',
-          'MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.',
+          'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
         ),
       );
     }
@@ -112,7 +112,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     const {mrtOrigin: origin} = this.resolvedConfig.values;
     const auth = this.getMrtAuth();
 
-    ux.stdout(
+    this.log(
       t('commands.mrt.env.var.push.fetching', 'Fetching remote env vars for {{project}}/{{environment}}...', {
         project,
         environment,
@@ -128,16 +128,15 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     const diff = computeEnvVarDiff(localVars, remoteVars);
     const toSync = [...diff.add, ...diff.update];
 
-    // Step 6: Display summary
-    ux.stdout('');
-    ux.stdout(formatEnvVarDiffSummary(diff));
+    // Step 6: Show the diff preview (human progress on stderr; suppressed in --json)
+    this.log(formatEnvVarDiffSummary(diff));
 
     if (toSync.length === 0) {
       return {pushed: 0, failed: 0, skipped: diff.remoteOnly.length};
     }
 
-    // Step 7: Confirm unless --yes
-    if (!flags.yes) {
+    // Step 7: Confirm unless --yes (skipped in --json, which is non-interactive)
+    if (!flags.yes && !this.jsonEnabled()) {
       const message = t(
         'commands.mrt.env.var.push.confirm',
         'Push {{count}} variable(s) ({{add}} new, {{update}} updated) to {{project}}/{{environment}}?',
@@ -151,7 +150,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       );
       const confirmed = await confirm(message);
       if (!confirmed) {
-        ux.stdout(t('commands.mrt.env.var.push.aborted', 'Aborted.'));
+        this.log(t('commands.mrt.env.var.push.aborted', 'Aborted.'));
         return {pushed: 0, failed: 0, skipped: diff.remoteOnly.length};
       }
     }
@@ -166,7 +165,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       const variables = Object.fromEntries(toSync.map(({key, value}) => [key, value]));
       await this.operations.setEnvVars({...baseParams, variables}, auth);
       for (const {key} of toSync) {
-        ux.stdout(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
+        this.log(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
       }
       pushed = toSync.length;
     } catch {
@@ -178,7 +177,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       for (const [index, result] of results.entries()) {
         const {key} = toSync[index];
         if (result.status === 'fulfilled') {
-          ux.stdout(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
+          this.log(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
           pushed++;
         } else {
           this.warn(
@@ -192,9 +191,8 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       }
     }
 
-    // Step 9: Summary
-    ux.stdout('');
-    ux.stdout(
+    // Step 9: Summary (human progress on stderr; suppressed in --json)
+    this.log(
       t(
         'commands.mrt.env.var.push.summary',
         'Summary: {{pushed}} pushed, {{failed}} failed, {{skipped}} remote-only (not deleted)',

@@ -341,6 +341,28 @@ export function parseJSONOutput(result: ExecaReturnValue): any {
   }
 }
 
+interface CLIErrorOutput {
+  error: {message?: string; detail?: string; status?: number; code?: number | string};
+}
+
+/** Extract the CLI JSON error envelope without treating debug logs as JSON. */
+export function parseJSONErrorOutput(result: Pick<ExecaReturnValue, 'stderr' | 'stdout'>): CLIErrorOutput {
+  for (const output of [toString(result.stderr), toString(result.stdout)]) {
+    // BaseCommand emits the error as one JSON line; also accept standalone formatted JSON.
+    for (const candidate of [output, ...output.split(/\r?\n/).reverse()]) {
+      try {
+        const parsed = JSON.parse(candidate) as CLIErrorOutput;
+        if (parsed?.error && typeof parsed.error.message === 'string' && !('level' in parsed)) {
+          return parsed;
+        }
+      } catch {
+        // Diagnostic lines are expected alongside the JSON error.
+      }
+    }
+  }
+  throw new Error('Command did not return a JSON error object');
+}
+
 /**
  * Get sandbox ID from create or get response
  * @param response Parsed JSON response

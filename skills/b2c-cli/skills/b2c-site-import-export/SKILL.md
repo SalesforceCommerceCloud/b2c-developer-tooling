@@ -1,385 +1,57 @@
 ---
 name: b2c-site-import-export
-description: Import and export site archives containing metadata XML on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to import a site archive directory or zip to an instance, apply an ordered set of archives idempotently, export site configuration as XML, structure a site archive folder (sites/site_template/meta/), write or debug metadata XML files (system-objecttype-extensions.xml, custom-objecttype-definitions.xml, preferences.xml), or push custom attributes, custom object types, or site preferences to a sandbox via site import. Also use when an import job fails with schema validation errors — even if they just say "push metadata to the sandbox" or "import my XML files".
+description: Author, validate, import, and verify B2C Commerce site archives and metadata XML; export selected data for inspection or migration.
 ---
 
-# Site Import/Export Skill
+# Site Archives
 
-Use the `b2c` CLI plugin to import and export site archives on Salesforce B2C Commerce instances.
+Use `b2c job import` / `b2c job export` to transfer site archives. If `b2c` is
+unavailable, use `npx @salesforce/b2c-cli`.
 
-> **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli job import`).
+## Configuration and tool choice
 
-## Configuration & Authentication
+CLI and MCP share resolved configuration: `SFCC_*` variables (including project
+`.env`), project/shared `dw.json`, and plugins. `package.json` provides nonsecret
+defaults. Use `--project-directory` outside the target project. Inspect with
+`b2c setup inspect --json` or MCP `config_inspect`; keep secrets masked. Configured
+values normally make credential flags and manual `dw.json` reads unnecessary.
+For resolution issues, use `b2c-cli:b2c-config`.
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
+No dedicated MCP archive-transfer tool exists. Use the CLI for XML imports and
+exports, including settings absent from SCAPI contracts. MCP `scapi_execute` can
+manage supported Admin fields; a metadata record alone does not prove that
+promotion discounts or targeting rules are configured.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+## Import and verify
 
-## Import Commands
-
-### Import Local Directory
-
-```bash
-# Import a local directory as a site archive (waits for completion by default)
-b2c job import ./my-site-data
-
-# Import and return immediately without waiting
-b2c job import ./my-site-data --no-wait
-
-# Import a local zip file
-b2c job import ./export.zip
-
-# Keep the archive on the instance after import
-b2c job import ./my-site-data --keep-archive
-
-# Show job log if the import fails
-b2c job import ./my-site-data --show-log
-```
-
-### Import Remote Archive
+1. Resolve the target site/catalog and intended change. Include only relevant
+   data in the archive; preserve unrelated settings and requested enabled state.
+2. Author XML in the platform archive layout. Check the relevant XSD with
+   `b2c docs schema <name>` (list names with `--list`), then validate locally.
+3. Import the directory or zip. The command waits by default; `--show-log` shows
+   job logs on failure. Check completion before retrying.
+4. Read back the affected fields. If the API omits them, export the matching data
+   unit and inspect the relevant XML records. A successful job alone is insufficient.
 
 ```bash
-# Import an archive that already exists on the instance (in Impex/src/instance/)
-b2c job import existing-archive.zip --remote
+b2c job import ./archive --show-log
+b2c job export --site MySite --site-data campaigns_and_promotions --output ./verification
 ```
 
-### Apply an Ordered, Idempotent Import Set
-
-Use `job import-set` when site import/export archives must be applied in order and skipped after the instance records their successful import. By default, the command reads discovered cartridge metadata first and the migrations directory second. This section is a summary; for the full migration workflow — source exclusions, post-import README notes, import history, set IDs, CI/CD patterns, and recovery — use the dedicated `b2c-cli:b2c-import-set-migrations` skill.
-
-Cartridge metadata supports two project layouts:
-
-- A standard site import/export archive directly inside `metadata/`, applied as one archive.
-- An ordered collection of immediate child directories or `.zip` files inside `metadata/`, with each child applied as one archive.
-
-Use one layout consistently within a cartridge. Cartridges are ordered by name, their archives are ordered lexically, and every cartridge archive is considered before the explicit import-set directory. Every directory-based archive must contain at least one file; empty directory trees are rejected before upload. The explicit directory uses the ordered-child layout:
-
-```text
-migrations/
-├── 20260801T140000-add-preferences/
-│   ├── meta/
-│   └── sites/
-├── 20260802T091500-seed-content.zip
-└── README.md                       # ignored
-```
-
-Name every archive `YYYYMMDDTHHmmss-description`, using UTC for cross-time-zone teams. The timestamp supplies ordering and helps keep archive names unique across projects.
-
-```bash
-# Show pending and already-applied archives without writing anything
-b2c job import-set --dry-run
-
-# Apply the default ./migrations directory
-b2c job import-set
-
-# Ignore discovered cartridge metadata and apply only ./migrations
-b2c job import-set --no-cartridge-metadata
-
-# Ignore project directories recursively during source discovery
-b2c job import-set --import-set-exclude fixtures --import-set-exclude test/integration
-
-# Apply a different directory
-b2c job import-set ./data-migrations
-
-# Keep uploaded archives for inspection
-b2c job import-set --keep-archive
-```
-
-Important semantics:
-
-- After an archive succeeds, later runs against the same instance skip it, including runs from other machines.
-- The archive name determines whether it has run; changing its contents does not cause another import. Never edit an applied archive—add a new, later-sorting archive for each change.
-- An interrupted run can retry its current archive. Make every archive safe to apply more than once.
-- Only one runner applies a history at a time. Other runners wait and then skip work completed while they were waiting.
-- An inactive run becomes recoverable after 30 minutes by default. Adjust this with `--stale-lock-seconds`; use `--break-lock` only after confirming the previous runner has stopped.
-- `--timeout` applies to each archive import, `--poll-interval` controls job polling, and `--lock-poll-interval` controls waiting for another runner.
-- `--import-set-exclude` can be repeated or comma-separated. Paths are relative to the project directory and exclude the named source directory and all descendants. Configure the same project default with `b2c.importSetExclude` in `package.json`, `import-set-exclude` in `dw.json`, or `SFCC_IMPORT_SET_EXCLUDE`.
-
-The default directory is `./migrations`; it may be absent if discovered cartridges supply at least one metadata archive. The default history name is `migrations` and is shared across runs against the target instance, regardless of local path. Most users should omit `--set-id`; use it only when intentionally creating an independent history. Cartridge discovery is enabled by default; use `--no-cartridge-metadata` to opt out.
-
-To start over without deleting the previous history, use a new set ID and keep using it on subsequent runs:
-
-```bash
-b2c job import-set --set-id migrations-reset-20260818
-```
-
-To reset the default history in place, remove it and rerun the import set:
-
-```bash
-b2c webdav rm --root=impex b2c-cli/import-sets/migrations
-b2c job import-set
-```
-
-For a custom set ID, replace the final `migrations` path segment with that ID. Resetting in place permanently forgets which archives succeeded and makes every current archive pending again, so only use it when every archive is safe to reapply. `--break-lock` is for recovery and does not reset history.
-
-### Import Archives Larger Than the Instance Limit
-
-An instance rejects a single import archive above its size limit (typically 200 MB). Use `--split` on a directory import to import the data in multiple smaller parts:
-
-```bash
-# Split a large directory import into multiple archive parts
-b2c job import ./big-site-data --split
-
-# Tune the per-archive size limit (default 190mb; bare number is MiB)
-b2c job import ./big-site-data --split --max-size 150mb
-```
-
-How splitting works:
-
-- **Metadata/XML is imported first**, kept together in one archive when it fits (so internal references and dependency ordering resolve within a single import). If the XML alone is too large, it splits at top-level data-unit boundaries (`catalogs`, `libraries`, `sites`, `meta`, …) in dependency order — never splitting a single unit.
-- **Static assets** (files under a `static/` folder) are deferred into later archive parts, packed by compressed size. They attach to the catalogs/libraries created by the metadata import.
-- Parts import sequentially; the command stops on the first failure.
-
-If a single file, or a single data unit's XML, is larger than `--max-size` on its own, the command errors (a file is never split across archives). A normal directory import that exceeds the limit warns and recommends `--split`. `--split` cannot be combined with `--remote`, subset paths, or `--no-wait`.
-
-## Export Commands
-
-```bash
-# Export global metadata (waits for completion by default)
-b2c job export --global-data meta_data
-
-# Export a site with specific data units
-b2c job export --site RefArch --site-data content,site_preferences
-
-# Export only the site descriptor (includes the cartridge path)
-b2c job export --site RefArch --site-data site_descriptor
-
-# Build an import-set archive directly under its migrations source
-b2c job export --site RefArch --site-data site_preferences --output migrations
-```
-
-Directory output preserves the platform export's generated top-level `*_export` directory. When building an ordered migration, rename that newly generated directory once to the permanent timestamped archive name, then review and trim it in place. Do not routinely export to a temporary directory and copy the result. Never export over an existing or applied archive.
-
-Exports can include unrelated defaults, generated `version.txt`, environment-specific values, and secrets such as encrypted storefront passwords. Remove them before committing, but keep fields required by the relevant XSD. Use `b2c-cli:b2c-import-set-migrations` for the complete direct-to-migration workflow and `b2c-cli:b2c-job` for all export data units and output options.
-
-## Common Workflows
-
-### Adding a Custom Attribute to Products
-
-1. Create the metadata XML file:
-
-**meta/system-objecttype-extensions.xml:**
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
-    <type-extension type-id="Product">
-        <custom-attribute-definitions>
-            <attribute-definition attribute-id="vendorSKU">
-                <display-name xml:lang="x-default">Vendor SKU</display-name>
-                <type>string</type>
-                <mandatory-flag>false</mandatory-flag>
-                <externally-managed-flag>true</externally-managed-flag>
-            </attribute-definition>
-        </custom-attribute-definitions>
-        <group-definitions>
-            <attribute-group group-id="CustomAttributes">
-                <display-name xml:lang="x-default">Custom Attributes</display-name>
-                <attribute attribute-id="vendorSKU"/>
-            </attribute-group>
-        </group-definitions>
-    </type-extension>
-</metadata>
-```
-
-2. Create the directory structure:
-
-```
-my-import/
-└── meta/
-    └── system-objecttype-extensions.xml
-```
-
-3. Import:
-
-```bash
-b2c job import ./my-import
-```
-
-### Adding Site Preferences
-
-1. Create metadata for the preference:
-
-**meta/system-objecttype-extensions.xml:**
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
-    <type-extension type-id="SitePreferences">
-        <custom-attribute-definitions>
-            <attribute-definition attribute-id="enableFeatureX">
-                <display-name xml:lang="x-default">Enable Feature X</display-name>
-                <type>boolean</type>
-                <default-value>false</default-value>
-            </attribute-definition>
-        </custom-attribute-definitions>
-    </type-extension>
-</metadata>
-```
-
-2. Create preference values:
-
-**sites/MySite/preferences.xml:**
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<preferences xmlns="http://www.demandware.com/xml/impex/preferences/2007-03-31">
-    <custom-preferences>
-        <all-instances>
-            <preference preference-id="enableFeatureX">true</preference>
-        </all-instances>
-    </custom-preferences>
-</preferences>
-```
-
-3. Directory structure:
-
-```
-my-import/
-├── meta/
-│   └── system-objecttype-extensions.xml
-└── sites/
-    └── MySite/
-        └── preferences.xml
-```
-
-4. Import:
-
-```bash
-b2c job import ./my-import
-```
-
-### Creating a Custom Object Type
-
-1. Define the custom object:
-
-**meta/custom-objecttype-definitions.xml:**
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
-    <custom-type type-id="APIConfiguration">
-        <display-name xml:lang="x-default">API Configuration</display-name>
-        <staging-mode>source-to-target</staging-mode>
-        <storage-scope>site</storage-scope>
-        <key-definition attribute-id="configId">
-            <display-name xml:lang="x-default">Config ID</display-name>
-            <type>string</type>
-            <min-length>1</min-length>
-        </key-definition>
-        <attribute-definitions>
-            <attribute-definition attribute-id="endpoint">
-                <display-name xml:lang="x-default">API Endpoint</display-name>
-                <type>string</type>
-            </attribute-definition>
-            <attribute-definition attribute-id="apiKey">
-                <display-name xml:lang="x-default">API Key</display-name>
-                <type>password</type>
-            </attribute-definition>
-            <attribute-definition attribute-id="isActive">
-                <display-name xml:lang="x-default">Active</display-name>
-                <type>boolean</type>
-                <default-value>true</default-value>
-            </attribute-definition>
-        </attribute-definitions>
-    </custom-type>
-</metadata>
-```
-
-2. Import:
-
-```bash
-b2c job import ./my-import
-```
-
-### Importing Custom Object Data
-
-**customobjects/APIConfiguration.xml:**
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<custom-objects xmlns="http://www.demandware.com/xml/impex/customobject/2006-10-31">
-    <custom-object type-id="APIConfiguration" object-id="payment-gateway">
-        <object-attribute attribute-id="endpoint">https://api.payment.com/v2</object-attribute>
-        <object-attribute attribute-id="isActive">true</object-attribute>
-    </custom-object>
-</custom-objects>
-```
-
-## Site Archive Structure
-
-```
-site-archive/
-├── services.xml                           # Service configurations (credentials, profiles, services)
-├── meta/
-│   ├── system-objecttype-extensions.xml   # Custom attributes on system objects
-│   └── custom-objecttype-definitions.xml  # Custom object type definitions
-├── sites/
-│   └── {SiteID}/
-│       ├── preferences.xml                # Site preference values
-│       └── library/
-│           └── content/
-│               └── content.xml            # Content assets
-├── catalogs/
-│   └── {CatalogID}/
-│       └── catalog.xml                    # Products and categories
-├── pricebooks/
-│   └── {PriceBookID}/
-│       └── pricebook.xml                  # Price definitions
-├── customobjects/
-│   └── {ObjectTypeID}.xml                 # Custom object instances
-└── inventory-lists/
-    └── {InventoryListID}/
-        └── inventory.xml                  # Inventory records
-```
-
-## Tips
-
-### Checking Job Status
-
-```bash
-# Search for recent job executions
-b2c job search
-
-# Wait for a specific job execution
-b2c job wait <job-id> <execution-id>
-
-# View job logs on failure
-b2c job import ./my-data --show-log
-```
-
-### Best Practices
-
-1. **Test imports on sandbox first** before importing to staging/production
-2. Import waits for completion by default — use `--no-wait` only when you want to return immediately
-3. **Use `--show-log`** to debug failed imports
-4. **Keep archives organized** by feature or change type; use `job import-set` when a growing ordered set should be safely repeatable
-5. **Version control your metadata** XML files
-
-### Configuring External Services
-
-For service configurations (HTTP, FTP, SOAP services), see the `b2c:b2c-webservices` skill which includes:
-
-- Complete services.xml examples
-- Credential, profile, and service element patterns
-- Import/export workflows
-
-Quick example:
-
-```bash
-# Import service configuration
-b2c job import ./services-folder
-```
-
-Where `services-folder/services.xml` follows the patterns in the `b2c:b2c-webservices` skill.
-
-## Detailed Reference
-
-- [Metadata XML Patterns](references/METADATA-XML.md) - Common XML patterns for imports
-
-## Related Skills
-
-- `b2c-cli:b2c-import-set-migrations` - Ordered, idempotent, repeatable site-import migrations (`job import-set`) with post-import notes
-- `b2c:b2c-webservices` - Service configurations (HTTP, FTP, SOAP), services.xml format
-- `b2c:b2c-metadata` - System object extensions and custom object definitions
-- `b2c-cli:b2c-job` - Running and monitoring jobs, including individual archive imports
+`--site` alone exports all site data; specify `--site-data` for focused work.
+Directory output retains the platform's generated `*_export` root. Do not overwrite
+an existing/applied migration. Exports may contain secrets or unrelated defaults;
+review and trim before committing, preserving XSD-required fields.
+
+## Focused references
+
+- Archive layout and XML workflows: [archive workflows](references/WORKFLOWS.md).
+- Attribute/type XML patterns: [metadata XML](references/METADATA-XML.md).
+- Remote imports, size splitting, and import-set options: [import options](references/IMPORT-OPTIONS.md).
+- Export flags, data units, and compact JSON results: [export reference](../b2c-job/references/EXPORT.md).
+- Ordered migrations, naming, history, and recovery: `b2c-cli:b2c-import-set-migrations`.
+- Service configuration XML: `b2c:b2c-webservices`.
+
+Jobs prefer SCAPI; `--api-backend auto` can fall back to OCAPI on supported
+rejections. Archive transfer uses WebDAV in either case. For job scopes, backend
+selection, and monitoring, use the relevant section of `b2c-cli:b2c-job`.

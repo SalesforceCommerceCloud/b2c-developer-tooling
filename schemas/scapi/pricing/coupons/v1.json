@@ -1,0 +1,1542 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Coupons",
+    "version": "1.0.43",
+    "x-api-type": "Admin",
+    "x-api-family": "Pricing"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/pricing/coupons/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/coupons": {
+      "post": {
+        "operationId": "couponsSearch",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon information successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thrown when the query is ill-formed."
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/coupons/redemptions": {
+      "post": {
+        "operationId": "couponRedemptionsSearch",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon redemption information successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponRedemptionSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thrown when the query is ill-formed."
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/coupons/actions/redeem": {
+      "post": {
+        "operationId": "redeemCoupon",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponCodeRedemptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Coupon was successfully redeemed and a redemption record created.\n"
+          },
+          "400": {
+            "description": "Thrown when the coupon code can not be redeemed, for example, if it is disabled,\nalready redeemed, if the redemption limit (maximum number or timeframe) is\nexceeded or if it has no assigned active promotion.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thrown when the site does not contain a coupon, which\ndefines whether the coupon code requested can be redeemed.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/coupons/{couponId}": {
+      "get": {
+        "operationId": "getCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coupon information for the specified coupon ID successfully returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Coupon"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thrown when the coupon does not exist matching the given ID.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "createCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Coupon"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Coupon"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thrown when the coupon passed is not valid (the argument indicates\n              which field is invalid).\nPossible reasons:\n- The code provided is in use by another coupon.\n- A single code coupon set the coupon code improperly.\n- The ID in the request does not match the ID in the document.\n- A quota for system-generated coupons is violated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Thrown when the resource requires global context instead of site-specific context.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Coupon successfully deleted."
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Coupon"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon successfully updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Coupon"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- Cannot update certain fields in a coupon after redeeming it or exporting it\n- The code provided is in use by another coupon.\n- A quota for system-generated coupons is violated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Thrown when trying to update a broken coupon that should be deleted and re-created, or when trying to update a legacy coupon.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/coupons/{couponId}/codes": {
+      "get": {
+        "operationId": "getCouponCodes",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coupon codes successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponCodes"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thrown when the coupon does not exist matching the given ID.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "operationId": "updateCouponCodes",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "delete",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponMultiCodesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Coupon codes successfully updated - this is also returned if we try to add an already existing code or to delete a non-existing code."
+          },
+          "400": {
+            "description": "Thrown when the coupon code could not be created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thrown if the coupon does not exist matching the given ID.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Query": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolQuery": {
+            "$ref": "#/components/schemas/BoolQuery"
+          },
+          "filteredQuery": {
+            "$ref": "#/components/schemas/FilteredQuery"
+          },
+          "matchAllQuery": {
+            "$ref": "#/components/schemas/MatchAllQuery"
+          },
+          "nestedQuery": {
+            "$ref": "#/components/schemas/NestedQuery"
+          },
+          "termQuery": {
+            "$ref": "#/components/schemas/TermQuery"
+          },
+          "textQuery": {
+            "$ref": "#/components/schemas/TextQuery"
+          }
+        }
+      },
+      "BoolQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "must": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "mustNot": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "should": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolFilter": {
+            "$ref": "#/components/schemas/BoolFilter"
+          },
+          "queryFilter": {
+            "$ref": "#/components/schemas/QueryFilter"
+          },
+          "range2Filter": {
+            "$ref": "#/components/schemas/Range2Filter"
+          },
+          "rangeFilter": {
+            "$ref": "#/components/schemas/RangeFilter"
+          },
+          "termFilter": {
+            "$ref": "#/components/schemas/TermFilter"
+          }
+        }
+      },
+      "BoolFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            }
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or",
+              "not"
+            ]
+          }
+        },
+        "required": [
+          "operator"
+        ]
+      },
+      "QueryFilter": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Field": {
+        "type": "string",
+        "maxLength": 260
+      },
+      "Range2Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filterMode": {
+            "type": "string",
+            "default": "overlap",
+            "enum": [
+              "overlap",
+              "containing",
+              "contained"
+            ]
+          },
+          "fromField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "fromValue": {},
+          "toField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "toValue": {}
+        },
+        "required": [
+          "fromField",
+          "toField"
+        ]
+      },
+      "RangeFilter": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "from": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "to": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "TermFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "field",
+          "operator"
+        ]
+      },
+      "FilteredQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/Filter"
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "filter",
+          "query"
+        ]
+      },
+      "MatchAllQuery": {
+        "type": "object"
+      },
+      "NestedQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "scoreMode": {
+            "type": "string",
+            "enum": [
+              "avg",
+              "total",
+              "max",
+              "none"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "query"
+        ]
+      },
+      "TermQuery": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "fields",
+          "operator"
+        ]
+      },
+      "TextQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "searchPhrase": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fields",
+          "searchPhrase"
+        ]
+      },
+      "String256": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "Sort": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/String256"
+              }
+            ]
+          },
+          "sortOrder": {
+            "type": "string",
+            "default": "asc",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "PaginatedSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "hits": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "RedemptionLimitPerPeriod": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "redemptionTimeFrame": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 999,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "limit",
+          "redemptionTimeFrame"
+        ]
+      },
+      "RedemptionLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limitPerCode": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "limitPerCustomer": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "limitPerTimeFrame": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RedemptionLimitPerPeriod"
+              }
+            ]
+          }
+        },
+        "required": [
+          "limitPerCode",
+          "limitPerCustomer",
+          "limitPerTimeFrame"
+        ]
+      },
+      "CouponSystemCodeConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "codePrefix": {
+            "type": "string"
+          },
+          "numberOfCodes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "codePrefix",
+          "numberOfCodes"
+        ]
+      },
+      "Coupon": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "couponId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "exportedCodeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "redemptionCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "redemptionLimits": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RedemptionLimits"
+              }
+            ]
+          },
+          "singleCode": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "systemCodesConfig": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CouponSystemCodeConfig"
+              }
+            ]
+          },
+          "totalCodesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "single_code",
+              "multiple_codes",
+              "system_codes"
+            ]
+          }
+        },
+        "required": [
+          "couponId",
+          "enabled",
+          "type"
+        ]
+      },
+      "CouponSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Coupon"
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      },
+      "CouponRedemption": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "couponId": {
+            "type": "string"
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customerEmail": {
+            "type": "string"
+          },
+          "orderNo": {
+            "type": "string"
+          },
+          "viewOrderUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "couponId",
+          "creationDate",
+          "customerEmail",
+          "orderNo",
+          "viewOrderUrl"
+        ]
+      },
+      "CouponRedemptionSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponRedemption"
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      },
+      "CouponCodeRedemptionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "customerEmail": {
+            "type": "string"
+          },
+          "orderNo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "orderNo"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "CouponCode": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "issued": {
+            "type": "boolean"
+          },
+          "redemptionCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "code",
+          "issued",
+          "redemptionCount"
+        ]
+      },
+      "CouponCodes": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponCode"
+            }
+          }
+        },
+        "required": [
+          "data",
+          "total"
+        ]
+      },
+      "CouponMultiCodesRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "codes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            },
+            "maxItems": 999
+          }
+        },
+        "required": [
+          "codes"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "couponId": {
+        "name": "couponId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "delete": {
+        "name": "delete",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.promotions": "promotions READONLY",
+              "sfcc.promotions.rw": "promotions read/write"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.promotions": "promotions READONLY",
+              "sfcc.promotions.rw": "promotions read/write"
+            }
+          }
+        }
+      }
+    }
+  }
+}

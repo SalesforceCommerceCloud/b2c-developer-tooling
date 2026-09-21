@@ -12,10 +12,12 @@ export const redirects: Record<string, string> = {
 
 /** Normalize a router path to the key form used in the map (strip base, `.html`, trailing slash). */
 export function lookupRedirect(pathname: string, base: string): string | undefined {
-  let p = pathname;
+  const url = new URL(pathname, 'https://docs.local');
+  let p = url.pathname;
   if (base && base !== '/' && p.startsWith(base)) {
     p = p.slice(base.length - 1); // keep leading slash
   }
   p = p.replace(/\.html$/, '').replace(/\/$/, '');
+  if (p === '/mcp/installation') return `/mcp/${url.search}${url.hash || '#setup'}`;
   return redirects[p];
 }

@@ -7,13 +7,19 @@ description: Check custom SCAPI endpoint registration status using the b2c CLI. 
 
 Use the `b2c` CLI plugin to manage SCAPI Custom API endpoints and check their registration status.
 
+When B2C MCP is available, prefer `scapi_custom_apis_get_status` for registration
+and `scapi_schemas_list` for live contracts. For Admin custom API execution, read
+`skill://mcp/scapi/SKILL.md`; fetch the contract through `scapi.request` in the
+program before calling its endpoints. Schema reads need `sfcc.scapi-schemas`;
+execution needs the declared `c_*` scope. Shopper execution is unsupported.
+
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli scapi custom status`).
 
 ## Configuration
 
 Values like `tenantId`, `shortCode`, `clientId`, and `clientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance / configuration plugins. Examples below show minimal usage; **add flags only to override configured values** — passing `--client-id`/`--client-secret`/`--tenant-id`/`--short-code` is usually unnecessary. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Tenant ID vs. Organization ID
 
@@ -26,8 +32,8 @@ The tenant ID identifies your B2C Commerce instance. It is **not** the same as t
 
 For sandbox instances, derive the tenant ID from the hostname by replacing hyphens with underscores:
 
-| Hostname | Tenant ID |
-|----------|-----------|
+| Hostname                                   | Tenant ID  |
+| ------------------------------------------ | ---------- |
 | `zzpq-013.dx.commercecloud.salesforce.com` | `zzpq_013` |
 | `zzxy-001.dx.commercecloud.salesforce.com` | `zzxy_001` |
 | `abcd-dev.dx.commercecloud.salesforce.com` | `abcd_dev` |

@@ -1,0 +1,234 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Timeouts",
+    "version": "1.0.6",
+    "x-api-type": "Admin",
+    "x-api-family": "Configuration"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/configuration/timeouts/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/timeouts": {
+      "get": {
+        "operationId": "getTimeouts",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully returned SCAPI timeout overrides.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeoutConfigurations"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.timeouts",
+              "sfcc.timeouts.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "putTimeouts",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeoutConfigurations"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful update of SCAPI Timeout overrides.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeoutConfigurations"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Successful creation of SCAPI Timeout overrides.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeoutConfigurations"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid SCAPI timeout override values (e.g., incomplete JSON or key not in \"api-family/api\" format).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.timeouts.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteTimeouts",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted all SCAPI timeout values.",
+            "content": {}
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.timeouts.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "TimeoutMappings": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "properties": {}
+      },
+      "TimeoutConfigurations": {
+        "type": "object",
+        "properties": {
+          "timeouts": {
+            "$ref": "#/components/schemas/TimeoutMappings"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.timeouts": "Timeouts READONLY scope",
+              "sfcc.timeouts.rw": "Timeouts scope"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.timeouts": "Timeouts READONLY scope",
+              "sfcc.timeouts.rw": "Timeouts scope"
+            }
+          }
+        }
+      }
+    }
+  }
+}

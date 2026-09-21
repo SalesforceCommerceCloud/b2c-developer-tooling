@@ -1,0 +1,26 @@
+diff --git a/dist/src-CX2iR2pK.mjs b/dist/src-CX2iR2pK.mjs
+index a84104122fd3fdc6ae8865c10c65221c76f71ee3..67b2e5c29661fa96937161f6a771cc5e95851945 100644
+--- a/dist/src-CX2iR2pK.mjs
++++ b/dist/src-CX2iR2pK.mjs
+@@ -6247,7 +6247,7 @@ var Protocol = class {
+ 		return this._requestHandlers.get(method);
+ 	}
+ 	async _oncancel(notification) {
+-		if (!notification.params.requestId) return;
++		if (notification.params.requestId === undefined) return;
+ 		this._requestHandlerAbortControllers.get(notification.params.requestId)?.abort(notification.params.reason);
+ 	}
+ 	_setupTimeout(messageId, timeout, maxTotalTimeout, onTimeout, resetTimeoutOnProgress = false) {
+diff --git a/dist/src-STyD_Vvf.cjs b/dist/src-STyD_Vvf.cjs
+index cf5cbacc42becea62c32f3aa83a5748aebcb33c0..42f0de6dfd7cdfe86fb4e25c198c7accb25644ca 100644
+--- a/dist/src-STyD_Vvf.cjs
++++ b/dist/src-STyD_Vvf.cjs
+@@ -6248,7 +6248,7 @@ var Protocol = class {
+ 		return this._requestHandlers.get(method);
+ 	}
+ 	async _oncancel(notification) {
+-		if (!notification.params.requestId) return;
++		if (notification.params.requestId === undefined) return;
+ 		this._requestHandlerAbortControllers.get(notification.params.requestId)?.abort(notification.params.reason);
+ 	}
+ 	_setupTimeout(messageId, timeout, maxTotalTimeout, onTimeout, resetTimeoutOnProgress = false) {

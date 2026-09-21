@@ -1,12 +1,13 @@
 ---
-description: Moved — documented on the combined SCAPI Custom APIs page.
+description: SCAPI development capabilities are documented in Tools and Capabilities.
 head:
-  - ['meta', {'http-equiv': 'refresh', content: '0; url=./scapi-custom-apis#scapi-custom-api-generate-scaffold'}]
-  - ['link', {rel: 'canonical', href: './scapi-custom-apis'}]
+  - ['meta', {'http-equiv': 'refresh', content: '0; url=../toolsets#scapi'}]
+  - ['link', {rel: 'canonical', href: '../toolsets'}]
+  - ['meta', {name: 'robots', content: 'noindex'}]
 aside: false
 outline: false
 ---
 
 # This page has moved
 
-`scapi_custom_api_generate_scaffold` is now documented on the **[SCAPI Custom APIs](./scapi-custom-apis#scapi-custom-api-generate-scaffold)** page. Redirecting…
+See [SCAPI development](../toolsets#scapi) for capabilities, required access, and configuration.

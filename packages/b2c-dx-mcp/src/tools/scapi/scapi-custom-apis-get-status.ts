@@ -132,10 +132,12 @@ export function createScapiCustomApisStatusTool(loadServices: () => Promise<Serv
   return createToolAdapter<CustomListInput, CustomListOutput>(
     {
       name: 'scapi_custom_apis_get_status',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'List Custom SCAPI endpoint registration status per site. Supports filtering, grouping, and selected columns. Requires shortCode, tenantId, and sfcc.custom-apis scope. Use scapi_schemas_list for schemas.',
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
-      isGA: true,
       requiresInstance: false,
       usesConfigurationContext: true,
       inputSchema: {

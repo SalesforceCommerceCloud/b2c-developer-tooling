@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: SLAS Shopper Token Flows
+  version: 1.0.0
+  description: Subset of the Shopper Login API used by the SDK token helpers.
+paths:
+  /oauth2/authorize:
+    get:
+      parameters:
+        - {name: client_id, in: query, required: true, schema: {type: string}}
+        - {name: response_type, in: query, required: true, schema: {type: string, enum: [code]}}
+        - {name: redirect_uri, in: query, required: true, schema: {type: string}}
+        - {name: hint, in: query, required: true, schema: {type: string, enum: [guest]}}
+        - {name: code_challenge, in: query, required: true, schema: {type: string}}
+      responses:
+        '303': {$ref: '#/components/responses/AuthorizationRedirect'}
+        default: {$ref: '#/components/responses/Error'}
+  /oauth2/login:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [client_id, channel_id, code_challenge, redirect_uri]
+              properties:
+                client_id: {type: string}
+                channel_id: {type: string}
+                code_challenge: {type: string}
+                redirect_uri: {type: string}
+      responses:
+        '303': {$ref: '#/components/responses/AuthorizationRedirect'}
+        default: {$ref: '#/components/responses/Error'}
+  /oauth2/token:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [grant_type, channel_id]
+              properties:
+                grant_type: {type: string, enum: [client_credentials, authorization_code_pkce]}
+                channel_id: {type: string}
+                client_id: {type: string}
+                code: {type: string}
+                code_verifier: {type: string}
+                redirect_uri: {type: string}
+                usid: {type: string}
+      responses:
+        '200':
+          description: Shopper access token
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [access_token, refresh_token, expires_in, token_type, usid, customer_id]
+                properties:
+                  access_token: {type: string}
+                  refresh_token: {type: string}
+                  expires_in: {type: integer}
+                  token_type: {type: string}
+                  usid: {type: string}
+                  customer_id: {type: string}
+                  id_token: {type: string}
+        default: {$ref: '#/components/responses/Error'}
+components:
+  responses:
+    AuthorizationRedirect:
+      description: Authorization code returned in the Location header
+      headers:
+        Location:
+          required: true
+          schema: {type: string}
+    Error:
+      description: SLAS error response
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true

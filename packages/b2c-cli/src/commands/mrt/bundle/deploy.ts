@@ -6,14 +6,18 @@
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
-  pushBundle,
+  pushMrtBundle,
   deployMrtBundle,
   waitForEnv,
   waitForDeploymentScapi,
   DEFAULT_SSR_PARAMETERS,
-  type PushResult,
+  DEFAULT_V2_ROOT_DIR,
+  DEFAULT_V2_CONFIG_PATH,
+  DEFAULT_V2_MATCH_MODE,
   type MrtEnvironment,
+  type MrtBackendPreference,
   type ScapiMrtConnection,
+  type BundleV2MatchMode,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 import {
@@ -30,9 +34,9 @@ type ScapiDeploymentResult = Awaited<ReturnType<typeof waitForDeploymentScapi>>;
  * Deploy a bundle to Managed Runtime.
  *
  * Without bundleId: Creates a bundle from the local build directory and uploads it.
- * Optionally deploys to a target environment if --environment is specified.
- * The local-build path is legacy-pinned (bundle upload is not part of the SCAPI
- * MRT surface yet), so it runs against the MRT Cloud API regardless of backend.
+ * Optionally deploys to an environment if --environment is specified. This path
+ * is backend-aware — it honors `--mrt-backend` (auto/legacy/scapi), uploading
+ * (and optionally deploying) via SCAPI or the legacy MRT Cloud API.
  *
  * With bundleId: Deploys an existing bundle to the specified environment. This
  * path is backend-aware — it honors `--mrt-backend` (auto/legacy/scapi).
@@ -59,6 +63,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     '<%= config.bin %> <%= command.id %> --project my-storefront --build-dir ./dist',
     '<%= config.bin %> <%= command.id %> --project my-storefront --node-version 20.x',
     '<%= config.bin %> <%= command.id %> --project my-storefront --ssr-param SSRProxyPath=/api',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --mrt-backend scapi --root-dir bld --match-mode ignore_missing',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --mrt-backend legacy --v2 --match-mode ignore_missing',
     '<%= config.bin %> <%= command.id %> 12345 --project my-storefront --environment staging',
     '<%= config.bin %> <%= command.id %> 12345 --project my-storefront --environment staging --wait',
     '<%= config.bin %> <%= command.id %> 12345 -p my-storefront -e staging --mrt-backend scapi --wait',
@@ -80,6 +86,21 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     }),
     'ssr-shared': Flags.string({
       description: 'Glob patterns for shared files (comma-separated or JSON array, only for local builds)',
+    }),
+    v2: Flags.boolean({
+      description:
+        'Use the v2 bundle format/endpoint. SCAPI always uses v2; on the legacy backend this routes the upload through the v2 endpoint (default: v1)',
+      default: false,
+    }),
+    'root-dir': Flags.string({
+      description: `Archive path prefix under which built files and the config file live (v2 uploads only; default: ${DEFAULT_V2_ROOT_DIR})`,
+    }),
+    'config-path': Flags.string({
+      description: `Path to the in-archive config file, relative to --root-dir (v2 uploads only; default: ${DEFAULT_V2_CONFIG_PATH})`,
+    }),
+    'match-mode': Flags.string({
+      description: `How ssr-only/ssr-shared patterns that match no files are handled (v2 uploads only; default: ${DEFAULT_V2_MATCH_MODE})`,
+      options: ['strict', 'ignore_missing'],
     }),
     'node-version': Flags.string({
       char: 'n',
@@ -108,7 +129,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
   };
 
   protected operations = {
-    pushBundle,
+    pushMrtBundle,
     deployMrtBundle,
     waitForEnv,
     waitForDeploymentScapi,
@@ -140,7 +161,9 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
     if (!environment) {
       this.error(
@@ -150,15 +173,13 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
 
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.deploying', 'Deploying bundle {{bundleId}} to {{project}}/{{environment}}...', {
-          bundleId,
-          project,
-          environment,
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.deploying', 'Deploying bundle {{bundleId}} to {{project}}/{{environment}}...', {
+        bundleId,
+        project,
+        environment,
+      }),
+    );
 
     try {
       const result = await this.operations.deployMrtBundle({
@@ -172,25 +193,23 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         onResolve: (backend) => this.logger.debug({backend}, '[MRT] Deploying bundle via backend'),
       });
 
-      if (!this.jsonEnabled()) {
+      this.log(
+        t(
+          'commands.mrt.bundle.deploy.deploySuccess',
+          'Deployment started. Bundle {{bundleId}} is being deployed to {{environment}}.',
+          {
+            bundleId,
+            environment,
+          },
+        ),
+      );
+      if (!this.flags.wait) {
         this.log(
           t(
-            'commands.mrt.bundle.deploy.deploySuccess',
-            'Deployment started. Bundle {{bundleId}} is being deployed to {{environment}}.',
-            {
-              bundleId,
-              environment,
-            },
+            'commands.mrt.bundle.deploy.note',
+            'Note: Deployments are asynchronous. Use "b2c mrt env get" or the Runtime Admin dashboard to check status.',
           ),
         );
-        if (!this.flags.wait) {
-          this.log(
-            t(
-              'commands.mrt.bundle.deploy.note',
-              'Note: Deployments are asynchronous. Use "b2c mrt env get" or the Runtime Admin dashboard to check status.',
-            ),
-          );
-        }
       }
 
       for (const w of result.warnings ?? []) this.warn(w);
@@ -214,35 +233,61 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         const message = t('commands.mrt.bundle.deploy.deployFailed', 'Failed to create deployment: {{message}}', {
           message: error.message,
         });
-        // `MRT_PROJECT_SUGGESTION` points at `b2c mrt project list`, a legacy MRT
-        // Cloud API command — only relevant when the legacy backend served the
-        // request. Under explicit `--mrt-backend scapi` the failure is a SCAPI
-        // one, so appending it would send the user down the wrong path.
-        if (isMrtAuthError(error) && preference !== 'scapi') {
-          this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
-        }
-        this.error(message);
+        this.failWithMrtError(error, message, preference, scapiConnection);
       }
       throw error;
     }
   }
 
   /**
-   * Push a local build to create a new bundle. Legacy-pinned: bundle upload is
-   * not part of the SCAPI MRT surface, so a single command never mixes
-   * backends. Explicit `--mrt-backend scapi` errors here; `auto` warns and
-   * proceeds on the legacy MRT Cloud API.
+   * Fail a push/deploy with the appropriate message, appending the legacy
+   * `b2c mrt project list` suggestion only when the legacy backend served (or
+   * could have served) the request.
+   *
+   * `MRT_PROJECT_SUGGESTION` points at `b2c mrt project list`, a legacy MRT
+   * Cloud API command — only relevant when the legacy backend served the
+   * request. The command can't tell post-hoc which backend threw (the router
+   * only reports `backend` on success), so suggest it only when legacy is the
+   * serving backend: an explicit `legacy` preference, or `auto` with no SCAPI
+   * connection configured. Under `scapi` (or `auto` with SCAPI configured) the
+   * failure is almost always a SCAPI one, so appending a legacy hint would send
+   * the user down the wrong path.
    */
-  private async pushLocalBuild(): Promise<MrtEnvironment | PushResult> {
-    this.guardUnsupportedByScapiMrt('pushing a local build');
-    this.requireMrtCredentials();
+  private failWithMrtError(
+    error: Error,
+    message: string,
+    preference: MrtBackendPreference,
+    scapiConnection?: ScapiMrtConnection,
+  ): never {
+    const legacyServed = preference === 'legacy' || !scapiConnection;
+    if (isMrtAuthError(error) && legacyServed) {
+      this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
+    }
+    this.error(message);
+  }
 
+  /**
+   * Push a local build to create a new bundle. Backend-aware: honors
+   * `--mrt-backend` and uploads (then optionally deploys, when `--environment`
+   * is given) via SCAPI or the legacy MRT Cloud API, with safe `auto` fallback.
+   * On `--wait`, polls whichever backend served the push.
+   *
+   * Returns the backend's native response so `--json` stays backend-specific:
+   * without `--wait`, the raw push result (legacy MRT Cloud API push result, or
+   * the SCAPI upload — plus create-deployment — responses); with `--wait`, the
+   * polled environment (legacy) or completed deployment (SCAPI).
+   */
+  private async pushLocalBuild(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: target} = this.resolvedConfig.values;
     const {message} = this.flags;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
+
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
     const buildDir = this.flags['build-dir'];
     const ssrOnly = this.flags['ssr-only'] ? parseGlobPatterns(this.flags['ssr-only']) : undefined;
@@ -256,71 +301,100 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       ssrParameters.SSRFunctionNodeVersion = this.flags['node-version'];
     }
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.mrt.bundle.deploy.pushing', 'Pushing bundle to {{project}}...', {project}));
+    // v2 archive layout flags — only meaningful for a v2 upload (SCAPI always,
+    // or legacy with --v2). Left undefined here so createBundleV2 supplies the
+    // DEFAULT_V2_* values; the legacy v1 upload ignores them. Track which were
+    // explicitly set so we can warn if the push runs on legacy v1.
+    const v2 = this.flags.v2;
+    const rootDir = this.flags['root-dir'];
+    const configPath = this.flags['config-path'];
+    const matchMode = this.flags['match-mode'] as BundleV2MatchMode | undefined;
+    const v2LayoutFlagsUsed: string[] = [];
+    if (rootDir !== undefined) v2LayoutFlagsUsed.push('--root-dir');
+    if (configPath !== undefined) v2LayoutFlagsUsed.push('--config-path');
+    if (matchMode !== undefined) v2LayoutFlagsUsed.push('--match-mode');
 
-      if (target) {
-        this.log(
-          t('commands.mrt.bundle.deploy.willDeploy', 'Bundle will be deployed to {{environment}}', {
-            environment: target,
-          }),
-        );
-      }
+    this.log(t('commands.mrt.bundle.deploy.pushing', 'Pushing bundle to {{project}}...', {project}));
+
+    if (target) {
+      this.log(
+        t('commands.mrt.bundle.deploy.willDeploy', 'Bundle will be deployed to {{environment}}', {
+          environment: target,
+        }),
+      );
     }
 
     try {
-      const result = await this.operations.pushBundle(
-        {
-          projectSlug: project,
-          target,
-          message,
-          buildDirectory: buildDir,
-          projectDirectory: this.resolvedConfig.values.projectDirectory,
-          ssrOnly,
-          ssrShared,
-          ssrParameters,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+      const result = await this.operations.pushMrtBundle({
+        preference,
+        scapiConnection,
+        legacyAuth,
+        projectSlug: project,
+        targetSlug: target,
+        message,
+        buildDirectory: buildDir,
+        projectDirectory: this.resolvedConfig.values.projectDirectory,
+        ssrOnly,
+        ssrShared,
+        ssrParameters,
+        rootDir,
+        configPath,
+        matchMode,
+        v2,
+        origin: this.resolvedConfig.values.mrtOrigin,
+        onResolve: (backend) => this.logger.debug({backend}, '[MRT] Pushing local build via backend'),
+      });
 
-      // Consolidated success output
-      if (!this.jsonEnabled()) {
-        const deployedMsg = result.deployed && result.target ? ` and deployed to ${result.target}` : '';
-        this.log(
-          t(
-            'commands.mrt.bundle.deploy.pushSuccess',
-            'Bundle #{{bundleId}} pushed to {{project}}{{deployed}} ({{message}})',
-            {
-              bundleId: String(result.bundleId),
-              project: result.projectSlug,
-              deployed: deployedMsg,
-              message: result.message,
-            },
-          ),
+      // --root-dir/--config-path/--match-mode only affect a v2 upload. If the
+      // legacy backend served this push as v1 (no --v2 — explicit `legacy`, or
+      // `auto` resolving/falling back to legacy), warn that they had no effect.
+      if (result.backend === 'legacy' && !v2 && v2LayoutFlagsUsed.length > 0) {
+        this.warn(
+          `${v2LayoutFlagsUsed.join(', ')} apply only to v2 uploads and were ignored (this push used the legacy v1 endpoint; pass --v2 to enable them).`,
         );
       }
+
+      // Consolidated success output
+      const deployedMsg = result.deployed && target ? ` and deployed to ${target}` : '';
+      this.log(
+        t(
+          'commands.mrt.bundle.deploy.pushSuccess',
+          'Bundle #{{bundleId}} pushed to {{project}}{{deployed}} ({{message}})',
+          {
+            bundleId: String(result.bundleId),
+            project,
+            deployed: deployedMsg,
+            message: result.message ?? '',
+          },
+        ),
+      );
 
       for (const w of result.warnings ?? []) this.warn(w);
 
       if (this.flags.wait) {
         if (!target) {
-          this.warn('--wait was specified but no environment target was provided. Skipping wait.');
-          return result;
+          this.warn('--wait was specified but no environment was provided. Skipping wait.');
+          return result.raw;
+        }
+        if (result.backend === 'scapi') {
+          if (result.deploymentId) {
+            return this.waitForScapiDeploymentById(scapiConnection!, project, target, result.deploymentId);
+          }
+          this.warn(
+            '--wait was specified but the SCAPI deployment did not return a deployment ID; cannot poll for completion.',
+          );
+          return result.raw;
         }
         return this.waitForDeployment(project, target);
       }
 
-      return result;
+      return result.raw;
     } catch (error) {
       if (error instanceof Error) {
         const message = t('commands.mrt.bundle.deploy.pushFailed', 'Push failed: {{message}}', {
           message: error.message,
         });
-        if (isMrtAuthError(error)) {
-          this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
-        }
-        this.error(message);
+        this.failWithMrtError(error, message, preference, scapiConnection);
       }
       throw error;
     }
@@ -330,13 +404,11 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
    * Wait for a legacy deployment to complete by polling the environment state.
    */
   private async waitForDeployment(project: string, environment: string): Promise<MrtEnvironment> {
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.waiting', 'Waiting for deployment to complete on {{environment}}...', {
-          environment,
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.waiting', 'Waiting for deployment to complete on {{environment}}...', {
+        environment,
+      }),
+    );
 
     const envResult = await this.operations.waitForEnv(
       {
@@ -346,26 +418,22 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         pollIntervalSeconds: this.flags['poll-interval'],
         timeoutSeconds: this.flags.timeout,
         onPoll: (info) => {
-          if (!this.jsonEnabled()) {
-            this.log(
-              t('commands.mrt.bundle.deploy.state', '[{{elapsed}}s] State: {{state}}', {
-                elapsed: String(info.elapsedSeconds),
-                state: info.state,
-              }),
-            );
-          }
+          this.log(
+            t('commands.mrt.bundle.deploy.state', '[{{elapsed}}s] State: {{state}}', {
+              elapsed: String(info.elapsedSeconds),
+              state: info.state,
+            }),
+          );
         },
       },
       this.getMrtAuth(),
     );
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.deployComplete', 'Deployment complete. Environment is {{state}}.', {
-          state: envResult.state ?? 'unknown',
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.deployComplete', 'Deployment complete. Environment is {{state}}.', {
+        state: envResult.state ?? 'unknown',
+      }),
+    );
 
     return envResult;
   }
@@ -380,13 +448,11 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     environmentId: string,
     deploymentId: string,
   ): Promise<ScapiDeploymentResult> {
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.waiting', 'Waiting for deployment to complete on {{environment}}...', {
-          environment: environmentId,
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.waiting', 'Waiting for deployment to complete on {{environment}}...', {
+        environment: environmentId,
+      }),
+    );
 
     const deployment = await this.operations.waitForDeploymentScapi(conn, {
       storefrontId,
@@ -395,27 +461,23 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       pollIntervalSeconds: this.flags['poll-interval'],
       timeoutSeconds: this.flags.timeout,
       onPoll: (info) => {
-        if (!this.jsonEnabled()) {
-          const pct = typeof info.percentage === 'number' ? ` (${info.percentage}%)` : '';
-          const desc = info.description ? ` — ${info.description}` : '';
-          this.log(
-            t('commands.mrt.bundle.deploy.scapiState', '[{{elapsed}}s] Status: {{status}}{{detail}}', {
-              elapsed: String(info.elapsedSeconds),
-              status: info.status,
-              detail: `${pct}${desc}`,
-            }),
-          );
-        }
+        const pct = typeof info.percentage === 'number' ? ` (${info.percentage}%)` : '';
+        const desc = info.description ? ` — ${info.description}` : '';
+        this.log(
+          t('commands.mrt.bundle.deploy.scapiState', '[{{elapsed}}s] Status: {{status}}{{detail}}', {
+            elapsed: String(info.elapsedSeconds),
+            status: info.status,
+            detail: `${pct}${desc}`,
+          }),
+        );
       },
     });
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.bundle.deploy.scapiDeployComplete', 'Deployment complete. Status: {{status}}.', {
-          status: deployment.status ?? 'unknown',
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.bundle.deploy.scapiDeployComplete', 'Deployment complete. Status: {{status}}.', {
+        status: deployment.status ?? 'unknown',
+      }),
+    );
 
     return deployment;
   }

@@ -1,0 +1,1929 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Campaigns",
+    "version": "1.1.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Pricing"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/pricing/campaigns/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/campaigns": {
+      "post": {
+        "operationId": "campaignsSearch",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Campaign search successfully executed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Returned when the query is ill-formed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/campaigns/{campaignId}": {
+      "get": {
+        "operationId": "getCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignId"
+                }
+              ],
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign information successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Campaign"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Returned when there is no campaign found with the given ID for the requested site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "createCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignId"
+                }
+              ],
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Campaign"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Campaign successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Campaign"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Returned when the ID in the request does not match the ID in the document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignId"
+                }
+              ],
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Campaign deleted successfully."
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignId"
+                }
+              ],
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Campaign"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Campaign successfully updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Campaign"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Returned when a campaign with the specified campaign ID already exists in the site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Returned when there is no campaign found with the specified ID for the requested site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/campaigns/{campaignId}/promotions": {
+      "get": {
+        "operationId": "getCampaignPromotionAssignments",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignId"
+                }
+              ],
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Promotion campaign assignments successfully retrieved, ordered by rank ascending.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionCampaignAssignmentResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Campaign"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/campaigns/{campaignId}/promotions/{promotionId}": {
+      "get": {
+        "operationId": "getCampaignPromotionAssignment",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignId"
+                }
+              ],
+              "minLength": 1
+            }
+          },
+          {
+            "name": "promotionId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Promotion campaign assignment successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionCampaignAssignment"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Assignment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "assignPromotionToCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignId"
+                }
+              ],
+              "minLength": 1
+            }
+          },
+          {
+            "name": "promotionId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromotionCampaignAssignmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Promotion campaign assignment successfully replaced.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionCampaignAssignment"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Promotion campaign assignment successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionCampaignAssignment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_Assignment"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_CampaignOrPromotion"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "unassignPromotionFromCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignId"
+                }
+              ],
+              "minLength": 1
+            }
+          },
+          {
+            "name": "promotionId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Promotion campaign assignment successfully deleted."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Assignment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateCampaignPromotionAssignment",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignId"
+                }
+              ],
+              "minLength": 1
+            }
+          },
+          {
+            "name": "promotionId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromotionCampaignAssignmentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Promotion campaign assignment successfully updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionCampaignAssignment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_Assignment"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Assignment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Query": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolQuery": {
+            "$ref": "#/components/schemas/BoolQuery"
+          },
+          "filteredQuery": {
+            "$ref": "#/components/schemas/FilteredQuery"
+          },
+          "matchAllQuery": {
+            "$ref": "#/components/schemas/MatchAllQuery"
+          },
+          "nestedQuery": {
+            "$ref": "#/components/schemas/NestedQuery"
+          },
+          "termQuery": {
+            "$ref": "#/components/schemas/TermQuery"
+          },
+          "textQuery": {
+            "$ref": "#/components/schemas/TextQuery"
+          }
+        }
+      },
+      "BoolQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "must": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "mustNot": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "should": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolFilter": {
+            "$ref": "#/components/schemas/BoolFilter"
+          },
+          "queryFilter": {
+            "$ref": "#/components/schemas/QueryFilter"
+          },
+          "range2Filter": {
+            "$ref": "#/components/schemas/Range2Filter"
+          },
+          "rangeFilter": {
+            "$ref": "#/components/schemas/RangeFilter"
+          },
+          "termFilter": {
+            "$ref": "#/components/schemas/TermFilter"
+          }
+        }
+      },
+      "BoolFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            }
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or",
+              "not"
+            ]
+          }
+        },
+        "required": [
+          "operator"
+        ]
+      },
+      "QueryFilter": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Field": {
+        "type": "string",
+        "maxLength": 260
+      },
+      "Range2Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filterMode": {
+            "type": "string",
+            "default": "overlap",
+            "enum": [
+              "overlap",
+              "containing",
+              "contained"
+            ]
+          },
+          "fromField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "fromValue": {},
+          "toField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "toValue": {}
+        },
+        "required": [
+          "fromField",
+          "toField"
+        ]
+      },
+      "RangeFilter": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "from": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "to": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "TermFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "field",
+          "operator"
+        ]
+      },
+      "FilteredQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/Filter"
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "filter",
+          "query"
+        ]
+      },
+      "MatchAllQuery": {
+        "type": "object"
+      },
+      "NestedQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "scoreMode": {
+            "type": "string",
+            "enum": [
+              "avg",
+              "total",
+              "max",
+              "none"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "query"
+        ]
+      },
+      "TermQuery": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "fields",
+          "operator"
+        ]
+      },
+      "TextQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "searchPhrase": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fields",
+          "searchPhrase"
+        ]
+      },
+      "Sort": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "sortOrder": {
+            "type": "string",
+            "default": "asc",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "PaginatedSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "hits": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "CampaignId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "CouponId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "CustomerGroupId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "SourceCodeGroupId": {
+        "type": "string",
+        "maxLength": 28,
+        "minLength": 1
+      },
+      "Campaign": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "campaignId": {
+            "$ref": "#/components/schemas/CampaignId"
+          },
+          "coupons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponId"
+            }
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customerGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerGroupId"
+            }
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sourceCodeGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceCodeGroupId"
+            }
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CampaignSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Campaign"
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "CouponsBased": {
+        "type": "boolean"
+      },
+      "CustomerGroupsBased": {
+        "type": "boolean"
+      },
+      "RequiredQualifier": {
+        "type": "string",
+        "default": "any",
+        "enum": [
+          "all",
+          "any"
+        ]
+      },
+      "TimeOfDay": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timeFrom": {
+            "type": "string"
+          },
+          "timeTo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "timeFrom",
+          "timeTo"
+        ]
+      },
+      "Recurrence": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dayOfWeek": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday"
+              ]
+            }
+          },
+          "timeOfDay": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeOfDay"
+              }
+            ]
+          }
+        },
+        "required": [
+          "dayOfWeek",
+          "timeOfDay"
+        ]
+      },
+      "Schedule": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Recurrence"
+              }
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "endDate",
+          "startDate"
+        ]
+      },
+      "SourceCodeBased": {
+        "type": "boolean"
+      },
+      "PromotionCampaignAssignment": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "campaign": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Campaign"
+              }
+            ]
+          },
+          "campaignId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "coupons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponId"
+            }
+          },
+          "couponsBased": {
+            "$ref": "#/components/schemas/CouponsBased"
+          },
+          "customerGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerGroupId"
+            }
+          },
+          "customerGroupsBased": {
+            "$ref": "#/components/schemas/CustomerGroupsBased"
+          },
+          "enabled": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requiredQualifier": {
+            "$ref": "#/components/schemas/RequiredQualifier"
+          },
+          "schedule": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Schedule"
+              }
+            ]
+          },
+          "sourceCodeBased": {
+            "$ref": "#/components/schemas/SourceCodeBased"
+          },
+          "sourceCodeGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceCodeGroupId"
+            }
+          }
+        },
+        "required": [
+          "campaign",
+          "campaignId",
+          "coupons",
+          "couponsBased",
+          "customerGroups",
+          "customerGroupsBased",
+          "enabled",
+          "promotionId",
+          "rank",
+          "requiredQualifier",
+          "schedule",
+          "sourceCodeBased",
+          "sourceCodeGroups"
+        ]
+      },
+      "PromotionCampaignAssignmentResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PromotionCampaignAssignment"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CampaignNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "campaignId": {
+            "$ref": "#/components/schemas/CampaignId"
+          },
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          }
+        }
+      },
+      "PromotionCampaignAssignmentNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "campaignId": {
+            "$ref": "#/components/schemas/CampaignId"
+          },
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          }
+        }
+      },
+      "PromotionCampaignAssignmentRequest": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "coupons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponId"
+            }
+          },
+          "couponsBased": {
+            "$ref": "#/components/schemas/CouponsBased"
+          },
+          "customerGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerGroupId"
+            }
+          },
+          "customerGroupsBased": {
+            "$ref": "#/components/schemas/CustomerGroupsBased"
+          },
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requiredQualifier": {
+            "$ref": "#/components/schemas/RequiredQualifier"
+          },
+          "schedule": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Schedule"
+              }
+            ]
+          },
+          "sourceCodeBased": {
+            "$ref": "#/components/schemas/SourceCodeBased"
+          },
+          "sourceCodeGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceCodeGroupId"
+            }
+          }
+        },
+        "required": [
+          "schedule"
+        ]
+      },
+      "AssignmentIdMismatchErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "AssignmentBusinessRuleViolationErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "PromotionNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          }
+        }
+      },
+      "PromotionCampaignAssignmentUpdate": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "coupons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponId"
+            }
+          },
+          "couponsBased": {
+            "$ref": "#/components/schemas/CouponsBased"
+          },
+          "customerGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerGroupId"
+            }
+          },
+          "customerGroupsBased": {
+            "$ref": "#/components/schemas/CustomerGroupsBased"
+          },
+          "promotionId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requiredQualifier": {
+            "$ref": "#/components/schemas/RequiredQualifier"
+          },
+          "schedule": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Schedule"
+              }
+            ]
+          },
+          "sourceCodeBased": {
+            "$ref": "#/components/schemas/SourceCodeBased"
+          },
+          "sourceCodeGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceCodeGroupId"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "404NotFound_Campaign": {
+        "description": "The campaign was not found for the requested site.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/CampaignNotFoundErrorResponse"
+            }
+          }
+        }
+      },
+      "404NotFound_Assignment": {
+        "description": "The campaign or the promotion campaign assignment was not found for the requested site.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignNotFoundErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/PromotionCampaignAssignmentNotFoundErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "400BadRequest_Assignment": {
+        "description": "Bad Request. The request body is ill-formed, the composite key does not match the path, or a business rule rejected the request.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/AssignmentIdMismatchErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/AssignmentBusinessRuleViolationErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "404NotFound_CampaignOrPromotion": {
+        "description": "The campaign or the promotion was not found for the requested site.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CampaignNotFoundErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/PromotionNotFoundErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "campaignId": {
+        "name": "campaignId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/CampaignId"
+            }
+          ],
+          "minLength": 1
+        }
+      },
+      "promotionId": {
+        "name": "promotionId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.promotions": "promotions READONLY",
+              "sfcc.promotions.rw": "promotions read/write"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.promotions": "promotions READONLY",
+              "sfcc.promotions.rw": "promotions read/write"
+            }
+          }
+        }
+      }
+    }
+  }
+}

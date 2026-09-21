@@ -14,12 +14,10 @@ import {ServerContext} from '../../../src/server-context.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import {createDebugListSessionsTool} from '../../../src/tools/diagnostics/debug-list-sessions.js';
 import {createDebugEndSessionTool} from '../../../src/tools/diagnostics/debug-end-session.js';
-import {createDebugContinueTool} from '../../../src/tools/diagnostics/debug-continue.js';
-import {createDebugGetStackTool} from '../../../src/tools/diagnostics/debug-get-stack.js';
+import {createDebugControlTool} from '../../../src/tools/diagnostics/debug-control.js';
+import {createDebugInspectTool} from '../../../src/tools/diagnostics/debug-inspect.js';
 import {createDebugEvaluateTool} from '../../../src/tools/diagnostics/debug-evaluate.js';
-import {createDebugGetVariablesTool} from '../../../src/tools/diagnostics/debug-get-variables.js';
 import {createDebugSetBreakpointsTool} from '../../../src/tools/diagnostics/debug-set-breakpoints.js';
-import {createDebugStepTools} from '../../../src/tools/diagnostics/debug-step.js';
 import {createDebugWaitForStopTool} from '../../../src/tools/diagnostics/debug-wait-for-stop.js';
 import {createDebugCaptureAtBreakpointTool} from '../../../src/tools/diagnostics/debug-capture-at-breakpoint.js';
 import {createDebugStartSessionTool} from '../../../src/tools/diagnostics/debug-start-session.js';
@@ -129,6 +127,62 @@ describe('tools/diagnostics', () => {
 
   afterEach(async () => {
     await serverContext.destroyAll();
+  });
+
+  describe('combined debugger operations', () => {
+    it('returns stack and all variable scopes by default, fetching only requested views', async () => {
+      const manager = createMockManager();
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
+      const tool = createDebugInspectTool(loadServices, serverContext);
+      const args = {session_id: entry.sessionId, thread_id: 1};
+      const result = getResultJson<{stack: unknown[]; variables: {scope: string}[]}>(await tool.handler(args));
+      expect(result.stack).to.have.length(1);
+      expect(result.variables.map((variable) => variable.scope)).to.include.members(['local', 'global']);
+      (manager.client.getThread as sinon.SinonStub).resetHistory();
+      (manager.client.getVariables as sinon.SinonStub).resetHistory();
+      await tool.handler({...args, include: ['variables'], frame_index: 2});
+      expect((manager.client.getThread as sinon.SinonStub).called).to.equal(false);
+      expect((manager.client.getVariables as sinon.SinonStub).calledWith(1, 2)).to.equal(true);
+      (manager.client.getVariables as sinon.SinonStub).resetHistory();
+      const stackOnly = await tool.handler({...args, include: ['stack'], frame_index: 0});
+      expect(stackOnly.isError).not.to.equal(true);
+      expect(getResultJson<{stack: unknown[]}>(stackOnly).stack).to.have.length(1);
+      expect((manager.client.getVariables as sinon.SinonStub).called).to.equal(false);
+    });
+
+    it('rejects incompatible inspection selectors before remote calls', async () => {
+      const manager = createMockManager();
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
+      const tool = createDebugInspectTool(loadServices, serverContext);
+      const args = {session_id: entry.sessionId, thread_id: 1};
+      expect((await tool.handler({...args, include: ['stack'], scope: 'local'})).isError).to.equal(true);
+      expect((await tool.handler({...args, scope: 'local', object_path: 'request'})).isError).to.equal(true);
+      expect((await tool.handler({...args, include: []})).isError).to.equal(true);
+      expect((manager.client.getThread as sinon.SinonStub).called).to.equal(false);
+      expect((manager.client.getVariables as sinon.SinonStub).called).to.equal(false);
+      expect((manager.client.getMembers as sinon.SinonStub).called).to.equal(false);
+    });
+
+    it('requires an explicit valid execution action before loading services', async () => {
+      const load = sinon.stub().throws(new Error('Must not load services'));
+      const tool = createDebugControlTool(load, serverContext);
+      const args = {session_id: 'x', thread_id: 1};
+      expect((await tool.handler(args)).isError).to.equal(true);
+      expect((await tool.handler({...args, action: 'unknown'})).isError).to.equal(true);
+      expect(load.called).to.equal(false);
+    });
   });
 
   describe('debug_list_sessions', () => {
@@ -282,7 +336,7 @@ describe('tools/diagnostics', () => {
     });
   });
 
-  describe('debug_continue', () => {
+  describe('debug_control continue', () => {
     it('should resume the specified thread', async () => {
       const manager = createMockManager();
       const entry = serverContext.debugSessions.registerSession({
@@ -293,24 +347,24 @@ describe('tools/diagnostics', () => {
         cartridges: [],
       });
 
-      const tool = createDebugContinueTool(loadServices, serverContext);
-      const result = await tool.handler({session_id: entry.sessionId, thread_id: 5});
+      const tool = createDebugControlTool(loadServices, serverContext);
+      const result = await tool.handler({action: 'continue', session_id: entry.sessionId, thread_id: 5});
 
       expect(result.isError).to.be.undefined;
-      const json = getResultJson<{thread_id: number; status: string}>(result);
+      const json = getResultJson<{thread_id: number; action: string}>(result);
       expect(json.thread_id).to.equal(5);
-      expect(json.status).to.equal('resumed');
+      expect(json.action).to.equal('continue');
       expect((manager.resume as sinon.SinonStub).calledWith(5)).to.be.true;
     });
 
     it('should error when server context is missing', async () => {
-      const tool = createDebugContinueTool(loadServices, undefined);
-      const result = await tool.handler({session_id: 'x', thread_id: 1});
+      const tool = createDebugControlTool(loadServices, undefined);
+      const result = await tool.handler({action: 'continue', session_id: 'x', thread_id: 1});
       expect(result.isError).to.be.true;
     });
   });
 
-  describe('debug_get_stack', () => {
+  describe('debug_inspect stack', () => {
     it('should return mapped stack frames', async () => {
       const manager = createMockManager();
       const entry = serverContext.debugSessions.registerSession({
@@ -321,20 +375,20 @@ describe('tools/diagnostics', () => {
         cartridges: [],
       });
 
-      const tool = createDebugGetStackTool(loadServices, serverContext);
-      const result = await tool.handler({session_id: entry.sessionId, thread_id: 1});
+      const tool = createDebugInspectTool(loadServices, serverContext);
+      const result = await tool.handler({include: ['stack'], session_id: entry.sessionId, thread_id: 1});
 
       expect(result.isError).to.be.undefined;
-      const json = getResultJson<{frames: Array<{function_name: string; file: string; line: number}>}>(result);
-      expect(json.frames).to.have.lengthOf(1);
-      expect(json.frames[0].function_name).to.equal('show');
-      expect(json.frames[0].line).to.equal(42);
-      expect(json.frames[0].file).to.equal('/local/app_test/cartridge/controllers/Cart.js');
+      const json = getResultJson<{stack: Array<{function_name: string; file: string; line: number}>}>(result);
+      expect(json.stack).to.have.lengthOf(1);
+      expect(json.stack[0].function_name).to.equal('show');
+      expect(json.stack[0].line).to.equal(42);
+      expect(json.stack[0].file).to.equal('/local/app_test/cartridge/controllers/Cart.js');
     });
 
     it('should error when server context is missing', async () => {
-      const tool = createDebugGetStackTool(loadServices, undefined);
-      const result = await tool.handler({session_id: 'x', thread_id: 1});
+      const tool = createDebugInspectTool(loadServices, undefined);
+      const result = await tool.handler({include: ['stack'], session_id: 'x', thread_id: 1});
       expect(result.isError).to.be.true;
     });
   });
@@ -398,7 +452,7 @@ describe('tools/diagnostics', () => {
     });
   });
 
-  describe('debug_get_variables', () => {
+  describe('debug_inspect variables', () => {
     it('should return variables with has_children flag based on type', async () => {
       const manager = createMockManager();
       const entry = serverContext.debugSessions.registerSession({
@@ -409,8 +463,8 @@ describe('tools/diagnostics', () => {
         cartridges: [],
       });
 
-      const tool = createDebugGetVariablesTool(loadServices, serverContext);
-      const result = await tool.handler({session_id: entry.sessionId, thread_id: 1});
+      const tool = createDebugInspectTool(loadServices, serverContext);
+      const result = await tool.handler({include: ['variables'], session_id: entry.sessionId, thread_id: 1});
 
       expect(result.isError).to.be.undefined;
       const json = getResultJson<{
@@ -433,8 +487,13 @@ describe('tools/diagnostics', () => {
         cartridges: [],
       });
 
-      const tool = createDebugGetVariablesTool(loadServices, serverContext);
-      const result = await tool.handler({session_id: entry.sessionId, thread_id: 1, scope: 'global'});
+      const tool = createDebugInspectTool(loadServices, serverContext);
+      const result = await tool.handler({
+        include: ['variables'],
+        session_id: entry.sessionId,
+        thread_id: 1,
+        scope: 'global',
+      });
 
       const json = getResultJson<{variables: Array<{name: string}>}>(result);
       expect(json.variables).to.have.lengthOf(1);
@@ -451,8 +510,13 @@ describe('tools/diagnostics', () => {
         cartridges: [],
       });
 
-      const tool = createDebugGetVariablesTool(loadServices, serverContext);
-      const result = await tool.handler({session_id: entry.sessionId, thread_id: 1, object_path: 'obj'});
+      const tool = createDebugInspectTool(loadServices, serverContext);
+      const result = await tool.handler({
+        include: ['variables'],
+        session_id: entry.sessionId,
+        thread_id: 1,
+        object_path: 'obj',
+      });
 
       expect((manager.client.getMembers as sinon.SinonStub).calledOnce).to.be.true;
       const json = getResultJson<{variables: Array<{name: string}>}>(result);
@@ -485,8 +549,8 @@ describe('tools/diagnostics', () => {
         cartridges: [],
       });
 
-      const tool = createDebugGetVariablesTool(loadServices, serverContext);
-      const result = await tool.handler({session_id: entry.sessionId, thread_id: 1});
+      const tool = createDebugInspectTool(loadServices, serverContext);
+      const result = await tool.handler({include: ['variables'], session_id: entry.sessionId, thread_id: 1});
 
       const json = getResultJson<{variables: Array<{value: string}>}>(result);
       expect(json.variables[0].value).to.have.lengthOf(203); // 200 + '...'
@@ -494,8 +558,8 @@ describe('tools/diagnostics', () => {
     });
 
     it('should error when server context is missing', async () => {
-      const tool = createDebugGetVariablesTool(loadServices, undefined);
-      const result = await tool.handler({session_id: 'x', thread_id: 1});
+      const tool = createDebugInspectTool(loadServices, undefined);
+      const result = await tool.handler({include: ['variables'], session_id: 'x', thread_id: 1});
       expect(result.isError).to.be.true;
     });
   });
@@ -525,6 +589,7 @@ describe('tools/diagnostics', () => {
       const json = getResultJson<{breakpoints: Array<{id: number; verified: boolean; file: string}>}>(result);
       expect(json.breakpoints).to.have.lengthOf(1);
       expect(json.breakpoints[0].verified).to.be.true;
+      expect(json).not.to.have.property('skillReferences');
     });
 
     it('should warn when path cannot be round-trip mapped', async () => {
@@ -545,8 +610,13 @@ describe('tools/diagnostics', () => {
         breakpoints: [{file: '/unknown/cartridge/foo.js', line: 10}],
       });
 
-      const json = getResultJson<{breakpoints: Array<{verified: boolean}>; warnings?: string[]}>(result);
+      const json = getResultJson<{
+        breakpoints: Array<{verified: boolean}>;
+        warnings?: string[];
+        skillReferences: {uri: string; section: string}[];
+      }>(result);
       expect(json.breakpoints[0].verified).to.be.false;
+      expect(json.skillReferences).to.deep.equal([{uri: 'skill://mcp/debugger/SKILL.md', section: 'prerequisites'}]);
       expect(json.warnings).to.exist;
       expect(json.warnings![0]).to.include('could not be mapped back to a local file');
     });
@@ -583,13 +653,7 @@ describe('tools/diagnostics', () => {
     });
   });
 
-  describe('debug_step_* tools', () => {
-    it('should create three step tools', () => {
-      const tools = createDebugStepTools(loadServices, serverContext);
-      expect(tools).to.have.lengthOf(3);
-      expect(tools.map((t) => t.name)).to.deep.equal(['debug_step_over', 'debug_step_into', 'debug_step_out']);
-    });
-
+  describe('debug_control stepping', () => {
     it('step_over should call manager.stepOver', async () => {
       const manager = createMockManager();
       const entry = serverContext.debugSessions.registerSession({
@@ -599,13 +663,13 @@ describe('tools/diagnostics', () => {
         sourceMapper: createMockSourceMapper(),
         cartridges: [],
       });
-      const [stepOver] = createDebugStepTools(loadServices, serverContext);
+      const stepOver = createDebugControlTool(loadServices, serverContext);
 
-      const result = await stepOver.handler({session_id: entry.sessionId, thread_id: 3});
+      const result = await stepOver.handler({action: 'over', session_id: entry.sessionId, thread_id: 3});
 
       expect(result.isError).to.be.undefined;
       const json = getResultJson<{action: string}>(result);
-      expect(json.action).to.equal('step_over');
+      expect(json.action).to.equal('over');
       expect((manager.stepOver as sinon.SinonStub).calledWith(3)).to.be.true;
     });
 
@@ -618,9 +682,9 @@ describe('tools/diagnostics', () => {
         sourceMapper: createMockSourceMapper(),
         cartridges: [],
       });
-      const [, stepInto] = createDebugStepTools(loadServices, serverContext);
+      const stepInto = createDebugControlTool(loadServices, serverContext);
 
-      await stepInto.handler({session_id: entry.sessionId, thread_id: 3});
+      await stepInto.handler({action: 'into', session_id: entry.sessionId, thread_id: 3});
 
       expect((manager.stepInto as sinon.SinonStub).calledWith(3)).to.be.true;
     });
@@ -634,16 +698,16 @@ describe('tools/diagnostics', () => {
         sourceMapper: createMockSourceMapper(),
         cartridges: [],
       });
-      const stepOut = createDebugStepTools(loadServices, serverContext)[2];
+      const stepOut = createDebugControlTool(loadServices, serverContext);
 
-      await stepOut.handler({session_id: entry.sessionId, thread_id: 3});
+      await stepOut.handler({action: 'out', session_id: entry.sessionId, thread_id: 3});
 
       expect((manager.stepOut as sinon.SinonStub).calledWith(3)).to.be.true;
     });
 
     it('should error when server context is missing', async () => {
-      const [stepOver] = createDebugStepTools(loadServices, undefined);
-      const result = await stepOver.handler({session_id: 'x', thread_id: 1});
+      const stepOver = createDebugControlTool(loadServices, undefined);
+      const result = await stepOver.handler({action: 'over', session_id: 'x', thread_id: 1});
       expect(result.isError).to.be.true;
     });
   });
@@ -761,6 +825,47 @@ describe('tools/diagnostics', () => {
   });
 
   describe('debug_capture_at_breakpoint', () => {
+    it('returns a halted capture while its HTTP trigger is still waiting for resume', async () => {
+      const manager = createMockManager({
+        getKnownThreads: sinon.stub().returns([{id: 5, status: 'halted', call_stack: []}]),
+      });
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
+      let finishRequest!: (response: Response) => void;
+      const fetchStub = sinon.stub(globalThis, 'fetch').returns(
+        new Promise<Response>((resolve) => {
+          finishRequest = resolve;
+        }),
+      );
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const result = await Promise.race([
+          createDebugCaptureAtBreakpointTool(loadServices, serverContext).handler({
+            session_id: entry.sessionId,
+            file: '/app_test/cartridge/x.js',
+            line: 1,
+            trigger_url: 'https://example.com/trigger',
+            auto_continue: false,
+          }),
+          new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(() => reject(new Error('Capture waited for the halted request')), 200);
+          }),
+        ]);
+        const json = getResultJson<{halted: boolean; auto_continued: boolean; trigger_pending: boolean}>(result);
+        expect(json).to.include({halted: true, auto_continued: false, trigger_pending: true});
+        expect((manager.resume as sinon.SinonStub).called).to.equal(false);
+      } finally {
+        clearTimeout(timer);
+        finishRequest(new Response('', {status: 200}));
+        fetchStub.restore();
+      }
+    });
+
     it('should set breakpoint, wait, capture, and optionally continue', async () => {
       const haltedThread = {
         id: 5,
@@ -810,6 +915,7 @@ describe('tools/diagnostics', () => {
       expect(json.variables).to.have.lengthOf(3);
       expect(json.evaluations).to.have.lengthOf(2);
       expect(json.auto_continued).to.be.true;
+      expect(json).not.to.have.property('skillReferences');
       expect((manager.resume as sinon.SinonStub).calledOnce).to.be.true;
     });
 
@@ -873,9 +979,16 @@ describe('tools/diagnostics', () => {
         timeout_ms: 50,
       });
 
-      const json = getResultJson<{halted: boolean; timed_out?: boolean}>(result);
+      const json = getResultJson<{
+        halted: boolean;
+        timed_out?: boolean;
+        warnings: string[];
+        skillReferences: {uri: string; section: string}[];
+      }>(result);
       expect(json.halted).to.be.false;
       expect(json.timed_out).to.be.true;
+      expect(json.warnings[0]).to.include('breakpoint remains armed');
+      expect(json.skillReferences).to.deep.equal([{uri: 'skill://mcp/debugger/SKILL.md', section: 'recovery'}]);
       expect(json).not.to.have.property('hint');
     });
 

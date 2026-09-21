@@ -1,0 +1,658 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Analytics",
+    "version": "1.0.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Intelligence"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/intelligence/analytics/v1",
+      "variables": {
+        "shortCode": {
+          "default": "0dnz6oep"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/subject-areas": {
+      "get": {
+        "operationId": "getSubjectAreas",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subject Areas Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectAreasResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400MalformedParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.analytics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/subject-areas/{subjectAreaId}": {
+      "get": {
+        "operationId": "getSubjectAreaById",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "subjectAreaId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SubjectAreaId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subject Area Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectArea"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400MalformedParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404SubjectAreaNotFound"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.analytics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/query/{subjectAreaId}": {
+      "post": {
+        "operationId": "querySubjectArea",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "subjectAreaId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SubjectAreaId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful query response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400MalformedParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404SubjectAreaNotFound"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.analytics"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "SubjectAreasResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "MalformedParameterErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "parameterId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        }
+      },
+      "SubjectAreaId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "DimensionId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "Dimension": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/DimensionId"
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ]
+      },
+      "MeasureId": {
+        "type": "string",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "Measure": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/MeasureId"
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ]
+      },
+      "SubjectArea": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/SubjectAreaId"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "dimensions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Dimension"
+            }
+          },
+          "measures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Measure"
+            }
+          }
+        },
+        "required": [
+          "dimensions",
+          "displayName",
+          "id",
+          "measures"
+        ]
+      },
+      "SubjectAreaNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "subjectAreaId": {
+            "$ref": "#/components/schemas/SubjectAreaId"
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "properties": {
+          "operator": {
+            "type": "string",
+            "enum": [
+              "equals",
+              "not_equals",
+              "contains",
+              "not_contains",
+              "gt",
+              "lt",
+              "gte",
+              "lte",
+              "set",
+              "not_set",
+              "in_date_range",
+              "not_in_date_range",
+              "before_date",
+              "after_date"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "values"
+        ]
+      },
+      "DimensionFilter": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Filter"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "dimension": {
+                "type": "string",
+                "maxLength": 256,
+                "minLength": 1
+              }
+            },
+            "required": [
+              "dimension"
+            ]
+          }
+        ]
+      },
+      "MeasureFilter": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Filter"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "measure": {
+                "type": "string",
+                "maxLength": 256,
+                "minLength": 1
+              }
+            },
+            "required": [
+              "measure"
+            ]
+          }
+        ]
+      },
+      "SortOrder": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "required": [
+          "field",
+          "order"
+        ]
+      },
+      "QueryRequest": {
+        "type": "object",
+        "properties": {
+          "dimensions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DimensionId"
+            }
+          },
+          "measures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeasureId"
+            }
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/DimensionFilter"
+                },
+                {
+                  "$ref": "#/components/schemas/MeasureFilter"
+                }
+              ]
+            }
+          },
+          "order": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SortOrder"
+            }
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "dimensions",
+          "measures"
+        ]
+      },
+      "QueryResponse": {
+        "type": "object",
+        "properties": {
+          "subjectAreaId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubjectAreaId"
+              }
+            ]
+          },
+          "query": {
+            "$ref": "#/components/schemas/QueryRequest"
+          },
+          "dimensions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DimensionId"
+            }
+          },
+          "measures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeasureId"
+            }
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "data",
+          "dimensions",
+          "fields",
+          "measures",
+          "query",
+          "subjectAreaId"
+        ]
+      }
+    },
+    "responses": {
+      "400MalformedParameter": {
+        "description": "Malformed query or request body parameter",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/MalformedParameterErrorResponse"
+            }
+          }
+        }
+      },
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "404SubjectAreaNotFound": {
+        "description": "Subject Area Not Found",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/SubjectAreaNotFoundErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "subjectAreaId": {
+        "name": "subjectAreaId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/SubjectAreaId"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.analytics": "Access to analytics subject areas, metadata, and query operations"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.analytics": "Access to analytics subject areas, metadata, and query operations"
+            }
+          }
+        }
+      }
+    }
+  }
+}

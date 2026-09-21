@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {TOOLSETS} from '../../utils/constants.js';
 import {z} from 'zod';
 import {searchDocs, type DocCategory, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
@@ -11,17 +12,21 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {categoryEnumValues, enabledCategoriesNote} from './topics.js';
-import {WORKSPACE_VALUES, detectedWorkspaceNote, resolveWorkspace, type WorkspaceParam} from './storefront.js';
+import {
+  workspaceInputSchema,
+  detectedWorkspaceNote,
+  resolveProjectWorkspace,
+  type WorkspaceContextInput,
+} from './storefront.js';
 
 /** Default number of results returned when `limit` is not supplied. Kept small to bound payload size for agents. */
 const DEFAULT_LIMIT = 5;
 
-interface SearchInput {
+interface SearchInput extends WorkspaceContextInput {
   limit?: number;
   offset?: number;
   query: string;
   category?: DocCategory;
-  workspace?: WorkspaceParam;
   verbose?: boolean;
 }
 
@@ -79,19 +84,19 @@ export function createDocsSearchTool(
   return createToolAdapter<SearchInput, SearchOutput>(
     {
       name: 'docs_search',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Search B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
         'Use for natural-language queries or unknown IDs; call docs_read with a result ID.' +
         enabledCategoriesNote(enabledCategories) +
         detectedWorkspaceNote(detectedWorkspaces),
-      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: [...TOOLSETS],
       inputSchema: {
+        ...workspaceInputSchema,
         query: z.string().min(1).describe('Search query (class name, topic, or natural-language phrase).'),
         category: z.enum(categoryEnumValues(enabledCategories)).optional().describe('Restrict results to one corpus.'),
-        workspace: z
-          .enum(WORKSPACE_VALUES)
-          .optional()
-          .describe('"auto" uses startup workspace; "all" disables weighting; or select a workspace type.'),
         limit: z
           .number()
           .int()
@@ -110,7 +115,7 @@ export function createDocsSearchTool(
           .describe('Include keywords and canonical url on each result (larger payload). Defaults to false.'),
       },
       async execute(args) {
-        const workspace = resolveWorkspace(args.workspace, detectedWorkspaces);
+        const workspace = await resolveProjectWorkspace(args, detectedWorkspaces);
         const limit = args.limit ?? DEFAULT_LIMIT;
         const offset = args.offset ?? 0;
         // The SDK returns top-N search hits. Retrieve the complete ranked set here

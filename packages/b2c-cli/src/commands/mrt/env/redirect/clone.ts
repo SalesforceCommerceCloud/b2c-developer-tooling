@@ -48,7 +48,9 @@ export default class MrtRedirectClone extends MrtCommand<typeof MrtRedirectClone
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const {from: fromTarget, to: toTarget, force} = this.flags;
@@ -86,19 +88,13 @@ export default class MrtRedirectClone extends MrtCommand<typeof MrtRedirectClone
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t(
-            'commands.mrt.redirect.clone.success',
-            'Cloned {{count}} redirect(s) from {{fromTarget}} to {{toTarget}}.',
-            {
-              count: result.count,
-              fromTarget,
-              toTarget,
-            },
-          ),
-        );
-      }
+      this.log(
+        t('commands.mrt.redirect.clone.success', 'Cloned {{count}} redirect(s) from {{fromTarget}} to {{toTarget}}.', {
+          count: result.count,
+          fromTarget,
+          toTarget,
+        }),
+      );
 
       return result;
     } catch (error) {

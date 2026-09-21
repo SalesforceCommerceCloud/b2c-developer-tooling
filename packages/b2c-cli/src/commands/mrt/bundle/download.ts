@@ -57,7 +57,9 @@ export default class MrtBundleDownload extends MrtCommand<typeof MrtBundleDownlo
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const urlOnly = this.flags['url-only'];
@@ -81,13 +83,11 @@ export default class MrtBundleDownload extends MrtCommand<typeof MrtBundleDownlo
 
       // If url-only flag or JSON mode, just return the URL
       if (urlOnly) {
-        if (!this.jsonEnabled()) {
-          this.log(
-            t('commands.mrt.bundle.download.urlOnly', 'Download URL (valid for 1 hour):\n{{downloadUrl}}', {
-              downloadUrl: result.downloadUrl,
-            }),
-          );
-        }
+        this.log(
+          t('commands.mrt.bundle.download.urlOnly', 'Download URL (valid for 1 hour):\n{{downloadUrl}}', {
+            downloadUrl: result.downloadUrl,
+          }),
+        );
         return result;
       }
 
@@ -125,14 +125,12 @@ export default class MrtBundleDownload extends MrtCommand<typeof MrtBundleDownlo
       const fileStream = createWriteStream(absolutePath);
       await pipeline(response.body, fileStream);
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.bundle.download.success', 'Bundle {{bundleId}} downloaded to {{filePath}}', {
-            bundleId,
-            filePath: outputPath,
-          }),
-        );
-      }
+      this.log(
+        t('commands.mrt.bundle.download.success', 'Bundle {{bundleId}} downloaded to {{filePath}}', {
+          bundleId,
+          filePath: outputPath,
+        }),
+      );
 
       return {...result, filePath: absolutePath};
     } catch (error) {

@@ -1,0 +1,292 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Custom APIs",
+    "version": "1.0.2",
+    "x-api-type": "Admin",
+    "x-api-family": "DX"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/dx/custom-apis/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/endpoints": {
+      "get": {
+        "operationId": "getEndpoints",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/EndpointStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomApiEndpointResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or malformed filter parameter",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.custom-apis"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "EndpointStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "not_registered"
+        ]
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "CustomApiEndpointFilter": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "not_registered"
+            ]
+          }
+        }
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "CustomApiEndpoint": {
+        "type": "object",
+        "properties": {
+          "apiName": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "apiVersion": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "cartridgeName": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+          },
+          "endpointPath": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "errorReason": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "httpMethod": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE",
+              "PATCH",
+              "OPTIONS",
+              "HEAD"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 36
+          },
+          "implementationScript": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "operationId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "securityScheme": {
+            "type": "string",
+            "enum": [
+              "ShopperToken",
+              "AmOAuth2"
+            ]
+          },
+          "schemaFile": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EndpointStatus"
+          }
+        }
+      },
+      "CustomApiEndpointResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/CustomApiEndpointFilter"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomApiEndpoint"
+            }
+          },
+          "activeCodeVersion": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "status": {
+        "name": "status",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/EndpointStatus"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.custom-apis": "Custom APIs READONLY scope",
+              "sfcc.custom-apis.rw": "Custom APIs scope"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.custom-apis": "Custom APIs READONLY scope",
+              "sfcc.custom-apis.rw": "Custom APIs scope"
+            }
+          }
+        }
+      }
+    }
+  }
+}

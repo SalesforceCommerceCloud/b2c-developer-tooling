@@ -21,6 +21,8 @@ The `b2c scaffold` commands help you generate B2C Commerce components from templ
 
 List available project scaffolds with optional filtering.
 
+[![B2C CLI listing scaffolds for cartridges, controllers, Custom APIs, hooks, job steps, Page Designer components, and services.](/terminal/scaffold-list.png)](/terminal/scaffold-list.png)
+
 ### Usage
 
 ```bash

@@ -20,6 +20,12 @@ type SlasClientEntry = SlasComponents['schemas']['Client'];
 
 type ApiType = 'Admin' | 'Shopper';
 
+function tokenSetupHint(apiType: ApiType): string {
+  return apiType === 'Shopper'
+    ? 'Check slas-client-id and site-id; private clients also need slas-client-secret. See Setup Help.'
+    : 'Check Account Manager credentials and API scopes. See Setup Help.';
+}
+
 /**
  * Pre-fill default values for known parameters (e.g. organizationId, siteId)
  * throughout the spec so users don't have to fill them in manually for "Try it out".
@@ -369,10 +375,12 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     // Acquire token before rendering so it can be embedded in the HTML
     let initialToken = '';
+    let initialTokenError = '';
     try {
       initialToken = (await this.getToken(apiType, requiredScopes)) ?? '';
-    } catch {
-      /* token errors will be visible in the webview bar */
+      if (!initialToken) initialTokenError = tokenSetupHint(apiType);
+    } catch (error) {
+      initialTokenError = error instanceof Error ? error.message : String(error);
     }
 
     const swaggerUiDir = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'swagger-ui');
@@ -403,13 +411,15 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       }
     });
 
-    panel.webview.html = this.getWebviewHtml(panel.webview, spec, apiType, initialToken);
+    panel.webview.html = this.getWebviewHtml(panel.webview, spec, apiType, initialToken, initialTokenError);
 
     // Handle messages from webview (token refresh + API proxy)
     panel.webview.onDidReceiveMessage((msg: {type: string; [k: string]: unknown}) => {
       const handle = async (): Promise<void> => {
         if (msg.type === 'refreshToken') {
           await this.sendToken(panel, apiType, requiredScopes);
+        } else if (msg.type === 'showSetupHelp') {
+          await vscode.commands.executeCommand('b2c-dx.apiBrowser.help');
         } else if (msg.type === 'proxyRequest') {
           await this.handleProxyRequest(panel, msg);
         }
@@ -486,6 +496,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     spec: Record<string, unknown>,
     apiType: ApiType,
     initialToken: string,
+    initialTokenError: string,
   ): string {
     const swaggerUiDir = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'swagger-ui');
     const bundleUri = webview.asWebviewUri(vscode.Uri.joinPath(swaggerUiDir, 'swagger-ui-bundle.js'));
@@ -504,6 +515,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     html = html.replace('__API_TYPE__', apiType);
     html = html.replace('__SPEC_JSON__', JSON.stringify(spec));
     html = html.replace('__INITIAL_TOKEN__', initialToken.replace(/[\\'"]/g, '\\$&'));
+    html = html.replace('__INITIAL_TOKEN_ERROR__', () => JSON.stringify(initialTokenError).replace(/</g, '\\u003c'));
 
     return html;
   }
@@ -581,10 +593,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       if (token) {
         this.safePostMessage(panel, {type: 'updateToken', token});
       } else {
-        const hint =
-          apiType === 'Shopper'
-            ? 'No public SLAS client found. Configure slasClientId and siteId in dw.json, or create a public SLAS client.'
-            : 'Configure clientId and clientSecret in dw.json.';
+        const hint = tokenSetupHint(apiType);
         this.log.appendLine(`[API Browser] No ${apiType} token available — ${hint}`);
         this.safePostMessage(panel, {type: 'tokenError', error: hint});
       }

@@ -11,9 +11,11 @@ Use the `b2c` CLI to export, list, and validate Page Designer content from Sales
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
+The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+
+Online export/list starts a system export job: SCAPI uses `sfcc.jobs.rw` plus the tenant scope; WebDAV downloads the archive and assets. `--api-backend ocapi` forces OCAPI; `auto` permits fallback. If an error only mentions OCAPI, retry with `--api-backend scapi` to expose the SCAPI failure before assuming OCAPI permissions are needed.
 
 ## Examples
 
@@ -161,7 +163,7 @@ See `b2c content --help` for a full list of available commands and options in th
 ## Troubleshooting
 
 - **"Library is required"** -- Set `--library` flag or configure `content-library` in `dw.json`.
-- **Authentication errors** -- OAuth credentials are required for remote operations. Run `b2c auth:login` first. The `--library-file` flag bypasses authentication for offline/local use.
+- **Authentication errors** -- Inspect resolved configuration first. SCAPI needs client-credentials or JWT authentication with `sfcc.jobs.rw` and the tenant scope; browser login is OCAPI/WebDAV-only. Use `b2c-cli:b2c-auth` for setup. `--library-file` skips the remote export job; add `--offline` to skip asset downloads too.
 - **Library not found** -- Verify the library ID matches exactly. For site-private libraries, add `--site-library`.
 - **No content found** -- Check that the page/content IDs exist. Use `b2c content list` to discover available IDs.
 - **Timeout errors** -- Large libraries may exceed the default timeout. Use `--timeout <seconds>` to increase it.

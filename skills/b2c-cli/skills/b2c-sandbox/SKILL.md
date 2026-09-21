@@ -15,9 +15,9 @@ Use the `b2c` CLI plugin to manage Salesforce B2C Commerce On-demand sandboxes (
 
 ## Configuration & Authentication
 
-The CLI auto-discovers credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--client-id` and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected. Use `--user-auth` only when you need browser-based login (e.g., no client secret, or interactive use).
+The CLI auto-discovers credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--client-id` and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected. Use `--user-auth` only when you need browser-based login (e.g., no client secret, or interactive use).
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Sandbox ID Formats
 

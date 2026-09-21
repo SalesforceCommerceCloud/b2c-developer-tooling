@@ -1,0 +1,13 @@
+API Name             Method  Status
+─────────────────────────────────────
+admin-info           GET     active
+fraud-check          POST    active
+motd                 GET     active
+request-inspector    GET     active
+shipping-estimates   POST    active
+shipping-estimation  POST    active
+transaction-test     GET     active
+transaction-test     POST    active
+transaction-test     GET     active
+transaction-test     POST    active
+transaction-test     GET     active

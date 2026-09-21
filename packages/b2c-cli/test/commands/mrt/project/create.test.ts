@@ -40,10 +40,11 @@ describe('mrt project create', () => {
   it('calls command.error when organization is missing', async () => {
     const command = createCommand();
 
-    stubParse(command, {name: 'My Project'}, {slug: 'my-project'});
+    stubParse(command, {}, {name: 'My Project'});
     await command.init();
 
     stubCommonAuth(command);
+    sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtOrigin: 'https://example.com'}}));
 
     const errorStub = stubErrorToThrow(command);
@@ -59,40 +60,33 @@ describe('mrt project create', () => {
   it('calls createProject with correct parameters and returns result', async () => {
     const command = createCommand();
 
-    stubParse(
-      command,
-      {
-        name: 'My Project',
-        organization: 'my-org',
-        region: 'us-east-1',
-        type: 'pwa',
-      },
-      {slug: 'my-project'},
-    );
+    // slug is no longer its own flag — it comes from the shared --project/--storefront
+    // (-p/-s) flag, resolved into resolvedConfig.values.mrtProject during init().
+    stubParse(command, {organization: 'my-org', region: 'us-east-1'}, {name: 'My Project'});
     await command.init();
 
     stubCommonAuth(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtOrigin: 'https://example.com'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({
+      values: {mrtOrigin: 'https://example.com', mrtProject: 'my-project'},
+    }));
 
     const createStub = sinon.stub().resolves({
       name: 'My Project',
       slug: 'my-project',
       organization: 'my-org',
       ssr_region: 'us-east-1',
-      project_type: 'pwa',
     } as any);
 
     (command as any).run = async function () {
       this.requireMrtCredentials();
       const result = await createStub({
-        name: 'My Project',
-        slug: 'my-project',
-        organization: 'my-org',
-        ssrRegion: 'us-east-1',
-        projectType: 'pwa',
-        origin: 'https://example.com',
+        name: this.args.name,
+        organization: this.flags.organization,
+        slug: this.resolvedConfig.values.mrtProject,
+        ssrRegion: this.flags.region,
+        origin: this.resolvedConfig.values.mrtOrigin,
       });
       return result;
     };

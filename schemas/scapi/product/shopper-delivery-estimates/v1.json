@@ -1,0 +1,517 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Shopper Delivery Estimates",
+    "version": "1.2.0",
+    "x-api-type": "Shopper",
+    "x-api-family": "Product"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/product/shopper-delivery-estimates/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/delivery-estimates": {
+      "get": {
+        "operationId": "getDeliveryEstimates",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "productIds",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ProductId"
+              },
+              "maxItems": 1,
+              "minItems": 1
+            }
+          },
+          {
+            "name": "postalCode",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 20,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "countryCode",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/CountryCode"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sfdc_dw_dnt",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryEstimatesResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-delivery-estimates",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-delivery-estimates",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "ProductId": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "CountryCode": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z]$"
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Destination": {
+        "type": "object",
+        "properties": {
+          "postalCode": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1
+          },
+          "countryCode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ]
+          }
+        },
+        "required": [
+          "countryCode",
+          "postalCode"
+        ]
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "pattern": "^([A-Z][A-Z][A-Z]|N/A)$"
+      },
+      "DeliveryWindow": {
+        "type": "object",
+        "properties": {
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "endAt",
+          "startAt"
+        ]
+      },
+      "ShippingOption": {
+        "type": "object",
+        "properties": {
+          "shippingMethodId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "carrier": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "price": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "currency": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ]
+          },
+          "deliveryWindow": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryWindow"
+              }
+            ]
+          },
+          "orderCutoffAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nonDeliverableReason": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "shippingMethodId"
+        ]
+      },
+      "ProductDeliveryEstimate": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/Destination"
+          },
+          "shippingOptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShippingOption"
+            }
+          }
+        },
+        "required": [
+          "destination",
+          "productId",
+          "shippingOptions"
+        ]
+      },
+      "DeliveryEstimatesResult": {
+        "type": "object",
+        "properties": {
+          "productDeliveryEstimates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductDeliveryEstimate"
+            }
+          }
+        },
+        "required": [
+          "productDeliveryEstimates"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "productIds": {
+        "name": "productIds",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "maxItems": 1,
+          "minItems": 1
+        }
+      },
+      "postalCode": {
+        "name": "postalCode",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 20,
+          "minLength": 1
+        }
+      },
+      "countryCode": {
+        "name": "countryCode",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/CountryCode"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      },
+      "sfdcUsid": {
+        "name": "sfdc_usid",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "sfdcDwDnt": {
+        "name": "sfdc_dw_dnt",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "0",
+            "1"
+          ]
+        }
+      },
+      "personalized": {
+        "name": "personalized",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "none"
+          ]
+        }
+      },
+      "sfdcShopperContext": {
+        "name": "sfdc_shopper_context",
+        "in": "header",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "ShopperToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-delivery-estimates": "scope granting read-access to shopper delivery estimates endpoints",
+              "sfcc.shopper-standard": "scope granting read-access to standard shopper endpoints"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/authorize",
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-delivery-estimates": "scope granting read-access to shopper delivery estimates endpoints",
+              "sfcc.shopper-standard": "scope granting read-access to standard shopper endpoints"
+            }
+          }
+        }
+      },
+      "ShopperClientContextToken": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token?hint=client_context",
+            "scopes": {
+              "sfcc.shopper-delivery-estimates": "scope granting read-access to shopper delivery estimates endpoints",
+              "sfcc.shopper-standard": "scope granting read-access to standard shopper endpoints"
+            }
+          }
+        }
+      }
+    }
+  }
+}

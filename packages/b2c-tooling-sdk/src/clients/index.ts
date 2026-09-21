@@ -151,6 +151,8 @@ export type {
 } from './ocapi.js';
 
 export {createSlasClient} from './slas-admin.js';
+export {createSlasShopperClient, type SlasShopperClient, type SlasShopperClientConfig} from './slas-shopper.js';
+export type {paths as SlasShopperPaths, components as SlasShopperComponents} from './slas-shopper.js';
 export type {
   SlasClient,
   SlasClientConfig,

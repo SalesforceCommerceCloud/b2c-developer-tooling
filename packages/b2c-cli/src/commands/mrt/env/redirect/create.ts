@@ -60,7 +60,9 @@ export default class MrtRedirectCreate extends MrtCommand<typeof MrtRedirectCrea
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
     if (!environment) {
       this.error(
@@ -98,20 +100,15 @@ export default class MrtRedirectCreate extends MrtCommand<typeof MrtRedirectCrea
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.redirect.create.success', 'Redirect created: {{from}} -> {{to}}', {
-            from: fromPath,
-            to: toUrl,
-          }),
-        );
-        this.log(
-          t(
-            'commands.mrt.redirect.create.note',
-            'Note: Changes may take up to 20 minutes to take effect on your site.',
-          ),
-        );
-      }
+      this.log(
+        t('commands.mrt.redirect.create.success', 'Redirect created: {{from}} -> {{to}}', {
+          from: fromPath,
+          to: toUrl,
+        }),
+      );
+      this.log(
+        t('commands.mrt.redirect.create.note', 'Note: Changes may take up to 20 minutes to take effect on your site.'),
+      );
 
       return result;
     } catch (error) {

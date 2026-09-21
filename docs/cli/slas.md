@@ -4,7 +4,7 @@ description: Commands for creating, updating, and managing Shopper Login and API
 
 # SLAS Commands
 
-Commands for managing Shopper Login and API Security (SLAS) clients.
+Commands for managing Shopper Login and API Access Service (SLAS) clients. For client types, user roles, and shopper authentication flows, see Salesforce's [Authorization for Shopper APIs](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-shopper-apis.html).
 
 ## Global SLAS Flags
 
@@ -52,6 +52,11 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 ## b2c slas token
 
 Get a SLAS shopper access token for testing APIs.
+
+Shopper authorization, login, and token requests use the shared HTTP middleware.
+Custom headers configured through `SFCC_EXTRA_HEADERS` (a JSON object) or
+`--extra-headers` apply to every step of both guest and registered flows.
+Use `--log-level debug` to include SLAS response correlation IDs when diagnosing failures.
 
 ### Usage
 
@@ -124,12 +129,14 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ```json
 {
-  "accessToken": "...",
-  "refreshToken": "...",
-  "expiresIn": 1800,
-  "tokenType": "Bearer",
-  "usid": "...",
-  "customerId": "...",
+  "response": {
+    "accessToken": "...",
+    "refreshToken": "...",
+    "expiresIn": 1800,
+    "tokenType": "Bearer",
+    "usid": "...",
+    "customerId": "..."
+  },
   "clientId": "...",
   "siteId": "RefArch",
   "isGuest": true

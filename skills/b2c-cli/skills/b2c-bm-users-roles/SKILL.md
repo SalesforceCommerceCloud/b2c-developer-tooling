@@ -21,7 +21,7 @@ OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the d
 
 ## Authentication
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected. Run `b2c setup inspect` to see the resolved configuration and which source provided each value. For precedence and troubleshooting, see the `b2c-cli:b2c-config` skill.
+The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected. Run `b2c setup inspect` to see the resolved configuration and which source provided each value. For precedence and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 As of release 26.8, SCAPI Admin APIs require client credentials or JWT Bearer and do not support browser-based user auth. User auth continues to work through OCAPI and WebDAV, and `auto` selects OCAPI for that flow. Explicit SCAPI fails with actionable guidance. A handful of OCAPI endpoints require a _real BM user identity_ and default to user auth.
 

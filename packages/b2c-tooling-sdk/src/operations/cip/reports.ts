@@ -80,6 +80,13 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     name: 'sales-analytics',
     description: 'Track daily sales performance with AOV and AOS metrics',
     category: 'Sales Analytics',
+    tablesUsed: ['ccdw_aggr_sales_summary', 'ccdw_dim_site'],
+    resultNotes: [
+      'One row per submit_date with recorded sales, filtered by natural site ID and inclusive dates; absent dates are not filled with zero.',
+      'std_revenue sums gross merchandise value in standard currency; tax and shipping are separate columns.',
+      'std_aov = revenue / orders; aos = units / orders. Both are null for zero orders. For period AOV, divide period revenue by period orders, not daily averages.',
+      'Submission dates describe sales activity, not warehouse refresh time. Verify reporting timezone and currency before comparisons.',
+    ],
     parameters: [
       {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
@@ -89,13 +96,14 @@ export const CIP_REPORTS: CipReportDefinition[] = [
       const siteId = getStringLiteral(params, 'siteId');
       const from = getDateLiteral(params, 'from');
       const to = getDateLiteral(params, 'to');
-      return `SELECT CAST(ss.submit_date AS VARCHAR) AS "date", SUM(std_revenue) AS std_revenue, SUM(num_orders) AS orders, CAST(SUM(std_revenue) / SUM(num_orders) AS DECIMAL(15,2)) AS std_aov, SUM(num_units) AS units, CAST(SUM(num_units) / SUM(num_orders) AS DECIMAL(15,2)) AS aos, SUM(std_tax) AS std_tax, SUM(std_shipping) AS std_shipping FROM ccdw_aggr_sales_summary ss JOIN ccdw_dim_site s ON s.site_id = ss.site_id WHERE ss.submit_date >= ${from} AND ss.submit_date <= ${to} AND s.nsite_id = ${siteId} GROUP BY ss.submit_date ORDER BY ss.submit_date`;
+      return `SELECT CAST(ss.submit_date AS VARCHAR) AS "date", SUM(std_revenue) AS std_revenue, SUM(num_orders) AS orders, CAST(SUM(std_revenue) / NULLIF(SUM(num_orders), 0) AS DECIMAL(15,2)) AS std_aov, SUM(num_units) AS units, CAST(SUM(num_units) / NULLIF(SUM(num_orders), 0) AS DECIMAL(15,2)) AS aos, SUM(std_tax) AS std_tax, SUM(std_shipping) AS std_shipping FROM ccdw_aggr_sales_summary ss JOIN ccdw_dim_site s ON s.site_id = ss.site_id WHERE ss.submit_date >= ${from} AND ss.submit_date <= ${to} AND s.nsite_id = ${siteId} GROUP BY ss.submit_date ORDER BY ss.submit_date`;
     },
   },
   {
     name: 'sales-summary',
     description: 'Query detailed sales records for custom analysis',
     category: 'Sales Analytics',
+    tablesUsed: ['ccdw_aggr_sales_summary', 'ccdw_dim_site'],
     parameters: [
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
@@ -113,6 +121,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     name: 'ocapi-requests',
     description: 'Analyze OCAPI request volume and response latency',
     category: 'Technical Analytics',
+    tablesUsed: ['ccdw_aggr_ocapi_request', 'ccdw_dim_site'],
     parameters: [
       {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
@@ -129,6 +138,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     name: 'top-selling-products',
     description: 'Identify top selling products across channels',
     category: 'Product Analytics',
+    tablesUsed: ['ccdw_aggr_product_sales_summary', 'ccdw_dim_product', 'ccdw_dim_site'],
     parameters: [
       {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
@@ -145,6 +155,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     name: 'product-co-purchase-analysis',
     description: 'Analyze frequently co-purchased products',
     category: 'Product Analytics',
+    tablesUsed: ['ccdw_aggr_product_cobuy', 'ccdw_dim_product', 'ccdw_dim_site'],
     parameters: [
       {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
@@ -161,6 +172,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     name: 'promotion-discount-analysis',
     description: 'Measure promotional discount impact on orders',
     category: 'Promotion Analytics',
+    tablesUsed: ['ccdw_aggr_sales_summary', 'ccdw_aggr_promotion_sales_summary', 'ccdw_dim_promotion'],
     parameters: [
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
       {name: 'to', description: 'Inclusive end date (YYYY-MM-DD)', type: 'date', required: true},
@@ -168,13 +180,14 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     buildSql(params) {
       const from = getDateLiteral(params, 'from');
       const to = getDateLiteral(params, 'to');
-      return `WITH TOTAL_ORDERS AS (SELECT ss.submit_date AS submit_day, SUM(num_orders) AS total_orders FROM ccdw_aggr_sales_summary ss WHERE ss.submit_date >= ${from} AND ss.submit_date <= ${to} GROUP BY ss.submit_date), PROMOTION_DISCOUNT AS (SELECT pss.submit_date AS submit_day, p.promotion_class AS promotion_class, SUM(std_total_discount) AS std_total_discount, SUM(num_orders) AS promotion_orders FROM ccdw_aggr_promotion_sales_summary pss JOIN ccdw_dim_promotion p ON p.promotion_id = pss.promotion_id WHERE pss.submit_date >= ${from} AND pss.submit_date <= ${to} GROUP BY pss.submit_date, p.promotion_class) SELECT t.submit_day, t.total_orders, p.promotion_class, p.std_total_discount, p.promotion_orders, p.std_total_discount / p.promotion_orders AS avg_discount_per_order FROM TOTAL_ORDERS t LEFT JOIN PROMOTION_DISCOUNT p ON t.submit_day = p.submit_day`;
+      return `WITH TOTAL_ORDERS AS (SELECT ss.submit_date AS submit_day, SUM(num_orders) AS total_orders FROM ccdw_aggr_sales_summary ss WHERE ss.submit_date >= ${from} AND ss.submit_date <= ${to} GROUP BY ss.submit_date), PROMOTION_DISCOUNT AS (SELECT pss.submit_date AS submit_day, p.promotion_class AS promotion_class, SUM(std_total_discount) AS std_total_discount, SUM(num_orders) AS promotion_orders FROM ccdw_aggr_promotion_sales_summary pss JOIN ccdw_dim_promotion p ON p.promotion_id = pss.promotion_id WHERE pss.submit_date >= ${from} AND pss.submit_date <= ${to} GROUP BY pss.submit_date, p.promotion_class) SELECT t.submit_day, t.total_orders, p.promotion_class, p.std_total_discount, p.promotion_orders, p.std_total_discount / NULLIF(p.promotion_orders, 0) AS avg_discount_per_order FROM TOTAL_ORDERS t LEFT JOIN PROMOTION_DISCOUNT p ON t.submit_day = p.submit_day`;
     },
   },
   {
     name: 'search-query-performance',
     description: 'Identify search terms driving revenue and conversion',
     category: 'Search Analytics',
+    tablesUsed: ['ccdw_aggr_search_conversion', 'ccdw_dim_site'],
     parameters: [
       {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
       {
@@ -199,6 +212,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     name: 'payment-method-performance',
     description: 'Track payment method adoption and transaction metrics',
     category: 'Payment Analytics',
+    tablesUsed: ['ccdw_aggr_payment_sales_summary', 'ccdw_dim_payment_method', 'ccdw_dim_site'],
     parameters: [
       {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
@@ -208,13 +222,14 @@ export const CIP_REPORTS: CipReportDefinition[] = [
       const siteId = getStringLiteral(params, 'siteId');
       const from = getDateLiteral(params, 'from');
       const to = getDateLiteral(params, 'to');
-      return `SELECT pm.display_name AS payment_method, SUM(pss.num_payments) AS total_payments, SUM(pss.num_orders) AS orders_with_payment, SUM(pss.std_captured_amount) AS std_captured_amount, SUM(pss.std_refunded_amount) AS std_refunded_amount, SUM(pss.std_transaction_amount) AS std_transaction_amount, (SUM(pss.std_captured_amount) / SUM(pss.num_payments)) AS avg_payment_amount FROM ccdw_aggr_payment_sales_summary pss JOIN ccdw_dim_payment_method pm ON pm.payment_method_id = pss.payment_method_id JOIN ccdw_dim_site s ON s.site_id = pss.site_id WHERE pss.submit_date >= ${from} AND pss.submit_date <= ${to} AND s.nsite_id = ${siteId} GROUP BY pm.display_name ORDER BY std_captured_amount DESC`;
+      return `SELECT pm.display_name AS payment_method, SUM(pss.num_payments) AS total_payments, SUM(pss.num_orders) AS orders_with_payment, SUM(pss.std_captured_amount) AS std_captured_amount, SUM(pss.std_refunded_amount) AS std_refunded_amount, SUM(pss.std_transaction_amount) AS std_transaction_amount, (SUM(pss.std_captured_amount) / NULLIF(SUM(pss.num_payments), 0)) AS avg_payment_amount FROM ccdw_aggr_payment_sales_summary pss JOIN ccdw_dim_payment_method pm ON pm.payment_method_id = pss.payment_method_id JOIN ccdw_dim_site s ON s.site_id = pss.site_id WHERE pss.submit_date >= ${from} AND pss.submit_date <= ${to} AND s.nsite_id = ${siteId} GROUP BY pm.display_name ORDER BY std_captured_amount DESC`;
     },
   },
   {
     name: 'customer-registration-trends',
     description: 'Track customer registration trends by date and device',
     category: 'Customer Analytics',
+    tablesUsed: ['ccdw_aggr_registration', 'ccdw_dim_site'],
     parameters: [
       {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},
@@ -231,6 +246,7 @@ export const CIP_REPORTS: CipReportDefinition[] = [
     name: 'top-referrers',
     description: 'Identify top traffic referrers and visit share',
     category: 'Traffic Analytics',
+    tablesUsed: ['ccdw_aggr_visit_referrer', 'ccdw_dim_site'],
     parameters: [
       {name: 'siteId', description: 'Natural site id', type: 'string', required: true},
       {name: 'from', description: 'Inclusive start date (YYYY-MM-DD)', type: 'date', required: true},

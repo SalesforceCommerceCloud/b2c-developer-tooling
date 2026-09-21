@@ -1,0 +1,1036 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Source Code Groups",
+    "version": "1.0.40",
+    "x-api-type": "Admin",
+    "x-api-family": "Pricing"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/pricing/source-code-groups/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/source-code-groups/{id}": {
+      "get": {
+        "operationId": "getSourceCodeGroup",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SourceCodeGroupId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Source code group information returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceCodeGroup"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thrown when the source code group does not exist or does not match the given ID.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.source-codes",
+              "sfcc.source-codes.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "operationId": "createSourceCodeGroup",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SourceCodeGroupId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceCodeGroup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The source code group was created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceCodeGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- Thrown when the ID given in the request URL is different from the ID provided in the source code group document.\n- The source code group peovided is not valid.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.source-codes.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteSourceCodeGroup",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SourceCodeGroupId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The source code group was deleted successfully."
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.source-codes.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateSourceCodeGroup",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SourceCodeGroupId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceCodeGroup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The source code group was updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceCodeGroup"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thrown when the source code group does not exist matching the given ID.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.source-codes.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/source-code-groups": {
+      "post": {
+        "operationId": "sourceCodeGroupsSearch",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The source code group information was returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceCodeGroupSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thrown when the query is ill-formed.\n"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.source-codes",
+              "sfcc.source-codes.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "SourceCodeGroupId": {
+        "type": "string",
+        "maxLength": 28,
+        "minLength": 1
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "SourceCodeRedirectInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "locationType": {
+            "type": "string",
+            "enum": [
+              "default",
+              "home",
+              "product",
+              "category",
+              "page",
+              "url"
+            ]
+          },
+          "location": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationType"
+        ]
+      },
+      "SourceCodeSpecification": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "expression": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "expression"
+        ]
+      },
+      "SourceCodeGroup": {
+        "type": "object",
+        "additionalProperties": {},
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "activeRedirect": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SourceCodeRedirectInfo"
+              }
+            ]
+          },
+          "cookieDuration": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 999,
+            "minimum": 0
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "$ref": "#/components/schemas/SourceCodeGroupId"
+          },
+          "inactiveRedirect": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SourceCodeRedirectInfo"
+              }
+            ]
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "specifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceCodeSpecification"
+            }
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "Query": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolQuery": {
+            "$ref": "#/components/schemas/BoolQuery"
+          },
+          "filteredQuery": {
+            "$ref": "#/components/schemas/FilteredQuery"
+          },
+          "matchAllQuery": {
+            "$ref": "#/components/schemas/MatchAllQuery"
+          },
+          "nestedQuery": {
+            "$ref": "#/components/schemas/NestedQuery"
+          },
+          "termQuery": {
+            "$ref": "#/components/schemas/TermQuery"
+          },
+          "textQuery": {
+            "$ref": "#/components/schemas/TextQuery"
+          }
+        }
+      },
+      "BoolQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "must": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "mustNot": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "should": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolFilter": {
+            "$ref": "#/components/schemas/BoolFilter"
+          },
+          "queryFilter": {
+            "$ref": "#/components/schemas/QueryFilter"
+          },
+          "range2Filter": {
+            "$ref": "#/components/schemas/Range2Filter"
+          },
+          "rangeFilter": {
+            "$ref": "#/components/schemas/RangeFilter"
+          },
+          "termFilter": {
+            "$ref": "#/components/schemas/TermFilter"
+          }
+        }
+      },
+      "BoolFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            }
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or",
+              "not"
+            ]
+          }
+        },
+        "required": [
+          "operator"
+        ]
+      },
+      "QueryFilter": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Field": {
+        "type": "string",
+        "maxLength": 260
+      },
+      "Range2Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filterMode": {
+            "type": "string",
+            "default": "overlap",
+            "enum": [
+              "overlap",
+              "containing",
+              "contained"
+            ]
+          },
+          "fromField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "fromValue": {},
+          "toField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "toValue": {}
+        },
+        "required": [
+          "fromField",
+          "toField"
+        ]
+      },
+      "RangeFilter": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "from": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true
+          },
+          "to": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "TermFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ]
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "field",
+          "operator"
+        ]
+      },
+      "FilteredQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/Filter"
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "filter",
+          "query"
+        ]
+      },
+      "MatchAllQuery": {
+        "type": "object"
+      },
+      "NestedQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "scoreMode": {
+            "type": "string",
+            "enum": [
+              "avg",
+              "total",
+              "max",
+              "none"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "query"
+        ]
+      },
+      "TermQuery": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "fields",
+          "operator"
+        ]
+      },
+      "TextQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "searchPhrase": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fields",
+          "searchPhrase"
+        ]
+      },
+      "String256": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "Sort": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/String256"
+              }
+            ]
+          },
+          "sortOrder": {
+            "type": "string",
+            "default": "asc",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "PaginatedSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "hits": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "SourceCodeGroupSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceCodeGroup"
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/SourceCodeGroupId"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.source-codes": "source-codes READONLY",
+              "sfcc.source-codes.rw": "source-codes read/write"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.source-codes": "source-codes READONLY",
+              "sfcc.source-codes.rw": "source-codes read/write"
+            }
+          }
+        }
+      }
+    }
+  }
+}

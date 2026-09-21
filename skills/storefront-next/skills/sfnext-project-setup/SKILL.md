@@ -9,11 +9,23 @@ This skill guides you through creating and configuring a Storefront Next project
 
 ## Overview
 
-Storefront Next storefronts run on Managed Runtime (MRT) with all SCAPI requests executing server-side. Projects are created with `create-storefront` from `@salesforce/storefront-next-dev` and use TypeScript exclusively (`.ts`/`.tsx` files only — `.js`/`.jsx`/`.mjs`/`.cjs` are forbidden).
+Storefront Next storefronts run on Managed Runtime (MRT) with all SCAPI requests executing server-side. Use Business Manager storefront setup for an instance-connected storefront; use `create-storefront` for local exploration. Project application source uses TypeScript (`.ts`/`.tsx`); follow the project's configuration for build scripts.
 
 ## Creating a Project
 
-### Via CLI (local development)
+### Via Business Manager (instance-connected storefront)
+
+Prefer storefront setup: it creates API clients, MRT resources, initial configuration,
+and a deployment. Reuse those resources; do not create replacement SLAS clients or
+MRT projects as routine setup. Choose the [GitHub workflow](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm-github.html)
+or [local-code workflow](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm.html).
+Use the downloaded `env.txt` as the project's `.env`; do not invent tenant/site IDs
+or expose its secrets. Guide the user through Business Manager when setup is needed.
+
+### Via CLI (local exploration)
+
+Use for template exploration without provisioning instance resources. To connect
+to the user's instance, follow storefront setup above and use its configuration.
 
 ```bash
 # Create a new storefront project (interactive)
@@ -31,10 +43,6 @@ pnpm install
 # Start development server
 pnpm dev
 ```
-
-### Via Business Manager
-
-Projects can also be created from Business Manager, which sets up the storefront with Commerce Cloud credentials pre-configured.
 
 ## Project Structure
 
@@ -79,13 +87,18 @@ See [Project Structure Reference](references/PROJECT-STRUCTURE.md) for detailed 
 
 ## Environment Setup
 
-Copy `.env.default` to `.env` and configure required Commerce Cloud credentials:
+For Business Manager-created storefronts, use the downloaded configuration.
+For local CLI exploration, copy `.env.default` to `.env`:
 
 ```bash
 cp .env.default .env
 ```
 
 ### Required Variables
+
+Use values from the selected storefront. This is a configuration example, not a
+request to provision new credentials. See Salesforce's [Environment Variables](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.html)
+for public/server-only visibility and supported paths.
 
 ```bash
 PUBLIC__app__commerce__api__clientId=your-client-id

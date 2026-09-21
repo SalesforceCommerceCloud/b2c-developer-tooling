@@ -1,0 +1,10 @@
+```json
+{
+  "mcpServers": {
+    "b2c-dx-mcp": {
+      "command": "npx",
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest"]
+    }
+  }
+}
+```

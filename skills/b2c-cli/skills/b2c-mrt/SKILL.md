@@ -11,23 +11,23 @@ Use the `b2c` CLI to manage Managed Runtime (MRT) projects, environments, bundle
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the MRT API key from `SFCC_MRT_API_KEY`, `~/.mobify`, `dw.json`, `package.json`, and configuration plugins. Project and environment defaults can come from `dw.json` (`mrtProject`, `mrtEnvironment`) or env vars. **Flags like `--api-key`, `-p`, and `-e` are usually unnecessary** when defaults are configured — only pass them to override.
+The CLI resolves the MRT API key from `MRT_API_KEY` (or `SFCC_MRT_API_KEY`), `dw.json`, `~/.mobify`, or configuration plugins. Project and environment defaults can also come from `package.json` under `b2c` (`mrtProject`, `mrtEnvironment`) or environment variables. `package.json` cannot supply API keys or other secrets. **Flags like `--api-key`, `-p`, and `-e` are usually unnecessary** when defaults are configured — only pass them to override.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; keep secrets masked unless the user explicitly requests their values). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ### MRT Backends (legacy vs SCAPI)
 
-Most MRT commands run against the legacy MRT Cloud API (API key). Two commands — `mrt bundle history` and `mrt bundle deploy <bundleId>` — can also run over the SCAPI MRT backend. Choose with `--mrt-backend` (`MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
+Most MRT commands run against the legacy MRT Cloud API (API key). The bundle commands — `mrt bundle history`, `mrt bundle list`, and `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`) — can also run over the SCAPI MRT backend. Choose with `--mrt-backend` (`MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
 - `auto` (default) — use SCAPI when it's configured (`--short-code` + `--tenant-id` + client-credentials or JWT Bearer auth; scopes `sfcc.storefront.deployments[.rw]`), otherwise legacy. Falls back to legacy on safe pre-execution errors.
 - `legacy` — always the MRT Cloud API.
-- `scapi` — always SCAPI, with no fallback; errors if prerequisites are missing. Also errors on unsupported commands and on the local-build push path (`deploy` with no bundle ID).
+- `scapi` — always SCAPI, with no fallback; errors if prerequisites are missing. Also errors on unsupported commands (every MRT command except the bundle commands above).
 
 Notes:
 
 - Under `--json`, these commands emit the **serving backend's native shape** (legacy `{count, next, previous, deployments}` vs SCAPI `{limit, offset, total, data}`). The human table is normalized; `--json` is not. Pin `legacy` or `scapi` when a script needs a stable shape.
-- Legacy-only flags (`--api-key`, `--cloud-origin` / `-o`, `--credentials-file` / `-c`) are ignored — with a warning — when SCAPI serves the request.
-- `--storefront` / `-s` is an alias of `--project` / `-p` (the SCAPI storefront ID is the project slug).
+- Legacy-only flags (`--api-key`, `--cloud-origin` / `-u`, `--credentials-file` / `-c`) are ignored — with a warning — when SCAPI serves the request.
+- `--storefront` (long) and `-s` (short) are aliases of `--project` / `-p` — the SCAPI storefront ID is the project slug, so all four are interchangeable on every `mrt` command. On `mrt project create` this flag sets the new project's slug (auto-generated from the name if omitted); `mrt bundle save` uses `-d` for `--save-dir`, keeping `-s` free for the storefront alias.
 
 ## Command Structure
 

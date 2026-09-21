@@ -3,6 +3,7 @@ packages:
   - docs
   - skills
   - python/b2c-tooling-sdk
+  - schemas
 
 catalog:
   '@eslint/compat': ^1

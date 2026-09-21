@@ -44,6 +44,8 @@ In addition to these topic-specific options, all commands also support [global f
 
 Search documentation across all corpora using content-aware BM25-style ranking. Results include metadata (category, summary, keywords, url) to help triage matches. Search results are paginated by ranked position.
 
+[![B2C CLI finding catalog import documentation across administrator and merchant guides.](/terminal/docs-search.png)](/terminal/docs-search.png)
+
 ### Usage
 
 ```bash

@@ -45,6 +45,10 @@ function parseDependencies(value: string): Record<string, unknown> {
  *
  * This command is upload-only: it does not deploy the bundle. Deploy separately
  * with `b2c mrt bundle deploy <bundleId> --environment <env>`.
+ *
+ * Note: `b2c mrt bundle deploy --v2` covers the same v2 upload (and can also
+ * deploy in one step with `--environment`). Prefer it going forward; this
+ * command remains for the dedicated upload-only workflow.
  */
 export default class MrtBundleUploadV2 extends MrtCommand<typeof MrtBundleUploadV2> {
   static description = withDocs(
@@ -125,7 +129,9 @@ export default class MrtBundleUploadV2 extends MrtCommand<typeof MrtBundleUpload
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const buildDir = this.flags['build-dir'];
@@ -173,35 +179,40 @@ export default class MrtBundleUploadV2 extends MrtCommand<typeof MrtBundleUpload
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.bundle.uploadV2.success', 'Bundle #{{bundleId}} uploaded to {{project}} ({{message}})', {
-            bundleId: String(result.bundleId),
-            project: result.projectSlug,
-            message: result.message,
-          }),
-        );
+      this.log(
+        t('commands.mrt.bundle.uploadV2.success', 'Bundle #{{bundleId}} uploaded to {{project}} ({{message}})', {
+          bundleId: String(result.bundleId),
+          project: result.projectSlug,
+          message: result.message,
+        }),
+      );
 
-        // The server returns a `matches` object describing how SSR patterns
-        // resolved. Its internal shape is not part of the stable contract, so
-        // report it generically here and expose the raw object via --json.
-        if (Object.keys(result.matches).length > 0) {
-          this.log(
-            t(
-              'commands.mrt.bundle.uploadV2.matches',
-              'Server reported SSR file matches for this bundle. Run with --json to inspect them.',
-            ),
-          );
-        }
-
+      // The server returns a `matches` object describing how SSR patterns
+      // resolved. Its internal shape is not part of the stable contract, so
+      // report it generically here and expose the raw object via --json.
+      if (Object.keys(result.matches).length > 0) {
         this.log(
           t(
-            'commands.mrt.bundle.uploadV2.deployHint',
-            'To deploy this bundle: b2c mrt bundle deploy {{bundleId}} --environment <environment>',
-            {bundleId: String(result.bundleId)},
+            'commands.mrt.bundle.uploadV2.matches',
+            'Server reported SSR file matches for this bundle. Run with --json to inspect them.',
+          ),
+        );
+
+        this.warn(
+          t(
+            'commands.mrt.bundle.uploadV2.pushV2Hint',
+            '"b2c mrt bundle deploy --v2" performs the same v2 upload and can build, upload, and deploy in one step.',
           ),
         );
       }
+
+      this.log(
+        t(
+          'commands.mrt.bundle.uploadV2.deployHint',
+          'To deploy this bundle: b2c mrt bundle deploy {{bundleId}} --environment <environment>',
+          {bundleId: String(result.bundleId)},
+        ),
+      );
 
       for (const w of result.warnings ?? []) this.warn(w);
 

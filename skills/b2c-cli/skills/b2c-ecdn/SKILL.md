@@ -13,7 +13,7 @@ Use the `b2c` CLI plugin to manage eCDN (embedded Content Delivery Network) zone
 
 Values like `tenantId`, `clientId`, and `clientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance / configuration plugins. Examples below show minimal usage; **add flags only to override configured values** — passing `--client-id`/`--client-secret`/`--tenant-id` is usually unnecessary. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Prerequisites
 
@@ -125,9 +125,9 @@ The `--zone` flag accepts either:
 
 ### OAuth Scopes
 
-| Operation | Required Scope |
-|-----------|---------------|
-| Read operations | `sfcc.cdn-zones` |
+| Operation        | Required Scope      |
+| ---------------- | ------------------- |
+| Read operations  | `sfcc.cdn-zones`    |
 | Write operations | `sfcc.cdn-zones.rw` |
 
 ### More Commands

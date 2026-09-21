@@ -1,0 +1,760 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Replications",
+    "version": "1.0.7",
+    "x-api-type": "Admin",
+    "x-api-family": "Operation"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/operation/replications/v1",
+      "variables": {
+        "shortCode": {
+          "default": "123456gf"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/granular-processes": {
+      "get": {
+        "operationId": "listPublishProcesses",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved list of publish processes successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishProcessListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_GetProcesses"
+          },
+          "403": {
+            "$ref": "#/components/responses/403Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/422UnprocessableContent"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.granular-replications",
+              "sfcc.granular-replications.rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "operationId": "publishItems",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "ID of the publish process",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishIdResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_CreateProcess"
+          },
+          "403": {
+            "$ref": "#/components/responses/403Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_CreateProcess"
+          },
+          "409": {
+            "$ref": "#/components/responses/409Conflict_CreateProcess"
+          },
+          "422": {
+            "$ref": "#/components/responses/422UnprocessableContent_CreateProcess"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.granular-replications.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/granular-processes/{id}": {
+      "get": {
+        "operationId": "getPublishProcess",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Publish process details retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishProcessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/403Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_GetProcess"
+          },
+          "422": {
+            "$ref": "#/components/responses/422UnprocessableContent"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.granular-replications",
+              "sfcc.granular-replications.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "maxLength": 28
+      },
+      "ProductId": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "ProductItem": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "PriceTableItem": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "priceBookId": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "priceBookId",
+          "productId"
+        ]
+      },
+      "SiteId": {
+        "type": "string",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "ContentAssetItemPrivate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "contentId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "private"
+            ]
+          },
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          }
+        },
+        "required": [
+          "contentId",
+          "siteId",
+          "type"
+        ]
+      },
+      "ContentAssetItemShared": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "contentId": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "shared"
+            ]
+          },
+          "libraryId": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "contentId",
+          "libraryId",
+          "type"
+        ]
+      },
+      "ContentAssetItem": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ContentAssetItemPrivate"
+          },
+          {
+            "$ref": "#/components/schemas/ContentAssetItemShared"
+          }
+        ]
+      },
+      "PublishProcessResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "in_progress",
+              "failed",
+              "queued"
+            ]
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "initiatedBy": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "productItem": {
+            "$ref": "#/components/schemas/ProductItem"
+          },
+          "priceTableItem": {
+            "$ref": "#/components/schemas/PriceTableItem"
+          },
+          "contentAssetItem": {
+            "$ref": "#/components/schemas/ContentAssetItem"
+          }
+        },
+        "required": [
+          "id",
+          "initiatedBy",
+          "startTime",
+          "status"
+        ]
+      },
+      "PublishProcessListResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublishProcessResponse"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "InvalidQueryParameterErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "FeatureNotEnabledErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "NotOnStagingInstanceErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "ProductPublishRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "product": {
+            "type": "object",
+            "properties": {
+              "productId": {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            },
+            "required": [
+              "productId"
+            ]
+          }
+        },
+        "required": [
+          "product"
+        ]
+      },
+      "PriceTablePublishRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "priceTable": {
+            "type": "object",
+            "properties": {
+              "productId": {
+                "$ref": "#/components/schemas/ProductId"
+              },
+              "priceBookId": {
+                "type": "string",
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "priceBookId",
+              "productId"
+            ]
+          }
+        },
+        "required": [
+          "priceTable"
+        ]
+      },
+      "ContentAssetPublishRequest": {
+        "type": "object",
+        "properties": {
+          "contentAsset": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ContentAssetItemPrivate"
+              },
+              {
+                "$ref": "#/components/schemas/ContentAssetItemShared"
+              }
+            ]
+          }
+        },
+        "required": [
+          "contentAsset"
+        ]
+      },
+      "PublishItemRequest": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ProductPublishRequest"
+          },
+          {
+            "$ref": "#/components/schemas/PriceTablePublishRequest"
+          },
+          {
+            "$ref": "#/components/schemas/ContentAssetPublishRequest"
+          }
+        ]
+      },
+      "PublishIdResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/id"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "InvalidRequestBodyErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "ItemNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "AlreadyQueuedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "TooManyQueuedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "ReplicationRunningErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "FeedBasedPriceBookNotSupportedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ]
+      },
+      "PublishProcessNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/id"
+          }
+        }
+      }
+    },
+    "responses": {
+      "400BadRequest_GetProcesses": {
+        "description": "Bad Request. Invalid query parameter.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/InvalidQueryParameterErrorResponse"
+            }
+          }
+        }
+      },
+      "403Forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don't have the required permissions to access the resource,\nor the Granular Replication feature is disabled.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/FeatureNotEnabledErrorResponse"
+            }
+          }
+        }
+      },
+      "422UnprocessableContent": {
+        "description": "If the request was not sent to a staging instance",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/NotOnStagingInstanceErrorResponse"
+            }
+          }
+        }
+      },
+      "400BadRequest_CreateProcess": {
+        "description": "Bad Request. The request is malformed or contains invalid data.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/InvalidRequestBodyErrorResponse"
+            }
+          }
+        }
+      },
+      "404NotFound_CreateProcess": {
+        "description": "The specified item was not found.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ItemNotFoundErrorResponse"
+            }
+          }
+        }
+      },
+      "409Conflict_CreateProcess": {
+        "description": "The item could not get queued for the upcoming publish operation.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/AlreadyQueuedErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/TooManyQueuedErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/ReplicationRunningErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "422UnprocessableContent_CreateProcess": {
+        "description": "The item could not get processed.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/FeedBasedPriceBookNotSupportedErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/NotOnStagingInstanceErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "404NotFound_GetProcess": {
+        "description": "The publish process for given ID was not found.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/PublishProcessNotFoundErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/id"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "c.example": "custom scopes mus start with c. used for custom APIs [MAX length of scope 49 characters]",
+              "sfcc.example": "standard salesforce commerce apis scopes must start with \"sfcc.\". Without suffix \".rw\" scopes grants READONLY access. [MAX length of scope 49 characters]",
+              "sfcc.example.rw": "salesforce commerce apis scopes must start with \"sfcc.\". The suffix \".rw\" scopes grants READ and WRITE access. [MAX length of scope 49 characters]"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "c.example": "custom scopes mus start with c. used for custom APIs [MAX length of scope 49 characters]",
+              "sfcc.example": "standard salesforce commerce apis scopes must start with \"sfcc.\". Without suffix \".rw\" scopes grants READONLY access. [MAX length of scope 49 characters]",
+              "sfcc.example.rw": "salesforce commerce apis scopes must start with \"sfcc.\". The suffix \".rw\" scopes grants READ and WRITE access. [MAX length of scope 49 characters]"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {TOOLSETS} from '../../utils/constants.js';
 import {z} from 'zod';
 import {searchSchemas, type SchemaSearchResult} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool} from '../../utils/index.js';
@@ -24,10 +25,13 @@ export function createDocsSchemaSearchTool(loadServices: () => Promise<Services>
   return createToolAdapter<SearchInput, SearchOutput>(
     {
       name: 'docs_schema_search',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Search bundled B2C Commerce (SFCC/Demandware) XSD schemas by ID. ' +
         'Returns matching IDs and scores; use docs_schema_read for content.',
-      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: [...TOOLSETS],
       inputSchema: {
         query: z.string().min(1).describe('Schema name or partial match (e.g., "catalog", "order").'),
         limit: z.number().int().positive().optional().describe('Maximum number of results to return. Defaults to 20.'),

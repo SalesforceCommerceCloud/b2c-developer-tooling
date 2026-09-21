@@ -1,5 +1,5 @@
 ---
-description: Connect the Salesforce B2C Commerce VS Code Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference.
+description: Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference.
 ---
 
 # Configuration
@@ -11,6 +11,7 @@ This page covers:
 - [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
 - [How the Extension Chooses a Project](#how-the-extension-chooses-a-project) — parent folders and multi-root workspaces.
 - [Selecting an Instance](#selecting-an-instance) — workspace-specific and shared defaults.
+- [Safety Mode](#safety-mode) — restrict changes and require confirmation for selected actions.
 - [Settings Reference](#settings-reference) — the `b2c-dx.*` toggles and verbosity controls.
 
 ## Connecting to a B2C Instance
@@ -34,17 +35,17 @@ The extension's instance picker combines instances from the primary and global f
 
 A summary by feature, regardless of which configuration source provides the values:
 
-| Feature                    | Required configuration                                                                                                      |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter. |
-| **WebDAV Browser**         | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted.                |
-| **Content Libraries**      | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree.                                              |
-| **Cartridge Code Sync**    | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations.                              |
-| **SCAPI API Browser**      | `client-id`, `client-secret`, `short-code`, `tenant-id`.                                                                    |
-| **B2C Script Debugger**    | WebDAV (for source-mapping).                                                                                                |
-| **Log Tailing**            | WebDAV (logs are read from `Logs/`).                                                                                        |
-| **CAP install**            | WebDAV; some apps additionally require OAuth client credentials.                                                            |
-| **Scaffold**               | None — local-only.                                                                                                          |
+| Feature                    | Required configuration                                                                                                                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter.                                                                                              |
+| **WebDAV Browser**         | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted.                                                                                                             |
+| **Content Libraries**      | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree.                                                                                                                                           |
+| **Cartridge Code Sync**    | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations.                                                                                                                           |
+| **SCAPI API Browser**      | Account Manager access, `short-code`, and `tenant-id` to load schemas. Shopper requests also use `slas-client-id` and `site-id`; private clients need `slas-client-secret`. See [API Browser Setup](#api-browser-setup). |
+| **B2C Script Debugger**    | WebDAV (for source-mapping).                                                                                                                                                                                             |
+| **Log Tailing**            | WebDAV (logs are read from `Logs/`).                                                                                                                                                                                     |
+| **CAP install**            | WebDAV; some apps additionally require OAuth client credentials.                                                                                                                                                         |
+| **Scaffold**               | None — local-only.                                                                                                                                                                                                       |
 
 ### Example `dw.json`
 
@@ -71,6 +72,16 @@ A summary by feature, regardless of which configuration source provides the valu
 
 See the [Authentication Setup guide](../guide/authentication) for OAuth scope requirements and Account Manager API client setup.
 
+### API Browser Setup
+
+Use the **Setup Help** question-mark button in the API Browser toolbar or **Setup Help** in an API documentation tab. The guide opens inside the editor and includes an example `dw.json`, access requirements, and troubleshooting.
+
+Loading schemas for either Admin or Shopper families requires Account Manager access with the `sfcc.scapi-schemas` scope and the tenant in the client's tenant filter. Sending Admin requests requires that API's scopes as well.
+
+For Shopper requests, add [SLAS credentials](../guide/configuration#shopper-authentication-slas) to the selected connection. Public clients use `slas-client-id` and `site-id`; private clients also use `slas-client-secret`. The API Browser obtains a guest shopper token. A configured public client must allow the redirect URI `http://localhost:3000/callback`.
+
+The extension handles authentication. Check the token status or use **Refresh Token** after updating credentials. After changing the instance or site, close API tabs, refresh the API list, and reopen the API so its request defaults match your selection. **Try it out** sends real requests to that instance.
+
 <!-- TODO(screenshot): replace ./images/settings.svg with ./images/settings.png — Settings UI filtered to b2c-dx -->
 
 ## How the Extension Chooses a Project
@@ -94,6 +105,17 @@ When your configuration defines multiple named instances (the recommended patter
 The picker distinguishes the instance **selected for this workspace** with a check mark and the shared **default instance** with a star. Use the star action on a row—or run **B2C DX: Set Default Instance**—to intentionally change the default used by other consumers. Run **B2C DX: Follow Default Instance** to remove the workspace-specific selection.
 
 For named entries, setting the default writes `active: true`; a root configuration without an explicit `active` value remains an implicit default. This is equivalent to running `b2c setup instance set-active <name>` and is separate from selecting an instance only for VS Code.
+
+## Safety Mode
+
+The extension honors the selected instance's `safety` settings in `dw.json`.
+You can block commands such as sandbox deletion or require a modal **Proceed**
+confirmation before stopping a sandbox. Request-level safety restrictions also
+apply; approving a command does not override them.
+
+See [Safety Mode for the IDE extension](../guide/safety#ide-extension) for
+configuration examples, supported confirmations, and shared safety files.
+There is no separate safety-level toggle in VS Code Settings.
 
 ## Settings Reference
 
