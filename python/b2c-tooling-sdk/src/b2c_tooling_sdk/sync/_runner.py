@@ -8,11 +8,25 @@ process. Every synchronous call submits its coroutine to that loop via
 :func:`asyncio.run_coroutine_threadsafe` and blocks on the result.
 
 Using *one* persistent loop (rather than :func:`asyncio.run` per call) is
-deliberate: the async SDK caches tokens with module-level ``asyncio.Future``
-objects and locks (single-flight token minting). Those primitives are bound to
-the loop that created them, so a fresh loop per call would raise
-``RuntimeError: ... bound to a different event loop`` on the second call. Reusing
-one loop preserves the async API's caching/single-flight semantics exactly.
+deliberate: SDK service objects hold loop-bound resources (a persistent
+``httpx.AsyncClient`` per client, single-flight token-minting locks/tasks), so a
+fresh loop per call would raise ``RuntimeError: ... attached to a different
+loop`` on the second call. Reusing one loop preserves those semantics exactly.
+
+Calling the facade from inside an already-running event loop (e.g. your own
+async code) blocks *that* loop's thread until the call completes rather than
+deadlocking - this is deliberately tolerated because it is also what every
+Jupyter cell does (ipykernel always executes cell code inside a running loop,
+awaited or not; the "frictionless" sync facade in notebooks depends on this
+working). :func:`run_sync` emits a :class:`RuntimeWarning` in that case, since
+serializing concurrent async work this way is usually a mistake outside a
+single-cell/single-request context, but it does not raise.
+
+Do not mix direct ``await`` use of an SDK object with sync-facade use of that
+*same* object in one process - once an object has run a coroutine on a given
+loop, its loop-bound resources (a persistent ``httpx.AsyncClient``, etc.) are
+pinned to it; :func:`run_sync` re-raises the resulting cross-loop
+``RuntimeError`` with an actionable hint rather than the bare asyncio message.
 """
 
 from __future__ import annotations
@@ -20,6 +34,7 @@ from __future__ import annotations
 import asyncio
 import atexit
 import threading
+import warnings
 from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
@@ -83,6 +98,15 @@ def _shutdown() -> None:
         loop.close()
 
 
+_CROSS_LOOP_HINT = (
+    " This SDK service object appears to have been created or previously awaited "
+    "on a different asyncio event loop (for example, your own async code, or a "
+    "distinct process-level loop). Do not mix direct `await` use of an SDK object "
+    "with the `b2c_tooling_sdk.sync` facade for that *same* object within one "
+    "process - pick one calling convention per object."
+)
+
+
 def run_sync(coro: Coroutine[Any, Any, T]) -> T:
     """Run ``coro`` on the persistent background loop and block for its result.
 
@@ -98,8 +122,34 @@ def run_sync(coro: Coroutine[Any, Any, T]) -> T:
         # Submitting to our own loop and blocking on the result would deadlock.
         # This should never happen: sync-facade coroutines run *on* this loop and
         # therefore never re-enter run_sync. Guard defensively regardless.
+        coro.close()
         msg = "run_sync() must not be called from within the SDK sync event-loop thread"
         raise RuntimeError(msg)
 
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        pass
+    else:
+        # The calling thread is itself inside a running event loop (e.g. async
+        # code, or - harmlessly - any Jupyter cell). Blocking on future.result()
+        # below stalls that loop until the background coroutine finishes; fine
+        # for a single notebook cell, but silently serializes real concurrent
+        # work if the caller is, say, an async web handler. Warn rather than
+        # raise, since Jupyter's loop-per-cell design makes this path routine.
+        warnings.warn(
+            "b2c_tooling_sdk.sync was called from inside a running event loop; "
+            "this blocks that loop until the call completes. If you are inside "
+            "async code with other concurrent work pending, use the async "
+            "b2c_tooling_sdk API directly instead.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
     future = asyncio.run_coroutine_threadsafe(coro, loop)
-    return future.result()
+    try:
+        return future.result()
+    except RuntimeError as error:
+        if "different loop" in str(error) or "different event loop" in str(error):
+            raise RuntimeError(str(error) + _CROSS_LOOP_HINT) from error
+        raise

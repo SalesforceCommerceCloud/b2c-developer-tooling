@@ -30,6 +30,7 @@ import dataclasses
 import enum
 import functools
 import inspect
+import weakref
 from typing import TYPE_CHECKING, Any
 
 from b2c_tooling_sdk.sync._runner import run_sync
@@ -38,6 +39,14 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 _SDK_ROOT = "b2c_tooling_sdk"
+
+# Keyed by the async target's identity (SDK service classes use the default,
+# identity-based __eq__/__hash__), so repeated syncify() calls for the *same*
+# underlying object return the *same* SyncProxy - preserving `is`/set/dict
+# identity semantics across the sync facade the way the async API has them
+# (e.g. a cached `instance.webdav` property). Weak-keyed so a proxy never
+# outlives (or keeps alive) the async object it wraps.
+_PROXY_CACHE: weakref.WeakKeyDictionary[Any, SyncProxy] = weakref.WeakKeyDictionary()
 
 
 def _is_sdk_service(obj: object) -> bool:
@@ -72,12 +81,26 @@ def _unwrap_args(args: tuple[Any, ...], kwargs: dict[str, Any]) -> tuple[tuple[A
 
 
 def syncify(obj: Any) -> Any:
-    """Wrap an SDK service object in a :class:`SyncProxy`; return anything else as-is."""
+    """Wrap an SDK service object in a :class:`SyncProxy`; return anything else as-is.
+
+    Returns the *same* proxy instance for repeated calls on the same ``obj``
+    (see :data:`_PROXY_CACHE`), so identity/equality on the sync surface match
+    the async surface's.
+    """
     if isinstance(obj, SyncProxy):
         return obj
-    if _is_sdk_service(obj):
+    if not _is_sdk_service(obj):
+        return obj
+    try:
+        cached = _PROXY_CACHE.get(obj)
+    except TypeError:
+        # Not weakly-referenceable / unhashable - fall back to an uncached proxy.
         return SyncProxy(obj)
-    return obj
+    if cached is not None:
+        return cached
+    proxy = SyncProxy(obj)
+    _PROXY_CACHE[obj] = proxy
+    return proxy
 
 
 class SyncProxy:
@@ -95,6 +118,14 @@ class SyncProxy:
     def __repr__(self) -> str:
         target = object.__getattribute__(self, "_async_target")
         return f"SyncProxy({target!r})"
+
+    def __eq__(self, other: object) -> bool:
+        target = object.__getattribute__(self, "_async_target")
+        return bool(target == _unwrap(other))
+
+    def __hash__(self) -> int:
+        target = object.__getattribute__(self, "_async_target")
+        return hash(target)
 
     def __getattr__(self, name: str) -> Any:
         target = object.__getattribute__(self, "_async_target")

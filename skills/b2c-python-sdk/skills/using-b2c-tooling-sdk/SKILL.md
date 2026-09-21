@@ -86,7 +86,7 @@ you have no config file or need a specific flow.
 | --- | --- | --- |
 | Server-to-server automation (CI, scripts) | OAuth **client-credentials** | `OAuthStrategy(OAuthConfig(client_id, client_secret, scopes))` |
 | Server-to-server with a cert instead of a secret | **JWT Bearer** | `JwtOAuthStrategy(JwtOAuthConfig(client_id, cert_path, key_path, ...))` |
-| Interactive user login (opens a browser) | **PKCE** (+ implicit fallback) | `create_user_auth_strategy(AuthCredentials(client_id, redirect_uri))` |
+| Interactive user login (opens a browser) | **PKCE** (+ implicit fallback) | `create_user_auth_strategy(PkceOAuthConfig(client_id=..., account_manager_host=...))` |
 | Reuse a session created by `b2c auth login` | shared session store | `resolve_config()` picks it up automatically; or `find_auth_session(client_id)` |
 | WebDAV / OCAPI Basic auth | **Basic** | `BasicAuthStrategy(username, password)` |
 | Static API key header | **API key** | `ApiKeyStrategy("my-key")` |

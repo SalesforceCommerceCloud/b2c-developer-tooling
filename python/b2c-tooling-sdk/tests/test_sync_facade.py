@@ -121,6 +121,34 @@ def test_run_sync_reraises_exception_synchronously() -> None:
         run_sync(boom())
 
 
+def test_run_sync_from_within_running_loop_warns_but_still_returns() -> None:
+    """Calling the sync facade from inside an already-running loop (as every
+    Jupyter cell does, awaited or not) must keep working, but warn - it silently
+    serializes concurrent async work if the caller isn't a single notebook cell."""
+
+    async def coro() -> int:
+        return 1
+
+    result: int | None = None
+
+    async def caller() -> None:
+        nonlocal result
+        result = run_sync(coro())
+
+    with pytest.warns(RuntimeWarning, match="running event loop"):
+        asyncio.run(caller())
+
+    assert result == 1
+
+
+def test_cross_loop_runtime_error_gets_actionable_hint() -> None:
+    async def boom() -> None:
+        raise RuntimeError("Task got Future <Future pending> attached to a different loop")
+
+    with pytest.raises(RuntimeError, match="Do not mix direct"):
+        run_sync(boom())
+
+
 # --- 2. persistent loop: no "bound to a different event loop" --------------------
 
 
@@ -176,6 +204,21 @@ def test_metrics_free_function_matches_async() -> None:
     assert sync_result == async_result
     point = sync_result["data"][0]["dataSeries"][0]["data"][0]
     assert point["timestamp"] == 1_700_000_000 * 1000  # seconds -> ms normalization
+
+
+def test_syncify_preserves_identity_for_same_target() -> None:
+    """Repeated syncify() calls for the same async object must return the same
+    proxy, so `is`/set/dict identity on the sync surface matches the async
+    surface's (e.g. a cached `B2CInstance.webdav` property)."""
+    target = _strategy()
+
+    proxy1 = syncify(target)
+    proxy2 = syncify(target)
+
+    assert proxy1 is proxy2
+    assert proxy1 == target
+    assert hash(proxy1) == hash(target)
+    assert {proxy1, proxy2} == {proxy1}
 
 
 def test_resolve_config_matches_async() -> None:
