@@ -5,7 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {setEnvVars} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {setEnvVarsWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
@@ -30,6 +30,7 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
     '<%= config.bin %> <%= command.id %> MY_VAR=value --project acme-storefront --environment production',
     '<%= config.bin %> <%= command.id %> API_KEY=secret DEBUG=true -p my-project -e staging',
     '<%= config.bin %> <%= command.id %> "MESSAGE=hello world" -p my-project -e production',
+    '<%= config.bin %> <%= command.id %> API_KEY=secret -p my-project -e staging --mrt-backend scapi',
   ];
 
   static flags = {
@@ -40,12 +41,10 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
   static strict = false;
 
   protected operations = {
-    setEnvVars,
+    setEnvVarsWithBackend,
   };
 
   async run(): Promise<{variables: Record<string, string>; project: string; environment: string}> {
-    this.requireMrtCredentials();
-
     const {argv} = await this.parse(MrtEnvVarSet);
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
@@ -87,34 +86,51 @@ export default class MrtEnvVarSet extends MrtCommand<typeof MrtEnvVarSet> {
       this.error(t('commands.mrt.env.var.set.noVariables', 'No environment variables provided. Use KEY=value format.'));
     }
 
-    await this.operations.setEnvVars(
-      {
-        projectSlug: project,
-        environment,
-        variables,
-        origin: this.resolvedConfig.values.mrtOrigin,
-      },
-      this.getMrtAuth(),
-    );
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
-    if (keys.length === 1) {
-      this.log(
-        t('commands.mrt.env.var.set.successSingle', 'Set {{key}} on {{project}}/{{environment}}', {
-          key: keys[0],
-          project,
-          environment,
-        }),
-      );
-    } else {
-      this.log(
-        t('commands.mrt.env.var.set.successMultiple', 'Set {{count}} variables on {{project}}/{{environment}}', {
-          count: keys.length,
-          project,
-          environment,
-        }),
-      );
+    // The resolved backend is surfaced via `onResolve` (debug log) only — it is
+    // deliberately kept out of the `--json` payload so the legacy `--json`
+    // output stays byte-identical and matches `mrt env var list` / `bundle deploy`.
+    await this.operations.setEnvVarsWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      variables,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (resolved) =>
+        this.logger.debug({backend: resolved}, '[MRT] Setting environment variables via backend'),
+    });
+
+    // Under --json, emit only the result object: the human success message
+    // routes through the logger (stderr) and would otherwise interleave with the
+    // JSON. Mirrors `mrt env var list` / `mrt bundle deploy`.
+    if (!this.jsonEnabled()) {
+      if (keys.length === 1) {
+        this.log(
+          t('commands.mrt.env.var.set.successSingle', 'Set {{key}} on {{project}}/{{environment}}', {
+            key: keys[0],
+            project,
+            environment,
+          }),
+        );
+      } else {
+        this.log(
+          t('commands.mrt.env.var.set.successMultiple', 'Set {{count}} variables on {{project}}/{{environment}}', {
+            count: keys.length,
+            project,
+            environment,
+          }),
+        );
+      }
     }
 
     return {variables, project, environment};
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

@@ -285,11 +285,12 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
 
   /**
    * Whether this command implements the SCAPI MRT backend. Defaults to `false`;
-   * the supported commands (`mrt bundle history`, `mrt bundle list`, and
-   * `mrt bundle deploy` — both the local-build push and `<bundleId>` deploy)
-   * override it to `true`. Used by {@link init} to reject an explicit
-   * `--mrt-backend scapi` on commands that would otherwise silently fall back to
-   * legacy — an explicit SCAPI request must never be quietly downgraded.
+   * the supported commands (`mrt bundle history`, `mrt bundle list`,
+   * `mrt bundle deploy` — both the local-build push and `<bundleId>` deploy —
+   * and the `mrt env var` family: `list`, `set`, `delete`, `push`) override it
+   * to `true`. Used by {@link init} to reject an explicit `--mrt-backend scapi`
+   * on commands that would otherwise silently fall back to legacy — an explicit
+   * SCAPI request must never be quietly downgraded.
    */
   protected supportsScapiMrt(): boolean {
     return false;
@@ -302,8 +303,9 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     // not silently serve an explicit `--mrt-backend scapi` from legacy.
     if (!this.supportsScapiMrt() && this.mrtBackendPreference === 'scapi') {
       this.error(
-        '--mrt-backend scapi is not supported by this command yet. The SCAPI MRT backend currently supports only ' +
-          '"mrt bundle history", "mrt bundle list", and "mrt bundle deploy". Re-run with --mrt-backend legacy or auto.',
+        '--mrt-backend scapi is not supported by this command yet. The SCAPI MRT backend currently supports ' +
+          '"mrt bundle history", "mrt bundle list", "mrt bundle deploy", and "mrt env var" (list/set/delete/push). ' +
+          'Re-run with --mrt-backend legacy or auto.',
       );
     }
   }
