@@ -2,12 +2,16 @@
 #
 # release.sh — cut a Python SDK release (temporary tag-based process).
 #
-# Reads the current version from pyproject.toml, proposes the next minor
-# version, runs the quality gate, bumps the version, commits, tags
-# (python-v<version>), and pushes the branch + tag to the fork.
+# The version is no longer chosen here: Changesets owns it. Merging a
+# changeset targeting @salesforce/b2c-tooling-sdk-python bumps
+# python/b2c-tooling-sdk/package.json on `main`, and the sync script
+# (scripts/sync-python-sdk-version.mjs, run as part of `pnpm run version`)
+# propagates that number into pyproject.toml and version.py. This script just
+# reads whatever version is already committed in pyproject.toml on the current
+# branch, runs the quality gate, and tags + pushes it.
 #
 # Usage:
-#   ./release.sh                # interactive; proposes next minor version
+#   ./release.sh                # reads the version from pyproject.toml
 #   ./release.sh --skip-gate    # skip ruff/mypy/pytest (not recommended)
 #   ./release.sh --dry-run      # show what would happen; make no changes
 #
@@ -54,31 +58,19 @@ if [ "$CURRENT_BRANCH" != "$BRANCH" ]; then
 fi
 
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-  warn "Working tree has uncommitted tracked changes; only pyproject.toml will be committed."
+  warn "Working tree has uncommitted tracked changes; the release tags whatever is already committed."
   git status --short
   read -r -p "Continue? [y/N] " ans
   [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
 fi
 
-# --- Determine versions ------------------------------------------------------
-CURRENT="$(grep -E '^version[[:space:]]*=' pyproject.toml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
-if [[ ! "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  error "Could not parse a valid current version from pyproject.toml (got '$CURRENT')"; exit 1
-fi
-
-IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-PROPOSED="${MAJOR}.$((MINOR + 1)).0"   # next minor
-
-info "Current version: $CURRENT"
-read -r -p "New version [$PROPOSED]: " INPUT
-VERSION="${INPUT:-$PROPOSED}"
-
+# --- Determine version (owned by Changesets, already committed here) --------
+VERSION="$(grep -E '^version[[:space:]]*=' pyproject.toml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  error "Version '$VERSION' is not valid semver (expected MAJOR.MINOR.PATCH)"; exit 1
+  error "Could not parse a valid version from pyproject.toml (got '$VERSION')"; exit 1
 fi
-if [ "$VERSION" = "$CURRENT" ]; then
-  error "New version equals the current version ($CURRENT). Bump it."; exit 1
-fi
+
+info "Version to release: $VERSION (from pyproject.toml)"
 
 TAG="${TAG_PREFIX}${VERSION}"
 if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
@@ -103,22 +95,14 @@ fi
 # --- Confirm the outward actions ---------------------------------------------
 echo
 info "Ready to release:"
-echo "    version : $CURRENT -> $VERSION"
-echo "    commit  : chore(python): release v$VERSION  (bumps pyproject.toml)"
+echo "    version : $VERSION  (already committed in pyproject.toml)"
 echo "    tag     : $TAG"
 echo "    push to : $REMOTE  (branch $BRANCH + tag $TAG)"
 echo
-read -r -p "Proceed with commit, tag, and push? [y/N] " ans
+read -r -p "Proceed with tag and push? [y/N] " ans
 [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted. No changes pushed."; exit 1; }
 
-# --- Bump, commit, tag, push -------------------------------------------------
-info "Bumping version in pyproject.toml..."
-run "sed -i.bak -E 's/^version[[:space:]]*=.*/version = \"${VERSION}\"/' pyproject.toml && rm -f pyproject.toml.bak"
-
-info "Committing..."
-run "git add pyproject.toml"
-run "git commit -m 'chore(python): release v${VERSION}'"
-
+# --- Tag, push -----------------------------------------------------------
 info "Tagging $TAG..."
 run "git tag '${TAG}'"
 

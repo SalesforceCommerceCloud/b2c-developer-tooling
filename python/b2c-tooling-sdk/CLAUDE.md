@@ -10,8 +10,11 @@ OCAPI/SCAPI/WebDAV clients, and higher-level operations (code deploy, jobs,
 sites, catalogs, BM users/roles, sandboxes/ODS, metrics, logs). It lives in the
 `python/b2c-tooling-sdk/` subfolder of the larger `b2c-developer-tooling`
 monorepo (alongside `python/samples/`), whose root
-`CLAUDE.md`/`AGENTS.md` covers the **TypeScript** packages — that guidance does
-**not** apply here (no pnpm, no changesets, no oclif).
+`CLAUDE.md`/`AGENTS.md` covers the **TypeScript** packages — that guidance
+mostly does **not** apply here (no pnpm, no oclif), with one exception:
+**versioning uses the root Changesets flow** (see Releasing below and the root
+`CLAUDE.md`), since this package is registered as a private, unpublished
+`package.json` purely so Changesets can bump its version and changelog.
 
 **This is a faithful port of the TypeScript `@salesforce/b2c-tooling-sdk`**
 (`../../packages/b2c-tooling-sdk/`). Parity is the entire point of the project:
@@ -120,8 +123,11 @@ generator and run `make generate-models`.
   auth-session store at a tmp dir, so tests never touch real user data or the
   network. `tests/helpers/` has shared fixtures (e.g. JWT minting).
 - The SDK's User-Agent product token is `b2c-tooling-sdk-python/{version}` and is
-  intentionally decoupled from the folder name. Version source of truth is
-  `pyproject.toml` (with a `version.py` source-checkout fallback — bump both).
+  intentionally decoupled from the folder name. The version is set via the
+  monorepo's Changesets flow (a changeset targeting
+  `@salesforce/b2c-tooling-sdk-python`) and flows into `pyproject.toml` and the
+  `version.py` fallback automatically via `scripts/sync-python-sdk-version.mjs` —
+  don't hand-edit either.
 
 ## Samples
 
@@ -137,7 +143,9 @@ substring must be avoided in tracked filenames).
 ## Releasing
 
 Not on PyPI yet; released as git tags (`python-vX.Y.Z`) on the fork's `python`
-branch. `release.sh`/`RELEASE.md` describe the process — note `release.sh` is
-interactive and commits **only** `pyproject.toml`, so commit code changes first
-or they are excluded from the tag. Never push to the `upstream`
-(SalesforceCommerceCloud) remote.
+branch. The version number and CHANGELOG come from the root Changesets flow (a
+changeset targeting `@salesforce/b2c-tooling-sdk-python`, this package's
+private/unpublished `package.json`); `release.sh`/`RELEASE.md` describe the
+remaining manual steps — it no longer bumps or commits `pyproject.toml`
+itself, just tags and pushes whatever version is already committed there.
+Never push to the `upstream` (SalesforceCommerceCloud) remote.
