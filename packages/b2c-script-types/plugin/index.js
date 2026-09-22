@@ -77,7 +77,12 @@ function init({ typescript: ts }) {
     const setCartridges = (list) => {
         cartridges = list.map(({ name, src }) => {
             const n = normalize(src);
-            return { name, root: n.endsWith('/') ? n : n + '/' };
+            const raw = src.replace(/\\/g, '/');
+            return {
+                name,
+                root: n.endsWith('/') ? n : n + '/',
+                srcRoot: raw.endsWith('/') ? raw : raw + '/',
+            };
         });
     };
     const applyConfig = (config) => {
@@ -275,7 +280,7 @@ function init({ typescript: ts }) {
         if (!subpath)
             return undefined;
         for (const c of order) {
-            const baseAbs = c.root + subpath;
+            const baseAbs = c.srcRoot + subpath;
             for (const ext of CANDIDATE_EXTENSIONS) {
                 const candidate = baseAbs + ext;
                 if (fileExists(candidate)) {
@@ -307,7 +312,7 @@ function init({ typescript: ts }) {
         const modulesCart = cartridges.find((c) => c.name === 'modules');
         if (!modulesCart)
             return undefined;
-        const baseAbs = modulesCart.root + moduleName;
+        const baseAbs = modulesCart.srcRoot + moduleName;
         for (const ext of CANDIDATE_EXTENSIONS) {
             const candidate = baseAbs + ext;
             if (fileExists(candidate)) {
@@ -322,7 +327,7 @@ function init({ typescript: ts }) {
                 if (content) {
                     const main = JSON.parse(content).main;
                     if (typeof main === 'string' && main.length > 0) {
-                        const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
+                        const resolved = (modulesCart.srcRoot + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
                         if (fileExists(resolved)) {
                             return { resolved, source: modulesCart.name };
                         }
@@ -538,7 +543,7 @@ function init({ typescript: ts }) {
             const moduleName = sfraModuleAtOffset(def.textSpan.start);
             if (!moduleName)
                 return def;
-            const candidates = [modulesCart.root + moduleName + '.js', modulesCart.root + moduleName + '/index.js'];
+            const candidates = [modulesCart.srcRoot + moduleName + '.js', modulesCart.srcRoot + moduleName + '/index.js'];
             for (const candidate of candidates) {
                 if (fileExists(candidate)) {
                     return { ...def, fileName: candidate, textSpan: { start: 0, length: 0 } };
