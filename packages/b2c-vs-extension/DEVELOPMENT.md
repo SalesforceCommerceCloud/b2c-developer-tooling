@@ -14,11 +14,14 @@ From the monorepo root:
 
 ```bash
 pnpm install
-pnpm --filter b2c-vs-extension run build
+# Same as: pnpm --filter @salesforce/b2c-tooling-sdk --filter @salesforce/b2c-script-types --filter b2c-vs-extension run build
+pnpm --filter b2c-vs-extension... run build
 pnpm --filter b2c-vs-extension run lint
 pnpm --filter b2c-vs-extension run format
 pnpm --filter b2c-vs-extension run test
 ```
+
+The trailing `...` on the build filter selects the extension **and its workspace dependencies**. The production build, type-check, and tests consume those packages from compiled `dist/` (or `plugin/`), not from TypeScript sources, so building the extension on its own against a stale or absent SDK `dist/` fails with esbuild `No matching export ... for import` errors naming SDK symbols. Running `pnpm -r run build` from the repo root works too, and is what CI does.
 
 ### Tests
 

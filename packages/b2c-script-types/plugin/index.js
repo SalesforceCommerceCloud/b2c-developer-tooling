@@ -37,8 +37,9 @@ const SFRA_AMBIENT_MODULES = new Set([
 ]);
 // Candidate suffixes appended when resolving a SFCC-style relative require to
 // a cartridge file. SFRA convention is to omit the .js extension, so .js wins
-// first; .json captures the occasional resource bundle import.
-const CANDIDATE_EXTENSIONS = ['.js', '.json', '/index.js'];
+// first; .json captures the occasional resource bundle import; .ds covers
+// legacy pipeline-era scripts, which the platform also resolves after .js.
+const CANDIDATE_EXTENSIONS = ['.js', '.json', '.ds', '/index.js', '/index.ds'];
 // Cartridges that conventionally sit at the bottom of the cartridge path when
 // the user hasn't told us otherwise (no `cartridges` in dw.json/SFCC_CARTRIDGES).
 // Higher rank = lower in the cartridge path. SFRA's runtime path ends with
@@ -429,6 +430,17 @@ function init({ typescript: ts }) {
                 additions.push(SFRA_SERVER_DTS);
             }
             return additions.length > 0 ? [...list, ...additions] : list;
+        };
+        // TS derives a file's ScriptKind from its extension and falls back to TS
+        // for anything it doesn't recognize, which would parse legacy .ds scripts
+        // as TypeScript. Report JS so they get the same JavaScript semantics
+        // (allowJs/checkJs, JSDoc types) as their .js siblings. Returning Unknown
+        // for everything else lets TS fall back to its own extension mapping.
+        const origGetScriptKind = host.getScriptKind?.bind(host);
+        host.getScriptKind = (fileName) => {
+            if (enabled && fileName.endsWith('.ds'))
+                return ts.ScriptKind.JS;
+            return origGetScriptKind ? origGetScriptKind(fileName) : ts.ScriptKind.Unknown;
         };
         const origResolveModuleNameLiterals = host.resolveModuleNameLiterals?.bind(host);
         if (origResolveModuleNameLiterals) {
