@@ -26,8 +26,19 @@ interface PluginConfig {
 
 interface NormalizedCartridge {
   name: string;
-  /** Forward-slash path with trailing '/'. Lowercased on case-insensitive filesystems. */
+  /**
+   * Forward-slash path with trailing '/'. Lowercased on case-insensitive
+   * filesystems, so it may only be compared against other normalize()d paths —
+   * never handed to the filesystem.
+   */
   root: string;
+  /**
+   * Forward-slash path with trailing '/', in its original case. Use this for
+   * every filesystem probe and for paths handed back to TypeScript: `root` is
+   * case-folded whenever ts.sys reports a case-insensitive filesystem, which
+   * breaks lookups for projects that live on a case-sensitive volume.
+   */
+  srcRoot: string;
 }
 
 const PLUGIN_NAME = '@salesforce/b2c-script-types';
@@ -107,7 +118,12 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
   const setCartridges = (list: ConfiguredCartridge[]) => {
     cartridges = list.map(({name, src}) => {
       const n = normalize(src);
-      return {name, root: n.endsWith('/') ? n : n + '/'};
+      const raw = src.replace(/\\/g, '/');
+      return {
+        name,
+        root: n.endsWith('/') ? n : n + '/',
+        srcRoot: raw.endsWith('/') ? raw : raw + '/',
+      };
     });
   };
 
@@ -306,7 +322,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     if (!subpath) return undefined;
 
     for (const c of order) {
-      const baseAbs = c.root + subpath;
+      const baseAbs = c.srcRoot + subpath;
       for (const ext of CANDIDATE_EXTENSIONS) {
         const candidate = baseAbs + ext;
         if (fileExists(candidate)) {
@@ -335,7 +351,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     const modulesCart = cartridges.find((c) => c.name === 'modules');
     if (!modulesCart) return undefined;
 
-    const baseAbs = modulesCart.root + moduleName;
+    const baseAbs = modulesCart.srcRoot + moduleName;
     for (const ext of CANDIDATE_EXTENSIONS) {
       const candidate = baseAbs + ext;
       if (fileExists(candidate)) {
@@ -351,7 +367,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
         if (content) {
           const main = (JSON.parse(content) as {main?: string}).main;
           if (typeof main === 'string' && main.length > 0) {
-            const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
+            const resolved = (modulesCart.srcRoot + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
             if (fileExists(resolved)) {
               return {resolved, source: modulesCart.name};
             }
@@ -605,7 +621,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       if (!modulesCart) return def;
       const moduleName = sfraModuleAtOffset(def.textSpan.start);
       if (!moduleName) return def;
-      const candidates = [modulesCart.root + moduleName + '.js', modulesCart.root + moduleName + '/index.js'];
+      const candidates = [modulesCart.srcRoot + moduleName + '.js', modulesCart.srcRoot + moduleName + '/index.js'];
       for (const candidate of candidates) {
         if (fileExists(candidate)) {
           return {...def, fileName: candidate, textSpan: {start: 0, length: 0}};
