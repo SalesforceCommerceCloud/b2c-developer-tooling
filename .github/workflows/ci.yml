@@ -100,9 +100,15 @@ jobs:
         working-directory: packages/mrt-welcome-app
         run: pnpm run pretest && pnpm run test:ci && pnpm run lint
 
+      - name: Run Script Types tests
+        id: script-types-test
+        if: always() && steps.mrt-welcome-app-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-script-types
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+
       - name: Run VS Extension checks
         id: vs-extension-test
-        if: always() && steps.mrt-welcome-app-test.conclusion != 'cancelled'
+        if: always() && steps.script-types-test.conclusion != 'cancelled'
         working-directory: packages/b2c-vs-extension
         run: pnpm run typecheck:agent && pnpm run lint
 
@@ -137,6 +143,16 @@ jobs:
             cd packages/b2c-cli && pnpm c8 report --reporter=text-summary 2>/dev/null | tail -n 6 >> $GITHUB_STEP_SUMMARY
             cd ../..
             echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Script Types Coverage
+          if [ -f "packages/b2c-script-types/coverage/lcov.info" ]; then
+            echo "### @salesforce/b2c-script-types" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cd packages/b2c-script-types && pnpm c8 report --reporter=text-summary 2>/dev/null | tail -n 6 >> $GITHUB_STEP_SUMMARY
+            cd ../..
+            echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Upload coverage reports
@@ -147,6 +163,7 @@ jobs:
           path: |
             packages/b2c-tooling-sdk/coverage/
             packages/b2c-cli/coverage/
+            packages/b2c-script-types/coverage/
           retention-days: 30
 
   test-windows:
@@ -222,8 +239,13 @@ jobs:
         if: always() && steps.mrt-reference-app-test.conclusion != 'cancelled'
         working-directory: packages/mrt-welcome-app
         run: pnpm run pretest && pnpm run test:ci && pnpm run lint
-      - name: Run VS Extension checks
+      - name: Run Script Types tests
+        id: script-types-test
         if: always() && steps.mrt-welcome-app-test.conclusion != 'cancelled'
+        working-directory: packages/b2c-script-types
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+      - name: Run VS Extension checks
+        if: always() && steps.script-types-test.conclusion != 'cancelled'
         working-directory: packages/b2c-vs-extension
         run: pnpm run typecheck:agent && pnpm run lint
       - name: Print Windows test failures
@@ -243,6 +265,7 @@ jobs:
               'packages/mrt-utilities/test-results.json',
               'packages/mrt-reference-app/test-results.json',
               'packages/mrt-welcome-app/test-results.json',
+              'packages/b2c-script-types/test-results.json',
             ];
             let totalFailures = 0;
             for (const report of reports) {
@@ -283,4 +306,5 @@ jobs:
           path: |
             packages/b2c-tooling-sdk/coverage/
             packages/b2c-cli/coverage/
+            packages/b2c-script-types/coverage/
           retention-days: 30
