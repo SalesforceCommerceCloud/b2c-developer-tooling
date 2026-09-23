@@ -1,8 +1,76 @@
+diff --git a/dist/createMcpHandler-CLhGwQTn.d.mts b/dist/createMcpHandler-CLhGwQTn.d.mts
+index 0f86d3f6b6a48501db9011c7328a0eadd54d7d10..992ae296eb5b31e12c54d5a5bc896b9381a3b17b 100644
+--- a/dist/createMcpHandler-CLhGwQTn.d.mts
++++ b/dist/createMcpHandler-CLhGwQTn.d.mts
+@@ -2001,6 +2001,7 @@ type RequestOptions = {
+   /**
+    * A timeout (in milliseconds) for this request. If exceeded, an {@linkcode SdkError} with code {@linkcode SdkErrorCode.RequestTimeout} will be raised from {@linkcode Protocol.request | request()}.
+    *
++   * Zero disables the timeout; explicit cancellation remains available.
+    * If not specified, {@linkcode DEFAULT_REQUEST_TIMEOUT_MSEC} will be used as the timeout.
+    */
+   timeout?: number;
+@@ -2819,7 +2820,7 @@ type ServerOptions = ProtocolOptions & {
+     /**
+      * Per-leg timeout (ms) for the shim's embedded server→client
+      * requests, sent with `resetTimeoutOnProgress: true`. Human-paced —
+-     * deliberately far above the 60s protocol default.
++     * deliberately far above the 60s protocol default. Zero disables the timeout.
+      * @default 600_000
+      */
+     roundTimeoutMs?: number;
+diff --git a/dist/createMcpHandler-dBHMsxwf.d.cts b/dist/createMcpHandler-dBHMsxwf.d.cts
+index 1c8d54f4dff316317e01b405eb5e18ed60470f5d..74e054d3db454dc3f8ef02a531780c824cf0c08b 100644
+--- a/dist/createMcpHandler-dBHMsxwf.d.cts
++++ b/dist/createMcpHandler-dBHMsxwf.d.cts
+@@ -2003,6 +2003,7 @@ type RequestOptions = {
+   /**
+    * A timeout (in milliseconds) for this request. If exceeded, an {@linkcode SdkError} with code {@linkcode SdkErrorCode.RequestTimeout} will be raised from {@linkcode Protocol.request | request()}.
+    *
++   * Zero disables the timeout; explicit cancellation remains available.
+    * If not specified, {@linkcode DEFAULT_REQUEST_TIMEOUT_MSEC} will be used as the timeout.
+    */
+   timeout?: number;
+@@ -2821,7 +2822,7 @@ type ServerOptions = ProtocolOptions & {
+     /**
+      * Per-leg timeout (ms) for the shim's embedded server→client
+      * requests, sent with `resetTimeoutOnProgress: true`. Human-paced —
+-     * deliberately far above the 60s protocol default.
++     * deliberately far above the 60s protocol default. Zero disables the timeout.
+      * @default 600_000
+      */
+     roundTimeoutMs?: number;
+diff --git a/dist/mcp-D7GmuPnv.cjs b/dist/mcp-D7GmuPnv.cjs
+index 275f8337354523bb679eea70d0b7cfbff8eb7e99..090a05b5ea7173f8b9fb1823992bb8c03aae23ca 100644
+--- a/dist/mcp-D7GmuPnv.cjs
++++ b/dist/mcp-D7GmuPnv.cjs
+@@ -488,7 +488,7 @@ const DEFAULT_LEGACY_SHIM_ROUND_TIMEOUT_MS = 6e5;
+ /** Resolves and validates `ServerOptions.inputRequired`, failing loudly at construction time. */
+ function resolveLegacyShimOptions(options) {
+ 	if (options?.maxRounds !== void 0 && (!Number.isInteger(options.maxRounds) || options.maxRounds < 1)) throw new RangeError(`inputRequired.maxRounds must be a positive integer (got ${options.maxRounds})`);
+-	if (options?.roundTimeoutMs !== void 0 && (!Number.isFinite(options.roundTimeoutMs) || options.roundTimeoutMs <= 0)) throw new RangeError(`inputRequired.roundTimeoutMs must be a positive number (got ${options.roundTimeoutMs})`);
++	if (options?.roundTimeoutMs !== void 0 && (!Number.isFinite(options.roundTimeoutMs) || options.roundTimeoutMs < 0)) throw new RangeError(`inputRequired.roundTimeoutMs must be a non-negative number (got ${options.roundTimeoutMs})`);
+ 	return {
+ 		maxRounds: options?.maxRounds ?? DEFAULT_LEGACY_SHIM_MAX_ROUNDS,
+ 		roundTimeoutMs: options?.roundTimeoutMs ?? DEFAULT_LEGACY_SHIM_ROUND_TIMEOUT_MS,
+diff --git a/dist/mcp-DXXb3Vv3.mjs b/dist/mcp-DXXb3Vv3.mjs
+index 49d5128ad085cc2339925155bf3130109c3b0ff4..1dc8759891f320ca1cff10af7bb91d5045489b92 100644
+--- a/dist/mcp-DXXb3Vv3.mjs
++++ b/dist/mcp-DXXb3Vv3.mjs
+@@ -486,7 +486,7 @@ const DEFAULT_LEGACY_SHIM_ROUND_TIMEOUT_MS = 6e5;
+ /** Resolves and validates `ServerOptions.inputRequired`, failing loudly at construction time. */
+ function resolveLegacyShimOptions(options) {
+ 	if (options?.maxRounds !== void 0 && (!Number.isInteger(options.maxRounds) || options.maxRounds < 1)) throw new RangeError(`inputRequired.maxRounds must be a positive integer (got ${options.maxRounds})`);
+-	if (options?.roundTimeoutMs !== void 0 && (!Number.isFinite(options.roundTimeoutMs) || options.roundTimeoutMs <= 0)) throw new RangeError(`inputRequired.roundTimeoutMs must be a positive number (got ${options.roundTimeoutMs})`);
++	if (options?.roundTimeoutMs !== void 0 && (!Number.isFinite(options.roundTimeoutMs) || options.roundTimeoutMs < 0)) throw new RangeError(`inputRequired.roundTimeoutMs must be a non-negative number (got ${options.roundTimeoutMs})`);
+ 	return {
+ 		maxRounds: options?.maxRounds ?? DEFAULT_LEGACY_SHIM_MAX_ROUNDS,
+ 		roundTimeoutMs: options?.roundTimeoutMs ?? DEFAULT_LEGACY_SHIM_ROUND_TIMEOUT_MS,
 diff --git a/dist/src-CX2iR2pK.mjs b/dist/src-CX2iR2pK.mjs
-index a84104122fd3fdc6ae8865c10c65221c76f71ee3..67b2e5c29661fa96937161f6a771cc5e95851945 100644
+index a84104122fd3fdc6ae8865c10c65221c76f71ee3..fbd2dcabcf1ed3d441e21e14dd5c2647b6471a7c 100644
 --- a/dist/src-CX2iR2pK.mjs
 +++ b/dist/src-CX2iR2pK.mjs
-@@ -6247,7 +6247,7 @@ var Protocol = class {
+@@ -6247,10 +6247,12 @@ var Protocol = class {
  		return this._requestHandlers.get(method);
  	}
  	async _oncancel(notification) {
@@ -11,11 +79,16 @@ index a84104122fd3fdc6ae8865c10c65221c76f71ee3..67b2e5c29661fa96937161f6a771cc5e
  		this._requestHandlerAbortControllers.get(notification.params.requestId)?.abort(notification.params.reason);
  	}
  	_setupTimeout(messageId, timeout, maxTotalTimeout, onTimeout, resetTimeoutOnProgress = false) {
++		// Zero disables the deadline for human-paced elicitation; cancellation remains active.
++		if (timeout === 0) return;
+ 		this._timeoutInfo.set(messageId, {
+ 			timeoutId: setTimeout(onTimeout, timeout),
+ 			startTime: Date.now(),
 diff --git a/dist/src-STyD_Vvf.cjs b/dist/src-STyD_Vvf.cjs
-index cf5cbacc42becea62c32f3aa83a5748aebcb33c0..42f0de6dfd7cdfe86fb4e25c198c7accb25644ca 100644
+index cf5cbacc42becea62c32f3aa83a5748aebcb33c0..1ea211e5d2b4016cf57b25a0764532a87bbd933a 100644
 --- a/dist/src-STyD_Vvf.cjs
 +++ b/dist/src-STyD_Vvf.cjs
-@@ -6248,7 +6248,7 @@ var Protocol = class {
+@@ -6248,10 +6248,12 @@ var Protocol = class {
  		return this._requestHandlers.get(method);
  	}
  	async _oncancel(notification) {
@@ -24,3 +97,8 @@ index cf5cbacc42becea62c32f3aa83a5748aebcb33c0..42f0de6dfd7cdfe86fb4e25c198c7acc
  		this._requestHandlerAbortControllers.get(notification.params.requestId)?.abort(notification.params.reason);
  	}
  	_setupTimeout(messageId, timeout, maxTotalTimeout, onTimeout, resetTimeoutOnProgress = false) {
++		// Zero disables the deadline for human-paced elicitation; cancellation remains active.
++		if (timeout === 0) return;
+ 		this._timeoutInfo.set(messageId, {
+ 			timeoutId: setTimeout(onTimeout, timeout),
+ 			startTime: Date.now(),

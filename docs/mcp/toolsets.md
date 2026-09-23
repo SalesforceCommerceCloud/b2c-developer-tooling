@@ -170,9 +170,12 @@ Available in SCAPI, PWAV3, and STOREFRONTNEXT.
 
 The standard API reference works offline without credentials. Working with your
 instance's data requires [OAuth credentials and scopes](../guide/authentication#configuring-scopes)
-for the requested operations. Your account permissions and configured
-[Safety Mode](./security#scapi-code-mode) control access, including creating,
-updating, and deleting records.
+for the requested operations.
+
+**Safety Mode:** SCAPI code mode enforces your configured [safety rules](../guide/safety)
+on each managed API request. Confirmation-required operations prompt for approval
+in clients that support form elicitation; other clients block them. Explicit block
+rules remain blocked. Declining stops execution without undoing earlier changes.
 
 Custom attributes and custom Admin APIs are supported. Discovering your instance's
 custom definitions requires the `sfcc.scapi-schemas` scope; custom APIs also require

@@ -138,8 +138,10 @@ Use SDK v2 `serveStdio` with a fresh server/state factory. It serves current and
 earlier clients; direct `connect(new StdioServerTransport())` only serves the
 earlier protocol. Use Zod 4 schema objects at SDK registration, including output
 schemas. Await instance cleanup before shutdown. Cache only stable discovery and
-skill resources, privately; never cache live tool results. `input_required` is
-available for future workflows but is not currently used. Test both protocol paths.
+skill resources, privately; never advertise cached live tool results. SCAPI
+confirmations use `input_required` with form elicitation and retained workers;
+the SDK bridges older clients. Keep bounded terminal results only to deduplicate
+continuations. Test both protocol paths.
 
 Bound waits and returned data. A tool must not await work that requires another
 tool call to release it: debugger capture returns while its trigger is halted.
@@ -190,6 +192,13 @@ Token-export helpers serve explicit external-client needs;
 managed requests authenticate automatically. Resolve prerequisites lazily by
 helper, honor configured auth methods, and propagate cancellation through grants.
 Never expose configured secrets to the worker or persist tokens in snippet source.
+Retained SCAPI executions bind native retries to the original arguments and target;
+never replay code. Confirmation exempts only one detached request, including its
+query/body. Keep hard blocks, unsupported clients, decline, and cancellation
+closed. Serialize managed calls at approval boundaries. Approval waits have no
+server deadline, including the legacy elicitation bridge; pause active runtime
+while awaiting approval. Bound active runtime and worker count, support explicit
+cancellation, and await worker cleanup on shutdown.
 Forward request context through registration; test cancellation through both
 stdio protocols and verify execution stops. Resolve project safety environment
 without mutating process.env; launch values win over project .env. Evaluate the

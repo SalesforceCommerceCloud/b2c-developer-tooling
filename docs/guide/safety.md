@@ -214,11 +214,12 @@ This does not turn explicit `block` rules into confirmation prompts, and it does
 not prompt for operations the level already allows. For one specific action,
 prefer a `confirm` rule.
 
-| Where you work                            | What happens                                                                                                                         |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Interactive CLI                           | Command rules prompt in the terminal. Request-level confirmations are available where the command supports them; otherwise it stops. |
-| IDE extension                             | Command rules and supported sandbox operations show a modal **Proceed** dialog. Other confirmation-required requests stop.           |
-| MCP, CI, or CLI without interactive input | Confirmation-required operations are blocked.                                                                                        |
+| Where you work                                                                          | What happens                                                                                                                              |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Interactive CLI                                                                         | Command rules prompt in the terminal. Request-level confirmations are available where the command supports them; otherwise it stops.      |
+| IDE extension                                                                           | Command rules and supported sandbox operations show a modal **Proceed** dialog. Other confirmation-required requests stop.                |
+| MCP SCAPI code mode with form elicitation                                               | Each confirmation-required request prompts before it is sent. Decline or cancellation stops the execution; earlier writes remain applied. |
+| Other MCP tools, clients without form elicitation, CI, or CLI without interactive input | Confirmation-required operations are blocked.                                                                                             |
 
 `SFCC_SAFETY_CONFIRM=true` or `1` also enables confirmation mode. Review the
 [combined policy](#configuration-merge): setting it to `false` in one place does

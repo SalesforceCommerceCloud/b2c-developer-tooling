@@ -75,8 +75,16 @@ file writes or every debugger action.
 
 For a skills-only or documentation-only assistant, select those tools
 explicitly. Do not treat `READ_ONLY` as a complete MCP sandbox. SCAPI code mode
-stops requests that require Safety Mode confirmation; interactive confirmation
-is not supported.
+supports Safety Mode confirmation in clients with form elicitation. Review the
+target and request details before approving. Other MCP tools and clients without
+form elicitation stop at confirmation-required requests.
+
+Declining or cancelling an approval stops the entire code-mode execution.
+Unanswered approvals have no server deadline, and waiting does not consume the
+execution runtime budget. Clients may impose their own timeout. Pending approvals
+occupy one of four execution slots until answered, cancelled, or the server
+disconnects or shuts down. Earlier changes are not rolled back. You can ask your
+assistant to cancel an execution using the ID shown in its approval prompt.
 
 For SCAPI code mode, the selected project's `.env` can set `SFCC_SAFETY_LEVEL`, `SFCC_SAFETY_CONFIRM`,
 and `SFCC_SAFETY_CONFIG`. Launch environment values take precedence over `.env`.

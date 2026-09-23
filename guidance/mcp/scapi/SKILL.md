@@ -33,18 +33,18 @@ runtime support, not configured access; `op.security` gives scopes.
 Use these API IDs to narrow discovery; inspect the operation's inputs before calling.
 Snippet names below have the `builtin/` prefix. Describe only the relevant snippet.
 
-| Task | API / starting point |
-| --- | --- |
-| Review runs, including successes | `operation/jobs/v1`: `searchJobExecutions`; `job-execution-review` snippet |
-| Inspect steps and exact log path | `operation/jobs/v1`: `getJobExecution`; `job-execution-inspect` snippet |
-| Investigate failures with detail reads | `failed-job-triage` snippet; [jobs](references/jobs.md) |
-| Start a job / stop an execution | `operation/jobs/v1`: `createJobExecution` / `deleteJobExecution`; confirm intent and active runs first |
-| Active/rollback versions, activation metadata | `dx/scripts/v1`: `getCodeVersions`; `code-version-inspect` snippet |
-| Activate/create/delete a code version | `dx/scripts/v1`: `updateCodeVersion` / `createCodeVersion` / `deleteCodeVersion` |
-| Site status, catalog, ordered cartridge path | `site/sites/v1`: `getSiteById`; `site-cartridge-inspect` snippet |
-| Change a site's custom cartridge path | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries |
-| Basic product + optional category assignment | `create-product` snippet; [products](references/products.md) |
-| Campaign assignments and promotion details | `campaign-promotions` snippet; [promotions](references/promotions.md) |
+| Task                                          | API / starting point                                                                                   |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Review runs, including successes              | `operation/jobs/v1`: `searchJobExecutions`; `job-execution-review` snippet                             |
+| Inspect steps and exact log path              | `operation/jobs/v1`: `getJobExecution`; `job-execution-inspect` snippet                                |
+| Investigate failures with detail reads        | `failed-job-triage` snippet; [jobs](references/jobs.md)                                                |
+| Start a job / stop an execution               | `operation/jobs/v1`: `createJobExecution` / `deleteJobExecution`; confirm intent and active runs first |
+| Active/rollback versions, activation metadata | `dx/scripts/v1`: `getCodeVersions`; `code-version-inspect` snippet                                     |
+| Activate/create/delete a code version         | `dx/scripts/v1`: `updateCodeVersion` / `createCodeVersion` / `deleteCodeVersion`                       |
+| Site status, catalog, ordered cartridge path  | `site/sites/v1`: `getSiteById`; `site-cartridge-inspect` snippet                                       |
+| Change a site's custom cartridge path         | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries                   |
+| Basic product + optional category assignment  | `create-product` snippet; [products](references/products.md)                                           |
+| Campaign assignments and promotion details    | `campaign-promotions` snippet; [promotions](references/promotions.md)                                  |
 
 File content is WebDAV: `webdav_list` / `webdav_get` / `webdav_put`.
 Deploy local cartridge files with `cartridge_deploy`. Job schedules/definitions
@@ -115,15 +115,45 @@ These are conditional setup references, not additional prerequisite reads.
   no program replay or automatic cleanup deletion.
 - Filter/page at the API, then project/aggregate in code. Include IDs, verification
   fields, errors, totals, and continuation inputs. Do not crop away missing data.
-- Limits: 20 calls, four concurrent, 30 seconds, 24 KB returned. Narrow oversized
+- Limits: 20 calls, four outstanding, 30 seconds of active execution, 24 KB returned.
+  Managed API/token calls are serialized within an execution. Narrow oversized
   discovery; reduce live pages/projections.
 - SDK safety applies per request, including POST searches. Use only authorized
-  targeted exceptions. Confirmation-required requests stop. Code mode does not
+  targeted exceptions. Confirmation uses client elicitation; see below. Code mode does not
   transfer binaries; use WebDAV tools for instance files, an external client for
   binary SCAPI endpoints.
 - `fetch` and `WebSocket` are disabled. Use `scapi.request()` inside programs;
   direct HTTP belongs in an external client, outside MCP Safety Mode. Do not use
   imports or other Node networking APIs to bypass this boundary.
+
+## Confirmation and cancellation
+
+- A request requiring approval retains the running program and returns MCP
+  `input_required`. Let the client handle elicitation and the protocol retry;
+  never manufacture approval responses or modify opaque `requestState`.
+- Retries validate the original code, input, and target arguments, then resume
+  the same execution. Repeated code is **not evaluated again**. Each request
+  needs its own approval; a whole program is not a transaction.
+- Later managed calls wait for the pending decision. Earlier writes remain
+  applied. Prompts identify the target, method/path, payload preview, execution
+  ID, and cancellation instructions. Results include operation outcomes; `unknown` requires
+  checking the affected records before a fresh attempt.
+- Decline/cancel terminates the entire execution, even if code catches errors.
+  Explicitly stop work with `scapi_execute({action: "cancel", executionId, skillRead: true})`;
+  omit code, input, project overrides, and protocol continuation state.
+- Approval has no server deadline; waiting does not consume the active runtime
+  budget. At most four executions may be active per server, including pending
+  approvals. Cancel unwanted work to free a slot. Server shutdown or disconnect
+  releases retained workers; state does not survive a restart. Clients may impose
+  their own timeout. Duplicate responses never replay code or send a request twice.
+- To change code/input/target, cancel unwanted retained work and start a fresh
+  execution without continuation state. Cancellation does not roll back writes.
+  Clients without form elicitation stop at confirmation-required requests.
+
+For safety levels, rule matching, configuration precedence, and confirmation
+semantics, read `docs_read({query: "guide-safety"})` when needed. If docs tools
+are unavailable, use the [Safety Mode guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.md).
+This is an optional policy reference, not another prerequisite read.
 
 ## Reusable workflows
 
