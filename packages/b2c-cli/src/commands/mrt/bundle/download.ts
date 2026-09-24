@@ -83,13 +83,11 @@ export default class MrtBundleDownload extends MrtCommand<typeof MrtBundleDownlo
 
       // If url-only flag or JSON mode, just return the URL
       if (urlOnly) {
-        if (!this.jsonEnabled()) {
-          this.log(
-            t('commands.mrt.bundle.download.urlOnly', 'Download URL (valid for 1 hour):\n{{downloadUrl}}', {
-              downloadUrl: result.downloadUrl,
-            }),
-          );
-        }
+        this.log(
+          t('commands.mrt.bundle.download.urlOnly', 'Download URL (valid for 1 hour):\n{{downloadUrl}}', {
+            downloadUrl: result.downloadUrl,
+          }),
+        );
         return result;
       }
 
@@ -127,14 +125,12 @@ export default class MrtBundleDownload extends MrtCommand<typeof MrtBundleDownlo
       const fileStream = createWriteStream(absolutePath);
       await pipeline(response.body, fileStream);
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.bundle.download.success', 'Bundle {{bundleId}} downloaded to {{filePath}}', {
-            bundleId,
-            filePath: outputPath,
-          }),
-        );
-      }
+      this.log(
+        t('commands.mrt.bundle.download.success', 'Bundle {{bundleId}} downloaded to {{filePath}}', {
+          bundleId,
+          filePath: outputPath,
+        }),
+      );
 
       return {...result, filePath: absolutePath};
     } catch (error) {

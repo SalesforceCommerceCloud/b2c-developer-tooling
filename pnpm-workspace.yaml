@@ -2,6 +2,7 @@ packages:
   - packages/*
   - docs
   - skills
+  - python/b2c-tooling-sdk
   - schemas
 
 catalog:
@@ -89,7 +90,7 @@ overrides:
   '@opentelemetry/core@>=2.0.0 <2.8.0': '>=2.8.0 <3'
   protobufjs@>=7.0.0 <7.6.1: '>=7.6.1 <8'
   protobufjs@>=8.0.0 <8.6.0: '>=8.6.0 <9'
-  qs@<6.14.2: '>=6.15.2'
+  qs@<6.16.0: '>=6.16.0'
   rollup@>=4.0.0 <4.59.0: '>=4.59.0 <5'
   serialize-javascript@<7.0.3: '>=7.0.3 <8'
   shell-quote@<=1.8.3: '>=1.8.4 <2'

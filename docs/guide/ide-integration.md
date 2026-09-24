@@ -33,6 +33,18 @@ The plugin also resolves SFCC cartridge-style requires, matching runtime semanti
 
 Cartridge resolution order matches your runtime cartridge path: the `cartridges` field from your resolved configuration (`dw.json`, `SFCC_CARTRIDGES`, `.env`, etc.) wins. When that's not set, cartridges fall back to discovery order with known base cartridges (`app_storefront_base`, `modules`) sorted last. The same ordering also drives the extension's **Cartridges** tree view.
 
+#### Legacy `.ds` scripts
+
+The extension associates `**/cartridge/scripts/**/*.ds` with the JavaScript language mode, so legacy pipeline-era scripts get the same syntax highlighting, completions, hover docs, and debugger breakpoints as their `.js` siblings. Requires that land on a `.ds` file resolve as well — `.js` still wins when both exist, matching the platform. Override the association in your own settings if you use `.ds` files for something else:
+
+```json
+{
+  "files.associations": {
+    "**/cartridge/scripts/**/*.ds": "plaintext"
+  }
+}
+```
+
 ### Standalone VS Code, WebStorm, or IntelliJ Ultimate
 
 For IDEs without the extension, run the following from your project root to vendor the type bundle and a `jsconfig.json`:

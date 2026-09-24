@@ -40,8 +40,6 @@ const inputSchema = {
 const collectionSchema = z.object({
   id: z.string(),
   title: z.string(),
-  isGA: z.boolean(),
-  workspaces: z.array(z.string()).optional(),
 });
 const pageFields = {
   collections: z.array(collectionSchema),

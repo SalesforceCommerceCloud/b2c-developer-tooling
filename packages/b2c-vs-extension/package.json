@@ -89,6 +89,9 @@
       },
       "emmet.includeLanguages": {
         "isml": "html"
+      },
+      "files.associations": {
+        "**/cartridge/scripts/**/*.ds": "javascript"
       }
     },
     "semanticTokenTypes": [

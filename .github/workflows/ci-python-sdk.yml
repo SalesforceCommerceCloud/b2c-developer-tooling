@@ -1,0 +1,90 @@
+name: Python SDK CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'python/b2c-tooling-sdk/**'
+      - 'python/samples/**'
+      - '.github/workflows/ci-python-sdk.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'python/b2c-tooling-sdk/**'
+      - 'python/samples/**'
+      - '.github/workflows/ci-python-sdk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+
+    defaults:
+      run:
+        working-directory: python/b2c-tooling-sdk
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: python/b2c-tooling-sdk/pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e ".[dev,docs]"
+
+      - name: Lint (ruff check)
+        run: make lint
+
+      - name: Format check (ruff format)
+        run: make format-check
+
+      - name: Type check (mypy)
+        run: make typecheck
+
+      - name: Test (pytest)
+        run: make test
+
+  samples-smoke:
+    runs-on: ubuntu-latest
+    # Cheap guardrail only: import every sample module (without running its
+    # main()) so a renamed/removed SDK export breaks CI instead of silently
+    # bit-rotting. Samples are otherwise untested - they need real B2C
+    # credentials (dw.json) to actually run, which CI doesn't have.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: python/b2c-tooling-sdk/pyproject.toml
+
+      - name: Install SDK (editable, from this checkout)
+        run: pip install -e python/b2c-tooling-sdk
+
+      - name: Import-smoke-test each sample script
+        working-directory: python/samples/code
+        run: |
+          for f in *.py; do
+            [ "$f" = "_common.py" ] && continue
+            echo "Importing $f"
+            python -c "import importlib; importlib.import_module('${f%.py}')"
+          done

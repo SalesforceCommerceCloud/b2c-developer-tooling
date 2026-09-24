@@ -14,6 +14,8 @@ at the end of this page.
 
 ## Documentation and skills {#documentation}
 
+**Toolsets:** All
+
 **Find answers across Salesforce B2C Commerce references and guides from your assistant.**
 
 Look up Script API behavior, storefront patterns, API setup, standard job steps,
@@ -22,7 +24,7 @@ for administrators and merchants: jobs, replication, access, catalogs, pricing,
 promotions, search, and content. Ask for an explanation applied to your task and
 links to the source documentation.
 
-Included in every toolset. No B2C Commerce credentials required.
+No B2C Commerce credentials required.
 
 | Tool                 | Capability                                                                   |
 | -------------------- | ---------------------------------------------------------------------------- |
@@ -40,7 +42,7 @@ installation is needed.
 
 <ExamplePrompt>
 
-> Check this catalog import XML against the B2C Commerce schema and documented import behavior. Explain what would be replaced or preserved before I run the import, and link to the references.
+> Check this catalog import XML for errors and tell me which existing product data it would replace.
 
 </ExamplePrompt>
 
@@ -48,52 +50,129 @@ Documentation search is also available through the [B2C CLI](../cli/docs).
 See [documentation topic settings](./configuration#documentation-tools-restriction)
 to customize coverage.
 
-## Deployment {#cartridges}
+## SCAPI Development {#scapi}
 
-| Tool               | Capability                                                                            | Toolsets                   |
-| ------------------ | ------------------------------------------------------------------------------------- | -------------------------- |
-| `cartridge_deploy` | Upload cartridges or selected files to a code version; optionally activate/reload it. | CARTRIDGES                 |
-| `mrt_bundle_push`  | Publish a pre-built storefront bundle; optionally deploy it.                          | MRT, PWAV3, STOREFRONTNEXT |
+**Toolsets:** `SCAPI`, `PWAV3`, `STOREFRONTNEXT`
 
-Cartridges require WebDAV write access. Code-version discovery and reload use
-SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`) with OCAPI compatibility where available.
-Check [deployment permissions](./security#deployments) before connecting.
+Requires OAuth, the instance short code, and tenant ID.
+See [authentication and scopes](../guide/authentication#configuring-scopes).
 
-### Managed Runtime {#mrt}
+| Tool                           | Capability                                       | OAuth scope          |
+| ------------------------------ | ------------------------------------------------ | -------------------- |
+| `scapi_schemas_list`           | Browse and read standard and custom API schemas. | `sfcc.scapi-schemas` |
+| `scapi_custom_apis_get_status` | Check custom endpoint registration.              | `sfcc.custom-apis`   |
 
-Bundle publishing requires an [MRT API key and project](../guide/authentication#managed-runtime-api-key),
-plus an environment when deploying.
+## SCAPI Code Mode {#scapi-code-mode}
 
-## Instance files {#webdav}
+**Toolsets:** `SCAPI`, `PWAV3`, `STOREFRONTNEXT`
 
-Browse instance directories, read exact job logs, and upload or download files
-without installing the CLI separately. Upload text directly or transfer files
-from the machine running the MCP server.
+**Explore nearly 600 Salesforce Commerce API operations and work with your instance's data.**
 
-| Tool          | Capability                                                               | Toolsets                       |
-| ------------- | ------------------------------------------------------------------------ | ------------------------------ |
-| `webdav_list` | List a directory with file sizes and modification dates.                 | CARTRIDGES, DIAGNOSTICS, SCAPI |
-| `webdav_get`  | Read part of a text file or download a whole file.                       | CARTRIDGES, DIAGNOSTICS, SCAPI |
-| `webdav_put`  | Upload text or a local file; replace existing files only when requested. | CARTRIDGES, SCAPI              |
+Explore products, catalogs, orders, customers, inventory, pricing, and more.
+SCAPI code mode lets your assistant work across APIs in a single task: create a
+product and assign it to a category, review a campaign's promotions, or investigate
+failed jobs. Describe the outcome you want in your own words; you do not need to
+write code or choose API calls.
 
-Requires WebDAV access to the selected directory. Whole-file transfers are limited
-to 64 MiB. Upload folders must already exist; local downloads require a new filename.
-Selected cartridge uploads support up to 100 files / 64 MiB total.
-See [file access](./security#instance-files).
+| Tool                 | Capability                                                                |
+| -------------------- | ------------------------------------------------------------------------- |
+| `scapi_search`       | Find Admin and Shopper API operations and their requirements.             |
+| `scapi_execute`      | Read and manage B2C Commerce data through standard and custom Admin APIs. |
+| `scapi_snippet_save` | Save a workflow for reuse across sessions.                                |
+
+The standard API reference works offline without credentials. Working with your
+instance's data requires [OAuth credentials and scopes](../guide/authentication#configuring-scopes)
+for the requested operations.
+
+**Review changes before they happen.** With [Safety Mode](../guide/safety), you can
+let your assistant inspect data while asking for approval before selected changes.
+For example, review a new product before it is created, then approve its category
+assignment separately. Your assistant app must support these approval prompts;
+otherwise, the change is blocked. Declining stops the task without undoing earlier
+changes. [Set up product approvals](../guide/safety.md#scapi-code-mode-example).
+
+Custom attributes and custom Admin APIs are supported. Discovering your instance's
+custom definitions requires the `sfcc.scapi-schemas` scope; custom APIs also require
+their declared scopes. See [code mode access](./security#scapi-code-mode).
+
+**Current limits:** Shopper APIs are available for reference only. Code mode does
+not yet run Shopper API requests or upload and download binary files.
 
 <ExamplePrompt>
 
-> Download the log for this failed job execution and identify the first error. Don't rerun the job.
+> Create a test product in my catalog and keep it offline while I finish setting it up.
 
 </ExamplePrompt>
 
+Ready-to-use workflows cover product creation and category assignment, campaign
+reviews, job history and step inspection, code-version checks, and site cartridge
+path checks. Products created with the built-in workflow
+start offline unless you request otherwise.
+
+[![ChatGPT creating an offline test product after checking its ID is unused, then verifying the saved product and its storefront catalog category assignment.](/screenshots/mcp-product-creation.png)](/screenshots/mcp-product-creation.png)
+
+<ExamplePrompt>
+
+> Which jobs failed this week, and what needs attention?
+
+</ExamplePrompt>
+
+<ExamplePrompt>
+
+> Summarize the promotions attached to this campaign, including enabled status
+> and schedules.
+
+</ExamplePrompt>
+
+Ask your assistant to save a useful workflow so you can repeat it for other products,
+campaigns, or dates. [Saved workflows](./configuration#saved-workflows) remain
+available across sessions and use the credentials and safety settings of the
+project where you run them.
+
+## Logs {#logs}
+
+Logs may contain sensitive data; see [data handling](./security#protect-credentials-and-data).
+
+### Instance logs
+
+**Toolsets:** `CARTRIDGES`, `DIAGNOSTICS`, `SCAPI`
+
+| Tool              | Capability                                   |
+| ----------------- | -------------------------------------------- |
+| `logs_list_files` | Browse instance log files.                   |
+| `logs_get_recent` | Read and filter recent instance logs.        |
+| `logs_watch`      | Start, list, or stop instance log watches.   |
+| `logs_watch_poll` | Retrieve entries from an instance log watch. |
+
+Instance logs require WebDAV log-read access.
+
+<ExamplePrompt>
+
+> Watch my sandbox logs while I reproduce this checkout error and help me find the cause.
+
+</ExamplePrompt>
+
+### Managed Runtime logs
+
+**Toolsets:** `DIAGNOSTICS`, `PWAV3`, `STOREFRONTNEXT`
+
+| Tool                  | Capability                                 |
+| --------------------- | ------------------------------------------ |
+| `mrt_logs_watch`      | Start, list, or stop live MRT log streams. |
+| `mrt_logs_watch_poll` | Retrieve entries from an MRT log stream.   |
+
+MRT logs require an API key, project, and environment; historical MRT logs are
+not available.
+
 ## Debugging {#diagnostics}
+
+**Toolsets:** `CARTRIDGES`, `DIAGNOSTICS`, `SCAPI`
 
 Let your assistant investigate what happens inside a running cartridge. It can
 pause at a breakpoint, inspect the call stack and variable values, and step
 through controllers, hooks, jobs, and custom API code to explain unexpected behavior.
 
-Available in DIAGNOSTICS, CARTRIDGES, and SCAPI. Requires a Business Manager user
+Requires a Business Manager user
 or access key with `WebDAV_Manage_Customization`; OAuth is unsupported.
 
 | Tool                          | Capability                                                   |
@@ -113,113 +192,65 @@ sandbox and end sessions when finished. See [debugger access](./security#debugge
 
 <ExamplePrompt>
 
-> Pause at this line in my sandbox while I reproduce the request. Show which branch ran and the relevant variable values, then resume and disconnect. Don't modify the code.
+> This controller returns the wrong price in my sandbox. Help me find out why while I reproduce the issue.
 
 </ExamplePrompt>
 
 [See debugging with an assistant or IDE](../guide/script-debugger).
 
-## Logs {#logs}
+## Deployment {#cartridges}
 
-| Tool                  | Capability                                   | Toolsets                           |
-| --------------------- | -------------------------------------------- | ---------------------------------- |
-| `logs_list_files`     | Browse instance log files.                   | DIAGNOSTICS, CARTRIDGES, SCAPI     |
-| `logs_get_recent`     | Read and filter recent instance logs.        | DIAGNOSTICS, CARTRIDGES, SCAPI     |
-| `logs_watch`          | Start, list, or stop instance log watches.   | DIAGNOSTICS, CARTRIDGES, SCAPI     |
-| `logs_watch_poll`     | Retrieve entries from an instance log watch. | DIAGNOSTICS, CARTRIDGES, SCAPI     |
-| `mrt_logs_watch`      | Start, list, or stop live MRT log streams.   | DIAGNOSTICS, PWAV3, STOREFRONTNEXT |
-| `mrt_logs_watch_poll` | Retrieve entries from an MRT log stream.     | DIAGNOSTICS, PWAV3, STOREFRONTNEXT |
+### Cartridge deployment
 
-Instance logs require WebDAV log-read access. MRT logs require an API key,
-project, and environment; historical MRT logs are not available. Logs may
-contain sensitive data; see [data handling](./security#protect-credentials-and-data).
+**Toolsets:** `CARTRIDGES`
 
-<ExamplePrompt>
+| Tool               | Capability                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------- |
+| `cartridge_deploy` | Upload cartridges or selected files to a code version; optionally activate/reload it. |
 
-> Watch my sandbox error logs while I reproduce this issue. Summarize new errors
-> and include the timestamps.
+Cartridges require WebDAV write access. Code-version discovery and reload use
+SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`) with OCAPI compatibility where available.
+Check [deployment permissions](./security#deployments) before connecting.
 
-</ExamplePrompt>
+### Managed Runtime {#mrt}
 
-## SCAPI development {#scapi}
+**Toolsets:** `MRT`, `PWAV3`, `STOREFRONTNEXT`
 
-Available in SCAPI, PWAV3, and STOREFRONTNEXT. Requires OAuth, the instance short
-code, and tenant ID. See [authentication and scopes](../guide/authentication#configuring-scopes).
+| Tool              | Capability                                                   |
+| ----------------- | ------------------------------------------------------------ |
+| `mrt_bundle_push` | Publish a pre-built storefront bundle; optionally deploy it. |
 
-| Tool                           | Capability                                       | OAuth scope          |
-| ------------------------------ | ------------------------------------------------ | -------------------- |
-| `scapi_schemas_list`           | Browse and read standard and custom API schemas. | `sfcc.scapi-schemas` |
-| `scapi_custom_apis_get_status` | Check custom endpoint registration.              | `sfcc.custom-apis`   |
+Bundle publishing requires an [MRT API key and project](../guide/authentication#managed-runtime-api-key),
+plus an environment when deploying.
 
-## B2C Commerce data and operations {#scapi-code-mode}
+## Instance files {#webdav}
 
-**Explore nearly 600 Salesforce Commerce API operations and work with your instance's data.**
+**Toolsets:** `CARTRIDGES`, `SCAPI`, `DIAGNOSTICS` (browse and download only)
 
-Explore products, catalogs, orders, customers, inventory, pricing, and more.
-SCAPI code mode lets your assistant work across APIs in a single task: create a
-product and assign it to a category, review a campaign's promotions, or investigate
-failed jobs. Describe the outcome you want in your own words.
+Browse instance directories, read exact job logs, and upload or download files
+without installing the CLI separately. Upload text directly or transfer files
+from the machine running the MCP server.
 
-Available in SCAPI, PWAV3, and STOREFRONTNEXT.
+| Tool          | Capability                                                               |
+| ------------- | ------------------------------------------------------------------------ |
+| `webdav_list` | List a directory with file sizes and modification dates.                 |
+| `webdav_get`  | Read part of a text file or download a whole file.                       |
+| `webdav_put`  | Upload text or a local file; replace existing files only when requested. |
 
-| Tool                 | Capability                                                                |
-| -------------------- | ------------------------------------------------------------------------- |
-| `scapi_search`       | Find Admin and Shopper API operations and their requirements.             |
-| `scapi_execute`      | Read and manage B2C Commerce data through standard and custom Admin APIs. |
-| `scapi_snippet_save` | Save a workflow for reuse across sessions.                                |
-
-The standard API reference works offline without credentials. Working with your
-instance's data requires [OAuth credentials and scopes](../guide/authentication#configuring-scopes)
-for the requested operations. Your account permissions and configured
-[Safety Mode](./security#scapi-code-mode) control access, including creating,
-updating, and deleting records.
-
-Custom attributes and custom Admin APIs are supported. Discovering your instance's
-custom definitions requires the `sfcc.scapi-schemas` scope; custom APIs also require
-their declared scopes. See [code mode access](./security#scapi-code-mode).
-
-**Current limits:** Shopper APIs are available for reference only. Code mode does
-not yet run Shopper API requests or upload and download binary files.
+Requires WebDAV access to the selected directory. Whole-file transfers are limited
+to 64 MiB. Upload folders must already exist; local downloads require a new filename.
+Selected cartridge uploads support up to 100 files / 64 MiB total.
+See [file access](./security#instance-files).
 
 <ExamplePrompt>
 
-> Create an offline test product in my catalog, check that its ID is unused,
-> and verify the saved product.
+> Download the log for this failed import and help me find what went wrong.
 
 </ExamplePrompt>
-
-Ready-to-use workflows cover product creation and category assignment, campaign
-reviews, job history and step inspection, code-version checks, and site cartridge
-path checks. Products created with the built-in workflow
-start offline unless you request otherwise.
-
-[![ChatGPT creating an offline test product after checking its ID is unused, then verifying the saved product and its storefront catalog category assignment.](/screenshots/mcp-product-creation.png)](/screenshots/mcp-product-creation.png)
-
-<ExamplePrompt>
-
-> Show failed job executions from the past week. Summarize the first three
-> failures and tell me whether there are more to investigate.
-
-</ExamplePrompt>
-
-<ExamplePrompt>
-
-> Summarize the promotions attached to this campaign, including enabled status
-> and schedules.
-
-</ExamplePrompt>
-
-Ask your assistant to save a useful workflow so you can repeat it for other products,
-campaigns, or dates. [Saved workflows](./configuration#saved-workflows) remain
-available across sessions and use the credentials and safety settings of the
-project where you run them.
-
-## Observability metrics (closed beta) {#metrics}
-
-`metrics_get` reads B2C Commerce metrics. Available in SCAPI; requires tenant access
-to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 
 ## Analytics reports {#cip}
+
+**Toolsets:** `CIP`
 
 **Turn B2C Commerce analytics into answers for your site.**
 
@@ -239,8 +270,8 @@ that go beyond them. No separate CLI or SQL client is needed.
 | `cip_discover` | Find reports, inspect their inputs and SQL, or browse available tables and columns. |
 | `cip_query`    | Run sales, merchandising, and technical reports or custom SQL analyses.             |
 
-Available in CIP, included in the default installation. Requires Account Manager
-client credentials and the **Salesforce Commerce API** role for the selected tenant.
+Requires Account Manager client credentials and the **Salesforce Commerce API**
+role for the selected tenant.
 Production and non-production availability, host selection, and setup are covered
 in the [analytics guide](../guide/analytics-reports-cip-ccac).
 
@@ -250,11 +281,20 @@ datasets. Keep queries focused on a chosen period; long-running analyses may tim
 Analytics can lag storefront activity; use logs or live APIs for immediate state.
 See [analytics access](./security#cip).
 
+## Observability metrics (closed beta) {#metrics}
+
+**Toolsets:** `SCAPI`
+
+`metrics_get` reads B2C Commerce metrics. Requires tenant access
+to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
+
 ## Configuration inspection
 
-| Tool             | Capability                                                               | Toolsets         |
-| ---------------- | ------------------------------------------------------------------------ | ---------------- |
-| `config_inspect` | Check resolved configuration and targets; secrets are masked by default. | DIAGNOSTICS, CIP |
+**Toolsets:** `DIAGNOSTICS`, `CIP`
+
+| Tool             | Capability                                                               |
+| ---------------- | ------------------------------------------------------------------------ |
+| `config_inspect` | Check resolved configuration and targets; secrets are masked by default. |
 
 ## Toolsets for customization
 

@@ -1,0 +1,17 @@
+{
+  "configs": [
+    {
+      "name": "staging",
+      "active": true,
+      "hostname": "staging-zzsa-012.dx.commercecloud.salesforce.com",
+      "clientId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      "clientSecret": "your-staging-account-manager-api-client-secret"
+    },
+    {
+      "name": "production",
+      "hostname": "production-zzsa-012.dx.commercecloud.salesforce.com",
+      "clientId": "ffffffff-1111-2222-3333-444444444444",
+      "clientSecret": "your-production-account-manager-api-client-secret"
+    }
+  ]
+}

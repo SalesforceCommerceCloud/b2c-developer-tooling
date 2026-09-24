@@ -15,6 +15,12 @@ This skill covers documentation for the Agentic B2C Developer Toolkit.
   Describe outcomes people can request from their assistant; keep agent tool
   choreography, runtime internals, and implementation rationale in agent skills
   or contributor docs. Include technical details when they affect a user's choice.
+- Write for junior developers and non-developer administrators. Lead with the
+  task, benefit, and visible behavior; explain technical terms when needed for
+  setup. Say "asks for approval" rather than "form elicitation" or "per-request
+  confirmation." Keep protocol state, worker lifetimes, and execution budgets
+  in contributor docs or agent skills. Shared features must cover CLI, IDE, and
+  assistant use; reserve assistant-specific framing for the relevant sections.
 - Link to canonical Salesforce Developer Center or Help pages for platform setup,
   requirements, and behavior. Toolkit guides supplement those workflows with our
   CLI, MCP, IDE, and skills capabilities; avoid maintaining a competing setup
@@ -27,6 +33,9 @@ This skill covers documentation for the Agentic B2C Developer Toolkit.
 - MCP tool references use compact tool-name/capability tables, access requirements,
   meaningful limits, and example requests. Link shared configuration/authentication;
   MCP Configuration covers MCP-specific settings only.
+  Put toolset availability in a consistent **Toolsets:** field directly below
+  each tool-group heading, not in prose or repeated table columns. Use subgroups
+  when tools have different availability.
 - Prefer plugin installation where supported; keep manual setup and toolset
   customization secondary. A brief linked mention of the Agent Plugins standard
   is useful; manifest/schema details are not installation guidance.
@@ -54,6 +63,15 @@ give their assistant:
 
 </ExamplePrompt>
 ```
+
+Write example prompts as user outcomes, without MCP tool names, toolsets, or
+instructions to use code mode. Name and explain those capabilities in the
+surrounding documentation, not in the user's request.
+Prompts should sound like natural business or development requests. Do not make
+users ask for policy enforcement, explanations of tool failures, routine
+verification, or session cleanup; those belong to tools and skills. Include
+constraints only when they express a real user choice, such as keeping a product
+offline or reviewing a proposed fix before editing code.
 
 Keep blank lines around the Markdown quote so VitePress parses it. The component
 provides the upright "Example prompt" label, chat icon, tinted background, and

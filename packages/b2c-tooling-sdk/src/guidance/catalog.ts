@@ -283,7 +283,7 @@ export class GuidanceCatalog {
     candidates = candidates.filter(({entry}) => !request.collection || entry.collection === request.collection);
     const result: GuidancePage = {
       kind: request.query === undefined ? 'directory' : 'search',
-      collections: this.manifest.collections,
+      collections: this.manifest.collections.map(({id, title}) => ({id, title})),
       total: candidates.length,
       offset,
       entries: [],

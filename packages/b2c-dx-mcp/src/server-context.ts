@@ -7,6 +7,7 @@
 import {LogWatchRegistry} from './tools/diagnostics/log-watch-registry.js';
 import {MrtLogWatchRegistry} from './tools/diagnostics/mrt-log-watch-registry.js';
 import {DebugSessionRegistry} from './tools/diagnostics/session-registry.js';
+import {ScapiExecutionRegistry} from './tools/scapi/execution-registry.js';
 
 /**
  * Server-scoped persistent state that lives for the lifetime of the MCP
@@ -34,11 +35,13 @@ export class ServerContext {
   readonly debugSessions: DebugSessionRegistry;
   readonly logWatches: LogWatchRegistry;
   readonly mrtLogWatches: MrtLogWatchRegistry;
+  readonly scapiExecutions: ScapiExecutionRegistry;
 
   constructor() {
     this.debugSessions = new DebugSessionRegistry();
     this.logWatches = new LogWatchRegistry();
     this.mrtLogWatches = new MrtLogWatchRegistry();
+    this.scapiExecutions = new ScapiExecutionRegistry();
   }
 
   async destroyAll(): Promise<void> {
@@ -46,6 +49,7 @@ export class ServerContext {
       this.debugSessions.destroyAll(),
       this.logWatches.destroyAll(),
       this.mrtLogWatches.destroyAll(),
+      this.scapiExecutions.destroyAll(),
     ]);
   }
 }

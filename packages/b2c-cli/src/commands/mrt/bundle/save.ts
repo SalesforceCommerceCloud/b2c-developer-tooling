@@ -117,9 +117,7 @@ export default class MrtBundleSave extends BaseCommand<typeof MrtBundleSave> {
 
     writeFileSync(filePath, data);
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.mrt.bundle.save.success', 'Bundle saved to {{filePath}}', {filePath}));
-    }
+    this.log(t('commands.mrt.bundle.save.success', 'Bundle saved to {{filePath}}', {filePath}));
 
     return {
       filePath,

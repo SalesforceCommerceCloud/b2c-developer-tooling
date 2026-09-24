@@ -10,14 +10,10 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {
-  listEnvVars,
-  type ListEnvVarsResult,
-  type EnvironmentVariable,
-} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {listEnvVarsWithBackend, type MrtEnvVarView} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<EnvironmentVariable>> = {
+const COLUMNS: Record<string, ColumnDef<MrtEnvVarView>> = {
   name: {
     header: 'Name',
     get: (v) => v.name,
@@ -28,11 +24,15 @@ const COLUMNS: Record<string, ColumnDef<EnvironmentVariable>> = {
   },
   status: {
     header: 'Status',
-    get: (v) => v.publishingStatusDescription,
+    get: (v) => v.status ?? '-',
   },
   updated: {
     header: 'Updated',
     get: (v) => (v.updatedAt ? new Date(v.updatedAt).toLocaleString() : '-'),
+  },
+  backend: {
+    header: 'Backend',
+    get: (v) => v.backend,
   },
 };
 
@@ -54,6 +54,7 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
   static examples = [
     '<%= config.bin %> <%= command.id %> --project acme-storefront --environment production',
     '<%= config.bin %> <%= command.id %> -p my-project -e staging',
+    '<%= config.bin %> <%= command.id %> -p my-project -e staging --mrt-backend scapi',
     '<%= config.bin %> <%= command.id %> -p my-project -e production --json',
   ];
 
@@ -63,16 +64,14 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
   };
 
   protected operations = {
-    listEnvVars,
+    listEnvVarsWithBackend,
   };
 
-  protected renderTable(variables: EnvironmentVariable[]): void {
+  protected renderTable(variables: MrtEnvVarView[]): void {
     tableRenderer.render(variables, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
   }
 
-  async run(): Promise<ListEnvVarsResult> {
-    this.requireMrtCredentials();
-
+  async run(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
@@ -86,21 +85,27 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
       );
     }
 
-    this.log(
-      t('commands.mrt.env.var.list.fetching', 'Listing env vars for {{project}}/{{environment}}...', {
-        project,
-        environment,
-      }),
-    );
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
-    const result = await this.operations.listEnvVars(
-      {
-        projectSlug: project,
-        environment,
-        origin: this.resolvedConfig.values.mrtOrigin,
-      },
-      this.getMrtAuth(),
-    );
+    if (!this.jsonEnabled()) {
+      this.log(
+        t('commands.mrt.env.var.list.fetching', 'Listing env vars for {{project}}/{{environment}}...', {
+          project,
+          environment,
+        }),
+      );
+    }
+
+    const result = await this.operations.listEnvVarsWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Listing environment variables via backend'),
+    });
 
     if (!this.jsonEnabled()) {
       if (result.variables.length === 0) {
@@ -110,6 +115,14 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
       }
     }
 
-    return result;
+    // Under --json, emit the backend's native list response verbatim (legacy MRT
+    // Cloud API list shape, or the SCAPI Environments map) so the machine
+    // contract stays backend-specific and backward-compatible. The normalized
+    // rows above feed the human table only.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

@@ -102,23 +102,21 @@ export default class MrtNotificationCreate extends MrtCommand<typeof MrtNotifica
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.notification.create.success', 'Notification created with ID {{id}}.', {
-            id: result.id ?? 'unknown',
-          }),
-        );
-        this.log(
-          t('commands.mrt.notification.create.environments', 'Environments: {{environments}}', {
-            environments: environments.join(', '),
-          }),
-        );
-        this.log(
-          t('commands.mrt.notification.create.recipients', 'Recipients: {{recipients}}', {
-            recipients: recipients.join(', '),
-          }),
-        );
-      }
+      this.log(
+        t('commands.mrt.notification.create.success', 'Notification created with ID {{id}}.', {
+          id: result.id ?? 'unknown',
+        }),
+      );
+      this.log(
+        t('commands.mrt.notification.create.environments', 'Environments: {{environments}}', {
+          environments: environments.join(', '),
+        }),
+      );
+      this.log(
+        t('commands.mrt.notification.create.recipients', 'Recipients: {{recipients}}', {
+          recipients: recipients.join(', '),
+        }),
+      );
 
       return result;
     } catch (error) {

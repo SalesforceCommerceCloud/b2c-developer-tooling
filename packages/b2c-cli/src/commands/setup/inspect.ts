@@ -5,6 +5,7 @@
  */
 import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
+import {join, resolve} from 'node:path';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import type {NormalizedConfig, ConfigSourceInfo, ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {
@@ -15,7 +16,12 @@ import {
 } from '@salesforce/b2c-tooling-sdk/config';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
-import {withDocs} from '../../i18n/index.js';
+import {
+  loadGlobalSafetyConfig,
+  parseSafetyLevelString,
+  resolveEffectiveSafetyConfig,
+} from '@salesforce/b2c-tooling-sdk/safety';
+import {t, withDocs} from '../../i18n/index.js';
 
 /**
  * JSON output structure for the inspect command.
@@ -24,6 +30,13 @@ interface SetupInspectResponse {
   config: Record<string, unknown>;
   sources: ConfigSourceInfo[];
   warnings?: string[];
+}
+
+interface SafetyInspection {
+  config?: NormalizedConfig['safety'];
+  sources: ConfigSourceInfo[];
+  fieldSources: Map<string, string>;
+  ruleSources: string[];
 }
 
 /**
@@ -92,12 +105,17 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> --verbose',
     '<%= config.bin %> <%= command.id %> --unmask',
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
   static flags = {
     ...BaseCommand.baseFlags,
+    verbose: Flags.boolean({
+      description: t('commands.setup.inspect.verbose', 'Show the full ordered safety ruleset'),
+      default: false,
+    }),
     unmask: Flags.boolean({
       description: 'Show sensitive values unmasked (passwords, secrets, API keys)',
       default: false,
@@ -140,7 +158,10 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
   }
 
   async run(): Promise<SetupInspectResponse> {
-    const {values, sources, warnings} = this.resolvedConfig;
+    const {warnings} = this.resolvedConfig;
+    const safety = this.inspectSafety();
+    const values = {...this.resolvedConfig.values, ...(safety.config ? {safety: safety.config} : {})};
+    const {sources} = safety;
     const unmask = this.flags.unmask;
 
     // Build output config with masking applied
@@ -161,7 +182,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       this.warn('Sensitive values are displayed unmasked.');
     }
 
-    this.printConfig(values, sources, unmask);
+    this.printConfig(values, sources, unmask, safety);
 
     // Show warnings
     for (const warning of warnings) {
@@ -189,10 +210,68 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     return resultMap;
   }
 
+  /** Use the enforcement resolver, retaining each contributor for display. */
+  private inspectSafety(): SafetyInspection {
+    const {values, sources} = this.resolvedConfig;
+    const global = loadGlobalSafetyConfig(this.config.configDir);
+    const envLevel = parseSafetyLevelString(process.env.SFCC_SAFETY_LEVEL);
+    const rawConfirm = process.env.SFCC_SAFETY_CONFIRM;
+    const envConfirm = rawConfirm === undefined ? undefined : rawConfirm === 'true' || rawConfirm === '1';
+    const inspection: SafetyInspection = {sources: [...sources], fieldSources: new Map(), ruleSources: []};
+    if (!values.safety && !global && envLevel === undefined && envConfirm === undefined) return inspection;
+
+    const contributors: Array<{name: string; config: NormalizedConfig['safety']}> = [
+      {name: this.buildFieldSourceMap(sources).get('safety') ?? 'Configuration', config: values.safety},
+      {name: 'SafetyFile', config: global},
+      {name: 'SafetyEnv', config: {level: envLevel, confirm: envConfirm}},
+    ];
+    if (global) {
+      inspection.sources.push({
+        name: 'SafetyFile',
+        location: process.env.SFCC_SAFETY_CONFIG
+          ? resolve(process.env.SFCC_SAFETY_CONFIG)
+          : join(this.config.configDir, 'safety.json'),
+        fields: ['safety'],
+      });
+    }
+    if (envLevel !== undefined || envConfirm !== undefined) {
+      inspection.sources.push({
+        name: 'SafetyEnv',
+        location: [
+          envLevel === undefined ? '' : 'SFCC_SAFETY_LEVEL',
+          envConfirm === undefined ? '' : 'SFCC_SAFETY_CONFIRM',
+        ]
+          .filter(Boolean)
+          .join(', '),
+        fields: ['safety'],
+      });
+    }
+
+    const effective = resolveEffectiveSafetyConfig(values.safety, global);
+    inspection.config = effective;
+    for (const field of ['level', 'confirm'] as const) {
+      const names = contributors
+        .filter(({config}) => config?.[field] !== undefined && config[field] === effective[field])
+        .map(({name}) => name);
+      if (names.length > 0) inspection.fieldSources.set(field, names.join(', '));
+    }
+    for (const {name, config} of contributors) {
+      inspection.ruleSources.push(...(config?.rules ?? []).map(() => name));
+    }
+    if (inspection.ruleSources.length > 0)
+      inspection.fieldSources.set('rules', [...new Set(inspection.ruleSources)].join(', '));
+    return inspection;
+  }
+
   /**
    * Print the configuration in human-readable format.
    */
-  private printConfig(config: NormalizedConfig, sources: ConfigSourceInfo[], unmask: boolean): void {
+  private printConfig(
+    config: NormalizedConfig,
+    sources: ConfigSourceInfo[],
+    unmask: boolean,
+    safety: SafetyInspection,
+  ): void {
     const ui = cliui({width: process.stdout.columns || 80});
     const fieldSources = this.buildFieldSourceMap(sources);
 
@@ -346,7 +425,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       unmask,
     );
 
-    this.renderOptionalSection(ui, 'Safety', [['safety', config.safety]], fieldSources, unmask);
+    this.renderSafety(ui, safety);
 
     // Sources section
     if (sources.length > 0) {
@@ -375,6 +454,69 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     const configuredFields = fields.filter(([, value]) => value !== undefined && value !== null);
     if (configuredFields.length > 0) {
       this.renderSection(ui, title, configuredFields, fieldSources, unmask);
+    }
+  }
+
+  /**
+   * Show safety settings and ordered matchers without serializing rules as JSON.
+   */
+  private renderSafety(ui: ReturnType<typeof cliui>, inspection: SafetyInspection): void {
+    const safety = inspection.config;
+    if (!safety) return;
+
+    const defaultLabel = t('commands.setup.inspect.default', 'default');
+    const level = inspection.fieldSources.has('level') ? safety.level : `NONE (${defaultLabel})`;
+    const confirmation = safety.confirm
+      ? t('commands.setup.inspect.enabled', 'Enabled')
+      : t('commands.setup.inspect.disabled', 'Disabled');
+    const levelLabel = t('commands.setup.inspect.safetyLevel', 'Level');
+    const confirmationLabel = t('commands.setup.inspect.safetyConfirm', 'Level confirmation');
+    const rulesLabel = t('commands.setup.inspect.safetyRulesLabel', 'Rules');
+    const rules = safety.rules ?? [];
+    const fieldSources = new Map<string, string>();
+    for (const [field, label] of [
+      ['level', levelLabel],
+      ['confirm', confirmationLabel],
+      ['rules', rulesLabel],
+    ]) {
+      const source = inspection.fieldSources.get(field);
+      if (source) fieldSources.set(label, source);
+    }
+    this.renderSection(
+      ui,
+      t('commands.setup.inspect.safety', 'Safety'),
+      [
+        [levelLabel, level],
+        [
+          confirmationLabel,
+          inspection.fieldSources.has('confirm') ? confirmation : `${confirmation} (${defaultLabel})`,
+        ],
+        [
+          rulesLabel,
+          rules.length === 0
+            ? t('commands.setup.inspect.noSafetyRules', 'none')
+            : this.flags.verbose
+              ? String(rules.length)
+              : t('commands.setup.inspect.safetyRuleCount', '{{count}} (use --verbose to show)', {count: rules.length}),
+        ],
+      ],
+      fieldSources,
+      false,
+    );
+    if (rules.length === 0 || !this.flags.verbose) return;
+
+    ui.div({text: t('commands.setup.inspect.safetyRules', 'Rules (first match wins):'), padding: [0, 0, 0, 2]});
+    for (const [index, rule] of rules.entries()) {
+      let matcher = rule.method ?? '*';
+      if (rule.command !== undefined)
+        matcher = t('commands.setup.inspect.commandRule', 'command {{command}}', {command: rule.command});
+      else if (rule.job !== undefined) matcher = t('commands.setup.inspect.jobRule', 'job {{job}}', {job: rule.job});
+      ui.div(
+        {text: `${index + 1}. ${rule.action.toUpperCase()} ${matcher}`, width: 62, padding: [0, 0, 0, 4]},
+        {text: `[${inspection.ruleSources[index]}]`, padding: [0, 0, 0, 2]},
+      );
+      if (rule.command === undefined && rule.job === undefined)
+        ui.div({text: rule.path ?? '/**', padding: [0, 0, 0, 7]});
     }
   }
 

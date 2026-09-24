@@ -82,14 +82,12 @@ export default class MrtMemberUpdate extends MrtCommand<typeof MrtMemberUpdate> 
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.member.update.success', 'Member {{email}} updated to role {{roleName}}.', {
-            email,
-            roleName,
-          }),
-        );
-      }
+      this.log(
+        t('commands.mrt.member.update.success', 'Member {{email}} updated to role {{roleName}}.', {
+          email,
+          roleName,
+        }),
+      );
 
       return result;
     } catch (error) {

@@ -79,6 +79,12 @@ export {
   downloadBundle,
   deleteBundle,
   bulkDeleteBundles,
+  listBundlesScapi,
+  uploadBundleScapi,
+  listMrtBundles,
+  pushMrtBundle,
+  normalizeLegacyBundle,
+  normalizeScapiBundle,
 } from './push.js';
 export type {
   PushOptions,
@@ -94,10 +100,29 @@ export type {
   BulkDeleteBundlesResult,
   BulkDeleteRejectedBundle,
   MrtBundle,
+  MrtBundleView,
+  MrtBundlesView,
+  ListMrtBundlesBackendOptions,
+  UploadBundleScapiResult,
+  PushMrtBundleBackendOptions,
+  MrtPushResultView,
 } from './push.js';
 
 // Environment variable operations
-export {listEnvVars, setEnvVar, setEnvVars, deleteEnvVar} from './env-var.js';
+export {
+  listEnvVars,
+  setEnvVar,
+  setEnvVars,
+  deleteEnvVar,
+  getEnvironmentVariablesScapi,
+  updateEnvironmentVariablesScapi,
+  listEnvVarsWithBackend,
+  setEnvVarWithBackend,
+  setEnvVarsWithBackend,
+  deleteEnvVarWithBackend,
+  normalizeLegacyEnvVar,
+  normalizeEnvVarScapi,
+} from './env-var.js';
 export type {
   EnvVarOptions,
   SetEnvVarOptions,
@@ -105,6 +130,13 @@ export type {
   DeleteEnvVarOptions,
   ListEnvVarsResult,
   EnvironmentVariable,
+  MrtEnvVarView,
+  MrtEnvVarsView,
+  MrtEnvVarWriteResult,
+  EnvVarBackendOptions,
+  SetEnvVarBackendOptions,
+  SetEnvVarsBackendOptions,
+  DeleteEnvVarBackendOptions,
 } from './env-var.js';
 
 // Environment (target) operations

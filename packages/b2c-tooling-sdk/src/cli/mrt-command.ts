@@ -119,6 +119,26 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     );
   }
 
+  /**
+   * Suppress human-readable logging in `--json` mode.
+   *
+   * MRT commands emit progress/status lines via {@link BaseCommand.log}, which
+   * routes to the structured logger on stderr. When `--json` is set the caller
+   * wants machine-readable output only, so these lines are swallowed centrally
+   * here instead of guarding every call site with `if (!this.jsonEnabled())`.
+   *
+   * This only affects `this.log()` (stderr diagnostics). Structured stdout
+   * output — tables and detail views written via `ux.stdout` — is untouched and
+   * must still be guarded by `jsonEnabled()` at its call site so it never
+   * corrupts the JSON payload on stdout.
+   */
+  public log(message?: string, ...args: unknown[]): void {
+    if (this.jsonEnabled()) {
+      return;
+    }
+    super.log(message, ...args);
+  }
+
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     const mrt = extractMrtFlags(this.flags as Record<string, unknown>);
     const options: LoadConfigOptions = {
@@ -265,10 +285,12 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
 
   /**
    * Whether this command implements the SCAPI MRT backend. Defaults to `false`;
-   * the supported commands (`mrt bundle history`, `mrt bundle deploy <bundleId>`)
-   * override it to `true`. Used by {@link init} to reject an explicit
-   * `--mrt-backend scapi` on commands that would otherwise silently fall back to
-   * legacy — an explicit SCAPI request must never be quietly downgraded.
+   * the supported commands (`mrt bundle history`, `mrt bundle list`,
+   * `mrt bundle deploy` — both the local-build push and `<bundleId>` deploy —
+   * and the `mrt env var` family: `list`, `set`, `delete`, `push`) override it
+   * to `true`. Used by {@link init} to reject an explicit `--mrt-backend scapi`
+   * on commands that would otherwise silently fall back to legacy — an explicit
+   * SCAPI request must never be quietly downgraded.
    */
   protected supportsScapiMrt(): boolean {
     return false;
@@ -281,8 +303,9 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     // not silently serve an explicit `--mrt-backend scapi` from legacy.
     if (!this.supportsScapiMrt() && this.mrtBackendPreference === 'scapi') {
       this.error(
-        '--mrt-backend scapi is not supported by this command yet. The SCAPI MRT backend currently supports only ' +
-          '"mrt bundle history" and "mrt bundle deploy <bundleId>". Re-run with --mrt-backend legacy or auto.',
+        '--mrt-backend scapi is not supported by this command yet. The SCAPI MRT backend currently supports ' +
+          '"mrt bundle history", "mrt bundle list", "mrt bundle deploy", and "mrt env var" (list/set/delete/push). ' +
+          'Re-run with --mrt-backend legacy or auto.',
       );
     }
   }
