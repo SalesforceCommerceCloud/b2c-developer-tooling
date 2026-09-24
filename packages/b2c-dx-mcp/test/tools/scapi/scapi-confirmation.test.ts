@@ -33,6 +33,11 @@ function approve(prompt: ToolResult, decision?: unknown): ToolContext {
   };
 }
 
+function message(prompt: ToolResult): string {
+  const input = prompt as unknown as InputRequiredResult;
+  return (Object.values(input.inputRequests!)[0] as {params: {message: string}}).params.message;
+}
+
 describe('SCAPI retained confirmations', function () {
   this.timeout(10_000);
   let directory: string;
@@ -88,6 +93,7 @@ describe('SCAPI retained confirmations', function () {
     const prompt = await execute.handler(args, capable);
     expect(sent).to.have.length(1);
     expect(authenticate.callCount).to.equal(1);
+    expect(message(prompt)).to.include('Earlier write requests sent: 1; no rollback.');
     const context = approve(prompt);
     const [result, duplicate] = await Promise.all([execute.handler(args, context), execute.handler(args, context)]);
     expect(result).to.deep.equal(duplicate);
@@ -96,6 +102,54 @@ describe('SCAPI retained confirmations', function () {
     expect(load.callCount).to.equal(1);
     expect(await execute.handler(args, context)).to.deep.equal(result);
     expect(sent).to.have.length(2);
+  });
+
+  for (const {body, truncated} of [
+    {body: {id: 'small', secret: 'private-value'}, truncated: false},
+    {body: {id: 'x'.repeat(800)}, truncated: true},
+    {body: {id: 'nested', custom: {nested: {values: [1, 2, 3, 4, 5]}}}, truncated: true},
+  ]) {
+    it(`bounds and redacts the approval preview without changing the ${body.id.slice(0, 6)} request`, async () => {
+      const {execute} = fixture();
+      const args = {
+        skillRead: true,
+        input: body,
+        code: `async (input) => scapi.request({method:'PUT',path:'${prefix}preview',body:input})`,
+      };
+      const prompt = await execute.handler(args, capable);
+      const text = message(prompt);
+      expect(text).to.include('Approve SCAPI operation: createProduct');
+      expect(text).to.include('Organization: f_ecom_test_001');
+      expect(text).to.include('No earlier writes.');
+      expect(text).not.to.include('api.commercecloud.salesforce.com');
+      expect(text).not.to.include('Query:');
+      expect(text).not.to.include('private-value');
+      const excerpt = /Body:\n([\s\S]*?)\nSafety Mode/.exec(text)![1];
+      expect(excerpt.length).to.be.at.most(400);
+      expect(excerpt.split('\n').length).to.be.at.most(5);
+      expect(excerpt.includes('[truncated; approval covers full request]')).to.equal(truncated);
+      if (!truncated) expect(JSON.parse(excerpt)).to.deep.equal({id: 'small', secret: '[redacted]'});
+      expect(sent).to.have.length(0);
+      await execute.handler(args, approve(prompt));
+      expect(sent[0].body).to.deep.equal(body);
+    });
+  }
+
+  it('omits absent bodies and does not count earlier reads as writes', async () => {
+    const {execute} = fixture();
+    const args = {
+      skillRead: true,
+      code: `async () => {
+        await scapi.request({method:'GET',path:'${prefix}existing'});
+        return scapi.request({method:'DELETE',path:'${prefix}existing'});
+      }`,
+    };
+    // A missing product is a completed read, not an earlier write.
+    (globalThis.fetch as ReturnType<typeof stub>).resolves(new Response('{}', {status: 404}));
+    const text = message(await execute.handler(args, capable));
+    expect(text).to.include('No earlier writes.');
+    expect(text).not.to.include('Body:');
+    expect(text).not.to.include('Query:');
   });
 
   it('requires a separate approval for each parallel request and never shares exemptions', async () => {

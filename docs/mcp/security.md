@@ -4,8 +4,8 @@ description: Control MCP tool access, protect B2C Commerce credentials, and unde
 
 # Security and Access
 
-The MCP server runs locally with the permissions of the process that starts it.
-Connected tools use your configured B2C Commerce or Managed Runtime credentials.
+The MCP server runs on your computer and uses the access available to your local
+user account. Connected tools use your configured B2C Commerce or Managed Runtime credentials.
 Start with a sandbox and grant only the access needed for your work. Review
 changes through your client's approval controls and use Safety Mode to restrict
 supported operations.
@@ -68,34 +68,36 @@ See [script debugging](../guide/script-debugger) for CLI and IDE alternatives.
 
 ## Safety settings
 
-The shared [Safety Mode settings](../guide/safety) can restrict supported HTTP
-operations. Review the complete policy: explicit allow rules can override a
-safety level. These settings do not provide a universal restriction on local
-file writes or every debugger action.
+Use [Safety Mode](../guide/safety) to keep investigations read-only, block selected
+actions, or require approval before changes. It uses the same settings as the CLI
+and IDE Extension. Rules can make exceptions to the selected safety level, so
+review both when checking what is allowed.
 
-For a skills-only or documentation-only assistant, select those tools
-explicitly. Do not treat `READ_ONLY` as a complete MCP sandbox. SCAPI code mode
-supports Safety Mode confirmation in clients with form elicitation. Review the
-target and request details before approving. Other MCP tools and clients without
-form elicitation stop at confirmation-required requests.
+For [SCAPI Code Mode](./toolsets#scapi-code-mode) data tasks, your assistant can
+show the target and proposed change for review before proceeding. Your assistant
+app must support these approval prompts. If it cannot show one, the change is
+blocked. Other B2C MCP tools currently block actions that require Safety Mode
+approval. Permission to use a tool, which your app may request separately, does
+not approve the specific change or override a block.
 
-Declining or cancelling an approval stops the entire code-mode execution.
-Unanswered approvals have no server deadline, and waiting does not consume the
-execution runtime budget. Clients may impose their own timeout. Pending approvals
-occupy one of four execution slots until answered, cancelled, or the server
-disconnects or shuts down. Earlier changes are not rolled back. You can ask your
-assistant to cancel an execution using the ID shown in its approval prompt.
+Declining stops the task; changes already made remain in place. You can also ask
+your assistant to cancel a pending task. The B2C tools do not set a time limit
+for your answer, but your assistant app may. Keep the session connected while
+you decide.
 
-For SCAPI code mode, the selected project's `.env` can set `SFCC_SAFETY_LEVEL`, `SFCC_SAFETY_CONFIRM`,
-and `SFCC_SAFETY_CONFIG`. Launch environment values take precedence over `.env`.
-Relative safety-file paths resolve from the selected project. The effective level
-is the most restrictive of environment, global file, and instance settings;
-explicit rules still take precedence over the level.
+Start with the [product approval example](../guide/safety.md#scapi-code-mode-example)
+or [shared SCAPI policy](../guide/safety.md#global-scapi-confirmation). Some searches
+use POST and need a rule to run under `READ_ONLY`; see the
+[job search example](../guide/safety#allow-a-search-without-enabling-other-writes).
 
-`READ_ONLY` uses HTTP methods, so it also blocks searches that use POST. See
-[allow a search without enabling other writes](../guide/safety#allow-a-search-without-enabling-other-writes)
-for a job-investigation example. An assistant's tool approval does not satisfy
-a Safety Mode confirmation or override a block.
+Use your existing `dw.json`, global safety configuration, or environment variables;
+SCAPI Code Mode needs no separate safety setup. See
+[how settings combine](../guide/safety#configuration-merge).
+
+Safety Mode controls supported B2C requests. It does not restrict all local file
+changes, debugger actions, or other tools your assistant can access. Use
+[tool selection](./configuration#toolset-selection) if you only want to provide
+documentation or skills.
 
 ## SCAPI code mode
 
@@ -105,14 +107,15 @@ Account Manager credentials and granted API scopes. The configured
 Multi-step tasks can partially complete: review completed changes before
 retrying a failed or interrupted task.
 
-Code mode runs generated JavaScript locally with restrictions on file and process
-access. It is not a security sandbox or network isolation; Safety Mode governs
-Salesforce Commerce API requests, not arbitrary JavaScript.
+Code mode runs code written by your assistant on your computer, with limits on
+file access and starting other programs. These limits do not provide complete
+isolation. Safety Mode checks its supported API requests, not everything that
+code could do.
 
-Custom Admin APIs use the same safety policy. Grant `sfcc.scapi-schemas` for live
-contract discovery and the endpoint's declared `c_*` scope for execution. The
-`sfcc.custom-apis` scope grants registration visibility, not access to custom
-business logic.
+Custom Admin APIs use the same safety policy. Grant `sfcc.scapi-schemas` to read
+your instance's API definitions and the API's declared `c_*` scope to call it.
+The `sfcc.custom-apis` scope lets you check whether an API is registered; calling
+that API requires its own permissions.
 
 Code mode can export Account Manager or SLAS access tokens when you need them
 for a separate HTTP client. Normal SCAPI requests authenticate automatically;

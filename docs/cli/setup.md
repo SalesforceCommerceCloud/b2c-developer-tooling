@@ -10,6 +10,16 @@ Commands for viewing configuration, setting up the development environment, and 
 
 Display the resolved configuration from all sources, showing which values are set and where they came from. Useful for debugging configuration issues.
 
+The Safety section summarizes the settings in use, including your instance,
+global safety file, and environment variables. Add `--verbose` to see all rules
+in the order they are checked. `--json` always includes the complete settings.
+
+The source column shows where each setting came from. `SafetyFile` refers to the
+global file listed in Sources; `SafetyEnv` refers to environment variables.
+"Level confirmation" controls approval for requests the selected level would
+normally block. Individual `confirm` rules still ask for approval when this
+setting is disabled. See [Safety Mode](../guide/safety).
+
 **Alias:** `b2c setup config`
 
 ### Usage
@@ -23,6 +33,7 @@ b2c setup inspect [FLAGS]
 | Flag                     | Description                                                   | Default                    |
 | ------------------------ | ------------------------------------------------------------- | -------------------------- |
 | `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys) | `false`                    |
+| `--verbose`              | Show the full ordered safety ruleset                          | `false`                    |
 | `--account-manager-host` | Account Manager hostname for OAuth                            | `account.demandware.com`   |
 | `--cloud-origin`         | MRT cloud origin URL                                          | `https://cloud.mobify.com` |
 | `--json`                 | Output results as JSON                                        | `false`                    |
@@ -32,6 +43,9 @@ b2c setup inspect [FLAGS]
 ```bash
 # Display resolved configuration (sensitive values masked)
 b2c setup inspect
+
+# Include the full safety ruleset
+b2c setup inspect --verbose
 
 # Display configuration with sensitive values unmasked
 b2c setup inspect --unmask
@@ -109,7 +123,10 @@ By default, sensitive fields are masked to prevent accidental exposure:
 
 Use `--unmask` to reveal the actual values when needed for debugging.
 
-The Sources section shows both the primary and default `dw.json` files and marks the file that supplied the selected instance with `*`. When the shared default `dw.json` supplies values, fields are annotated with `[default]` and its source row is labeled `(default)`. JSON output includes the same file provenance plus `"scope": "global"` on a selected default source.
+The Sources section lists the project and shared default `dw.json` files. An `*`
+marks the file used for the selected instance. Values from the shared default
+file show `[default]` in the source column. JSON output also identifies that file
+with `"scope": "global"`.
 
 ### See Also
 

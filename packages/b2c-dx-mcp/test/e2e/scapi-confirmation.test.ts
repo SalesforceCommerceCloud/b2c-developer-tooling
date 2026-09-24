@@ -67,7 +67,7 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
     it('uses native elicitation twice while retaining the original program variables', async () => {
       const nonces: string[] = [];
       client.setRequestHandler('elicitation/create', async (request) => {
-        const body = /Body: (.*)\n/.exec(request.params.message)!;
+        const body = /Body:\n([\s\S]*?)\nSafety Mode/.exec(request.params.message)!;
         nonces.push(JSON.parse(body[1]).id);
         return {action: 'accept', content: {approve: true}};
       });
@@ -112,7 +112,7 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
 
     it('accepts explicit cancellation while an elicitation is outstanding', async () => {
       client.setRequestHandler('elicitation/create', async (request) => {
-        const executionId = /Execution: ([\da-f-]+)\./.exec(request.params.message)![1];
+        const executionId = /Execution: ([\da-f-]+)/.exec(request.params.message)![1];
         const cancelled = await client.callTool({
           name: 'scapi_execute',
           arguments: {action: 'cancel', executionId, skillRead: true},

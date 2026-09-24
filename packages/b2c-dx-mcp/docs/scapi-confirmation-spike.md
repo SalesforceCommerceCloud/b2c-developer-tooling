@@ -61,11 +61,17 @@ async (input) => {
 ```
 
 Expected: two distinct approval prompts; each shows the resolved target,
-operation, execution ID, and cancellation instructions. Approve each. The final result contains
+organization, operation, and execution ID, without empty query/body fields. Approve each. The final result contains
 two completed operation records and the original `startedAt`. Debug logs show
 one worker start for the entire program, including its approval round trips.
 The client retries the same arguments with protocol state automatically; do
 not ask the model to synthesize approval responses or reissue the program.
+
+For a write requiring approval, check that its JSON body preview is pretty-printed
+and capped at five lines and 400 characters, including any truncation notice.
+Use a long string and a deeply nested body to exercise both limits. Truncation
+must be marked, credential-like fields redacted, and approval must still send the
+full original body. Earlier reads must not count as earlier writes in the prompt.
 
 Repeat with these decisions:
 

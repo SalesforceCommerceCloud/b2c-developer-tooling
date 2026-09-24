@@ -41,10 +41,15 @@ function errorResult(message: string): ToolResult {
 
 function preview(value: unknown): string {
   const json =
-    JSON.stringify(value, (key, item: unknown) =>
-      /password|secret|token|authorization|credential/i.test(key) ? '[redacted]' : item,
+    JSON.stringify(
+      value,
+      (key, item: unknown) => (/password|secret|token|authorization|credential/i.test(key) ? '[redacted]' : item),
+      2,
     ) ?? 'none';
-  return json.length > 2000 ? `${json.slice(0, 2000)}... [truncated]` : json;
+  const excerpt = json.split('\n').slice(0, 5).join('\n');
+  if (excerpt.length === json.length && json.length <= 400) return json;
+  const notice = ' ... [truncated; approval covers full request]';
+  return excerpt.slice(0, 400 - notice.length).trimEnd() + notice;
 }
 
 interface OperationRecord {
@@ -106,13 +111,21 @@ export class ScapiExecution {
     const roundNumber = this.rounds.size + 1;
     const state = this.mintState(roundNumber);
     const key = `approve_${roundNumber}`;
+    const path = new URL(request.url).pathname;
+    const organizationId = path.match(/\/organizations\/([^/]+)/)?.[1];
+    const earlierWrites = this.operations.filter(
+      (item) =>
+        item.kind === 'request' && !['GET', 'HEAD', 'OPTIONS'].includes(item.method ?? '') && this.dispatched.has(item),
+    ).length;
     const message = [
-      `Approve this SCAPI request? Execution: ${this.id}. Approval has no server deadline.`,
-      `${request.method} ${request.url} (${request.operationId})`,
-      `Query: ${preview(request.query)}\nBody: ${preview(request.body)}`,
-      request.reason,
-      `${this.operations.filter((item) => item.status === 'completed').length} earlier operations completed. Decline cancels the execution; completed writes are not rolled back.`,
-      'To cancel explicitly: scapi_execute({action:"cancel", executionId:"' + this.id + '", skillRead:true}).',
+      `Approve SCAPI operation: ${request.operationId}`,
+      ...(organizationId ? [`Organization: ${organizationId}`] : []),
+      `${request.method} ${path}`,
+      ...(Object.keys(request.query).length > 0 ? [`Query:\n${preview(request.query)}`] : []),
+      ...(request.body === undefined ? [] : [`Body:\n${preview(request.body)}`]),
+      'Safety Mode requires approval. Declining stops this execution.',
+      earlierWrites ? `Earlier write requests sent: ${earlierWrites}; no rollback.` : 'No earlier writes.',
+      `Execution: ${this.id}`,
     ].join('\n');
     const prompt: ToolResult = {
       ...inputRequired({
@@ -122,7 +135,7 @@ export class ScapiExecution {
             message,
             requestedSchema: {
               type: 'object',
-              properties: {approve: {type: 'boolean', title: 'Approve this request', default: false}},
+              properties: {approve: {type: 'boolean', title: 'Approve this request only', default: false}},
               required: ['approve'],
             },
           }),

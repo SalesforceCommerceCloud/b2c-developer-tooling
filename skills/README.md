@@ -72,7 +72,7 @@ Plugins listed in [`plugins.json`](./plugins.json) are zipped to `<name>-skills.
 - When changing development patterns, update the relevant `b2c/skills/<topic>/SKILL.md`.
 - Add runbooks under `b2c-ops/skills/` using the shared operational structure in
   `.agents/skills/mcp-development/references/workflows.md`; link shipped outcomes
-  from the Operations guide. Register collections in `guidance/collections.json`
+  from the Operations guide. Register collections in `packages/b2c-dx-mcp/skills/collections.json`
   for MCP bundling and in both marketplaces for native installation.
 - To make a new plugin installable via the B2C CLI, add it to [`plugins.json`](./plugins.json) and register a source in `packages/b2c-tooling-sdk/src/skills/sources.ts` (plus the `SkillSet` type in `types.ts`).
 - Add a changeset targeting `@salesforce/b2c-agent-plugins` for any skill content changes.

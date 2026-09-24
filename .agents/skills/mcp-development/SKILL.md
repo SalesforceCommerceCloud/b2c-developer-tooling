@@ -9,7 +9,7 @@ description: Develop B2C MCP tools, resources, workflow skills, and runbooks. Us
 
 - `packages/b2c-dx-mcp`: tool registration, adapters, resources, and session lifecycles.
 - SDK `guidance`: shared offline catalog, search, section reads, and exposure filters.
-- `guidance/mcp`: shipped MCP skills. Native collections live under `skills/`.
+- `packages/b2c-dx-mcp/skills`: shipped MCP skills and collection manifest. Native collections live under `skills/`.
 - `docs/mcp`: user capabilities, installation, configuration, and security.
   Tool references use capability/tool-name tables with shared access requirements.
   Keep parameters and agent choreography in schemas and skills.
@@ -32,7 +32,7 @@ description: Develop B2C MCP tools, resources, workflow skills, and runbooks. Us
   such as Salesforce Commerce API.
 
 For skill/runbook content, read [workflow authoring](references/workflows.md).
-For packaging and protocol details, read [the catalog contract](../../../guidance/README.md).
+For packaging and protocol details, read [the catalog contract](../../../packages/b2c-dx-mcp/docs/skills.md).
 
 Native skill changes use an agent-plugin changeset; the MCP's bundled
 `workspace:*` dependency automatically triggers an MCP patch release. Keep it in
@@ -157,7 +157,7 @@ at execution time.
 Test observable contracts: restricted tool selection with readable MCP resources,
 excluded collections rejecting direct reads, source/resource/tool parity, emitted
 section destinations, clean output without unnecessary pointers, and lifecycle
-failures. Use the [testing guide](../../../guidance/TESTING.md) for build/packaged
+failures. Use the [testing guide](../../../packages/b2c-dx-mcp/docs/testing.md) for build/packaged
 stdio checks. Regenerate skills before source-parity tests. Keep authoring checks
 focused; do not test prose by matching whole descriptions.
 
