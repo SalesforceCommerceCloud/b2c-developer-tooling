@@ -1,5 +1,27 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.10.0
+
+### Minor Changes
+
+- [#667](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/667) [`f9110ac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f9110ace279f3f3290ceaac9104e6436d71d2688) - Add a `b2c-python-sdk` agent-skills plugin for consuming the Python `salesforce-b2c-tooling-sdk` from scripts and notebooks. Install it from the plugin marketplace (`b2c-python-sdk`) or with `b2c setup skills b2c-python-sdk`. The skill covers install/import, async-vs-sync usage, choosing an auth mechanism, resolving config from `dw.json`, the operations-vs-clients error contract, and SLAS shopper tokens, with a full symbol catalog reference. (Thanks [@priandsf](https://github.com/priandsf)!)
+
+### Patch Changes
+
+- [#690](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/690) [`df4f24c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/df4f24c963c050facea179013fc69db129ade5ea) - Make the `b2c mrt env var` family (`list` / `set` / `push` / `delete`) backend-aware, so environment variables can be read and written over the SCAPI Storefront Environments API (OAuth, scopes `sfcc.storefront.environments` for reads and `sfcc.storefront.environments.rw` for writes) instead of the legacy MRT Cloud API (per-user API key). Select the backend with `--mrt-backend` (`auto` | `legacy` | `scapi`, also `MRT_BACKEND` / `mrtBackend` in `dw.json`): `auto` prefers SCAPI when `--short-code`/`--tenant-id` and client-credentials or JWT Bearer auth are configured — otherwise legacy — and falls back to legacy on safe pre-execution errors; `scapi` never silently falls back. Over SCAPI, `set` and `delete` apply a merge-PATCH (only the keys you pass change; `delete` sends the key with a `null` value), and `push` pins every write to the backend its initial read resolved to, so a single `push` never crosses backends. The legacy path is unchanged. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+  Under `--json`, `env var list` returns the serving backend's native shape (legacy `{count, variables}` vs the SCAPI environment-variables map) — the human-readable table is normalized across backends, but `--json` is not, so pin `legacy` or `scapi` when a script needs a stable shape. All four commands now emit only their result object on stdout under `--json` (progress text is suppressed); `push --json` is non-interactive and requires `--yes` when there are changes to apply.
+
+- [#667](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/667) [`f9110ac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f9110ace279f3f3290ceaac9104e6436d71d2688) - Hardened the Python SDK's `sync` facade: calling it from inside an already-running event loop (e.g. a Jupyter cell) now warns instead of silently blocking forever with no explanation, mixing direct `await` use and `sync` use of the same object now raises an actionable error instead of a confusing cross-loop `RuntimeError`, and syncified objects now preserve identity/equality with their async counterparts (`sync_obj == async_obj`, stable `is`/hashing across repeated calls). Also fixed a PKCE code example in the `b2c-python-sdk` skill that referenced a nonexistent `AuthCredentials` constructor. (Thanks [@priandsf](https://github.com/priandsf)!)
+
+- [#705](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/705) [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6) - Show a readable effective safety policy and rule count in `b2c setup inspect`, including instance, global-file, and environment sources. Use `--verbose` for the full ordered ruleset; `--json` includes the complete structured configuration. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#686](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/686) [`643d0c0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/643d0c055eb2101bb5bbce24d5bf5a9701610220) - Export one composable storefront by name and optionally wait for Storefront Next post-import setup after a successful site archive import, surfacing import data errors if setup never starts. Export configuration types and the IDE selector now also include the latest platform data units. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#689](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/689) [`880d25a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/880d25a42a841e41202dab3d428a3433a7350ebd) - Reuse Storefront Next B2C Commerce, SLAS, site, and MRT environment variables as configuration fallbacks while preserving toolkit-specific overrides and normalizing full organization IDs. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#706](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/706) [`3fe3a10`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fe3a10f6ea0a1e7c1e8824d387efac45b7e6e7f) - Support `--root=dynamic` across WebDAV commands to manage site-specific files, including Velocity templates, independently of code deployments. Include the site ID as the first segment of the remote path, for example `b2c webdav ls --root=dynamic MySite/`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.9.0
 
 ### Minor Changes

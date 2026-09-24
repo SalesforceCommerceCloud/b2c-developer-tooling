@@ -1,6 +1,0 @@
----
-'@salesforce/b2c-cli': minor
-'@salesforce/b2c-tooling-sdk': minor
----
-
-Extend the SCAPI MRT backend to `mrt bundle list` and the local-build push path of `mrt bundle deploy`. Both commands now honor `--mrt-backend` (`auto` | `legacy` | `scapi`): `list` fetches bundles from the SCAPI Storefront Deployments API, and `deploy` (without a bundle ID) uploads the local build — and optionally deploys it — over SCAPI. `auto` prefers SCAPI when short code, tenant ID, and client-credentials or JWT Bearer auth are configured, and falls back to legacy on safe pre-execution errors; `scapi` never silently falls back. The bundle format now maps to the endpoint: SCAPI always uploads the v2 format, while legacy defaults to v1. A new `--v2` flag opts the legacy backend into the v2 endpoint (upload, plus a separate deploy when `--environment` is given). `deploy` also gains `--root-dir`, `--config-path`, and `--match-mode` to control the v2 archive layout; these apply to v2 uploads only and are ignored, with a warning, on a legacy v1 push. `mrt bundle deploy --v2` performs the same v2 upload as `mrt bundle upload-v2` and can build, upload, and deploy in one step. `--json` output stays backend-native. The SDK adds `listMrtBundles`, `uploadBundleScapi`, and `pushMrtBundle` operations.

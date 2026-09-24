@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.3.2
+
+### Patch Changes
+
+- [#699](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/699) [`98aa9ae`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/98aa9aecb89164dc6bb709e00b4194e7678ecdc4) - Upgrade `qs` to 6.16.0 to address the reported dependency vulnerability. (Thanks [@kevinxh](https://github.com/kevinxh)!)
+
 ## 0.3.1
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "b2c-ops",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "B2C Commerce operator and administrator runbooks for job health, checkout and failed orders, and incident triage.",
   "author": {
     "name": "Salesforce"

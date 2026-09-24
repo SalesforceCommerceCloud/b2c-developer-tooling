@@ -1,5 +1,21 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.1.0
+
+### Minor Changes
+
+- [#705](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/705) [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6) - SCAPI Code Mode can now ask you to approve changes in supported assistant apps, with short request previews, cancellation, and no server time limit for answering. Approved tasks continue where they paused without repeating earlier changes; apps that cannot show approval prompts block those actions. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Add product approval examples and a shared SCAPI policy, with clearer Safety Mode guidance across the CLI, IDE Extension, and AI assistants, plus easier-to-browse MCP tool documentation.
+
+### Patch Changes
+
+- [#705](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/705) [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6) - Keep internal release-status and workspace-ranking metadata out of skill discovery responses and the MCP output schema. Public collection results contain only IDs and titles. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`f9110ac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f9110ace279f3f3290ceaac9104e6436d71d2688), [`ae2b79e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ae2b79e522125bd515e39ec538bba7ab569179e9), [`df4f24c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/df4f24c963c050facea179013fc69db129ade5ea), [`09e5a0a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/09e5a0a3f3d96380dc29e9a83c5a075c8cc8eb9b), [`5e2a955`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5e2a955d281536978aba914c3a4f3f64447e4618), [`f9110ac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f9110ace279f3f3290ceaac9104e6436d71d2688), [`d076982`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d0769822c484bf52cc8d897d503840a95522e36d), [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6), [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6), [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6), [`ee1ed01`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee1ed01b42e0b31dfbbd874b50a1ce6f165f4a91), [`643d0c0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/643d0c055eb2101bb5bbce24d5bf5a9701610220), [`880d25a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/880d25a42a841e41202dab3d428a3433a7350ebd), [`3fe3a10`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fe3a10f6ea0a1e7c1e8824d387efac45b7e6e7f)]:
+  - @salesforce/b2c-tooling-sdk@2.1.0
+  - @salesforce/b2c-agent-plugins@1.10.0
+
 ## 3.0.1
 
 ### Patch Changes

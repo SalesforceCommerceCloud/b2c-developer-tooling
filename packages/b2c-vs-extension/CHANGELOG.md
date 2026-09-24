@@ -1,5 +1,20 @@
 # Change Log
 
+## 1.3.0
+
+### Minor Changes
+
+- [#686](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/686) [`643d0c0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/643d0c055eb2101bb5bbce24d5bf5a9701610220) - Export one composable storefront by name and optionally wait for Storefront Next post-import setup after a successful site archive import, surfacing import data errors if setup never starts. Export configuration types and the IDE selector now also include the latest platform data units. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#702](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/702) [`ae2b79e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ae2b79e522125bd515e39ec538bba7ab569179e9) - Treat legacy `.ds` cartridge scripts like their `.js` siblings. Files under `cartridge/scripts/` now open in JavaScript mode — syntax highlighting, completions, hover docs for `dw/*`, and debugger breakpoints — and `require()` calls, hook references, and job step modules resolve to `.ds` files (`.js` still wins when both exist). Set `files.associations` in your own settings to opt out if you use `.ds` files for something else. (Thanks [@clstopher](https://github.com/clstopher)!)
+
+### Patch Changes
+
+- [#704](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/704) [`8315379`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/831537918a6f9f2514a1ebd472a84d790d6a08f2) - Fixed cartridge IntelliSense on case-sensitive filesystems. Cross-cartridge `require()` calls (`~/cartridge/...`, `*/cartridge/...`, and named-cartridge paths) failed to resolve when the project lived on a case-sensitive volume while TypeScript itself was installed on a case-insensitive one, leaving hovers as `any` and go-to-definition doing nothing. `dw/*` types were unaffected, so the failure was easy to miss. (Thanks [@clstopher](https://github.com/clstopher)!)
+
+- Updated dependencies [[`f9110ac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f9110ace279f3f3290ceaac9104e6436d71d2688), [`ae2b79e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ae2b79e522125bd515e39ec538bba7ab569179e9), [`df4f24c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/df4f24c963c050facea179013fc69db129ade5ea), [`09e5a0a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/09e5a0a3f3d96380dc29e9a83c5a075c8cc8eb9b), [`5e2a955`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5e2a955d281536978aba914c3a4f3f64447e4618), [`d076982`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d0769822c484bf52cc8d897d503840a95522e36d), [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6), [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6), [`ee1ed01`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee1ed01b42e0b31dfbbd874b50a1ce6f165f4a91), [`643d0c0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/643d0c055eb2101bb5bbce24d5bf5a9701610220), [`880d25a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/880d25a42a841e41202dab3d428a3433a7350ebd), [`3fe3a10`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fe3a10f6ea0a1e7c1e8824d387efac45b7e6e7f)]:
+  - @salesforce/b2c-tooling-sdk@2.1.0
+
 ## 1.2.0
 
 ### Minor Changes
