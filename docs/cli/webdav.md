@@ -25,8 +25,24 @@ Available roots:
 - `catalogs` - Product catalogs
 - `libraries` - Content libraries
 - `static` - Static resources
+- `dynamic` - Site-specific files, including Velocity templates
 - `logs` - Log files
 - `securitylogs` - Security log files
+
+### Dynamic Site Files
+
+Use `--root=dynamic` to manage files under `Sites/Dynamic/<site-id>/`, independently
+of code deployments. Include the site ID as the first segment of the remote path:
+
+```bash
+b2c webdav ls --root=dynamic MySite/
+b2c webdav mkdir --root=dynamic MySite/mockData
+b2c webdav put --root=dynamic ./mock.vm MySite/mockData/
+b2c webdav get --root=dynamic MySite/mockData/mock.vm -o ./mock.vm
+```
+
+The same path format works with `rm`, `zip`, and `unzip`. This location is used by
+`dw.template.Velocity.renderTemplate()` for site-specific Velocity templates.
 
 ## Authentication
 
