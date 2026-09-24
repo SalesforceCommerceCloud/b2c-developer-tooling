@@ -275,7 +275,7 @@ export interface ConfigResolutionResult {
  * Options for configuration resolution.
  */
 export interface ResolveConfigOptions {
-  /** Named instance for supporting ConfigSources */
+  /** Explicit instance name, or the name resolved from an earlier source during loading. */
   instance?: string;
   /** Explicit path to config file (defaults to auto-discover) */
   configPath?: string;

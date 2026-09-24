@@ -40,6 +40,73 @@ class MockSource implements ConfigSource {
 
 describe('config/resolver', () => {
   describe('ConfigResolver', () => {
+    describe('instance context for credential sources', () => {
+      const scenarios: Array<{
+        name: string;
+        overrides?: Partial<NormalizedConfig>;
+        options?: ResolveConfigOptions;
+        configs: NormalizedConfig[];
+        expectedInstance?: string;
+      }> = [
+        {
+          name: 'preserves an explicit instance selection',
+          options: {instance: 'explicit'},
+          configs: [{instanceName: 'default'}],
+          expectedInstance: 'explicit',
+        },
+        {
+          name: 'seeds the instance from explicit configuration overrides',
+          overrides: {instanceName: 'override'},
+          configs: [{instanceName: 'default'}],
+          expectedInstance: 'override',
+        },
+        {
+          name: 'prefers the explicit instance option over an override name',
+          overrides: {instanceName: 'override'},
+          options: {instance: 'explicit'},
+          configs: [],
+          expectedInstance: 'explicit',
+        },
+        {
+          name: 'keeps the instance name from the highest-priority source',
+          configs: [{instanceName: 'selected'}, {instanceName: 'lower-priority'}],
+          expectedInstance: 'selected',
+        },
+        {
+          name: 'does not use the instance name from a rejected hostname',
+          overrides: {hostname: 'other.example.com'},
+          configs: [{hostname: 'original.example.com', instanceName: 'original'}],
+        },
+        {
+          name: 'leaves unnamed configurations on plugin defaults',
+          configs: [{hostname: 'example.com'}],
+        },
+      ];
+
+      for (const scenario of scenarios) {
+        it(scenario.name, async () => {
+          let receivedInstance: string | undefined;
+          const credentialSource: ConfigSource = {
+            name: 'credentials',
+            load(options) {
+              receivedInstance = options.instance;
+              return {config: {clientId: 'test-client', clientSecret: 'test-secret'}};
+            },
+          };
+          const resolver = new ConfigResolver([
+            ...scenario.configs.map((config, index) => new MockSource(`config-${index}`, config)),
+            credentialSource,
+          ]);
+          const options = {...scenario.options};
+
+          await resolver.resolve(scenario.overrides, options);
+
+          expect(receivedInstance).to.equal(scenario.expectedInstance);
+          expect(options).to.deep.equal(scenario.options ?? {});
+        });
+      }
+    });
+
     describe('resolve', () => {
       it('resolves from a single source', async () => {
         const source = new MockSource('test', {

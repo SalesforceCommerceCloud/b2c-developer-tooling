@@ -86,6 +86,14 @@ Configuration is resolved with the following precedence:
 
 Each source fills in missing values - it doesn't override values from higher-priority sources.
 
+Credential sources should select the instance inside `load(options)`, using
+`options.instance`. This contains the explicit `--instance` selection or, for
+sources loaded after `dw.json`, the selected configuration's `name`. The earlier
+`b2c:config-sources` hook runs before configuration loading, so its instance value
+only reflects an explicit selection. Use `priority: 'after'` to fill credentials
+for the instance selected by `dw.json`; credentials already present in that file
+retain precedence.
+
 ::: tip Custom ConfigSource Priority
 When implementing a custom `ConfigSource`, you can set the `priority` property directly on your class:
 
