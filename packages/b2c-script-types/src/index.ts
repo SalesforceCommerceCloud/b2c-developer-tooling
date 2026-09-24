@@ -26,8 +26,19 @@ interface PluginConfig {
 
 interface NormalizedCartridge {
   name: string;
-  /** Forward-slash path with trailing '/'. Lowercased on case-insensitive filesystems. */
+  /**
+   * Forward-slash path with trailing '/'. Lowercased on case-insensitive
+   * filesystems, so it may only be compared against other normalize()d paths —
+   * never handed to the filesystem.
+   */
   root: string;
+  /**
+   * Forward-slash path with trailing '/', in its original case. Use this for
+   * every filesystem probe and for paths handed back to TypeScript: `root` is
+   * case-folded whenever ts.sys reports a case-insensitive filesystem, which
+   * breaks lookups for projects that live on a case-sensitive volume.
+   */
+  srcRoot: string;
 }
 
 const PLUGIN_NAME = '@salesforce/b2c-script-types';
@@ -60,8 +71,9 @@ const SFRA_AMBIENT_MODULES = new Set([
 
 // Candidate suffixes appended when resolving a SFCC-style relative require to
 // a cartridge file. SFRA convention is to omit the .js extension, so .js wins
-// first; .json captures the occasional resource bundle import.
-const CANDIDATE_EXTENSIONS = ['.js', '.json', '/index.js'];
+// first; .json captures the occasional resource bundle import; .ds covers
+// legacy pipeline-era scripts, which the platform also resolves after .js.
+const CANDIDATE_EXTENSIONS = ['.js', '.json', '.ds', '/index.js', '/index.ds'];
 
 // Cartridges that conventionally sit at the bottom of the cartridge path when
 // the user hasn't told us otherwise (no `cartridges` in dw.json/SFCC_CARTRIDGES).
@@ -106,7 +118,12 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
   const setCartridges = (list: ConfiguredCartridge[]) => {
     cartridges = list.map(({name, src}) => {
       const n = normalize(src);
-      return {name, root: n.endsWith('/') ? n : n + '/'};
+      const raw = src.replace(/\\/g, '/');
+      return {
+        name,
+        root: n.endsWith('/') ? n : n + '/',
+        srcRoot: raw.endsWith('/') ? raw : raw + '/',
+      };
     });
   };
 
@@ -305,7 +322,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     if (!subpath) return undefined;
 
     for (const c of order) {
-      const baseAbs = c.root + subpath;
+      const baseAbs = c.srcRoot + subpath;
       for (const ext of CANDIDATE_EXTENSIONS) {
         const candidate = baseAbs + ext;
         if (fileExists(candidate)) {
@@ -334,7 +351,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     const modulesCart = cartridges.find((c) => c.name === 'modules');
     if (!modulesCart) return undefined;
 
-    const baseAbs = modulesCart.root + moduleName;
+    const baseAbs = modulesCart.srcRoot + moduleName;
     for (const ext of CANDIDATE_EXTENSIONS) {
       const candidate = baseAbs + ext;
       if (fileExists(candidate)) {
@@ -350,7 +367,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
         if (content) {
           const main = (JSON.parse(content) as {main?: string}).main;
           if (typeof main === 'string' && main.length > 0) {
-            const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
+            const resolved = (modulesCart.srcRoot + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
             if (fileExists(resolved)) {
               return {resolved, source: modulesCart.name};
             }
@@ -459,6 +476,17 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
         additions.push(SFRA_SERVER_DTS);
       }
       return additions.length > 0 ? [...list, ...additions] : list;
+    };
+
+    // TS derives a file's ScriptKind from its extension and falls back to TS
+    // for anything it doesn't recognize, which would parse legacy .ds scripts
+    // as TypeScript. Report JS so they get the same JavaScript semantics
+    // (allowJs/checkJs, JSDoc types) as their .js siblings. Returning Unknown
+    // for everything else lets TS fall back to its own extension mapping.
+    const origGetScriptKind = host.getScriptKind?.bind(host);
+    host.getScriptKind = (fileName) => {
+      if (enabled && fileName.endsWith('.ds')) return ts.ScriptKind.JS;
+      return origGetScriptKind ? origGetScriptKind(fileName) : ts.ScriptKind.Unknown;
     };
 
     const origResolveModuleNameLiterals = host.resolveModuleNameLiterals?.bind(host);
@@ -593,7 +621,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       if (!modulesCart) return def;
       const moduleName = sfraModuleAtOffset(def.textSpan.start);
       if (!moduleName) return def;
-      const candidates = [modulesCart.root + moduleName + '.js', modulesCart.root + moduleName + '/index.js'];
+      const candidates = [modulesCart.srcRoot + moduleName + '.js', modulesCart.srcRoot + moduleName + '/index.js'];
       for (const candidate of candidates) {
         if (fileExists(candidate)) {
           return {...def, fileName: candidate, textSpan: {start: 0, length: 0}};

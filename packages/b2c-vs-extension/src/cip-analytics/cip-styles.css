@@ -2848,7 +2848,6 @@ body.cip-query-builder {
   opacity: 0.6;
 }
 
-
 .clause-head {
   padding: 10px 16px;
   gap: 12px;
@@ -2869,7 +2868,6 @@ body.cip-query-builder {
   background: rgba(14, 99, 156, 0.12);
   color: var(--cip-accent);
 }
-
 
 .clause-title {
   font-size: 13px;
@@ -2892,7 +2890,6 @@ body.cip-query-builder {
   background: rgba(14, 99, 156, 0.08);
   color: var(--cip-accent);
 }
-
 
 .clause-desc {
   font-size: 11.5px;
