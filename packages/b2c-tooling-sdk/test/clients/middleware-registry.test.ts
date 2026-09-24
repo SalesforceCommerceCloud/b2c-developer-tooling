@@ -116,4 +116,50 @@ describe('clients/middleware-registry', () => {
     expect(registry.size).to.equal(0);
     expect(registry.getProviderNames()).to.deep.equal([]);
   });
+
+  it('replaces only scoped providers and preserves exclusions and registration order', () => {
+    const registry = new MiddlewareRegistry();
+    const original = {};
+    const scoped = {};
+    const plugin = {};
+    registry.register({name: 'policy', getMiddleware: () => original});
+    registry.register({name: 'plugin', getMiddleware: () => plugin});
+    registry.runWithOverrides([{name: 'policy', getMiddleware: () => scoped}], () => {
+      expect(registry.getMiddleware('webdav')).to.have.length(2);
+      expect(registry.getMiddleware('webdav')[0]).to.equal(scoped);
+      expect(registry.getMiddleware('webdav')[1]).to.equal(plugin);
+      expect(registry.getMiddleware('scapi', {exclude: ['policy']})).to.deep.equal([plugin]);
+    });
+    expect(registry.getMiddleware('webdav')[0]).to.equal(original);
+  });
+
+  it('isolates concurrent async scopes and restores outer policy after a nested failure', async () => {
+    const registry = new MiddlewareRegistry();
+    const outer = {onRequest: () => undefined};
+    const nested = {onResponse: () => undefined};
+    const concurrent = {onError: () => undefined};
+    let release!: () => void;
+    const ready = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await Promise.all([
+      registry.runWithOverrides([{name: 'policy', getMiddleware: () => outer}], async () => {
+        await ready;
+        expect(() =>
+          registry.runWithOverrides([{name: 'policy', getMiddleware: () => nested}], () => {
+            expect(registry.getMiddleware('webdav')[0]).to.equal(nested);
+            throw new Error('nested failure');
+          }),
+        ).to.throw('nested failure');
+        expect(registry.getMiddleware('webdav')[0]).to.equal(outer);
+      }),
+      registry.runWithOverrides([{name: 'policy', getMiddleware: () => concurrent}], async () => {
+        release();
+        await ready;
+        expect(registry.getMiddleware('webdav')[0]).to.equal(concurrent);
+      }),
+    ]);
+    expect(registry.getMiddleware('webdav')).to.deep.equal([]);
+    expect(registry.size).to.equal(0);
+  });
 });

@@ -430,7 +430,7 @@ export function createToolAdapter<TInput, TOutput>(
             executionResolution.directories[name] = value;
           },
         };
-        const output = await execute(args, context);
+        const output = await services.runWithSafety(() => execute(args, context));
 
         // 6. Format output
         const result = formatOutput(output);

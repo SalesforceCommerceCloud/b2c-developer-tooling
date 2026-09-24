@@ -25,8 +25,8 @@
  *
  * ## Resolution Pattern
  *
- * Both B2CInstance and MRT auth are resolved once at server startup (not on each tool call).
- * This provides fail-fast behavior and consistent performance.
+ * B2C instance and MRT auth are resolved for each tool call, so edits to project
+ * configuration are picked up without restarting the server.
  *
  * **B2C Instance** (for WebDAV/OCAPI tools):
  * - Flags (highest priority) merged with dw.json (auto-discovered or via --config)
@@ -48,7 +48,8 @@ import path from 'node:path';
 import os from 'node:os';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
-import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {getB2CConfigDirectory, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {SafetyGuard, resolveEffectiveSafetyConfig, loadGlobalSafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
 import type {ConfigurationResolutionSource, ProjectDirectoryInfo, ToolResolution} from './tools/project-context.js';
 import {
   createCustomApisClient,
@@ -56,6 +57,8 @@ import {
   createScapiSchemasClient,
   toOrganizationId,
   WebDavClient,
+  globalMiddlewareRegistry,
+  createSafetyMiddleware,
   type CustomApisClient,
   type MetricsClient,
   type ScapiSchemasClient,
@@ -148,14 +151,14 @@ function createToolResolution(config: ResolvedB2CConfig, inputs?: ServicesResolu
 export class Services {
   /**
    * Pre-resolved B2C instance for WebDAV/OCAPI operations.
-   * Resolved once at server startup from InstanceCommand flags and dw.json.
+   * Resolved for this tool call from server flags and project configuration.
    * Undefined if no B2C instance configuration was available.
    */
   public readonly b2cInstance?: B2CInstance;
 
   /**
    * Pre-resolved MRT configuration (auth, project, environment, origin).
-   * Resolved once at server startup from MrtCommand flags and ~/.mobify.
+   * Resolved for this tool call from server flags and MRT configuration.
    */
   public readonly mrtConfig: MrtConfig;
 
@@ -458,10 +461,6 @@ export class Services {
     return fs.readdirSync(dirPath, {withFileTypes: true});
   }
 
-  // ============================================
-  // SCAPI Helper Methods
-  // ============================================
-
   /**
    * Read a file from the filesystem.
    *
@@ -472,6 +471,10 @@ export class Services {
   public readFile(filePath: string, encoding: 'ascii' | 'base64' | 'hex' | 'latin1' | 'utf8' = 'utf8'): string {
     return fs.readFileSync(filePath, {encoding});
   }
+
+  // ============================================
+  // SCAPI Helper Methods
+  // ============================================
 
   /**
    * Resolve a path relative to the current working directory.
@@ -536,6 +539,27 @@ export class Services {
       return pathArg;
     }
     return path.resolve(projectDir, pathArg);
+  }
+
+  /** Run a tool with its resolved safety policy, without changing other calls. */
+  public runWithSafety<T>(callback: () => T): T {
+    const environment = Object.fromEntries(
+      ['SFCC_SAFETY_LEVEL', 'SFCC_SAFETY_CONFIRM', 'SFCC_SAFETY_CONFIG'].map((name) => [
+        name,
+        this.getEnvironmentVariable(name),
+      ]),
+    );
+    const guard = new SafetyGuard(
+      resolveEffectiveSafetyConfig(
+        this.resolvedConfig.values.safety,
+        loadGlobalSafetyConfig(getB2CConfigDirectory(), environment, this.resolution.projectDirectory.path),
+        environment,
+      ),
+    );
+    return globalMiddlewareRegistry.runWithOverrides(
+      [{name: 'cli-safety-guard', getMiddleware: () => createSafetyMiddleware(guard)}],
+      callback,
+    );
   }
 
   /**

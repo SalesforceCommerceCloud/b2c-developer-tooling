@@ -94,6 +94,11 @@ Use your existing `dw.json`, global safety configuration, or environment variabl
 SCAPI Code Mode needs no separate safety setup. See
 [how settings combine](../guide/safety#configuration-merge).
 
+Changes to `dw.json` and safety policy files apply to the next tool call, including
+cartridge deployments, without restarting the MCP server. Restart the server when
+changing its launch environment variables. A less restrictive instance level does
+not override a stricter global or environment level.
+
 Safety Mode controls supported B2C requests. It does not restrict all local file
 changes, debugger actions, or other tools your assistant can access. Use
 [tool selection](./configuration#toolset-selection) if you only want to provide
