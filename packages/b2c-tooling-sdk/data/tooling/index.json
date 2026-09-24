@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-24T01:40:36.076Z",
+  "generatedAt": "2026-09-24T14:33:06.206Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -251,7 +251,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/webdav.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/webdav.md",
-      "headings": "Global WebDAV Flags • Root Directory • Authentication • Basic Auth (Recommended) • OAuth • Mixed Authentication • b2c webdav ls • Usage • Arguments • Flags • Examples • Output • b2c webdav get • Usage • Arguments • Flags • Examples • b2c webdav put • Usage • Arguments • Examples • Notes • b2c webdav mkdir • Usage • Arguments • Examples • b2c webdav rm • Usage • Arguments • Flags • Examples • Notes • b2c webdav zip • Usage • Arguments • Examples • Notes • b2c webdav unzip • Usage • Arguments • Examples • Notes",
+      "headings": "Global WebDAV Flags • Root Directory • Dynamic Site Files • Authentication • Basic Auth (Recommended) • OAuth • Mixed Authentication • b2c webdav ls • Usage • Arguments • Flags • Examples • Output • b2c webdav get • Usage • Arguments • Flags • Examples • b2c webdav put • Usage • Arguments • Examples • Notes • b2c webdav mkdir • Usage • Arguments • Examples • b2c webdav rm • Usage • Arguments • Flags • Examples • Notes • b2c webdav zip • Usage • Arguments • Examples • Notes • b2c webdav unzip • Usage • Arguments • Examples • Notes",
       "preview": "Commands for WebDAV file operations including listing, uploading, downloading, and managing files on B2C Commerce instances."
     },
     {
