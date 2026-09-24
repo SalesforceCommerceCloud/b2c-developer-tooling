@@ -31,6 +31,23 @@ Sources, in resolution order (highest priority first):
 
 For unexpected values, inspect resolved configuration and sources with `config_inspect` or `b2c setup inspect`.
 
+### Storefront Next Environment Compatibility
+
+The resolver accepts these Storefront Next variables as fallbacks, so a project
+can reuse its existing B2C Commerce and SLAS configuration:
+
+| Storefront Next variable                     | Resolved field     | Default toolkit variable  |
+| -------------------------------------------- | ------------------ | ------------------------- |
+| `PUBLIC__app__commerce__api__clientId`       | `slasClientId`     | `SFCC_SLAS_CLIENT_ID`     |
+| `PUBLIC__app__commerce__api__organizationId` | `tenantId`         | `SFCC_TENANT_ID`          |
+| `PUBLIC__app__commerce__api__shortCode`      | `shortCode`        | `SFCC_SHORTCODE`          |
+| `COMMERCE_API_SLAS_SECRET`                   | `slasClientSecret` | `SFCC_SLAS_CLIENT_SECRET` |
+| `PUBLIC__app__defaultSiteId`                 | `siteId`           | `SFCC_SITE_ID`            |
+| `MRT_PROJECT`                                | `mrtProject`       | `MRT_PROJECT`             |
+| `MRT_TARGET`                                 | `mrtEnvironment`   | `MRT_ENVIRONMENT`         |
+
+Explicit flags and default toolkit variables win over these fallbacks.
+
 ### Shared Global Default
 
 Use a shared fallback when the same `dw.json`-format file should work across the CLI, MCP server, and B2C DX VS Code extension:

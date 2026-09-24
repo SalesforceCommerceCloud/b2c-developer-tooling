@@ -5,7 +5,7 @@
  */
 import {resetLogger} from '../logging/index.js';
 
-const ADDITIONAL_ENV_VARS = ['LANGUAGE', 'NO_COLOR'];
+const ADDITIONAL_ENV_VARS = ['COMMERCE_API_SLAS_SECRET', 'LANGUAGE', 'NO_COLOR'];
 
 interface IsolationState {
   savedEnvVars: Record<string, string | undefined>;
@@ -19,7 +19,7 @@ export function isolateConfig(): void {
   const savedEnvVars: Record<string, string | undefined> = {};
 
   for (const key of Object.keys(process.env)) {
-    if (key.startsWith('SFCC_') || key.startsWith('MRT_')) {
+    if (key.startsWith('SFCC_') || key.startsWith('MRT_') || key.startsWith('PUBLIC__')) {
       savedEnvVars[key] = process.env[key];
       delete process.env[key];
     }
