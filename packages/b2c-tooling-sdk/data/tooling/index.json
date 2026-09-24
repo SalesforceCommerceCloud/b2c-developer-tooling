@@ -530,7 +530,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.md",
-      "headings": "Highlights • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Cartridge Management and Code Watch/Upload • SCAPI API Explorer • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
+      "headings": "Highlights • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Site Archive Export • Cartridge Management and Code Watch/Upload • SCAPI API Explorer • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
       "preview": "The official Salesforce B2C Commerce IDE Extension for VS Code, Cursor, and other VS Code-compatible editors — code sync, sandbox management, API exploration, and debugging."
     },
     {

@@ -805,6 +805,7 @@ export interface ExportSitesConfiguration {
   all?: boolean;
   cache_settings?: boolean;
   campaigns_and_promotions?: boolean;
+  channels?: boolean;
   commerce_feature_states?: boolean;
   content?: boolean;
   coupons?: boolean;
@@ -817,6 +818,7 @@ export interface ExportSitesConfiguration {
   ocapi_settings?: boolean;
   payment_methods?: boolean;
   payment_processors?: boolean;
+  point_of_sale_channels?: boolean;
   redirect_urls?: boolean;
   search_settings?: boolean;
   shipping?: boolean;
@@ -843,6 +845,7 @@ export interface ExportGlobalDataConfiguration {
   custom_preference_groups?: boolean;
   custom_quota_settings?: boolean;
   custom_types?: boolean;
+  event_routing?: boolean;
   geolocations?: boolean;
   global_custom_objects?: boolean;
   job_schedules?: boolean;
@@ -866,6 +869,8 @@ export interface ExportGlobalDataConfiguration {
  * Data units configuration for export.
  */
 export interface ExportDataUnitsConfiguration {
+  /** Experience assignments to export (experience_id: true) */
+  assignments?: Record<string, boolean>;
   /** Catalog static resources to export (catalog_id: true) */
   catalog_static_resources?: Record<string, boolean>;
   /** Catalogs to export (catalog_id: true) */
@@ -882,6 +887,8 @@ export interface ExportDataUnitsConfiguration {
   price_books?: Record<string, boolean>;
   /** Sites to export (site_id: ExportSitesConfiguration) */
   sites?: Record<string, Partial<ExportSitesConfiguration> | boolean>;
+  /** Composable storefront to export (storefront_name: true). Only one storefront can be exported at a time. */
+  storefronts?: Record<string, boolean>;
   /** Global data to export */
   global_data?: Partial<ExportGlobalDataConfiguration>;
 }

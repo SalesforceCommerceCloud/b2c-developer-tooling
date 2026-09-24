@@ -23,11 +23,23 @@ b2c job import existing-archive.zip --remote
 # show job log on failure
 b2c job import ./my-site-data --show-log
 
+# wait for Storefront Next post-import setup after the archive import succeeds
+b2c job import ./storefront-export.zip --wait-for-storefront
+
 # import only a subset of a directory (extra positionals are paths/globs
 # resolved against the directory; preserves layout inside the archive)
 b2c job import ./my-site-data sites/RefArch libraries/mylib
 b2c job import ./my-site-data 'libraries/**'
 ```
+
+`--wait-for-storefront` snapshots existing setup-job executions before import,
+waits for the archive import to succeed, and then polls briefly for the newly
+triggered `sfcc-post-import-setup-storefront` execution before waiting for it to
+finish. It cannot be combined with `--no-wait`. If no new setup execution appears
+within 60 seconds, the CLI checks available import logs and includes `[DATAERROR]`
+entries in the timeout error. Logs are downloaded for this diagnostic only on
+discovery timeout. Resolve any reported data errors before retrying; if logs are
+unavailable or contain no data errors, inspect the import contents and recent job executions.
 
 ### Import Sets
 
