@@ -27,13 +27,13 @@ analytics data and build a custom analysis.
 
 <ExamplePrompt>
 
-> Which search terms returned no results on my site last week? Rank them by frequency and explain what the data covers.
+> Which search terms returned no results on my site last week? Show the most common ones first.
 
 </ExamplePrompt>
 
 <ExamplePrompt>
 
-> Compare daily sales and average order value for my site over the last two complete weeks. Explain any missing days and whether there's enough data to identify a trend.
+> How did daily sales and average order value compare with the previous week?
 
 </ExamplePrompt>
 
@@ -247,11 +247,16 @@ Inside the Query Builder, the **Save** button persists the current SQL into a wo
 
 Saved queries stay in your editor workspace; they are not committed to source control.
 
-### Safety mode
-
-Your [Safety Mode policy](/guide/safety) can block analytics actions or require confirmation. For analytics access and read-only policy exceptions, see [CIP access](/mcp/security#cip).
-
 Query text and results are not collected as telemetry. See [privacy settings](/vscode-extension/configuration#verbosity-polling-telemetry) for controls.
+
+## Safety Mode
+
+Your [Safety Mode settings](/guide/safety) also apply to analytics in the CLI,
+IDE Extension, and your assistant. Reading a report uses a POST request, so
+`READ_ONLY` can block it even though the report does not change your data.
+You can allow these requests with a rule for your analytics tenant; see
+[analytics access](/mcp/security#cip). Analytics tools in your assistant cannot
+currently ask for Safety Mode approval, so a `confirm` rule blocks the request.
 
 ## SDK Support
 

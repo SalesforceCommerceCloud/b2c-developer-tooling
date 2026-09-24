@@ -263,7 +263,7 @@ The `setup inspect` command displays configuration organized by category:
 - **Managed Runtime (MRT)**: mrtProject, mrtEnvironment, mrtApiKey, mrtOrigin (if set)
 - **Project**: configured deployment, content, and documentation defaults
 - **Metadata**: siteId, instanceName, and projectDirectory (only shown when configured)
-- **Safety**: safety configuration (only shown when configured)
+- **Safety**: effective level, level-based confirmation, source column, and rule count after combining instance, global-file, and environment settings (only shown when configured). `SafetyFile` identifies the global file listed in Sources; `SafetyEnv` identifies environment settings. Use `--verbose` for numbered rules in matching order with their sources, or `--json` for the complete effective safety object. Explicit confirmation rules still apply when level confirmation is disabled.
 - **Sources**: List of all configuration sources that were loaded
 
 Each value shows its source in brackets:

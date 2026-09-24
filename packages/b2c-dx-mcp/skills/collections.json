@@ -31,7 +31,7 @@
     {
       "id": "mcp",
       "title": "MCP Workflows",
-      "directory": "guidance/mcp",
+      "directory": "skills",
       "isGA": true
     }
   ]

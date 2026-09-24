@@ -29,31 +29,38 @@ These flags are available on all commands that interact with B2C instances:
 
 ### Safety Mode
 
-Safety Mode provides protection against accidental or unwanted destructive operations. This is particularly important when using the CLI in automated environments, CI/CD pipelines, or as a tool for AI agents.
+Use Safety Mode to limit changes while investigating an issue, running automated
+scripts, or letting an assistant run CLI commands. It shares its settings with
+the IDE Extension and MCP tools.
 
 | Environment Variable   | Values | Description |
 | ---------------------- | ------ | ----------- |
 | `SFCC_SAFETY_LEVEL` | `NONE` (default) | No restrictions |
 | | `NO_DELETE` | Block DELETE operations |
-| | `NO_UPDATE` | Block DELETE and destructive operations (reset, stop, restart) |
-| | `READ_ONLY` | Block all write operations (GET only) |
-| `SFCC_SAFETY_CONFIRM` | `true`, `1` | Enable confirmation mode (prompt user instead of blocking destructive operations) |
-| `SFCC_SAFETY_CONFIG` | File path | Path to global safety config file (JSON format with optional `level`, `confirm`, and `rules`) |
+| | `READ_ONLY` | Block POST, PUT, PATCH, and DELETE requests |
+| `SFCC_SAFETY_CONFIRM` | `true`, `1` | Ask for approval instead of blocking requests under the selected level, where supported. Explicit block rules still block. |
+| `SFCC_SAFETY_CONFIG` | File path | Use a shared safety configuration file. |
+
+Existing `NO_UPDATE` configurations still work, but this legacy setting allows
+many updates. See [choosing a safety level](/guide/safety#safety-levels) before
+using it for new work.
 
 **Example:**
 ```bash
 # Prevent deletions in CI/CD
 export SFCC_SAFETY_LEVEL=NO_DELETE
-b2c sandbox create --realm test  # ✅ Allowed
-b2c sandbox delete test-id       # ❌ Blocked
+b2c sandbox create --realm test  # Allowed
+b2c sandbox delete test-id       # Blocked
 
 # Read-only mode for reporting
 export SFCC_SAFETY_LEVEL=READ_ONLY
-b2c sandbox list                 # ✅ Allowed
-b2c sandbox create --realm test  # ❌ Blocked
+b2c sandbox list                 # Allowed
+b2c sandbox create --realm test  # Blocked
 ```
 
-Safety Mode operates at the HTTP layer and cannot be bypassed by command-line flags. See the [Safety Mode](/guide/safety) guide for detailed information.
+Rules can allow specific tasks or ask for approval in a terminal. Commands that
+need approval stop in automated runs where nobody can answer. See the
+[Safety Mode guide](/guide/safety) for setup examples and supported confirmations.
 
 ### Other Environment Variables
 

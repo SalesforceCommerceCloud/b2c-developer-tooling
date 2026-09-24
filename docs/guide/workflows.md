@@ -31,7 +31,7 @@ See [Project Setup](./project-setup) for optional assistant instructions and tea
 - [Metrics](./metrics) - Inspect B2C Commerce observability metrics.
 
 For catalog and promotion tasks with your assistant, see
-[MCP B2C Commerce data and operations](../mcp/toolsets#scapi-code-mode).
+[SCAPI Code Mode](../mcp/toolsets#scapi-code-mode).
 
 ## Migration
 

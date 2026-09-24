@@ -1,22 +1,23 @@
 # Authoring and distributing MCP skills
 
 The MCP skill catalog is a superset of native plugin skills. Author shared
-content once in `skills/<plugin>/skills/<entry>/SKILL.md`. Author MCP-specific
-workflows here in `mcp/<entry>/SKILL.md`. Both use `name` and `description` YAML
+content once in the repository's `skills/<plugin>/skills/<entry>/SKILL.md`. Author MCP-specific
+workflows in this package's `skills/<entry>/SKILL.md`. Both use `name` and `description` YAML
 frontmatter. Supporting Markdown files stay alongside their entrypoint, normally
 under `references/`.
 
-`collections.json` selects entire plugin collections by their existing name in
-`skills/plugins.json`; it does not duplicate the per-skill inventory. Collections
-can instead name a repository-relative directory for MCP-only skills. `isGA`
-is collection metadata; MCP includes every selected collection regardless of it.
-`workspaces` only influences ranking. Neither native
+This package's `skills/collections.json` selects entire plugin collections by their existing name in
+the repository's `skills/plugins.json`; it does not duplicate the per-skill inventory. Collections
+can instead name a package-relative directory for MCP-only skills. `isGA`
+is internal collection metadata; MCP includes every selected collection regardless of it.
+`workspaces` only influences ranking. Discovery responses expose only collection
+IDs and titles; `isGA` and `workspaces` are absent from the MCP output schema. Neither native
 skill installation nor `--docs-topics` defines the skill catalog.
 
 ## MCP skills and resources
 
 `resources/list` advertises `skill://index` and selected MCP-specific skills,
-chosen by the top-level `featuredResources` IDs in `collections.json`. Featuring
+chosen by the top-level `featuredResources` IDs in `skills/collections.json`. Featuring
 an entry controls listing only. All available skills and references are readable
 through the resource template and `skills_read`, grouped into `b2c`, `b2c-cli`,
 `b2c-ops`, `storefront-next`, and `mcp`. Every tool discovery/read result includes a URI. MCP resources are always registered.
@@ -67,8 +68,8 @@ linked for extra detail are not automatically prerequisites.
 ## Workflow authoring
 
 Common tool, context, and result-guidance patterns live in the
-[MCP development skill](../.agents/skills/mcp-development/SKILL.md). Its
-[workflow authoring reference](../.agents/skills/mcp-development/references/workflows.md)
+[MCP development skill](../../../.agents/skills/mcp-development/SKILL.md). Its
+[workflow authoring reference](../../../.agents/skills/mcp-development/references/workflows.md)
 owns the skill/runbook template, concrete choice/exception pattern, MCP/CLI
 tie-breaks, and conditional reference routing. Existing imported skills migrate
 incrementally; do not fabricate tool equivalents.
@@ -155,7 +156,7 @@ Changesets.
    and the later acknowledgment/effect seams. No placeholder code tool ships here.
 
 These are reviewable progress points, not automatic approval stops. See the
-[isolated Codex test guide](./TESTING.md) for the packaged checkpoint.
+[isolated Codex test guide](./testing.md) for the packaged checkpoint.
 
 ## Public documentation scope
 
