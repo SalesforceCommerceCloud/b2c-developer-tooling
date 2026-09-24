@@ -119,9 +119,9 @@ describe('clients/middleware-registry', () => {
 
   it('replaces only scoped providers and preserves exclusions and registration order', () => {
     const registry = new MiddlewareRegistry();
-    const original = {};
-    const scoped = {};
-    const plugin = {};
+    const original: UnifiedMiddleware = {onRequest: ({request}) => request};
+    const scoped: UnifiedMiddleware = {onRequest: ({request}) => request};
+    const plugin: UnifiedMiddleware = {onRequest: ({request}) => request};
     registry.register({name: 'policy', getMiddleware: () => original});
     registry.register({name: 'plugin', getMiddleware: () => plugin});
     registry.runWithOverrides([{name: 'policy', getMiddleware: () => scoped}], () => {
