@@ -6,10 +6,14 @@
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {parseEnv} from 'node:util';
-import {Flags, ux} from '@oclif/core';
+import {Flags} from '@oclif/core';
 import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {listEnvVars, setEnvVar, setEnvVars} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {
+  listEnvVarsWithBackend,
+  setEnvVarWithBackend,
+  setEnvVarsWithBackend,
+} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 import {filterByPrefix, computeEnvVarDiff, formatEnvVarDiffSummary} from '../../../../utils/mrt/env-var-diff.js';
 
@@ -32,6 +36,7 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     '<%= config.bin %> <%= command.id %> --project acme-storefront --environment production',
     '<%= config.bin %> <%= command.id %> -p my-project -e staging --yes',
     '<%= config.bin %> <%= command.id %> --file config/.env --exclude-prefix INTERNAL_ -p my-project -e staging',
+    '<%= config.bin %> <%= command.id %> -p my-project -e staging --mrt-backend scapi --yes',
   ];
 
   static flags = {
@@ -57,9 +62,9 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
   };
 
   protected operations = {
-    listEnvVars,
-    setEnvVar,
-    setEnvVars,
+    listEnvVarsWithBackend,
+    setEnvVarWithBackend,
+    setEnvVarsWithBackend,
     readEnvFile: (path: string): string => readFileSync(path, 'utf8'),
   };
 
@@ -107,21 +112,32 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       );
     }
 
-    // Step 4: Fetch current remote env vars
-    this.requireMrtCredentials();
+    // Step 4: Resolve the backend and fetch current remote env vars. The list
+    // resolves the backend once (with safe `auto` fallback); every write below
+    // is pinned to whatever backend served this read so the push never crosses
+    // backends mid-operation.
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
     const {mrtOrigin: origin} = this.resolvedConfig.values;
-    const auth = this.getMrtAuth();
 
-    ux.stdout(
+    // Human progress goes through this.log, which MrtCommand.log() suppresses
+    // centrally under --json — so these lines need no per-call --json guard.
+    this.log(
       t('commands.mrt.env.var.push.fetching', 'Fetching remote env vars for {{project}}/{{environment}}...', {
         project,
         environment,
       }),
     );
-    const {variables: remoteVariables} = await this.operations.listEnvVars(
-      {projectSlug: project, environment, origin},
-      auth,
-    );
+    const {backend, variables: remoteVariables} = await this.operations.listEnvVarsWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      origin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (resolved) =>
+        this.logger.debug({backend: resolved}, '[MRT] Pushing environment variables via backend'),
+    });
     const remoteVars = new Map(remoteVariables.map((v) => [v.name, v.value]));
 
     // Step 5: Compute diff
@@ -129,8 +145,8 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     const toSync = [...diff.add, ...diff.update];
 
     // Step 6: Display summary
-    ux.stdout('');
-    ux.stdout(formatEnvVarDiffSummary(diff));
+    this.log('');
+    this.log(formatEnvVarDiffSummary(diff));
 
     if (toSync.length === 0) {
       return {pushed: 0, failed: 0, skipped: diff.remoteOnly.length};
@@ -138,6 +154,17 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
 
     // Step 7: Confirm unless --yes
     if (!flags.yes) {
+      // Under --json the command is non-interactive: a machine consumer can't
+      // answer a prompt (and stdout must stay clean JSON), so require --yes
+      // rather than hang on stdin.
+      if (this.jsonEnabled()) {
+        this.error(
+          t(
+            'commands.mrt.env.var.push.jsonRequiresYes',
+            'Confirmation is required to push. Re-run with --yes to push in --json (non-interactive) mode.',
+          ),
+        );
+      }
       const message = t(
         'commands.mrt.env.var.push.confirm',
         'Push {{count}} variable(s) ({{add}} new, {{update}} updated) to {{project}}/{{environment}}?',
@@ -151,50 +178,74 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
       );
       const confirmed = await confirm(message);
       if (!confirmed) {
-        ux.stdout(t('commands.mrt.env.var.push.aborted', 'Aborted.'));
+        this.log(t('commands.mrt.env.var.push.aborted', 'Aborted.'));
         return {pushed: 0, failed: 0, skipped: diff.remoteOnly.length};
       }
     }
 
-    // Step 8: Push variables — try batch first, fall back to individual calls
+    // Step 8: Push variables, pinned to the backend the read resolved to
+    // (`preference: backend`), so a write never silently falls back to the other
+    // backend after the read already committed to one.
     let pushed = 0;
     let failed = 0;
 
-    const baseParams = {projectSlug: project, environment, origin};
+    const pinnedContext = {
+      preference: backend,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      origin,
+    };
 
     try {
       const variables = Object.fromEntries(toSync.map(({key, value}) => [key, value]));
-      await this.operations.setEnvVars({...baseParams, variables}, auth);
+      await this.operations.setEnvVarsWithBackend({...pinnedContext, variables});
       for (const {key} of toSync) {
-        ux.stdout(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
+        this.log(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
       }
       pushed = toSync.length;
-    } catch {
-      this.warn(t('commands.mrt.env.var.push.batchFailed', 'Batch push failed, retrying variables individually...'));
-      const results = await Promise.allSettled(
-        toSync.map(({key, value}) => this.operations.setEnvVar({...baseParams, key, value}, auth)),
-      );
-
-      for (const [index, result] of results.entries()) {
-        const {key} = toSync[index];
-        if (result.status === 'fulfilled') {
-          ux.stdout(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
-          pushed++;
-        } else {
+    } catch (batchError) {
+      if (backend === 'scapi') {
+        // SCAPI applies the whole set as a single merge-PATCH; retrying per key
+        // would just re-hit the same endpoint, so surface the batch failure
+        // directly instead of a misleading per-variable retry.
+        for (const {key} of toSync) {
           this.warn(
             t('commands.mrt.env.var.push.varFailed', '  ✗ {{key}}: {{message}}', {
               key,
-              message: (result.reason as Error).message,
+              message: (batchError as Error).message,
             }),
           );
-          failed++;
+        }
+        failed = toSync.length;
+      } else {
+        this.warn(t('commands.mrt.env.var.push.batchFailed', 'Batch push failed, retrying variables individually...'));
+        const results = await Promise.allSettled(
+          toSync.map(({key, value}) => this.operations.setEnvVarWithBackend({...pinnedContext, key, value})),
+        );
+
+        for (const [index, result] of results.entries()) {
+          const {key} = toSync[index];
+          if (result.status === 'fulfilled') {
+            this.log(t('commands.mrt.env.var.push.varSuccess', '  ✓ {{key}}', {key}));
+            pushed++;
+          } else {
+            this.warn(
+              t('commands.mrt.env.var.push.varFailed', '  ✗ {{key}}: {{message}}', {
+                key,
+                message: (result.reason as Error).message,
+              }),
+            );
+            failed++;
+          }
         }
       }
     }
 
     // Step 9: Summary
-    ux.stdout('');
-    ux.stdout(
+    this.log('');
+    this.log(
       t(
         'commands.mrt.env.var.push.summary',
         'Summary: {{pushed}} pushed, {{failed}} failed, {{skipped}} remote-only (not deleted)',
@@ -207,5 +258,9 @@ export default class MrtEnvVarPush extends MrtCommand<typeof MrtEnvVarPush> {
     );
 
     return {pushed, failed, skipped: diff.remoteOnly.length};
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

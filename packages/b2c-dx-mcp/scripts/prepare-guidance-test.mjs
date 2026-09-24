@@ -272,5 +272,5 @@ writeFileSync(
 );
 writeFileSync(join(testRoot, 'verification.json'), `${JSON.stringify(metrics, null, 2)}\n`);
 process.stdout.write(
-  `\nOffline packed-package verification passed.\n${JSON.stringify(metrics, null, 2)}\n\nTest directory: ${testRoot}\nSee guidance/TESTING.md for login, launch, and evaluation prompts.\n`,
+  `\nOffline packed-package verification passed.\n${JSON.stringify(metrics, null, 2)}\n\nTest directory: ${testRoot}\nSee packages/b2c-dx-mcp/docs/testing.md for login, launch, and evaluation prompts.\n`,
 );

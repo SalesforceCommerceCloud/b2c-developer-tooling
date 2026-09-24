@@ -89,9 +89,7 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(t('commands.mrt.redirect.delete.success', 'Redirect {{fromPath}} deleted.', {fromPath}));
-      }
+      this.log(t('commands.mrt.redirect.delete.success', 'Redirect {{fromPath}} deleted.', {fromPath}));
 
       return {fromPath, deleted: true};
     } catch (error) {

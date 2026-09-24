@@ -10,6 +10,7 @@ import {
   ProtocolErrorCode,
   CLIENT_INFO_META_KEY,
   PROTOCOL_VERSION_META_KEY,
+  CLIENT_CAPABILITIES_META_KEY,
 } from '@modelcontextprotocol/server';
 import type {
   CallToolResult,
@@ -19,12 +20,13 @@ import type {
   ServerOptions,
   Transport,
   ServerContext,
+  ClientCapabilities,
 } from '@modelcontextprotocol/server';
 
 import {z, type ZodRawShape} from 'zod';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
-import type {McpToolConfig} from './utils/types.js';
+import type {McpToolConfig, ToolContext} from './utils/types.js';
 
 /**
  * Extended server options.
@@ -59,7 +61,11 @@ export class B2CDxMcpServer extends McpServer {
    */
   public constructor(serverInfo: Implementation, options?: B2CDxMcpServerOptions) {
     const {cleanup, telemetry, ...serverOptions} = options ?? {};
-    super(serverInfo, serverOptions);
+    // The bundled SDK patch supports zero for human-paced approval with no server deadline.
+    super(serverInfo, {
+      ...serverOptions,
+      inputRequired: {maxRounds: 20, roundTimeoutMs: 0, ...serverOptions.inputRequired},
+    });
     this.cleanup = cleanup;
     this.telemetry = telemetry;
 
@@ -103,7 +109,7 @@ export class B2CDxMcpServer extends McpServer {
     name: string,
     description: string,
     inputSchema: ZodRawShape,
-    handler: (args: Record<string, unknown>, context?: {signal?: AbortSignal}) => Promise<CallToolResult>,
+    handler: (args: Record<string, unknown>, context?: ToolContext) => Promise<CallToolResult>,
     metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {annotations?: ToolAnnotations} = {},
   ): void {
     const wrappedHandler = async (args: Record<string, unknown>, context: ServerContext): Promise<CallToolResult> => {
@@ -111,7 +117,19 @@ export class B2CDxMcpServer extends McpServer {
       if (clientInfo) this.telemetry?.addAttributes({clientName: clientInfo.name, clientVersion: clientInfo.version});
       const startTime = Date.now();
       try {
-        const result = await handler(args, {signal: context.mcpReq?.signal});
+        const envelope = context.mcpReq?.envelope as
+          | undefined
+          | {[CLIENT_CAPABILITIES_META_KEY]?: ClientCapabilities; [PROTOCOL_VERSION_META_KEY]?: string};
+        const capabilities = envelope?.[CLIENT_CAPABILITIES_META_KEY] ?? this.server.getClientCapabilities();
+        const elicitation = capabilities?.elicitation;
+        const result = await handler(args, {
+          signal: context.mcpReq?.signal,
+          requestState: context.mcpReq?.requestState?.(),
+          inputResponses: context.mcpReq?.inputResponses,
+          supportsElicitation:
+            elicitation !== undefined && (elicitation.form !== undefined || Object.keys(elicitation).length === 0),
+          keepCancellation: !envelope?.[PROTOCOL_VERSION_META_KEY],
+        });
         const runTimeMs = Date.now() - startTime;
 
         // Extract error message from CallToolResult content when isError is true

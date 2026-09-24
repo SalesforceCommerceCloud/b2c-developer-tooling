@@ -19,6 +19,7 @@ import {createMetricsGetTool} from './metrics-get.js';
 import {createScapiCustomApisStatusTool} from './scapi-custom-apis-get-status.js';
 import {createScapiSchemasListTool} from './scapi-schemas-list.js';
 import {createScapiCodeTools} from './scapi-code.js';
+import type {ScapiExecutionRegistry} from './execution-registry.js';
 
 /**
  * Creates all tools for the SCAPI toolset.
@@ -26,9 +27,12 @@ import {createScapiCodeTools} from './scapi-code.js';
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Array of MCP tools
  */
-export function createScapiTools(loadServices: () => Promise<Services> | Services): McpTool[] {
+export function createScapiTools(
+  loadServices: () => Promise<Services> | Services,
+  executions?: ScapiExecutionRegistry,
+): McpTool[] {
   return [
-    ...createScapiCodeTools(loadServices),
+    ...createScapiCodeTools(loadServices, undefined, executions),
     createMetricsGetTool(loadServices),
     createScapiCustomApisStatusTool(loadServices),
     createScapiSchemasListTool(loadServices),

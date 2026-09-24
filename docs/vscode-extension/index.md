@@ -26,7 +26,7 @@ Available on the [Visual Studio Marketplace](https://marketplace.visualstudio.co
 
 ### ISML and Script API Editor Support
 
-Write storefront code with ISML syntax highlighting, snippets, formatting, tag completion, diagnostics, and Emmet support. Cartridge JavaScript files automatically provide autocomplete and hover documentation for `dw/*` modules without writing a `jsconfig.json` into your project. See the [Script API IntelliSense guide](../guide/ide-integration#script-api-intellisense) for more detail.
+Write storefront code with ISML syntax highlighting, snippets, formatting, tag completion, diagnostics, and Emmet support. Cartridge JavaScript files automatically provide autocomplete and hover documentation for `dw/*` modules without writing a `jsconfig.json` into your project, and legacy `.ds` scripts under `cartridge/scripts/` are treated as JavaScript so they get the same support. See the [Script API IntelliSense guide](../guide/ide-integration#script-api-intellisense) for more detail.
 
 ### B2C Script Debugger
 

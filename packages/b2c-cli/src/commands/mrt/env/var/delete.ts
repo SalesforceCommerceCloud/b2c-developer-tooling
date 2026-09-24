@@ -5,7 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {deleteEnvVar} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {deleteEnvVarWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
@@ -29,6 +29,7 @@ export default class MrtEnvVarDelete extends MrtCommand<typeof MrtEnvVarDelete> 
   static examples = [
     '<%= config.bin %> <%= command.id %> MY_VAR --project acme-storefront --environment production',
     '<%= config.bin %> <%= command.id %> OLD_API_KEY -p my-project -e staging',
+    '<%= config.bin %> <%= command.id %> OLD_API_KEY -p my-project -e staging --mrt-backend scapi',
   ];
 
   static flags = {
@@ -36,14 +37,12 @@ export default class MrtEnvVarDelete extends MrtCommand<typeof MrtEnvVarDelete> 
   };
 
   protected operations = {
-    deleteEnvVar,
+    deleteEnvVarWithBackend,
   };
 
   async run(): Promise<{key: string; project: string; environment: string}> {
     // Prevent deletion in safe mode
     this.assertDestructiveOperationAllowed('delete environment variable');
-
-    this.requireMrtCredentials();
 
     const {key} = this.args;
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
@@ -59,24 +58,41 @@ export default class MrtEnvVarDelete extends MrtCommand<typeof MrtEnvVarDelete> 
       );
     }
 
-    await this.operations.deleteEnvVar(
-      {
-        projectSlug: project,
-        environment,
-        key,
-        origin: this.resolvedConfig.values.mrtOrigin,
-      },
-      this.getMrtAuth(),
-    );
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
-    this.log(
-      t('commands.mrt.env.var.delete.success', 'Deleted {{key}} from {{project}}/{{environment}}', {
-        key,
-        project,
-        environment,
-      }),
-    );
+    // The resolved backend is surfaced via `onResolve` (debug log) only — it is
+    // deliberately kept out of the `--json` payload so the legacy `--json`
+    // output stays byte-identical and matches `mrt env var list` / `bundle deploy`.
+    await this.operations.deleteEnvVarWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      key,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (resolved) =>
+        this.logger.debug({backend: resolved}, '[MRT] Deleting environment variable via backend'),
+    });
+
+    // Under --json, emit only the result object: the human success message
+    // routes through the logger (stderr) and would otherwise interleave with the
+    // JSON. Mirrors `mrt env var list` / `mrt bundle deploy`.
+    if (!this.jsonEnabled()) {
+      this.log(
+        t('commands.mrt.env.var.delete.success', 'Deleted {{key}} from {{project}}/{{environment}}', {
+          key,
+          project,
+          environment,
+        }),
+      );
+    }
 
     return {key, project, environment};
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

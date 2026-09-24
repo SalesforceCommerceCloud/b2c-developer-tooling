@@ -9,7 +9,7 @@ export {loadScapiSchemas, findScapiOperation, resolveScapiReference} from './cat
 export type {ApiDocument, ScapiSchemaEntry, ScapiSchemaDocument} from './catalog.js';
 export {runScapiCode} from './runtime.js';
 export {createScapiAuth} from './auth-primitives.js';
-export type {ScapiCodeOptions} from './runtime.js';
+export type {ScapiCodeOptions, ScapiRuntimeControl} from './runtime.js';
 export {
   loadBuiltinScapiSnippets,
   loadScapiSnippets,
@@ -19,6 +19,6 @@ export {
 } from './snippets.js';
 export type {ScapiSnippet} from './snippets.js';
 export {createScapiRequest} from './request.js';
-export type {ScapiRequestOptions} from './request.js';
+export type {ScapiRequestOptions, ScapiConfirmation} from './request.js';
 export {getScapiAuthInfo} from './authentication.js';
 export type {ScapiAuthType, ScapiAuthInfo, ScapiAuthDiagnostic} from './authentication.js';

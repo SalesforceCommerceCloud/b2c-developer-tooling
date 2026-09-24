@@ -64,9 +64,7 @@ export default class MrtOrgMemberUpdate extends MrtCommand<typeof MrtOrgMemberUp
       this.getMrtAuth(),
     );
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.mrt.org.member.update.success', 'Updated permissions for {{email}}.', {email}));
-    }
+    this.log(t('commands.mrt.org.member.update.success', 'Updated permissions for {{email}}.', {email}));
 
     return result;
   }

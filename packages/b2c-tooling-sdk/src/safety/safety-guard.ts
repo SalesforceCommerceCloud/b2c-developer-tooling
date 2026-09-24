@@ -25,13 +25,14 @@ import {
 } from './safety-middleware.js';
 import type {SafetyAction, SafetyEvaluation, SafetyOperation, SafetyRule} from './types.js';
 
-/** Regex to extract job ID from OCAPI job execution URLs. */
+/** Regex to extract job ID from SCAPI and OCAPI job execution URLs. */
 const JOB_EXECUTION_PATTERN = /\/jobs\/([^/]+)\/executions/;
 
 /**
  * Extract a job ID from a URL path if it's a job execution endpoint.
  *
  * Matches patterns like:
+ * - `/operation/jobs/v1/organizations/org/jobs/catalog-import/executions`
  * - `/s/-/dw/data/v24_5/jobs/sfcc-site-archive-import/executions`
  * - `/jobs/sfcc-site-archive-export/executions`
  */

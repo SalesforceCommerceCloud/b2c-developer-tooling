@@ -22,6 +22,16 @@ import {
   isScapiTextMediaType,
 } from './authentication.js';
 
+/** Exact, resolved request awaiting approval. Credentials are never included. */
+export interface ScapiConfirmation {
+  operationId: string;
+  method: string;
+  url: string;
+  query: Record<string, unknown>;
+  body?: unknown;
+  reason: string;
+}
+
 export interface ScapiRequestOptions {
   shortCode: string;
   tenantId: string;
@@ -30,6 +40,10 @@ export interface ScapiRequestOptions {
   safety: SafetyConfig;
   documents: ScapiSchemaDocument[];
   middlewareRegistry?: MiddlewareRegistry;
+  /** Resolve only after user approval; reject on decline/cancellation. Omit to block confirmations. */
+  confirm?: (request: ScapiConfirmation, signal: AbortSignal) => Promise<void>;
+  /** Called immediately before network dispatch, for tracking potentially applied writes. */
+  onDispatch?: () => void;
 }
 
 /** Build one execution's SCAPI request helper. Auth, policy, and responses stay in the host. */
@@ -39,13 +53,13 @@ export function createScapiRequest(
   if (!/^[a-z0-9-]+$/i.test(options.shortCode)) throw new Error('Invalid SCAPI shortCode.');
   const origin = `https://${options.shortCode}.api.commercecloud.salesforce.com`;
   const organizationId = toOrganizationId(options.tenantId);
-  const guard = new SafetyGuard(options.safety);
   const documents = [...options.documents];
   let totalBytes = 0;
   return async (input, signal) => {
     signal.throwIfAborted();
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Request must be an object.');
-    const args = input as Record<string, unknown>;
+    // Detach the request from caller mutations while a confirmation is outstanding.
+    const args = structuredClone(input) as Record<string, unknown>;
     if (Object.keys(args).some((key) => !['method', 'path', 'query', 'body'].includes(key)))
       throw new Error('Request accepts method, path, query, body only.');
     const method = typeof args.method === 'string' ? args.method.toUpperCase() : '';
@@ -127,10 +141,53 @@ export function createScapiRequest(
       candidates,
       tenantScope: buildTenantScope(options.tenantId),
     };
+    const querySerializer = (values: Record<string, unknown>) =>
+      Object.entries(values)
+        .map(([name, value]) => {
+          const parameter = parameters.find((item) => item.in === 'query' && item.name === name);
+          return createQuerySerializer({
+            array: {style: parameter?.style ?? 'form', explode: parameter?.explode ?? true},
+            object: {style: parameter?.style ?? 'form', explode: parameter?.explode ?? true},
+            allowReserved: parameter?.allowReserved,
+          })({[name]: value});
+        })
+        .filter(Boolean)
+        .join('&');
     // Use per-execution policy instead of the CLI's startup-bound safety provider.
     const url = origin + path;
     const pathname = new URL(url).pathname;
-    guard.assert({type: 'http', method, url, path: pathname, jobId: extractJobIdFromPath(pathname)});
+    // Each request owns its guard: an approval must not exempt concurrent requests.
+    const guard = new SafetyGuard(options.safety);
+    const safetyOperation = {type: 'http' as const, method, url, path: pathname, jobId: extractJobIdFromPath(pathname)};
+    const evaluation = guard.evaluate(safetyOperation);
+    let approved = false;
+    if (evaluation.action === 'confirm' && options.confirm) {
+      await options.confirm(
+        structuredClone({
+          operationId: operation.operationId,
+          method,
+          url,
+          query: queryValues,
+          body: args.body,
+          reason: evaluation.reason,
+        }),
+        signal,
+      );
+      signal.throwIfAborted();
+      guard.temporarilyAllow(safetyOperation);
+      approved = true;
+    }
+    guard.assert(safetyOperation);
+    const queryString = querySerializer(queryValues);
+    const approvedUrl = new URL(url + (queryString ? `?${queryString}` : '')).href;
+    const approvedBody = args.body === undefined ? '' : JSON.stringify(args.body);
+    const checkApprovedRequest = async (request: Request) => {
+      if (
+        approved &&
+        (request.method !== method || request.url !== approvedUrl || (await request.clone().text()) !== approvedBody)
+      )
+        throw new Error('SCAPI_APPROVAL_MISMATCH: request changed after approval; no request sent.');
+    };
     let baseAuth: AuthStrategy;
     try {
       baseAuth = withScopes(typeof options.auth === 'function' ? options.auth() : options.auth, [
@@ -160,6 +217,9 @@ export function createScapiRequest(
       headers: {Accept: 'application/json, text/*'},
       fetch: async (request: Request) => {
         signal.throwIfAborted();
+        await checkApprovedRequest(request);
+        signal.throwIfAborted();
+        options.onDispatch?.();
         const response = await fetch(request, {signal, redirect: 'error'});
         const mediaType = response.headers.get('content-type');
         if (response.ok && mediaType && !isScapiTextMediaType(mediaType)) {
@@ -197,21 +257,18 @@ export function createScapiRequest(
       exclude: ['cli-safety-guard'],
     }))
       client.use(middleware);
-    client.use(createSafetyMiddleware(guard), createAuthMiddleware(auth));
+    client.use(
+      {
+        onRequest: async ({request}) => {
+          await checkApprovedRequest(request);
+        },
+      },
+      createSafetyMiddleware(guard),
+      createAuthMiddleware(auth),
+    );
     const result = await client.request(method as HttpMethod, path, {
       params: {query: queryValues},
-      querySerializer: (values) =>
-        Object.entries(values)
-          .map(([name, value]) => {
-            const parameter = parameters.find((item) => item.in === 'query' && item.name === name);
-            return createQuerySerializer({
-              array: {style: parameter?.style ?? 'form', explode: parameter?.explode ?? true},
-              object: {style: parameter?.style ?? 'form', explode: parameter?.explode ?? true},
-              allowReserved: parameter?.allowReserved,
-            })({[name]: value});
-          })
-          .filter(Boolean)
-          .join('&'),
+      querySerializer,
       body: args.body,
       signal,
       redirect: 'error',

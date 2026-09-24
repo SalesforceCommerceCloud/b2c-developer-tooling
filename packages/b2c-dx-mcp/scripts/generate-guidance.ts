@@ -10,7 +10,6 @@ import {fileURLToPath} from 'node:url';
 import {
   guidanceHeadings,
   GUIDANCE_MAX_FILE_BYTES,
-  type GuidanceCollection,
   type GuidanceEntry,
   type GuidanceManifest,
 } from '@salesforce/b2c-tooling-sdk/guidance';
@@ -29,12 +28,12 @@ const snippetIndex =
         `## ${snippet.name}\n\n${snippet.description}\n\nEffect: ${snippet.effect}.\n\nInput JSON Schema:\n\n\`\`\`json\n${JSON.stringify(snippet.inputSchema)}\n\`\`\`\n`,
     )
     .join('\n');
-writeFileSync(join(repoRoot, 'guidance/mcp/scapi/references/snippets.md'), snippetIndex);
+writeFileSync(join(packageRoot, 'skills/scapi/references/snippets.md'), snippetIndex);
 const destination = join(packageRoot, 'content/guidance');
-const config = JSON.parse(readFileSync(join(repoRoot, 'guidance/collections.json'), 'utf8')) as {
+const config = JSON.parse(readFileSync(join(packageRoot, 'skills/collections.json'), 'utf8')) as {
   version: number;
   featuredResources?: string[];
-  collections: (GuidanceCollection & {plugin?: string; directory?: string})[];
+  collections: (GuidanceManifest['collections'][number] & {plugin?: string; directory?: string})[];
 };
 const plugins = JSON.parse(readFileSync(join(repoRoot, 'skills/plugins.json'), 'utf8')) as {plugins: {name: string}[]};
 const manifest: GuidanceManifest = {version: 1, collections: [], entries: []};
@@ -64,7 +63,7 @@ for (const {plugin, directory, ...collection} of config.collections) {
     throw new Error(`Invalid guidance collection ${collection.id}`);
   }
   if (plugin && !plugins.plugins.some((item) => item.name === plugin)) throw new Error(`Unknown plugin ${plugin}`);
-  const source = plugin ? join(repoRoot, 'skills', plugin, 'skills') : resolve(repoRoot, directory!);
+  const source = plugin ? join(repoRoot, 'skills', plugin, 'skills') : resolve(packageRoot, directory!);
   const relativeSource = relative(repoRoot, source);
   if (
     !relativeSource ||

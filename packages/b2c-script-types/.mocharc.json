@@ -1,0 +1,6 @@
+{
+  "node-option": ["import=tsx"],
+  "timeout": 10000,
+  "recursive": true,
+  "extension": ["ts"]
+}

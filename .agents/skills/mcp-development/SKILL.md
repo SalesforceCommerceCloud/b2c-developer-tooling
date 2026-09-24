@@ -9,7 +9,7 @@ description: Develop B2C MCP tools, resources, workflow skills, and runbooks. Us
 
 - `packages/b2c-dx-mcp`: tool registration, adapters, resources, and session lifecycles.
 - SDK `guidance`: shared offline catalog, search, section reads, and exposure filters.
-- `guidance/mcp`: shipped MCP skills. Native collections live under `skills/`.
+- `packages/b2c-dx-mcp/skills`: shipped MCP skills and collection manifest. Native collections live under `skills/`.
 - `docs/mcp`: user capabilities, installation, configuration, and security.
   Tool references use capability/tool-name tables with shared access requirements.
   Keep parameters and agent choreography in schemas and skills.
@@ -32,7 +32,7 @@ description: Develop B2C MCP tools, resources, workflow skills, and runbooks. Us
   such as Salesforce Commerce API.
 
 For skill/runbook content, read [workflow authoring](references/workflows.md).
-For packaging and protocol details, read [the catalog contract](../../../guidance/README.md).
+For packaging and protocol details, read [the catalog contract](../../../packages/b2c-dx-mcp/docs/skills.md).
 
 Native skill changes use an agent-plugin changeset; the MCP's bundled
 `workspace:*` dependency automatically triggers an MCP patch release. Keep it in
@@ -138,8 +138,10 @@ Use SDK v2 `serveStdio` with a fresh server/state factory. It serves current and
 earlier clients; direct `connect(new StdioServerTransport())` only serves the
 earlier protocol. Use Zod 4 schema objects at SDK registration, including output
 schemas. Await instance cleanup before shutdown. Cache only stable discovery and
-skill resources, privately; never cache live tool results. `input_required` is
-available for future workflows but is not currently used. Test both protocol paths.
+skill resources, privately; never advertise cached live tool results. SCAPI
+confirmations use `input_required` with form elicitation and retained workers;
+the SDK bridges older clients. Keep bounded terminal results only to deduplicate
+continuations. Test both protocol paths.
 
 Bound waits and returned data. A tool must not await work that requires another
 tool call to release it: debugger capture returns while its trigger is halted.
@@ -155,7 +157,7 @@ at execution time.
 Test observable contracts: restricted tool selection with readable MCP resources,
 excluded collections rejecting direct reads, source/resource/tool parity, emitted
 section destinations, clean output without unnecessary pointers, and lifecycle
-failures. Use the [testing guide](../../../guidance/TESTING.md) for build/packaged
+failures. Use the [testing guide](../../../packages/b2c-dx-mcp/docs/testing.md) for build/packaged
 stdio checks. Regenerate skills before source-parity tests. Keep authoring checks
 focused; do not test prose by matching whole descriptions.
 
@@ -190,6 +192,13 @@ Token-export helpers serve explicit external-client needs;
 managed requests authenticate automatically. Resolve prerequisites lazily by
 helper, honor configured auth methods, and propagate cancellation through grants.
 Never expose configured secrets to the worker or persist tokens in snippet source.
+Retained SCAPI executions bind native retries to the original arguments and target;
+never replay code. Confirmation exempts only one detached request, including its
+query/body. Keep hard blocks, unsupported clients, decline, and cancellation
+closed. Serialize managed calls at approval boundaries. Approval waits have no
+server deadline, including the legacy elicitation bridge; pause active runtime
+while awaiting approval. Bound active runtime and worker count, support explicit
+cancellation, and await worker cleanup on shutdown.
 Forward request context through registration; test cancellation through both
 stdio protocols and verify execution stops. Resolve project safety environment
 without mutating process.env; launch values win over project .env. Evaluate the

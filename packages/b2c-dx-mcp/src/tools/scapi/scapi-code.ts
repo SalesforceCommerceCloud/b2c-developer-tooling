@@ -5,7 +5,6 @@
  */
 
 import {z} from 'zod';
-import {randomUUID} from 'node:crypto';
 import {
   loadScapiSchemas,
   runScapiCode,
@@ -22,6 +21,7 @@ import type {ServicesLoader} from '../adapter.js';
 import {createProjectContextInputSchema, type ProjectContextInput, type ToolResolution} from '../project-context.js';
 import {jsonResult, attachResolution} from '../adapter.js';
 import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.js';
+import {ScapiExecutionRegistry} from './execution-registry.js';
 
 const code = z
   .string()
@@ -74,7 +74,8 @@ async () => {
 const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin APIs when no dedicated tool fits. Discover standard endpoints with scapi_search; for custom APIs, fetch the live contract through scapi.request() in the same program first. Requests authenticate automatically. JSON requests; no Shopper execution or binary transfers.
 Read skill://mcp/scapi/SKILL.md first.
 
-Reuse workflows with await codemode.run(name, input); describe before first use. Snippets share this execution's limits and configuration. async (input) receives the tool's input. executionId enables scapi_snippet_save; inspect the outcome before saving.
+Reuse workflows with await codemode.run(name, input); describe first. async (input) receives input. Completed executionId enables scapi_snippet_save.
+Safety confirmation uses MCP elicitation. Protocol retries resume retained code; never replay it. Approval has no server deadline. Decline or cancel terminates execution without rollback. action:cancel needs executionId only (plus skillRead).
 
 Available in your code:
 declare const organizationId: string | undefined; // resolved tenant
@@ -84,7 +85,7 @@ declare const scapi: {
     Promise<{status: number; ok: boolean; data: any; diagnostic?: {code: string; message: string}}>;
 };
 
-Compose known dependent requests in one async arrow function; await requests and pass intermediate results directly. Responses can be huge: filter/map/slice in code; return counts, selected rows, and verification fields. Preserve failures and diagnostics. HTTP failures return ok:false; transport/auth/safety failures throw. SDK safety governs scapi.request. fetch/WebSocket are disabled. Optional auth.accountManager()/auth.slas() export tokens for external clients; see skill. Check writes before retrying.
+Compose dependent requests; await each. Responses can be huge: filter/map/slice; return counts, selected rows and verification. Preserve failures. HTTP failures return ok:false; transport/auth/safety failures throw. SDK safety governs scapi.request. fetch/WebSocket are disabled. Optional auth.accountManager()/auth.slas() export tokens for external clients; see skill. Check writes before retrying.
 
 Example: inspect a campaign's promotions
 async () => codemode.run('builtin/campaign-promotions', {campaignId: 'selected-campaign', limit: 4})`;
@@ -114,7 +115,11 @@ function failure(error: unknown, resolution?: ToolResolution): ToolResult {
   };
 }
 
-export function createScapiCodeTools(loadServices: ServicesLoader, snippetDirectory?: string): McpTool[] {
+export function createScapiCodeTools(
+  loadServices: ServicesLoader,
+  snippetDirectory?: string,
+  registry = new ScapiExecutionRegistry(),
+): McpTool[] {
   // Retain only source for the last 50 completed executions, until this server ends.
   const executions = new Map<string, string>();
   const searchInput = {
@@ -128,7 +133,16 @@ export function createScapiCodeTools(loadServices: ServicesLoader, snippetDirect
   };
   const executeInput = {
     ...createProjectContextInputSchema('configuration'),
-    code,
+    action: z
+      .enum(['execute', 'cancel'])
+      .optional()
+      .describe('Defaults to execute. Cancel terminates retained work; no rollback.'),
+    executionId: z
+      .string()
+      .uuid()
+      .optional()
+      .describe('Required for cancel; forbidden for execute. Protocol continuation uses requestState, not this field.'),
+    code: code.optional(),
     skillRead,
     input: z.unknown().optional().describe('JSON input for async (input); kept separate from saved source.'),
   };
@@ -184,12 +198,26 @@ export function createScapiCodeTools(loadServices: ServicesLoader, snippetDirect
       async handler(args, context) {
         let resolution: ToolResolution | undefined;
         try {
-          const input = z.object(executeInput).strict().parse(args) as ProjectContextInput & {
-            code: string;
-            skillRead?: boolean;
-            input?: unknown;
-          };
+          const input = z.object(executeInput).strict().parse(args) as ProjectContextInput &
+            z.infer<z.ZodObject<typeof executeInput>>;
           requireScapiSkill(input.skillRead);
+          if (input.action === 'cancel') {
+            if (
+              !input.executionId ||
+              Object.keys(args).some((key) => !['action', 'executionId', 'skillRead'].includes(key)) ||
+              context?.requestState !== undefined ||
+              context?.inputResponses !== undefined
+            )
+              throw new Error(
+                'SCAPI_CANCEL_ARGUMENT_INVALID: cancel requires executionId and skillRead only; omit code, input, project overrides and protocol continuation.',
+              );
+            return await registry.cancel(input.executionId);
+          }
+          if (!input.code || input.executionId !== undefined)
+            throw new Error('SCAPI_EXECUTE_ARGUMENT_INVALID: execute requires code; omit executionId.');
+          if (context?.requestState !== undefined) return await registry.retry(input, context);
+          if (context?.inputResponses !== undefined)
+            throw new Error('SCAPI_CONTINUATION_INVALID: inputResponses require server-issued requestState.');
           const services = await loadServices(input);
           resolution = services.getResolution();
           const config = services.getResolvedConfig();
@@ -200,39 +228,56 @@ export function createScapiCodeTools(loadServices: ServicesLoader, snippetDirect
               services.getEnvironmentVariable(name),
             ]),
           );
-          let managedRequest: ReturnType<typeof createScapiRequest>;
-          const request = async (options: unknown, signal: AbortSignal) => {
-            if (!shortCode || !tenantId)
-              throw new Error('SCAPI requires configured shortCode and tenantId. Use config_inspect.');
-            managedRequest ??= createScapiRequest({
-              shortCode,
-              tenantId,
-              siteId,
-              auth: () => config.createOAuth(),
-              documents: loadScapiSchemas(),
-              safety: resolveEffectiveSafetyConfig(
-                config.values.safety,
-                loadGlobalSafetyConfig(getB2CConfigDirectory(), safetyEnvironment, resolution?.projectDirectory?.path),
-                safetyEnvironment,
-              ),
-            });
-            return managedRequest(options, signal);
-          };
-          const result = await runScapiCode({
-            code: input.code,
-            request,
-            auth: createScapiAuth(config.values, resolution.projectDirectory?.path),
-            organizationId: tenantId ? toOrganizationId(tenantId) : undefined,
-            siteId,
-            cwd: resolution.projectDirectory?.path,
-            signal: context?.signal,
-            input: input.input,
-            snippets: loadScapiSnippets(snippetDirectory),
+          return await registry.start(input, context, async (execution) => {
+            let managedRequest: ReturnType<typeof createScapiRequest>;
+            const request = async (options: unknown, signal: AbortSignal) => {
+              if (!shortCode || !tenantId)
+                throw new Error('SCAPI requires configured shortCode and tenantId. Use config_inspect.');
+              managedRequest ??= createScapiRequest({
+                shortCode,
+                tenantId,
+                siteId,
+                auth: () => config.createOAuth(),
+                documents: loadScapiSchemas(),
+                confirm: (request) => execution.confirm(request),
+                onDispatch: () => execution.markDispatched(),
+                safety: resolveEffectiveSafetyConfig(
+                  config.values.safety,
+                  loadGlobalSafetyConfig(
+                    getB2CConfigDirectory(),
+                    safetyEnvironment,
+                    resolution?.projectDirectory?.path,
+                  ),
+                  safetyEnvironment,
+                ),
+              });
+              return managedRequest(options, signal);
+            };
+            const auth = createScapiAuth(config.values, resolution?.projectDirectory?.path);
+            try {
+              const result = await runScapiCode({
+                code: input.code!,
+                request: (options, signal) => execution.runCall('request', options, () => request(options, signal)),
+                auth: (operation, options, signal) =>
+                  execution.runCall('auth', undefined, () => auth(operation, options, signal)),
+                organizationId: tenantId ? toOrganizationId(tenantId) : undefined,
+                siteId,
+                cwd: resolution?.projectDirectory?.path,
+                signal: execution.controller.signal,
+                onControl(control) {
+                  execution.control = control;
+                },
+                input: input.input,
+                snippets: loadScapiSnippets(snippetDirectory),
+              });
+              const executionId = execution.id;
+              executions.set(executionId, input.code!);
+              if (executions.size > 50) executions.delete(executions.keys().next().value!);
+              return codeResult({result, executionId}, resolution);
+            } catch (error) {
+              return failure(error, resolution);
+            }
           });
-          const executionId = randomUUID();
-          executions.set(executionId, input.code);
-          if (executions.size > 50) executions.delete(executions.keys().next().value!);
-          return codeResult({result, executionId}, resolution);
         } catch (error) {
           return failure(error, resolution);
         }

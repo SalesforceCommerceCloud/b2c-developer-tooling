@@ -464,6 +464,21 @@ export type {
   components as StorefrontDeploymentsComponents,
 } from './storefront-deployments.js';
 
+export {createStorefrontEnvironmentsClient, STOREFRONT_ENVIRONMENTS_CASCADE} from './storefront-environments.js';
+export type {
+  StorefrontEnvironmentsClient,
+  StorefrontEnvironmentsClientConfig,
+  StorefrontEnvironmentsError,
+  StorefrontEnvironmentsResponse,
+  EnvironmentVariables as StorefrontEnvironmentVariables,
+  EnvironmentVariableEntry as StorefrontEnvironmentVariableEntry,
+  EnvironmentVariablesUpdateRequest as StorefrontEnvironmentVariablesUpdateRequest,
+  EnvironmentVariableUpdateEntry as StorefrontEnvironmentVariableUpdateEntry,
+  PublishingStatus as StorefrontEnvironmentVariablePublishingStatus,
+  paths as StorefrontEnvironmentsPaths,
+  components as StorefrontEnvironmentsComponents,
+} from './storefront-environments.js';
+
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
 export {
   createScapiRequestError,

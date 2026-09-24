@@ -37,10 +37,27 @@ The `--root` flag specifies the WebDAV directory:
 - `catalogs` - Product catalogs
 - `libraries` - Content libraries
 - `static` - Static resources
+- `dynamic` - Site-specific files, including Velocity templates
 - `logs` - Application logs
 - `securitylogs` - Security logs
 
 ## Examples
+
+### Dynamic Site Files
+
+Use `--root=dynamic` with the site ID as the first remote path segment. For example,
+`MySite/mockData/mock.vm` resolves to `Sites/Dynamic/MySite/mockData/mock.vm`.
+This location holds site-specific files independently of code versions, including
+Velocity templates used by `dw.template.Velocity.renderTemplate()`.
+
+```bash
+b2c webdav ls --root=dynamic MySite/
+b2c webdav mkdir --root=dynamic MySite/mockData
+b2c webdav put --root=dynamic ./mock.vm MySite/mockData/
+b2c webdav get --root=dynamic MySite/mockData/mock.vm -o ./mock.vm
+```
+
+The same root and site-prefixed paths work with `rm`, `zip`, and `unzip`.
 
 ### List Files
 
