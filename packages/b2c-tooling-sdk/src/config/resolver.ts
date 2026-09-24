@@ -179,6 +179,9 @@ export class ConfigResolver {
 
     // Seed enriched options from overrides (CLI flags) so that all sources—including
     // the first one—can see CLI-provided values like accountManagerHost.
+    if (!enrichedOptions.instance && overrides.instanceName) {
+      enrichedOptions.instance = overrides.instanceName;
+    }
     if (!enrichedOptions.accountManagerHost && overrides.accountManagerHost) {
       enrichedOptions.accountManagerHost = overrides.accountManagerHost;
     }
@@ -307,6 +310,9 @@ export class ConfigResolver {
 
           // Enrich options with accumulated config values for subsequent sources.
           // Only set if not already provided via CLI options or overrides.
+          if (!enrichedOptions.instance && baseConfig.instanceName) {
+            enrichedOptions.instance = baseConfig.instanceName;
+          }
           if (!enrichedOptions.accountManagerHost && baseConfig.accountManagerHost) {
             enrichedOptions.accountManagerHost = baseConfig.accountManagerHost;
           }
