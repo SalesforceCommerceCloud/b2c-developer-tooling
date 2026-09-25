@@ -15,6 +15,7 @@ These skills follow the open [Agent Skills](https://agentskills.io/home) standar
 | [`b2c-ops`](./b2c-ops) | Administrator and operator runbooks — job health, checkout failures, incident triage, recovery checks, and escalation |
 | [`storefront-next`](./storefront-next) | Storefront Next development — project setup, routing, data fetching, components, design-system component authoring, vertical/theme creation, Page Designer, authentication, hybrid storefronts, i18n, state management, extensions, performance, testing, and Managed Runtime deployment |
 | [`storefront-next-figma`](./storefront-next-figma) | Figma design-kit workflows for Storefront Next verticals — duplicate the kit, sync Brand variables from `brand.css`, edit components at the correct layer, and publish Code Connect. **Requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server).** |
+| [`b2c-python-sdk`](./b2c-python-sdk) | Consuming the `salesforce-b2c-tooling-sdk` Python SDK from scripts and notebooks — install/import, choose an auth mechanism, resolve config from `dw.json`, and call the OCAPI/SCAPI/WebDAV clients and operations (code deploy, jobs, sites, catalogs, sandboxes, metrics, logs, SLAS shopper tokens) |
 
 `b2c-dx-mcp` is also published as a plugin from this repository, but it is an **MCP server plugin**, not a skills plugin — its skills are not in this directory. For installation and configuration, see the [MCP Installation Guide](../docs/mcp/installation.md) and [MCP Overview](../docs/mcp/index.md).
 
@@ -59,7 +60,8 @@ skills/
 ├── b2c-cli/skills/                 # B2C CLI operation skills
 ├── b2c-ops/skills/                 # Administrator/operator runbooks
 ├── storefront-next/skills/         # Storefront Next skills
-└── storefront-next-figma/skills/   # Figma design-kit skill(s)
+├── storefront-next-figma/skills/   # Figma design-kit skill(s)
+└── b2c-python-sdk/skills/          # Python tooling SDK consumer skill(s)
 ```
 
 Plugins listed in [`plugins.json`](./plugins.json) are zipped to `<name>-skills.zip` and attached to the `b2c-agent-plugins` GitHub release; the B2C CLI downloads those artifacts for `b2c setup skills`. Adding a plugin there is all that's needed for the release workflow to package it.
@@ -70,7 +72,7 @@ Plugins listed in [`plugins.json`](./plugins.json) are zipped to `<name>-skills.
 - When changing development patterns, update the relevant `b2c/skills/<topic>/SKILL.md`.
 - Add runbooks under `b2c-ops/skills/` using the shared operational structure in
   `.agents/skills/mcp-development/references/workflows.md`; link shipped outcomes
-  from the Operations guide. Register collections in `guidance/collections.json`
+  from the Operations guide. Register collections in `packages/b2c-dx-mcp/skills/collections.json`
   for MCP bundling and in both marketplaces for native installation.
 - To make a new plugin installable via the B2C CLI, add it to [`plugins.json`](./plugins.json) and register a source in `packages/b2c-tooling-sdk/src/skills/sources.ts` (plus the `SkillSet` type in `types.ts`).
 - Add a changeset targeting `@salesforce/b2c-agent-plugins` for any skill content changes.

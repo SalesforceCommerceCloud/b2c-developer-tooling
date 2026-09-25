@@ -17,7 +17,7 @@
       "source": "./skills/b2c-cli",
       "category": "productivity",
       "strict": false,
-      "version": "1.9.0"
+      "version": "1.10.0"
     },
     {
       "name": "b2c",
@@ -29,7 +29,7 @@
       "source": "./skills/b2c",
       "category": "productivity",
       "strict": false,
-      "version": "1.9.0"
+      "version": "1.10.0"
     },
     {
       "name": "b2c-ops",
@@ -41,7 +41,7 @@
       "source": "./skills/b2c-ops",
       "category": "productivity",
       "strict": false,
-      "version": "1.9.0"
+      "version": "1.10.0"
     },
     {
       "name": "b2c-dx-mcp",
@@ -53,7 +53,7 @@
       "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
       "strict": false,
-      "version": "3.0.1"
+      "version": "3.1.0"
     },
     {
       "name": "storefront-next",
@@ -65,7 +65,7 @@
       "source": "./skills/storefront-next",
       "category": "productivity",
       "strict": false,
-      "version": "1.9.0"
+      "version": "1.10.0"
     },
     {
       "name": "storefront-next-figma",
@@ -87,6 +87,18 @@
       },
       "license": "Apache-2.0",
       "source": "./skills/figma-to-sfnext-pagedesigner",
+      "category": "productivity",
+      "strict": false,
+      "version": "0.1.0"
+    },
+    {
+      "name": "b2c-python-sdk",
+      "description": "Consuming the salesforce-b2c-tooling-sdk Python SDK — authenticate to B2C Commerce, resolve dw.json config, and call OCAPI/SCAPI/WebDAV clients and operations from scripts or notebooks.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./skills/b2c-python-sdk",
       "category": "productivity",
       "strict": false,
       "version": "0.1.0"

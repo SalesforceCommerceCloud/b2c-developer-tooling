@@ -12,6 +12,7 @@
  * @module config/resolver
  */
 import type {AuthCredentials} from '../auth/types.js';
+import {normalizeTenantId} from '../clients/custom-apis.js';
 import type {B2CInstance} from '../instance/index.js';
 import {getLogger} from '../logging/logger.js';
 import {
@@ -179,6 +180,9 @@ export class ConfigResolver {
 
     // Seed enriched options from overrides (CLI flags) so that all sources—including
     // the first one—can see CLI-provided values like accountManagerHost.
+    if (!enrichedOptions.instance && overrides.instanceName) {
+      enrichedOptions.instance = overrides.instanceName;
+    }
     if (!enrichedOptions.accountManagerHost && overrides.accountManagerHost) {
       enrichedOptions.accountManagerHost = overrides.accountManagerHost;
     }
@@ -307,6 +311,9 @@ export class ConfigResolver {
 
           // Enrich options with accumulated config values for subsequent sources.
           // Only set if not already provided via CLI options or overrides.
+          if (!enrichedOptions.instance && baseConfig.instanceName) {
+            enrichedOptions.instance = baseConfig.instanceName;
+          }
           if (!enrichedOptions.accountManagerHost && baseConfig.accountManagerHost) {
             enrichedOptions.accountManagerHost = baseConfig.accountManagerHost;
           }
@@ -329,6 +336,12 @@ export class ConfigResolver {
     // Normalize mrtOrigin to ensure it always has an https:// prefix.
     // Users may provide a bare hostname (e.g., "cloud.mobify.com") or a full URL.
     config.mrtOrigin = normalizeOriginUrl(config.mrtOrigin);
+
+    // Keep the resolved representation consistent even when a source provides a
+    // full SCAPI organization ID (for example, Storefront Next configuration).
+    if (config.tenantId) {
+      config.tenantId = normalizeTenantId(config.tenantId);
+    }
 
     // Combine source warnings with merge warnings
     const warnings = [...sourceWarnings, ...mergeWarnings];

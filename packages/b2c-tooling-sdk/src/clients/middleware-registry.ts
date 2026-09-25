@@ -39,6 +39,7 @@
  *
  * @module clients/middleware-registry
  */
+import {AsyncLocalStorage} from 'node:async_hooks';
 import type {Middleware} from 'openapi-fetch';
 
 /**
@@ -69,7 +70,8 @@ export type HttpClientType =
   | 'scapi-sites'
   | 'scapi-catalogs'
   | 'scapi'
-  | 'storefront-deployments';
+  | 'storefront-deployments'
+  | 'storefront-environments';
 
 /**
  * Middleware interface compatible with openapi-fetch.
@@ -156,6 +158,19 @@ export interface HttpMiddlewareProvider {
  */
 export class MiddlewareRegistry {
   private providers: HttpMiddlewareProvider[] = [];
+  private overrides = new AsyncLocalStorage<ReadonlyMap<string, HttpMiddlewareProvider>>();
+
+  /**
+   * Replace named providers for one execution and its asynchronous descendants.
+   * Other providers remain installed. Nested scopes inherit overrides, while
+   * concurrent executions and callers outside the scope keep their own policy.
+   * Clients that capture middleware should be created inside the callback.
+   */
+  runWithOverrides<T>(providers: readonly HttpMiddlewareProvider[], callback: () => T): T {
+    const overrides = new Map(this.overrides.getStore());
+    for (const provider of providers) overrides.set(provider.name, provider);
+    return this.overrides.run(overrides, callback);
+  }
 
   /**
    * Registers a middleware provider.
@@ -191,8 +206,13 @@ export class MiddlewareRegistry {
    */
   getMiddleware(clientType: HttpClientType, options: {exclude?: string[]} = {}): UnifiedMiddleware[] {
     const middleware: UnifiedMiddleware[] = [];
+    const overrides = this.overrides.getStore();
+    const providers = this.providers.map((provider) => overrides?.get(provider.name) ?? provider);
+    for (const provider of overrides?.values() ?? []) {
+      if (!this.providers.some((registered) => registered.name === provider.name)) providers.push(provider);
+    }
 
-    for (const provider of this.providers) {
+    for (const provider of providers) {
       if (options.exclude?.includes(provider.name)) continue;
       const m = provider.getMiddleware(clientType);
       if (m) {

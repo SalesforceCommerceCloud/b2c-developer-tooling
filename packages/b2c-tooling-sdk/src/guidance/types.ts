@@ -4,10 +4,14 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/** Authored source collection, independent of native plugin installation. */
+/** Public collection identity for skill discovery. */
 export interface GuidanceCollection {
   id: string;
   title: string;
+}
+
+/** Internal distribution metadata; never returned by catalog reads. */
+interface GuidanceCollectionMetadata extends GuidanceCollection {
   isGA: boolean;
   workspaces?: string[];
 }
@@ -35,7 +39,7 @@ export interface GuidanceEntry {
 /** Deterministic distribution manifest; no absolute source paths or timestamps. */
 export interface GuidanceManifest {
   version: 1;
-  collections: GuidanceCollection[];
+  collections: GuidanceCollectionMetadata[];
   entries: GuidanceEntry[];
 }
 

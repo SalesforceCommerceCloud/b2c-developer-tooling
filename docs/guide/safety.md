@@ -1,23 +1,27 @@
 ---
-description: Control B2C Commerce changes from the CLI, MCP, and IDE extension with safety levels, confirmations, and per-instance rules.
+description: Choose which B2C Commerce actions are allowed, need approval, or are blocked across the CLI, IDE Extension, and AI assistants.
 ---
 
 # Safety Mode
 
-Safety Mode helps prevent unwanted B2C Commerce changes when you deploy code,
-manage sandboxes, run jobs, or work with data through your assistant. Choose a
-policy for each instance, add exceptions for specific tasks, and decide which
-operations should be blocked or require confirmation.
+Safety Mode helps you control changes to B2C Commerce from the CLI, the IDE
+Extension, and your AI assistant through MCP. Keep investigations read-only,
+restrict automated scripts, or ask for approval before selected changes.
+Choose settings for each instance or share a policy across your projects.
 
-The CLI, MCP, and IDE extension use the same safety configuration format.
+All three use the same safety configuration format. Approval prompts are
+available for [supported actions](#confirmation-mode).
 **Safety Mode is off by default** (`NONE`). It adds controls alongside your
 B2C Commerce permissions; it does not grant access you do not already have.
 
 ## Start with an instance policy {#quick-start}
 
-Add a `safety` object to an existing instance in `dw.json`. Keep its connection
-and credential fields unchanged. For example, start with a policy that blocks
-DELETE requests:
+Add a `safety` object to an existing instance in `dw.json`. In a plain `dw.json`,
+it sits alongside fields such as `hostname` and your credentials. Named
+configurations are optional; if you use a `configs` array, add `safety` to the
+[relevant entry](#per-instance-configuration). Keep your existing connection and
+credential fields unchanged. For example, this `safety` section blocks DELETE
+requests:
 
 ```json
 {
@@ -34,20 +38,34 @@ shared defaults.
 
 ## Choose a safety level {#safety-levels}
 
-Levels restrict supported operations by their HTTP method and, for some actions,
-the request path. Rules can make specific exceptions.
+Choose a starting level, then add rules for exceptions. These settings
+apply across supported B2C operations, including catalog data, code deployment,
+jobs, and sandbox management.
 
-| Level       | Default behavior                                                                                                                | Useful for                                                           |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `NONE`      | No level-based restrictions; explicit rules still apply.                                                                        | A sandbox where you want only selected actions blocked or confirmed. |
-| `NO_DELETE` | Blocks DELETE requests. Creates and updates remain allowed.                                                                     | Routine work where deletion needs a separate decision.               |
-| `NO_UPDATE` | Blocks DELETE and POST requests to reset, stop, restart, and sandbox operation paths. Other creates and updates remain allowed. | Restricting instance lifecycle actions as well as deletion.          |
-| `READ_ONLY` | Blocks POST, PUT, PATCH, and DELETE requests.                                                                                   | Inspecting data with write requests restricted.                      |
+| Level       | Default behavior                                              | Useful for                                                  |
+| ----------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| `NONE`      | No level-based restrictions; explicit rules still apply.       | Confirm or block only the operations you select with rules. |
+| `NO_DELETE` | Blocks DELETE; POST, PUT, and PATCH remain allowed.            | Allow writes while blocking DELETE requests.               |
+| `READ_ONLY` | Blocks POST, PUT, PATCH, and DELETE.                           | Inspect data, then allow or approve selected changes.      |
 
-**`NO_UPDATE` does not block every update.** Use `READ_ONLY` when that is your
-intent. Because these checks use HTTP methods, `READ_ONLY` also blocks searches
-that use POST. You can [allow a specific search](#allow-a-search-without-enabling-other-writes)
-without permitting other POST requests.
+For "ask before changes, block deletes," start with the
+[shared SCAPI approval example](#global-scapi-confirmation). It uses `READ_ONLY`
+with rules for the changes you want to review.
+
+The method names describe API requests: GET usually reads data, PUT and PATCH
+change it, POST can start tasks or run searches, and DELETE usually removes data.
+Safety Mode checks these methods, so a POST search also needs an
+[exception under `READ_ONLY`](#allow-a-search-without-enabling-other-writes).
+Likewise, `NO_DELETE` does not block data removal performed through another method.
+
+::: details Existing configurations using NO_UPDATE
+
+`NO_UPDATE` is a legacy setting that does not prevent all updates.
+It blocks DELETE and POST requests whose paths contain `/reset`, `/stop`,
+`/restart`, or `/operations`; PUT, PATCH, and other POST requests remain allowed.
+For new configurations, use one of the levels above with rules for your needs.
+
+:::
 
 ## Use it in your tools
 
@@ -66,7 +84,7 @@ that terminal. Use the instance's `safety` configuration when you want different
 policies for different targets.
 
 To review a particular command before it starts, add a command rule to the
-instance's safety policy:
+[`safety` section in `dw.json`](#quick-start):
 
 ```json
 {
@@ -77,39 +95,45 @@ instance's safety policy:
 ```
 
 An interactive `b2c code deploy` asks for confirmation. With piped input or in
-CI, it is blocked because there is no interactive confirmation. An approval for
-the command does not override separate request-level restrictions.
+CI, it is blocked because nobody can answer the prompt. Approving the command
+does not override other safety rules that apply to its actions.
 
 ### MCP and AI assistants {#mcp}
 
-Put the policy on the instance your assistant will use. This works with both
-plugin and manual MCP installation; no custom launch flags are needed for an
-instance policy.
+You can ask your assistant to investigate data without changing it, or require
+your approval before selected changes. Add the
+[safety settings to the `dw.json`](#quick-start) your assistant uses; this works
+with both plugin and manual installation.
 
-With `READ_ONLY`, SCAPI code mode can inspect products, catalogs, and other data
-through GET requests, while requests to create, update, or delete records are
-blocked. A POST-based search needs an explicit exception, as shown below.
+With `READ_ONLY`, [SCAPI Code Mode](../mcp/toolsets.md#scapi-code-mode) can inspect
+products, catalogs, and other data through GET requests, while requests to create,
+update, or delete records are blocked. A POST-based search needs an explicit
+exception, as shown below.
 
 <ExamplePrompt>
 
-> Review the products in this category and identify any that are offline. Report your findings without changing products. If the configured policy blocks a request, explain which part of the review could not be completed.
+> Which products in my New Arrivals category are offline?
 
 </ExamplePrompt>
 
-MCP requests that require Safety Mode confirmation are **blocked**. Your
-assistant's tool approval dialog is a separate control: approving a tool there
-does not satisfy a Safety Mode `confirm` rule. For a permitted recurring task,
-configure a narrow `allow` rule after reviewing the operation.
+For data tasks handled by SCAPI Code Mode, your assistant can ask you to review
+each change that needs approval. Check the target and proposed change, then
+approve to continue or decline to stop. See the
+[product creation example](#scapi-code-mode-example).
 
-For a manual server launch, you can also set `SFCC_SAFETY_LEVEL` in the client's
-MCP server environment. SCAPI code mode reads safety settings from the selected
-project's `.env`; launch environment values take precedence over `.env` values.
-See [MCP Security and Access](../mcp/security#safety-settings) for details.
+Your assistant app must support approval prompts from connected tools. If it
+cannot show the prompt, the change is blocked. Other B2C MCP tools currently
+block actions that require Safety Mode approval. Your app may also ask permission
+to use a tool; that separate permission does not approve the specific change.
+
+SCAPI Code Mode uses the same safety settings from `dw.json`, global safety
+configuration, and environment variables. No separate code mode setup is needed.
+See [how settings combine](#configuration-merge).
 
 ### IDE extension: VS Code and compatible editors {#ide-extension}
 
 The Salesforce B2C Commerce IDE Extension applies the safety policy for its
-selected instance. Add the `safety` object to that instance's `dw.json` entry;
+selected instance. Add the [`safety` object to its `dw.json`](#quick-start);
 there is no separate safety-level setting to configure in VS Code Settings.
 Switching the selected instance refreshes the policy with the connection.
 
@@ -130,12 +154,11 @@ one:
 Choosing **Delete** in the Sandbox Explorer shows a safety-policy error and does
 not run the command. Choosing **Stop** shows a modal warning with **Proceed**;
 dismissing it cancels the action. Ordinary action confirmations may still appear.
-Other request-level restrictions remain in effect after a command is approved.
+Other safety rules still apply after you approve a command.
 
-The extension also supports Safety Mode confirmation for sandbox delete, reset,
-and lifecycle requests. Actions without a confirmation dialog stop with an error
-when confirmation is required. Do not assume every blocked request will offer
-an override button.
+The extension also supports approval for sandbox deletion, reset, and start/stop
+actions. If an action needs approval but has no approval dialog, it stops with
+an error.
 
 CLI and extension command names differ. A `code:deploy` rule applies to the CLI;
 it does not select an IDE command or MCP tool. See
@@ -148,9 +171,9 @@ Rules are checked in order. **The first matching rule wins.**
 
 | Action    | Result                                                                        |
 | --------- | ----------------------------------------------------------------------------- |
-| `allow`   | Permits the matching operation even when the level would block it.            |
-| `block`   | Refuses the operation, including when confirmation mode is enabled.           |
-| `confirm` | Requires a supported interactive confirmation; otherwise the operation stops. |
+| `allow`   | Allows the matching action, even if the safety level would block it. |
+| `block`   | Blocks the matching action. Approval cannot override this rule.    |
+| `confirm` | Asks for approval. If the tool cannot ask, the action is blocked.  |
 
 An `allow` rule does not override an earlier matching `block`. If no rule matches,
 the safety level determines the result.
@@ -174,32 +197,171 @@ For job investigation through SCAPI code mode, add this policy to the instance:
 }
 ```
 
-This permits the job execution search endpoint. Starting jobs and other POST
-requests remain blocked unless another rule allows them. Check the path reported
-by a blocked request before adding an exception; use the full request pathname,
-not a documentation label or tool name.
+This allows searching job history while keeping job starts and other POST
+requests blocked. When adding an exception, use the request path shown in the
+error message.
+
+### Approve product changes with your assistant {#scapi-code-mode-example}
+
+[SCAPI Code Mode](../mcp/toolsets.md#scapi-code-mode) can create a product, assign
+it to a storefront category, and verify both changes in one task. Use this
+instance policy to review product creation or replacement and category
+assignments across all products. For a broader shared policy, see
+[approve SCAPI changes across instances](#global-scapi-confirmation).
+
+**Instance policy (`dw.json`):** Add this
+[`safety` section to your `dw.json`](#quick-start), keeping its existing connection
+and credential fields.
+
+```json
+{
+  "safety": {
+    "level": "READ_ONLY",
+    "rules": [
+      {
+        "method": "PUT",
+        "path": "/product/products/v1/organizations/*/products/*",
+        "action": "confirm"
+      },
+      {
+        "method": "PUT",
+        "path": "/product/catalogs/v1/organizations/*/catalogs/*/categories/*/products/*",
+        "action": "confirm"
+      }
+    ]
+  }
+}
+```
+
+The rules apply to every product ID and catalog/category assignment. Reading
+products does not prompt for approval; other changes remain blocked by
+`READ_ONLY`. These rules work without adding `confirm: true`.
+
+Use your own catalog and category names in this example:
+
+<ExamplePrompt>
+
+> Create an offline test product in my master catalog and add it to the
+> New Arrivals category in my storefront catalog.
+
+</ExamplePrompt>
+
+Expect one approval prompt to create the product and another to assign it to
+the category. Each prompt shows the target organization, action, and a short
+preview of the data being sent. Checking whether the product exists and
+verifying the result do not need approval.
+
+Approve to continue or decline to stop the task. If you decline the category
+assignment after approving product creation, the product remains. The B2C tools
+do not set a time limit for your answer, but your assistant app may. Keep the
+session connected while you decide.
+
+### Approve SCAPI changes across instances {#global-scapi-confirmation}
+
+Use one shared policy to review SCAPI changes across your instances. This
+example asks before PUT, POST, and PATCH requests, allows GET requests without
+prompting, and blocks DELETE. Save it as your global `safety.json`:
+
+```json
+{
+  "level": "READ_ONLY",
+  "rules": [
+    {
+      "method": "PUT",
+      "path": "/*/*/*/organizations/*/**",
+      "action": "confirm"
+    },
+    {
+      "method": "POST",
+      "path": "/*/*/*/organizations/*/**",
+      "action": "confirm"
+    },
+    {
+      "method": "PATCH",
+      "path": "/*/*/*/organizations/*/**",
+      "action": "confirm"
+    }
+  ]
+}
+```
+
+The `*` patterns cover SCAPI organization paths across APIs, versions, and
+organizations, including products, catalogs, jobs, and custom APIs. POST searches
+also ask for approval. `READ_ONLY` blocks DELETE and changes outside these paths.
+
+Use this with [SCAPI Code Mode](../mcp/toolsets.md#scapi-code-mode) and an assistant
+app that supports approval prompts. If the tool or app cannot ask for approval,
+it blocks the action.
+
+Save the file in your [B2C configuration directory](#global-safety-config), or
+select it in the environment that launches your CLI or MCP server:
+
+```bash
+export SFCC_SAFETY_CONFIG=/path/to/safety.json
+```
+
+Unlike `dw.json`, this file has no outer `safety` key. To use it for just one
+instance, place the policy under that instance's `safety` key in `dw.json` instead.
+Instance rules take priority over global rules, so an instance-specific `allow`
+rule can still permit deletion. Review [how settings combine](#configuration-merge)
+if you use both files.
+
+Run `b2c setup inspect` to see the settings in use and where they came from.
+Add `--verbose` to see all rules in order. `SafetyFile` in the source column
+refers to the global file whose path appears in Sources.
 
 ### Rule matchers
 
-Choose one matcher family per rule:
+Each example below is one rule in the `rules` array. For HTTP requests, `path`
+matches the part of the URL after the hostname, without query parameters.
 
-| Matcher                 | Example                                                | Applies to                                                                     |
-| ----------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| HTTP method and/or path | `{"method":"DELETE","action":"block"}`                 | Supported HTTP requests across the tools.                                      |
-| Job ID                  | `{"job":"sfcc-site-archive-import","action":"block"}`  | Job checks that carry an ID, including OCAPI `/jobs/{id}/executions` requests. |
-| CLI command ID          | `{"command":"code:deploy","action":"confirm"}`         | CLI commands; use colons between command words.                                |
-| IDE command ID          | `{"command":"b2c-dx.sandbox.delete","action":"block"}` | Extension commands that support Safety Mode.                                   |
+- **HTTP requests:** Ask before PUT requests to the SCAPI Products API.
+  Both fields must match; omit either `method` or `path` to match on the other alone:
+
+  ```json
+  {
+    "method": "PUT",
+    "path": "/product/products/**",
+    "action": "confirm"
+  }
+  ```
+
+- **Jobs:** Match a job ID in SCAPI or OCAPI job execution requests:
+
+  ```json
+  {
+    "job": "sfcc-site-archive-import",
+    "action": "block"
+  }
+  ```
+
+- **CLI commands:** Use colons between command words. For example, ask before deploying:
+
+  ```json
+  {
+    "command": "code:deploy",
+    "action": "confirm"
+  }
+  ```
+
+- **IDE commands:** Use the command ID for a supported extension action:
+
+  ```json
+  {
+    "command": "b2c-dx.sandbox.delete",
+    "action": "block"
+  }
+  ```
 
 Patterns support wildcards: `*` matches within a path segment; `**` can span
-segments. Method and path must both match when both are supplied. A rule for an
-OCAPI URL does not automatically match its SCAPI equivalent. For SCAPI job APIs
-whose URLs do not contain the job ID, use a method/path rule rather than assuming
-a job-name rule will match.
+multiple segments.
 
 ## Require confirmation {#confirmation-mode}
 
-Set `confirm: true` to request confirmation for operations that the **level**
-would otherwise block:
+Use a `confirm` rule when you want to approve a specific action. To ask for
+approval for everything your chosen safety level normally blocks, set
+`confirm: true`. For example, this changes `NO_DELETE` from blocking DELETE
+requests to asking for approval where the tool supports it:
 
 ```json
 {
@@ -210,19 +372,23 @@ would otherwise block:
 }
 ```
 
-This does not turn explicit `block` rules into confirmation prompts, and it does
-not prompt for operations the level already allows. For one specific action,
-prefer a `confirm` rule.
+An explicit `block` rule still blocks the action. Requests already allowed by
+the safety level do not need approval.
 
-| Where you work                            | What happens                                                                                                                         |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Interactive CLI                           | Command rules prompt in the terminal. Request-level confirmations are available where the command supports them; otherwise it stops. |
-| IDE extension                             | Command rules and supported sandbox operations show a modal **Proceed** dialog. Other confirmation-required requests stop.           |
-| MCP, CI, or CLI without interactive input | Confirmation-required operations are blocked.                                                                                        |
+| Where you work                                                                          | What happens                                                                                                                              |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| CLI in a terminal                            | Command rules ask in the terminal. Individual API requests can also ask where supported; otherwise the action is blocked. |
+| IDE Extension                                | Supported commands and sandbox actions show a **Proceed** dialog. Actions that need approval but have no dialog are blocked. |
+| Assistant data tasks through SCAPI Code Mode  | Asks before each action that needs approval. Your assistant app must support these prompts; otherwise the action is blocked. |
+| Other B2C MCP tools                          | Actions that require Safety Mode approval are currently blocked. |
+| Automated scripts and CI without user input  | Actions that require approval are blocked because nobody can answer the prompt. |
 
-`SFCC_SAFETY_CONFIRM=true` or `1` also enables confirmation mode. Review the
-[combined policy](#configuration-merge): setting it to `false` in one place does
-not disable confirmation enabled by another source.
+For assistant tasks, approving one change does not approve later changes.
+Declining stops the task, but does not undo changes already made.
+
+`SFCC_SAFETY_CONFIRM=true` or `1` has the same effect as `confirm: true`. If any
+configuration source enables it, setting it to `false` elsewhere does not turn
+it off. See [how settings combine](#configuration-merge).
 
 ## Use different policies per instance {#per-instance-configuration}
 
@@ -251,7 +417,7 @@ Confirm the target before requesting a change. CLI `-i production`, your
 assistant's selected target, and the IDE's instance picker can each select a
 different instance. A stricter environment or global level still applies.
 
-## Share a safety file {#global-safety-config}
+## Global safety configuration {#global-safety-config}
 
 The CLI and MCP look for `safety.json` in their B2C configuration directory:
 
@@ -288,14 +454,19 @@ connection. The file contains the safety object directly:
 
 ### How settings combine {#configuration-merge}
 
-- **Level:** the most restrictive environment, instance, or global level wins.
-- **Confirmation:** enabled if any of those sources enables it.
-- **Rules:** instance rules are checked before global rules; the first matching
-  rule wins. An instance rule can therefore make an exception to a global rule.
-- **No matching rule:** the level applies, with confirmation mode where enabled.
+- **Safety level:** the strictest level from your instance, global file, or
+  environment variables applies.
+- **Approval for blocked requests:** if any source sets `confirm: true`, requests
+  blocked by the level can ask for approval. Explicit `block` rules still block.
+- **Rules:** instance rules are checked before global rules. The first match
+  decides the outcome, so an instance rule can make an exception to a global rule.
+- **No matching rule:** the safety level decides whether the request can proceed.
 
 For example, an instance's `NONE` level cannot lower a global `READ_ONLY` level.
 An instance's explicit `allow` rule can still permit a particular request.
+If another source enables `confirm: true`, DELETE requests blocked by `READ_ONLY`
+can ask for approval too. Use an explicit `{"method":"DELETE","action":"block"}`
+rule when DELETE must stay blocked even with that setting enabled.
 
 ## When an operation is blocked
 
@@ -318,10 +489,3 @@ handling, and assistant approvals aligned with your intended access. See
 | `SFCC_SAFETY_LEVEL`   | `NONE`, `NO_DELETE`, `NO_UPDATE`, or `READ_ONLY`. |
 | `SFCC_SAFETY_CONFIRM` | `true` or `1` enables confirmation mode.          |
 | `SFCC_SAFETY_CONFIG`  | Path to the shared safety JSON file.              |
-
-## SDK usage
-
-Custom tooling can use `SafetyGuard` and `createSafetyMiddleware` to apply these
-policies, and `withSafetyConfirmation` to provide a confirmation interface.
-SDK consumers must connect safety checks to their operations; importing a client
-does not automatically apply a policy. See the [SDK reference](../api/).

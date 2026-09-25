@@ -11,6 +11,12 @@ import {SCAPI_WORKER_SOURCE} from './worker-source.js';
 import {describeScapiSchemas, type ScapiAuthType} from './authentication.js';
 import {createScapiSnippetResolver, loadBuiltinScapiSnippets, type ScapiSnippet} from './snippets.js';
 
+/** Host-only controls for an execution retained while awaiting user input. */
+export interface ScapiRuntimeControl {
+  pauseTimeout(): void;
+  resumeTimeout(): void;
+}
+
 export interface ScapiCodeOptions {
   code: string;
   input?: unknown;
@@ -25,6 +31,8 @@ export interface ScapiCodeOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
   maxOutputBytes?: number;
+  /** The host owns cancellation and cleanup while paused; approval may wait indefinitely. Never exposed to the child. */
+  onControl?: (control: ScapiRuntimeControl) => void;
 }
 
 /** Execute one JavaScript async function in a disposable Node process. */
@@ -69,10 +77,24 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
     };
     const cancel = () =>
       finish(undefined, new Error('SCAPI_EXECUTION_CANCELLED: check any in-flight write before retrying.'));
-    const timer = setTimeout(
-      () => finish(undefined, new Error('SCAPI_EXECUTION_TIMEOUT: check any in-flight write before retrying.')),
-      timeoutMs,
-    );
+    let remainingMs = timeoutMs;
+    let startedAt = performance.now();
+    const timedOut = () =>
+      finish(undefined, new Error('SCAPI_EXECUTION_TIMEOUT: check any in-flight write before retrying.'));
+    let timer: ReturnType<typeof setTimeout> | undefined = setTimeout(timedOut, remainingMs);
+    const control: ScapiRuntimeControl = {
+      pauseTimeout() {
+        if (settled || !timer) return;
+        remainingMs = Math.max(0, remainingMs - (performance.now() - startedAt));
+        clearTimeout(timer);
+        timer = undefined;
+      },
+      resumeTimeout() {
+        if (settled || timer) return;
+        startedAt = performance.now();
+        timer = setTimeout(timedOut, remainingMs);
+      },
+    };
     options.signal?.addEventListener('abort', cancel, {once: true});
     const drain = (chunk: Buffer) => {
       outputBytes += chunk.length;
@@ -136,6 +158,16 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
         active--;
       }
     });
+    try {
+      options.onControl?.(control);
+    } catch (error) {
+      finish(undefined, error instanceof Error ? error : new Error(String(error)));
+      return;
+    }
+    if (options.signal?.aborted) {
+      cancel();
+      return;
+    }
     child.send(
       {
         type: 'run',
@@ -145,6 +177,7 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
         auth: undefined,
         snippets: undefined,
         signal: undefined,
+        onControl: undefined,
         maxOutputBytes: Math.min(options.maxOutputBytes ?? 24_000, 65_536),
       },
       (error) => {

@@ -56,7 +56,7 @@ the [B2C CLI](../cli/docs).
 
 <ExamplePrompt>
 
-> This controller returns the wrong result in my sandbox. Set a breakpoint and inspect the variables while I reproduce the request. Explain what happened, then resume execution and disconnect. Don't change the code.
+> This controller returns the wrong result in my sandbox. Help me find the cause while I reproduce the issue.
 
 </ExamplePrompt>
 
@@ -79,7 +79,7 @@ without a separate CLI installation.
 
 <ExamplePrompt>
 
-> Review last night's jobs for my configured site. Flag recurring failures or incomplete updates and prepare a handoff for anything that needs attention. Don't rerun jobs or change data.
+> Were there any problems with last night's jobs on my site? Let me know what needs attention.
 
 </ExamplePrompt>
 
@@ -99,13 +99,16 @@ report or a custom analysis without setting up the CLI or a separate SQL client.
 
 <ExamplePrompt>
 
-> Compare daily sales and average order value for my site over the last two complete weeks. Explain the date range and any gaps in the data.
+> How did daily sales and average order value compare with the previous week?
 
 </ExamplePrompt>
 
 ## Configuration and access
 
 Connected tasks use your [B2C Commerce configuration](../guide/configuration) and account permissions.
+With [Safety Mode](../guide/safety), keep investigations read-only or review
+selected data changes before your assistant makes them. The CLI and IDE Extension
+use the same settings.
 See [authentication](../guide/authentication) for credential setup and [Security and Access](./security)
 for approvals, credential handling, and Safety Mode.
 

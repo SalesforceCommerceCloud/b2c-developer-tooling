@@ -6,8 +6,9 @@ For tool contracts, context efficiency, result guidance, and runbook patterns, s
 the [MCP development skill](../../.agents/skills/mcp-development/SKILL.md).
 
 For packaged skill validation and an isolated Codex test setup, see
-[skill testing](../../guidance/TESTING.md). Authoring conventions, protocol
-contracts, and implementation checkpoints are in [skill authoring](../../guidance/README.md).
+[skill testing](docs/testing.md). Authoring conventions, protocol
+contracts, and implementation checkpoints are in [skill authoring](docs/skills.md).
+Manual Safety Mode scenarios are in [SCAPI confirmation testing](docs/scapi-confirmation-spike.md).
 
 ## Quick Start
 

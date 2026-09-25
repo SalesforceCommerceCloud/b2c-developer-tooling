@@ -62,7 +62,7 @@ export function createToolRegistry(
     ...createDiagnosticsTools(loadServices, serverContext),
     ...createDocsTools(loadServices, {detectedWorkspaces, enabledCategories: enabledDocCategories}),
     ...createMrtTools(loadServices),
-    ...createScapiTools(loadServices),
+    ...createScapiTools(loadServices, serverContext?.scapiExecutions),
     createGuidanceTool(),
   ];
 

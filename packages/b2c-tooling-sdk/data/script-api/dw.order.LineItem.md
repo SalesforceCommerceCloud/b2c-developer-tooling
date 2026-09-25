@@ -171,9 +171,6 @@ This class does not have a constructor, so you cannot create it directly.
   - : Returns the tax items for this line item. When taxes are set via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection), the line item's
       tax amount and tax rate are updated as the sum and combined rate of all tax items. The tax items are preserved
       after order creation and can be retrieved on both baskets and orders.
-      
-      
-      Access is currently restricted to select pilot customers and controlled via feature toggle.
 
 
     **See Also:**
@@ -319,9 +316,6 @@ This class does not have a constructor, so you cannot create it directly.
   - : Returns the tax items for this line item. When taxes are set via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection), the line item's
       tax amount and tax rate are updated as the sum and combined rate of all tax items. The tax items are preserved
       after order creation and can be retrieved on both baskets and orders.
-      
-      
-      Access is currently restricted to select pilot customers and controlled via feature toggle.
 
 
     **Returns:**
@@ -466,11 +460,6 @@ Use [updatePrice(Money)](dw.order.LineItem.md#updatepricemoney) which sets the b
       Use either multilevel tax items via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection) or
       [setTax(Money)](dw.order.LineItem.md#settaxmoney)/[setTaxRate(Number)](dw.order.LineItem.md#settaxratenumber)/[updateTax(Number, Money)](dw.order.LineItem.md#updatetaxnumber-money)/[updateTaxAmount(Money)](dw.order.LineItem.md#updatetaxamountmoney),
       not both.
-      
-      
-      Access is currently restricted to select pilot customers and controlled via feature toggle.
-      
-      
       
       
       The maximum number of tax items allowed per line item is 10.

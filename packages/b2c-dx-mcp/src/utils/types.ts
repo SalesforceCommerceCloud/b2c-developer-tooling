@@ -13,6 +13,16 @@ import type {Toolset} from './constants.js';
  */
 export type ToolResult = CallToolResult;
 
+/** Protocol input stays separate from model-supplied tool arguments. */
+export interface ToolContext {
+  signal?: AbortSignal;
+  requestState?: unknown;
+  inputResponses?: Record<string, unknown>;
+  supportsElicitation?: boolean;
+  /** Legacy elicitation keeps the originating request open between handler entries. */
+  keepCancellation?: boolean;
+}
+
 /** Effects of advertised operations; annotations are derived at registration. */
 export interface ToolEffects {
   effect: 'destructive' | 'read' | 'write';
@@ -44,7 +54,7 @@ export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> extends Tool
  */
 export interface McpTool<T extends ZodRawShape = ZodRawShape> extends McpToolConfig<T> {
   /** Handler function that executes the tool */
-  handler: (args: z.infer<z.ZodObject<T>>, context?: {signal?: AbortSignal}) => Promise<ToolResult>;
+  handler: (args: z.infer<z.ZodObject<T>>, context?: ToolContext) => Promise<ToolResult>;
 }
 
 /**

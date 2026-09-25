@@ -41,19 +41,17 @@ export default class MrtOrgCertRestartValidation extends MrtCommand<typeof MrtOr
       this.getMrtAuth(),
     );
 
-    if (!this.jsonEnabled()) {
+    this.log(
+      t('commands.mrt.org.cert.restartValidation.success', 'Validation restarted for certificate {{id}}.', {
+        id: String(certId),
+      }),
+    );
+    if (cert.validation_record) {
       this.log(
-        t('commands.mrt.org.cert.restartValidation.success', 'Validation restarted for certificate {{id}}.', {
-          id: String(certId),
+        t('commands.mrt.org.cert.restartValidation.record', 'New validation record:\n  {{record}}', {
+          record: cert.validation_record,
         }),
       );
-      if (cert.validation_record) {
-        this.log(
-          t('commands.mrt.org.cert.restartValidation.record', 'New validation record:\n  {{record}}', {
-            record: cert.validation_record,
-          }),
-        );
-      }
     }
 
     return cert;

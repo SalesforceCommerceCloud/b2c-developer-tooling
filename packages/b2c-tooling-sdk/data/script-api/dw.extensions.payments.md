@@ -3,14 +3,17 @@
 ## Classes
 | Class | Description |
 | --- | --- |
+| [GiftCardPaymentDetails](dw.extensions.payments.GiftCardPaymentDetails.md) | Details to a payment of type [SalesforcePaymentDetails.TYPE_GIFT_CARD](dw.extensions.payments.SalesforcePaymentDetails.md#type_gift_card). |
+| [GiftCardTransactionDetails](dw.extensions.payments.GiftCardTransactionDetails.md) | Payment transaction details for gift card payments. |
 | [SalesforceAdyenPaymentIntent](dw.extensions.payments.SalesforceAdyenPaymentIntent.md) | <p>  Salesforce Payments representation of an Adyen payment intent object. |
 | [SalesforceAdyenSavedPaymentMethod](dw.extensions.payments.SalesforceAdyenSavedPaymentMethod.md) | <p>  Salesforce Payments representation of an Adyen saved payment method object. |
-| [SalesforceBancontactPaymentDetails](dw.extensions.payments.SalesforceBancontactPaymentDetails.md) | <p>  Details to a Salesforce Payments payment of type [SalesforcePaymentMethod.TYPE_BANCONTACT](dw.extensions.payments.SalesforcePaymentMethod.md#type_bancontact). |
-| [SalesforceCardPaymentDetails](dw.extensions.payments.SalesforceCardPaymentDetails.md) | <p>  Details to a Salesforce Payments payment of type [SalesforcePaymentMethod.TYPE_CARD](dw.extensions.payments.SalesforcePaymentMethod.md#type_card). |
-| [SalesforceEpsPaymentDetails](dw.extensions.payments.SalesforceEpsPaymentDetails.md) | <p>  Details to a Salesforce Payments payment of type [SalesforcePaymentMethod.TYPE_EPS](dw.extensions.payments.SalesforcePaymentMethod.md#type_eps). |
-| [SalesforceIdealPaymentDetails](dw.extensions.payments.SalesforceIdealPaymentDetails.md) | <p>  Details to a Salesforce Payments payment of type [SalesforcePaymentMethod.TYPE_IDEAL](dw.extensions.payments.SalesforcePaymentMethod.md#type_ideal). |
-| [SalesforceKlarnaPaymentDetails](dw.extensions.payments.SalesforceKlarnaPaymentDetails.md) | <p>  Details to a Salesforce Payments payment of type [SalesforcePaymentMethod.TYPE_KLARNA](dw.extensions.payments.SalesforcePaymentMethod.md#type_klarna). |
-| [SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md) | <p>  Base class details to a Salesforce Payments payment. |
+| [SalesforceBancontactPaymentDetails](dw.extensions.payments.SalesforceBancontactPaymentDetails.md) | Details to a payment of type [SalesforcePaymentDetails.TYPE_BANCONTACT](dw.extensions.payments.SalesforcePaymentDetails.md#type_bancontact). |
+| [SalesforceCardPaymentDetails](dw.extensions.payments.SalesforceCardPaymentDetails.md) | Details to a payment of type [SalesforcePaymentDetails.TYPE_CARD](dw.extensions.payments.SalesforcePaymentDetails.md#type_card). |
+| [SalesforceCardTransactionDetails](dw.extensions.payments.SalesforceCardTransactionDetails.md) | Payment transaction details for credit card payments, including those via wallets like Apple Pay and Google Pay. |
+| [SalesforceEpsPaymentDetails](dw.extensions.payments.SalesforceEpsPaymentDetails.md) | Details to a payment of type [SalesforcePaymentDetails.TYPE_EPS](dw.extensions.payments.SalesforcePaymentDetails.md#type_eps). |
+| [SalesforceIdealPaymentDetails](dw.extensions.payments.SalesforceIdealPaymentDetails.md) | Details to a payment of type [SalesforcePaymentDetails.TYPE_IDEAL](dw.extensions.payments.SalesforcePaymentDetails.md#type_ideal). |
+| [SalesforceKlarnaPaymentDetails](dw.extensions.payments.SalesforceKlarnaPaymentDetails.md) | Details to a payment of type [SalesforcePaymentDetails.TYPE_KLARNA](dw.extensions.payments.SalesforcePaymentDetails.md#type_klarna). |
+| [SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md) | <p>  Base class details to a payment. |
 | [SalesforcePaymentIntent](dw.extensions.payments.SalesforcePaymentIntent.md) | <p>  Salesforce Payments representation of a Stripe payment intent object. |
 | [SalesforcePaymentMethod](dw.extensions.payments.SalesforcePaymentMethod.md) | <p>  Salesforce Payments representation of a payment method object. |
 | [SalesforcePaymentRequest](dw.extensions.payments.SalesforcePaymentRequest.md) | <p>  Salesforce Payments request for a shopper to make payment. |
@@ -23,6 +26,7 @@
 | [SalesforcePayPalOrder](dw.extensions.payments.SalesforcePayPalOrder.md) | <p>  Salesforce Payments representation of a PayPal order object. |
 | [SalesforcePayPalOrderAddress](dw.extensions.payments.SalesforcePayPalOrderAddress.md) | <p>  Salesforce Payments representation of a PayPal order address object. |
 | [SalesforcePayPalOrderPayer](dw.extensions.payments.SalesforcePayPalOrderPayer.md) | <p>  Salesforce Payments representation of a PayPal order's payer object. |
-| [SalesforcePayPalPaymentDetails](dw.extensions.payments.SalesforcePayPalPaymentDetails.md) | <p>  Details to a Salesforce Payments payment of type [SalesforcePayPalOrder.TYPE_PAYPAL](dw.extensions.payments.SalesforcePayPalOrder.md#type_paypal). |
-| [SalesforceSepaDebitPaymentDetails](dw.extensions.payments.SalesforceSepaDebitPaymentDetails.md) | <p>  Details to a Salesforce Payments payment of type [SalesforcePaymentMethod.TYPE_SEPA_DEBIT](dw.extensions.payments.SalesforcePaymentMethod.md#type_sepa_debit). |
-| [SalesforceVenmoPaymentDetails](dw.extensions.payments.SalesforceVenmoPaymentDetails.md) | <p>  Details to a Salesforce Payments payment of type [SalesforcePayPalOrder.TYPE_VENMO](dw.extensions.payments.SalesforcePayPalOrder.md#type_venmo). |
+| [SalesforcePayPalPaymentDetails](dw.extensions.payments.SalesforcePayPalPaymentDetails.md) | Details to a payment of type [SalesforcePaymentDetails.TYPE_PAYPAL](dw.extensions.payments.SalesforcePaymentDetails.md#type_paypal). |
+| [SalesforceSepaDebitPaymentDetails](dw.extensions.payments.SalesforceSepaDebitPaymentDetails.md) | Details to a payment of type [SalesforcePaymentDetails.TYPE_SEPA_DEBIT](dw.extensions.payments.SalesforcePaymentDetails.md#type_sepa_debit). |
+| [SalesforceTransactionDetails](dw.extensions.payments.SalesforceTransactionDetails.md) | Base class transaction details to a payment transaction. |
+| [SalesforceVenmoPaymentDetails](dw.extensions.payments.SalesforceVenmoPaymentDetails.md) | Details to a payment of type [SalesforcePaymentDetails.TYPE_VENMO](dw.extensions.payments.SalesforcePaymentDetails.md#type_venmo). |

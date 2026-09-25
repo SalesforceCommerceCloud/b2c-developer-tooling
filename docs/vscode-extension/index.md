@@ -30,7 +30,7 @@ Use B2C Commerce tools in VS Code and Cursor chat with MCP registration supplied
 
 ### ISML and Script API Editor Support
 
-Write storefront code with ISML syntax highlighting, snippets, formatting, tag completion, diagnostics, and Emmet support. Cartridge JavaScript files automatically provide autocomplete and hover documentation for `dw/*` modules without writing a `jsconfig.json` into your project. See the [Script API IntelliSense guide](../guide/ide-integration#script-api-intellisense) for more detail.
+Write storefront code with ISML syntax highlighting, snippets, formatting, tag completion, diagnostics, and Emmet support. Cartridge JavaScript files automatically provide autocomplete and hover documentation for `dw/*` modules without writing a `jsconfig.json` into your project, and legacy `.ds` scripts under `cartridge/scripts/` are treated as JavaScript so they get the same support. See the [Script API IntelliSense guide](../guide/ide-integration#script-api-intellisense) for more detail.
 
 ### B2C Script Debugger
 
@@ -67,6 +67,14 @@ Find Page Designer pages and components fast, with one-click export (with assets
 ![Library Explorer](./images/library-explorer.png)
 
 </a>
+
+### Site Archive Export
+
+Build site archive exports interactively from the **Export** view. Select site,
+global, catalog, inventory, assignment, and composable storefront data units,
+then download and extract the generated archive. Storefront exports are selected
+by storefront name and limited to one storefront per export, matching the B2C
+Commerce platform contract.
 
 ### Cartridge Management and Code Watch/Upload
 

@@ -14,6 +14,7 @@ import {
   type ParsedFlags,
 } from '@salesforce/b2c-tooling-sdk/cli';
 import type {ConfigSource, ConfigLoadResult, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 
 /**
  * Mock config source for testing.
@@ -179,6 +180,54 @@ describe('cli/config', () => {
 
       const config = await loadConfig(flags, {}, pluginSources);
       expect(config).to.be.an('object');
+    });
+
+    describe('Storefront Next environment fallbacks', () => {
+      beforeEach(() => {
+        isolateConfig();
+      });
+
+      afterEach(() => {
+        restoreConfig();
+      });
+
+      it('loads Storefront Next B2C and SLAS variables', async () => {
+        process.env.PUBLIC__app__commerce__api__clientId = 'storefront-slas-client';
+        process.env.PUBLIC__app__commerce__api__organizationId = 'f_ecom_bjgk_005';
+        process.env.PUBLIC__app__commerce__api__shortCode = 'storefront-short-code';
+        process.env.COMMERCE_API_SLAS_SECRET = 'storefront-slas-secret';
+        process.env.PUBLIC__app__defaultSiteId = 'RefArchGlobal';
+
+        const config = await loadConfig();
+
+        expect(config.values.slasClientId).to.equal('storefront-slas-client');
+        expect(config.values.tenantId).to.equal('bjgk_005');
+        expect(config.values.shortCode).to.equal('storefront-short-code');
+        expect(config.values.slasClientSecret).to.equal('storefront-slas-secret');
+        expect(config.values.siteId).to.equal('RefArchGlobal');
+      });
+
+      it('keeps parsed canonical environment values above Storefront Next fallbacks', async () => {
+        process.env.PUBLIC__app__commerce__api__clientId = 'storefront-slas-client';
+        process.env.PUBLIC__app__commerce__api__organizationId = 'f_ecom_storefront_001';
+        process.env.PUBLIC__app__commerce__api__shortCode = 'storefront-short-code';
+        process.env.COMMERCE_API_SLAS_SECRET = 'storefront-slas-secret';
+        process.env.PUBLIC__app__defaultSiteId = 'StorefrontSite';
+
+        const config = await loadConfig({
+          slasClientId: 'canonical-slas-client',
+          tenantId: 'canonical_001',
+          shortCode: 'canonical-short-code',
+          slasClientSecret: 'canonical-slas-secret',
+          siteId: 'CanonicalSite',
+        });
+
+        expect(config.values.slasClientId).to.equal('canonical-slas-client');
+        expect(config.values.tenantId).to.equal('canonical_001');
+        expect(config.values.shortCode).to.equal('canonical-short-code');
+        expect(config.values.slasClientSecret).to.equal('canonical-slas-secret');
+        expect(config.values.siteId).to.equal('CanonicalSite');
+      });
     });
   });
 

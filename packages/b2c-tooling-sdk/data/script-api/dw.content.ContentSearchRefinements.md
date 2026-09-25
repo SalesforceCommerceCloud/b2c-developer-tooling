@@ -201,7 +201,7 @@ This class does not have a constructor, so you cannot create it directly.
 - getRefinementValues(definition: [ContentSearchRefinementDefinition](dw.content.ContentSearchRefinementDefinition.md)): [Collection](dw.util.Collection.md)
   - : Returns a collection of refinement values for the given refinement
       definition. The returned refinement values only include those that are
-      part of the actual search result (i.e. hit count will always be > 0).
+      part of the actual search result (i.e. hit count will always be &gt; 0).
 
 
     **Parameters:**

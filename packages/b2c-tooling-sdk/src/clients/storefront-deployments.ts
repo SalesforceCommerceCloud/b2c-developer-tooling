@@ -42,6 +42,7 @@ export type StorefrontDeploymentsError = components['schemas']['ErrorResponse'];
 export type Bundle = components['schemas']['Bundle'];
 export type BundleResult = components['schemas']['BundleResult'];
 export type BundleUploadResponse = components['schemas']['BundleUploadResponse'];
+export type BundleUploadRequest = components['schemas']['BundleUploadRequest'];
 export type Deployment = components['schemas']['Deployment'];
 export type DeploymentResult = components['schemas']['DeploymentResult'];
 export type DeploymentCreateRequest = components['schemas']['DeploymentCreateRequest'];

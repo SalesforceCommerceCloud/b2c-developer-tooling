@@ -4,17 +4,22 @@
 - [TopLevel.Object](TopLevel.Object.md)
   - [dw.customer.consent.ShopperConsentException](dw.customer.consent.ShopperConsentException.md)
 
-This exception is thrown by [ShopperConsentMgr](dw.customer.consent.ShopperConsentMgr.md) methods when an error occurs
-during consent subscription operations.
+This exception is thrown by [ShopperConsentMgr](dw.customer.consent.ShopperConsentMgr.md) methods when an error occurs during consent subscription
+operations.
 
 
 The 'errorCode' property is set to one of the following values:
 
-- [ShopperConsentErrorCodes.FEATURE_DISABLED](dw.customer.consent.ShopperConsentErrorCodes.md#feature_disabled)- Indicates that the Marketing Consent  feature is not enabled.
-- [ShopperConsentErrorCodes.RETRIEVAL_ERROR](dw.customer.consent.ShopperConsentErrorCodes.md#retrieval_error)- Indicates that an error occurred while  retrieving consent subscriptions.
-- [ShopperConsentErrorCodes.UPDATE_ERROR](dw.customer.consent.ShopperConsentErrorCodes.md#update_error)- Indicates that an error occurred while  updating consent subscriptions.
-- [ShopperConsentErrorCodes.CUSTOMER_NOT_AUTHENTICATED](dw.customer.consent.ShopperConsentErrorCodes.md#customer_not_authenticated)- Indicates that the customer  is not authenticated (required for consent status retrieval).
+- [ShopperConsentErrorCodes.FEATURE_DISABLED](dw.customer.consent.ShopperConsentErrorCodes.md#feature_disabled)- Indicates that the Marketing Consent feature is not  enabled.
+- [ShopperConsentErrorCodes.RETRIEVAL_ERROR](dw.customer.consent.ShopperConsentErrorCodes.md#retrieval_error)- Indicates that an error occurred while retrieving consent  subscriptions.
+- [ShopperConsentErrorCodes.UPDATE_ERROR](dw.customer.consent.ShopperConsentErrorCodes.md#update_error)- Indicates that an error occurred while updating consent  subscriptions.
+- [ShopperConsentErrorCodes.CUSTOMER_NOT_AUTHENTICATED](dw.customer.consent.ShopperConsentErrorCodes.md#customer_not_authenticated)- Indicates that the customer is not authenticated  (required for consent status retrieval).
 - [ShopperConsentErrorCodes.INTERNAL_ERROR](dw.customer.consent.ShopperConsentErrorCodes.md#internal_error)- Indicates that an internal error occurred.
+- [ShopperConsentErrorCodes.INVALID_CHANNEL](dw.customer.consent.ShopperConsentErrorCodes.md#invalid_channel)- Indicates that an unrecognized channel value was  provided.
+- [ShopperConsentErrorCodes.INVALID_CONSENT_STATUS](dw.customer.consent.ShopperConsentErrorCodes.md#invalid_consent_status)- Indicates that an unrecognized consent status value  was provided.
+- [ShopperConsentErrorCodes.CONTACT_POINT_VALUE_TOO_LONG](dw.customer.consent.ShopperConsentErrorCodes.md#contact_point_value_too_long)- Indicates that the provided contact point value  exceeds the maximum allowed length.
+- [ShopperConsentErrorCodes.SUBSCRIPTION_ID_TOO_LONG](dw.customer.consent.ShopperConsentErrorCodes.md#subscription_id_too_long)- Indicates that the provided subscription ID exceeds  the maximum allowed length.
+- [ShopperConsentErrorCodes.INVALID_CONTACT_POINT_VALUE](dw.customer.consent.ShopperConsentErrorCodes.md#invalid_contact_point_value)- Indicates that the provided contact point value  is null, empty, or blank.
 
 
 

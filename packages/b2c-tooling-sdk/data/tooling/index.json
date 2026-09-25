@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-18T15:58:03.133Z",
+  "generatedAt": "2026-09-25T18:21:49.356Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -251,7 +251,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/webdav.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/webdav.md",
-      "headings": "Global WebDAV Flags • Root Directory • Authentication • Basic Auth (Recommended) • OAuth • Mixed Authentication • b2c webdav ls • Usage • Arguments • Flags • Examples • Output • b2c webdav get • Usage • Arguments • Flags • Examples • b2c webdav put • Usage • Arguments • Examples • Notes • b2c webdav mkdir • Usage • Arguments • Examples • b2c webdav rm • Usage • Arguments • Flags • Examples • Notes • b2c webdav zip • Usage • Arguments • Examples • Notes • b2c webdav unzip • Usage • Arguments • Examples • Notes",
+      "headings": "Global WebDAV Flags • Root Directory • Dynamic Site Files • Authentication • Basic Auth (Recommended) • OAuth • Mixed Authentication • b2c webdav ls • Usage • Arguments • Flags • Examples • Output • b2c webdav get • Usage • Arguments • Flags • Examples • b2c webdav put • Usage • Arguments • Examples • Notes • b2c webdav mkdir • Usage • Arguments • Examples • b2c webdav rm • Usage • Arguments • Flags • Examples • Notes • b2c webdav zip • Usage • Arguments • Examples • Notes • b2c webdav unzip • Usage • Arguments • Examples • Notes",
       "preview": "Commands for WebDAV file operations including listing, uploading, downloading, and managing files on B2C Commerce instances."
     },
     {
@@ -278,7 +278,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac.md",
-      "headings": "Use Your AI Assistant • Authentication and Access • Non-Production Support (26.1+) • Host Selection Behavior • Use the B2C CLI {#quick-start} • Curated reports (`cip report`) • Raw SQL (`cip query`) • Metadata discovery (`cip tables`, `cip describe`) • Choosing Query vs Report • Rate Limits and Query Discipline • Site ID Parameter Note • JSON Output • Explore in Your IDE {#vs-code-ide-integration} • Available panels • Realm management • Saving queries • Safety mode • SDK Support • Next Steps",
+      "headings": "Use Your AI Assistant • Authentication and Access • Non-Production Support (26.1+) • Host Selection Behavior • Use the B2C CLI {#quick-start} • Curated reports (`cip report`) • Raw SQL (`cip query`) • Metadata discovery (`cip tables`, `cip describe`) • Choosing Query vs Report • Rate Limits and Query Discipline • Site ID Parameter Note • JSON Output • Explore in Your IDE {#vs-code-ide-integration} • Available panels • Realm management • Saving queries • Safety Mode • SDK Support • Next Steps",
       "preview": "Explore B2C Commerce sales, search, promotions, and technical performance with your AI assistant, IDE, or CLI."
     },
     {
@@ -314,7 +314,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md",
-      "headings": "Choose Your Connection • Configuration File • Single Instance • Shopper Authentication (SLAS) • Multiple Instances • Managing Instances with the CLI • Configuration File Selection • Global Default Configuration • Environment Variables • .env File • Check Your Configuration {#debugging-configuration} • Resolution Priority • Credential Grouping • Settings Reference {#supported-fields} • Instance and Site • Administrative Authentication {#oauth-scapi-ocapi} • Shopper Authentication • WebDAV and Certificates {#basic-authentication-webdav} • Code, Content, and Documentation • Sandboxes and Analytics • Managed Runtime • Other Environment Settings • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • CLI Flags • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • MRT API Key • Two-Factor Authentication (mTLS) • Troubleshooting • Next Steps",
+      "headings": "Choose Your Connection • Configuration File • Single Instance • Shopper Authentication (SLAS) • Multiple Instances • Managing Instances with the CLI • Configuration File Selection • Global Default Configuration • Environment Variables • .env File • Storefront Next Compatibility • Check Your Configuration {#debugging-configuration} • Resolution Priority • Credential Grouping • Settings Reference {#supported-fields} • Instance and Site • Administrative Authentication {#oauth-scapi-ocapi} • Shopper Authentication • WebDAV and Certificates {#basic-authentication-webdav} • Code, Content, and Documentation • Sandboxes and Analytics • Managed Runtime • Other Environment Settings • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • CLI Flags • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • MRT API Key • Two-Factor Authentication (mTLS) • Troubleshooting • Next Steps",
       "preview": "Configure B2C Commerce connections for the CLI, MCP, and IDE extension, including SLAS credentials, named instances, and shared project defaults."
     },
     {
@@ -332,7 +332,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.md",
-      "headings": "Script API IntelliSense • Salesforce B2C Commerce VS Code Extension (recommended) • Standalone VS Code, WebStorm, or IntelliJ Ultimate • Neovim, Helix, Zed, Sublime, or other LSP-based editors • Notes • IntelliJ SFCC Plugin • Setup",
+      "headings": "Script API IntelliSense • Salesforce B2C Commerce VS Code Extension (recommended) • Legacy `.ds` scripts • Standalone VS Code, WebStorm, or IntelliJ Ultimate • Neovim, Helix, Zed, Sublime, or other LSP-based editors • Notes • IntelliJ SFCC Plugin • Setup",
       "preview": "Configure IDE tooling like the IntelliJ SFCC plugin to consume resolved B2C CLI configuration, plus enable Script API IntelliSense via TypeScript definitions."
     },
     {
@@ -404,8 +404,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.md",
-      "headings": "Start with an instance policy {#quick-start} • Choose a safety level {#safety-levels} • Use it in your tools • CLI • MCP and AI assistants {#mcp} • IDE extension: VS Code and compatible editors {#ide-extension} • Add rules for specific tasks {#safety-rules} • Allow a search without enabling other writes • Rule matchers • Require confirmation {#confirmation-mode} • Use different policies per instance {#per-instance-configuration} • Share a safety file {#global-safety-config} • How settings combine {#configuration-merge} • When an operation is blocked • Environment variables reference • SDK usage",
-      "preview": "Control B2C Commerce changes from the CLI, MCP, and IDE extension with safety levels, confirmations, and per-instance rules."
+      "headings": "Start with an instance policy {#quick-start} • Choose a safety level {#safety-levels} • Use it in your tools • CLI • MCP and AI assistants {#mcp} • IDE extension: VS Code and compatible editors {#ide-extension} • Add rules for specific tasks {#safety-rules} • Allow a search without enabling other writes • Approve product changes with your assistant {#scapi-code-mode-example} • Approve SCAPI changes across instances {#global-scapi-confirmation} • Rule matchers • Require confirmation {#confirmation-mode} • Use different policies per instance {#per-instance-configuration} • Global safety configuration {#global-safety-config} • How settings combine {#configuration-merge} • When an operation is blocked • Environment variables reference",
+      "preview": "Choose which B2C Commerce actions are allowed, need approval, or are blocked across the CLI, IDE Extension, and AI assistants."
     },
     {
       "id": "guide-scaffolding",
@@ -512,7 +512,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Documentation and skills {#documentation} • Deployment {#cartridges} • Managed Runtime {#mrt} • Instance files {#webdav} • Debugging {#diagnostics} • Logs {#logs} • SCAPI development {#scapi} • B2C Commerce data and operations {#scapi-code-mode} • Observability metrics (closed beta) {#metrics} • Analytics reports {#cip} • Configuration inspection • Toolsets for customization",
+      "headings": "Documentation and skills {#documentation} • SCAPI Development {#scapi} • SCAPI Code Mode {#scapi-code-mode} • Logs {#logs} • Instance logs • Managed Runtime logs • Debugging {#diagnostics} • Deployment {#cartridges} • Cartridge deployment • Managed Runtime {#mrt} • Instance files {#webdav} • Analytics reports {#cip} • Observability metrics (closed beta) {#metrics} • Configuration inspection • IDE context • Toolsets for customization",
       "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {
@@ -530,7 +530,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.md",
-      "headings": "Highlights • AI Chat Context • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Cartridge Management and Code Watch/Upload • SCAPI API Explorer • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
+      "headings": "Highlights • AI Chat Context • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Site Archive Export • Cartridge Management and Code Watch/Upload • SCAPI API Explorer • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
       "preview": "The official Salesforce B2C Commerce IDE Extension for VS Code, Cursor, and other VS Code-compatible editors — code sync, sandbox management, API exploration, and debugging."
     },
     {

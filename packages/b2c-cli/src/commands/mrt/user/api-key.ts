@@ -61,16 +61,14 @@ export default class MrtUserApiKey extends MrtCommand<typeof MrtUserApiKey> {
       this.getMrtAuth(),
     );
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.mrt.user.api-key.success', 'API key has been reset successfully.'));
-      this.log(t('commands.mrt.user.api-key.new-key', '\nNew API key: {{apiKey}}', {apiKey: result.api_key}));
-      this.log(
-        t(
-          'commands.mrt.user.api-key.warning',
-          '\nIMPORTANT: Please update your stored API key immediately. The old key is now invalid.',
-        ),
-      );
-    }
+    this.log(t('commands.mrt.user.api-key.success', 'API key has been reset successfully.'));
+    this.log(t('commands.mrt.user.api-key.new-key', '\nNew API key: {{apiKey}}', {apiKey: result.api_key}));
+    this.log(
+      t(
+        'commands.mrt.user.api-key.warning',
+        '\nIMPORTANT: Please update your stored API key immediately. The old key is now invalid.',
+      ),
+    );
 
     return result;
   }

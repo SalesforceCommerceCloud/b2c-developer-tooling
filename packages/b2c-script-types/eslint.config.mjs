@@ -6,7 +6,7 @@
 import headerPlugin from 'eslint-plugin-header';
 import tseslint from 'typescript-eslint';
 
-import {copyrightHeader, sharedRules, prettierPlugin} from '../../eslint.config.mjs';
+import {copyrightHeader, sharedRules, chaiTestRules, prettierPlugin} from '../../eslint.config.mjs';
 
 headerPlugin.rules.header.meta.schema = false;
 
@@ -17,7 +17,7 @@ export default [
   ...tseslint.configs.recommended,
   prettierPlugin,
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'test/**/*.ts'],
     plugins: {
       header: headerPlugin,
     },
@@ -28,5 +28,9 @@ export default [
       'header/header': ['error', 'block', copyrightHeader],
       ...sharedRules,
     },
+  },
+  {
+    files: ['test/**/*.ts'],
+    rules: chaiTestRules,
   },
 ];

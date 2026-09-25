@@ -209,7 +209,7 @@ Changeset guidelines:
   - HOW a consumer should update their code
 - Good changesets are brief and user-focused (not contributor); they are generally 1 line or two; The content of the changeset is used in CHANGELOG and release notes. You do not need to list internal implementation details or all details of commands; just the high level summary for users.
 
-Valid changeset packages: `@salesforce/b2c-api-schemas`, `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-vs-extension`, `@salesforce/b2c-dx-docs`, `@salesforce/b2c-agent-plugins`
+Valid changeset packages: `@salesforce/b2c-api-schemas`, `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-vs-extension`, `@salesforce/b2c-dx-docs`, `@salesforce/b2c-agent-plugins`, `@salesforce/b2c-tooling-sdk-python`
 
 Create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 
@@ -225,3 +225,4 @@ Description of the change explaining WHAT, WHY, and HOW to update
 - Include only the packages that were directly modified
 - For doc-only changes, target `@salesforce/b2c-dx-docs` instead of the CLI/SDK/MCP packages
 - For changes to agent skills/plugins in `skills/` (adding or updating skill content, adding a new plugin), target `@salesforce/b2c-agent-plugins`
+- For changes to the Python SDK port (`python/b2c-tooling-sdk/`), target `@salesforce/b2c-tooling-sdk-python` — this is a private, unpublished `package.json` used only so Changesets can version and changelog that package; the bumped version flows into `pyproject.toml`/`version.py` via `scripts/sync-python-sdk-version.mjs`, but the actual release (tagging, pushing) is a separate manual step (see `python/b2c-tooling-sdk/RELEASE.md`), not automated by this repo's CI

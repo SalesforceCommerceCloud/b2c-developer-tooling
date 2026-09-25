@@ -1,5 +1,27 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.1
+
+### Patch Changes
+
+- [`eaf789a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/eaf789a2d7f879630cef772a48c3a31f122a2b41) - Clarified project guidance for using MCP skills, runbooks, and documentation tools. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#702](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/702) [`ae2b79e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ae2b79e522125bd515e39ec538bba7ab569179e9) - Document how legacy `.ds` cartridge scripts are handled in the IDE integration guide, including how to override the JavaScript file association. (Thanks [@clstopher](https://github.com/clstopher)!)
+
+- [#707](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/707) [`5e2a955`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5e2a955d281536978aba914c3a4f3f64447e4618) - Pass the instance name selected from configuration to later credential sources, so plugins such as macOS Keychain and password-store load instance-specific credentials without requiring `--instance`. Explicit selections and configuration precedence remain unchanged. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#705](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/705) [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6) - SCAPI Code Mode can now ask you to approve changes in supported assistant apps, with short request previews, cancellation, and no server time limit for answering. Approved tasks continue where they paused without repeating earlier changes; apps that cannot show approval prompts block those actions. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Add product approval examples and a shared SCAPI policy, with clearer Safety Mode guidance across the CLI, IDE Extension, and AI assistants, plus easier-to-browse MCP tool documentation.
+
+- [#705](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/705) [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6) - Show a readable effective safety policy and rule count in `b2c setup inspect`, including instance, global-file, and environment sources. Use `--verbose` for the full ordered ruleset; `--json` includes the complete structured configuration. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#686](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/686) [`643d0c0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/643d0c055eb2101bb5bbce24d5bf5a9701610220) - Export one composable storefront by name and optionally wait for Storefront Next post-import setup after a successful site archive import, surfacing import data errors if setup never starts. Export configuration types and the IDE selector now also include the latest platform data units. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#689](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/689) [`880d25a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/880d25a42a841e41202dab3d428a3433a7350ebd) - Reuse Storefront Next B2C Commerce, SLAS, site, and MRT environment variables as configuration fallbacks while preserving toolkit-specific overrides and normalizing full organization IDs. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#706](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/706) [`3fe3a10`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fe3a10f6ea0a1e7c1e8824d387efac45b7e6e7f) - Support `--root=dynamic` across WebDAV commands to manage site-specific files, including Velocity templates, independently of code deployments. Include the site ID as the first segment of the remote path, for example `b2c webdav ls --root=dynamic MySite/`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.0
 
 ### Minor Changes

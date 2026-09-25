@@ -26,6 +26,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
   static examples = [
     '<%= config.bin %> <%= command.id %> --global-data meta_data',
     '<%= config.bin %> <%= command.id %> --site RefArch --site-data content,site_preferences',
+    '<%= config.bin %> <%= command.id %> --storefront my-storefront',
     '<%= config.bin %> <%= command.id %> --catalog storefront-catalog',
     '<%= config.bin %> <%= command.id %> --data-units \'{"global_data":{"meta_data":true}}\'',
     '<%= config.bin %> <%= command.id %> --output ./exports --no-download',
@@ -43,6 +44,9 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
+    }),
+    storefront: Flags.string({
+      description: 'Composable storefront name to export (only one storefront per export)',
     }),
     'site-data': Flags.string({
       description: 'Site data units to export (comma-separated: content,site_preferences,etc.)',
@@ -113,6 +117,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
     const {
       output,
       site,
+      storefront,
       'site-data': siteData,
       catalog,
       library,
@@ -143,6 +148,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
     const dataUnits = this.buildDataUnits({
       dataUnitsJson,
       site,
+      storefront,
       siteData,
       catalog,
       library,
@@ -155,7 +161,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       this.error(
         t(
           'commands.job.export.noDataUnits',
-          'No data units specified. Use --global-data, --site, --catalog, etc. or --data-units',
+          'No data units specified. Use --global-data, --site, --storefront, --catalog, etc. or --data-units',
         ),
       );
     }
@@ -256,6 +262,13 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
       return result;
     } catch (error) {
+      const storefrontNote =
+        dataUnits.storefronts && Object.keys(dataUnits.storefronts).length > 0
+          ? `\n${t(
+              'commands.job.export.storefrontVersionNote',
+              'Note: The storefronts export data unit requires B2C Commerce 26.10 or later. Check the target instance version if this data unit is rejected.',
+            )}`
+          : '';
       // Run afterOperation hooks with failure
       await this.runAfterHooks(context, {
         success: false,
@@ -271,14 +284,14 @@ export default class JobExport extends JobCommand<typeof JobExport> {
         this.error(
           t('commands.job.export.failed', 'Export failed: {{status}}', {
             status: error.execution.exit_status?.code || 'ERROR',
-          }),
+          }) + storefrontNote,
         );
       }
       if (error instanceof Error) {
         this.error(
           t('commands.job.export.error', 'Export error: {{message}}', {
             message: error.message,
-          }),
+          }) + storefrontNote,
         );
       }
       throw error;
@@ -290,6 +303,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
   private buildDataUnits(params: {
     dataUnitsJson?: string;
     site?: string[];
+    storefront?: string;
     siteData?: string;
     catalog?: string[];
     library?: string[];
@@ -320,6 +334,12 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       for (const siteId of params.site) {
         dataUnits.sites[siteId] = siteDataUnits || {all: true};
       }
+    }
+
+    // The platform supports exactly one composable storefront per export and
+    // identifies it by storefront name (not site ID or MRT storefront ID).
+    if (params.storefront) {
+      dataUnits.storefronts = {[params.storefront]: true};
     }
 
     // Catalogs

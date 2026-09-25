@@ -1,0 +1,6 @@
+{
+  "name": "@salesforce/b2c-tooling-sdk-python",
+  "version": "0.4.1",
+  "private": true,
+  "description": "Python port of the B2C Commerce tooling SDK. Private — not published to npm; tracked here only so Changesets can version it and generate a CHANGELOG. Ships as source via git tags (see RELEASE.md)."
+}

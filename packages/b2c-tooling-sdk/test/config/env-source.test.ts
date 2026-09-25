@@ -20,6 +20,23 @@ describe('config/EnvSource', () => {
       {alias: 'SFCC_OAUTH_CLIENT_SECRET', canonical: 'SFCC_CLIENT_SECRET', field: 'clientSecret'},
       {alias: 'SFCC_LOGIN_URL', canonical: 'SFCC_ACCOUNT_MANAGER_HOST', field: 'accountManagerHost'},
       {alias: 'SFCC_SHORT_CODE', canonical: 'SFCC_SHORTCODE', field: 'shortCode'},
+      {
+        alias: 'PUBLIC__app__commerce__api__clientId',
+        canonical: 'SFCC_SLAS_CLIENT_ID',
+        field: 'slasClientId',
+      },
+      {
+        alias: 'PUBLIC__app__commerce__api__organizationId',
+        canonical: 'SFCC_TENANT_ID',
+        field: 'tenantId',
+      },
+      {
+        alias: 'PUBLIC__app__commerce__api__shortCode',
+        canonical: 'SFCC_SHORTCODE',
+        field: 'shortCode',
+      },
+      {alias: 'COMMERCE_API_SLAS_SECRET', canonical: 'SFCC_SLAS_CLIENT_SECRET', field: 'slasClientSecret'},
+      {alias: 'PUBLIC__app__defaultSiteId', canonical: 'SFCC_SITE_ID', field: 'siteId'},
       {alias: 'SFCC_MRT_API_KEY', canonical: 'MRT_API_KEY', field: 'mrtApiKey'},
       {alias: 'SFCC_MRT_PROJECT', canonical: 'MRT_PROJECT', field: 'mrtProject'},
       {alias: 'SFCC_MRT_ENVIRONMENT', canonical: 'MRT_ENVIRONMENT', field: 'mrtEnvironment'},

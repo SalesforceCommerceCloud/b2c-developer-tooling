@@ -162,33 +162,33 @@ This class does not have a constructor, so you cannot create it directly.
   - : Applies tax to the given [Basket](dw.order.Basket.md) using the platform's tax hook dispatch logic.
       
       
-      This method is intended for use in custom {@code dw.order.calculate} hook implementations (e.g., in SFRA or
+      This method is intended for use in custom `dw.order.calculate` hook implementations (e.g., in SFRA or
       SiteGenesis) that override the default basket calculation. Calling this method instead of directly invoking
-      {@code dw.order.calculateTax} ensures that Commerce App tax providers registered via
-      {@code sfcc.app.tax.calculate} are invoked when available, with automatic fallback to the legacy
-      {@code dw.order.calculateTax} hook or the platform default tax calculation.
+      `dw.order.calculateTax` ensures that Commerce App tax providers registered via
+      `sfcc.app.tax.calculate` are invoked when available, with automatic fallback to the legacy
+      `dw.order.calculateTax` hook or the platform default tax calculation.
       
       
       
       
-      **WARNING:** Do NOT call this method from within a {@code dw.order.calculateTax} hook
+      **WARNING:** Do NOT call this method from within a `dw.order.calculateTax` hook
       implementation, as this will cause infinite recursion. This method is designed to be called from
-      {@code dw.order.calculate} hooks only.
+      `dw.order.calculate` hooks only.
       
       
       
       
       The dispatch precedence is:
       
-      1. {@code sfcc.app.tax.calculate}— if a Commerce App tax provider is installed and the feature is   enabled.
-      2. {@code dw.order.calculateTax}— if registered by the storefront.
+      1. `sfcc.app.tax.calculate`— if a Commerce App tax provider is installed and the feature is   enabled.
+      2. `dw.order.calculateTax`— if registered by the storefront.
       3. Platform default tax calculation — using the site's tax tables.
       
       
       
       
       
-      **Typical usage in a custom {@code dw.order.calculate} hook:**
+      **Typical usage in a custom `dw.order.calculate` hook:**
       
       
       
