@@ -98,7 +98,7 @@ staging                   No        No        11/25/2024, 9:00:00 AM    12
 
 Deploy cartridges to a B2C Commerce instance.
 
-This command finds cartridges in the specified directory (by looking for `.project` files), creates a zip archive, uploads it via WebDAV, and optionally reloads the code version.
+This command discovers cartridges in the specified directory, creates a zip archive, uploads it via WebDAV, and optionally reloads the code version.
 
 ### Usage
 
@@ -158,7 +158,12 @@ b2c code deploy
 
 ### Cartridge Discovery
 
-Cartridges are discovered by searching for `.project` files (Eclipse project markers commonly used in SFCC development). The directory containing the `.project` file is considered a cartridge.
+Cartridges are discovered using two marker files, tried in order:
+
+1. **`.project`** (primary) — Eclipse project marker used by UX Studio, SFRA, and most traditional cartridge repositories. The directory containing `.project` is treated as the cartridge root.
+2. **`cartridge/<name>.properties`** (fallback) — SFCC structural marker present in pwa-kit and storefront-next cartridge packages. Used automatically when no `.project` files are found. The directory two levels above the `.properties` file (i.e. `<cartridge>/cartridge/<name>.properties`) is the cartridge root.
+
+If `.project` files are found anywhere under the search path, the fallback is skipped — even if those files are excluded by `--cartridge`/`--exclude-cartridge` filters.
 
 ---
 
