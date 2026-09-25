@@ -26,8 +26,12 @@ using [AbstractItem.getOrderItem()](dw.order.AbstractItem.md#getorderitem).
 
 
 The order-item provides an item-level [status](dw.order.OrderItem.md#getstatus) and
-[type](dw.order.OrderItem.md#gettype), methods for accessing and creating associated items,
-and methods used to [allocate  inventory](dw.order.OrderItem.md#allocateinventoryboolean) for [shipping-order](dw.order.ShippingOrder.md) creation.
+[type](dw.order.OrderItem.md#gettype), and methods for accessing and creating associated items.
+
+
+Per-item inventory allocation via [allocateInventory(Boolean)](dw.order.OrderItem.md#allocateinventoryboolean) is retired. To finalize an
+order's inventory, set the order's export status to exported via
+[Order.setExportStatus(Number)](dw.order.Order.md#setexportstatusnumber).
 
 
 Order post-processing APIs (gillian) are now inactive by default and will throw
@@ -78,7 +82,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 | Method | Description |
 | --- | --- |
-| [allocateInventory](dw.order.OrderItem.md#allocateinventoryboolean)([Boolean](TopLevel.Boolean.md)) | Please note that this method is disabled by default. |
+| ~~[allocateInventory](dw.order.OrderItem.md#allocateinventoryboolean)([Boolean](TopLevel.Boolean.md))~~ | Please note that this method is disabled by default. |
 | [getAppeasedAmount](dw.order.OrderItem.md#getappeasedamount)() | Sum of amounts appeased for this item, calculated by iterating over  invoice items associated with the item. |
 | [getCapturedAmount](dw.order.OrderItem.md#getcapturedamount)() | Sum of amounts captured for this item, calculated by iterating over  invoice items associated with the item. |
 | [getInvoiceItems](dw.order.OrderItem.md#getinvoiceitems)() | Returns all invoice items associated with this item, each  [InvoiceItem](dw.order.InvoiceItem.md) will belong to a different  [Invoice](dw.order.Invoice.md), which can also be accessed using  [Order.getInvoices()](dw.order.Order.md#getinvoices) or [Order.getInvoice(String)](dw.order.Order.md#getinvoicestring). |
@@ -343,7 +347,7 @@ This class does not have a constructor, so you cannot create it directly.
 ## Method Details
 
 ### allocateInventory(Boolean)
-- allocateInventory(partialAllocation: [Boolean](TopLevel.Boolean.md)): [Quantity](dw.value.Quantity.md)
+- ~~allocateInventory(partialAllocation: [Boolean](TopLevel.Boolean.md)): [Quantity](dw.value.Quantity.md)~~
   - : Please note that this method is disabled by default. Please contact support for enabling it.
       
       
@@ -365,6 +369,15 @@ This class does not have a constructor, so you cannot create it directly.
       - failed: `null`
 
 
+    **Deprecated:**
+:::warning
+Per-item inventory allocation is retired; this method no longer performs a per-item
+            allocation and returns the item's full ordered quantity for any line item type (it no
+            longer raises an error for line items that are not products). To finalize an order's
+            inventory, set the order's export status to exported via
+            [Order.setExportStatus(Number)](dw.order.Order.md#setexportstatusnumber).
+
+:::
 
 ---
 

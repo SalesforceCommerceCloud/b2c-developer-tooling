@@ -171,6 +171,14 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
+            <xsd:element name="content-tag-assignments" type="complexType.Content.ContentTagAssignments" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The content-tag-assignments can be set for pages and components. Each content can be assigned to
+                        multiple tags, and each tag can be assigned to multiple content assets within the same library.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
             <xsd:element name="sitemap-included-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -285,6 +293,29 @@
             <xsd:element name="position" type="xsd:double" minOccurs="0" maxOccurs="1" />
         </xsd:all>
         <xsd:attribute name="content-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- ContentTagAssignment -->
+    <xsd:complexType name="complexType.Content.ContentTagAssignments" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                These assignments represent tags linked to a content asset (page or component). Tags are scoped to
+                the library the content belongs to.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="content-tag-assignment" type="complexType.Content.ContentTagAssignment" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Content.ContentTagAssignment" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                Represents a single tag assignment. The tag is resolved (or created) by name, case-insensitively,
+                within the library that owns the content.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:attribute name="tag-name" type="simpleType.Generic.NonEmptyString.256" use="required" />
     </xsd:complexType>
 
     <xsd:simpleType name="simpleType.AssignedObjectType">

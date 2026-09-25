@@ -138,13 +138,13 @@ This class does not have a constructor, so you cannot create it directly.
 
 
     **Parameters:**
-    - contactPointValue - The contact point value (email address or phone number).
-    - subscriptionId - The subscription ID.
+    - contactPointValue - The contact point value (email address or phone number).                           Must not exceed 320 characters.
+    - subscriptionId - The subscription ID. Must not exceed 255 characters.
     - channel - The channel type ("EMAIL", "SMS", or "WHATSAPP").
     - status - The consent status ("OPT\_IN" or "OPT\_OUT").
 
     **Throws:**
-    - ShopperConsentException - if the consent feature is not enabled or update fails.
+    - ShopperConsentException - whose `errorCode` identifies the specific reason — one of          [ShopperConsentErrorCodes.INVALID_CHANNEL](dw.customer.consent.ShopperConsentErrorCodes.md#invalid_channel),          [ShopperConsentErrorCodes.INVALID_CONSENT_STATUS](dw.customer.consent.ShopperConsentErrorCodes.md#invalid_consent_status),          [ShopperConsentErrorCodes.INVALID_CONTACT_POINT_VALUE](dw.customer.consent.ShopperConsentErrorCodes.md#invalid_contact_point_value),          [ShopperConsentErrorCodes.FEATURE_DISABLED](dw.customer.consent.ShopperConsentErrorCodes.md#feature_disabled),          [ShopperConsentErrorCodes.CONTACT_POINT_VALUE_TOO_LONG](dw.customer.consent.ShopperConsentErrorCodes.md#contact_point_value_too_long),          [ShopperConsentErrorCodes.SUBSCRIPTION_ID_TOO_LONG](dw.customer.consent.ShopperConsentErrorCodes.md#subscription_id_too_long),          [ShopperConsentErrorCodes.UPDATE_ERROR](dw.customer.consent.ShopperConsentErrorCodes.md#update_error), or          [ShopperConsentErrorCodes.INTERNAL_ERROR](dw.customer.consent.ShopperConsentErrorCodes.md#internal_error).
 
 
 ---

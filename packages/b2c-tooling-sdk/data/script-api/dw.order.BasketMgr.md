@@ -286,7 +286,7 @@ This class does not have a constructor, so you cannot create it directly.
       
       
       In case a Business Manager user is logged in into the session the basket will be marked as an agent basket. See
-      [Basket.isAgentBasket()](dw.order.Basket.md#isagentbasket)</>.
+      [Basket.isAgentBasket()](dw.order.Basket.md#isagentbasket)&lt;/&gt;.
       
       
       

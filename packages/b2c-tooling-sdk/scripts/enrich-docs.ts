@@ -27,7 +27,7 @@
  *   ANTHROPIC_API_KEY      required to run (else no-op). Bearer token.
  *   ANTHROPIC_BASE_URL     default https://api.anthropic.com
  *   DOCS_ENRICH_MODEL      default claude-haiku-4-5
- *   COMMERCE_DOCS_REPO     local commerce-cloud-docs clone (default ~/code/commerce-cloud-docs)
+ *   GUIDES_CONTENT_DIR    local Developer Center source directory (required)
  *   DOCS_ENRICH_CONCURRENCY default 6
  *
  * Usage:
@@ -36,7 +36,6 @@
  */
 
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -64,11 +63,11 @@ const API_KEY = process.env.ANTHROPIC_API_KEY;
 const CONCURRENCY = Number(process.env.DOCS_ENRICH_CONCURRENCY || 6);
 
 function resolveContentDir(): string {
-  const env = process.env.COMMERCE_DOCS_REPO;
-  const repo = env ? path.resolve(env) : path.join(os.homedir(), 'code', 'commerce-cloud-docs');
-  const contentDir = path.join(repo, 'content', 'en-us');
-  if (!fs.existsSync(contentDir)) {
-    throw new Error(`commerce-cloud-docs content not found at ${contentDir}. Set COMMERCE_DOCS_REPO.`);
+  const configured = process.env.GUIDES_CONTENT_DIR;
+  if (!configured) throw new Error('Set GUIDES_CONTENT_DIR to the local Developer Center source directory.');
+  const contentDir = path.resolve(configured);
+  if (!CATEGORIES.some((category) => fs.existsSync(path.join(contentDir, category, 'guides')))) {
+    throw new Error(`Developer Center guide content not found at ${contentDir}. Check GUIDES_CONTENT_DIR.`);
   }
   return contentDir;
 }

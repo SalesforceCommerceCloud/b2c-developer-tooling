@@ -137,12 +137,17 @@ describe('docs: Developer Center guides corpus', function () {
     expect(results[0].entry.id).to.contain('passwordless');
   });
 
-  it('boosts a workspace-relevant category to the top of cross-corpus results', () => {
-    // "components" spans several corpora; a Storefront Next workspace should
-    // float an sfnext guide to the top of the mixed result set.
-    const results = searchDocs('components', {workspace: 'storefront-next', limit: 10});
-    expect(results.length).to.be.greaterThan(0);
-    expect(results[0].entry.category).to.equal('sfnext');
+  it('boosts workspace-relevant guides in cross-corpus results', () => {
+    // The boost is soft: shared API guides can outrank framework guides as
+    // their summaries change. Compare the same guide with and without it.
+    const baseline = searchDocs('components', {limit: 100});
+    const results = searchDocs('components', {workspace: 'storefront-next', limit: 100});
+    const guide = baseline.find((result) => result.entry.category === 'sfnext');
+    expect(guide).to.not.equal(undefined);
+    const boosted = results.find((result) => result.entry.id === guide!.entry.id);
+    expect(boosted).to.not.equal(undefined);
+    expect(boosted!.score).to.be.greaterThan(guide!.score);
+    expect(categoriesForWorkspace('storefront-next')).to.include(results[0].entry.category);
   });
 
   it('omits the internal headings field from search and list results (payload hygiene)', () => {
@@ -477,10 +482,25 @@ describe('docs: Salesforce Help corpus', function () {
       'help-admin/b2c_incorporate_third-party_apps',
       'help-merchant/b2c_merchandising_your_site',
       'help-merchant/b2c_multi_currency_sites',
-      'help-merchant/b2c_batch_processing',
     ]) {
       expect(ids.has(id), `missing direct topic from composite map: ${id}`).to.equal(true);
     }
+  });
+
+  it('includes new Help maps and the split batch-processing articles', () => {
+    const helpEntries = [...listDocs('help-admin'), ...listDocs('help-merchant')];
+    const ids = new Set(helpEntries.map((entry) => entry.id));
+    for (const id of [
+      'help-admin/b2c_ai_social_integrations',
+      'help-admin/b2c_product_feed_setup',
+      'help-admin/b2c_google_feed_overview',
+      'help-admin/b2c_commerce_apps',
+      'help-merchant/b2c_batch_processing_catalogs',
+      'help-merchant/b2c_batch_processing_products',
+    ]) {
+      expect(ids.has(id), `missing current Help article: ${id}`).to.equal(true);
+    }
+    expect(ids.has('help-merchant/b2c_batch_processing')).to.equal(false);
   });
 
   it('only emits related entry ids that resolve within the corpus', () => {

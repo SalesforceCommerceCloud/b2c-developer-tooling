@@ -1528,7 +1528,7 @@ This class does not have a constructor, so you cannot create it directly.
       
       
       
-      Null is accepted and represents Quantity.NA. Otherwise, the quantity value must be > 0.
+      Null is accepted and represents Quantity.NA. Otherwise, the quantity value must be &gt; 0.
 
 
     **Parameters:**
@@ -1660,7 +1660,7 @@ This class does not have a constructor, so you cannot create it directly.
       
       
       
-      Null is accepted and represents Quantity.NA. Otherwise, the quantity value must be > 0.
+      Null is accepted and represents Quantity.NA. Otherwise, the quantity value must be &gt; 0.
 
 
     **Parameters:**

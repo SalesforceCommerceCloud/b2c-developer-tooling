@@ -1,4 +1,21 @@
 {
+  "b2c-commerce/agentforce-commerce-client-overview": {
+    "summary": "Embed an AI-powered shopping agent widget on B2C Commerce storefronts using the Agentforce Commerce Client npm package or CDN bundles.",
+    "keywords": [
+      "Agentforce Commerce Client",
+      "@cimulate/copilot-widget",
+      "embeddable widget",
+      "shopping agent",
+      "B2C Commerce",
+      "JavaScript SDK",
+      "Server-Sent Events",
+      "SCRT2",
+      "conversational UI",
+      "storefront integration",
+      "React component",
+      "CDN bundle"
+    ]
+  },
   "b2c-commerce/agentic-mcp-shopper-tools-quick-start": {
     "summary": "Integrate AI agents with B2C Commerce via MCP protocol to provide shoppers with accurate, real-time product recommendations and storefront-specific suggestions.",
     "keywords": [
@@ -33,19 +50,19 @@
     ]
   },
   "b2c-commerce/architecture": {
-    "summary": "Learn the Commerce Apps framework hierarchy, extension points, and packaging structure for building customizations on B2C Commerce.",
+    "summary": "Learn the Commerce Apps framework, architecture patterns (UI-only, backend-only, fullstack), extension points, UI targets, CAP structure, and installation lifecycle.",
     "keywords": [
       "Commerce Apps framework",
+      "CAP structure",
       "extension points",
-      "architecture hierarchy",
-      "domains",
-      "storefront extensions",
       "UI targets",
-      "components",
-      "Commerce App Registry",
-      "packaging structure",
-      "customizations",
-      "storefront next"
+      "storefront extensions",
+      "fullstack architecture",
+      "backend-only",
+      "UI-only",
+      "CommerceFeatureState",
+      "domain isolation",
+      "b2c cap install"
     ]
   },
   "b2c-commerce/b2c-access-log-files": {
@@ -343,20 +360,18 @@
     ]
   },
   "b2c-commerce/b2c-business-objects": {
-    "summary": "Create and customize business object definitions and attributes in B2C Commerce to extend system objects and add custom data structures for your ecommerce implementation.",
+    "summary": "Create and manage custom object definitions and attributes to extend B2C Commerce data models for your business needs.",
     "keywords": [
       "custom object definitions",
-      "system objects",
-      "business objects",
       "custom attributes",
+      "system objects",
       "attribute definitions",
-      "extend objects",
-      "data structure",
-      "object customization",
-      "system object types",
+      "business objects",
+      "Custom Object Types",
       "attribute grouping",
-      "custom preferences",
-      "B2C Commerce objects"
+      "data structure",
+      "custom object types",
+      "attribute properties"
     ]
   },
   "b2c-commerce/b2c-business-objects-for-recommendations": {
@@ -377,51 +392,53 @@
     ]
   },
   "b2c-commerce/b2c-cartridges": {
-    "summary": "Learn what cartridges are, how to package and deploy code/data, organize business functionality, and manage cartridge order in B2C Commerce.",
+    "summary": "Cartridges package and deploy program code, data, controllers, templates, and scripts to extend B2C Commerce business functionality.",
     "keywords": [
-      "cartridges",
-      "cartridge deployment",
-      "code packaging",
+      "cartridge",
+      "deploy",
+      "package",
       "B2C CLI",
-      "cartridge configuration",
-      "generic cartridges",
-      "application-specific cartridges",
-      "cartridge order",
-      "Business Manager",
-      "extend functionality",
-      "reusable code",
-      "cartridge classpath"
+      "code deployment",
+      "WebDAV",
+      "register cartridge",
+      "controllers",
+      "templates",
+      "site functionality",
+      "generic cartridge",
+      "application-specific cartridge"
     ]
   },
   "b2c-commerce/b2c-clone-on-demand-sandboxes": {
-    "summary": "Clone sandboxes on-demand to create isolated replicas with database, code, and configurations in minutes for testing and development.",
+    "summary": "Create exact replicas of sandboxes in minutes using the Sandbox Cloning API for development, testing, and disaster recovery.",
     "keywords": [
       "sandbox cloning",
       "on-demand sandboxes",
       "clone API",
-      "test environments",
       "sandbox replica",
-      "isolated development",
-      "disaster recovery testing",
-      "CI/CD pipelines",
+      "one-to-many cloning",
       "sandbox provisioning",
-      "bug reproduction"
+      "disaster recovery",
+      "development environment",
+      "REST API",
+      "sandbox management",
+      "test environment"
     ]
   },
   "b2c-commerce/b2c-code-deployment": {
-    "summary": "Upload and manage multiple custom code versions in B2C Commerce, set an active version, and roll back to previous versions as needed.",
+    "summary": "Upload, manage, and activate custom code versions with version control, compatibility modes, and secure deployment to B2C Commerce instances.",
     "keywords": [
       "code deployment",
       "code versions",
-      "upload code",
-      "active version",
-      "code management",
-      "cartridge upload",
-      "roll back",
-      "version control",
-      "staging production",
-      "code versioning",
-      "deployment"
+      "WebDAV upload",
+      "code activation",
+      "code rollback",
+      "compatibility mode",
+      "API version",
+      "B2C CLI",
+      "code replication",
+      "cartridges",
+      "secure uploads",
+      "instance management"
     ]
   },
   "b2c-commerce/b2c-commerce-development": {
@@ -573,20 +590,20 @@
     ]
   },
   "b2c-commerce/b2c-content-assets-for-developers": {
-    "summary": "Create and manage content assets in B2C Commerce, including HTML pages, metadata attributes, and site-specific customization options.",
+    "summary": "Use content assets to store HTML, images, and reusable content on storefronts with customizable attributes, links, and site-specific configurations.",
     "keywords": [
       "content assets",
       "HTML content",
-      "storefront pages",
-      "metadata attributes",
-      "import export content",
+      "content links",
+      "ContentMgr",
+      "content slots",
+      "staticlink",
+      "content APIs",
+      "shared libraries",
+      "private libraries",
       "site-specific attributes",
-      "onlineFlag",
-      "Content system object",
-      "content customization",
-      "static files",
-      "shared library",
-      "searchableFlag"
+      "content import export",
+      "WebDAV"
     ]
   },
   "b2c-commerce/b2c-content-cache": {
@@ -920,20 +937,20 @@
     ]
   },
   "b2c-commerce/b2c-custom-job-steps": {
-    "summary": "Define custom job step types by creating CommonJS modules or pipelines and steptypes configuration files for B2C Commerce job automation.",
+    "summary": "Define custom job step types using CommonJS modules or pipelines, with steptypes.json configuration for B2C Commerce jobs.",
     "keywords": [
-      "custom job step types",
+      "custom job steps",
+      "CommonJS modules",
       "steptypes.json",
-      "steptypes.xml",
-      "CommonJS module",
-      "job step",
-      "cartridge",
-      "task-oriented step",
-      "chunk-oriented step",
+      "task-oriented",
+      "chunk-oriented",
+      "pipeline modules",
+      "dw.job.JobStepExecution",
+      "dw.system.Status",
+      "job framework",
       "B2C Commerce CLI",
-      "job automation",
-      "pipeline",
-      "job framework"
+      "cartridge",
+      "Business Manager"
     ]
   },
   "b2c-commerce/b2c-customer-data-for-developers": {
@@ -1068,20 +1085,20 @@
     ]
   },
   "b2c-commerce/b2c-dev-best-practices": {
-    "summary": "Guidelines for B2C Commerce development covering instance naming, code repository management, and technical limitations for video, email, and other resources.",
+    "summary": "Best practices for B2C Commerce development including instance naming, code repository management, and development guidelines with limits.",
     "keywords": [
-      "development best practices",
-      "instance naming conventions",
-      "code repository management",
-      "zip files cartridges",
-      "video support limits",
+      "instance naming",
+      "code repository",
+      "zip files",
+      "video support",
+      "email limits",
+      "ISML templates",
+      "Page Designer",
+      "quotas",
+      "script timeout",
       "development guidelines",
-      "B2C Commerce limitations",
-      "version control",
-      "code organization",
-      "developer efficiency",
-      "storefront implementation",
-      "file management"
+      "performance optimization",
+      "file size limits"
     ]
   },
   "b2c-commerce/b2c-dev-components": {
@@ -1133,20 +1150,19 @@
     ]
   },
   "b2c-commerce/b2c-developer-considerations-for-predictive-recommendations": {
-    "summary": "Modify ISML templates, define content slots with unique IDs, and create page templates to display product recommendations on storefronts.",
+    "summary": "Implement Einstein Product Recommendations by modifying ISML templates, defining content slots with unique IDs, and configuring context attributes for product or category pages.",
     "keywords": [
-      "product recommendations",
+      "Einstein Product Recommendations",
       "ISML templates",
       "content slots",
+      "isslot tag",
+      "context-object",
+      "product detail pages",
+      "category landing pages",
       "slot rendering",
-      "recommendation engine",
-      "context object",
-      "product detail page",
-      "category landing page",
-      "slot caching",
-      "template customization",
-      "islot tag",
-      "recommendation templates"
+      "recommendation templates",
+      "caching strategy",
+      "context global"
     ]
   },
   "b2c-commerce/b2c-developer-sandboxes": {
@@ -1167,37 +1183,37 @@
     ]
   },
   "b2c-commerce/b2c-developer-tooling": {
-    "summary": "B2C CLI, MCP, and Tooling SDK streamline B2C Commerce development through command-line tools, agent skills, and IDE extensions for deployment, sandbox management, and instance operations.",
+    "summary": "Comprehensive toolkit for building, debugging, deploying, and managing Salesforce B2C Commerce via CLI, IDE extension, AI assistant integration, and agent skills.",
     "keywords": [
       "B2C CLI",
-      "command line interface",
-      "Tooling SDK",
-      "MCP server",
-      "IDE extensions",
-      "code deployment",
-      "sandbox management",
-      "agent skills",
-      "B2C Commerce development",
-      "developer tools",
-      "CI pipeline",
-      "Managed Runtime"
+      "B2C MCP",
+      "IDE Extension",
+      "Agent Skills",
+      "cartridge deployment",
+      "debugging",
+      "SCAPI",
+      "Managed Runtime",
+      "storefront development",
+      "VS Code",
+      "configuration",
+      "authentication"
     ]
   },
   "b2c-commerce/b2c-developer-tooling-agent-skills": {
-    "summary": "Enable AI coding agents to develop and operate B2C Commerce with 30+ preconfigured skills covering CLI commands, development patterns, and platform workflows.",
+    "summary": "Learn to empower AI assistants with B2C Commerce knowledge through Agent Skills for development, CLI operations, and incident investigation.",
     "keywords": [
-      "B2C CLI agent skills",
-      "agent skills standard",
-      "coding agent",
-      "AI assistant development",
-      "B2C Commerce CLI",
-      "storefront development",
-      "headless commerce",
-      "Claude Code",
-      "GitHub Copilot",
-      "cartridge deployment",
-      "sandbox management",
-      "platform automation"
+      "Agent Skills",
+      "Agentic B2C Developer Toolkit",
+      "b2c skill collection",
+      "b2c-cli",
+      "storefront-next",
+      "b2c-ops",
+      "B2C MCP",
+      "Custom API",
+      "Page Designer",
+      "incident investigation",
+      "AI assistant integration",
+      "Agent Plugins"
     ]
   },
   "b2c-commerce/b2c-displaying-prices-in-multiple-currencies": {
@@ -1523,20 +1539,19 @@
     ]
   },
   "b2c-commerce/b2c-get-started-sandboxes": {
-    "summary": "Set up on-demand sandboxes by purchasing credits, configuring user roles, creating API clients, and provisioning sandboxes via the Sandbox API.",
+    "summary": "Set up on-demand sandboxes by purchasing credits, configuring user roles, API clients, and provisioning sandboxes via Sandbox API or CLI.",
     "keywords": [
       "on-demand sandboxes",
       "sandbox credits",
       "Sandbox API",
-      "user roles",
-      "API client key",
+      "API client ID",
       "realm ID",
+      "user roles",
+      "B2C Commerce CLI",
       "sandbox provisioning",
-      "Account Manager",
-      "scope filter",
-      "sandbox management",
-      "self-service sandboxes",
-      "sandbox setup"
+      "Business Manager",
+      "WebDAV",
+      "OCAPI"
     ]
   },
   "b2c-commerce/b2c-get-unzip-ds": {
@@ -2572,20 +2587,20 @@
     ]
   },
   "b2c-commerce/b2c-log-files-overview": {
-    "summary": "Access and manage B2C Commerce system, custom, and security log files for debugging performance, errors, and quotas across instances.",
+    "summary": "Access and manage B2C Commerce log files including system logs, custom logs, security logs, and import/export logs with retention policies and configuration options.",
     "keywords": [
       "log files",
       "system logs",
-      "custom logs",
-      "logging configuration",
-      "WebDAV access",
-      "log retention",
-      "debug logs",
+      "custom logging",
       "security logs",
-      "Development Setup",
-      "Custom Log Settings",
-      "monitoring",
-      "troubleshooting"
+      "import export logs",
+      "quota log",
+      "WebDAV",
+      "B2C CLI",
+      "log retention",
+      "batch processing logs",
+      "Logger",
+      "custom named log files"
     ]
   },
   "b2c-commerce/b2c-maintenance-pages": {
@@ -2619,36 +2634,36 @@
     ]
   },
   "b2c-commerce/b2c-manage-sb": {
-    "summary": "Create and manage on-demand B2C Commerce sandboxes using the Sandbox API or CLI with easy lifecycle management.",
+    "summary": "Create and manage on-demand sandboxes using the Sandbox API, including resource profiles, operations, scheduling, and monitoring.",
     "keywords": [
       "Sandbox API",
       "on-demand sandboxes",
-      "manage sandboxes",
-      "B2C CLI",
+      "resource profiles",
+      "B2C Commerce CLI",
+      "sandbox operations",
+      "Operation Scheduler",
       "sandbox lifecycle",
-      "create sandbox",
-      "sandbox management",
-      "Sandbox API user interface",
-      "sandbox ID",
-      "sandbox commands",
-      "DX tooling",
-      "commerce cloud sandbox"
+      "credit usage",
+      "hostname alias",
+      "DBINIT",
+      "sandbox status",
+      "GET/sandboxes"
     ]
   },
   "b2c-commerce/b2c-managing-sites-for-dev": {
-    "summary": "Create and manage B2C Commerce sites for development using Business Manager or CLI, configuring site ID, currency, taxation, and cartridge paths.",
+    "summary": "Create and manage B2C Commerce sites for development using Business Manager and CLI, including configuration, catalog assignment, and search indexing.",
     "keywords": [
       "create site",
       "manage sites",
-      "B2C CLI",
       "Business Manager",
-      "site configuration",
+      "B2C CLI",
       "cartridge paths",
-      "site ID",
-      "currency settings",
-      "taxation",
-      "storefront development",
-      "site setup"
+      "page caching",
+      "search indexes",
+      "catalog assignment",
+      "site configuration",
+      "hostname allowlist",
+      "site locales"
     ]
   },
   "b2c-commerce/b2c-mappings": {
@@ -2813,18 +2828,18 @@
     ]
   },
   "b2c-commerce/b2c-pipelet-to-script-conversion": {
-    "summary": "Migrate pipelets to script methods or job steps with a reference table mapping legacy pipelets to modern API equivalents.",
+    "summary": "Reference guide mapping legacy pipelets to modern script methods and job steps for B2C Commerce development.",
     "keywords": [
-      "pipelet conversion",
-      "script method replacement",
-      "job step equivalent",
-      "pipelet migration",
-      "legacy API modernization",
-      "dw script methods",
-      "pipelet alternatives",
-      "API deprecation",
-      "controller script methods",
-      "pipelet to JavaScript"
+      "pipelet",
+      "script method",
+      "job step",
+      "migration",
+      "dw.order",
+      "dw.customer",
+      "dw.catalog",
+      "API replacement",
+      "controller",
+      "legacy conversion"
     ]
   },
   "b2c-commerce/b2c-promotions-for-developers": {
@@ -2894,19 +2909,20 @@
     ]
   },
   "b2c-commerce/b2c-recommendations-for-developers": {
-    "summary": "Understand when to use explicit product recommendations versus product linking in B2C Commerce storefronts, including implementation considerations for existing applications.",
+    "summary": "Implement explicit product recommendations in B2C Commerce storefronts with developer best practices, business objects, and considerations for integration with existing systems.",
     "keywords": [
-      "product recommendations",
       "explicit recommendations",
+      "product recommendations",
       "product linking",
-      "product relationships",
+      "Einstein Product Recommendations",
+      "Recommendation system object",
+      "RecommendationType",
       "cross-sell",
       "up-sell",
-      "replacement products",
-      "recommendation feature",
-      "product linking migration",
-      "storefront recommendations",
-      "business manager"
+      "recommendation import",
+      "Business Manager",
+      "pipeline processing",
+      "storefront implementation"
     ]
   },
   "b2c-commerce/b2c-registering-your-site-with-oauth2-providers": {
@@ -3020,6 +3036,23 @@
       "search placement",
       "search rank",
       "category search"
+    ]
+  },
+  "b2c-commerce/b2c-search-mode-ab-testing": {
+    "summary": "Set up A/B testing to compare Agentic Commerce Search against native B2C Commerce search using the searchMode parameter and Google Analytics 4.",
+    "keywords": [
+      "search mode A/B testing",
+      "Agentic Commerce Search",
+      "searchMode parameter",
+      "semantic search",
+      "lexical search",
+      "effectiveSearchMode",
+      "SCAPI",
+      "Shopper Search API",
+      "Google Analytics 4",
+      "SLAS authentication",
+      "bucketing algorithm",
+      "product search"
     ]
   },
   "b2c-commerce/b2c-search-suggestion-for-developers": {
@@ -3327,37 +3360,37 @@
     ]
   },
   "b2c-commerce/b2c-third-party": {
-    "summary": "Integrate third-party applications like product reviews, geotracking, Facebook, and Google Pay into Salesforce B2C Commerce storefronts.",
+    "summary": "Integrate third-party applications including product reviews, geotracking, Apple Pay, Facebook, and Google Pay with Salesforce B2C Commerce storefronts.",
     "keywords": [
-      "third-party integration",
+      "third-party integrations",
       "product reviews",
       "geotracking",
-      "geolocation",
-      "Facebook integration",
+      "Apple Pay on the Web",
       "Google Pay",
-      "IP address lookup",
+      "Facebook",
+      "payment service provider",
+      "PSP",
+      "SFRA",
+      "geolocation",
       "dw.util.Geolocation",
-      "site selector",
-      "SFRA decorator",
-      "external services",
-      "payment providers"
+      "social channels"
     ]
   },
   "b2c-commerce/b2c-troubleshooting": {
-    "summary": "Diagnose and resolve B2C Commerce installation issues by documenting errors, checking logs, and using CLI tools to correlate error messages.",
+    "summary": "Troubleshoot Salesforce B2C Commerce issues by documenting errors, reviewing logs, reproducing problems, and using CLI tools for diagnostics.",
     "keywords": [
       "troubleshooting",
-      "error debugging",
+      "error diagnosis",
       "log files",
       "B2C Commerce CLI",
       "session ID",
-      "error diagnostics",
-      "production issues",
+      "request ID",
       "code instrumentation",
-      "Business Manager logs",
+      "debugging",
+      "Business Manager",
       "error reproduction",
-      "web adapter logs",
-      "system troubleshooting"
+      "log analysis",
+      "staging problems"
     ]
   },
   "b2c-commerce/b2c-troubleshooting-infrastructure": {
@@ -3757,20 +3790,18 @@
     ]
   },
   "b2c-commerce/b2c_cc_create_clone": {
-    "summary": "Clone an existing on-demand sandbox in Control Center by specifying TTL, resource profile, and optional notification emails.",
+    "summary": "Clone an on-demand sandbox using Control Center with configurable TTL, resource profile, and batch options.",
     "keywords": [
       "clone sandbox",
       "on-demand sandbox",
       "Control Center",
-      "sandbox cloning",
       "TTL",
-      "time-to-live",
       "resource profile",
-      "sandbox instance",
-      "Account Manager",
       "Sandbox_API_User",
-      "clone operation",
-      "sandbox configuration"
+      "batch clones",
+      "Account Manager",
+      "sandbox cloning",
+      "clone history"
     ]
   },
   "b2c-commerce/b2c_cc_create_ods_instance": {
@@ -4127,37 +4158,36 @@
     ]
   },
   "b2c-commerce/building-your-app": {
-    "summary": "Build a Commerce App by choosing an architecture (UI-only, Backend-only, or Fullstack) and using Claude Code skills to scaffold and generate app structure with extension points.",
+    "summary": "Build Commerce Apps across three architectures (UI-only, Backend-only, Fullstack) using extension points, hooks, and Storefront Next components.",
     "keywords": [
-      "build commerce app",
-      "app architecture",
-      "scaffold app",
-      "backend-only app",
-      "fullstack app",
+      "Commerce App architecture",
       "extension points",
-      "Claude Code skills",
-      "commerce-app.json",
-      "IMPEX generation",
-      "app development",
-      "cartridge development",
-      "tax domain"
+      "backend hooks",
+      "Storefront Next",
+      "sfcc.app.tax",
+      "sfcc.app.oms",
+      "service integration",
+      "IMPEX",
+      "custom attributes",
+      "health check",
+      "SCAPI"
     ]
   },
   "b2c-commerce/commerce-apps-overview": {
-    "summary": "Learn what Commerce Apps are: packaged, installable solutions bundling frontend UI, backend code, admin config, and platform data into deployable Commerce App Packages for marketplace distribution.",
+    "summary": "Learn how Commerce Apps package frontend UI, backend code, and configuration into installable solutions for B2C Commerce storefronts.",
     "keywords": [
-      "Commerce Apps",
+      "Commerce App",
       "CAP",
       "Commerce App Package",
-      "cartridge replacement",
-      "installable solution",
-      "Storefront Next extensions",
-      "backend cartridges",
-      "plug-and-play installation",
-      "Commerce Cloud packaging",
-      "frontend UI components",
-      "server-side code",
-      "marketplace-ready"
+      "Storefront Next",
+      "cartridge",
+      "ISV",
+      "extension points",
+      "UI targets",
+      "IMPEX",
+      "Commerce App Registry",
+      "WebDAV",
+      "installation"
     ]
   },
   "b2c-commerce/community": {
@@ -4175,6 +4205,55 @@
       "developer support",
       "community forums",
       "developer network"
+    ]
+  },
+  "b2c-commerce/component-override-sdk": {
+    "summary": "Replace widget product and agent-action rendering with custom markup using framework-agnostic custom elements and override contracts.",
+    "keywords": [
+      "Component Override SDK",
+      "custom elements",
+      "ComponentOverrides",
+      "ProductTile",
+      "ProductCarousel",
+      "ProductDetailCard",
+      "ProductComparison",
+      "ProgressSteps",
+      "tool_results",
+      "output_name",
+      "OverrideElement",
+      "messaging-mode"
+    ]
+  },
+  "b2c-commerce/configure-the-commerce-client": {
+    "summary": "Configure the Agentforce Commerce Client widget with connection settings, content behavior, component presentation, and product result callbacks.",
+    "keywords": [
+      "Agentforce Commerce Client",
+      "CopilotWidgetProps",
+      "messagingConfig",
+      "SCRT2 connection",
+      "widget configuration",
+      "product results",
+      "componentConfig",
+      "dialog positioning",
+      "transcript download",
+      "escalation to agent",
+      "embedded service messaging"
+    ]
+  },
+  "b2c-commerce/connect-third-party-oms": {
+    "summary": "Integrate a third-party Order Management System with B2C Commerce using backend hooks to serve order data through Shopper APIs.",
+    "keywords": [
+      "OMS integration",
+      "order management system",
+      "sfcc.app.oms.order hooks",
+      "Commerce App",
+      "Shopper Orders API",
+      "expand=oms parameter",
+      "order retrieve",
+      "order list",
+      "order cancel",
+      "order return",
+      "UCP order lifecycle"
     ]
   },
   "b2c-commerce/creatingbusinessobjects": {
@@ -4242,6 +4321,21 @@
       "wrapper objects"
     ]
   },
+  "b2c-commerce/customization-decision-guide": {
+    "summary": "Choose between configuration, custom CSS, or component overrides to customize the Agentforce Commerce Client based on your needs.",
+    "keywords": [
+      "customization approach",
+      "Agentforce Commerce Client",
+      "configuration",
+      "custom CSS",
+      "component overrides",
+      "theme properties",
+      "Component Override SDK",
+      "styling",
+      "widget customization",
+      "messaging-mode"
+    ]
+  },
   "b2c-commerce/demandwarejavascript": {
     "summary": "Learn to use B2C Commerce JavaScript with Rhino engine to customize storefronts, add business logic, validate input, and integrate back-end systems.",
     "keywords": [
@@ -4260,36 +4354,37 @@
     ]
   },
   "b2c-commerce/developer-workflow": {
-    "summary": "High-level developer workflow outlining essential steps to create a performant B2C Commerce site using SFRA, Composable Storefront, or B2C Commerce API.",
+    "summary": "High-level developer workflow for efficiently creating a performant B2C Commerce site, covering discovery, setup, building, customization, best practices, testing, and monitoring.",
     "keywords": [
-      "B2C Commerce setup",
+      "B2C Commerce",
       "getting started",
       "developer workflow",
       "SFRA",
       "Composable Storefront",
+      "site development",
+      "setup prerequisites",
       "B2C Commerce API",
-      "site creation",
-      "storefront options",
-      "B2C Commerce architecture",
-      "quick start",
-      "prerequisites",
-      "B2C CLI"
+      "Page Designer",
+      "launch",
+      "monitoring",
+      "best practices"
     ]
   },
   "b2c-commerce/development-environment": {
-    "summary": "Set up your local development environment with prerequisites, tools, and Claude Code skills for building Commerce Apps.",
+    "summary": "Set up local development environments for Commerce Apps using B2C CLI, Claude Code skills, and Node.js with prerequisites including a sandbox instance and OAuth credentials.",
     "keywords": [
-      "development environment setup",
-      "local development",
-      "Commerce App setup",
-      "prerequisites",
-      "B2C CLI installation",
-      "Node.js npm",
-      "Claude Code skills",
-      "sandbox instance",
+      "development environment",
+      "B2C CLI",
+      "Commerce App Package",
+      "CAP",
+      "Node.js",
+      "OAuth authentication",
+      "WebDAV",
+      "OCAPI",
+      "IMPEX",
+      "sandbox setup",
       "Storefront Next",
-      "Commerce App Registry",
-      "environment configuration"
+      "ISV development"
     ]
   },
   "b2c-commerce/doc-announcement": {
@@ -4425,6 +4520,70 @@
       "auth loops"
     ]
   },
+  "b2c-commerce/install-on-pwa-kit": {
+    "summary": "Enable and configure the Agentforce Commerce Client on PWA Kit using the COMMERCE_AGENT_SETTINGS environment variable with component override support.",
+    "keywords": [
+      "Agentforce Commerce Client",
+      "PWA Kit",
+      "Composable Storefront",
+      "COMMERCE_AGENT_SETTINGS",
+      "Managed Runtime",
+      "environment variable",
+      "component overrides",
+      "cc_overrides",
+      "cc_overridesUrl",
+      "retail-react-app",
+      "custom elements",
+      "Content Security Policy"
+    ]
+  },
+  "b2c-commerce/install-on-sfnext": {
+    "summary": "Enable and configure Agentforce Commerce Client on Storefront Next using the PUBLIC__app__cimulateAgent environment variable.",
+    "keywords": [
+      "Agentforce Commerce Client",
+      "Storefront Next",
+      "PUBLIC__app__cimulateAgent",
+      "Managed Runtime",
+      "B2C Shopper Agent",
+      "environment variable",
+      "Embedded Service",
+      "Cimulate",
+      "SCRT2 URL",
+      "Commerce Client installation"
+    ]
+  },
+  "b2c-commerce/install-on-sfra": {
+    "summary": "Install and configure the Agentforce Commerce Client cartridge on SFRA storefronts using plugin_commerce_client with CDN or static bundle loading.",
+    "keywords": [
+      "Agentforce Commerce Client",
+      "SFRA",
+      "plugin_commerce_client",
+      "cartridge installation",
+      "Site Preferences",
+      "CDN bundle",
+      "static assets",
+      "Business Manager",
+      "Storefront Reference Architecture",
+      "widget configuration",
+      "cc_config"
+    ]
+  },
+  "b2c-commerce/install-the-commerce-client": {
+    "summary": "Install the Agentforce Commerce Client via CDN script tag or npm package for React applications.",
+    "keywords": [
+      "Agentforce Commerce Client",
+      "install",
+      "CDN",
+      "npm",
+      "@cimulate/copilot-widget",
+      "React",
+      "UMD bundle",
+      "AgentForceWidget",
+      "messaging widget",
+      "SFRA",
+      "PWA Kit"
+    ]
+  },
   "b2c-commerce/integratingwithapplications": {
     "summary": "Connect external applications to B2C Commerce using WSDL, SOAP, RPC, FTP, SMTP, WebDAV, and HTTP protocols for data exchange.",
     "keywords": [
@@ -4460,19 +4619,18 @@
     ]
   },
   "b2c-commerce/jdbc_aggregate_tables": {
-    "summary": "Aggregate tables store pre-calculated summarized data optimized for reporting and analysis, with details on robot traffic filtering and IP address filter constraints.",
+    "summary": "Pre-calculated summarized data tables optimized for reporting and analysis, with details on robot traffic filtering and IP address constraints.",
     "keywords": [
       "aggregate tables",
-      "pre-calculated data",
-      "reporting",
-      "analysis",
-      "robot traffic filtering",
-      "IP address filters",
       "ccdw_aggr",
-      "summarized data",
-      "analytics tables",
+      "reporting",
       "data warehouse",
-      "performance metrics"
+      "robot traffic",
+      "IP address filter",
+      "JDBC",
+      "sales summary",
+      "search analytics",
+      "visit metrics"
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_controller_request": {
@@ -4504,6 +4662,22 @@
       "CCDW recommendation analytics",
       "algorithm-specific product performance",
       "recommendation attribution revenue"
+    ]
+  },
+  "b2c-commerce/jdbc_ccdw_aggr_impression": {
+    "summary": "Aggregated table tracking product impression and click metrics across sites, devices, and locales.",
+    "keywords": [
+      "ccdw_aggr_impression",
+      "product impressions",
+      "click metrics",
+      "impression_date",
+      "product_id",
+      "site_id",
+      "device_class_code",
+      "locale_code",
+      "num_impressions",
+      "num_clicks",
+      "aggregation table"
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_include_controller_request": {
@@ -4592,18 +4766,20 @@
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_product_cobuy": {
-    "summary": "Query the ccdw_aggr_product_cobuy table to identify products frequently purchased together and analyze co-buy patterns by channel, locale, and customer type.",
+    "summary": "Identifies products frequently bought together with frequency counts and revenue metrics.",
     "keywords": [
       "ccdw_aggr_product_cobuy",
-      "co-buy products",
+      "product co-buy",
       "frequently bought together",
-      "product affinity",
-      "cross-sell",
-      "product pairs",
       "co-purchase analysis",
-      "commerce data warehouse",
-      "CCDW table",
-      "product relationships"
+      "product affinity",
+      "frequency_count",
+      "std_cobuy_revenue",
+      "product_one_id",
+      "product_two_id",
+      "order channel",
+      "customer segmentation",
+      "e-commerce analytics"
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_product_recommendation": {
@@ -4641,20 +4817,19 @@
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_product_sales_summary": {
-    "summary": "Query aggregated product sales metrics by date, channel, customer type, site, product, device, and locale from the data warehouse.",
+    "summary": "Aggregated product sales metrics table summarizing orders, units, revenue, and costs by product and various dimensions.",
     "keywords": [
       "ccdw_aggr_product_sales_summary",
       "product sales metrics",
-      "sales aggregation",
-      "data warehouse",
+      "aggregate sales data",
+      "revenue reporting",
       "fact table",
-      "sales reporting",
-      "product analytics",
-      "commerce metrics",
-      "CCDW table",
+      "ccdw_fact_line_item",
+      "business channel",
+      "site_id",
+      "product_id",
       "sales dimensions",
-      "order analytics",
-      "reporting schema"
+      "CCDW"
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_promotion_activation": {
@@ -4675,35 +4850,35 @@
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_promotion_cobuy": {
-    "summary": "Aggregate table tracking pairs of promotions applied together in the same purchase orders for analysis.",
+    "summary": "Aggregate table tracking pairs of promotions purchased together in the same orders for analysis.",
     "keywords": [
-      "promotion co-buy",
-      "promotion pairs",
-      "aggregate promotion",
       "ccdw_aggr_promotion_cobuy",
-      "promotion analysis",
-      "order promotions",
+      "promotion pairs",
+      "co-purchase analysis",
+      "aggregate table",
       "promotion combination",
-      "promotion dimension",
-      "purchase analysis",
-      "promotion tracking"
+      "order analysis",
+      "ccdw_dim_promotion",
+      "frequency count",
+      "promotion class",
+      "order channel"
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_promotion_sales_summary": {
-    "summary": "Query aggregated promotion sales data by dimensions like date, channel, customer type, campaign, and coupon from the data warehouse.",
+    "summary": "Aggregated table summarizing sales attributed to promotions across multiple dimensions like channel, campaign, and customer type.",
     "keywords": [
       "ccdw_aggr_promotion_sales_summary",
-      "promotion sales summary table",
-      "aggregated promotion data",
+      "promotion sales",
+      "sales aggregation",
       "promotion analytics",
-      "sales by promotion",
-      "CCDW fact table",
-      "promotion reporting",
       "campaign performance",
-      "coupon analysis",
-      "data warehouse schema",
-      "promotion dimensions",
-      "sales metrics"
+      "coupon tracking",
+      "discount reporting",
+      "revenue attribution",
+      "ccdw_fact_promotion_line_item",
+      "business_channel_id",
+      "site_id",
+      "first_time_buyer"
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_registration": {
@@ -4724,20 +4899,20 @@
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_sales_summary": {
-    "summary": "Daily aggregated sales metrics table summarizing orders, units, revenue, tax, and shipping by date, channel, customer type, site, device, and locale.",
+    "summary": "Daily aggregated sales metrics table summarizing orders, revenue, discounts, and customer dimensions.",
     "keywords": [
       "ccdw_aggr_sales_summary",
-      "sales summary table",
-      "aggregated sales metrics",
-      "daily sales data",
+      "sales metrics",
+      "daily aggregation",
       "revenue reporting",
-      "order aggregation",
-      "sales dimensions",
-      "fact table",
-      "business channel",
-      "customer registration",
-      "first-time buyer",
-      "device class"
+      "ccdw_fact_line_item",
+      "business_channel_id",
+      "site_id",
+      "first_time_buyer",
+      "promotional discount",
+      "standard currency",
+      "device_class_code",
+      "traffic_medium"
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_scapi_request": {
@@ -4758,19 +4933,19 @@
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_search": {
-    "summary": "Track general search activity metrics aggregated by date, site, user registration status, device class, and locale.",
+    "summary": "Aggregated search activity table tracking search metrics by date, site, user type, device, and locale.",
     "keywords": [
       "ccdw_aggr_search",
       "search analytics",
-      "search activity table",
+      "aggregated data",
       "search metrics",
       "search results",
-      "aggregated search data",
-      "search query analysis",
-      "visitor search behavior",
-      "search performance",
-      "search events",
-      "CCDW search table"
+      "search clicks",
+      "visitor searches",
+      "device class",
+      "locale code",
+      "site_id",
+      "search activity"
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_search_conversion": {
@@ -4790,20 +4965,18 @@
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_search_query": {
-    "summary": "Query the ccdw_aggr_search_query table to analyze search query performance, including result counts and user search behavior metrics.",
+    "summary": "Aggregate table tracking search query details, outcomes, and user interaction metrics across B2C Commerce storefront searches.",
     "keywords": [
       "ccdw_aggr_search_query",
-      "search query analytics",
-      "search results table",
-      "aggregated search data",
+      "search queries",
+      "search analytics",
+      "search results",
       "search metrics",
+      "storefront search",
       "query performance",
-      "search events",
-      "CCDW table",
-      "search analysis",
-      "search without results",
-      "search behavior",
-      "commerce search reporting"
+      "search clicks",
+      "user searches",
+      "search aggregation"
     ]
   },
   "b2c-commerce/jdbc_ccdw_aggr_source_code_activation": {
@@ -5216,6 +5389,21 @@
       "timezone metadata"
     ]
   },
+  "b2c-commerce/jdbc_ccdw_dim_traffic_source": {
+    "summary": "Dimension table that describes attributed external traffic sources with identifiers, source names, mediums, and channel classifications.",
+    "keywords": [
+      "ccdw_dim_traffic_source",
+      "traffic source",
+      "dimension table",
+      "traffic_source_id",
+      "source",
+      "medium",
+      "channel_type",
+      "attributed traffic",
+      "data warehouse",
+      "CCDW"
+    ]
+  },
   "b2c-commerce/jdbc_ccdw_dim_user_agent": {
     "summary": "Query user agent details including browser family, version, rendering engine, OS, and classification for analyzing client requests.",
     "keywords": [
@@ -5300,37 +5488,36 @@
     ]
   },
   "b2c-commerce/jdbc_ccdw_fact_line_item": {
-    "summary": "Data warehouse table capturing individual line item details within placed orders with timestamps, keys, and dimensional relationships.",
+    "summary": "Fact table capturing individual line item details within orders, including pricing, discounts, taxes, and customer information.",
     "keywords": [
       "ccdw_fact_line_item",
       "line item",
       "order details",
+      "pricing",
+      "discounts",
+      "GMV",
+      "merchandise value",
+      "shipping",
+      "tax",
+      "SKU",
       "fact table",
-      "data warehouse",
-      "order line items",
-      "dimensional data",
-      "fact_line_item",
-      "line items table",
-      "order items",
-      "commerce data",
       "CCDW"
     ]
   },
   "b2c-commerce/jdbc_ccdw_fact_order_payments": {
-    "summary": "Query payment transaction records for orders including timestamps, payment IDs, and dimensional relationships for analytics.",
+    "summary": "Fact table recording payment transactions for orders with amounts, timestamps, customer details, and currency information.",
     "keywords": [
       "ccdw_fact_order_payments",
-      "order payments",
       "payment transactions",
+      "order payments",
+      "captured amount",
+      "refunded amount",
+      "payment method",
+      "currency",
+      "customer",
+      "visitor tracking",
       "fact table",
-      "order payment data",
-      "payment records",
-      "payment analytics",
-      "order_payment_id",
-      "dimensional data",
-      "data warehouse",
-      "CCDW",
-      "payment facts"
+      "CCDW"
     ]
   },
   "b2c-commerce/jdbc_ccdw_fact_promotion_activation": {
@@ -5351,20 +5538,20 @@
     ]
   },
   "b2c-commerce/jdbc_ccdw_fact_promotion_line_item": {
-    "summary": "Track how promotions apply to individual line items in orders with promotion and product foreign keys for analysis and reporting.",
+    "summary": "Fact table recording promotion applications to individual line items in orders, with discount, tax, and currency conversion details.",
     "keywords": [
-      "promotion line item",
       "ccdw_fact_promotion_line_item",
-      "promotion reporting",
-      "line item promotion",
+      "promotion line item",
+      "fact table",
+      "promotional discount",
+      "line-item reporting",
+      "order promotions",
+      "CCDW",
+      "data warehouse",
+      "discount allocation",
       "SKU promotion",
-      "promotion attribution",
-      "order promotion",
-      "fact table promotion",
-      "promotion analysis",
-      "line item discount",
-      "promotion tracking",
-      "product promotion"
+      "coupon",
+      "campaign attribution"
     ]
   },
   "b2c-commerce/jdbc_ccdw_fact_realtime_metric": {
@@ -5400,20 +5587,19 @@
     ]
   },
   "b2c-commerce/jdbc_dimension_tables": {
-    "summary": "Reference guide for B2C Commerce dimension tables that store descriptive attributes providing context to facts in data warehouses.",
+    "summary": "Reference guide for dimension tables in B2C Commerce data warehouse that store descriptive attributes for reporting and analysis.",
     "keywords": [
       "dimension tables",
-      "CCDW",
+      "ccdw_dim",
       "data warehouse",
-      "descriptive attributes",
-      "fact tables",
-      "dim_business_channel",
-      "dim_campaign",
-      "dim_customer",
-      "dim_date",
       "JDBC",
-      "analytics schema",
-      "dimensional modeling"
+      "customer attributes",
+      "product data",
+      "date dimension",
+      "geography",
+      "campaign",
+      "analytics tables",
+      "fact table context"
     ]
   },
   "b2c-commerce/jdbc_fact_tables": {
@@ -5498,20 +5684,20 @@
     ]
   },
   "b2c-commerce/jdbc_use_cases": {
-    "summary": "Execute production SQL queries against Commerce Intelligence data warehouse to analyze sales, payments, traffic, registrations, and inventory using the JDBC Driver.",
+    "summary": "Analytics use cases and SQL queries for the B2C Commerce Intelligence JDBC Driver to analyze sales, payments, traffic, inventory, promotions, and customer data.",
     "keywords": [
       "JDBC driver",
       "Commerce Intelligence",
+      "analytics",
       "SQL queries",
       "data warehouse",
-      "analytics",
-      "sales analytics",
-      "payment analytics",
-      "traffic source",
-      "customer registration",
-      "inventory analytics",
-      "business intelligence",
-      "DW queries"
+      "sales metrics",
+      "traffic analysis",
+      "customer acquisition",
+      "inventory management",
+      "promotion effectiveness",
+      "PostgreSQL dialect",
+      "Apache Calcite"
     ]
   },
   "b2c-commerce/monitor-maintain": {
@@ -5532,37 +5718,53 @@
     ]
   },
   "b2c-commerce/packaging": {
-    "summary": "Package a Commerce App into a CAP structure with required files, directories, and IMPEX configuration for distribution.",
+    "summary": "Package Commerce Apps into CAP format with required structure, files, IMPEX configuration, and validation for distribution.",
     "keywords": [
       "CAP",
       "Commerce App Package",
-      "packaging app",
+      "packaging",
       "commerce-app.json",
       "IMPEX",
+      "tasksList.json",
       "cartridges",
       "storefront-next",
-      "tasksList.json",
-      "app distribution",
-      "setup wizard",
-      "app structure",
-      "package deployment"
+      "validation",
+      "ZIP structure",
+      "adminComponents.json",
+      "localization"
     ]
   },
   "b2c-commerce/post-publication": {
-    "summary": "Manage Commerce App updates, replication workflow, and post-publication maintenance across staging and production environments.",
+    "summary": "Manage Commerce App updates, replication workflows, and production deployment after installation from the registry or WebDAV.",
     "keywords": [
+      "post-install maintenance",
       "app updates",
-      "app maintenance",
       "code replication",
       "data replication",
       "staging to production",
+      "Commerce App promotion",
       "cartridge deployment",
-      "migration",
-      "b2c cap pull",
       "tasksList.json",
-      "credentials management",
-      "app lifecycle",
-      "post-publication"
+      "CommerceFeatureState",
+      "multi-site installation",
+      "version management",
+      "IMPEX migration"
+    ]
+  },
+  "b2c-commerce/private-commerce-apps": {
+    "summary": "Create and deploy a merchant-specific Commerce App locally via WebDAV without publishing to the registry.",
+    "keywords": [
+      "private commerce app",
+      "WebDAV install",
+      "CAP packaging",
+      "b2c cap install",
+      "merchant-specific app",
+      "app_source WebDAV",
+      "SI distribution",
+      "local development",
+      "Commerce App Package",
+      "storefront deployment",
+      "Business Manager configuration"
     ]
   },
   "b2c-commerce/quick-start-landing-page": {
@@ -5583,53 +5785,70 @@
     ]
   },
   "b2c-commerce/reference": {
-    "summary": "Define Commerce App package identity, metadata, and publisher details using the required commerce-app.json schema file.",
+    "summary": "Technical reference for Commerce App Package schemas, configuration files, localization, and connection health check extension points.",
     "keywords": [
       "commerce-app.json",
+      "adminComponents.json",
       "CAP schema",
-      "app manifest",
-      "Commerce Apps APIs",
-      "app identity",
-      "package configuration",
-      "publisher metadata",
-      "semantic versioning",
-      "app registry",
-      "app domain",
-      "Commerce App Package"
+      "app configuration",
+      "localization",
+      "tasksList.json",
+      "storefrontComponentVisibility",
+      "connection health check",
+      "extension point",
+      "Commerce App Package",
+      "target-config.json",
+      "componentKey"
+    ]
+  },
+  "b2c-commerce/style-and-theme-the-widget": {
+    "summary": "Style the Agentforce Commerce Client widget using theme properties, header configuration, and custom CSS with scoped class names.",
+    "keywords": [
+      "Agentforce Commerce Client",
+      "widget styling",
+      "theme properties",
+      "CSS customization",
+      "cim-widget classes",
+      "headerConfig",
+      "primaryColor",
+      "secondaryColor",
+      "CSS custom properties",
+      "component theming",
+      "storefront styling"
     ]
   },
   "b2c-commerce/submission-review": {
-    "summary": "Submit and publish a Commerce App to the registry by validating, packaging, and issuing a pull request for review and approval.",
+    "summary": "Submit and publish your Commerce App to the App Registry for merchant discovery and installation in Business Manager.",
     "keywords": [
-      "submit commerce app",
-      "app submission",
-      "commerce app registry",
-      "app review process",
+      "App Registry",
+      "publish app",
+      "ISV submission",
+      "Commerce App",
       "CAP validation",
       "app packaging",
-      "pull request submission",
-      "app publication",
-      "review states",
-      "app approval",
-      "b2c cap validate",
-      "b2c cap package"
+      "pull request",
+      "review process",
+      "Business Manager",
+      "merchant installation",
+      "b2c cap package",
+      "app approval"
     ]
   },
   "b2c-commerce/supported-domains": {
-    "summary": "Documents all supported Commerce App domains, their hub sections, architectures, extension points, and example partners.",
+    "summary": "Reference guide to Commerce Apps framework domains, their hub organization, extension points, UI targets, and release timeline.",
     "keywords": [
-      "supported domains",
-      "commerce domains",
-      "domain registry",
-      "providers",
-      "additional setup",
-      "tax",
-      "payment",
-      "shipping",
-      "gift cards",
-      "loyalty",
-      "search",
-      "analytics"
+      "Commerce Apps domains",
+      "tax domain",
+      "payment domain",
+      "shipping domain",
+      "OMS domain",
+      "ratings and reviews",
+      "loyalty domain",
+      "extension points",
+      "UI targets",
+      "commerce-app.json",
+      "release wave",
+      "adapter interface"
     ]
   },
   "b2c-commerce/test-launch": {
@@ -5650,20 +5869,20 @@
     ]
   },
   "b2c-commerce/testing-validation": {
-    "summary": "Validate and test Commerce Apps before submission using Claude Code skills, sandbox installation, and multi-site testing procedures.",
+    "summary": "Validate and test Commerce Apps on sandbox environments before submission, including installation, uninstallation, multi-site scenarios, and functional testing.",
     "keywords": [
       "testing Commerce App",
-      "app validation",
+      "sandbox validation",
+      "app installation",
+      "app uninstallation",
       "IMPEX validation",
-      "sandbox testing",
-      "app installation testing",
-      "uninstall verification",
+      "Claude Code skills",
       "multi-site testing",
-      "app review submission",
+      "app registry submission",
+      "review checklist",
+      "rejection reasons",
       "b2c cap install",
-      "cartridge path verification",
-      "configuration tasks",
-      "app rejection reasons"
+      "functional testing"
     ]
   },
   "b2c-commerce/thescriptingpipeletexplained": {
@@ -5697,6 +5916,137 @@
       "BI",
       "metrics",
       "tracking"
+    ]
+  },
+  "b2c-commerce/ucp-authentication": {
+    "summary": "Set up SLAS authentication for Checkout Session APIs using private clients and access tokens with the dev.ucp.shopping.checkout:manage scope.",
+    "keywords": [
+      "Checkout Session APIs",
+      "SLAS authentication",
+      "Shopper Login API Access Service",
+      "private client",
+      "dev.ucp.shopping.checkout:manage",
+      "client credentials grant",
+      "access token",
+      "shopper scope",
+      "SLAS Admin UI",
+      "guest checkout",
+      "channel_id"
+    ]
+  },
+  "b2c-commerce/ucp-configuration": {
+    "summary": "Configure UCP in Business Manager to enable platform discovery, define business profile capabilities, payment handlers, and checkout settings for Salesforce Commerce storefronts.",
+    "keywords": [
+      "UCP configuration",
+      "business profile",
+      "well-known endpoint",
+      "platform discovery",
+      "payment handlers",
+      "Salesforce Payments",
+      "checkout settings",
+      "protocol version",
+      "signing keys",
+      "OMS integration",
+      "Google Pay",
+      "SLAS authentication"
+    ]
+  },
+  "b2c-commerce/ucp-google-gmc-configuration": {
+    "summary": "Set up Google as a commerce platform by completing UCP compliance, configuring Google Merchant Center feeds, and sharing checkout credentials for Gemini and AI Mode shopping.",
+    "keywords": [
+      "Google UCP",
+      "Gemini",
+      "AI Mode in Search",
+      "Google Merchant Center",
+      "GMC",
+      "native_commerce",
+      "checkout API",
+      "Buy button",
+      "business profile",
+      "SLAS",
+      "end-to-end testing",
+      "dynamic checkout"
+    ]
+  },
+  "b2c-commerce/ucp-implementation-considerations": {
+    "summary": "Design and implement UCP checkout extensibility using hooks, payment configuration, and transaction management patterns.",
+    "keywords": [
+      "UCP extensibility",
+      "checkout session hooks",
+      "SCAPI hooks",
+      "payment configuration",
+      "third-party payment providers",
+      "Salesforce Payments",
+      "hook lifecycle",
+      "basket validation",
+      "order placement",
+      "transaction management",
+      "Adyen webhooks",
+      "post-placement actions"
+    ]
+  },
+  "b2c-commerce/ucp-index": {
+    "summary": "Enable Universal Commerce Protocol (UCP) integration for your B2C Commerce site to allow platforms like Google to discover and sell your products while you remain Merchant of Record.",
+    "keywords": [
+      "Universal Commerce Protocol",
+      "UCP",
+      "agent commerce",
+      "platform integration",
+      "business profile",
+      "checkout session",
+      "Google Gemini",
+      "Merchant of Record",
+      "SLAS authentication",
+      "order management",
+      "webhook sync"
+    ]
+  },
+  "b2c-commerce/ucp-order-post-processing-events": {
+    "summary": "Guide to how order post-processing events (shipments, cancellations, returns) trigger UCP order-lifecycle updates for agentic-commerce channels via Salesforce OMS or third-party OMS integration.",
+    "keywords": [
+      "UCP order lifecycle",
+      "order post-processing events",
+      "agentic commerce",
+      "Salesforce Order Management",
+      "third-party OMS",
+      "fulfillment events",
+      "adjustments",
+      "order snapshot",
+      "oms-status-events API",
+      "shipment cancellation return",
+      "cryptographic signature",
+      "agent platform"
+    ]
+  },
+  "b2c-commerce/ucp-technical-audit": {
+    "summary": "Audit your existing checkout before enabling UCP to identify which hooks, controllers, and SCAPI resources need migration or bridging to the headless checkout-session flow.",
+    "keywords": [
+      "UCP",
+      "checkout audit",
+      "hooks migration",
+      "SCAPI resources",
+      "SFRA controllers",
+      "basket order hooks",
+      "dw.order.calculate",
+      "validateBasket",
+      "payment path",
+      "headless checkout"
+    ]
+  },
+  "b2c-commerce/ucp-transaction-management": {
+    "summary": "Understand transaction boundaries, hook execution order, and atomicity guarantees for UCP Checkout Session API operations.",
+    "keywords": [
+      "Checkout Session APIs",
+      "transaction management",
+      "SCAPI",
+      "hooks",
+      "complete operation",
+      "create update cancel",
+      "atomicity",
+      "platform-managed transactions",
+      "Status object",
+      "authorization",
+      "order placement"
     ]
   },
   "b2c-commerce/understand-b2c": {
@@ -5750,20 +6100,18 @@
     ]
   },
   "b2c-commerce/which-product": {
-    "summary": "Review B2C Commerce storefront types and their features to select the best option for your use case and development needs.",
+    "summary": "Compare B2C Commerce storefront types including Storefront Next, SFRA, hybrid implementations, and custom builds to choose the best fit for your needs.",
     "keywords": [
-      "storefront types",
-      "storefront selection",
       "Storefront Next",
-      "B2C Commerce setup",
-      "storefront development",
-      "server-side rendering",
-      "Shopper Agent",
-      "Business Manager",
-      "storefront architecture",
-      "storefront comparison",
-      "PWA storefront",
-      "headless commerce"
+      "SFRA",
+      "storefront types",
+      "hybrid implementation",
+      "SCAPI",
+      "B2C Commerce API",
+      "managed runtime",
+      "React",
+      "custom implementation",
+      "development environment"
     ]
   },
   "b2c-commerce/workingwithjson": {
@@ -5800,20 +6148,20 @@
     ]
   },
   "commerce-api/auth-z-scope-catalog": {
-    "summary": "Understand and configure authorization scopes that control which B2C Commerce API endpoints tokens can access and what operations they can perform.",
+    "summary": "Catalog of authorization scopes that control token access and permissions for B2C Commerce API endpoints across Shopper, Admin, and SLAS APIs.",
     "keywords": [
       "authorization scopes",
-      "API scopes",
-      "OAuth scopes",
-      "token permissions",
-      "sfcc scope format",
-      "Shopper API scopes",
-      "SCAPI Admin scopes",
+      "sfcc scopes",
+      "JWT permissions",
       "SLAS JWT",
-      "scope configuration",
+      "Shopper APIs",
+      "SCAPI Admin APIs",
+      "token configuration",
       "API access control",
-      "read write permissions",
-      "token security"
+      "scope format",
+      "read-write permissions",
+      "scope families",
+      "Account Manager JWT"
     ]
   },
   "commerce-api/authorization": {
@@ -5834,23 +6182,23 @@
     ]
   },
   "commerce-api/authorization-for-admin-apis": {
-    "summary": "Create API clients in Account Manager and obtain access tokens to authorize SCAPI Admin API requests.",
+    "summary": "Create an API client in Account Manager and request access tokens to authenticate calls to SCAPI Admin APIs.",
     "keywords": [
-      "SCAPI Admin API authorization",
-      "API client creation",
-      "Account Manager API client",
-      "OAuth scopes",
+      "SCAPI Admin APIs",
+      "API client",
+      "Account Manager",
+      "OAuth",
       "access token",
-      "SCAPI authentication",
+      "authorization",
       "API credentials",
-      "admin API setup",
-      "client secret",
-      "Commerce API authorization",
-      "SLAS vs Account Manager"
+      "scopes",
+      "client_credentials",
+      "JWT",
+      "authentication"
     ]
   },
   "commerce-api/authorization-for-shopper-apis": {
-    "summary": "Set up Shopper Login and API Access Service (SLAS) to request access tokens for Shopper APIs.",
+    "summary": "Set up Shopper Login and API Access Service (SLAS) to authorize and manage access tokens for Shopper APIs.",
     "keywords": [
       "SLAS",
       "Shopper Login and API Access Service",
@@ -5858,12 +6206,12 @@
       "access tokens",
       "Shopper APIs",
       "SLAS Admin UI",
-      "user roles",
-      "Account Manager",
-      "API authentication",
-      "shopper authentication",
-      "SLAS setup",
-      "Account Administrator"
+      "SLAS Admin API",
+      "client credentials",
+      "private client",
+      "public client",
+      "API security",
+      "shopper authentication"
     ]
   },
   "commerce-api/base-url": {
@@ -5899,70 +6247,66 @@
     ]
   },
   "commerce-api/cdn-cache-rules": {
-    "summary": "Configure eCDN cache rules to control which content is eligible for edge caching based on request conditions and HTTP headers.",
+    "summary": "Control which content is eligible for caching at the eCDN edge network using cache rules and expressions.",
     "keywords": [
       "eCDN cache rules",
-      "edge caching",
-      "cache control headers",
-      "content caching",
       "cache eligibility",
-      "cache purging",
+      "edge caching",
+      "Cache-Control headers",
+      "cache key",
+      "query strings",
+      "expression fields",
+      "cache purge",
+      "file extensions",
+      "cache hit ratio",
       "HTTP caching",
-      "Cache-Control header",
-      "max-age",
-      "cache configuration",
-      "origin server caching"
+      "origin headers"
     ]
   },
   "commerce-api/cdn-caching": {
-    "summary": "Implement CDN caching for non-personalized SCAPI GET responses to reduce latency and improve headless storefront performance using the personalized=none parameter.",
+    "summary": "SCAPI CDN caching is part of the SCAPI caching stack for optimizing content delivery.",
     "keywords": [
       "SCAPI CDN caching",
-      "personalized=none",
-      "CDN edge cache",
-      "content delivery network",
-      "web-tier caching",
-      "non-personalized responses",
-      "latency reduction",
-      "headless storefront",
-      "cache hit",
-      "TTL",
-      "SCAPI performance",
-      "commerce API caching"
+      "CDN caching",
+      "SCAPI caching stack",
+      "commerce-api caching",
+      "content delivery",
+      "server-side caching",
+      "web tier caching",
+      "SCAPI",
+      "cache optimization"
     ]
   },
   "commerce-api/cdn-pci-4-compliance": {
-    "summary": "Monitor and secure client-side scripts on your storefront using eCDN PCI 4.0 compliance tools powered by Cloudflare Page Shield.",
+    "summary": "Configure Page Shield to monitor JavaScript scripts and enforce Content Security Policies for PCI DSS 4.0 compliance on payment pages.",
     "keywords": [
-      "PCI 4.0 compliance",
-      "PCI DSS v4.0",
       "Page Shield",
-      "client-side security",
-      "malicious script detection",
-      "CSP content security policy",
-      "eCDN security",
+      "PCI 4.0 compliance",
+      "Content Security Policy",
+      "CSP directives",
       "script monitoring",
-      "Magecart protection",
-      "PCI compliance tools",
-      "security alerts",
-      "storefront security"
+      "malicious script detection",
+      "eCDN",
+      "getPageShieldScripts",
+      "policy violations",
+      "webhook notifications",
+      "Cloudflare"
     ]
   },
   "commerce-api/cdn-rate-limiting-rules": {
-    "summary": "Configure rate limiting rules to control request traffic, prevent bot attacks, and improve storefront availability using CDN-API parameters and expressions.",
+    "summary": "Configure rate limiting rules for eCDN zones to control request traffic, prevent bot abuse, and protect storefront availability using expressions and actions.",
     "keywords": [
       "rate limiting",
       "eCDN",
       "CDN-API",
-      "rate limit rules",
-      "request throttling",
+      "rule expression",
+      "characteristics",
       "bot protection",
       "traffic control",
-      "storefront availability",
-      "rate limiting parameters",
-      "rule expression",
       "mitigation timeout",
-      "zone configuration"
+      "counting expression",
+      "rule action",
+      "requests per period"
     ]
   },
   "commerce-api/cdn-supported-csp-directives": {
@@ -5983,20 +6327,20 @@
     ]
   },
   "commerce-api/cdn-zones": {
-    "summary": "Configure CDN zones for storefront content delivery with security rulesets, SSL certificates, and custom hostname DNS mapping.",
+    "summary": "Configure CDN security, access control, firewall rules, WAF, and performance settings for B2C Commerce storefronts using the CDN Zones API.",
     "keywords": [
-      "CDN zones",
-      "content delivery network",
+      "CDN Zones API",
       "eCDN",
-      "proxy zone",
-      "SSL certificate",
-      "DNS CNAME",
-      "custom hostname",
-      "storefront zone",
-      "security rules",
-      "zones API",
+      "Web Application Firewall",
+      "WAF",
+      "firewall rules",
+      "access control",
+      "IP blocklist",
+      "regional access",
+      "custom rules",
       "zone configuration",
-      "CDN setup"
+      "security",
+      "Brotli compression"
     ]
   },
   "commerce-api/cdn-zones-automatic-certs": {
@@ -6016,71 +6360,69 @@
     ]
   },
   "commerce-api/cdn-zones-cipher-suite-types": {
-    "summary": "Configure and manage TLS cipher suites for eCDN zones to secure browser and device connections to your storefront.",
+    "summary": "Configure TLS cipher suites for B2C Commerce eCDN zones with Modern, Compatible, Legacy, or Custom options.",
     "keywords": [
       "cipher suites",
-      "TLS configuration",
-      "SSL security",
-      "eCDN zones",
+      "TLS",
+      "SSL",
       "getCipherSuites",
       "updateCipherSuites",
+      "eCDN zones",
+      "ECDHE",
+      "AES-GCM",
+      "PCI DSS",
       "forward secrecy",
-      "AEAD encryption",
-      "modern cipher suites",
-      "compatible cipher suites",
-      "TLS 1.2",
-      "security settings"
+      "AEAD"
     ]
   },
   "commerce-api/cdn-zones-custom-rules": {
-    "summary": "Create and manage eCDN custom firewall rules to control incoming traffic using expressions, request parameters, and rule actions like block or js_challenge.",
+    "summary": "Create and manage eCDN custom rules to control incoming traffic with security policies based on request parameters and expressions.",
     "keywords": [
       "eCDN custom rules",
-      "firewall rules",
-      "traffic control",
+      "security policies",
       "rule expression",
-      "block action",
-      "js_challenge",
-      "captcha",
+      "rule actions",
+      "block",
+      "managed_challenge",
       "rate limiting",
-      "request parameters",
-      "firewall policies",
-      "eCDN zone",
-      "custom rule endpoints"
+      "WAFv2",
+      "verified bots",
+      "leaked credentials detection",
+      "SLAS login",
+      "traffic control"
     ]
   },
   "commerce-api/cdn-zones-logpush": {
-    "summary": "Set up eCDN Logpush to deliver CDN logs containing request details and firewall events to cloud storage or monitoring destinations.",
+    "summary": "eCDN Logpush delivers eCDN logs in batches to multiple destinations including S3, GCS, Azure, Datadog, Splunk, HTTPS, and Kinesis.",
     "keywords": [
       "eCDN Logpush",
-      "CDN logs",
       "log delivery",
-      "S3 bucket",
+      "CDN logs",
+      "Amazon S3",
       "Google Cloud Storage",
-      "Azure",
+      "Azure Blob Storage",
       "Datadog",
       "Splunk",
+      "HTTPS endpoint",
+      "AWS Kinesis",
       "firewall events",
-      "HTTP requests logging",
-      "Logpush job",
-      "log configuration"
+      "http_requests"
     ]
   },
   "commerce-api/cdn-zones-logpush-filter": {
-    "summary": "Create and configure eCDN Logpush jobs with filter criteria using comparison operators on supported log fields.",
+    "summary": "Create and filter eCDN Logpush jobs using comparison and logical operators to selectively send logs based on specific criteria.",
     "keywords": [
       "eCDN Logpush",
-      "logpush filter",
-      "logpush job",
-      "log filtering",
+      "Logpush Filter",
+      "Logpush job creation",
       "comparison operators",
-      "eCDN logs",
+      "logical operators",
       "filter criteria",
-      "logpush API",
-      "CDN logging",
-      "firewall events",
-      "log field filtering",
-      "escaped JSON filter"
+      "AND OR",
+      "ClientRequestPath",
+      "EdgeResponseStatus",
+      "escaped JSON string",
+      "B2C CLI"
     ]
   },
   "commerce-api/cdn-zones-logpush-log-field": {
@@ -6212,20 +6554,18 @@
     ]
   },
   "commerce-api/custom-api-caching": {
-    "summary": "Enable and configure response caching for Custom API endpoints using setExpires() and setVaryBy() methods to improve performance.",
+    "summary": "Enable and configure caching for Custom API responses using Page Caching, setExpires, and setVary methods to improve performance.",
     "keywords": [
-      "caching custom API",
-      "response caching",
+      "Custom API caching",
+      "Page Caching",
       "setExpires",
       "setVaryBy",
-      "page caching",
-      "cache strategies",
-      "API performance",
-      "cache time",
-      "personalized responses",
       "dw.system.Response",
-      "cache optimization",
-      "endpoint caching"
+      "CDN caching",
+      "cache control",
+      "response caching",
+      "performance optimization",
+      "SCAPI caching"
     ]
   },
   "commerce-api/custom-api-circuit-breaker": {
@@ -6278,19 +6618,20 @@
     ]
   },
   "commerce-api/custom-api-status-report": {
-    "summary": "View real-time registration status of Custom API endpoints to diagnose issues and verify endpoint accessibility without manual log searching.",
+    "summary": "Monitor real-time registration status of Custom API endpoints with transparent error reporting and troubleshooting guidance.",
     "keywords": [
       "Custom API status report",
-      "API endpoint registration",
-      "Custom API debugging",
-      "endpoint status verification",
+      "endpoint registration",
       "Custom API troubleshooting",
+      "B2C CLI",
+      "sfcc.custom-apis",
+      "OAuth 2.0",
       "API registration status",
-      "B2C CLI custom endpoints",
-      "Custom API errors",
-      "endpoint registration failures",
-      "API diagnostic tool",
-      "custom endpoint monitoring"
+      "error reason",
+      "code version activation",
+      "not_registered status",
+      "Account Manager",
+      "cartridge endpoints"
     ]
   },
   "commerce-api/custom-api-troubleshooting": {
@@ -6311,19 +6652,20 @@
     ]
   },
   "commerce-api/custom-apis": {
-    "summary": "Create custom REST APIs within SCAPI by defining OAS 3.0 schemas, implementing controller logic, and exposing functionality through the B2C Commerce framework.",
+    "summary": "Create and expose custom REST APIs in B2C Commerce using OAS 3.0 contracts, script implementations, and API mappings.",
     "keywords": [
-      "custom APIs",
-      "SCAPI",
+      "Custom APIs",
       "REST API",
       "OAS 3.0",
-      "hooks",
+      "SCAPI",
+      "api.json",
+      "operationId",
       "cartridge",
-      "API contract",
-      "custom endpoints",
-      "B2C Commerce Script API",
-      "storefront integration",
-      "API implementation"
+      "rest-apis",
+      "Shopper API",
+      "Admin API",
+      "authentication",
+      "circuit breaker"
     ]
   },
   "commerce-api/custom-properties": {
@@ -6360,20 +6702,20 @@
     ]
   },
   "commerce-api/ecdn-rules-for-phased-headless-rollout": {
-    "summary": "Route traffic between SFRA and Composable Storefront using eCDN for production or hybrid proxy for development in phased headless rollouts.",
+    "summary": "Configure CDN routing rules to gradually roll out Composable Storefront alongside SFRA using eCDN, Business Manager, CLI, or CDN Zones API.",
     "keywords": [
-      "CDN",
+      "CDN routing rules",
+      "hybrid storefront",
       "eCDN",
-      "hybrid implementation",
-      "traffic routing",
-      "SFRA",
+      "Managed Runtime",
+      "MRT",
       "Composable Storefront",
-      "headless rollout",
-      "PIG",
-      "SIG",
-      "hybrid proxy",
-      "PWA Kit",
-      "B2C CLI"
+      "SFRA",
+      "phased rollout",
+      "CDN Zones API",
+      "Business Manager",
+      "Cloudflare expressions",
+      "traffic routing"
     ]
   },
   "commerce-api/einstein-activities-for-phased-headless-rollouts": {
@@ -6393,19 +6735,20 @@
     ]
   },
   "commerce-api/error-response-codes": {
-    "summary": "Reference guide for HTTP status codes and error responses returned by B2C Commerce APIs to handle success, errors, and special cases.",
+    "summary": "Reference for HTTP status codes, error messages, and best practices for handling B2C Commerce API responses.",
     "keywords": [
       "HTTP status codes",
       "error handling",
-      "API errors",
       "SCAPI",
-      "400 bad request",
-      "401 unauthorized",
-      "404 not found",
-      "HTTP response codes",
-      "error messages",
-      "status code reference",
-      "API response handling"
+      "API errors",
+      "400 Bad Request",
+      "401 Unauthorized",
+      "404 Not Found",
+      "500 Internal Server Error",
+      "503 Service Unavailable",
+      "504 Request Timeout",
+      "RFC 7807",
+      "error response format"
     ]
   },
   "commerce-api/extend": {
@@ -6424,53 +6767,53 @@
     ]
   },
   "commerce-api/extensibility_via_hooks": {
-    "summary": "Use hooks to customize and extend Shopper API behavior via Script API with before, after, and modifyResponse operations.",
+    "summary": "Use hooks to customize and extend Shopper API resources with before, after, and modifyResponse logic using the Script API.",
     "keywords": [
       "hooks",
-      "Shopper API customization",
+      "Shopper API",
       "Script API",
-      "before hook",
-      "after hook",
+      "before",
+      "after",
       "modifyResponse",
-      "API extension",
-      "custom validation",
-      "request modification",
-      "response modification",
-      "commerce-api hooks",
-      "B2C Commerce hooks"
+      "customization",
+      "OCAPI",
+      "SCAPI",
+      "basket",
+      "payment instruments",
+      "validation"
     ]
   },
   "commerce-api/general-guidance": {
-    "summary": "Start here for cross-cutting B2C Commerce API guidance on authentication, extensibility, caching, personalization, and error handling.",
+    "summary": "Cross-cutting guidance for B2C Commerce APIs covering authentication, extensibility, caching, personalization, error handling, baskets, and request formatting.",
     "keywords": [
-      "SCAPI overview",
-      "commerce API fundamentals",
-      "API guidance",
-      "getting started",
-      "authentication authorization",
-      "extensibility hooks",
-      "caching performance",
+      "SCAPI",
+      "authentication",
+      "authorization",
+      "hooks",
+      "caching",
       "personalization",
       "error handling",
-      "best practices",
-      "cross-cutting concerns"
+      "baskets",
+      "orders",
+      "rate limiting",
+      "CORS",
+      "custom APIs"
     ]
   },
   "commerce-api/guest-order-access-code": {
-    "summary": "Enable guest shoppers to securely access and manage their orders after losing session via email-based one-time password (OTP) access codes.",
+    "summary": "Enable guest shoppers to securely access, view, cancel, and return orders using time-limited OTP access codes delivered via email.",
     "keywords": [
       "guest order access",
       "OTP",
-      "one-time password",
       "access code",
       "order lookup",
       "Shopper Orders API",
-      "guest checkout",
+      "sendOrderAccessCode hook",
+      "oms-cancel-order",
+      "oms-return-order",
+      "request-access-code",
       "order self-service",
-      "email hook",
-      "order management",
-      "guest authentication",
-      "session recovery"
+      "OMS integration"
     ]
   },
   "commerce-api/hook-method-details": {
@@ -6706,37 +7049,36 @@
     ]
   },
   "commerce-api/scapi-get-started": {
-    "summary": "Get started building storefronts and integrations using B2C Commerce's RESTful APIs with authentication and first API call examples.",
+    "summary": "Introduction to B2C Commerce API (SCAPI), a RESTful API platform for building storefronts, merchant tools, and integrations with authentication, SDKs, and operational guidelines.",
     "keywords": [
-      "B2C Commerce API",
       "SCAPI",
+      "B2C Commerce API",
       "Salesforce Commerce API",
-      "REST API",
-      "get started",
-      "first request",
-      "guest token",
+      "Shopper APIs",
+      "Admin APIs",
       "SLAS",
-      "Shopper API",
+      "OAuth 2.1",
+      "REST API",
+      "commerce-sdk",
+      "Account Manager",
       "API authentication",
-      "curl example",
-      "Commerce SDK"
+      "storefront development"
     ]
   },
   "commerce-api/scapi-logs-request-tracking": {
-    "summary": "Use Log Center to view and troubleshoot SCAPI logs, track requests by correlation ID, and monitor B2C Commerce API performance.",
+    "summary": "Use Log Center to view SCAPI logs, track requests by correlation ID, enable verbose logging, and monitor API performance for troubleshooting.",
     "keywords": [
       "SCAPI logs",
       "Log Center",
-      "API logging",
       "correlation ID",
-      "troubleshoot API",
-      "monitor performance",
-      "B2C CLI logs",
+      "verbose logging",
+      "API troubleshooting",
       "request tracking",
-      "API debugging",
-      "log search",
-      "request response matching",
-      "API monitoring"
+      "LCQL",
+      "sfdc_verbose header",
+      "externalID",
+      "SCAPI metrics",
+      "error patterns"
     ]
   },
   "commerce-api/scapi-property-selection": {
@@ -6772,52 +7114,53 @@
     ]
   },
   "commerce-api/security": {
-    "summary": "Authenticate and authorize API clients with secrets and scopes while protecting B2C Commerce systems against DoS and rate-limiting threats.",
+    "summary": "Secure B2C Commerce API interactions through authentication, authorization, and availability features with best practices for headless commerce.",
     "keywords": [
-      "security",
       "authentication",
       "authorization",
-      "API client",
+      "API security",
+      "OAuth scopes",
       "access token",
-      "scopes",
-      "permissions",
-      "DoS protection",
+      "least privilege",
       "rate limiting",
-      "API gateway",
-      "headless commerce security",
-      "data privacy"
+      "DoS protection",
+      "SLAS",
+      "passwordless login",
+      "XSS prevention",
+      "API client"
     ]
   },
   "commerce-api/server-side-web-tier-caching": {
-    "summary": "Configure server-side web-tier caching for SCAPI GET requests across product, search, pricing, and configuration APIs.",
+    "summary": "Configure and optimize SCAPI's two-tier caching (web-tier and CDN) for GET requests across Shopper APIs to reduce latency and origin load.",
     "keywords": [
-      "server-side caching",
-      "web-tier caching",
       "SCAPI caching",
-      "GET request caching",
-      "API response caching",
-      "cache configuration",
-      "storefront caching",
-      "product API caching",
-      "search API caching",
-      "cache layers",
-      "edge caching"
+      "CDN cache",
+      "web-tier cache",
+      "cache TTL",
+      "personalized caching",
+      "expand parameter",
+      "cache hit rate",
+      "Shopper APIs",
+      "cache key",
+      "cf-cache-status",
+      "sfdc_cache_status"
     ]
   },
   "commerce-api/shopper-context-api": {
-    "summary": "Use Shopper Context API to personalize headless storefront experiences by setting qualifiers like effective date and coupon codes that persist across SCAPI calls.",
+    "summary": "Set and retrieve shopper context to personalize headless storefront experiences without writing hooks or cartridges.",
     "keywords": [
-      "shopper context API",
-      "personalization",
-      "headless storefront",
+      "Shopper Context API",
       "SCAPI",
-      "qualifiers",
+      "personalization",
+      "headless commerce",
+      "shopper qualifiers",
       "effectiveDate",
       "couponCodes",
-      "shopper context setup",
-      "storefront personalization",
-      "dynamic customer groups",
-      "context state management"
+      "SLAS",
+      "sfcc.shopper-context.rw",
+      "Shopper Context Lite",
+      "sfdc_shopper_context",
+      "USID"
     ]
   },
   "commerce-api/shopper-context-api-future": {
@@ -6922,53 +7265,85 @@
       "IP geolocation"
     ]
   },
+  "commerce-api/shopper-context-lite": {
+    "summary": "Apply lightweight shopper context via the sfdc_shopper_context header to personalize Shopper API requests without prior context setup.",
+    "keywords": [
+      "Shopper Context Lite",
+      "sfdc_shopper_context header",
+      "personalization",
+      "Shopper API",
+      "clientIp",
+      "sourceCode",
+      "customQualifiers",
+      "SLAS",
+      "shopper context",
+      "headless storefront",
+      "context merging"
+    ]
+  },
   "commerce-api/slas": {
-    "summary": "Enable secure shopper authentication and API access to B2C Commerce and OCAPI through SLAS client configuration and admin tools.",
+    "summary": "SLAS enables secure shopper access to B2C Commerce and Open Commerce APIs through public/private clients, OAuth 2.1 grant types, and various token types for different authentication scenarios.",
     "keywords": [
       "SLAS",
-      "Shopper Login API Access Service",
-      "shopper authentication",
-      "API access control",
-      "SLAS client",
+      "Shopper Login",
+      "API Access Service",
+      "OAuth 2.1",
       "public client",
       "private client",
+      "ShopperToken",
+      "getAccessToken",
+      "authorization_code_pkce",
+      "client_credentials",
+      "refresh token",
+      "JWT"
+    ]
+  },
+  "commerce-api/slas-batch-logout": {
+    "summary": "Log out up to 50 shoppers across all sessions using the SLAS Admin API batchLogout endpoint in B2C Commerce v26.9+.",
+    "keywords": [
+      "batchLogout",
       "SLAS Admin API",
-      "SLAS tenant",
-      "secure access",
-      "OCAPI",
-      "shopper APIs"
+      "Shopper Login and API Access Service",
+      "batch logout",
+      "session logout",
+      "logoutCustomer",
+      "SLAS admin token",
+      "Account Manager access token",
+      "loginIds",
+      "shopper authentication",
+      "B2C Commerce 26.9"
     ]
   },
   "commerce-api/slas-best-practices": {
-    "summary": "Implement SLAS security best practices including Strict Client Auth for private clients and guest session rotation to enhance authentication and prevent token reuse.",
+    "summary": "Best practices for SLAS including Strict Client Auth, passwordless login, refresh token protection, guest session rotation, and custom header forwarding.",
     "keywords": [
-      "SLAS best practices",
+      "SLAS",
       "Shopper Login API Access Service",
       "Strict Client Auth",
-      "x-slas-client-auth header",
-      "private client authentication",
-      "guest token reuse",
-      "session rotation",
-      "Base64 client credentials",
-      "/login /authorize endpoints",
-      "SLAS security",
-      "client authentication",
-      "guest shopper security"
+      "x-slas-client-auth",
+      "passwordless login",
+      "OTP",
+      "passkeys",
+      "refresh token",
+      "guest session rotation",
+      "client credentials",
+      "rate limiting",
+      "OAuth state"
     ]
   },
   "commerce-api/slas-custom-parameters": {
-    "summary": "Pass custom parameters to SLAS login and authorize endpoints with c_ prefix to integrate with OCAPI hooks and third-party IDPs.",
+    "summary": "Pass custom parameters to SLAS login and authorize endpoints, which forward them to OCAPI hooks and third-party IDPs.",
     "keywords": [
-      "SLAS custom parameters",
-      "login endpoint custom parameters",
-      "authorize endpoint custom parameters",
-      "OCAPI hooks",
+      "SLAS",
+      "custom parameters",
+      "hooks",
+      "/login endpoint",
+      "/authorize endpoint",
+      "OCAPI SHOP /customers/auth",
       "c_ prefix",
-      "authentication hooks",
-      "third party IDP",
-      "SLAS configuration",
-      "custom headers SLAS",
-      "customers/auth hooks"
+      "authentication",
+      "IDP integration",
+      "custom headers"
     ]
   },
   "commerce-api/slas-default-idp": {
@@ -7072,18 +7447,17 @@
     ]
   },
   "commerce-api/slas-passwordless-login-email": {
-    "summary": "Implement passwordless email login using SLAS to send shoppers one-time passwords without third-party authentication services.",
+    "summary": "Configure passwordless email login with SLAS, including private clients, domain identities, email templates, and OTP delivery.",
     "keywords": [
       "passwordless login",
-      "email OTP",
+      "OTP email",
       "SLAS",
-      "Shopper Login API",
-      "one-time password",
-      "getPasswordResetToken",
+      "Shopper Login API Access Service",
+      "domain identity",
+      "DMARC",
       "authorizePasswordlessCustomer",
-      "sfcc.pwdless_login",
-      "private client",
-      "shopper authentication",
+      "registerPwdlessTemplate",
+      "one-time password",
       "email authentication"
     ]
   },
@@ -7358,71 +7732,71 @@
     ]
   },
   "commerce-api/throttle-rates": {
-    "summary": "Understand load shedding and rate limiting mechanisms in B2C Commerce APIs to handle system capacity and request frequency constraints.",
+    "summary": "Configure load shedding and rate limiting mechanisms to protect B2C Commerce API instances from overload while maintaining storefront availability.",
     "keywords": [
       "load shedding",
       "rate limiting",
-      "SCAPI",
-      "HTTP 503",
       "HTTP 429",
-      "sfdc_load",
+      "HTTP 503",
+      "SLAS",
+      "Omnichannel Inventory API",
+      "OCI",
+      "RPM",
       "API throttling",
-      "system capacity",
-      "request frequency",
-      "API protection",
-      "availability",
-      "commerce API limits"
+      "sfdc_load",
+      "Retry-After",
+      "rolling rate limits"
     ]
   },
   "commerce-api/timeout-troubleshoot": {
-    "summary": "Identify and resolve API request timeouts by tracking correlation IDs, analyzing response times, and gathering request details from logs and dashboards.",
+    "summary": "Identify and resolve gateway timeout issues by tracking requests, analyzing response times, and debugging custom code and hooks.",
     "keywords": [
       "request timeout",
       "gateway timeout",
-      "troubleshoot timeout",
-      "correlation ID",
-      "SCAPI response",
+      "correlationID",
       "response time",
-      "API timeout limits",
-      "request tracking",
-      "log center",
-      "CIP dashboard",
-      "timeout threshold",
-      "API performance"
+      "SCAPI",
+      "Log Center",
+      "hooks",
+      "custom API",
+      "circuit breaker",
+      "performance troubleshooting",
+      "verbose logging",
+      "504 error"
     ]
   },
   "commerce-api/timeouts-limits": {
-    "summary": "Configure API timeout thresholds and size limits for SCAPI to ensure optimal performance and handle gateway timeout errors.",
+    "summary": "Configure API timeouts, request/response size limits, and quotas for Commerce API performance and stability.",
     "keywords": [
-      "API timeouts",
-      "SCAPI timeouts",
-      "timeout limits",
+      "timeout",
+      "limits",
+      "SCAPI",
+      "request size",
+      "response size",
       "504 gateway timeout",
-      "connection idle timeout",
-      "Shopper-API timeout",
-      "Custom-API timeout",
-      "Admin-API timeout",
-      "performance limits",
-      "timeout configuration",
-      "API rate limits",
-      "request timeout"
+      "Shopper-API",
+      "Admin-API",
+      "Custom-API",
+      "quotas",
+      "circuit breaker",
+      "HTTP status codes"
     ]
   },
   "commerce-api/troubleshoot": {
-    "summary": "Debug and resolve B2C Commerce API issues using error codes, response analysis, rate limits, timeouts, and performance monitoring tools.",
+    "summary": "Troubleshoot B2C Commerce API issues using quick triage, error codes, logs, and performance analysis.",
     "keywords": [
       "API troubleshooting",
-      "error handling",
       "error codes",
-      "response codes",
-      "rate limiting",
-      "throttling",
-      "timeouts",
-      "API performance",
-      "debugging",
-      "logs",
+      "gateway timeout",
+      "throttle rates",
+      "authorization errors",
+      "SCAPI logs",
+      "correlationID",
       "request tracking",
-      "SCAPI"
+      "response handling",
+      "caching issues",
+      "rate limits",
+      "code profiler"
     ]
   },
   "commerce-api/url-encode": {
@@ -7589,20 +7963,20 @@
     ]
   },
   "pwa-kit-managed-runtime/build-customize": {
-    "summary": "Set up and develop a PWA Kit storefront by customizing components, pages, and integrating Page Designer with template extensibility.",
+    "summary": "Guide to developing and customizing your PWA Kit site using template extensibility, Page Designer integration, and best practices.",
     "keywords": [
-      "PWA Kit site setup",
-      "build storefront",
-      "customize components",
+      "PWA Kit",
+      "site development",
       "template extensibility",
-      "Page Designer integration",
+      "Page Designer",
       "Retail React app",
+      "customization",
+      "component customization",
       "environment variables",
       "personalization",
-      "sitemap SEO",
+      "SEO sitemap",
       "cache optimization",
-      "PWA development",
-      "composable storefront"
+      "store locator"
     ]
   },
   "pwa-kit-managed-runtime/compatibility-matrix": {
@@ -7755,20 +8129,20 @@
     ]
   },
   "pwa-kit-managed-runtime/debugging": {
-    "summary": "Debug PWA Kit apps using browser tools, linters, and profilers to troubleshoot bugs and performance issues.",
+    "summary": "Debug PWA Kit applications locally and on Managed Runtime using query parameters, DevTools, source maps, and Log Center.",
     "keywords": [
-      "PWA Kit debugging",
-      "troubleshooting",
-      "performance profiling",
-      "Chrome DevTools",
-      "React Developer Tools",
-      "linting",
-      "ESLint",
-      "code formatter",
-      "Prettier",
-      "browser console errors",
-      "network debugging",
-      "runtime performance"
+      "debugging",
+      "PWA Kit",
+      "source maps",
+      "Log Center",
+      "__server_only",
+      "__pretty_print",
+      "__server_timing",
+      "server-side rendering",
+      "SSR",
+      "Managed Runtime",
+      "performance metrics",
+      "breakpoints"
     ]
   },
   "pwa-kit-managed-runtime/decide-on-cdn": {
@@ -7805,52 +8179,52 @@
     ]
   },
   "pwa-kit-managed-runtime/env-var-3rd-party-CMS": {
-    "summary": "Store and access API keys securely using environment variables in PWA Kit to protect third-party service credentials from client-side exposure.",
+    "summary": "Store and access API keys securely using environment variables in PWA Kit managed runtime for server-side resource access.",
     "keywords": [
       "environment variables",
-      "API keys",
+      "API key",
       "protected resources",
-      "secure credentials",
-      "server-side security",
       "ssr.js",
-      "Express.js handler",
-      "external API access",
-      "PWA Kit configuration",
-      "environment variable setup",
-      "CMS integration"
+      "Express.js",
+      "server-side",
+      "PWA Kit managed runtime",
+      "projects_target_env_var_partial_update",
+      "CMS integration",
+      "deployment",
+      "B2C CLI"
     ]
   },
   "pwa-kit-managed-runtime/env-var-feature-access": {
-    "summary": "Configure and use environment variables in React.js with PWA Kit to control feature rendering without code changes.",
+    "summary": "Configure and use environment variables in React.js applications within PWA Kit to control features without code changes.",
     "keywords": [
       "environment variables",
       "React.js",
-      "process.env",
       "PWA Kit",
-      "isomorphic rendering",
+      "process.env",
       "feature flags",
-      "configuration",
-      "local testing",
-      "pwa-kit-managed-runtime",
-      "conditional rendering",
-      "Node.js environment"
+      "isomorphic rendering",
+      "config/default.js",
+      "runtime admin",
+      "projects_target_env_var_partial_update",
+      "deployment",
+      "local testing"
     ]
   },
   "pwa-kit-managed-runtime/environment-variables": {
-    "summary": "Configure secure environment variables in PWA Kit Managed Runtime for API keys, feature flags, and environment-specific configuration without code changes.",
+    "summary": "Configure and manage secure environment variables for PWA Kit Managed Runtime applications using API keys, feature flags, and configuration values.",
     "keywords": [
       "environment variables",
       "PWA Kit",
-      "managed runtime",
+      "Managed Runtime",
+      "process.env",
+      "Managed Runtime API",
+      "Runtime Admin",
+      "configuration",
       "API keys",
       "feature flags",
-      "configuration",
-      "secure variables",
-      "app server",
-      "Node.js",
-      "runtime admin",
-      "managed runtime API",
-      "environment-specific config"
+      "projects_target_env_var_partial_update",
+      "B2C CLI",
+      "constraints"
     ]
   },
   "pwa-kit-managed-runtime/getting-started": {
@@ -7904,19 +8278,19 @@
     ]
   },
   "pwa-kit-managed-runtime/hybrid-routing-matrix": {
-    "summary": "Configure routing between PWA Kit and SFRA/SiteGenesis using eCDN rules and app/routes.jsx filtering for hybrid storefronts.",
+    "summary": "Choose a hybrid storefront routing strategy between PWA Kit and SFRA/SiteGenesis using eCDN rules and app/routes.jsx filtering.",
     "keywords": [
       "hybrid storefront routing",
-      "PWA Kit routing matrix",
+      "PWA Kit",
       "eCDN routing rules",
+      "Managed Runtime",
       "app/routes.jsx",
-      "Composable Storefront",
-      "SFRA SiteGenesis",
-      "Managed Runtime MRT",
-      "Cloudflare rule expression",
-      "hybrid proxy local development",
-      "phased headless rollout",
-      "React Router navigation"
+      "SFRA/SiteGenesis",
+      "Cloudflare expressions",
+      "createMrtRules API",
+      "matrix configurations",
+      "headless commerce",
+      "phased rollout"
     ]
   },
   "pwa-kit-managed-runtime/hybrid-upgrade-v2.x": {
@@ -8003,20 +8377,19 @@
     ]
   },
   "pwa-kit-managed-runtime/launching-your-storefront": {
-    "summary": "Deploy a PWA Kit storefront to production with a public URL using Managed Runtime and configure DNS settings.",
+    "summary": "Launch a PWA Kit storefront to production with custom domains using Managed Runtime, third-party CDN, or eCDN.",
     "keywords": [
-      "launch storefront",
-      "PWA Kit deployment",
-      "managed runtime",
-      "production URL",
-      "DNS configuration",
-      "CNAME records",
-      "runtime admin",
-      "API key",
-      "storefront setup",
-      "go live",
-      "public web address",
-      "pwa-kit"
+      "PWA Kit",
+      "Managed Runtime",
+      "storefront launch",
+      "DNS CNAME",
+      "TLS certificate",
+      "CDN configuration",
+      "eCDN",
+      "Runtime Admin",
+      "environment setup",
+      "domain routing",
+      "cutover process"
     ]
   },
   "pwa-kit-managed-runtime/maintain": {
@@ -8037,20 +8410,20 @@
     ]
   },
   "pwa-kit-managed-runtime/managed-runtime-administration": {
-    "summary": "Manage PWA Kit Managed Runtime organizations, projects, environments, and bundles using the Runtime Admin tool and API.",
+    "summary": "Manage organizations, projects, environments, users, certificates, and redirects for PWA Kit storefronts using Runtime Admin.",
     "keywords": [
-      "Managed Runtime Administration",
       "Runtime Admin",
-      "PWA Kit management",
-      "organization management",
-      "project administration",
-      "environment management",
+      "Managed Runtime",
+      "project management",
+      "environment configuration",
+      "TLS certificates",
+      "URL redirects",
+      "user permissions",
+      "organization administration",
+      "deployment notifications",
+      "PWA Kit",
       "Managed Runtime API",
-      "user access control",
-      "certificate management",
-      "runtime configuration",
-      "B2C Commerce runtime",
-      "storefront administration"
+      "site IDs"
     ]
   },
   "pwa-kit-managed-runtime/managing-global-state": {
@@ -8217,20 +8590,20 @@
     ]
   },
   "pwa-kit-managed-runtime/mrt-overview": {
-    "summary": "Deploy, host, and monitor PWA Kit storefronts using Managed Runtime infrastructure with configurable environments for production, development, and testing.",
+    "summary": "Managed Runtime provides cloud infrastructure to deploy, host, and monitor PWA Kit storefronts with environments, bundles, and admin tools.",
     "keywords": [
       "Managed Runtime",
-      "PWA Kit deployment",
-      "storefront hosting",
+      "PWA Kit",
+      "deployment",
       "environments",
-      "infrastructure",
-      "production environment",
-      "cloud hosting",
-      "PWA Kit administration",
-      "targets",
-      "microservices scaling",
-      "pwa-kit",
-      "deployment platform"
+      "bundles",
+      "Runtime Admin",
+      "App Server",
+      "Node.js",
+      "React",
+      "projects",
+      "organizations",
+      "production environments"
     ]
   },
   "pwa-kit-managed-runtime/multiple-shipments": {
@@ -8403,20 +8776,20 @@
     ]
   },
   "pwa-kit-managed-runtime/perf-tips": {
-    "summary": "Implement performance best practices for PWA Kit storefronts using efficient data fetching, withReactQuery, parallel requests, and strategic server/client-side loading.",
+    "summary": "Implement performance best practices for PWA Kit storefronts including data fetching optimization, code splitting, caching, and image optimization.",
     "keywords": [
       "PWA Kit performance",
-      "data fetching optimization",
+      "data fetching",
+      "code splitting",
+      "CDN caching",
+      "image optimization",
+      "Core Web Vitals",
+      "LCP",
+      "INP",
       "withReactQuery",
-      "LCP core web vitals",
-      "SSR server-side rendering",
-      "storefront performance",
-      "getProps optimization",
-      "parallel API requests",
-      "Promise.all",
-      "client-side data loading",
-      "TTFB time to first byte",
-      "PWA Kit v3"
+      "DynamicImage",
+      "lazy loading",
+      "third-party scripts"
     ]
   },
   "pwa-kit-managed-runtime/personalize-with-cookies": {
@@ -8486,50 +8859,51 @@
     ]
   },
   "pwa-kit-managed-runtime/protect-storefront": {
-    "summary": "Enable Protected Storefronts in Business Manager to restrict storefront access during development to only authorized organization users via basic authentication.",
+    "summary": "Enable Protected Storefronts in Business Manager to restrict access to development storefronts using basic authentication passwords for organization users only.",
     "keywords": [
-      "protected storefront",
-      "limit access",
-      "development environment",
+      "Protected Storefront",
+      "Managed Runtime",
       "basic auth",
       "site status",
       "shared password",
-      "restrict access",
-      "storefront under development",
+      "storefront access",
+      "development environment",
       "Business Manager",
-      "access control",
-      "authentication",
+      "PWA Kit",
+      "StorefrontNext",
+      "multi-site storefronts",
       "online protected"
     ]
   },
   "pwa-kit-managed-runtime/proxying-requests": {
-    "summary": "Route API requests from different domains through your storefront domain using Managed Runtime's proxy feature to improve performance and observability.",
+    "summary": "Configure and manage proxy requests to route APIs through your storefront domain in PWA Kit Managed Runtime.",
     "keywords": [
       "proxy requests",
-      "cross-domain API",
+      "proxy configuration",
+      "Managed Runtime",
       "CORS",
-      "managed runtime",
-      "API routing",
-      "preflight requests",
-      "CDN caching",
-      "request logging",
-      "storefront domain",
-      "proxyConfig",
-      "SSR parameters"
+      "Runtime Admin",
+      "B2C Commerce API",
+      "caching proxy",
+      "mobify proxy",
+      "ssr_proxy_configs",
+      "X-Mobify header",
+      "SSR_PROXY environment variables",
+      "getProxyConfigs"
     ]
   },
   "pwa-kit-managed-runtime/pushing-and-deploying-bundles": {
-    "summary": "Deploy PWA Kit commerce applications to Managed Runtime by setting up API credentials and pushing code bundles via CLI or admin web interface.",
+    "summary": "Push and deploy code bundles to Managed Runtime environments using API keys and command-line scripts.",
     "keywords": [
-      "deploy code",
-      "managed runtime",
-      "push bundle",
-      "API key setup",
-      "PWA Kit deployment",
-      "runtime admin",
-      "code bundle",
-      "CLI deployment",
-      "authorization",
+      "bundle push",
+      "deploy",
+      "Managed Runtime",
+      "API key",
+      "Runtime Admin",
+      "PWA Kit",
+      "npm run push",
+      "environment deployment",
+      "bundle troubleshooting",
       "production environment"
     ]
   },
@@ -8585,19 +8959,18 @@
     ]
   },
   "pwa-kit-managed-runtime/pwa-framework": {
-    "summary": "Understand PWA Kit framework architecture and components for building performant Progressive Web App storefronts.",
+    "summary": "Learn the architecture and inner workings of PWA Kit framework including configuration, routing, rendering, and state management.",
     "keywords": [
       "PWA Kit",
-      "Progressive Web App",
       "framework architecture",
-      "configuration",
+      "configuration files",
       "routing",
       "rendering",
       "state management",
-      "proxy requests",
       "Retail React App",
-      "PWA components",
-      "composable storefront"
+      "proxy requests",
+      "progressive web app",
+      "Composable Storefront"
     ]
   },
   "pwa-kit-managed-runtime/pwa-get-set-up": {
@@ -8614,6 +8987,23 @@
       "SLAS private client",
       "multiple sites",
       "project initialization"
+    ]
+  },
+  "pwa-kit-managed-runtime/pwa-guest-order": {
+    "summary": "Enable guest shoppers to look up order status and tracking details via email verification in PWA Kit storefronts without requiring account registration.",
+    "keywords": [
+      "guest order lookup",
+      "order tracking",
+      "PWA Kit",
+      "email verification",
+      "guestOrderLookup API",
+      "unregistered shoppers",
+      "order status",
+      "multi-factor verification",
+      "access code",
+      "SCAPI",
+      "session cookie",
+      "self-service"
     ]
   },
   "pwa-kit-managed-runtime/pwa-httponly-cookie": {
@@ -8650,6 +9040,23 @@
       "PLP PDP checkout"
     ]
   },
+  "pwa-kit-managed-runtime/pwa-pd-site-wide-regions": {
+    "summary": "Build site-wide content blocks for PWA Kit storefronts that appear across all pages, such as announcement banners in headers.",
+    "keywords": [
+      "content blocks",
+      "site-wide regions",
+      "PWA Kit",
+      "Page Designer",
+      "announcement banner",
+      "EmbeddedSubtreeProvider",
+      "useComponent",
+      "header layout",
+      "cartridge descriptors",
+      "Region component",
+      "commerce_layouts",
+      "Shopper Experience API"
+    ]
+  },
   "pwa-kit-managed-runtime/pwa-redirects": {
     "summary": "Implement HTTP status code redirects in PWA Kit using the RedirectWithStatus component for React Router-based applications.",
     "keywords": [
@@ -8680,6 +9087,23 @@
       "headless implementation",
       "custom storefront",
       "React storefront"
+    ]
+  },
+  "pwa-kit-managed-runtime/pwa-site-prefs": {
+    "summary": "Access site preferences from the MRT Data Store in composable storefronts instead of making SCAPI calls, with utilities for server middleware and React components.",
+    "keywords": [
+      "MRT Data Store",
+      "site preferences",
+      "Business Manager",
+      "getCustomSitePreferences",
+      "getCustomGlobalPreferences",
+      "useCustomSitePreferences",
+      "useCustomGlobalPreferences",
+      "ssr.js",
+      "React hooks",
+      "PWAKIT_MRT_DATA_STORE_ENABLED",
+      "composable storefront",
+      "MRT_DATA_STORE_DEFAULTS"
     ]
   },
   "pwa-kit-managed-runtime/quick-start": {
@@ -8883,20 +9307,19 @@
     ]
   },
   "pwa-kit-managed-runtime/storefront-preview": {
-    "summary": "Preview PWA Kit storefronts in Runtime Admin by shopper context (customer groups, date/time, triggers) to test changes before production deployment.",
+    "summary": "Preview PWA Kit storefronts in Runtime Admin with shopper context, customer groups, pricing, and marketing strategies before production deployment.",
     "keywords": [
-      "storefront preview",
-      "runtime admin",
+      "Storefront Preview",
+      "Runtime Admin",
       "PWA Kit",
-      "preview staging",
       "shopper context",
       "customer groups",
-      "preview testing",
-      "CMS integration",
-      "pre-production testing",
-      "seasonal campaigns",
+      "source code",
       "pricing preview",
-      "marketing strategies"
+      "StorefrontPreview component",
+      "SLAS private client",
+      "personalization",
+      "CMS integration"
     ]
   },
   "pwa-kit-managed-runtime/storefront-preview-bm": {
@@ -9098,53 +9521,53 @@
     ]
   },
   "pwa-kit-managed-runtime/use-a-slas-private-client": {
-    "summary": "Configure and use SLAS private clients in PWA Kit for secure shopper authentication with server-side secret storage.",
+    "summary": "Set up and configure SLAS private clients in PWA Kit to enable secure shopper authentication with server-side client secret storage.",
     "keywords": [
       "SLAS private client",
-      "Shopper Login and API Access",
-      "PWA Kit authentication",
+      "shopper authentication",
       "client secret",
-      "passwordless login",
-      "guest pre-authorization",
-      "server-side environment variables",
-      "SLAS setup",
       "PWA Kit 3.5",
-      "secure authentication",
-      "API client configuration"
+      "CommerceAPIProvider",
+      "useSLASPrivateClient",
+      "PWA_KIT_SLAS_CLIENT_SECRET",
+      "environment variables",
+      "Managed Runtime",
+      "passwordless login",
+      "Shopper Agents API",
+      "ssr.js"
     ]
   },
   "pwa-kit-managed-runtime/using-the-managed-runtime-api": {
-    "summary": "Control B2C Commerce Managed Runtime deployments via API with custom tooling and admin capabilities beyond the Runtime Admin web interface.",
+    "summary": "Manage B2C Commerce Managed Runtime applications programmatically via API with authentication, rate limits, and administration capabilities.",
     "keywords": [
       "Managed Runtime API",
-      "runtime administration",
-      "B2C Commerce deployment",
       "Runtime Admin",
+      "projects_target_list",
+      "projects_target_create",
       "API key authentication",
-      "pwa-kit managed runtime",
-      "custom tooling",
-      "application control",
-      "storefront deployment",
-      "environment management",
-      "API rate limits",
-      "mobify domain"
+      "rate limits",
+      "environments",
+      "deployments",
+      "B2C Commerce",
+      "CI/CD automation",
+      "mobify.com"
     ]
   },
   "sfnext/sfnext-adapters": {
-    "summary": "Implement custom analytics adapters using the engagement adapter pattern to decouple vendor-specific event tracking from generic storefront components.",
+    "summary": "Implement vendor-agnostic analytics event tracking using the adapter pattern with Einstein, Active Data, or Data 360.",
     "keywords": [
-      "engagement adapter pattern",
-      "analytics adapter",
+      "engagement adapter",
       "EngagementAdapter interface",
+      "analytics event tracking",
       "Einstein adapter",
       "Active Data adapter",
-      "event tracking",
+      "Data 360 adapter",
       "adapter pattern",
-      "custom adapter",
-      "adapter registration",
-      "engagement.adapters config",
+      "storefront next",
+      "engagement.adapters",
       "lazy initialization",
-      "code splitting"
+      "code-split",
+      "custom adapter"
     ]
   },
   "sfnext/sfnext-address-autocomplete": {
@@ -9165,54 +9588,54 @@
     ]
   },
   "sfnext/sfnext-aeo-geo": {
-    "summary": "Implement Answer Engine Optimization (AEO) and Generative Engine Optimization (GEO) on PDP/PLP pages to make product data machine-readable for search engines, AI assistants, and voice searches.",
+    "summary": "Implement Answer Engine Optimization (AEO) and Generative Engine Optimization (GEO) using JSON-LD and SeoMeta on PDPs and PLPs for rich search results and AI grounding.",
     "keywords": [
       "AEO",
       "GEO",
-      "Answer Engine Optimization",
-      "Generative Engine Optimization",
-      "structured data",
-      "schema markup",
       "JSON-LD",
-      "product metadata",
+      "structured data",
+      "schema.org",
       "rich snippets",
-      "AI citation",
+      "Product schema",
+      "CollectionPage",
+      "SeoMeta",
       "PDP",
-      "PLP"
+      "PLP",
+      "answer engines"
     ]
   },
   "sfnext/sfnext-analytics": {
-    "summary": "Collect and track storefront activity using Storefront Next analytics hooks, events, and consent management integrated with Einstein and third-party systems.",
+    "summary": "Implement analytics tracking in Storefront Next using built-in hooks, events, and adapters for Einstein, Active Data, and Data 360 with consent management.",
     "keywords": [
-      "analytics tracking",
-      "Storefront Next analytics",
-      "analytics hook",
+      "analytics",
       "AnalyticsEvent",
-      "Einstein analytics",
+      "EngagementAdapter",
+      "Einstein Activities",
+      "Active Data",
+      "Data 360",
       "tracking consent",
-      "GDPR compliance",
-      "engagement adapter",
-      "consent banner",
-      "sfnext analytics",
-      "activity monitoring",
-      "event tracking"
+      "GDPR",
+      "analytics hook",
+      "Beacon API",
+      "consentCategory",
+      "sfnext"
     ]
   },
   "sfnext/sfnext-api-integration": {
-    "summary": "Type-safe API client for calling Salesforce B2C Commerce Shopper APIs with TypeScript support, autocomplete, and semantic operation names from storefronts.",
+    "summary": "Type-safe API client for calling Salesforce B2C Commerce Shopper APIs with TypeScript support, authentication helpers, and custom API integration.",
     "keywords": [
-      "SCAPI client",
+      "SCAPI",
       "B2C Commerce API",
       "Shopper API",
-      "type-safe API client",
-      "TypeScript commerce API",
-      "storefront API integration",
-      "Commerce API wrapper",
-      "createCommerceApiClients",
-      "RESTful API client",
+      "API client",
+      "TypeScript",
       "openapi-fetch",
+      "authentication",
+      "SLAS",
       "custom APIs",
-      "authentication helpers"
+      "storefront-next-runtime",
+      "middleware",
+      "REST API"
     ]
   },
   "sfnext/sfnext-architecture": {
@@ -9232,20 +9655,19 @@
     ]
   },
   "sfnext/sfnext-base-path": {
-    "summary": "Route requests to different Managed Runtime environments using environment base paths on a single domain with eCDN.",
+    "summary": "Route requests to specific MRT environments using environment base paths for multi-environment storefronts on a single domain.",
     "keywords": [
       "environment base paths",
-      "MRT routing",
-      "managed runtime environments",
-      "single domain multiple storefronts",
-      "eCDN routing",
-      "storefront subpaths",
-      "locale routing",
-      "regional storefronts",
-      "multistore setup",
-      "sfnext configuration",
-      "domain path mapping",
-      "request routing"
+      "MRT",
+      "Managed Runtime",
+      "routing",
+      "eCDN",
+      "multitenancy",
+      "config.server.ts",
+      "envBasePath",
+      "storefront",
+      "multiple environments",
+      "domain routing"
     ]
   },
   "sfnext/sfnext-basket-management": {
@@ -9281,72 +9703,87 @@
       "sfnext browsers"
     ]
   },
+  "sfnext/sfnext-build-shopping-section": {
+    "summary": "Customize and build core shopping flows including basket management, checkout, payments, order management, and AI-assisted shopping experiences.",
+    "keywords": [
+      "shopping experience",
+      "basket management",
+      "checkout configuration",
+      "Salesforce Payments",
+      "order management",
+      "store locator",
+      "Shopper Agent",
+      "Storefront Next",
+      "guest order lookup",
+      "address autocomplete",
+      "in-store pickup",
+      "shopper context"
+    ]
+  },
   "sfnext/sfnext-build-tools": {
-    "summary": "Configure Vite build tools for Storefront Next with React Router, Tailwind CSS, TypeScript, and MRT deployment optimization.",
+    "summary": "Configure Vite build tools, React Router, TypeScript, testing, and bundle optimization for Storefront Next development and MRT deployment.",
     "keywords": [
       "Vite",
       "build tools",
-      "Storefront Next",
-      "vite.config.ts",
       "React Router",
-      "Tailwind CSS",
-      "TypeScript paths",
-      "storefrontNextPlugin",
+      "TypeScript",
+      "Vitest",
+      "source maps",
+      "bundle size",
+      "Managed Runtime",
       "MRT deployment",
-      "bundle optimization",
-      "Rollup",
-      "Vitest"
+      "vite.config.ts",
+      "storefrontNextPlugin",
+      "Tailwind CSS"
     ]
   },
   "sfnext/sfnext-caching-content": {
-    "summary": "Configure multi-tier caching strategy for Storefront Next across browser, CDN, runtime, and API layers to optimize performance.",
+    "summary": "Multi-tier caching strategy for Storefront Next including browser, CDN, Managed Runtime, and SCAPI layers.",
     "keywords": [
       "content caching",
-      "storefront next caching",
+      "static content",
       "CDN caching",
-      "eCDN",
-      "static content caching",
-      "metadata caching",
+      "Cloudflare",
+      "Managed Runtime",
+      "MRT",
       "SCAPI caching",
-      "managed runtime cache",
-      "web-tier caching",
+      "metadata caching",
       "cache hit ratio",
-      "edge caching",
-      "performance optimization"
+      "B2C Commerce API",
+      "web-tier caching",
+      "eCDN"
     ]
   },
   "sfnext/sfnext-cli": {
-    "summary": "Use the sfnext CLI tool to develop, deploy, and manage Storefront Next projects via commands like create-storefront, dev, and preview.",
+    "summary": "Reference guide for sfnext CLI commands for developing, building, and deploying Storefront Next projects.",
     "keywords": [
       "sfnext CLI",
-      "command-line interface",
-      "Storefront Next",
-      "pnpm sfnext",
-      "CLI commands",
-      "development server",
       "create-storefront",
-      "dev command",
-      "package.json scripts",
-      "project setup",
-      "deployment",
-      "CLI reference"
+      "dev server",
+      "preview",
+      "push",
+      "create-bundle",
+      "extensions",
+      "Managed Runtime",
+      "pnpm sfnext",
+      "SSR",
+      "environment variables",
+      "deployment"
     ]
   },
   "sfnext/sfnext-component-extend-upgrade": {
-    "summary": "Manage customized React components by merging updates directly or maintaining separate copies with Vite aliasing to balance improvements with preserving customizations.",
+    "summary": "Strategies for customizing Storefront Next template code while managing upgrades to new template versions.",
     "keywords": [
-      "customize components",
-      "component upgrade",
-      "React components",
-      "merge updates",
-      "Vite aliasing",
+      "customization",
+      "upgrades",
+      "Storefront Next",
       "Git merge",
-      "component versioning",
-      "storefront customization",
-      "built-in components",
-      "upgrade strategy",
-      "conflict resolution",
-      "component maintenance"
+      "Vite aliases",
+      "React components",
+      "extensions",
+      "UI targets",
+      "template updates",
+      "component customization"
     ]
   },
   "sfnext/sfnext-connect-storefront": {
@@ -9367,68 +9804,113 @@
     ]
   },
   "sfnext/sfnext-customize": {
-    "summary": "Create a custom banner component and add it to a new storefront page using Storefront Next.",
+    "summary": "Create a custom page and banner component in Storefront Next using React and TypeScript.",
     "keywords": [
-      "customize storefront",
-      "custom component",
-      "custom page",
-      "banner component",
-      "React component",
       "Storefront Next",
-      "sfnext",
-      "add page",
+      "custom page",
+      "component",
+      "React Router",
+      "TypeScript",
+      "banner",
+      "createPage",
+      "Tailwind CSS",
       "route file",
-      "Tailwind styling"
+      "sfnext",
+      "customization"
+    ]
+  },
+  "sfnext/sfnext-customize-data": {
+    "summary": "Create a server-side data loader for Storefront Next pages to fetch products from B2C Commerce and render them in React components.",
+    "keywords": [
+      "data fetching",
+      "server-side loader",
+      "Shopper Search API",
+      "createApiClients",
+      "FeaturedProducts component",
+      "Storefront Next",
+      "B2C Commerce",
+      "SLAS authorization",
+      "loaderData",
+      "product grid"
     ]
   },
   "sfnext/sfnext-customize-sf": {
-    "summary": "Learn to build and customize Storefront Next with B2C Commerce features including checkout, authentication, store locator, and deployment.",
+    "summary": "Customize and extend Storefront Next with components, AI agents, and modernized storefront experiences.",
     "keywords": [
-      "Storefront Next",
-      "B2C Commerce",
-      "storefront customization",
-      "checkout configuration",
-      "one-click checkout",
-      "address autocomplete",
-      "Managed Runtime deployment",
-      "shopper experience",
-      "authentication",
-      "storefront features",
+      "Storefront Next customization",
+      "component extension",
+      "page creation",
+      "B2C Agent Skills",
+      "modernized storefront",
       "sfnext",
-      "Commerce Apps"
+      "storefront enhancement",
+      "integration",
+      "upgrade best practices",
+      "feature extension"
+    ]
+  },
+  "sfnext/sfnext-data-analytics-section": {
+    "summary": "Integrate Storefront Next with analytics platforms like Einstein, Active Data, and Data360 to track and analyze shopper activity.",
+    "keywords": [
+      "Storefront Next analytics",
+      "Einstein analytics",
+      "Active Data",
+      "Data360",
+      "shopper tracking",
+      "customer data unification",
+      "analytics hook",
+      "analytics events",
+      "product views",
+      "engagement events",
+      "sfnext"
     ]
   },
   "sfnext/sfnext-data-loading": {
-    "summary": "Understand how Storefront Next handles data fetching using server-side loaders/actions, client-side fetchers, and SSR/CSR patterns for optimal performance.",
+    "summary": "Guide to data fetching patterns in Storefront Next using React Router loaders, actions, fetchers, and middleware for server-rendered SPAs.",
     "keywords": [
-      "data fetching",
+      "React Router",
       "loaders",
       "actions",
       "fetchers",
+      "middleware",
       "server-side rendering",
       "SSR",
-      "client-side rendering",
-      "CSR",
-      "React Router",
-      "data loading",
-      "middleware",
-      "cookies sessions"
+      "data fetching",
+      "SCAPI",
+      "Storefront Next",
+      "cookies",
+      "sessions"
+    ]
+  },
+  "sfnext/sfnext-data360": {
+    "summary": "Connect Storefront Next to Data 360 to send shopper engagement events and unify customer data on Salesforce.",
+    "keywords": [
+      "Data 360",
+      "Storefront Next",
+      "analytics events",
+      "engagement events",
+      "data integration",
+      "config.server.ts",
+      "app source ID",
+      "tenant ID",
+      "Web engagement",
+      "shopper activities",
+      "data stream"
     ]
   },
   "sfnext/sfnext-debug": {
-    "summary": "Learn debugging and troubleshooting techniques to identify and resolve issues and performance bottlenecks in Storefront Next applications.",
+    "summary": "Learn debugging and troubleshooting techniques to identify issues and performance bottlenecks in Storefront Next storefronts.",
     "keywords": [
-      "debug storefront next",
+      "debug",
       "troubleshooting",
-      "debugging tips",
-      "performance bottlenecks",
-      "local debugging",
+      "Storefront Next",
+      "sfnext",
+      "performance",
       "logging",
-      "sfnext debug",
-      "storefront next issues",
-      "debug locally",
-      "performance optimization",
-      "storefront next troubleshooting"
+      "Log Center",
+      "local debugging",
+      "bottlenecks",
+      "issue resolution"
     ]
   },
   "sfnext/sfnext-debug-locally": {
@@ -9449,20 +9931,19 @@
     ]
   },
   "sfnext/sfnext-debug-log-center": {
-    "summary": "Use Log Center to debug production Storefront Next and B2C Commerce environments with centralized logging, search, and error tracking.",
+    "summary": "Use Log Center to debug Storefront Next production issues by aggregating MRT and B2C Commerce instance logs in one searchable interface.",
     "keywords": [
       "Log Center",
-      "production debugging",
       "Storefront Next",
+      "debugging",
+      "Managed Runtime",
       "MRT logs",
-      "B2C Commerce logging",
+      "B2C Commerce",
       "SLAS errors",
-      "CDN error logs",
-      "log search",
-      "production troubleshooting",
-      "PWA Kit logs",
-      "Managed Runtime logs",
-      "error investigation"
+      "CDN logs",
+      "correlationId",
+      "log filtering",
+      "production troubleshooting"
     ]
   },
   "sfnext/sfnext-debug-mrt": {
@@ -9568,20 +10049,20 @@
     ]
   },
   "sfnext/sfnext-get-started": {
-    "summary": "Build high-performance, scalable storefronts using React 19, server-side rendering, and modern web technologies with Storefront Next.",
+    "summary": "Build modern, high-performance storefronts using Storefront Next with React 19, server-side rendering, and personalization capabilities.",
     "keywords": [
       "Storefront Next",
-      "sfnext",
       "React 19",
       "server-side rendering",
-      "SSR",
-      "Tailwind CSS",
-      "shadcn/ui",
       "React Router 7",
-      "storefront performance",
+      "Tailwind CSS",
       "personalization",
       "Core Web Vitals",
-      "modern storefront"
+      "Managed Runtime",
+      "storefront deployment",
+      "hybrid implementation",
+      "PWA Kit migration",
+      "shadcn/ui"
     ]
   },
   "sfnext/sfnext-get-started-section": {
@@ -9589,48 +10070,95 @@
     "keywords": [
       "Storefront Next",
       "sfnext",
-      "get started",
       "architecture",
-      "core concepts",
-      "browser compatibility",
       "quick start",
+      "browser compatibility",
+      "B2C Commerce",
+      "managed runtime",
       "create storefront",
       "connect storefront",
-      "B2C Commerce",
-      "setup",
-      "initialization"
+      "environment setup",
+      "release notes"
+    ]
+  },
+  "sfnext/sfnext-github-connect": {
+    "summary": "Connect an existing GitHub repository to your Storefront Next in Business Manager for version control and team collaboration.",
+    "keywords": [
+      "GitHub repository",
+      "Storefront Next",
+      "Business Manager",
+      "source code",
+      "version control",
+      "CI/CD",
+      "Commerce Apps",
+      "Salesforce CLI",
+      "team collaboration",
+      "sfnext"
+    ]
+  },
+  "sfnext/sfnext-go-live": {
+    "summary": "Launch your Storefront Next to staging or production and configure routing rules for custom domains.",
+    "keywords": [
+      "go live",
+      "launch storefront",
+      "staging",
+      "production",
+      "routing rules",
+      "Business Manager",
+      "custom domains",
+      "vanity domains",
+      "Storefront Next",
+      "public web address"
+    ]
+  },
+  "sfnext/sfnext-guest-order": {
+    "summary": "Enable unregistered shoppers to securely look up order status and tracking details using email verification in Storefront Next.",
+    "keywords": [
+      "guest order lookup",
+      "order tracking",
+      "unregistered shoppers",
+      "Storefront Next",
+      "guestOrderLookup API",
+      "email verification",
+      "multi-factor verification",
+      "order details",
+      "self-service",
+      "Turnstile bot protection",
+      "SCAPI",
+      "order status"
     ]
   },
   "sfnext/sfnext-hybrid": {
-    "summary": "Integrate Storefront Next with SFRA or SiteGenesis using Hybrid Auth for synchronized authentication and seamless shopper experience.",
+    "summary": "Set up Storefront Next in a hybrid implementation with Hybrid Auth for seamless authentication and data synchronization across SFRA/SiteGenesis and modern storefronts.",
     "keywords": [
-      "hybrid implementation",
-      "hybrid auth",
+      "Hybrid Auth",
       "Storefront Next",
       "SFRA",
       "SiteGenesis",
       "SLAS",
-      "authentication",
-      "token synchronization",
+      "eCDN routing",
+      "session bridging",
+      "basket merging",
+      "Shopper Context",
+      "hybrid implementation",
       "dwsid",
-      "JWT",
-      "hybrid proxy",
-      "third-party IDP"
+      "legacyRoutes"
     ]
   },
   "sfnext/sfnext-hybrid-ods": {
-    "summary": "Configure hybrid storefronts running Storefront Next and SFRA/SiteGenesis simultaneously on ODS using Cloudflare eCDN origin routing.",
+    "summary": "Configure hybrid storefront routing on ODS instances using Cloudflare eCDN to run Storefront Next and SFRA/SiteGenesis simultaneously.",
     "keywords": [
-      "hybrid storefront ODS",
-      "On-Demand Sandbox setup",
-      "eCDN origin routing",
-      "Storefront Next SFRA",
-      "Cloudflare eCDN rules",
-      "hybrid proxy ODS",
-      "production-like routing",
-      "SiteGenesis migration",
-      "origin routing configuration",
-      "ODS deployment"
+      "ODS",
+      "On-Demand Sandbox",
+      "hybrid storefront",
+      "eCDN",
+      "origin routing",
+      "Storefront Next",
+      "SFRA",
+      "SiteGenesis",
+      "hybrid auth",
+      "MRT environment variables",
+      "legacyRoutes"
     ]
   },
   "sfnext/sfnext-hybrid-proxy-local-dev": {
@@ -9651,36 +10179,36 @@
     ]
   },
   "sfnext/sfnext-hybrid-routing-matrix": {
-    "summary": "Configure hybrid storefront routing rules to split traffic between Storefront Next and SFRA/SiteGenesis across local, ODS, and production environments.",
+    "summary": "Configure hybrid storefront routing between Storefront Next and SFRA/SiteGenesis using edge rules and client-side middleware.",
     "keywords": [
-      "hybrid storefront routing",
+      "hybrid storefront",
+      "routing matrix",
       "HYBRID_ROUTING_RULES",
       "Storefront Next",
-      "SFRA SiteGenesis",
+      "SFRA",
       "eCDN routing",
-      "hybrid proxy setup",
-      "Cloudflare expressions",
-      "client-side routing middleware",
       "PUBLIC__app__hybrid__legacyRoutes",
-      "edge routing layer",
-      "storefront split configuration"
+      "Cloudflare expression",
+      "url.prefix",
+      "edge routing",
+      "site-locale prefix"
     ]
   },
   "sfnext/sfnext-images": {
-    "summary": "Optimize and deliver responsive images using Dynamic Imaging Service (DIS) and DynamicImage component to improve Core Web Vitals.",
+    "summary": "Optimize storefront images using Dynamic Imaging Service (DIS) and the DynamicImage component for responsive, format-converted, server-resized delivery.",
     "keywords": [
+      "DynamicImage component",
       "Dynamic Imaging Service",
       "DIS",
       "image optimization",
       "responsive images",
-      "DynamicImage component",
-      "image resizing",
-      "format conversion",
-      "WebP",
+      "WebP format conversion",
+      "server-side resizing",
+      "DynamicImageProvider",
       "Core Web Vitals",
       "LCP",
-      "image transformation",
-      "CDN caching"
+      "toDisImageUrl",
+      "image alt text"
     ]
   },
   "sfnext/sfnext-instore-pickup": {
@@ -9700,20 +10228,20 @@
     ]
   },
   "sfnext/sfnext-intl": {
-    "summary": "Set up internationalization using i18next with dual server/client instances for multi-locale support in Remix storefronts.",
+    "summary": "Implement multi-language and multi-currency support in Storefront Next using i18next and remix-i18next with runtime switching.",
     "keywords": [
       "i18n",
       "internationalization",
       "i18next",
-      "react-i18next",
       "remix-i18next",
-      "localization",
-      "multi-locale",
-      "translations",
+      "useTranslation",
+      "getTranslation",
+      "locales",
       "language switching",
-      "server-side i18n",
-      "client-side i18n",
-      "locale detection"
+      "currency switching",
+      "translations.json",
+      "namespaces",
+      "LocaleSwitcher"
     ]
   },
   "sfnext/sfnext-load-more": {
@@ -9734,37 +10262,36 @@
     ]
   },
   "sfnext/sfnext-logging": {
-    "summary": "Configure and use Storefront Next's built-in structured JSON logger with correlation IDs for server-side and client-side logging across your application.",
+    "summary": "Configure and use Storefront Next's built-in structured JSON logger with correlation IDs for request tracing across server and client code.",
     "keywords": [
       "logging",
       "structured logger",
-      "JSON logging",
       "getLogger",
       "createLogger",
       "correlation ID",
       "log levels",
-      "error warn info debug",
-      "Storefront Next",
+      "JSON output",
       "Log Center",
+      "SFCC_LOG_LEVEL",
+      "request tracing",
       "Managed Runtime",
-      "request tracing"
+      "ndjson"
     ]
   },
   "sfnext/sfnext-login-support": {
-    "summary": "Comprehensive guide to authentication methods (password, OTP, social login) and account management features supported in Storefront Next.",
+    "summary": "Storefront Next login and registration capabilities including password, OTP, social login, and account update features.",
     "keywords": [
-      "login authentication",
+      "login",
       "registration",
-      "OTP email",
-      "social login",
+      "authentication",
+      "OTP",
+      "email verification",
       "password reset",
+      "social login",
       "account update",
       "Storefront Next",
-      "shopper authentication",
-      "identity provider",
-      "account management",
-      "email verification",
-      "user registration"
+      "SLAS",
+      "passwordless"
     ]
   },
   "sfnext/sfnext-login-support-hybrid": {
@@ -9784,20 +10311,36 @@
       "multi-storefront"
     ]
   },
-  "sfnext/sfnext-mcp-server": {
-    "summary": "Use AI coding agents with B2C DX MCP server and agent skills plugins to accelerate Storefront Next development, cartridge deployment, and B2C Commerce API integration.",
+  "sfnext/sfnext-manage-sites": {
+    "summary": "Add or remove sites assigned to a Storefront Next instance in Business Manager to support new locales, brands, or markets.",
     "keywords": [
-      "agent skills",
-      "B2C DX MCP server",
-      "agentic development",
       "Storefront Next",
-      "AI coding agent",
-      "Claude Cursor Copilot",
-      "SCAPI",
-      "cartridge deployment",
-      "Managed Runtime MRT",
+      "manage sites",
+      "site assignment",
+      "Business Manager",
+      "MRT Data Store",
+      "multisite",
+      "SLAS",
+      "Shopper Login",
+      "site provisioning",
+      "storefront configuration"
+    ]
+  },
+  "sfnext/sfnext-mcp-server": {
+    "summary": "Connect AI assistants to B2C Commerce using MCP and Agent Skills for Storefront Next development tasks like debugging, documentation search, and SCAPI integration.",
+    "keywords": [
+      "MCP",
+      "Agent Skills",
+      "Storefront Next",
+      "B2C MCP",
+      "Agentic B2C Developer Toolkit",
+      "SCAPI Admin APIs",
       "B2C CLI",
-      "storefront development"
+      "Page Designer",
+      "Agentforce Commerce Vibes",
+      "AI assistant integration",
+      "storefront development",
+      "skill collections"
     ]
   },
   "sfnext/sfnext-modern-exp": {
@@ -9818,20 +10361,20 @@
     ]
   },
   "sfnext/sfnext-mrt-administration": {
-    "summary": "Manage Storefront Next organizations, projects, environments, and bundles through Runtime Admin console, Business Manager, or Managed Runtime API.",
+    "summary": "Manage Storefront Next organizations, projects, environments, bundles, users, and deployments through Runtime Admin console, Business Manager, and APIs.",
     "keywords": [
       "Managed Runtime Administration",
-      "Runtime Admin console",
-      "Managed Runtime API",
-      "organization management",
-      "project administration",
-      "environment management",
-      "bundle management",
-      "user access control",
-      "permissions management",
-      "Storefront Next",
-      "Account Manager",
-      "TLS certificates"
+      "Runtime Admin",
+      "organizations",
+      "projects",
+      "environments",
+      "deployment",
+      "bundles",
+      "user permissions",
+      "URL redirects",
+      "environment settings",
+      "MRT",
+      "Storefront Next"
     ]
   },
   "sfnext/sfnext-mrt-api": {
@@ -9852,37 +10395,35 @@
     ]
   },
   "sfnext/sfnext-mrt-create-environment": {
-    "summary": "Set up separate development, testing, and production environments for Storefront Next storefronts in Business Manager with automatic eCDN support.",
+    "summary": "Create a storefront environment in Business Manager to separate production from development and testing storefronts hosted in Managed Runtime.",
     "keywords": [
-      "create environment",
-      "Business Manager environment",
-      "Storefront Next environment",
-      "environment setup",
+      "environment creation",
+      "Business Manager",
+      "Storefront Next",
       "Managed Runtime",
       "eCDN",
-      "development environment",
-      "testing environment",
+      "storefronts",
       "production environment",
-      "environment configuration",
-      "sfnext environment",
-      "storefront environment"
+      "development environment",
+      "environment settings",
+      "region assignment",
+      "sfnext"
     ]
   },
   "sfnext/sfnext-mrt-data-store": {
-    "summary": "Access B2C Commerce site preferences and Page Designer changes stored in MRT data store for faster Storefront Next performance without API calls.",
+    "summary": "MRT Data Store stores B2C Commerce settings and Page Designer changes, enabling faster retrieval for Storefront Next without API calls.",
     "keywords": [
       "MRT data store",
-      "managed runtime",
-      "site preferences",
+      "Managed Runtime",
       "Storefront Next",
-      "data store middleware",
+      "site preferences",
       "Page Designer",
-      "dataStoreMiddleware",
+      "dataStoreMiddlewareLazy",
       "SCAPI",
-      "configuration",
-      "environment variables",
-      "root.tsx",
-      "performance"
+      "page manifests",
+      "sfcc-push-page-manifests",
+      "site deployment",
+      "local development"
     ]
   },
   "sfnext/sfnext-mrt-env-var-troubleshoot": {
@@ -9903,20 +10444,20 @@
     ]
   },
   "sfnext/sfnext-mrt-env-vars-api": {
-    "summary": "Automate environment variable management using B2C CLI or Managed Runtime API instead of the Runtime Admin UI.",
+    "summary": "Automate environment variable management using B2C CLI or Managed Runtime API instead of Runtime Admin UI.",
     "keywords": [
       "environment variables",
       "B2C CLI",
       "Managed Runtime API",
-      "automate environment configuration",
+      "automation",
+      "Runtime Admin",
       "process.env",
-      "Node.js environment variables",
       "MRT commands",
-      "set environment variables",
-      "list environment variables",
+      "API key",
+      "environment management",
       ".env file",
-      "runtime admin",
-      "environment management"
+      "projects_target_env_var_list",
+      "projects_target_env_var_partial_update"
     ]
   },
   "sfnext/sfnext-mrt-environment-vars": {
@@ -9937,20 +10478,18 @@
     ]
   },
   "sfnext/sfnext-mrt-launch-storefront": {
-    "summary": "Deploy and publish your Storefront Next to a public web address with proper DNS and Managed Runtime configuration.",
+    "summary": "Deploy and launch a Storefront Next storefront to staging or production with domain configuration and traffic routing.",
     "keywords": [
-      "launch storefront",
-      "deploy storefront next",
-      "public web address",
+      "storefront launch",
       "Managed Runtime",
-      "DNS CNAME",
-      "staging production",
-      "Runtime Admin",
-      "API key",
-      "storefront deployment",
-      "go live",
-      "publish storefront",
-      "environment launch"
+      "eCDN routing",
+      "SLAS client",
+      "site import/export",
+      "vanity domain",
+      "environment variables",
+      "access control headers",
+      "B2C CLI",
+      "production deployment"
     ]
   },
   "sfnext/sfnext-mrt-node-version": {
@@ -9969,35 +10508,36 @@
     ]
   },
   "sfnext/sfnext-mrt-overview": {
-    "summary": "Managed Runtime provides cloud infrastructure to deploy, host, and monitor Storefront Next apps with serverless Node.js hosting, WAF protection, and environment management.",
+    "summary": "Managed Runtime is cloud infrastructure for deploying, hosting, and monitoring Storefront Next applications with serverless hosting, WAF protection, and environment management.",
     "keywords": [
       "Managed Runtime",
-      "Storefront Next deployment",
-      "cloud infrastructure",
-      "serverless Node.js",
-      "WAF web application firewall",
-      "staging environments",
-      "production deployment",
-      "bundle management",
-      "eCDN",
-      "Storefront Next hosting",
-      "React Router 7",
-      "TLS security"
+      "Storefront Next",
+      "MRT",
+      "app server",
+      "web application firewall",
+      "WAF",
+      "environments",
+      "bundles",
+      "projects",
+      "deployment",
+      "Runtime Admin",
+      "serverless Node.js"
     ]
   },
   "sfnext/sfnext-mrt-release-notes": {
-    "summary": "Track Managed Runtime feature updates, changes, and new capabilities across releases.",
+    "summary": "Track Managed Runtime updates including rendering timeouts, capacity limits, environment settings, and security features.",
     "keywords": [
-      "Managed Runtime release notes",
-      "MRT releases",
-      "sfnext updates",
-      "SSR bundle size limit",
-      "release changelog",
-      "feature updates",
-      "MRT changelog",
-      "version history",
-      "Managed Runtime changes",
-      "deployment updates"
+      "Managed Runtime",
+      "MRT",
+      "release notes",
+      "Storefront Next",
+      "Composable Storefront",
+      "rendering timeout",
+      "environment capacity",
+      "production flag",
+      "Protected Storefront",
+      "SSR bundle",
+      "eCDN security"
     ]
   },
   "sfnext/sfnext-mrt-routing-bm": {
@@ -10017,37 +10557,51 @@
     ]
   },
   "sfnext/sfnext-mrt-section": {
-    "summary": "Deploy, host, and monitor Storefront Next applications on Managed Runtime cloud infrastructure with administration and configuration guides.",
+    "summary": "Deploy, host, and manage Storefront Next applications on B2C Commerce Managed Runtime cloud infrastructure.",
     "keywords": [
-      "Storefront Next deployment",
+      "Storefront Next",
       "Managed Runtime",
-      "sfnext hosting",
+      "MRT",
+      "deployment",
       "cloud infrastructure",
       "environment variables",
-      "routing rules",
-      "MRT administration",
-      "storefront launch",
-      "Business Manager configuration",
-      "runtime API",
-      "environment management",
-      "CI/CD automation"
+      "Node.js",
+      "administration",
+      "Business Manager",
+      "data store"
     ]
   },
   "sfnext/sfnext-multi-site": {
-    "summary": "Configure how site and locale identifiers appear in Storefront Next URLs using path prefixes, query parameters, or cookies for single/multiple site deployments.",
+    "summary": "Configure how site and locale identifiers appear in Storefront Next URLs using path segments, query parameters, or cookies, and set up multisite detection.",
     "keywords": [
       "multisite URLs",
-      "locale configuration",
-      "site resolution",
-      "URL patterns",
+      "URL prefix",
+      "site detection",
+      "locale detection",
+      "siteAliasMap",
+      "localeAliasMap",
+      "url.prefix",
+      "url.search",
+      "siteDetectionConfig",
+      "localeDetectionConfig",
+      "site-context cookies",
+      "buildUrl"
+    ]
+  },
+  "sfnext/sfnext-ods-security-rules": {
+    "summary": "Default security rules automatically added to On-Demand Sandbox instances to block AI crawlers, probe paths, and enforce rate limiting across all storefronts.",
+    "keywords": [
+      "ODS security rules",
+      "On-Demand Sandbox",
+      "Embedded CDN",
+      "rate limiting",
+      "firewall rules",
+      "AI crawlers",
+      "probe paths",
       "Storefront Next",
-      "multisite middleware",
-      "config.server.ts",
-      "commerce.sites",
-      "path prefix",
-      "query parameters",
-      "homepage routing",
-      "site detection"
+      "eCDN",
+      "Business Manager",
+      "security exclusions"
     ]
   },
   "sfnext/sfnext-one-click-checkout": {
@@ -10068,19 +10622,20 @@
     ]
   },
   "sfnext/sfnext-order-mgmt": {
-    "summary": "Connect Storefront Next with Salesforce Order Management to display and sync orders, enabling shoppers to track shipments and manage returns from the storefront.",
+    "summary": "Enable Storefront Next to display and manage Salesforce Order Management orders with tracking, cancellation, and return capabilities.",
     "keywords": [
-      "Storefront Next Order Management integration",
+      "Salesforce Order Management",
       "SOM integration",
-      "order history page",
-      "order tracking",
-      "order synchronization",
-      "B2C Commerce Order Management",
-      "order status",
-      "return management",
-      "self-service order management",
+      "order history",
       "order detail page",
-      "connect B2C Commerce SOM"
+      "track shipment",
+      "cancel order",
+      "return items",
+      "SCAPI",
+      "order synchronization",
+      "order actions",
+      "getOrder",
+      "getCustomerOrders"
     ]
   },
   "sfnext/sfnext-page-designer": {
@@ -10101,20 +10656,20 @@
     ]
   },
   "sfnext/sfnext-page-designer-content-blocks": {
-    "summary": "Create and manage reusable content blocks for site-wide regions like headers and banners in Storefront Next to maintain consistency across pages.",
+    "summary": "Create and manage content blocks in site-wide regions like headers, mega menus, and announcement banners for consistent storefront content.",
     "keywords": [
       "content blocks",
       "site-wide regions",
       "Storefront Next",
       "Page Designer",
-      "header management",
+      "headers",
+      "mega menu",
       "announcement banners",
-      "reusable content",
-      "sfnext",
-      "feature switch",
-      "brand consistency",
-      "content management",
-      "promotional content"
+      "component_id",
+      "embedded",
+      "RegionDefinition",
+      "SCAPI",
+      "getComponent"
     ]
   },
   "sfnext/sfnext-page-designer-content-slots": {
@@ -10145,6 +10700,23 @@
       "storefront components",
       "content deployment",
       "page designer staging"
+    ]
+  },
+  "sfnext/sfnext-passkey-login": {
+    "summary": "Enable passwordless login with passkeys in Storefront Next using WebAuthn and FIDO2 standards for biometric or security key authentication.",
+    "keywords": [
+      "passkeys",
+      "passwordless login",
+      "WebAuthn",
+      "FIDO2",
+      "Storefront Next",
+      "SLAS",
+      "biometric authentication",
+      "passkey registration",
+      "passkey management",
+      "OTP verification",
+      "config.server.ts",
+      "shopper authentication"
     ]
   },
   "sfnext/sfnext-password-reset": {
@@ -10181,20 +10753,19 @@
     ]
   },
   "sfnext/sfnext-pd-deploy-cartridge": {
-    "summary": "Deploy the Storefront Next cartridge to upload Page Designer metadata and components to your B2C Commerce instance after setup or modifications.",
+    "summary": "Deploy the Storefront Next cartridge to upload Page Designer metadata and components to your B2C Commerce instance.",
     "keywords": [
-      "deploy Storefront Next cartridge",
-      "Page Designer metadata",
-      "Page Designer components",
-      "dw.json configuration",
-      "B2C DX CLI deploy",
+      "Storefront Next",
+      "Page Designer",
       "cartridge deployment",
-      "Page Designer pages",
-      "Storefront Next setup",
-      "Business Manager deployment",
-      "upload Page Designer",
-      "code version deployment",
-      "sfnext cartridge"
+      "B2C CLI",
+      "dw.json",
+      ".env configuration",
+      "code deployment",
+      "Business Manager",
+      "VS Code extension",
+      "metadata upload",
+      "sandbox instance"
     ]
   },
   "sfnext/sfnext-perf-section": {
@@ -10245,20 +10816,36 @@
       "page load optimization"
     ]
   },
-  "sfnext/sfnext-project-config": {
-    "summary": "Set up centralized, type-safe configuration in Storefront Next using config.server.ts with environment variable overrides and server/client access separation.",
+  "sfnext/sfnext-present-content-section": {
+    "summary": "Build the content and merchandising layer for Storefront Next including Page Designer, SEO, AI engines, styling, and assets.",
     "keywords": [
-      "project configuration",
-      "config.server.ts",
-      "environment variables",
-      "type-safe configuration",
       "Storefront Next",
-      "configuration options",
-      "server-only values",
-      "SSR settings",
-      "metadata section",
-      "runtime configuration",
-      "app settings"
+      "Page Designer",
+      "content management",
+      "merchandising",
+      "SEO",
+      "AEO",
+      "GEO",
+      "UI styling",
+      "images",
+      "static assets",
+      "cartridge deployment",
+      "metadata"
+    ]
+  },
+  "sfnext/sfnext-project-config": {
+    "summary": "Set up type-safe configuration in Storefront Next using config.server.ts, environment variables with PUBLIC__ prefix, and APIs like getConfig() and useConfig().",
+    "keywords": [
+      "config.server.ts",
+      "getConfig()",
+      "useConfig()",
+      "PUBLIC__ prefix",
+      "environment variables",
+      "AppConfig",
+      "type-safe configuration",
+      "SLAS credentials",
+      "extension configuration",
+      "server-only secrets"
     ]
   },
   "sfnext/sfnext-project-config-build-tools": {
@@ -10296,20 +10883,18 @@
     ]
   },
   "sfnext/sfnext-protect-storefront": {
-    "summary": "Enable Protected Storefronts in Business Manager to restrict access to development storefronts using basic auth passwords for MRT organization users.",
+    "summary": "Enable Protected Storefronts in Business Manager to restrict storefront access to organization users during development using basic authentication.",
     "keywords": [
-      "protected storefront",
-      "limit access",
-      "development storefront",
-      "shared password",
-      "site status",
-      "basic auth",
-      "MRT organization",
-      "storefront security",
+      "Protected Storefront",
       "access control",
+      "basic auth",
+      "site status",
+      "shared password",
+      "storefront development",
       "Business Manager",
-      "online protected",
-      "restrict storefront access"
+      "Managed Runtime",
+      "environment protection",
+      "authentication"
     ]
   },
   "sfnext/sfnext-prototyped-cmp": {
@@ -10330,19 +10915,20 @@
     ]
   },
   "sfnext/sfnext-push-mrt-auto": {
-    "summary": "Deploy a Storefront Next application to Managed Runtime using the CLI with prerequisites, authentication, and step-by-step deployment instructions.",
+    "summary": "Deploy a Storefront Next storefront to Managed Runtime using the CLI and MRT credentials after initial Business Manager setup.",
     "keywords": [
-      "Storefront Next deployment",
-      "Managed Runtime MRT",
+      "Storefront Next",
       "MRT deployment",
       "pnpm sfnext push",
+      "Managed Runtime",
+      "MRT API key",
+      "Business Manager",
       "CLI deployment",
-      "Storefront Next CLI",
-      "MRT project environment",
-      "Managed Runtime API key",
-      "redeploy storefront",
+      "MRT_PROJECT",
+      "MRT_TARGET",
       "Runtime Admin",
-      "Business Manager deployment"
+      "bundle deployment",
+      "environment variables"
     ]
   },
   "sfnext/sfnext-pwa-api-integration": {
@@ -10699,86 +11285,99 @@
     ]
   },
   "sfnext/sfnext-quick-start-create-bm": {
-    "summary": "Create a Storefront Next in Business Manager and generate its code locally using Salesforce CLI.",
+    "summary": "Set up a Storefront Next storefront in Business Manager using local CLI to generate and store code locally with dependent API and MRT resources.",
     "keywords": [
       "Storefront Next",
       "Business Manager",
-      "Salesforce CLI",
-      "local code generation",
-      "storefront setup",
-      "sfnext",
-      "create storefront",
-      "MRT",
+      "CLI",
+      "local development",
       "Managed Runtime",
-      "B2C Commerce storefront",
-      "site configuration",
-      "CLI setup"
+      "MRT",
+      "storefront creation",
+      "environment configuration",
+      ".env file",
+      "SLAS",
+      "template selection",
+      "site assignment"
     ]
   },
   "sfnext/sfnext-quick-start-create-bm-github": {
-    "summary": "Set up a Storefront Next instance in Business Manager by connecting a GitHub repository to create storefront code and dependent API and Managed Runtime resources.",
+    "summary": "Create a Storefront Next storefront in Business Manager connected to a GitHub repository for code storage and Managed Runtime deployment.",
     "keywords": [
       "Storefront Next",
-      "Business Manager",
-      "GitHub repository",
-      "storefront setup",
-      "create storefront",
-      "MRT",
-      "Managed Runtime",
-      "storefront creation",
       "sfnext",
-      "B2C Commerce storefront",
-      "GitHub integration",
-      "storefront provisioning"
+      "GitHub repository",
+      "Business Manager",
+      "Managed Runtime",
+      "MRT",
+      "storefront setup",
+      "B2C Commerce",
+      "template",
+      "environment configuration",
+      ".env file",
+      "deployment"
     ]
   },
   "sfnext/sfnext-quick-start-create-sf": {
-    "summary": "Set up and explore Storefront Next code locally using the demo B2C Commerce instance without Business Manager setup.",
+    "summary": "Set up and run Storefront Next locally using CLI commands and a demo B2C Commerce instance without requiring Business Manager.",
     "keywords": [
-      "Storefront Next local setup",
-      "sfnext explore code",
-      "demo instance",
-      "CLI commands",
-      "pnpm install",
-      "Node.js",
-      "quick start",
-      "storefront project creation",
-      "SLAS configuration",
+      "Storefront Next",
       "local development",
-      "B2C Commerce retail storefront",
-      "get started sfnext"
+      "CLI setup",
+      "demo instance",
+      "pnpm",
+      "Node.js",
+      "storefront-next-template",
+      "development server",
+      "SLAS client",
+      "quick start"
     ]
   },
   "sfnext/sfnext-release-notes": {
-    "summary": "Track new features and changes in Storefront Next monthly releases with links to detailed GitHub release information.",
+    "summary": "Track Storefront Next monthly release features including delivery dates, guest order lookup, passkeys, payments, and Order Management integration.",
     "keywords": [
-      "Storefront Next release notes",
-      "sfnext releases",
-      "Storefront Next features",
-      "monthly releases",
-      "version updates",
-      "changelog",
-      "GitHub releases",
-      "Storefront Next v1.0.0",
-      "template updates",
-      "B2C Commerce releases"
+      "Storefront Next",
+      "release notes",
+      "Commerce Delivery Service",
+      "guest order lookup",
+      "passkeys",
+      "Salesforce Payments",
+      "Order Management",
+      "B2C Commerce",
+      "React Router",
+      "load more pagination",
+      "Data 360"
     ]
   },
   "sfnext/sfnext-salesforce-payments": {
-    "summary": "Set up Salesforce Payments for Storefront Next by configuring payment gateways, defining types, and updating configuration URLs.",
+    "summary": "Set up and configure Salesforce Payments for Storefront Next with payment gateways like Adyen, Stripe, and PayPal.",
     "keywords": [
       "Salesforce Payments",
       "Storefront Next",
-      "payment gateway configuration",
+      "payment gateway",
       "Adyen",
       "Stripe",
       "PayPal",
       "checkout",
-      "B2C Commerce payments",
+      "B2C Commerce",
       "config.server.ts",
-      "payment methods",
-      "sdkUrl",
-      "metadataUrl"
+      "CSP directives",
+      "Business Manager"
+    ]
+  },
+  "sfnext/sfnext-secure-storefront-section": {
+    "summary": "Control access and apply security rules to protect Storefront Next environments and storefronts under development.",
+    "keywords": [
+      "storefront security",
+      "access control",
+      "Storefront Next",
+      "sfnext",
+      "security rules",
+      "On-Demand Sandbox",
+      "ODS",
+      "environment protection",
+      "storefront development",
+      "authentication"
     ]
   },
   "sfnext/sfnext-security-headers": {
@@ -10799,36 +11398,37 @@
     ]
   },
   "sfnext/sfnext-seo-metadata": {
-    "summary": "Implement SEO optimization in Storefront Next using hreflang tags, canonical URLs, meta tags, and structured data for improved product discoverability.",
+    "summary": "Configure SEO features for Storefront Next including hreflang tags, canonical URLs, page titles, meta tags, and structured data to optimize search discoverability.",
     "keywords": [
-      "SEO",
       "hreflang",
-      "canonical URLs",
+      "canonical URL",
+      "page title",
       "meta tags",
-      "JSON-LD",
-      "structured data",
-      "multilocale",
-      "international SEO",
-      "storefront metadata",
-      "search optimization",
-      "localization",
-      "alternate links"
+      "SeoMeta",
+      "Open Graph",
+      "Twitter Card",
+      "noIndex",
+      "robots",
+      "query parameters",
+      "SEO",
+      "multisite locale"
     ]
   },
   "sfnext/sfnext-seo-url-rules-best-practices": {
-    "summary": "Configure SEO URL rules in Storefront Next using file-based routing and Business Manager to improve search rankings, UX, and routing performance.",
+    "summary": "Configure deterministic SEO URL rules in Storefront Next to match Business Manager settings for fast, predictable product, category, and content routing.",
     "keywords": [
       "SEO URL rules",
-      "Storefront Next routing",
-      "file-based routing",
-      "Business Manager configuration",
-      "deterministic URLs",
-      "URL optimization",
-      "React Router",
-      "B2C Commerce URLs",
-      "search engine optimization",
-      "URL structure",
-      "getUrlMapping"
+      "seoRoutes configuration",
+      "product URL prefix",
+      "category URL prefix",
+      "id-suffix mode",
+      "slug-path mode",
+      "createProductUrl",
+      "createCategoryUrl",
+      "URL redirects",
+      "canonical URLs",
+      "Business Manager",
+      "Storefront Next"
     ]
   },
   "sfnext/sfnext-server-routes": {
@@ -10865,35 +11465,50 @@
   "sfnext/sfnext-shopper-context": {
     "summary": "Enable personalized commerce by associating session attributes like source codes and customer groups with shoppers to influence pricing, promotions, and product sorting.",
     "keywords": [
-      "Shopper Context",
-      "personalization",
-      "session attributes",
-      "qualifiers",
-      "pricing promotions",
-      "source codes",
-      "customer groups",
-      "useShopperContext hook",
-      "URL parameters",
       "Shopper Context API",
-      "middleware",
-      "cookies state"
+      "qualifiers",
+      "session attributes",
+      "source code",
+      "coupon codes",
+      "customQualifiers",
+      "assignmentQualifiers",
+      "useShopperContext hook",
+      "cookies",
+      "personalization",
+      "SCAPI",
+      "shopper context middleware"
+    ]
+  },
+  "sfnext/sfnext-shopper-identity-section": {
+    "summary": "Configure shopper authentication, registration, passwordless and social login, email verification, password reset, and session management in Storefront Next.",
+    "keywords": [
+      "shopper identity",
+      "login",
+      "registration",
+      "passwordless login",
+      "social login",
+      "email verification",
+      "password reset",
+      "session management",
+      "authentication",
+      "Storefront Next",
+      "sfnext",
+      "subdomain sessions"
     ]
   },
   "sfnext/sfnext-shopping-agent": {
-    "summary": "Enable AI-powered Shopper Agent in Storefront Next to guide customers through product discovery and purchasing via conversational chat.",
+    "summary": "Enable AI-powered Shopper Agent on Storefront Next to guide customers through product discovery, recommendations, and purchases via chat.",
     "keywords": [
       "Shopper Agent",
       "Storefront Next",
-      "AI chat",
+      "Agentforce Commerce Client",
       "product discovery",
-      "conversational commerce",
-      "Agentforce",
-      "enhanced chat",
-      "messaging channel",
-      "embedded service deployment",
-      "guided shopping",
-      "storefront configuration",
-      "B2C agent"
+      "AI chat",
+      "purchase journey",
+      "Commerce Client",
+      "product recommendations",
+      "storefront chat",
+      "sfnext"
     ]
   },
   "sfnext/sfnext-social-login": {
@@ -10914,20 +11529,20 @@
     ]
   },
   "sfnext/sfnext-state-management": {
-    "summary": "Learn how React Router's loader/action pattern manages server data and state without external libraries like Redux.",
+    "summary": "Learn React Router's state management patterns including loaders, actions, fetchers, cookies, URL state, and React primitives for B2C Commerce applications.",
     "keywords": [
       "state management",
       "React Router",
-      "loader action pattern",
-      "useLoaderData",
-      "remote state",
-      "server state",
+      "loader",
+      "action",
       "useFetcher",
-      "mutations",
-      "Redux alternative",
-      "client-side state",
-      "form submissions",
-      "data synchronization"
+      "useLoaderData",
+      "useSearchParams",
+      "cookies",
+      "sessions",
+      "optimistic UI",
+      "useNavigation",
+      "useRouteLoaderData"
     ]
   },
   "sfnext/sfnext-static-assets": {
@@ -10947,20 +11562,20 @@
     ]
   },
   "sfnext/sfnext-storage-sessions": {
-    "summary": "Implement server-only authentication with token management in middleware and session data exposure through React context hooks.",
+    "summary": "Storefront Next server-only authentication architecture with HttpOnly cookies, token management, session data handling, and security practices.",
     "keywords": [
-      "authentication architecture",
-      "server middleware auth",
-      "SLAS tokens",
+      "authentication",
+      "SLAS",
       "HttpOnly cookies",
+      "server middleware",
+      "token management",
+      "session data",
       "useAuth hook",
-      "session management",
+      "JWT validation",
       "guest login",
-      "token refresh",
-      "XSS protection",
-      "Storefront Next auth",
-      "PublicSessionData",
-      "auth.server.ts"
+      "registered user",
+      "OAuth2 PKCE",
+      "cookie domain"
     ]
   },
   "sfnext/sfnext-storefront-preview": {
@@ -11081,35 +11696,37 @@
     ]
   },
   "sfnext/sfnext-ui-styling": {
-    "summary": "Style storefronts using Tailwind CSS v4, shadcn/ui patterns, and Radix UI for accessible, responsive components with consistent theming.",
+    "summary": "Style Storefront Next storefronts using Tailwind CSS v4, shadcn/ui components, and design tokens for consistent, accessible, responsive layouts.",
     "keywords": [
-      "UI styling",
       "Tailwind CSS",
       "shadcn/ui",
       "Radix UI",
-      "CSS styling",
-      "component variants",
-      "storefront styling",
-      "theme customization",
+      "design tokens",
+      "CSS variables",
       "responsive design",
+      "component styling",
       "class-variance-authority",
-      "tailwind-merge",
-      "CSS variables"
+      "cn() utility",
+      "accessibility",
+      "WCAG",
+      "UI components"
     ]
   },
   "sfra/b2c-build-sfra": {
-    "summary": "Download and set up SFRA repositories from GitHub to begin developing a custom B2C Commerce storefront.",
+    "summary": "Set up SFRA development environment by cloning repositories, installing Node.js and npm dependencies, building cartridges, and uploading code to sandbox.",
     "keywords": [
-      "SFRA setup",
-      "get started SFRA",
-      "clone SFRA repositories",
+      "SFRA",
+      "storefront-reference-architecture",
       "GitHub repositories",
-      "SFRA development",
-      "storefront development",
-      "SFRA configuration",
-      "Commerce Cloud repositories",
-      "initial setup",
-      "SFRA tools"
+      "npm dependencies",
+      "sgmf-scripts",
+      "cartridge build",
+      "Node.js",
+      "dw.json",
+      "code upload",
+      "cartridge compilation",
+      "plugin cartridges",
+      "sandbox deployment"
     ]
   },
   "sfra/b2c-clear-refresh-form": {
@@ -11390,20 +12007,20 @@
     ]
   },
   "sfra/b2c-sfra-standards-compliance": {
-    "summary": "Verify SFRA browser and device support requirements, Bootstrap 4 foundation, B2C Commerce version compatibility, and cookie compliance standards.",
+    "summary": "SFRA supports Bootstrap 5, B2C Commerce 17.5+, specific desktop and mobile browsers, cookie notifications, and WCAG accessibility guidelines.",
     "keywords": [
-      "SFRA browser support",
-      "Bootstrap 4",
-      "browser compatibility",
-      "device support",
+      "SFRA",
+      "Bootstrap 5",
+      "browser support",
       "B2C Commerce 17.5",
-      "WCAG accessibility",
-      "cookie notification",
-      "European cookie law",
-      "mobile support",
-      "IE Edge Firefox Chrome Safari",
-      "SFRA system requirements",
-      "storefront reference architecture"
+      "mobile browsers",
+      "Chrome",
+      "Safari",
+      "Firefox",
+      "Edge",
+      "WCAG",
+      "accessibility",
+      "cookie notification"
     ]
   },
   "sfra/b2c-sfra-versions": {
