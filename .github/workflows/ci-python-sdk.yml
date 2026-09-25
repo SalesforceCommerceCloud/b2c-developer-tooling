@@ -73,7 +73,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: '3.14.7'
           cache: 'pip'
           cache-dependency-path: python/b2c-tooling-sdk/pyproject.toml
 
