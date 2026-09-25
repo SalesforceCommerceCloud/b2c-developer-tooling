@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.2
+
+### Patch Changes
+
+- [#709](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/709) [`61e3438`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/61e3438164ab2a74067d4444f87c2831b5c72bfc) - Refresh bundled Script API documentation and schemas to B2C Commerce 26.10, and update Developer Center and Salesforce Help content. Refresh Developer Center search summaries and keywords for new and changed guides. Help now includes shared product-feed setup, Google catalog feeds, and Commerce Apps administration. The IDE extension now validates channel metadata XML. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.1
 
 ### Patch Changes

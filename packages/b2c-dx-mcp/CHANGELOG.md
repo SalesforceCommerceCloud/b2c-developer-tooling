@@ -1,5 +1,14 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.1.1
+
+### Patch Changes
+
+- [#708](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/708) [`ce3ed28`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ce3ed2816a5a84f363206079803f73fbd05f530f) - Apply updated project and instance safety policies to each MCP tool call, including cartridge deployments, without restarting the server. Concurrent calls keep separate policies while preserving global restrictions and plugin middleware. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`ce3ed28`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ce3ed2816a5a84f363206079803f73fbd05f530f), [`61e3438`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/61e3438164ab2a74067d4444f87c2831b5c72bfc)]:
+  - @salesforce/b2c-tooling-sdk@2.1.1
+
 ## 3.1.0
 
 ### Minor Changes
