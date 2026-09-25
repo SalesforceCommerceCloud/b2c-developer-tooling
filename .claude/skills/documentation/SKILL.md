@@ -536,6 +536,11 @@ from the archive by `refresh:docs-data` and forwarded to
 `generate:docs-index <version>`; running that generator manually with no arg
 preserves whatever version is already committed (it never silently drops it).
 
+When XSD files are added or removed, update
+`packages/b2c-vs-extension/resources/xsd-mappings.json` so every schema is
+mapped, bundled as an import, or explicitly skipped. Run `pnpm run build` to
+verify downstream consumers; SDK-only tests do not exercise this check.
+
 Use the recorded SHA to see exactly what changed upstream before a refresh. In
 the relevant local clone:
 
