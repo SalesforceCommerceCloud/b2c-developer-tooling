@@ -340,9 +340,15 @@ Use [getProductLists(Customer, Number)](dw.customer.ProductListMgr.md#getproduct
 ### removeProductList(ProductList)
 - static removeProductList(productList: [ProductList](dw.customer.ProductList.md)): void
   - : Removes the specified product list from the system.
+      By default, ownership verification is enforced - the current session customer must be the owner of the product list.
+      This check can be disabled via the DisableCrossAccountProductListDeletionCheck emergency toggle.
+
 
     **Parameters:**
     - productList - The list to remove, must not be null.
+
+    **Throws:**
+    - SecurityException - if ownership verification is enabled and the current session customer is not the owner of the product list.
 
 
 ---

@@ -811,7 +811,7 @@ This class does not have a constructor, so you cannot create it directly.
       
       
       Note this method has little effect as it only sets the customer number and it does _not re-link the basket with
-       a customer profile</> object, nor is the number copied into the [Order](dw.order.Order.md) should one be created from
+       a customer profile&lt;/&gt; object, nor is the number copied into the [Order](dw.order.Order.md) should one be created from
        the basket. Use [Order.setCustomer(Customer)](dw.order.Order.md#setcustomercustomer) instead for a registered customer. For a
        guest customer the customerNo is usually generated during order creation and the attribute is set at order level.
 

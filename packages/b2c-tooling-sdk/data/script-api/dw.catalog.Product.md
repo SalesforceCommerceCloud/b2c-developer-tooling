@@ -877,7 +877,7 @@ Use [isAssignedToSiteCatalog()](dw.catalog.Product.md#isassignedtositecatalog) i
 - taxClassID: [String](TopLevel.String.md) `(read-only)`
   - : Returns the ID of the product's tax class, by resolving
       the Global Preference setting selected. If the Localized
-      Tax Class setting under Global Preferences -> Products is
+      Tax Class setting under Global Preferences -&gt; Products is
       selected, the localizedTaxClassID attribute value will be
       returned, else the legacy taxClassID attribute value will
       be returned.
@@ -1956,7 +1956,7 @@ of a product. Finally use [getImages(String)](dw.catalog.Product.md#getimagesstr
 - getTaxClassID(): [String](TopLevel.String.md)
   - : Returns the ID of the product's tax class, by resolving
       the Global Preference setting selected. If the Localized
-      Tax Class setting under Global Preferences -> Products is
+      Tax Class setting under Global Preferences -&gt; Products is
       selected, the localizedTaxClassID attribute value will be
       returned, else the legacy taxClassID attribute value will
       be returned.

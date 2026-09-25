@@ -5,8 +5,7 @@
  */
 /**
  * Generates the bundled search index for B2C Commerce **Developer Center guides**
- * (conceptual / how-to prose) from a local clone of the `commerce-cloud-docs`
- * content repository.
+ * (conceptual / how-to prose) from a local documentation source directory.
  *
  * Unlike the Script API / job-step corpora, guide *content* is NOT bundled — the
  * index stores only lightweight metadata (title, section headings, category, and
@@ -41,14 +40,13 @@
  * expanding the entire subtree.
  *
  * Usage:
- *   COMMERCE_DOCS_REPO=/path/to/commerce-cloud-docs \
+ *   GUIDES_CONTENT_DIR=/path/to/guide-content \
  *     pnpm --filter @salesforce/b2c-tooling-sdk run generate:guides-index
  *
- * Defaults to ~/code/commerce-cloud-docs when COMMERCE_DOCS_REPO is unset.
+ * GUIDES_CONTENT_DIR must contain the category directories listed below.
  */
 
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -87,15 +85,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const GUIDES_DIR = path.resolve(__dirname, '../data/guides');
 const ENRICHMENT_PATH = path.join(GUIDES_DIR, 'enrichment.json');
 
-function resolveDocsRepo(): string {
-  const env = process.env.COMMERCE_DOCS_REPO;
-  const repo = env ? path.resolve(env) : path.join(os.homedir(), 'code', 'commerce-cloud-docs');
-  const contentDir = path.join(repo, 'content', 'en-us');
-  if (!fs.existsSync(contentDir)) {
-    throw new Error(
-      `commerce-cloud-docs content not found at ${contentDir}. ` +
-        `Clone the repo and set COMMERCE_DOCS_REPO to its root (default: ~/code/commerce-cloud-docs).`,
-    );
+function resolveContentDir(): string {
+  const configured = process.env.GUIDES_CONTENT_DIR;
+  if (!configured) throw new Error('Set GUIDES_CONTENT_DIR to the local Developer Center source directory.');
+  const contentDir = path.resolve(configured);
+  if (!CATEGORIES.some((category) => fs.existsSync(path.join(contentDir, category, 'guides')))) {
+    throw new Error(`Developer Center guide content not found at ${contentDir}. Check GUIDES_CONTENT_DIR.`);
   }
   return contentDir;
 }
@@ -232,9 +227,8 @@ function loadEnrichment(): Map<string, EnrichmentEntry> {
 }
 
 function main(): void {
-  const contentDir = resolveDocsRepo();
-  // contentDir is `<repo>/content/en-us`; capture provenance from the repo root.
-  const source = captureSourceProvenance(path.resolve(contentDir, '..', '..'));
+  const contentDir = resolveContentDir();
+  const source = captureSourceProvenance(contentDir);
   const enrichment = loadEnrichment();
   const published = collectTocBasenames(contentDir);
   const tocRelations = collectTocRelations(contentDir);

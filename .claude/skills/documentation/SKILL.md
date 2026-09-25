@@ -480,11 +480,11 @@ release workflow and SDK `prepack` regenerate the index as defense in depth.
 Because `data/tooling/index.json` ships in `@salesforce/b2c-tooling-sdk`, changes
 to the generated corpus require an SDK changeset.
 
-Regenerate the index from a local clone of the `commerce-cloud-docs` content
-repo (defaults to `~/code/commerce-cloud-docs`):
+Regenerate the index from a local Developer Center source directory containing
+the category directories (for example, `b2c-commerce/guides/`):
 
 ```bash
-COMMERCE_DOCS_REPO=/path/to/commerce-cloud-docs \
+GUIDES_CONTENT_DIR=/path/to/guide-content \
   pnpm --filter @salesforce/b2c-tooling-sdk run generate:guides-index
 ```
 
@@ -497,18 +497,22 @@ drafts) are not published by the docs site, so indexing them would yield dead
 ### Salesforce Help corpus (`help-admin` / `help-merchant`)
 
 A second prose corpus covers help.salesforce.com Business Manager administration
-and merchandising content, sourced from a local clone of the
-`content-commerce-cloud` DITA repo (defaults to `~/code/content-commerce-cloud`,
-override with `CONTENT_COMMERCE_CLOUD_REPO`). Unlike the guides, Help content is
+and merchandising content, sourced from a local DITA directory containing
+`maps/` and `topics/`. Set `HELP_CONTENT_DIR` to that directory. Unlike the
+guides, Help content is
 JS-rendered with no fetchable source, so the DITA is converted to Markdown and
 packed into the committed `docs/help-content.tar.gz` (extracted into the docs
 site at build time), with the lightweight index at
 `packages/b2c-tooling-sdk/data/help/index.json`:
 
 ```bash
-CONTENT_COMMERCE_CLOUD_REPO=/path/to/content-commerce-cloud \
+HELP_CONTENT_DIR=/path/to/help-content \
   pnpm --filter @salesforce/b2c-tooling-sdk run generate:help-corpus
 ```
+
+Keep source checkout locations and authentication settings in local environment
+configuration. Do not include source repository names, hosts, or personal
+checkout paths in tracked files or release notes.
 
 ### Source provenance (delta tracking)
 
@@ -532,21 +536,41 @@ from the archive by `refresh:docs-data` and forwarded to
 `generate:docs-index <version>`; running that generator manually with no arg
 preserves whatever version is already committed (it never silently drops it).
 
+When XSD files are added or removed, update
+`packages/b2c-vs-extension/resources/xsd-mappings.json` so every schema is
+mapped, bundled as an import, or explicitly skipped. Run `pnpm run build` to
+verify downstream consumers; SDK-only tests do not exercise this check.
+
 Use the recorded SHA to see exactly what changed upstream before a refresh. In
 the relevant local clone:
 
 ```bash
 # What guide content changed since the committed guides index was generated?
-git -C ~/code/commerce-cloud-docs log --oneline <sha>..HEAD -- content/en-us
+git -C "$GUIDES_CONTENT_DIR" log --oneline <sha>..HEAD -- .
 
 # What Help content changed since the committed help index was generated?
-git -C ~/code/content-commerce-cloud log --oneline <sha>..HEAD -- content/ht/en-us
+git -C "$HELP_CONTENT_DIR" log --oneline <sha>..HEAD -- .
 ```
 
 An empty log means the corpus is already current with that clone; otherwise the
 listed commits are the delta a regeneration will pick up. Always re-run
 `enrich:docs` (missing-only) after a guides refresh so new pages get
 summaries/keywords, then re-run `generate:guides-index` to merge them.
+
+The enrichment script defaults to `claude-haiku-4-5` (override with
+`DOCS_ENRICH_MODEL`) and requires `ANTHROPIC_API_KEY`; without a key it skips
+enrichment. It only enriches Developer Center guides. Help summaries come from
+DITA `<shortdesc>` and are refreshed with the source content.
+
+Audit published guide entries without a `summary` after each refresh. The
+missing-only mode does **not** update summaries for changed pages, and the
+sidecar currently records neither source hashes nor model/run metadata. The
+guides index's `source.sha` dates index generation, not LLM enrichment. Compare
+guide source changes against the source snapshot at the last enrichment update
+to identify potentially stale summaries; use `enrich:docs --full` when a full
+rerun is warranted. The enrichment script scans all guide Markdown, including
+unpublished orphan pages, so its work count can exceed the published index's
+missing-summary count.
 
 ### Verifying links (local only)
 

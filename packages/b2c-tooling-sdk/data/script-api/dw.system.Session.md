@@ -55,6 +55,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 | Method | Description |
 | --- | --- |
+| [agentSessionInit](dw.system.Session.md#agentsessioninitstring)([String](TopLevel.String.md)) | Bridges this shopper's storefront session into the paired Salesforce Core org during Agentforce  session initialization. |
 | [generateGuestSessionSignature](dw.system.Session.md#generateguestsessionsignature)() | Generates a new guest session signature. |
 | [generateRegisteredSessionSignature](dw.system.Session.md#generateregisteredsessionsignature)() | Generates a new registered session signature. |
 | [getClickStream](dw.system.Session.md#getclickstream)() | Returns the current click stream if this is an HTTP session, null otherwise. |
@@ -215,6 +216,51 @@ This class does not have a constructor, so you cannot create it directly.
 ---
 
 ## Method Details
+
+### agentSessionInit(String)
+- agentSessionInit(sessionInitKey: [String](TopLevel.String.md)): [Status](dw.system.Status.md)
+  - : Bridges this shopper's storefront session into the paired Salesforce Core org during Agentforce
+      session initialization.
+      
+      
+      When a shopper starts an agent conversation, the shopper's storefront session must be linked to the corresponding
+      session in the paired Salesforce Core org so the agent can act on the shopper's behalf. This method performs that
+      link in-process: given a session init key issued by the Core org, it posts this session to the org's identity
+      bridge, resolving the shopper's credentials, the target endpoint, and the storefront custom domain in-process from
+      the active storefront request and the trust pairing configuration. The storefront cartridge therefore does not
+      need to read those credentials itself or make its own outbound call to the Shopper Agents API, and only supplies
+      the session init key.
+      
+      
+      
+      
+      This method is only meaningful when a trust pairing (ANC) with a Salesforce Core org has been established and the
+      shopper is authenticated via Shopper Login and API Access Service (SLAS) hybrid authentication. It does not throw
+      for expected failure conditions: it returns an error [Status](dw.system.Status.md) when the session cannot be bridged - for
+      example when the trust pairing is not established, the shopper's session credentials cannot be resolved, or the
+      bridge endpoint rejects the request - so callers can degrade gracefully. On success it returns an OK status. The
+      error status carries a code identifying the failure category (for example `ANC_NOT_ESTABLISHED`,
+      `MISSING_SHOPPER_TOKENS`, or `BRIDGE_REJECTED`); when the bridge endpoint itself rejected
+      the request the observed HTTP status code is available under the `httpStatus` detail.
+      
+      
+      
+      
+      For more details on Hybrid Authentication for hybrid storefronts please refer to:
+      [Hybrid
+      Authentication](https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-auth.html)
+
+
+    **Parameters:**
+    - sessionInitKey - the session init key issued by the Salesforce Core org
+
+    **Returns:**
+    - an OK [Status](dw.system.Status.md) when the shopper session is successfully bridged; otherwise an error status whose
+              code identifies the failure category
+
+
+
+---
 
 ### generateGuestSessionSignature()
 - generateGuestSessionSignature(): [String](TopLevel.String.md)

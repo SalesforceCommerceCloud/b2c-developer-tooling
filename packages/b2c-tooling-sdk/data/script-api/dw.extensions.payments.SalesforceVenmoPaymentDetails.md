@@ -5,29 +5,30 @@
   - [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)
     - [dw.extensions.payments.SalesforceVenmoPaymentDetails](dw.extensions.payments.SalesforceVenmoPaymentDetails.md)
 
-
-
-Details to a Salesforce Payments payment of type [SalesforcePayPalOrder.TYPE_VENMO](dw.extensions.payments.SalesforcePayPalOrder.md#type_venmo). See Salesforce Payments
-documentation for how to gain access and configure it for use on your sites.
-
+Details to a payment of type [SalesforcePaymentDetails.TYPE_VENMO](dw.extensions.payments.SalesforcePaymentDetails.md#type_venmo).
 
 
 ## Property Summary
 
 | Property | Description |
 | --- | --- |
-| [captureID](#captureid): [String](TopLevel.String.md) `(read-only)` | Returns the ID of the capture against the PayPal Venmo order, or `null` if not known. |
-| [payerEmailAddress](#payeremailaddress): [String](TopLevel.String.md) `(read-only)` | Returns the email address of the payer for the PayPal Venmo order, or `null` if not known. |
+| [captureID](#captureid): [String](TopLevel.String.md) | Returns the ID of the capture against the PayPal Venmo order, or `null` if not known. |
+| [payerEmailAddress](#payeremailaddress): [String](TopLevel.String.md) | Returns the email address of the payer for the PayPal Venmo order, or `null` if not known. |
 
 ## Constructor Summary
 
-This class does not have a constructor, so you cannot create it directly.
+| Constructor | Description |
+| --- | --- |
+| [SalesforceVenmoPaymentDetails](#salesforcevenmopaymentdetails)() | Constructs an empty Venmo payment details object. |
+
 ## Method Summary
 
 | Method | Description |
 | --- | --- |
 | [getCaptureID](dw.extensions.payments.SalesforceVenmoPaymentDetails.md#getcaptureid)() | Returns the ID of the capture against the PayPal Venmo order, or `null` if not known. |
 | [getPayerEmailAddress](dw.extensions.payments.SalesforceVenmoPaymentDetails.md#getpayeremailaddress)() | Returns the email address of the payer for the PayPal Venmo order, or `null` if not known. |
+| [setCaptureID](dw.extensions.payments.SalesforceVenmoPaymentDetails.md#setcaptureidstring)([String](TopLevel.String.md)) | Sets the ID of the capture against the PayPal Venmo order. |
+| [setPayerEmailAddress](dw.extensions.payments.SalesforceVenmoPaymentDetails.md#setpayeremailaddressstring)([String](TopLevel.String.md)) | Sets the email address of the payer for the PayPal Venmo order. |
 
 ### Methods inherited from class SalesforcePaymentDetails
 
@@ -38,21 +39,24 @@ This class does not have a constructor, so you cannot create it directly.
 ## Property Details
 
 ### captureID
-- captureID: [String](TopLevel.String.md) `(read-only)`
+- captureID: [String](TopLevel.String.md)
   - : Returns the ID of the capture against the PayPal Venmo order, or `null` if not known.
-
-    **See Also:**
-    - [SalesforcePayPalOrder.getCaptureID()](dw.extensions.payments.SalesforcePayPalOrder.md#getcaptureid)
 
 
 ---
 
 ### payerEmailAddress
-- payerEmailAddress: [String](TopLevel.String.md) `(read-only)`
+- payerEmailAddress: [String](TopLevel.String.md)
   - : Returns the email address of the payer for the PayPal Venmo order, or `null` if not known.
 
-    **See Also:**
-    - [SalesforcePayPalOrderPayer.getEmailAddress()](dw.extensions.payments.SalesforcePayPalOrderPayer.md#getemailaddress)
+
+---
+
+## Constructor Details
+
+### SalesforceVenmoPaymentDetails()
+- SalesforceVenmoPaymentDetails()
+  - : Constructs an empty Venmo payment details object.
 
 
 ---
@@ -66,9 +70,6 @@ This class does not have a constructor, so you cannot create it directly.
     **Returns:**
     - PayPal order capture ID
 
-    **See Also:**
-    - [SalesforcePayPalOrder.getCaptureID()](dw.extensions.payments.SalesforcePayPalOrder.md#getcaptureid)
-
 
 ---
 
@@ -79,8 +80,25 @@ This class does not have a constructor, so you cannot create it directly.
     **Returns:**
     - payer email address
 
-    **See Also:**
-    - [SalesforcePayPalOrderPayer.getEmailAddress()](dw.extensions.payments.SalesforcePayPalOrderPayer.md#getemailaddress)
+
+---
+
+### setCaptureID(String)
+- setCaptureID(captureID: [String](TopLevel.String.md)): void
+  - : Sets the ID of the capture against the PayPal Venmo order.
+
+    **Parameters:**
+    - captureID - PayPal order capture ID
+
+
+---
+
+### setPayerEmailAddress(String)
+- setPayerEmailAddress(payerEmailAddress: [String](TopLevel.String.md)): void
+  - : Sets the email address of the payer for the PayPal Venmo order.
+
+    **Parameters:**
+    - payerEmailAddress - payer email address
 
 
 ---

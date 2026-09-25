@@ -47,6 +47,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 | Method | Description |
 | --- | --- |
+| static [attemptOrderTransition](dw.order.OrderMgr.md#attemptordertransitionorder)([Order](dw.order.Order.md)) | <p>  Evaluates remaining checkout-lifecycle steps (gift-card capture, payment, post-payment fraud) for the installed  Commerce Apps and advances a step when it is ready. |
 | static [cancelOrder](dw.order.OrderMgr.md#cancelorderorder)([Order](dw.order.Order.md)) | <p>  This method cancels an order. |
 | static [createOrder](dw.order.OrderMgr.md#createorderbasket)([Basket](dw.order.Basket.md)) | <p>  This method creates an order based on a basket. |
 | static [createOrder](dw.order.OrderMgr.md#createorderbasket-string)([Basket](dw.order.Basket.md), [String](TopLevel.String.md)) | <p>  This method functions the same as [createOrder(Basket)](dw.order.OrderMgr.md#createorderbasket), but allows the optional specification of  an `orderNo`. |
@@ -73,6 +74,45 @@ This class does not have a constructor, so you cannot create it directly.
 
 [assign](TopLevel.Object.md#assignobject-object), [create](TopLevel.Object.md#createobject), [create](TopLevel.Object.md#createobject-object), [defineProperties](TopLevel.Object.md#definepropertiesobject-object), [defineProperty](TopLevel.Object.md#definepropertyobject-object-object), [entries](TopLevel.Object.md#entriesobject), [freeze](TopLevel.Object.md#freezeobject), [fromEntries](TopLevel.Object.md#fromentriesiterable), [getOwnPropertyDescriptor](TopLevel.Object.md#getownpropertydescriptorobject-object), [getOwnPropertyNames](TopLevel.Object.md#getownpropertynamesobject), [getOwnPropertySymbols](TopLevel.Object.md#getownpropertysymbolsobject), [getPrototypeOf](TopLevel.Object.md#getprototypeofobject), [hasOwnProperty](TopLevel.Object.md#hasownpropertystring), [is](TopLevel.Object.md#isobject-object), [isExtensible](TopLevel.Object.md#isextensibleobject), [isFrozen](TopLevel.Object.md#isfrozenobject), [isPrototypeOf](TopLevel.Object.md#isprototypeofobject), [isSealed](TopLevel.Object.md#issealedobject), [keys](TopLevel.Object.md#keysobject), [preventExtensions](TopLevel.Object.md#preventextensionsobject), [propertyIsEnumerable](TopLevel.Object.md#propertyisenumerablestring), [seal](TopLevel.Object.md#sealobject), [setPrototypeOf](TopLevel.Object.md#setprototypeofobject-object), [toLocaleString](TopLevel.Object.md#tolocalestring), [toString](TopLevel.Object.md#tostring), [valueOf](TopLevel.Object.md#valueof), [values](TopLevel.Object.md#valuesobject)
 ## Method Details
+
+### attemptOrderTransition(Order)
+- static attemptOrderTransition(order: [Order](dw.order.Order.md)): [OrderTransitionResult](dw.order.OrderTransitionResult.md)
+  - : 
+      
+      Evaluates remaining checkout-lifecycle steps (gift-card capture, payment, post-payment fraud) for the installed
+      Commerce Apps and advances a step when it is ready. The platform places the order when applicable steps complete,
+      or fails it on a domain failure. A non-final result means a step is still pending; call again when that result
+      arrives. Repeat calls skip already-completed applicable steps.
+      
+      
+      
+      
+      Intended to be called from a payment or fraud Commerce App's webhook after it has updated the corresponding
+      payment transaction information based on the results. Do not call
+      [placeOrder(Order)](dw.order.OrderMgr.md#placeorderorder) or
+      [failOrder(Order, Boolean)](dw.order.OrderMgr.md#failorderorder-boolean) directly. The platform will perform those actions
+      automatically.
+      
+      
+      
+      
+      Call this only after the order-creation transaction has committed so the order is durably in `CREATED`
+      status. Remote gift-card, payment, and fraud provider work may run as part of this call; invoking it before that
+      durable commit can leave remote side effects committed while a rolled-back create leaves no local order. This
+      method may still participate in a later transaction for local order-state updates.
+
+
+    **Parameters:**
+    - order - the Order whose lifecycle should be evaluated for status transition
+
+    **Returns:**
+    - transition progress and result semantics: final results require no further processing in this invocation;
+              non-final results remain pending. A final result can represent successful placement, a domain failure, or
+              no attempt because the order is not in `CREATED` status.
+
+
+
+---
 
 ### cancelOrder(Order)
 - static cancelOrder(order: [Order](dw.order.Order.md)): [Status](dw.system.Status.md)
@@ -137,6 +177,7 @@ This class does not have a constructor, so you cannot create it directly.
       - any of the totals (net, gross, tax) of the basket is N/A
       - any of the product items is not available (this takes previously reserved items into account)
       - any campaign-based coupon in the basket is invalid (see [CouponLineItem.isValid()](dw.order.CouponLineItem.md#isvalid)
+      - a fraud Commerce App blocks order creation
       - the basket represents an order being edited, but the order has already been replaced by another order
       - the basket represents an order being edited, but the customer associated with the original order is not the  same as the current customer
       

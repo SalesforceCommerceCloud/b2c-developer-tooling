@@ -19,8 +19,8 @@ WebDAV ([File](dw.io.File.md) represent a file in WebDAV) to the appservers shar
 
 
 Please note that all provided methods are operating in appservers shared file system. These modifications are visible
-via "Custom Sitemaps" tab under _Merchant Tools_ => _SEO_ => _Sitemaps - Custom Sitemaps_ in
-Business Manager. To publish all changes, execute job under Merchant Tools => SEO => Sitemaps => Job.
+via "Custom Sitemaps" tab under _Merchant Tools_ =&gt; _SEO_ =&gt; _Sitemaps - Custom Sitemaps_ in
+Business Manager. To publish all changes, execute job under Merchant Tools =&gt; SEO =&gt; Sitemaps =&gt; Job.
 
 
 
@@ -69,8 +69,8 @@ This class does not have a constructor, so you cannot create it directly.
       custom sitemap directory is considered by the system job "Create Sitemap Schedule".
       
       
-      The files are added to the directory which is accessible via "Custom Sitemaps" tab under _Merchant Tools_ =>
-      _SEO_ => _Sitemaps - Custom Sitemaps_ in Business Manager. To publish that change, execute job under Merchant Tools => SEO => Sitemaps => Job.
+      The files are added to the directory which is accessible via "Custom Sitemaps" tab under _Merchant Tools_ =&gt;
+      _SEO_ =&gt; _Sitemaps - Custom Sitemaps_ in Business Manager. To publish that change, execute job under Merchant Tools =&gt; SEO =&gt; Sitemaps =&gt; Job.
 
 
     **Parameters:**
@@ -89,7 +89,7 @@ This class does not have a constructor, so you cannot create it directly.
       
       
       The file is deleted from the directory which is accessible via "Custom Sitemaps" tab under _Merchant Tools_
-      => _SEO_ => _Sitemaps - Custom Sitemaps_ in Business Manager. To publish that change, execute job under Merchant Tools => SEO => Sitemaps => Job.
+      =&gt; _SEO_ =&gt; _Sitemaps - Custom Sitemaps_ in Business Manager. To publish that change, execute job under Merchant Tools =&gt; SEO =&gt; Sitemaps =&gt; Job.
 
 
     **Parameters:**
@@ -104,7 +104,7 @@ This class does not have a constructor, so you cannot create it directly.
       
       
       The files are deleted from the directory which is accessible via "Custom Sitemaps" tab under _Merchant
-       Tools_ => _SEO_ => _Sitemaps - Custom Sitemaps_ in Business Manager. To publish that change, execute job under Merchant Tools => SEO => Sitemaps => Job.
+       Tools_ =&gt; _SEO_ =&gt; _Sitemaps - Custom Sitemaps_ in Business Manager. To publish that change, execute job under Merchant Tools =&gt; SEO =&gt; Sitemaps =&gt; Job.
 
 
 
@@ -116,7 +116,7 @@ This class does not have a constructor, so you cannot create it directly.
       
       
       The files are deleted from the directory which is accessible via "Custom Sitemaps" tab under _Merchant
-       Tools_ => _SEO_ => _Sitemaps - Custom Sitemaps_ in Business Manager. To publish that change, execute job under Merchant Tools => SEO => Sitemaps => Job.
+       Tools_ =&gt; _SEO_ =&gt; _Sitemaps - Custom Sitemaps_ in Business Manager. To publish that change, execute job under Merchant Tools =&gt; SEO =&gt; Sitemaps =&gt; Job.
 
 
     **Parameters:**
@@ -147,15 +147,15 @@ This class does not have a constructor, so you cannot create it directly.
       
       The file is looked up in the shared sitemap directory for the current site,
       using the hostname from the current storefront request. If the file is not found
-      in the new framework location ({@code .../sitemaps/<hostname>/}), the old
-      location ({@code .../sitemaps/}) is used as a fallback.
+      in the new framework location (`.../sitemaps/&lt;hostname&gt;/`), the old
+      location (`.../sitemaps/`) is used as a fallback.
 
 
     **Parameters:**
-    - fileName - The name of the sitemap file to read (e.g. "sitemap\_index.xml").             Must not be {@code null}, empty, or contain path traversal sequences.
+    - fileName - The name of the sitemap file to read (e.g. "sitemap\_index.xml").             Must not be `null`, empty, or contain path traversal sequences.
 
     **Returns:**
-    - The sitemap file content as a String, or {@code null} if the fileName is
+    - The sitemap file content as a String, or `null` if the fileName is
               invalid, the file does not exist, or the request context is unavailable.
 
 

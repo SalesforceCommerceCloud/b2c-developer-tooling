@@ -33,6 +33,9 @@
                     fields account-id and account-type are exported. Since version 22.9 details to a 
                     Salesforce Payments payment are no longer exported in a custom method element.
                     Since version 26.5 multi-level tax items can be exported for line items.
+                    Since version 26.9 custom attributes are exported for tax items.
+                    Since version 26.10 payment-details, fraud-decisions and transaction-details
+                    elements can be exported per payment.
                 </xsd:documentation>
             </xsd:annotation>
             <xsd:enumeration value="18.5" />
@@ -45,6 +48,8 @@
             <xsd:enumeration value="22.9" />
             <xsd:enumeration value="23.4" />
             <xsd:enumeration value="26.5" />
+            <xsd:enumeration value="26.9" />
+            <xsd:enumeration value="26.10" />
         </xsd:restriction>
     </xsd:simpleType>
 
@@ -230,6 +235,8 @@
                     <xsd:documentation>Tax amount in purchase currency.</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
+            <!-- Since 26.9: custom attributes on a tax item -->
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -631,6 +638,23 @@
                 <xsd:element name="custom-method" type="complexType.CustomPaymentMethod" />
             </xsd:choice>
 
+            <xsd:element name="payment-details" type="complexType.PaymentDetails" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    Since version 26.10.
+                    The normalized payment details for the order payment instrument.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="fraud-decisions" type="complexType.FraudDecisions" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    Since version 26.10.
+                    The normalized fraud decisions for the order payment instrument.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+
             <!--  payment transaction details -->
             <xsd:element name="amount" type="xsd:decimal" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="processor-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
@@ -649,6 +673,14 @@
                     <xsd:documentation>
                     Since version 21.9.
                     The type of the payment account used to create the payment transaction.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="transaction-details" type="complexType.TransactionDetails" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    Since version 26.10.
+                    The normalized transaction details for the order payment transaction.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
@@ -1168,6 +1200,54 @@
         </xsd:restriction>
     </xsd:simpleType>
 
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.4">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="4" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.8">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="8" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.1">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="1" />
+            <xsd:pattern value="\S" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.2">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="2" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.3">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="3" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.20">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="20" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
     <xsd:simpleType name="simpleType.Generic.NonEmptyString.40">
         <xsd:restriction base="simpleType.Generic.String">
             <xsd:minLength value="1" />
@@ -1221,6 +1301,243 @@
             <xsd:enumeration value="AUTH_REVERSAL"></xsd:enumeration>
             <xsd:enumeration value="CAPTURE"></xsd:enumeration>
             <xsd:enumeration value="CREDIT"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.PaymentDetails">
+        <xsd:annotation>
+            <xsd:documentation>
+                Since version 26.10.
+                Normalized payment details for the order payment instrument. Specific fields are populated depending on
+                the type value.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="brand" type="simpleType.Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The normalized card brand. Expected values are amex, diners, discover, jcb,
+                    mastercard, unionpay, visa, and unknown. A custom value may also be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="last-4" type="simpleType.Generic.NonEmptyString.4" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The last four digits of the payment instrument.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="wallet-type" type="simpleType.Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The normalized digital wallet used for the payment. Expected values are
+                    apple_pay and google_pay. A custom value may also be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="expiration-month" type="simpleType.PaymentDetails.ExpirationMonth" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The month when the payment instrument expires.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="expiration-year" type="xsd:int" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The year when the payment instrument expires.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="token" type="simpleType.Generic.NonEmptyString.40" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The reference token representing the payment instrument. This is an opaque
+                    identifier, not the card number (PAN).
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="token-type" type="simpleType.Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The type of token backing the reference token. Expected values are NETWORK
+                    and GATEWAY. A custom value may also be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="account-holder-name" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The name of the payment instrument account holder.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="bin" type="simpleType.Generic.NonEmptyString.8" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The bank identification number (BIN) of the payment card.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="dpan-last-4" type="simpleType.Generic.NonEmptyString.4" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The last four digits of the device primary account number for a
+                    wallet-tokenized card.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="issuing-country" type="simpleType.CountryCode" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The ISO 3166-1 alpha-2 country code of the issuing bank.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="funding-type" type="simpleType.Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The normalized card funding type. Expected values are CREDIT, DEBIT, and
+                    PREPAID. A custom value may also be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="type" type="simpleType.Generic.NonEmptyString.256" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                The normalized payment method type. Expected values are bancontact, card,
+                eps, gift_card, ideal, klarna, sepa_debit, paypal, venmo, afterpay_clearpay,
+                amazon_pay, and twint. A custom value may also be returned.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.TransactionDetails">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 26.10.
+            Normalized transaction details for the order payment transaction. Specific fields
+            are populated depending on the payment-details type value.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="cvc-result" type="simpleType.Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The card verification code check result. Expected values are MATCH, NO_MATCH,
+                    NOT_PROCESSED, and UNAVAILABLE. A custom value may also be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="avs-result" type="simpleType.Generic.NonEmptyString.1" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The address verification service result. Expected values are Y (full match),
+                    N (no match), A (address only), Z (postal code only), U (unavailable), S
+                    (unsupported), and R (retry). A custom value may also be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="three-ds-result" type="simpleType.Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The 3D Secure authentication result. Expected values are AUTHENTICATED,
+                    ATTEMPTED, FAILED, REJECTED, and UNAVAILABLE. A custom value may also be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="three-ds-version" type="simpleType.Generic.NonEmptyString.2" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The 3D Secure protocol version. Expected values are V1 and V2. A custom value may also be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="three-ds-transaction-id" type="simpleType.Generic.NonEmptyString.40" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The 3D Secure transaction identifier.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="electronic-commerce-indicator" type="simpleType.Generic.NonEmptyString.3" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The electronic commerce indicator (ECI) value returned by the processor.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="approval-code" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The approval code returned by the provider on a successful gift card capture.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="reason-code" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The reason code returned by the provider on a failed gift card capture.
+                    Expected values are DECLINED and INSUFFICIENT_FUNDS. A custom value may also
+                    be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="processor-response-text" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The human-readable gift card processor response text. The language and localization of this
+                    text are provider-defined and may vary by provider integration.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.FraudDecisions">
+        <xsd:annotation>
+            <xsd:documentation>
+            Since version 26.10.
+            Normalized fraud decisions for the order payment instrument. The values remain
+            readable for historical orders.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="pre-authorization" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The pre-authorization fraud decision used by the client to orchestrate
+                    checkout. Expected values are NOT_REVIEWED (no pre-authorization fraud
+                    decision was made), APPROVED (the payment authorization can proceed),
+                    CHALLENGE (the payment authorization should be challenged with additional
+                    verification such as a 3D Secure challenge before it can proceed), and
+                    DECLINED (the payment authorization is declined). A custom value may also be
+                    returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="post-authorization" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    The post-authorization fraud decision indicating whether the transaction is
+                    covered by a fraud guarantee. Expected values are NOT_REVIEWED (no
+                    post-authorization fraud decision was made), GUARANTEED (the transaction is
+                    covered by a fraud guarantee), NOT_GUARANTEED (the transaction is not covered
+                    by a fraud guarantee), and PENDING (the post-authorization fraud decision is
+                    still pending). A custom value may also be returned.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.PaymentDetails.ExpirationMonth">
+        <xsd:restriction base="xsd:int">
+            <xsd:minInclusive value="1"/>
+            <xsd:maxInclusive value="12"/>
         </xsd:restriction>
     </xsd:simpleType>
 
