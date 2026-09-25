@@ -20,6 +20,7 @@ import {createScapiTools} from './tools/scapi/index.js';
 import {createWebDavTools} from './tools/webdav/index.js';
 import {createCipTools} from './tools/cip/index.js';
 import {createGuidanceTool, registerGuidanceResources} from './guidance.js';
+import {createIdeContextTool, type IdeContextConnection} from './tools/ide-context.js';
 
 /**
  * Registry of tools organized by toolset.
@@ -40,6 +41,7 @@ export function createToolRegistry(
   serverContext?: ServerContext,
   detectedWorkspaces: readonly ProjectType[] = [],
   enabledDocCategories?: readonly DocCategory[],
+  ideContext?: IdeContextConnection,
 ): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
@@ -53,6 +55,7 @@ export function createToolRegistry(
 
   // Collect all tools from all factories
   const allTools: McpTool[] = [
+    ...(ideContext ? [createIdeContextTool(ideContext)] : []),
     ...createCartridgesTools(loadServices),
     ...createWebDavTools(loadServices),
     ...createCipTools(loadServices),
@@ -108,7 +111,7 @@ export async function registerToolsets(
   }
 
   // Tool availability is independent of the workspace. Explicit selection customizes the default catalog.
-  const toolRegistry = createToolRegistry(loadServices, serverContext, [], enabledDocCategories);
+  const toolRegistry = createToolRegistry(loadServices, serverContext, [], enabledDocCategories, flags.ideContext);
   const existingToolNames = new Set(
     Object.values(toolRegistry)
       .flat()

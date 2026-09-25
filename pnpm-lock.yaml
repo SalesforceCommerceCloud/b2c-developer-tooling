@@ -415,6 +415,9 @@ importers:
       mocha:
         specifier: 'catalog:'
         version: 11.7.5
+      msw:
+        specifier: 'catalog:'
+        version: 2.12.4(@types/node@22.19.0)(typescript@5.9.3)
       oclif:
         specifier: 'catalog:'
         version: 4.22.44(@types/node@22.19.0)

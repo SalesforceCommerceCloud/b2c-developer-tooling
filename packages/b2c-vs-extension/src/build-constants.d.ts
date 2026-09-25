@@ -10,4 +10,5 @@
  * as "no telemetry configured".
  */
 declare const __EXT_VERSION__: string;
+declare const __MCP_VERSION__: string;
 declare const __TELEMETRY_CONNECTION_STRING__: string;

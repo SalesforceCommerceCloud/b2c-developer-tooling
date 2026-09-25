@@ -16,8 +16,10 @@ connected tasks use your existing [B2C configuration](../guide/configuration).
 
 ## Set up your assistant {#setup}
 
-Choose your assistant. **Plugin installation is recommended where supported**;
-manual setup includes the same tools, documentation, and skills.
+Choose your assistant. In VS Code and Cursor, the **IDE Extension provides the MCP
+registration** and live editor context. For other compatible clients, plugin
+installation is recommended. Manual setup includes the same B2C Commerce tools,
+documentation, and skills, without the extension's live context.
 Our plugins use the open [Agent Plugins standard](https://agent-plugins.org/).
 
 <AssistantInstall sync-url>
@@ -214,7 +216,9 @@ For clients with a command array, such as OpenCode, use
 ## Updates and customization
 
 Use your client's plugin update controls to update a plugin installation, then
-start a new session. For direct installations, `@latest` follows the current npm
+start a new session. Extension-managed installations use the MCP version matched
+to the IDE Extension; update the extension to update that version.
+For direct installations, `@latest` follows the current npm
 release; use a specific version when your team needs a fixed version.
 
 The default installation includes all toolsets. If you want a smaller selection

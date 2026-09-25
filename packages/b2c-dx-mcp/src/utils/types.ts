@@ -61,6 +61,8 @@ export interface McpTool<T extends ZodRawShape = ZodRawShape> extends McpToolCon
  * Startup flags passed to the MCP server.
  */
 export interface StartupFlags {
+  /** Optional private connection to the editor that launched this server. */
+  ideContext?: {url: string; token: string};
   /** Comma-separated list of toolsets to enable */
   toolsets?: string[];
   /** Specific individual tools to enable */

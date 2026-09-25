@@ -117,6 +117,8 @@ export class B2CExtensionConfig implements vscode.Disposable {
   private instance: B2CInstance | null = null;
   private configError: string | null = null;
   private resolved = false;
+  private resolution: Promise<void> | undefined;
+  private configRevision = 0;
   private detectedDirectory = '';
   private pinned = false;
   private resolvedEnvironment: Record<string, string | undefined>;
@@ -264,8 +266,16 @@ export class B2CExtensionConfig implements vscode.Disposable {
    * Call this before reading from getters when you need fresh data.
    */
   async ensureResolved(): Promise<void> {
-    if (!this.resolved) {
-      await this.resolveAsync();
+    // Readers must wait for resets too, including a selection changed mid-resolution.
+    while (!this.resolved || this.resolution) {
+      if (!this.resolution) {
+        const revision = this.configRevision;
+        this.resolution = this.resolveAsync().finally(() => {
+          this.resolution = undefined;
+          this.resolved = revision === this.configRevision;
+        });
+      }
+      await this.resolution;
     }
   }
 
@@ -289,6 +299,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
   }
 
   reset(): void {
+    this.configRevision++;
     this.log.appendLine('[Config] Resetting cached config (will re-resolve asynchronously)');
     this.config = null;
     this.instance = null;
@@ -298,7 +309,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     this.pinned = false;
     this.resolvedEnvironment = this.ambientEnvironment;
     // Re-resolve asynchronously, then fire the event so listeners get fresh data
-    void this.resolveAsync().then(() => {
+    void this.ensureResolved().then(() => {
       this._onDidReset.fire();
     });
   }
@@ -376,7 +387,6 @@ export class B2CExtensionConfig implements vscode.Disposable {
   }
 
   private async resolveAsync(): Promise<void> {
-    this.resolved = true;
     try {
       // Check for pinned project root first
       const pinnedRoot = this.workspaceState?.get<string>(PROJECT_ROOT_KEY);

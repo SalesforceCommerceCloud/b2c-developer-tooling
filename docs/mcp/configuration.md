@@ -33,6 +33,32 @@ startup default, use the shared `--project-directory`, `--config`, or `--instanc
 options. See [Configuration](../guide/configuration) for their values and file formats.
 These defaults do not restrict which projects the assistant can access.
 
+### IDE selection
+
+The [IDE Extension](../vscode-extension/configuration#ai-chat) registers the
+Commerce MCP server in VS Code and Cursor. In Cursor, it also supplies a private
+connection for reading the selected instance and live code-sync status. VS Code
+provides the same context through the extension's native chat tool.
+
+The optional `--ide-context-url` launch flag and `SFCC_IDE_CONTEXT_TOKEN`
+environment variable are supplied together by the extension. It starts a private
+HTTP endpoint on an OS-assigned loopback port inside the extension host, then
+passes that endpoint's URL and a generated authentication token when registering
+the Commerce MCP process with Cursor. This is one MCP server with a connection
+back to the extension, not a second MCP registration. You do not generate the URL
+or add it to your MCP configuration yourself.
+
+The URL and token identify one running editor window and are not project
+configuration to save or share. The
+MCP process must run on the same host as the extension. Without that connection,
+the MCP server does not expose IDE context. Restarting the editor requires a new
+connection; a failed connection never substitutes the shared default instance.
+
+The assistant can use this context unless you explicitly select another target.
+This does not automatically override every MCP operation. Configuration
+inspection still reports what the MCP process resolves, which can differ from
+the editor's credentials or environment.
+
 ## Tools and toolsets {#toolset-selection}
 
 All toolsets are enabled by default. Use names from [MCP Tools](./toolsets) to

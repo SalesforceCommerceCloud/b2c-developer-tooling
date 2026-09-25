@@ -137,7 +137,8 @@
     "sinon": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "catalog:"
+    "typescript-eslint": "catalog:",
+    "msw": "catalog:"
   },
   "engines": {
     "node": ">=22.16.0"

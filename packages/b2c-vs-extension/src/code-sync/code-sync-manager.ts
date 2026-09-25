@@ -50,6 +50,12 @@ export class CodeSyncManager implements vscode.Disposable {
     return this.watching;
   }
 
+  getStatus(): {active: boolean; hostname?: string; codeVersion?: string} {
+    return this.watching
+      ? {active: true, hostname: this.instance?.config.hostname, codeVersion: this.codeVersion}
+      : {active: false};
+  }
+
   get discoveredCartridges(): CartridgeMapping[] {
     return this.cartridges;
   }

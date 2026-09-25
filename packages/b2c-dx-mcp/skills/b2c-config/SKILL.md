@@ -9,6 +9,24 @@ For MCP installation or tool selection, see [server setup](skill://mcp/server/SK
 
 ## Inspect resolved values
 
+When `b2c_get_ide_context` is available from the IDE extension and the user has
+not specified a target, read it before configuration-dependent calls. Pass its
+`projectDirectory`, `configPath`, and `instanceName` to the MCP tools. The IDE
+selection can differ from the active entry on disk; names alone are not unique
+across configuration files. Explicit user targets take precedence: resolve them
+independently rather than combining another instance name with the IDE's file.
+If IDE context is unavailable or unconfigured, report that instead of guessing
+or falling back silently. Without the IDE tool, use normal MCP configuration.
+
+Refresh IDE context after a selection change or when beginning another task;
+it is a snapshot, not a persistent binding. Compare returned `resolution` with
+the intended target. Environment/plugin overrides and different credential
+stores can make IDE and MCP resolution differ. Stop on a target mismatch before
+mutating data. Existing debugger/log sessions retain their original targets.
+`codeSync.active` reports the actual watcher state, not the auto-upload setting;
+its hostname/code version can differ while an old upload is draining. Do not
+assume active sync means every file has finished uploading.
+
 Call `config_inspect` directly with the task's absolute `projectDirectory`.
 No prior skill read is required. Secrets are masked by default (`unmask: false`).
 The result includes effective values, contributing sources, warnings, and

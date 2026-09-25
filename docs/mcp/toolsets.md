@@ -296,6 +296,14 @@ to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 | ---------------- | ------------------------------------------------------------------------ |
 | `config_inspect` | Check resolved configuration and targets; secrets are masked by default. |
 
+## IDE context
+
+**Toolsets:** All, when connected to the IDE Extension
+
+| Tool                  | Capability                                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------------------- |
+| `b2c_get_ide_context` | Read the selected IDE instance and live code-sync status when launched with an IDE connection. |
+
 ## Toolsets for customization
 
 | Toolset          | Capabilities                                                     |
