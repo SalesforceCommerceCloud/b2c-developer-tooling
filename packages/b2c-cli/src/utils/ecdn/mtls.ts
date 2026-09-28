@@ -6,7 +6,7 @@
 import {ux} from '@oclif/core';
 import * as fs from 'node:fs';
 import path from 'node:path';
-import type {CdnZonesClient} from '@salesforce/b2c-tooling-sdk/clients';
+import {normalizeTenantId, type CdnZonesClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {
   createCodeUploadCertificate,
   generateCaCertificate,
@@ -139,8 +139,10 @@ export function caKeySecurityNotice(caPrivateKey: string, caExpiresOn?: string):
  * Human-readable guidance for an issued client certificate.
  */
 export function clientCertificateNotice(options: {file: string; hostname?: string; passphrase: string}): string {
+  // On Hyperforce the code upload hostname is the standard staging hostname, so a
+  // separate webdav-hostname isn't needed.
   const config: Record<string, string> = {};
-  if (options.hostname) config['webdav-hostname'] = options.hostname;
+  if (options.hostname) config.hostname = options.hostname;
   config.certificate = options.file;
   config['certificate-passphrase'] = options.passphrase;
   const snippet = JSON.stringify(config, null, 2)
@@ -155,7 +157,7 @@ export function clientCertificateNotice(options: {file: string; hostname?: strin
     '  passphrase separate from the file, and never commit either to a repository.',
     '',
     '  To upload code, add these settings to your instance in dw.json',
-    '  (or use --webdav-server, --certificate and --passphrase):',
+    '  (or use --server, --certificate and --passphrase):',
     snippet,
   ].join('\n');
 }
@@ -179,7 +181,7 @@ export async function generateAndUploadCodeUploadCertificate(
   assertFilesWritable(Object.values(files), options.force);
 
   ensureGitIgnored(options.outDir);
-  progress('Generating CA certificate...');
+  progress(`Generating CA certificate for tenant ${normalizeTenantId(options.organizationId)}...`);
   const ca = generateCaCertificate({
     commonName: options.caCommonName ?? `${options.name} CA`,
     validityDays: options.caValidityDays,

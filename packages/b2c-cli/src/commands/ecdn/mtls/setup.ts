@@ -138,7 +138,7 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     }).catch((error: unknown) => this.error(error instanceof Error ? error.message : String(error)));
 
     const output: SetupOutput = {created: true, ...result};
-    output.configUpdated = await this.maybeUpdateConfig(result.certificate, result.files, result.clientPassphrase);
+    output.configUpdated = await this.maybeUpdateConfig(result.files, result.clientPassphrase);
 
     const cert = result.certificate;
     ux.stdout('');
@@ -198,11 +198,7 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     return data?.data ?? [];
   }
 
-  private async maybeUpdateConfig(
-    cert: MtlsCertificate,
-    files: CodeUploadCertificateFiles,
-    passphrase: string,
-  ): Promise<string | undefined> {
+  private async maybeUpdateConfig(files: CodeUploadCertificateFiles, passphrase: string): Promise<string | undefined> {
     // Prefer the dw.json the configuration was actually loaded from (it may be in a parent directory).
     const loadedFrom = this.resolvedConfig.sources.find((s) => s.name === 'DwJsonSource' && s.location)?.location;
     const dwJsonPath = path.resolve(
@@ -212,7 +208,7 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
       ux.stdout(
         t(
           'commands.ecdn.mtls.setup.noConfig',
-          'No dw.json found; configure "webdav-hostname", "certificate", and "certificate-passphrase" manually.',
+          'No dw.json found; configure "certificate" and "certificate-passphrase" manually.',
         ),
       );
       return undefined;
@@ -221,7 +217,7 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     const update = await confirm({
       message: t(
         'commands.ecdn.mtls.setup.updateConfig',
-        'Update {{path}} with the code upload hostname, certificate, and passphrase?',
+        'Update {{path}} with the client certificate and passphrase?',
         {path: dwJsonPath},
       ),
       default: true,
@@ -233,7 +229,6 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     try {
       const result = await updateInstanceConfig(
         {
-          webdavHostname: cert.mtlsAssociatedCodeUploadHostname,
           certificate: path.relative(path.dirname(dwJsonPath), files.clientCertificate),
           certificatePassphrase: passphrase,
         },

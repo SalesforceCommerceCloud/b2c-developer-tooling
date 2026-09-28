@@ -46,7 +46,7 @@ The wizard asks for a certificate name, your client certificate name (default: y
 
 1. Generates a CA valid for 1 year and uploads it.
 2. Issues your client certificate (`<name>.p12`) with a random passphrase.
-3. Offers to update `dw.json` with the code upload hostname, certificate path, and passphrase.
+3. Offers to update `dw.json` with the client certificate path and passphrase.
 
 Then deploy as usual:
 
@@ -103,7 +103,6 @@ Add the settings printed by `setup`, `create --generate`, or `issue` to your ins
 ```json
 {
   "hostname": "staging-abcd-acme.demandware.net",
-  "webdav-hostname": "staging-abcd-acme.demandware.net",
   "client-id": "your-client-id",
   "client-secret": "your-client-secret",
   "certificate": "./mtls-certs/jsmith.p12",
@@ -111,7 +110,7 @@ Add the settings printed by `setup`, `create --generate`, or `issue` to your ins
 }
 ```
 
-You can also use flags (`--webdav-server`, `--certificate`, `--passphrase`) or environment variables (`SFCC_WEBDAV_SERVER`, `SFCC_CERTIFICATE`, `SFCC_CERTIFICATE_PASSPHRASE`). See [Two-Factor Authentication (mTLS)](/guide/configuration#two-factor-authentication-mtls).
+Code upload uses the same staging hostname as everything else, so you don't need a separate `webdav-hostname`. You can also use flags (`--certificate`, `--passphrase`) or environment variables (`SFCC_CERTIFICATE`, `SFCC_CERTIFICATE_PASSPHRASE`). See [Two-Factor Authentication (mTLS)](/guide/configuration#two-factor-authentication-mtls).
 
 ::: warning
 If `dw.json` holds the passphrase, make sure `dw.json` is not committed to your repository.
@@ -149,7 +148,7 @@ Uploaded CAs are also listed in the staging Business Manager under **Administrat
 
 ## CI/CD on Hyperforce Staging
 
-Issue a dedicated client certificate for each pipeline, and store the `.p12` (base64-encoded) and its passphrase as separate secrets. Use the staging hostname as the WebDAV server. See [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls) for a GitHub Actions example.
+Issue a dedicated client certificate for each pipeline, and store the `.p12` (base64-encoded) and its passphrase as separate secrets. No separate WebDAV server is needed. See [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls) for a GitHub Actions example.
 
 ```bash
 b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-actions --output ./ci.p12
@@ -164,5 +163,5 @@ b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-act
 | `maximum CA expiry of 1 year` | Use a CA valid for 365 days or less. |
 | `not a CA certificate` | Upload the CA that signs client certificates, not a client certificate. |
 | `CA private key does not match the CA certificate` | `issue` was given a key from a different CA. |
-| Uploads fail with a TLS handshake error | Check that `webdav-hostname` is the staging hostname, the `.p12` was issued by a CA that is still uploaded, and neither certificate has expired. |
+| Uploads fail with a TLS handshake error | Check that `hostname` is the staging hostname and no legacy `webdav-hostname` is set, the `.p12` was issued by a CA that is still uploaded, and neither certificate has expired. |
 | `Invalid passphrase for certificate` | `certificate-passphrase` doesn't match the `.p12`. |

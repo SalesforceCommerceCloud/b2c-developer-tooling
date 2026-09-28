@@ -320,7 +320,7 @@ On Hyperforce, you manage the CA for code upload client certificates yourself th
 b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-actions --output ./ci.p12
 ```
 
-Use the code upload hostname reported by `b2c ecdn mtls list` (`staging-<realm>-<customer>.demandware.net`) as `webdav-server`; the legacy `cert.staging.*` hostname shown in the examples below applies only until your realm is migrated to Hyperforce, and `selfsigned` is not needed for the staging hostname.
+After migration, code upload uses the staging hostname (`staging-<realm>-<customer>.demandware.net`) set as `server`; `webdav-server` and `selfsigned` aren't needed. The separate `cert.staging.*` WebDAV hostname in the examples below applies only until your realm is migrated.
 :::
 
 Internal staging instances typically require:
