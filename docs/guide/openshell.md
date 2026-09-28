@@ -17,7 +17,10 @@ sandbox gives you:
 - **Enforced network rules.** Only the hosts in your policy can be reached,
   and you can limit each host by HTTP method and path. For example, you can
   allow reads on an instance but deny `PATCH` and `DELETE`.
-- **Audit logs.** Every allowed and denied connection and request is recorded.
+- **An audit log of agent activity.** OpenShell records every connection and
+  HTTP request from the sandbox, whether it was allowed or denied, and which
+  process made it. You can see exactly which B2C Commerce operations an agent
+  performed, or tried to perform. See [Audit log](#audit-log).
 
 ## OpenShell and Safety Mode
 
@@ -282,14 +285,23 @@ rules:
 Denied requests are recorded in the audit log, so use a denial in the log to
 find the path to allow.
 
-## Review the audit log
+## Audit log {#audit-log}
+
+OpenShell's sandbox supervisor records every connection and HTTP request that
+leaves the sandbox. The supervisor runs outside the agent's process and
+streams entries to the gateway; processes in the sandbox run as an
+unprivileged user and cannot modify the log. This gives you a record of what an
+agent did against B2C Commerce, including the attempts your policy blocked.
+The B2C CLI and MCP server do not write this log; OpenShell does.
+
+View recent entries:
 
 ```bash
 openshell logs b2c --since 10m --source sandbox
 ```
 
-Each entry shows the process, host, method, path, and the policy that allowed
-or denied it:
+Each entry shows the process, host, HTTP method and path, the result, and the
+policy that allowed or denied it:
 
 ```text
 HTTP:POST [INFO] ALLOWED POST .../dwsso/oauth2/access_token [policy:_provider_my_sandbox_am engine:l7]
@@ -297,12 +309,39 @@ HTTP:DELETE [MED] DENIED DELETE .../webdav/Sites/Temp/old.zip [policy:b2c_instan
 NET:OPEN [MED] DENIED /usr/bin/curl(0) -> account.demandware.com:443
 ```
 
+The log records requests, not request or response bodies. It shows that an
+agent sent a `PATCH` to a code version, for example, but not the payload.
+
+::: warning Keep the log if you need it later
+By default, the gateway keeps only a limited in-memory buffer of recent
+entries per sandbox, and loses it on restart. The files inside the sandbox
+keep three days and are deleted along with the sandbox. For compliance or
+long-term review, enable OpenShell's
+[OCSF JSON export](https://github.com/NVIDIA/OpenShell/blob/main/docs/observability/ocsf-json-export.mdx)
+and send the records to your log platform or SIEM:
+
+```bash
+openshell settings set b2c --key ocsf_json_enabled --value true
+```
+
+See the OpenShell
+[logging documentation](https://github.com/NVIDIA/OpenShell/blob/main/docs/observability/logging.mdx)
+for the event format and filtering.
+:::
+
 ## How credentials are handled
 
 - When the client secret is an OpenShell placeholder, the CLI and MCP server
   send the client credentials in the token request body instead of an HTTP
   Basic `Authorization` header. The proxy swaps in the real secret there.
   Real secrets always use the Basic header.
+
+  The body is needed because the proxy replaces a placeholder in a Basic
+  header with the raw secret, and Account Manager form-decodes that header.
+  A secret containing `+` or `%` would therefore reach Account Manager
+  altered, and the login would fail. In the body, the proxy decodes and
+  re-encodes the value, so every secret arrives intact.
+
 - WebDAV requests keep using Basic authentication. The proxy resolves the
   placeholder only on the host named in `credential_binding`.
 - The access token that Account Manager returns is a real, short-lived token
