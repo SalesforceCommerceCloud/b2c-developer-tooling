@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-28T15:26:31.315Z",
+  "generatedAt": "2026-09-28T20:21:54.988Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -388,6 +388,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/mrt-utilities.md",
       "headings": "When to use • Prerequisites • Installation • Package exports • Basic setup • Middleware • createMRTCommonMiddleware() • createMRTRequestProcessorMiddleware(requestProcessorPath, proxyConfigs) • createMRTProxyMiddlewares(proxyConfigs) • createMRTStaticAssetServingMiddleware(staticAssetDir) • createMRTCleanUpMiddleware() • Environment detection • Streaming (Lambda) • Tuning Brotli compression • Metrics • Data Store In Development • Related",
       "preview": "Use the mrt-utilities package to simulate a deployed Managed Runtime environment locally with Express middleware and streaming adapters."
+    },
+    {
+      "id": "guide-openshell",
+      "title": "Sandboxing with OpenShell",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/openshell.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/openshell.md",
+      "headings": "OpenShell and Safety Mode • Requirements • 1. Build a sandbox image • 2. Define provider profiles • 3. Store the credentials • 4. Write a sandbox policy • 5. Run the CLI in the sandbox • Allow specific writes • Review the audit log • How credentials are handled • Limitations",
+      "preview": "Run the B2C CLI and MCP server inside an NVIDIA OpenShell sandbox so AI agents never see your API client secret and can only reach the B2C Commerce hosts and operations you allow."
     },
     {
       "id": "guide-operations",

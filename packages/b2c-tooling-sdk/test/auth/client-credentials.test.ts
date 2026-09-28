@@ -4,7 +4,11 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {encodeBasicClientCredentials} from '@salesforce/b2c-tooling-sdk/auth';
+import {
+  applyClientCredentials,
+  encodeBasicClientCredentials,
+  isCredentialPlaceholder,
+} from '@salesforce/b2c-tooling-sdk/auth';
 
 /**
  * Reverses the server side of RFC 6749 §2.3.1: base64-decode the Basic payload,
@@ -50,6 +54,38 @@ describe('auth/client-credentials', () => {
       const {id: gotId, secret: gotSecret} = decodeBasicClientCredentials(encodeBasicClientCredentials(id, secret));
       expect(gotId).to.equal(id);
       expect(gotSecret).to.equal(secret);
+    });
+  });
+
+  describe('isCredentialPlaceholder', () => {
+    it('detects OpenShell canonical and alias placeholders', () => {
+      expect(isCredentialPlaceholder('openshell:resolve:env:v1_SFCC_CLIENT_SECRET')).to.equal(true);
+      expect(isCredentialPlaceholder('sk-OPENSHELL-RESOLVE-ENV-SFCC_CLIENT_SECRET')).to.equal(true);
+    });
+
+    it('does not flag ordinary secrets', () => {
+      expect(isCredentialPlaceholder('Xy9+Kq/2z=')).to.equal(false);
+      expect(isCredentialPlaceholder('resolve:env')).to.equal(false);
+    });
+  });
+
+  describe('applyClientCredentials', () => {
+    it('uses the Basic header and leaves the body untouched for a real secret', () => {
+      const params = new URLSearchParams({grant_type: 'client_credentials'});
+      const headers = applyClientCredentials(params, 'my-client-id', 'Xy9+Kq2z');
+      expect(headers).to.deep.equal({
+        Authorization: `Basic ${encodeBasicClientCredentials('my-client-id', 'Xy9+Kq2z')}`,
+      });
+      expect(params.toString()).to.equal('grant_type=client_credentials');
+    });
+
+    it('moves credentials into the body for a sandbox placeholder', () => {
+      const placeholder = 'openshell:resolve:env:v1_SFCC_CLIENT_SECRET';
+      const params = new URLSearchParams({grant_type: 'client_credentials'});
+      const headers = applyClientCredentials(params, 'my-client-id', placeholder);
+      expect(headers).to.deep.equal({});
+      expect(params.get('client_id')).to.equal('my-client-id');
+      expect(params.get('client_secret')).to.equal(placeholder);
     });
   });
 });

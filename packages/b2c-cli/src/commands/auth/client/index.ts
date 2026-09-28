@@ -5,7 +5,7 @@
  */
 import {Flags} from '@oclif/core';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import {saveAuthSession, decodeJWT, encodeBasicClientCredentials} from '@salesforce/b2c-tooling-sdk/auth';
+import {saveAuthSession, decodeJWT, applyClientCredentials} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 
@@ -124,11 +124,12 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
       grantPayload.scope = scopes.join(' ');
     }
 
-    const credentials = encodeBasicClientCredentials(clientId, clientSecret);
+    const params = new URLSearchParams(grantPayload);
+    const authHeaders = applyClientCredentials(params, clientId, clientSecret);
     const url = `https://${accountManagerHost}/dwsso/oauth2/access_token`;
 
     const method = 'POST';
-    const body = new URLSearchParams(grantPayload).toString();
+    const body = params.toString();
 
     this.logger.debug({grantType, clientId}, `[StatefulAuth] Using OAuth ${grantType} grant for client: ${clientId}`);
     this.logger.debug({method, url}, `[StatefulAuth REQ] ${method} ${url}`);
@@ -138,7 +139,7 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
     const response = await fetch(url, {
       method,
       headers: {
-        Authorization: `Basic ${credentials}`,
+        ...authHeaders,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body,

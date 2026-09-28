@@ -482,6 +482,10 @@ an assistant's other tools or local activity. Keep account permissions, credenti
 handling, and assistant approvals aligned with your intended access. See
 [MCP Security and Access](../mcp/security) for those controls.
 
+To enforce limits outside the CLI and MCP process, and keep your API client
+secret out of the agent's environment, run your tools in a sandbox. See
+[Sandboxing with OpenShell](./openshell).
+
 ## Environment variables reference
 
 | Variable              | Purpose                                           |

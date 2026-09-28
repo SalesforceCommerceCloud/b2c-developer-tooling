@@ -59,3 +59,50 @@ export function encodeBasicClientCredentials(clientId: string, clientSecret: str
   const userPass = `${formUrlEncodeComponent(clientId)}:${formUrlEncodeComponent(clientSecret)}`;
   return Buffer.from(userPass).toString('base64');
 }
+
+/**
+ * Markers used by credential-brokering sandboxes (NVIDIA OpenShell) for the
+ * placeholder values they expose in place of real secrets. The sandbox proxy
+ * swaps the real secret in on the wire, but only where it recognizes the
+ * placeholder: it matches a raw placeholder inside a decoded Basic header, so
+ * the per-component form-url-encoding above (`:` -> `%3A`) hides it. In a
+ * form-url-encoded request body the proxy decodes, resolves, and re-encodes the
+ * value, which preserves the `+`/`%` handling for the real secret.
+ */
+const CREDENTIAL_PLACEHOLDER_MARKERS = ['openshell:resolve:env:', 'OPENSHELL-RESOLVE-ENV-'];
+
+/**
+ * Returns true when a value is a sandbox credential placeholder rather than a
+ * real secret.
+ *
+ * @param value - The credential value to inspect
+ */
+export function isCredentialPlaceholder(value: string): boolean {
+  return CREDENTIAL_PLACEHOLDER_MARKERS.some((marker) => value.includes(marker));
+}
+
+/**
+ * Applies OAuth client authentication to a token request.
+ *
+ * Uses HTTP Basic (`client_secret_basic`) by default. When the secret is a
+ * sandbox credential placeholder (see {@link isCredentialPlaceholder}), the
+ * credentials are sent in the request body instead (`client_secret_post`) so the
+ * sandbox proxy can resolve them. Account Manager accepts either form.
+ *
+ * @param params - The token request body; credentials are appended in the body case
+ * @param clientId - The OAuth client identifier
+ * @param clientSecret - The OAuth client password/secret
+ * @returns Headers to add to the token request (empty in the body case)
+ */
+export function applyClientCredentials(
+  params: URLSearchParams,
+  clientId: string,
+  clientSecret: string,
+): Record<string, string> {
+  if (isCredentialPlaceholder(clientSecret)) {
+    params.set('client_id', clientId);
+    params.set('client_secret', clientSecret);
+    return {};
+  }
+  return {Authorization: `Basic ${encodeBasicClientCredentials(clientId, clientSecret)}`};
+}

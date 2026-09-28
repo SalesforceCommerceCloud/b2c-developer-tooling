@@ -88,6 +88,7 @@ const toolkitSidebar = [
       {text: 'Configuration', link: '/guide/configuration'},
       {text: 'Project Setup', link: '/guide/project-setup'},
       {text: 'Safety Mode', link: '/guide/safety'},
+      {text: 'Sandboxing with OpenShell', link: '/guide/openshell'},
     ],
   },
   {

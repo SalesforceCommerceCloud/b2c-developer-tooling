@@ -9,7 +9,7 @@ import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
-import {encodeBasicClientCredentials} from './client-credentials.js';
+import {applyClientCredentials} from './client-credentials.js';
 
 // Module-level token cache to support multiple instances with same clientId
 const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
@@ -415,13 +415,13 @@ export class OAuthStrategy implements AuthStrategy {
       params.append('scope', requestedScopes.join(' '));
     }
 
-    const credentials = encodeBasicClientCredentials(this.config.clientId, this.config.clientSecret);
+    const authHeaders = applyClientCredentials(params, this.config.clientId, this.config.clientSecret);
 
     // Build request object for middleware
     let request = new Request(url, {
       method,
       headers: {
-        Authorization: `Basic ${credentials}`,
+        ...authHeaders,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
