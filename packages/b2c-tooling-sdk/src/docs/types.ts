@@ -19,6 +19,7 @@ export const JOB_STEPS_DATA_DIR = path.join(packageRoot, 'data/job-steps');
 export const GUIDES_DATA_DIR = path.join(packageRoot, 'data/guides');
 export const TOOLING_DATA_DIR = path.join(packageRoot, 'data/tooling');
 export const HELP_DATA_DIR = path.join(packageRoot, 'data/help');
+export const HELP_KB_DATA_DIR = path.join(packageRoot, 'data/help-kb');
 
 /**
  * The corpus a documentation entry belongs to. Used to tag and filter results
@@ -34,6 +35,8 @@ export const HELP_DATA_DIR = path.join(packageRoot, 'data/help');
  *   import/export, jobs, replication, security, Account Manager, permissions, logs
  * - `help-merchant` — Salesforce Help merchandising content: catalogs, products,
  *   promotions, search, content, analytics, SEO
+ * - `help-kb` — Salesforce Help Knowledge Articles (`type=1`): public B2C Commerce
+ *   troubleshooting, how-to, and known-behavior articles, keyed by article number
  */
 export type DocCategory =
   | 'script-api'
@@ -45,7 +48,8 @@ export type DocCategory =
   | 'b2c-commerce'
   | 'tooling'
   | 'help-admin'
-  | 'help-merchant';
+  | 'help-merchant'
+  | 'help-kb';
 
 /**
  * A documentation entry in the search index.

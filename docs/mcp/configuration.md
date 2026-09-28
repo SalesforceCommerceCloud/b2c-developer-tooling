@@ -58,7 +58,7 @@ Use `--docs-topics` or `SFCC_DOCS_TOPICS` to select documentation topics,
 separated by commas:
 
 `script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`,
-`sfra`, `b2c-commerce`, `tooling`, `help-admin`, `help-merchant`.
+`sfra`, `b2c-commerce`, `tooling`, `help-admin`, `help-merchant`, `help-kb`.
 
 Omit this option to include all available topics. It does not restrict the
 included skills.

@@ -26,10 +26,12 @@ const GUIDES_INDEX = path.join(packageRoot, 'data/guides/index.json');
 const TOOLING_INDEX = path.join(packageRoot, 'data/tooling/index.json');
 
 const HELP_INDEX = path.join(packageRoot, 'data/help/index.json');
+const HELP_KB_INDEX = path.join(packageRoot, 'data/help-kb/index.json');
 
 const hasGuides = fs.existsSync(GUIDES_INDEX);
 const hasTooling = fs.existsSync(TOOLING_INDEX);
 const hasHelp = fs.existsSync(HELP_INDEX);
+const hasHelpKb = fs.existsSync(HELP_KB_INDEX);
 
 const INTERNAL_TOOLING_DOC_ROOTS = ['guide', 'cli', 'mcp', 'vscode-extension'];
 
@@ -511,5 +513,45 @@ describe('docs: Salesforce Help corpus', function () {
         expect(ids.has(relatedId), `${entry.id} references missing entry ${relatedId}`).to.equal(true);
       }
     }
+  });
+});
+
+describe('docs: Salesforce Help Knowledge Articles corpus', function () {
+  before(function () {
+    if (!hasHelpKb) this.skip();
+  });
+
+  it('keys every entry by article number with public Help and docs-site URLs', () => {
+    const entries = listDocs('help-kb');
+    expect(entries.length).to.be.greaterThan(0);
+    for (const entry of entries) {
+      const number = entry.id.replace(/^help-kb\//, '');
+      expect(number, entry.id).to.match(/^\d+$/);
+      expect(entry.url).to.equal(`https://help.salesforce.com/s/articleView?id=${number}&type=1`);
+      expect(entry.sourceUrl).to.match(new RegExp(`/help/help-kb/${number}\\.md$`));
+    }
+  });
+
+  it('reads article content online from sourceUrl', async () => {
+    const entry = listDocs('help-kb')[0];
+    clearContentCache(true);
+    const originalFetch = globalThis.fetch;
+    let fetchedUrl = '';
+    globalThis.fetch = ((input: Parameters<typeof fetch>[0]) => {
+      fetchedUrl = String(input);
+      return Promise.resolve(new Response('# KB Article\n\nfetched body', {status: 200}));
+    }) as typeof fetch;
+    try {
+      expect(await readEntryContent(entry)).to.equal('# KB Article\n\nfetched body');
+      expect(fetchedUrl).to.equal(entry.sourceUrl);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('is searchable by category', () => {
+    const results = searchDocs('code upload certificate', {category: 'help-kb', limit: 5});
+    expect(results.length).to.be.greaterThan(0);
+    expect(results.every((r) => r.entry.category === 'help-kb')).to.equal(true);
   });
 });
