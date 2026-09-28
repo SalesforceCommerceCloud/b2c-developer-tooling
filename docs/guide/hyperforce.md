@@ -32,7 +32,7 @@ The CLI generates your CA, uploads it to eCDN, and issues a client certificate (
 
 - A staging tenant (tenant ID ending in `_stg`, for example `zzxy_stg`).
 - An API client with the `sfcc.cdn-zones.rw` scope, and the SCAPI short code and tenant ID configured. See [SCAPI Authentication](/guide/authentication#scapi-authentication).
-- A custom hostname starting with `staging-` in the staging Business Manager eCDN zone.
+- Your staging hostname (starting with `staging-`) in the staging Business Manager eCDN zone.
 
 ### Quick Start
 
