@@ -230,6 +230,7 @@ export default defineConfig({
     ['meta', {property: 'og:image:width', content: '1200'}],
     ['meta', {property: 'og:image:height', content: '630'}],
     ['meta', {name: 'twitter:card', content: 'summary_large_image'}],
+    ['meta', {name: 'twitter:image', content: `${siteUrl}og-card.png`}],
   ],
 
   transformPageData(pageData, {siteConfig}) {
@@ -237,10 +238,14 @@ export default defineConfig({
     const head = (pageData.frontmatter.head ??= []);
     head.push(['link', {rel: 'alternate', type: 'text/markdown', href: `${basePath}${pageData.relativePath}`}]);
     const pagePath = pageData.relativePath.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '.html');
+    const title = pageData.title || siteTitle;
+    const description = pageData.description || siteDescription;
     head.push(
-      ['meta', {property: 'og:title', content: pageData.title || siteTitle}],
-      ['meta', {property: 'og:description', content: pageData.description || siteDescription}],
+      ['meta', {property: 'og:title', content: title}],
+      ['meta', {property: 'og:description', content: description}],
       ['meta', {property: 'og:url', content: `${siteUrl}${pagePath}`}],
+      ['meta', {name: 'twitter:title', content: title}],
+      ['meta', {name: 'twitter:description', content: description}],
     );
   },
 
