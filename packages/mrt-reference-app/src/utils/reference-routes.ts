@@ -139,6 +139,17 @@ export const outboundLoopTest = async (req: Request, res: Response) => {
   return res.send(body);
 };
 
+export const httpbinIpTest = async (_: Request, res: Response) => {
+  const response = await fetch('https://httpbin.org/ip');
+  const body = await response.text();
+  res.status(response.status);
+  const contentType = response.headers.get('content-type');
+  if (contentType) {
+    res.set('Content-Type', contentType);
+  }
+  res.send(body);
+};
+
 export const cacheTest = async (req: Request, res: Response) => {
   let duration = String(req.params.duration || '60');
   if (isNaN(parseInt(duration))) {

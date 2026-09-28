@@ -22,6 +22,7 @@ import {
   exception,
   tlsVersionTest,
   outboundLoopTest,
+  httpbinIpTest,
   cacheTest,
   memoryTest,
   cookieTest,
@@ -125,6 +126,7 @@ export const createApp = (): AppWithMetrics => {
   app.all('/exception', exception);
   app.get('/tls', tlsVersionTest);
   app.get('/outbound-loop', outboundLoopTest);
+  app.get('/httpbin-ip', httpbinIpTest);
   app.get('/cache', cacheTest);
   app.get('/cache/:duration', cacheTest);
   app.get('/memtest', memoryTest);
