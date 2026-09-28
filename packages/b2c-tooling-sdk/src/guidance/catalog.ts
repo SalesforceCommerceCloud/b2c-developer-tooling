@@ -41,7 +41,7 @@ function readSafe(root: string, relative: string): Buffer {
     return readFileSync(current);
   } catch (error) {
     if (error instanceof GuidanceError) throw error;
-    return fail('CONTENT_UNAVAILABLE', 'Packaged skills are unavailable; rebuild or reinstall the MCP package.');
+    return fail('CONTENT_UNAVAILABLE', 'Packaged skills are unavailable; rebuild or reinstall the package.');
   }
 }
 
@@ -99,6 +99,11 @@ export class GuidanceCatalog {
       entries: parsed.entries.filter((entry) => collections.some((collection) => collection.id === entry.collection)),
     };
     this.entries = new Map(this.manifest.entries.map((entry) => [entry.id, entry]));
+  }
+
+  /** Whether an entry ID is exposed by this catalog. */
+  has(id: string): boolean {
+    return this.entries.has(id);
   }
 
   /** Featured entrypoints only; all catalog files remain readable through the template. */
@@ -187,7 +192,7 @@ export class GuidanceCatalog {
   private resolveFile(id: string, file?: string): {entry: GuidanceEntry; file: string; content: string} {
     if (!safePath(id)) fail('INVALID_PATH', 'Use an exact skill ID from the directory.');
     const entry = this.entries.get(id);
-    if (!entry) fail('NOT_FOUND', 'Skill ID is not available. Use skills_read to list or search.');
+    if (!entry) fail('NOT_FOUND', 'Skill ID is not available. List or search skills to find one.');
     const selected = file ?? entry.entrypoint;
     if (!safePath(selected)) fail('INVALID_PATH', 'Use an inventoried relative Markdown path.');
     const metadata = entry.files.find((item) => item.path === selected);

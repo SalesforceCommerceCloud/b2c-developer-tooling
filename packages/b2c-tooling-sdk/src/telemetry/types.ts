@@ -43,6 +43,15 @@ export interface TelemetryEventProperties extends TelemetryAttributes {
    * can otherwise dominate volume and skew blended KPIs.
    */
   isCI: boolean;
+  /** Whether the event originated from a process driven by an AI coding agent. */
+  isAgent: boolean;
+  /** Detected agent harness id (e.g. `claude-code`), when {@link isAgent} is true. */
+  agent?: string;
+  /**
+   * Salted, truncated hash of the agent harness session id, for grouping events
+   * from one agent session. The raw session id is never sent.
+   */
+  agentSessionKey?: string;
 }
 
 /**

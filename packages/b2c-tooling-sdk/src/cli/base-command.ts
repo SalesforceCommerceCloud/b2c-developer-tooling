@@ -28,6 +28,7 @@ import {
 import {SafetyGuard} from '../safety/safety-guard.js';
 import type {SafetyEvaluation} from '../safety/types.js';
 import {confirm as safetyConfirm} from '../ux/confirm.js';
+import {getAgentContext, isInteractive} from '../ux/agent-context.js';
 import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import {readB2CSettings} from '../config/settings.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
@@ -85,6 +86,9 @@ export function classifyError(err: unknown): ErrorCategory {
 
   const name = (err as {name?: unknown} | undefined)?.name;
   if (name === 'SafetyBlockedError' || name === 'SafetyConfirmationRequired') return 'guardrail';
+  // A destructive command needed confirmation in a non-interactive session
+  // (no TTY or AI agent) and the caller omitted --force/--yes: a usage error.
+  if (name === 'ConfirmationRequiredError') return 'validation';
 
   return 'runtime';
 }
@@ -253,9 +257,12 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // overrides. Standalone SDK use falls back to an OS-idiomatic path.
     initializeContentCache(process.env.B2C_TEST_DATA_DIR ?? this.config.cacheDir);
 
-    // Set CLI User-Agent (CLI name/version only, without @salesforce/ prefix)
+    // Set CLI User-Agent (CLI name/version only, without @salesforce/ prefix),
+    // with an `agent/<id>` product token when an AI coding agent is detected.
     // This must happen before any API clients are created
-    setUserAgent(`${this.config.name.replace(/^@salesforce\//, '')}/${this.config.version}`);
+    const agent = getAgentContext().harness;
+    const userAgent = `${this.config.name.replace(/^@salesforce\//, '')}/${this.config.version}`;
+    setUserAgent(agent ? `${userAgent} agent/${agent.id}` : userAgent);
 
     // Register extra params middleware (from --extra-query, --extra-body, --extra-headers flags)
     // This must happen before any API clients are created
@@ -901,14 +908,15 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   /**
    * Require interactive confirmation for a safety-guarded operation.
    *
-   * If stdin is a TTY, prompts the user. Otherwise, blocks with an error message.
+   * If the session is interactive (stdin is a TTY and no AI agent is detected),
+   * prompts the user. Otherwise, blocks with an error message.
    * The error message clearly indicates the block is from the user's own safety configuration.
    *
    * @param evaluation - The safety evaluation that triggered confirmation
    * @throws Error if confirmation is denied or not possible
    */
   protected async confirmOrBlock(evaluation: SafetyEvaluation): Promise<void> {
-    if (!process.stdin.isTTY) {
+    if (!isInteractive()) {
       this.error(
         `Your safety configuration requires confirmation for this operation, ` +
           `but no interactive session is available.\n\n  ${evaluation.reason}\n\n` +

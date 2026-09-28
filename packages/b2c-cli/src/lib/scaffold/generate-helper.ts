@@ -5,6 +5,7 @@
  */
 import {input, confirm, select, checkbox, search} from '@inquirer/prompts';
 import type {Logger} from '@salesforce/b2c-tooling-sdk';
+import {isInteractive} from '@salesforce/b2c-tooling-sdk/ux';
 import {
   createScaffoldRegistry,
   generateFromScaffold,
@@ -94,8 +95,8 @@ export async function executeScaffoldGenerate(
   }
 
   // Resolve parameters using SDK, then prompt for any missing
-  const isTTY = process.stdin.isTTY && process.stdout.isTTY;
-  const interactive = !force && isTTY;
+  // Never prompt when an AI agent is driving the CLI (see isInteractive()).
+  const interactive = !force && isInteractive() && Boolean(process.stdout.isTTY);
 
   const resolved = await resolveScaffoldParameters(scaffold, {
     providedVariables,

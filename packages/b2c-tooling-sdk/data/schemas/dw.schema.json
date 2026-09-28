@@ -1,0 +1,558 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/schemas/dw.schema.json",
+  "title": "B2C Commerce dw.json",
+  "description": "Connection and project configuration for B2C Commerce tooling. See https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html",
+  "definitions": {
+    "instance": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Connection name for instance selection (`--instance` / `SFCC_INSTANCE`)."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Use this entry as the default instance."
+        },
+        "hostname": {
+          "type": "string",
+          "description": "Instance hostname, without a URL path (e.g. `abcd-001.dx.commercecloud.salesforce.com`). Env: `SFCC_SERVER`."
+        },
+        "server": {
+          "type": "string",
+          "description": "Alternate spelling of `hostname`. Instance hostname, without a URL path (e.g. `abcd-001.dx.commercecloud.salesforce.com`). Env: `SFCC_SERVER`."
+        },
+        "webdav-hostname": {
+          "type": "string",
+          "description": "Separate WebDAV hostname. Env: `SFCC_WEBDAV_SERVER`."
+        },
+        "webdavHostname": {
+          "type": "string",
+          "description": "Alternate spelling of `webdav-hostname`. Separate WebDAV hostname. Env: `SFCC_WEBDAV_SERVER`."
+        },
+        "webdav-server": {
+          "type": "string",
+          "description": "Alternate spelling of `webdav-hostname`. Separate WebDAV hostname. Env: `SFCC_WEBDAV_SERVER`."
+        },
+        "secure-server": {
+          "type": "string",
+          "description": "Alternate spelling of `webdav-hostname`. Separate WebDAV hostname. Env: `SFCC_WEBDAV_SERVER`."
+        },
+        "secureHostname": {
+          "type": "string",
+          "description": "Alternate spelling of `webdav-hostname`. Separate WebDAV hostname. Env: `SFCC_WEBDAV_SERVER`."
+        },
+        "code-version": {
+          "type": "string",
+          "description": "Default code version for operations that accept one. Env: `SFCC_CODE_VERSION`."
+        },
+        "codeVersion": {
+          "type": "string",
+          "description": "Alternate spelling of `code-version`. Default code version for operations that accept one. Env: `SFCC_CODE_VERSION`."
+        },
+        "short-code": {
+          "type": "string",
+          "description": "SCAPI short code. Env: `SFCC_SHORTCODE`."
+        },
+        "shortCode": {
+          "type": "string",
+          "description": "Alternate spelling of `short-code`. SCAPI short code. Env: `SFCC_SHORTCODE`."
+        },
+        "scapi-shortcode": {
+          "type": "string",
+          "description": "Alternate spelling of `short-code`. SCAPI short code. Env: `SFCC_SHORTCODE`."
+        },
+        "tenant-id": {
+          "type": "string",
+          "description": "Tenant or organization ID, such as `abcd_001` or `f_ecom_abcd_001`. Env: `SFCC_TENANT_ID`."
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "Alternate spelling of `tenant-id`. Tenant or organization ID, such as `abcd_001` or `f_ecom_abcd_001`. Env: `SFCC_TENANT_ID`."
+        },
+        "site-id": {
+          "type": "string",
+          "description": "Default site/channel ID for supported site and shopper operations. Env: `SFCC_SITE_ID`."
+        },
+        "siteId": {
+          "type": "string",
+          "description": "Alternate spelling of `site-id`. Default site/channel ID for supported site and shopper operations. Env: `SFCC_SITE_ID`."
+        },
+        "api-backend": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "scapi",
+            "ocapi"
+          ],
+          "description": "API backend for operations supporting both SCAPI and OCAPI. `auto` (default) prefers SCAPI with OCAPI fallback. Env: `SFCC_API_BACKEND`."
+        },
+        "apiBackend": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "scapi",
+            "ocapi"
+          ],
+          "description": "Alternate spelling of `api-backend`. API backend for operations supporting both SCAPI and OCAPI. `auto` (default) prefers SCAPI with OCAPI fallback. Env: `SFCC_API_BACKEND`."
+        },
+        "client-id": {
+          "type": "string",
+          "description": "Account Manager API client ID. Env: `SFCC_CLIENT_ID`."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Alternate spelling of `client-id`. Account Manager API client ID. Env: `SFCC_CLIENT_ID`."
+        },
+        "client-secret": {
+          "type": "string",
+          "description": "Account Manager client secret. Env: `SFCC_CLIENT_SECRET`."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "Alternate spelling of `client-secret`. Account Manager client secret. Env: `SFCC_CLIENT_SECRET`."
+        },
+        "oauth-scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Requested OAuth scopes. Scope grants must be configured on the API client. Env: `SFCC_OAUTH_SCOPES` (comma-separated)."
+        },
+        "oauthScopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Alternate spelling of `oauth-scopes`. Requested OAuth scopes. Scope grants must be configured on the API client. Env: `SFCC_OAUTH_SCOPES` (comma-separated)."
+        },
+        "jwt-cert-path": {
+          "type": "string",
+          "description": "PEM certificate path for JWT authentication. Env: `SFCC_JWT_CERT`; flag: `--jwt-cert`."
+        },
+        "jwtCertPath": {
+          "type": "string",
+          "description": "Alternate spelling of `jwt-cert-path`. PEM certificate path for JWT authentication. Env: `SFCC_JWT_CERT`; flag: `--jwt-cert`."
+        },
+        "jwt-key-path": {
+          "type": "string",
+          "description": "PEM private key path for JWT authentication. Env: `SFCC_JWT_KEY`."
+        },
+        "jwtKeyPath": {
+          "type": "string",
+          "description": "Alternate spelling of `jwt-key-path`. PEM private key path for JWT authentication. Env: `SFCC_JWT_KEY`."
+        },
+        "jwt-passphrase": {
+          "type": "string",
+          "description": "Passphrase for an encrypted JWT private key. Env: `SFCC_JWT_PASSPHRASE`."
+        },
+        "jwtPassphrase": {
+          "type": "string",
+          "description": "Alternate spelling of `jwt-passphrase`. Passphrase for an encrypted JWT private key. Env: `SFCC_JWT_PASSPHRASE`."
+        },
+        "auth-methods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "client-credentials",
+              "jwt",
+              "user",
+              "implicit",
+              "basic",
+              "api-key"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "Ordered list of allowed authentication methods. Do not combine with `user-auth`. Env: `SFCC_AUTH_METHODS` (comma-separated)."
+        },
+        "authMethods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "client-credentials",
+              "jwt",
+              "user",
+              "implicit",
+              "basic",
+              "api-key"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "Alternate spelling of `auth-methods`. Ordered list of allowed authentication methods. Do not combine with `user-auth`. Env: `SFCC_AUTH_METHODS` (comma-separated)."
+        },
+        "user-auth": {
+          "type": "boolean",
+          "description": "Shorthand for `\"auth-methods\": [\"user\"]` (browser login). Do not combine with `auth-methods`."
+        },
+        "userAuth": {
+          "type": "boolean",
+          "description": "Alternate spelling of `user-auth`. Shorthand for `\"auth-methods\": [\"user\"]` (browser login). Do not combine with `auth-methods`."
+        },
+        "account-manager-host": {
+          "type": "string",
+          "description": "Account Manager hostname override. Env: `SFCC_ACCOUNT_MANAGER_HOST`."
+        },
+        "accountManagerHost": {
+          "type": "string",
+          "description": "Alternate spelling of `account-manager-host`. Account Manager hostname override. Env: `SFCC_ACCOUNT_MANAGER_HOST`."
+        },
+        "slas-client-id": {
+          "type": "string",
+          "description": "Shopper Login and API Access Service (SLAS) client ID. Env: `SFCC_SLAS_CLIENT_ID`."
+        },
+        "slasClientId": {
+          "type": "string",
+          "description": "Alternate spelling of `slas-client-id`. Shopper Login and API Access Service (SLAS) client ID. Env: `SFCC_SLAS_CLIENT_ID`."
+        },
+        "slas-client-secret": {
+          "type": "string",
+          "description": "Secret for a private SLAS client; omit for public clients. Env: `SFCC_SLAS_CLIENT_SECRET`."
+        },
+        "slasClientSecret": {
+          "type": "string",
+          "description": "Alternate spelling of `slas-client-secret`. Secret for a private SLAS client; omit for public clients. Env: `SFCC_SLAS_CLIENT_SECRET`."
+        },
+        "username": {
+          "type": "string",
+          "description": "Business Manager username (typically an email address) for WebDAV. Env: `SFCC_USERNAME`."
+        },
+        "password": {
+          "type": "string",
+          "description": "WebDAV access key for `username`. Env: `SFCC_PASSWORD`."
+        },
+        "certificate": {
+          "type": "string",
+          "description": "Path to a PKCS12 (`.p12` / `.pfx`) client certificate for mTLS. Env: `SFCC_CERTIFICATE`."
+        },
+        "certificate-passphrase": {
+          "type": "string",
+          "description": "Client certificate passphrase. Env: `SFCC_CERTIFICATE_PASSPHRASE`."
+        },
+        "certificatePassphrase": {
+          "type": "string",
+          "description": "Alternate spelling of `certificate-passphrase`. Client certificate passphrase. Env: `SFCC_CERTIFICATE_PASSPHRASE`."
+        },
+        "passphrase": {
+          "type": "string",
+          "description": "Alternate spelling of `certificate-passphrase`. Client certificate passphrase. Env: `SFCC_CERTIFICATE_PASSPHRASE`."
+        },
+        "self-signed": {
+          "type": "boolean",
+          "description": "Disable server certificate verification (default `false`). Not required just because you use mTLS. Env: `SFCC_SELFSIGNED`."
+        },
+        "selfSigned": {
+          "type": "boolean",
+          "description": "Alternate spelling of `self-signed`. Disable server certificate verification (default `false`). Not required just because you use mTLS. Env: `SFCC_SELFSIGNED`."
+        },
+        "selfsigned": {
+          "type": "boolean",
+          "description": "Alternate spelling of `self-signed`. Disable server certificate verification (default `false`). Not required just because you use mTLS. Env: `SFCC_SELFSIGNED`."
+        },
+        "cartridges": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Cartridge names for deploy/watch filtering and IDE discovery. Array, or a colon/comma-separated string. Env: `SFCC_CARTRIDGES`."
+        },
+        "cartridgesPath": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Alternate spelling of `cartridges`. Cartridge names for deploy/watch filtering and IDE discovery. Array, or a colon/comma-separated string. Env: `SFCC_CARTRIDGES`."
+        },
+        "auto-upload": {
+          "type": "boolean",
+          "description": "Automatically upload code changes from the VS Code extension."
+        },
+        "autoUpload": {
+          "type": "boolean",
+          "description": "Alternate spelling of `auto-upload`. Automatically upload code changes from the VS Code extension."
+        },
+        "content-library": {
+          "type": "string",
+          "description": "Default library for content list/export."
+        },
+        "contentLibrary": {
+          "type": "string",
+          "description": "Alternate spelling of `content-library`. Default library for content list/export."
+        },
+        "catalogs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Catalog IDs for WebDAV browsing. Env: `SFCC_CATALOGS`."
+        },
+        "libraries": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Library ID."
+                  },
+                  "siteLibrary": {
+                    "type": "boolean",
+                    "description": "Whether this is a site-private library."
+                  }
+                }
+              }
+            ]
+          },
+          "description": "Content library IDs, as strings or `{\"id\": \"RefArch\", \"siteLibrary\": true}` entries. Env: `SFCC_LIBRARIES`."
+        },
+        "asset-query": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "JSON dot-paths for finding static asset URLs in content (default `[\"image.path\"]`). Env: `SFCC_ASSET_QUERY`."
+        },
+        "assetQuery": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Alternate spelling of `asset-query`. JSON dot-paths for finding static asset URLs in content (default `[\"image.path\"]`). Env: `SFCC_ASSET_QUERY`."
+        },
+        "import-set-exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Project-relative directories to exclude recursively from import-set discovery. Env: `SFCC_IMPORT_SET_EXCLUDE`."
+        },
+        "importSetExclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Alternate spelling of `import-set-exclude`. Project-relative directories to exclude recursively from import-set discovery. Env: `SFCC_IMPORT_SET_EXCLUDE`."
+        },
+        "docs-categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Documentation category allowlist for supported searches. Env: `SFCC_DOCS_CATEGORIES`."
+        },
+        "docsCategories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Alternate spelling of `docs-categories`. Documentation category allowlist for supported searches. Env: `SFCC_DOCS_CATEGORIES`."
+        },
+        "realm": {
+          "type": "string",
+          "description": "Default realm for sandbox operations."
+        },
+        "sandbox-api-host": {
+          "type": "string",
+          "description": "On-Demand Sandbox API hostname override. Env: `SFCC_SANDBOX_API_HOST`."
+        },
+        "sandboxApiHost": {
+          "type": "string",
+          "description": "Alternate spelling of `sandbox-api-host`. On-Demand Sandbox API hostname override. Env: `SFCC_SANDBOX_API_HOST`."
+        },
+        "cip-host": {
+          "type": "string",
+          "description": "CIP analytics host override. Env: `SFCC_CIP_HOST`."
+        },
+        "cipHost": {
+          "type": "string",
+          "description": "Alternate spelling of `cip-host`. CIP analytics host override. Env: `SFCC_CIP_HOST`."
+        },
+        "safety": {
+          "type": "object",
+          "description": "Per-instance safety restrictions and confirmation rules. See the Safety Mode guide.",
+          "additionalProperties": false,
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": [
+                "NONE",
+                "NO_DELETE",
+                "NO_UPDATE",
+                "READ_ONLY"
+              ],
+              "description": "Baseline restriction level. Env: `SFCC_SAFETY_LEVEL`."
+            },
+            "confirm": {
+              "type": "boolean",
+              "description": "Require interactive confirmation for blocked operations instead of refusing them."
+            },
+            "rules": {
+              "type": "array",
+              "description": "Ordered rules; the first match wins.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "action"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "description": "HTTP method pattern (e.g. `POST`, `DELETE`)."
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "URL path glob (e.g. `/jobs/*/executions`)."
+                  },
+                  "job": {
+                    "type": "string",
+                    "description": "Job ID glob."
+                  },
+                  "command": {
+                    "type": "string",
+                    "description": "CLI command ID glob (e.g. `sandbox:*`, `ecdn:cache:purge`)."
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "allow",
+                      "block",
+                      "confirm"
+                    ],
+                    "description": "Action when the rule matches."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "mrt-api-key": {
+          "type": "string",
+          "description": "Managed Runtime API key. Env: `MRT_API_KEY`."
+        },
+        "mrtApiKey": {
+          "type": "string",
+          "description": "Alternate spelling of `mrt-api-key`. Managed Runtime API key. Env: `MRT_API_KEY`."
+        },
+        "mrt-project": {
+          "type": "string",
+          "description": "Managed Runtime project slug (storefront ID for SCAPI MRT operations). Env: `MRT_PROJECT`."
+        },
+        "mrtProject": {
+          "type": "string",
+          "description": "Alternate spelling of `mrt-project`. Managed Runtime project slug (storefront ID for SCAPI MRT operations). Env: `MRT_PROJECT`."
+        },
+        "mrt-environment": {
+          "type": "string",
+          "description": "Managed Runtime target environment. Env: `MRT_ENVIRONMENT`."
+        },
+        "mrtEnvironment": {
+          "type": "string",
+          "description": "Alternate spelling of `mrt-environment`. Managed Runtime target environment. Env: `MRT_ENVIRONMENT`."
+        },
+        "mrt-origin": {
+          "type": "string",
+          "description": "Managed Runtime API origin override. Env: `MRT_CLOUD_ORIGIN`."
+        },
+        "mrtOrigin": {
+          "type": "string",
+          "description": "Alternate spelling of `mrt-origin`. Managed Runtime API origin override. Env: `MRT_CLOUD_ORIGIN`."
+        },
+        "cloudOrigin": {
+          "type": "string",
+          "description": "Alternate spelling of `mrt-origin`. Managed Runtime API origin override. Env: `MRT_CLOUD_ORIGIN`."
+        },
+        "mrt-backend": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "legacy",
+            "scapi"
+          ],
+          "description": "Managed Runtime backend for supported operations (default `auto`). Env: `MRT_BACKEND`."
+        },
+        "mrtBackend": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "legacy",
+            "scapi"
+          ],
+          "description": "Alternate spelling of `mrt-backend`. Managed Runtime backend for supported operations (default `auto`). Env: `MRT_BACKEND`."
+        }
+      },
+      "additionalProperties": true,
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "user-auth",
+              "auth-methods"
+            ]
+          },
+          {
+            "required": [
+              "userAuth",
+              "authMethods"
+            ]
+          },
+          {
+            "required": [
+              "user-auth",
+              "authMethods"
+            ]
+          },
+          {
+            "required": [
+              "userAuth",
+              "auth-methods"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/definitions/instance"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for editor support."
+    },
+    "configs": {
+      "type": "array",
+      "description": "Named instance entries. Select one with `--instance` / `SFCC_INSTANCE`, or mark one `active`.",
+      "items": {
+        "$ref": "#/definitions/instance"
+      }
+    }
+  }
+}
