@@ -199,13 +199,15 @@ jobs:
         if: steps.cfg.outputs.enabled == 'true'
         run: pnpm -r run build # builds the SDK that TypeDoc reads for API docs
 
-      # DOCS_BASE_PATH prefixes assets and links for /pr-next/ or /pr-<n>/.
+      # DOCS_BASE_PATH prefixes assets and links for /pr-next/ or /pr-<n>/;
+      # DOCS_SITE_ORIGIN makes the absolute Open Graph URLs point at the preview host.
       # The uxstudio S3 assets used by the production build are intentionally
       # skipped — no docs source references them.
       - name: Build documentation (preview base path)
         if: steps.cfg.outputs.enabled == 'true'
         env:
           DOCS_BASE_PATH: /${{ env.PREVIEW_PATH }}/
+          DOCS_SITE_ORIGIN: ${{ env.DOCS_PREVIEW_BASE_URL }}
         run: pnpm run docs:build
 
       - name: Configure AWS credentials

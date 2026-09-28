@@ -1,4 +1,4 @@
-.PHONY: install test test-agent lint lint-agent format typecheck typecheck-agent generate-models docs clean
+.PHONY: install test test-agent lint lint-agent format typecheck typecheck-agent generate-models api-docs api-docs-check clean
 
 install:
 	pip install -e ".[dev,docs]"
@@ -35,8 +35,12 @@ typecheck-agent:
 generate-models:
 	python scripts/generate_models.py
 
-docs:
-	mkdocs serve
+# Regenerate the API reference pages in ../../docs/python/api (served by the VitePress docs site)
+api-docs:
+	python scripts/generate_api_docs.py
+
+api-docs-check:
+	python scripts/generate_api_docs.py --check
 
 clean:
 	rm -rf dist build .pytest_cache .mypy_cache .ruff_cache htmlcov

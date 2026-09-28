@@ -1,4 +1,8 @@
-# Salesforce B2C Tooling SDK (Python)
+---
+description: Python SDK for Salesforce B2C Commerce tooling — auth, config, OCAPI/SCAPI clients, WebDAV, and operations.
+---
+
+# Python SDK
 
 A Python SDK for Salesforce B2C Commerce tooling — authentication, configuration
 resolution, typed OCAPI/SCAPI clients, WebDAV, and higher-level operations for
@@ -6,14 +10,15 @@ code deployment, jobs, sites, catalogs, Business Manager users/roles, sandboxes,
 metrics, and logs.
 
 It is a faithful port of the
-[`@salesforce/b2c-tooling-sdk`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling)
+[`@salesforce/b2c-tooling-sdk`](/api/)
 TypeScript SDK. The concepts, module layout, and public surface mirror the
 TypeScript library — only the syntax is Pythonic (`async`/`await`, dataclasses,
 snake_case).
 
-!!! note "Status"
-    Alpha, under active development. The public API mirrors the TypeScript SDK
-    but may still change.
+::: warning Status
+Alpha, under active development. The public API mirrors the TypeScript SDK
+but may still change.
+:::
 
 ## The interoperability guarantee
 
@@ -23,7 +28,7 @@ The Python SDK shares the **same on-disk state** as the B2C CLI, byte-for-byte:
   directory for the `@salesforce/b2c-cli` application), and
 - the same configuration files (`dw.json`, `~/.mobify`, `settings.json`).
 
-That means a token minted by the CLI (`b2c auth login`) works from Python, and a
+That means a token minted by the CLI ([`b2c auth login`](/cli/auth#b2c-auth-login)) works from Python, and a
 token refreshed from Python is visible to the CLI. You can authenticate
 interactively once with the CLI and then run non-interactive Python automation
 against the same session. See [CLI Interoperability](cli-interop.md) for the full
@@ -104,7 +109,7 @@ guide for details and caveats.
 - [Synchronous API](sync-api.md) — the blocking facade
 - [SLAS Shopper Login](slas.md) — guest and registered shopper tokens
 - [CLI Interoperability](cli-interop.md) — sharing sessions and config with the CLI
-- [API Reference](api-reference.md) — full generated reference
+- [API Reference](./api/) — full generated reference
 
 ## License
 

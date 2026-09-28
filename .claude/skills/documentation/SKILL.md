@@ -142,6 +142,8 @@ docs/
 │   └── ...
 ├── api/                # API reference (auto-generated)
 │   └── *.md
+├── python/             # Python SDK guides (manually written)
+│   └── api/            # Python API reference (generated, committed)
 └── .vitepress/         # Vitepress configuration
     └── config.mts
 ```
@@ -258,6 +260,27 @@ Never edit files in `docs/api/` directly. Instead:
 
 1. Update JSDoc comments in SDK source files
 2. Run `pnpm run docs:api` to regenerate
+
+### 4. Python SDK (`docs/python/`)
+
+Purpose: Guides and API reference for the Python SDK (`python/b2c-tooling-sdk/`),
+served under `/python/`. It is a self-contained section with its own sidebar —
+don't mirror TypeScript examples into it or add Python tabs to the main guides.
+
+- **Guides** (`docs/python/*.md`) are hand-written. Link to the shared docs
+  (`/guide/configuration`, `/cli/auth`, `/api/`) rather than re-explaining
+  shared concepts. The guide sidebar is hand-maintained in `config.mts`.
+- **API reference** (`docs/python/api/`) is generated from the Python docstrings
+  (sphinx style) by `python/b2c-tooling-sdk/scripts/generate_api_docs.py`
+  (griffe; no import of the package) along with `docs/python/api/sidebar.json`.
+  Unlike `docs/api/`, the output is **committed** so the docs build needs no
+  Python; the Python SDK CI job runs the `--check` mode.
+
+Never edit `docs/python/api/` directly. Update the docstrings, then from
+`python/b2c-tooling-sdk/` run `make api-docs` (or `make api-docs-check`) and commit
+the result. New public subpackages must be added to `PAGES` in the script.
+Heading anchors are emitted in VitePress's slug form (lowercase, `_`/`.` → `-`)
+because VitePress rewrites cross-page `#hash` links that way.
 
 ## Writing JSDoc for API Docs
 
@@ -674,6 +697,13 @@ b2c <topic> <command> --flag value
 3. Add entry point to `typedoc.json` if new module
 4. Run `pnpm run docs:api` to regenerate
 
+### When Changing the Python SDK Public API
+
+1. Update the sphinx-style docstrings in `python/b2c-tooling-sdk/src/`
+2. Add new barrel modules to `PAGES` in `scripts/generate_api_docs.py`
+3. Run `make api-docs` in `python/b2c-tooling-sdk/` and commit `docs/python/api/`
+4. Update `docs/python/*.md` guides if usage changed
+
 ### When Changing CLI Behavior
 
 1. Update affected examples in `docs/cli/*.md`
@@ -706,7 +736,9 @@ patterns, with MCP bundling preferred and standalone skills still supported.
   MCP Tools, and Security and Access, in that order.
 - **Guides** (`/guide/workflows`): task guides with their own expanded groups.
 - **Reference** (`/cli/`): CLI commands with their own sidebar.
-- **SDKs**: TypeScript SDK (`/api/`); TypeDoc generates its reference navigation.
+- **SDKs**: TypeScript SDK (`/api/`; TypeDoc generates its reference navigation),
+  Python SDK (`/python/`; guides sidebar plus generated `docs/python/api/sidebar.json`),
+  and external links to the Script API and B2C Commerce API references.
 
 Keep sidebar labels aligned with page titles; concise entries such as MCP and
 Introduction are intentional. Preserve published URLs/anchors when reorganizing

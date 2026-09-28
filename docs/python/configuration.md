@@ -1,6 +1,7 @@
 # Configuration
 
-The SDK resolves configuration from the same files the B2C CLI reads, so a
+The SDK resolves configuration from the same files the B2C CLI reads (see
+[Configuration](/guide/configuration)), so a
 `dw.json` or `~/.mobify` that works with `b2c` works unchanged from Python.
 
 ## `resolve_config`
@@ -132,4 +133,4 @@ returned instance.
 
 ## API reference
 
-See the [config section of the API reference](api-reference.md#configuration).
+See the [config section of the API reference](./api/config.md).
