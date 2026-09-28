@@ -143,6 +143,8 @@ b2c ecdn mtls create --tenant-id zzxy_stg --name code-upload \
 
 The certificate must be a CA certificate valid for at most 1 year. You can issue client certificates from it with `b2c ecdn mtls issue`.
 
+For manual OpenSSL instructions, see the Salesforce Help article [B2C Commerce Hyperforce Code Upload Instructions for Staging](https://help.salesforce.com/s/articleView?id=002772125&type=1).
+
 Uploaded CAs are also listed in the staging Business Manager under **Administration > Site Development > Development Setup > Code Upload Certificate**.
 
 ## CI/CD on Hyperforce Staging
