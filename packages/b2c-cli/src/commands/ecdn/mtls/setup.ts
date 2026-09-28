@@ -203,8 +203,10 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     files: CodeUploadCertificateFiles,
     passphrase: string,
   ): Promise<string | undefined> {
+    // Prefer the dw.json the configuration was actually loaded from (it may be in a parent directory).
+    const loadedFrom = this.resolvedConfig.sources.find((s) => s.name === 'DwJsonSource' && s.location)?.location;
     const dwJsonPath = path.resolve(
-      this.flags.config ?? path.join(this.flags['project-directory'] ?? process.cwd(), 'dw.json'),
+      loadedFrom ?? this.flags.config ?? path.join(this.flags['project-directory'] ?? process.cwd(), 'dw.json'),
     );
     if (!fs.existsSync(dwJsonPath)) {
       ux.stdout(
