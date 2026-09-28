@@ -220,7 +220,8 @@ export default defineConfig({
   title: siteTitle,
   description: siteDescription,
   base: basePath,
-  srcExclude: ['_partials/**', 'releases/_entries/**', 'public/releases/**'],
+  // api-readme.md is TypeDoc's readme input (rendered as /api/); don't also build it as a page.
+  srcExclude: ['_partials/**', 'releases/_entries/**', 'public/releases/**', 'api-readme.md'],
 
   head: [
     ['link', {rel: 'describedby', type: 'text/plain', href: `${basePath}llms.txt`}],
@@ -421,6 +422,10 @@ export default defineConfig({
             fuzzy: 0.2,
             prefix: true,
             boost: {title: 4, text: 2, titles: 1},
+            // Rank generated API reference (TypeDoc, Python) below everything else; it is
+            // ~90% of indexed pages and otherwise drowns out guides and CLI docs. Serialized
+            // to the client, so it must be self-contained (ids include the base path).
+            boostDocument: (id: string) => (/\/(?:python\/)?api\//.test(id) ? 0.1 : 1),
           },
         },
       },
