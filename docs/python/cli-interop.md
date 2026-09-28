@@ -1,6 +1,6 @@
 # CLI Interoperability
 
-The Python SDK and the B2C CLI (`@salesforce/b2c-cli`) share the **same on-disk
+The Python SDK and the [B2C CLI](/cli/overview) (`@salesforce/b2c-cli`) share the **same on-disk
 state, byte-for-byte**. Nothing is copied, translated, or duplicated — both tools
 read and write the identical files. A token minted by the CLI works from Python,
 and a token the Python SDK refreshes is visible to the CLI.
@@ -104,4 +104,4 @@ real file.
 
 ## API reference
 
-See the [session-store helpers in the auth reference](api-reference.md#authentication).
+See the [session-store helpers in the auth reference](./api/auth.md).

@@ -53,7 +53,17 @@ make format-check     # ruff format --check .
 
 ```bash
 make generate-models  # regenerate Pydantic models from the TS package's specs
+make api-docs         # regenerate the API reference pages (../../docs/python/api)
 ```
+
+## Documentation
+
+Guides live in the monorepo docs site at `../../docs/python/*.md` (VitePress,
+served under `/python/`). The API reference in `../../docs/python/api/` is
+**generated** from docstrings by `scripts/generate_api_docs.py` (griffe, sphinx
+docstring style) and committed; CI runs `make api-docs-check`. After changing a
+public docstring or a barrel's `__all__`, run `make api-docs` and commit the
+result. New public subpackages must be added to `PAGES` in that script.
 
 ## Architecture
 

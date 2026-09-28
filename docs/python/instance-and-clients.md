@@ -92,5 +92,5 @@ semantics.
 
 ## API reference
 
-See the [instance](api-reference.md#instance) and
-[clients](api-reference.md#clients) sections of the API reference.
+See the [instance](./api/instance.md) and
+[clients](./api/clients.md) sections of the API reference.

@@ -4,6 +4,7 @@ import path from 'node:path';
 import {defineConfig, type DefaultTheme} from 'vitepress';
 import {groupIconMdPlugin, groupIconVitePlugin} from 'vitepress-plugin-group-icons';
 import typedocSidebar from '../api/typedoc-sidebar.json';
+import pythonApiSidebar from '../python/api/sidebar.json';
 import {generateReleaseNotes} from './releases/generate.js';
 
 const docsDirectory = path.resolve(import.meta.dirname, '..');
@@ -65,6 +66,14 @@ const previewBasePath = process.env.DOCS_BASE_PATH
 // Base paths - dev build lives in /dev/ subdirectory, stable/release is at root
 const siteBase = '/b2c-developer-tooling';
 const basePath = previewBasePath ?? (isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`);
+
+// Link unfurlers (Slack, Teams, LinkedIn) need absolute Open Graph URLs. PR previews
+// are served from a different host, which CI passes in as DOCS_SITE_ORIGIN.
+const siteOrigin = (process.env.DOCS_SITE_ORIGIN || 'https://salesforcecommercecloud.github.io').replace(/\/+$/, '');
+const siteUrl = `${siteOrigin}${basePath}`;
+const siteTitle = 'Agentic B2C Developer Toolkit';
+const siteDescription =
+  'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE Extension for Salesforce B2C Commerce';
 
 const toolkitSidebar = [
   {text: 'Overview', link: '/'},
@@ -208,18 +217,37 @@ const referenceSidebar = [
 ];
 
 export default defineConfig({
-  title: 'Agentic B2C Developer Toolkit',
-  description:
-    'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE Extension for Salesforce B2C Commerce',
+  title: siteTitle,
+  description: siteDescription,
   base: basePath,
-  srcExclude: ['_partials/**', 'releases/_entries/**', 'public/releases/**'],
+  // api-readme.md is TypeDoc's readme input (rendered as /api/); don't also build it as a page.
+  srcExclude: ['_partials/**', 'releases/_entries/**', 'public/releases/**', 'api-readme.md'],
 
-  head: [['link', {rel: 'describedby', type: 'text/plain', href: `${basePath}llms.txt`}]],
+  head: [
+    ['link', {rel: 'describedby', type: 'text/plain', href: `${basePath}llms.txt`}],
+    ['meta', {property: 'og:site_name', content: siteTitle}],
+    ['meta', {property: 'og:type', content: 'website'}],
+    ['meta', {property: 'og:image', content: `${siteUrl}og-card.png`}],
+    ['meta', {property: 'og:image:width', content: '1200'}],
+    ['meta', {property: 'og:image:height', content: '630'}],
+    ['meta', {name: 'twitter:card', content: 'summary_large_image'}],
+    ['meta', {name: 'twitter:image', content: `${siteUrl}og-card.png`}],
+  ],
 
   transformPageData(pageData, {siteConfig}) {
     if (!fs.existsSync(path.join(siteConfig.srcDir, pageData.relativePath))) return;
     const head = (pageData.frontmatter.head ??= []);
     head.push(['link', {rel: 'alternate', type: 'text/markdown', href: `${basePath}${pageData.relativePath}`}]);
+    const pagePath = pageData.relativePath.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '.html');
+    const title = pageData.title || siteTitle;
+    const description = pageData.description || siteDescription;
+    head.push(
+      ['meta', {property: 'og:title', content: title}],
+      ['meta', {property: 'og:description', content: description}],
+      ['meta', {property: 'og:url', content: `${siteUrl}${pagePath}`}],
+      ['meta', {name: 'twitter:title', content: title}],
+      ['meta', {name: 'twitter:description', content: description}],
+    );
   },
 
   // Git-based "Last updated" timestamps (overridable per-page via frontmatter)
@@ -317,14 +345,29 @@ export default defineConfig({
       formatOptions: {dateStyle: 'medium'},
     },
     nav: [
-      {text: 'Docs', link: '/', activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/releases/|/cli/(?!overview))/`},
+      {
+        text: 'Docs',
+        link: '/',
+        activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/python/|/releases/|/cli/(?!overview))/`,
+      },
       {text: 'Guides', link: '/guide/workflows', activeMatch: `^${guidesActiveMatch}`},
       {text: 'Reference', link: '/cli/', activeMatch: '^/cli/(?!overview)'},
       {text: 'Release Notes', link: '/releases/'},
       {
         text: 'SDKs',
-        activeMatch: '^/api/',
-        items: [{text: 'TypeScript SDK', link: '/api/'}],
+        activeMatch: '^/(api|python)/',
+        items: [
+          {text: 'TypeScript SDK', link: '/api/'},
+          {text: 'Python SDK', link: '/python/'},
+          {
+            text: 'Script API',
+            link: 'https://salesforcecommercecloud.github.io/b2c-dev-doc/docs/current/scriptapi/html/index.html',
+          },
+          {
+            text: 'B2C Commerce API',
+            link: 'https://developer.salesforce.com/docs/commerce/commerce-api/references/about-commerce-api/scapi-api-doc.html',
+          },
+        ],
       },
     ],
 
@@ -350,6 +393,22 @@ export default defineConfig({
         },
         ...typedocSidebar.map((section) => ({...section, collapsed: true})),
       ],
+      '/python/': [
+        {
+          text: 'Python SDK',
+          items: [
+            {text: 'Overview', link: '/python/'},
+            {text: 'Authentication', link: '/python/authentication'},
+            {text: 'Configuration', link: '/python/configuration'},
+            {text: 'Instance & Clients', link: '/python/instance-and-clients'},
+            {text: 'Operations', link: '/python/operations'},
+            {text: 'Synchronous API', link: '/python/sync-api'},
+            {text: 'SLAS Shopper Login', link: '/python/slas'},
+            {text: 'CLI Interoperability', link: '/python/cli-interop'},
+          ],
+        },
+        {text: 'API Reference', collapsed: false, items: pythonApiSidebar},
+      ],
     },
 
     socialLinks: [{icon: 'github', link: 'https://github.com/SalesforceCommerceCloud/b2c-developer-tooling'}],
@@ -363,6 +422,10 @@ export default defineConfig({
             fuzzy: 0.2,
             prefix: true,
             boost: {title: 4, text: 2, titles: 1},
+            // Rank generated API reference (TypeDoc, Python) below everything else; it is
+            // ~90% of indexed pages and otherwise drowns out guides and CLI docs. Serialized
+            // to the client, so it must be self-contained (ids include the base path).
+            boostDocument: (id: string) => (/\/(?:python\/)?api\//.test(id) ? 0.1 : 1),
           },
         },
       },

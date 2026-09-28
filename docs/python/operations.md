@@ -179,4 +179,5 @@ Top-level functions cover Account Manager directly: `create_user`, `get_user`,
 
 ## API reference
 
-See the [operations sections of the API reference](api-reference.md#operations-code).
+See the operations pages of the [API reference](./api/), starting with
+[code](./api/operations/code.md).

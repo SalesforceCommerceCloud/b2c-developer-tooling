@@ -58,4 +58,4 @@ wrapped and available synchronously.)
 
 ## API reference
 
-See the [sync section of the API reference](api-reference.md#synchronous-facade).
+See the [sync section of the API reference](./api/sync.md).

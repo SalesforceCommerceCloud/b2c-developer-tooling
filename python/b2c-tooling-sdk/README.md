@@ -107,14 +107,15 @@ single-flight semantics are preserved.
 
 ## Documentation
 
-Full guides and the generated API reference are built with MkDocs from the
-`docs/` directory. Build locally:
+Guides and the API reference are part of the B2C Developer Tooling docs site
+under [Python SDK](https://salesforcecommercecloud.github.io/b2c-developer-tooling/python/).
+The guide sources live in the monorepo's `docs/python/`; the API reference in
+`docs/python/api/` is generated from docstrings and committed:
 
 ```bash
-mkdocs build --strict     # or: mkdocs serve
+make api-docs         # regenerate after changing public docstrings or exports
+make api-docs-check   # what CI runs
 ```
-
-Start with `docs/index.md` for the overview and quickstart.
 
 ## Development
 
