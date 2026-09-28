@@ -42,6 +42,7 @@ import {
   traceLogging,
   dataStoreTest,
   secretsManagerTest,
+  describeNetworkInterfacesTest,
   proxyTransformationTest,
 } from '../utils/reference-routes.js';
 import {isolationTests} from '../utils/isolation-actions.js';
@@ -146,6 +147,7 @@ export const createApp = (): AppWithMetrics => {
   app.get('/trace-logging', traceLogging);
   app.get('/data-store/:key', dataStoreTest);
   app.get('/secrets-manager', secretsManagerTest);
+  app.get('/describe-network-interfaces', describeNetworkInterfacesTest);
   app.get('/proxy-transformation', proxyTransformationTest);
 
   app.all('/auth/logout', (req, res) => res.status(401).send('Logged out'));
