@@ -4,4 +4,4 @@
 'b2c-vs-extension': patch
 ---
 
-Refresh bundled Script API documentation and schemas to B2C Commerce 26.10, and update Developer Center and Salesforce Help content. Refresh Developer Center search summaries and keywords for new and changed guides. Help now includes shared product-feed setup, Google catalog feeds, and Commerce Apps administration. The IDE extension now validates channel metadata XML.
+Bundled Script API documentation and schemas are updated to B2C Commerce 26.10, and Developer Center and Salesforce Help content is refreshed, with better search summaries for new and changed guides. Help now includes shared product-feed setup, Google catalog feeds, and Commerce Apps administration. The IDE extension now validates channel metadata XML.

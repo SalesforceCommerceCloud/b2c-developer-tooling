@@ -3,4 +3,4 @@
 '@salesforce/b2c-tooling-sdk': patch
 ---
 
-Apply updated project and instance safety policies to each MCP tool call, including cartridge deployments, without restarting the server. Concurrent calls keep separate policies while preserving global restrictions and plugin middleware.
+Changes to project and instance safety policies now take effect on the next MCP tool call, including cartridge deployments, without restarting the server.
