@@ -503,7 +503,7 @@ For WebDAV endpoints that require a client certificate, add the certificate sett
 
 Use a PKCS12 certificate (`.p12` or `.pfx`). Client certificate authentication and server certificate verification are separate: keep verification enabled unless you deliberately need to accept an untrusted server certificate. `self-signed: true` disables that verification; it is not a normal requirement for staging or mTLS.
 
-For certificate handling in CI, see [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls).
+To generate the CA and client certificates for Hyperforce staging instances, see [Code Upload Certificates](/guide/hyperforce#code-upload-certificates). For certificate handling in CI, see [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls).
 
 ## Troubleshooting
 

@@ -684,6 +684,12 @@ b2c <topic> <command> --flag value
 2. Update `docs/.vitepress/config.mts` sidebar if new topic
 3. Update `skills/b2c-cli/skills/b2c-<topic>/SKILL.md` with examples
 
+### When Adding a Guide
+
+1. Add the page to the matching group in the `docs/.vitepress/config.mts` sidebar
+2. Add it to the same section of the All Guides index (`docs/guide/workflows.md`)
+3. Regenerate the tooling index (`pnpm --filter @salesforce/b2c-tooling-sdk run generate:tooling-index`)
+
 ### When Adding an SDK Module
 
 1. Write module-level JSDoc in barrel file

@@ -57,20 +57,25 @@ This is the normal release flow from `main`.
    - Creates per-package git tags (e.g., `@salesforce/b2c-cli@0.4.1`)
    - Creates a GitHub Release with aggregated changelogs
    - Triggers a documentation rebuild
+   - Releases the GitHub Actions at the new CLI version (when the CLI was published)
 
 No manual tagging or workflow dispatch is needed.
 
-This package workflow does not move GitHub Action tags. Actions have an independent release process so a CLI, SDK, MCP, or documentation release cannot silently change the Action major used by existing workflows.
+A stable CLI publish also releases the GitHub Actions at the same version (see [GitHub Actions Releases](#github-actions-releases)).
 
 ## GitHub Actions Releases
 
-GitHub Actions use their own semantic version in `actions/VERSION`:
+GitHub Actions are released with the CLI and share its version:
 
-- `v2` follows backward-compatible Action 2.x releases and installs CLI 2.x by default.
-- `v1` follows the maintained Action 1.x line on the `actions/v1` branch and installs CLI 1.x by default.
-- Exact tags such as `v2.0.0` are immutable. The release workflow refuses to move an existing exact tag to another commit.
+- `pnpm run version` (run by `changesets.yml` for the version PR) calls `scripts/sync-actions-version.mjs`, which sets `actions/VERSION` to the new `@salesforce/b2c-cli` version, pins every internal `actions/setup` / `actions/run` reference to that exact `vX.Y.Z`, and sets the `version` input default to the CLI major.
+- When a stable CLI version is published, `publish.yml` dispatches **Release GitHub Actions** with the CLI's package tag (e.g. `@salesforce/b2c-cli@2.2.0`). It validates the Action metadata, installs the CLI major, runs a smoke test, creates the immutable `vX.Y.Z` tag, and moves the floating `vX` tag.
+- The floating tag only moves forward. A maintenance release from a `release/*` branch gets its exact tag, but `vX` stays on the newest release.
+- `v2` follows Action 2.x releases and installs CLI 2.x by default. `v1` follows the maintained Action 1.x line on the `actions/v1` branch and installs CLI 1.x by default.
+- Exact tags such as `v2.2.0` are immutable. The release workflow refuses to move an existing exact tag to another commit.
 
-The default CLI version must match the major in `actions/VERSION`. Every internal `actions/setup` or `actions/run` reference must use that exact `vX.Y.Z` release, keeping immutable outer tags reproducible. The validation script and Action CI enforce these relationships.
+Changes to the Actions (`action.yml`, `actions/`) ship with the next CLI release, so give them a `@salesforce/b2c-cli` changeset.
+
+To release manually (for example, to retry a failed run or release from `actions/v1`), run **Release GitHub Actions** and select the source ref. Prefer an immutable package tag over a moving branch.
 
 ### Establish the Action v1 Maintenance Branch
 
@@ -85,15 +90,6 @@ Complete this once before publishing CLI 2.0:
 Do not publish CLI 2.0 until this is complete. The older v1 setup action defaults to npm `latest`; freezing the tag without changing that default would still let npm `latest` pull CLI 2.0.
 
 The stable package workflow enforces this ordering. Publishing a new CLI major fails unless the previous floating Action major exists, declares its own version, defaults to the previous CLI major, and pins its internal Action references to its exact release.
-
-### Release a New Action Version
-
-1. Update the Action manifests and documentation on the appropriate branch.
-2. Bump `actions/VERSION` using semantic versioning. Use a new major when inputs, outputs, defaults, or supported CLI behavior are incompatible.
-3. Confirm the compatible CLI major is already published to npm. For the initial v2 release, publish CLI 2.0 first.
-4. Run **Release GitHub Actions** and select the source ref. Prefer the corresponding immutable package tag, such as `@salesforce/b2c-cli@2.0.0`, over a moving branch.
-
-The workflow validates the Action metadata, installs the declared CLI major, runs a command smoke test, creates the immutable `vX.Y.Z` tag, and moves only the matching floating `vX` tag. Maintenance releases for Action v1 come from `actions/v1`; Action v2 releases normally come from the relevant release commit on `main`.
 
 ## Release Branches
 

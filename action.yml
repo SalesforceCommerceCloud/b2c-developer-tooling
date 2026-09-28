@@ -66,6 +66,9 @@ inputs:
   certificate:
     description: 'Path to PKCS12 client certificate for two-factor (mTLS) auth → SFCC_CERTIFICATE'
     required: false
+  certificate-base64:
+    description: 'Base64-encoded PKCS12 client certificate (e.g. from a secret); decoded to a temp file → SFCC_CERTIFICATE. Use instead of certificate.'
+    required: false
   certificate-passphrase:
     description: 'Passphrase for the PKCS12 client certificate → SFCC_CERTIFICATE_PASSPHRASE'
     required: false
@@ -89,7 +92,7 @@ runs:
   steps:
     - name: Setup B2C CLI
       id: setup
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2.0.0
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2.1.0
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
@@ -107,13 +110,14 @@ runs:
         account-manager-host: ${{ inputs.account-manager-host }}
         webdav-server: ${{ inputs.webdav-server }}
         certificate: ${{ inputs.certificate }}
+        certificate-base64: ${{ inputs.certificate-base64 }}
         certificate-passphrase: ${{ inputs.certificate-passphrase }}
         selfsigned: ${{ inputs.selfsigned }}
 
     - name: Run command
       id: command
       if: inputs.command != ''
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2.0.0
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2.1.0
       with:
         command: ${{ inputs.command }}
         json: ${{ inputs.json }}
