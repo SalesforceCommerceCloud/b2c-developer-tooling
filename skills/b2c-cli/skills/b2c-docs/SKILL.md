@@ -17,7 +17,7 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 
 - **Multi-corpus search** — Search across Script API, Developer Center guides, Salesforce Help (admin + merchandising), internal tooling docs (guides, CLI reference, MCP, and VS Code extension), job steps, and schemas in a unified index
 - **Workspace-aware search** — Auto-detects project type (cartridges, SFRA, PWA Kit, Storefront Next) and boosts relevant documentation while de-boosting competing storefront frameworks
-- **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`, `help-admin`, `help-merchant`)
+- **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`, `help-admin`, `help-merchant`, `help-kb`)
 - **Triage metadata** — Search results include `category`, `summary`, `keywords`, and `url` to help identify the right match without reading full content
 - **Online content with local cache** — Script API, Developer Center guides, and Salesforce Help are fetched online when you read them and cached locally (memory + on-disk, 7-day TTL) so repeat reads avoid the network; graceful offline fallback shows the summary + headings + both URLs
 - **Content-aware ranking** — BM25-style search indexes titles, section headings, summaries, and keywords for better recall on conceptual questions
@@ -53,6 +53,9 @@ b2c docs search "site import export" --category help-admin
 
 # Search Salesforce Help — merchandising (catalogs, promotions, search, pricing)
 b2c docs search "price book assignment" --category help-merchant
+
+# Search Salesforce Help Knowledge Articles — troubleshooting, known issues, how-to answers
+b2c docs search "code upload certificate hyperforce" --category help-kb
 
 # Search tooling documentation
 b2c docs search "authentication setup" --category tooling
@@ -153,6 +156,7 @@ b2c docs read pwa-kit-managed-runtime/getting-started
 # Read Salesforce Help articles by namespaced ID
 b2c docs read help-admin/b2c_site_import_export
 b2c docs read help-merchant/b2c_creating_price_books
+b2c docs read help-kb/002772125
 
 # Read tooling guides
 b2c docs read guide-authentication
@@ -239,10 +243,11 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 | `job-step`                | Standard (system) job step catalog                                                                                               | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
 | `help-admin`              | Salesforce Help — administration/ops (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) | `help-admin/b2c_site_import_export`                 |
 | `help-merchant`           | Salesforce Help — merchandising (catalogs, products, promotions, search, content, analytics, SEO)                                | `help-merchant/b2c_creating_price_books`            |
+| `help-kb`                 | Salesforce Help Knowledge Articles — troubleshooting, known issues, and how-to answers (keyed by article number)                 | `help-kb/002772125`                                 |
 
-> **URLs:** All categories except `job-step` carry both `url` (human .html page) and `sourceUrl` (machine-readable .md). For `help-admin`/`help-merchant`, `url` is the live help.salesforce.com article and content is read from `sourceUrl`. `job-step` entries have neither (content is bundled inline).
+> **URLs:** All categories except `job-step` carry both `url` (human .html page) and `sourceUrl` (machine-readable .md). For `help-admin`/`help-merchant`/`help-kb`, `url` is the live help.salesforce.com article and content is read from `sourceUrl`. `job-step` entries have neither (content is bundled inline).
 >
-> **Caching:** Content for the online corpora (`script-api`, the guide categories, `help-admin`/`help-merchant`, `tooling`) is fetched on `docs read` and cached locally. Use `b2c docs cache` to inspect it and `b2c docs cache --clear` to purge it (forces a re-fetch).
+> **Caching:** Content for the online corpora (`script-api`, the guide categories, `help-admin`/`help-merchant`/`help-kb`, `tooling`) is fetched on `docs read` and cached locally. Use `b2c docs cache` to inspect it and `b2c docs cache --clear` to purge it (forces a re-fetch).
 
 ## Common Script API Classes
 

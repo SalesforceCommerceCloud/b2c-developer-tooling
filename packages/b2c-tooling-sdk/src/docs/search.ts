@@ -15,6 +15,7 @@ import {getCachedEntry, setCachedContent} from './content-cache.js';
 import {
   GUIDES_DATA_DIR,
   HELP_DATA_DIR,
+  HELP_KB_DATA_DIR,
   JOB_STEPS_DATA_DIR,
   SCRIPT_API_DATA_DIR,
   TOOLING_DATA_DIR,
@@ -35,6 +36,7 @@ const CORPUS_DIRS: readonly string[] = [
   GUIDES_DATA_DIR,
   TOOLING_DATA_DIR,
   HELP_DATA_DIR,
+  HELP_KB_DATA_DIR,
 ];
 
 /** Multiplier applied to a detected workspace's relevant categories. */
@@ -92,6 +94,7 @@ const CATEGORY_TAXONOMY: Record<DocCategory, {alwaysRelevant?: boolean}> = {
   // selection, never blanket-boosted for every detected workspace.
   'help-admin': {},
   'help-merchant': {},
+  'help-kb': {},
 };
 
 /**
