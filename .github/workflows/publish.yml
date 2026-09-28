@@ -37,7 +37,7 @@ jobs:
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
     permissions:
-      actions: write # For triggering deploy-docs.yml via workflow_dispatch
+      actions: write # For triggering deploy-docs.yml and release-actions.yml via workflow_dispatch
       contents: write # For creating GitHub releases and tags
       id-token: write # Required for npm OIDC trusted publishers AND SLSA build provenance
       attestations: write # For actions/attest-build-provenance on the VSIX
@@ -415,6 +415,17 @@ jobs:
           else
             echo "No tags to create"
           fi
+
+      # GitHub Actions are released with every stable CLI publish. The version PR
+      # already synced actions/VERSION and the internal Action references to the CLI
+      # version (scripts/sync-actions-version.mjs); release-actions.yml validates,
+      # smoke tests, and tags vX.Y.Z from the CLI's package tag.
+      - name: Release GitHub Actions
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_cli == 'true' && steps.publish-cli.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLI_VERSION: ${{ steps.packages.outputs.version_cli }}
+        run: gh workflow run release-actions.yml -f ref="@salesforce/b2c-cli@$CLI_VERSION" -f cli-version="$CLI_VERSION"
 
       - name: Update b2c-vs-extension@latest tag
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'

@@ -188,7 +188,7 @@ No separate WebDAV server or `selfsigned` setting is needed.
 
 ### GitHub Actions
 
-Pass the base64 secret to `certificate-base64` (Actions v2.1.0 and later). The action decodes it to an owner-only temporary file for you:
+Pass the base64 secret to `certificate-base64` (Actions v2.2.0 and later). The action decodes it to an owner-only temporary file for you:
 
 ```yaml
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2

@@ -157,7 +157,7 @@ When `json: true` (default), the `result` output contains the parsed JSON from t
 
 ## Version Pinning
 
-- **Action version:** Use `@v2` for compatible v2 updates (recommended), or an immutable release tag such as `@v2.0.0`
+- **Action version:** Use `@v2` for compatible v2 updates (recommended), or an immutable release tag such as `@v2.2.0`
 - **CLI version:** Action v2 defaults to the latest CLI 2.x release; Action v1 defaults to the latest CLI 1.x release
 
 ```yaml
@@ -167,7 +167,7 @@ When `json: true` (default), the `result` output contains the parsed JSON from t
     version: '2.0.0' # Pin an exact CLI version
 
 - name: Pin both the Action suite and CLI
-  uses: SalesforceCommerceCloud/b2c-developer-tooling@v2.0.0
+  uses: SalesforceCommerceCloud/b2c-developer-tooling@v2.2.0
   with:
     version: '2.0.0'
 ```

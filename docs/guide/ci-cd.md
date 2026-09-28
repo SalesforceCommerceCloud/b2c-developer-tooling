@@ -359,7 +359,7 @@ b2c code deploy \
 
 Staging mTLS works with the standard actions — the `setup` action accepts `webdav-server`, `certificate-base64`, `certificate-passphrase`, and `selfsigned` inputs alongside the usual auth inputs.
 
-Because the `.p12` is a binary file, store it as a base64-encoded GitHub secret and pass it to `certificate-base64` (Actions v2.1.0 and later). `setup` decodes it to an owner-only file in the runner's temp directory and points `SFCC_CERTIFICATE` at it. To use a certificate file that's already on disk, pass its path to `certificate` instead.
+Because the `.p12` is a binary file, store it as a base64-encoded GitHub secret and pass it to `certificate-base64` (Actions v2.2.0 and later). `setup` decodes it to an owner-only file in the runner's temp directory and points `SFCC_CERTIFICATE` at it. To use a certificate file that's already on disk, pass its path to `certificate` instead.
 
 These are in addition to the [authentication](#authentication) secrets and variables — the same `SFCC_*` names used elsewhere map straight through to the `setup` inputs:
 
@@ -544,12 +544,12 @@ Use the floating Action major to receive backward-compatible Action updates. Act
     version: '2.0.0' # Pin an exact CLI version
 
 - name: Pin both the Action suite and CLI
-  uses: SalesforceCommerceCloud/b2c-developer-tooling@v2.0.0
+  uses: SalesforceCommerceCloud/b2c-developer-tooling@v2.2.0
   with:
     version: '2.0.0'
 ```
 
-Use an immutable Action tag such as `@v2.0.0`, or a full commit SHA, when the workflow must not receive automatic Action updates. Set `version: latest` explicitly only when it should cross future CLI major versions automatically.
+Use an immutable Action tag such as `@v2.2.0`, or a full commit SHA, when the workflow must not receive automatic Action updates. Set `version: latest` explicitly only when it should cross future CLI major versions automatically.
 
 ### Upgrade from Action v1
 
