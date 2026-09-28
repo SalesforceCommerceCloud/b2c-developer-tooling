@@ -98,9 +98,11 @@ Send the `.p12` and its passphrase to the user separately.
 
 ### Configure the CLI
 
-Add the settings printed by `setup`, `create --generate`, or `issue` to your instance in `dw.json`:
+Point the CLI at your `.p12` and its passphrase. Code upload uses the same staging hostname as everything else, so no separate `webdav-hostname` is needed. Use whichever option fits:
 
-```json
+::: code-group
+
+```json [dw.json]
 {
   "hostname": "staging-abcd-acme.demandware.net",
   "client-id": "your-client-id",
@@ -110,11 +112,33 @@ Add the settings printed by `setup`, `create --generate`, or `issue` to your ins
 }
 ```
 
-Code upload uses the same staging hostname as everything else, so you don't need a separate `webdav-hostname`. You can also use flags (`--certificate`, `--passphrase`) or environment variables (`SFCC_CERTIFICATE`, `SFCC_CERTIFICATE_PASSPHRASE`). See [Two-Factor Authentication (mTLS)](/guide/configuration#two-factor-authentication-mtls).
+```bash [Flags]
+b2c code deploy --server staging-abcd-acme.demandware.net \
+  --certificate ./mtls-certs/jsmith.p12 \
+  --passphrase 'the-generated-passphrase'
+```
+
+```bash [Environment variables]
+export SFCC_SERVER=staging-abcd-acme.demandware.net
+export SFCC_CERTIFICATE=./mtls-certs/jsmith.p12
+export SFCC_CERTIFICATE_PASSPHRASE='the-generated-passphrase'
+
+b2c code deploy
+```
+
+:::
+
+`setup` updates `dw.json` for you; `create --generate` and `issue` print the settings to add. Flags and environment variables override `dw.json`. See [Two-Factor Authentication (mTLS)](/guide/configuration#two-factor-authentication-mtls) for details.
 
 ::: warning
 If `dw.json` holds the passphrase, make sure `dw.json` is not committed to your repository.
 :::
+
+To check the certificate works, list the cartridges directory over WebDAV:
+
+```bash
+b2c webdav ls --root cartridges
+```
 
 The `.p12` files also work with UX Studio, the VS Code extension, and WebDAV clients such as Cyberduck.
 
@@ -148,11 +172,54 @@ Uploaded CAs are also listed in the staging Business Manager under **Administrat
 
 ## CI/CD on Hyperforce Staging
 
-Issue a dedicated client certificate for each pipeline, and store the `.p12` (base64-encoded) and its passphrase as separate secrets. No separate WebDAV server is needed. See [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls) for a GitHub Actions example.
+Give each pipeline its own client certificate rather than sharing a user's:
 
 ```bash
 b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-actions --output ./ci.p12
 ```
+
+Store the `.p12` (base64-encoded) and its passphrase as separate secrets:
+
+```bash
+base64 -i ci.p12 | tr -d '\n'
+```
+
+In the pipeline, decode the certificate to a temporary file and deploy with the environment variables set. No separate WebDAV server or `selfsigned` setting is needed:
+
+```bash
+echo "$STAGING_CERTIFICATE_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/ci.p12"
+chmod 600 "$RUNNER_TEMP/ci.p12"
+
+export SFCC_SERVER=staging-abcd-acme.demandware.net
+export SFCC_CERTIFICATE="$RUNNER_TEMP/ci.p12"
+# SFCC_CERTIFICATE_PASSPHRASE, SFCC_CLIENT_ID and SFCC_CLIENT_SECRET come from secrets
+
+b2c code deploy --activate
+```
+
+With GitHub Actions, pass the same values to the `setup` action:
+
+```yaml
+- name: Decode staging client certificate
+  run: |
+    echo "${{ secrets.STAGING_CERTIFICATE_P12_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/ci.p12"
+    chmod 600 "$RUNNER_TEMP/ci.p12"
+
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
+  with:
+    client-id: ${{ secrets.SFCC_CLIENT_ID }}
+    client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
+    server: staging-abcd-acme.demandware.net
+    certificate: ${{ runner.temp }}/ci.p12
+    certificate-passphrase: ${{ secrets.SFCC_CERTIFICATE_PASSPHRASE }}
+
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
+  with:
+    code-version: staging-${{ github.run_number }}
+    activate: true
+```
+
+See [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls) for a complete workflow.
 
 ## Troubleshooting
 
