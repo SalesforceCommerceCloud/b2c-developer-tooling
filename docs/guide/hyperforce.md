@@ -92,7 +92,7 @@ Issue a certificate for another developer or a CI pipeline from the existing CA:
 b2c ecdn mtls issue --ca-cert-file ./mtls-certs/ca.pem --ca-key-file ./mtls-certs/ca.key --name jsmith
 ```
 
-Name the certificate after the user's Business Manager username. The `.p12` is written next to the CA unless you set `--output`. A random passphrase is generated unless you set `--p12-passphrase`. Client certificates are valid for 365 days (`--days`), and never past the CA's expiry.
+Name the certificate after the Business Manager username or API client ID that will use it. The `.p12` is written next to the CA unless you set `--output`. A random passphrase is generated unless you set `--p12-passphrase`. Client certificates are valid for 365 days (`--days`), and never past the CA's expiry.
 
 Send the `.p12` and its passphrase to the user separately.
 
@@ -107,7 +107,7 @@ Point the CLI at your `.p12` and its passphrase. Code upload uses the same stagi
   "hostname": "staging-abcd-acme.demandware.net",
   "client-id": "your-client-id",
   "client-secret": "your-client-secret",
-  "certificate": "./mtls-certs/jsmith.p12",
+  "certificate": "/Users/jsmith/projects/acme/mtls-certs/jsmith.p12",
   "certificate-passphrase": "the-generated-passphrase"
 }
 ```
@@ -128,7 +128,7 @@ b2c code deploy
 
 :::
 
-`setup` updates `dw.json` for you; `create --generate` and `issue` print the settings to add. Flags and environment variables override `dw.json`. See [Two-Factor Authentication (mTLS)](/guide/configuration#two-factor-authentication-mtls) for details.
+Use an absolute path in `dw.json`; relative paths are resolved from the directory you run the CLI in. `setup` updates `dw.json` for you; `create --generate` and `issue` print the settings to add. Flags and environment variables override `dw.json`. See [Two-Factor Authentication (mTLS)](/guide/configuration#two-factor-authentication-mtls) for details.
 
 ::: warning
 If `dw.json` holds the passphrase, make sure `dw.json` is not committed to your repository.

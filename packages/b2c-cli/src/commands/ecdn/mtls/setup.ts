@@ -110,7 +110,7 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     const clientName = await input({
       message: t(
         'commands.ecdn.mtls.setup.clientNamePrompt',
-        'Client certificate name (recommended: your Business Manager username):',
+        'Client certificate name (recommended: your Business Manager username or API client ID):',
       ),
       default: this.resolvedConfig.values.username ?? os.userInfo().username,
       validate: (v) => v.trim().length > 0 || 'Name is required',
@@ -134,7 +134,9 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
       outDir,
       passphrase: this.flags['p12-passphrase'],
       force,
-      onProgress: (message) => ux.stdout(message),
+      onProgress: (message) => {
+        if (!this.jsonEnabled()) this.log(message);
+      },
     }).catch((error: unknown) => this.error(error instanceof Error ? error.message : String(error)));
 
     const output: SetupOutput = {created: true, ...result};
@@ -229,7 +231,7 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     try {
       const result = await updateInstanceConfig(
         {
-          certificate: path.relative(path.dirname(dwJsonPath), files.clientCertificate),
+          certificate: files.clientCertificate,
           certificatePassphrase: passphrase,
         },
         {path: dwJsonPath, instance: this.flags.instance},

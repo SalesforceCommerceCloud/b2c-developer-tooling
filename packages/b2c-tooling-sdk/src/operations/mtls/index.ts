@@ -14,8 +14,9 @@
  *    includes the code upload hostname associated with the staging zone.
  * 3. Issue one or more client certificates signed by the CA, bundled as PKCS12
  *    (`.p12`) files ({@link issueClientCertificate}). Each user (named after their
- *    Business Manager username) or CI pipeline gets its own client certificate
- *    for WebDAV uploads; the CA itself is never used as a client certificate.
+ *    Business Manager username) or CI pipeline (named after its API client ID)
+ *    gets its own client certificate for WebDAV uploads; the CA itself is never
+ *    used as a client certificate.
  *
  * The CA certificate may be valid for at most {@link MAX_CODE_UPLOAD_CA_VALIDITY_DAYS}
  * days. To rotate, upload a new CA before the old one expires, re-issue client
@@ -114,7 +115,7 @@ export interface GenerateCaCertificateOptions {
 export interface IssueClientCertificateOptions {
   /** CA certificate and private key used to sign the client certificate */
   ca: CertificateKeyPair;
-  /** Subject common name identifying the client; Salesforce recommends the Business Manager username */
+  /** Subject common name identifying the client; Salesforce recommends the Business Manager username or API client ID */
   commonName: string;
   /** Optional subject organization (O) */
   organization?: string;

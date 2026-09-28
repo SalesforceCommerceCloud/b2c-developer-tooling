@@ -940,7 +940,7 @@ Uploaded CA certificates must be CA certificates valid for at most 1 year; the C
 | `--private-key-file` | Path to PEM-encoded CA private key file | |
 | `--generate` | Generate a new CA, upload it, and issue a client certificate | `false` |
 | `--out-dir` | Directory for generated files | `mtls-certs` |
-| `--client-name` | Common name for the generated client certificate (Business Manager username recommended) | `<name>-client` |
+| `--client-name` | Common name for the generated client certificate (Business Manager username or API client ID recommended) | `<name>-client` |
 | `--p12-passphrase` | Passphrase for the generated `.p12` (env: `SFCC_MTLS_P12_PASSPHRASE`) | Random |
 | `--ca-common-name` | Common name for the generated CA | Staging hostname if configured, else `<name> CA` |
 | `--ca-days` | CA validity in days (maximum 365) | `365` |
@@ -966,7 +966,7 @@ b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-act
 |------|-------------|---------|
 | `--ca-cert-file` | Path to PEM-encoded CA certificate file (required) | |
 | `--ca-key-file` | Path to PEM-encoded CA private key file (required) | |
-| `--name` | Common name identifying the client (required; Business Manager username recommended) | |
+| `--name` | Common name identifying the client (required; Business Manager username or API client ID recommended) | |
 | `--output`, `-o` | Output path for the `.p12` | `<name>.p12` next to the CA |
 | `--p12-passphrase` | Passphrase for the `.p12` (env: `SFCC_MTLS_P12_PASSPHRASE`) | Random |
 | `--days` | Validity in days (capped at the CA expiry) | `365` |
