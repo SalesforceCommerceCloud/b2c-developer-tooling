@@ -1,5 +1,13 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.10.1
+
+### Patch Changes
+
+- [#713](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/713) [`b9972c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b9972c9b9db69b2b2b7c2229250d9aa9b4c665e3) - Added Salesforce Help Knowledge Articles for B2C Commerce — troubleshooting, known issues, and how-to answers (administration: 135, developer support: 92, merchandising: 89, operations and security: 29, performance: 20, Composable Storefront: 16) — as a new `help-kb` docs category, available in the `b2c docs` CLI and MCP docs tools. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#711](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/711) [`c6ed31d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c6ed31d3f71553e1fb921c7e4106fb81086afb7d) - Updated the eCDN skill to cover the new code upload certificate workflow and fixed outdated flags in its certificate, security, speed, firewall, rate limit, and Page Shield examples. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.10.0
 
 ### Minor Changes

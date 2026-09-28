@@ -1,5 +1,19 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.2
+
+### Patch Changes
+
+- [#712](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/712) [`b64f1cd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b64f1cd6eee2be00d1a89f6b70f8309e83c99d79) - Added Open Graph and Twitter card metadata with a social preview image so links to the docs unfurl with a title, description, and image in Slack and other chat tools (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#712](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/712) [`b64f1cd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b64f1cd6eee2be00d1a89f6b70f8309e83c99d79) - Added links to the B2C Commerce Script API and B2C Commerce API references in the docs "SDKs" navigation menu (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#712](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/712) [`b64f1cd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b64f1cd6eee2be00d1a89f6b70f8309e83c99d79) - Docs search now ranks guides, CLI, and MCP pages above generated API reference pages, so reference results no longer crowd out task-oriented docs (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#712](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/712) [`b64f1cd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b64f1cd6eee2be00d1a89f6b70f8309e83c99d79) - Added the Python SDK guides and a generated API reference to the docs site, available from the "SDKs" menu (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#709](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/709) [`61e3438`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/61e3438164ab2a74067d4444f87c2831b5c72bfc) - Bundled Script API documentation and schemas are updated to B2C Commerce 26.10, and Developer Center and Salesforce Help content is refreshed, with better search summaries for new and changed guides. Help now includes shared product-feed setup, Google catalog feeds, and Commerce Apps administration. The IDE extension now validates channel metadata XML. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.1
 
 ### Patch Changes
