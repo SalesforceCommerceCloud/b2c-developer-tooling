@@ -4,4 +4,4 @@
 '@salesforce/b2c-agent-plugins': patch
 ---
 
-Added Salesforce Help Knowledge Articles for B2C Commerce (troubleshooting, known issues, and how-to answers) as a new `help-kb` docs category, available in `b2c docs search`/`read`, the MCP docs tools (and `--docs-topics`), and the `b2c-docs` agent skill.
+Added 381 Salesforce Help Knowledge Articles for B2C Commerce (troubleshooting, known issues, and how-to answers across administration, development, merchandising, operations and security, performance, and Composable Storefront) as a new `help-kb` docs category, available in the `b2c docs` CLI and MCP docs tools.
