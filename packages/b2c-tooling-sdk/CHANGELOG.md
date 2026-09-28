@@ -1,5 +1,19 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.2.0
+
+### Minor Changes
+
+- [#713](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/713) [`b9972c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b9972c9b9db69b2b2b7c2229250d9aa9b4c665e3) - Added Salesforce Help Knowledge Articles for B2C Commerce — troubleshooting, known issues, and how-to answers (administration: 135, developer support: 92, merchandising: 89, operations and security: 29, performance: 20, Composable Storefront: 16) — as a new `help-kb` docs category, available in the `b2c docs` CLI and MCP docs tools. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#711](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/711) [`c6ed31d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c6ed31d3f71553e1fb921c7e4106fb81086afb7d) - Set up two-factor (mTLS) code upload for Hyperforce staging in one step: `b2c ecdn mtls setup` generates and uploads your CA, issues your client certificate, and configures `dw.json`, and you can issue more certificates for teammates and CI pipelines. See the new Hyperforce guide for the full workflow. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#708](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/708) [`ce3ed28`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ce3ed2816a5a84f363206079803f73fbd05f530f) - Changes to project and instance safety policies now take effect on the next MCP tool call, including cartridge deployments, without restarting the server. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#709](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/709) [`61e3438`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/61e3438164ab2a74067d4444f87c2831b5c72bfc) - Bundled Script API documentation and schemas are updated to B2C Commerce 26.10, and Developer Center and Salesforce Help content is refreshed, with better search summaries for new and changed guides. Help now includes shared product-feed setup, Google catalog feeds, and Commerce Apps administration. The IDE extension now validates channel metadata XML. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.1.0
 
 ### Minor Changes

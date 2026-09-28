@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.3.1
+
+### Patch Changes
+
+- [#709](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/709) [`61e3438`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/61e3438164ab2a74067d4444f87c2831b5c72bfc) - Bundled Script API documentation and schemas are updated to B2C Commerce 26.10, and Developer Center and Salesforce Help content is refreshed, with better search summaries for new and changed guides. Help now includes shared product-feed setup, Google catalog feeds, and Commerce Apps administration. The IDE extension now validates channel metadata XML. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b9972c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b9972c9b9db69b2b2b7c2229250d9aa9b4c665e3), [`ce3ed28`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ce3ed2816a5a84f363206079803f73fbd05f530f), [`c6ed31d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c6ed31d3f71553e1fb921c7e4106fb81086afb7d), [`61e3438`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/61e3438164ab2a74067d4444f87c2831b5c72bfc)]:
+  - @salesforce/b2c-tooling-sdk@2.2.0
+
 ## 1.3.0
 
 ### Minor Changes
