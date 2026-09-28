@@ -142,6 +142,7 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
     collapsed: false,
     items: [
       {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
+      {text: 'Hyperforce', link: '/guide/hyperforce'},
       {text: 'Import Sets', link: '/guide/import-sets'},
       {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
     ],

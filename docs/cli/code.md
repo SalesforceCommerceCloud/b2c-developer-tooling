@@ -50,6 +50,8 @@ export SFCC_USERNAME=your-bm-username
 export SFCC_PASSWORD=your-webdav-access-key
 ```
 
+Staging instances also require a client certificate (two-factor mTLS). See [Code Upload Certificates](/guide/hyperforce#code-upload-certificates) to create one.
+
 ### Code Version Operations (list, activate, delete)
 
 These commands require OAuth authentication. Configure the `sfcc.scripts` / `sfcc.scripts.rw` scope on your API client in Account Manager, along with `shortCode` and `tenantId`.

@@ -41,17 +41,32 @@ b2c ecdn mrt-rules delete --zone my-zone
 
 ## mTLS Certificates
 
+Code upload certificates enable two-factor (mTLS) code upload to staging instances (`_stg` tenants only). Upload a CA certificate to eCDN, then issue client certificates (`.p12`) signed by that CA for each user or pipeline. The CA private key must be kept secret (treat like a password); the CA certificate bundle must have a maximum validity of 1 year and be renewed before expiry. On Hyperforce, use the `staging-<realm>-<customer>.demandware.net` code upload hostname (not legacy `cert.staging.*`).
+
+For the complete workflow, security guidance, and renewal instructions, see [Deploying to Hyperforce: Code Upload Certificates](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce#code-upload-certificates).
+
 ```bash
-# list mTLS certificates (organization level)
+# interactive wizard: generate CA, upload, issue your client cert, update dw.json
+b2c ecdn mtls setup
+
+# non-interactive: generate CA + upload + issue first client cert
+b2c ecdn mtls create --name code-upload --generate
+b2c ecdn mtls create --name code-upload --generate --out-dir ./certs --client-name jsmith
+
+# upload an existing CA
+b2c ecdn mtls create --name code-upload --certificate-file ./ca.pem --private-key-file ./ca.key
+
+# issue additional client certificates (local-only, no API call)
+b2c ecdn mtls issue --ca-cert-file ./certs/ca.pem --ca-key-file ./certs/ca.key --name jane.doe
+b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name ci --output ci.p12 --days 90
+
+# list uploaded CA certificates
 b2c ecdn mtls list
 
-# create mTLS certificate for code upload authentication
-b2c ecdn mtls create --name "Build Server" --ca-certificate-file ./ca.pem --leaf-certificate-file ./leaf.pem
-
-# get mTLS certificate details
+# get certificate details
 b2c ecdn mtls get --certificate-id abc123
 
-# delete mTLS certificate
+# delete a CA certificate (uploaded CA stops accepting client certs)
 b2c ecdn mtls delete --certificate-id abc123
 ```
 

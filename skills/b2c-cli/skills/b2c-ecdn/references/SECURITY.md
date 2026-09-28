@@ -33,10 +33,10 @@ b2c ecdn waf migrate --zone my-zone
 b2c ecdn firewall list --zone my-zone
 
 # create a firewall rule
-b2c ecdn firewall create --zone my-zone --description "Block bad bots" --action block --filter '(cf.client.bot)'
+b2c ecdn firewall create --zone my-zone --description "Block bad bots" --expression '(cf.client.bot)' --actions block
 
 # update a firewall rule
-b2c ecdn firewall update --zone my-zone --rule-id abc123 --action challenge
+b2c ecdn firewall update --zone my-zone --rule-id abc123 --actions managed_challenge
 
 # reorder firewall rules
 b2c ecdn firewall reorder --zone my-zone --rule-ids id1,id2,id3
@@ -49,7 +49,7 @@ b2c ecdn firewall reorder --zone my-zone --rule-ids id1,id2,id3
 b2c ecdn rate-limit list --zone my-zone
 
 # create a rate limiting rule
-b2c ecdn rate-limit create --zone my-zone --description "API rate limit" --threshold 100 --period 60 --action block --match-url '/api/*'
+b2c ecdn rate-limit create --zone my-zone --description "API rate limit" --expression '(http.request.uri.path matches "^/api/")' --characteristics cf.unique_visitor_id --action block --period 60 --requests-per-period 100 --mitigation-timeout 600
 
 # delete a rate limiting rule
 b2c ecdn rate-limit delete --zone my-zone --rule-id abc123
@@ -62,7 +62,7 @@ b2c ecdn rate-limit delete --zone my-zone --rule-id abc123
 b2c ecdn page-shield notifications list
 
 # create a notification webhook
-b2c ecdn page-shield notifications create --url https://example.com/webhook --secret my-secret --zones zone1,zone2
+b2c ecdn page-shield notifications create --webhook-url https://example.com/webhook --secret my-secret --zones zone1,zone2
 
 # list Page Shield policies (zone level)
 b2c ecdn page-shield policies list --zone my-zone

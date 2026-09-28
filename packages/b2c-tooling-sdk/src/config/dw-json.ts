@@ -16,7 +16,7 @@ import * as path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
 import type {LibraryEntry} from './types.js';
-import {normalizeConfigKeys} from './mapping.js';
+import {CONFIG_KEY_ALIASES, kebabToCamelCase, normalizeConfigKeys} from './mapping.js';
 
 /**
  * Configuration structure for dw.json after key normalization.
@@ -518,6 +518,72 @@ export async function setActiveInstance(name: string, options: SetActiveInstance
   }
 
   await saveDwJson(existing, dwJsonPath);
+}
+
+/**
+ * Options for updating an instance's config in dw.json.
+ */
+export interface UpdateInstanceConfigOptions {
+  /** Path to dw.json (defaults to ./dw.json in projectDirectory or cwd) */
+  path?: string;
+  /** Starting directory for search */
+  projectDirectory?: string;
+  /** Instance name to update; defaults to the active config, then the root config */
+  instance?: string;
+}
+
+function camelToKebabCase(str: string): string {
+  return str.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+}
+
+/**
+ * Updates fields of an existing instance config in dw.json.
+ *
+ * Fields are written in kebab-case (e.g. `webdav-hostname`). Any existing key
+ * that resolves to the same field — a camelCase or legacy alias such as
+ * `webdav-server` or `passphrase` — is replaced so the new value takes effect.
+ * Fields set to `undefined` are removed.
+ *
+ * @param patch - Fields to set, using canonical camelCase names
+ * @param options - dw.json location and target instance
+ * @returns The path of the updated dw.json and the name of the updated instance
+ * @throws Error if dw.json doesn't exist or the instance is not found
+ */
+export async function updateInstanceConfig(
+  patch: Partial<DwJsonConfig>,
+  options: UpdateInstanceConfigOptions = {},
+): Promise<{name?: string; path: string}> {
+  const dwJsonPath = options.path ?? path.join(options.projectDirectory || process.cwd(), 'dw.json');
+
+  let content: string;
+  try {
+    content = await fsp.readFile(dwJsonPath, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error('No dw.json file found');
+    }
+    throw error;
+  }
+
+  const existing = JSON.parse(content) as DwJsonMultiConfig;
+  const target = selectConfig(existing, options.instance) as Record<string, unknown> | undefined;
+  if (!target) {
+    throw new Error(`Instance "${options.instance}" not found`);
+  }
+
+  for (const [field, value] of Object.entries(patch)) {
+    for (const key of Object.keys(target)) {
+      if ((CONFIG_KEY_ALIASES[key] ?? kebabToCamelCase(key)) === field) {
+        delete target[key];
+      }
+    }
+    if (value !== undefined) {
+      target[camelToKebabCase(field)] = value;
+    }
+  }
+
+  await saveDwJson(existing, dwJsonPath);
+  return {name: target.name as string | undefined, path: dwJsonPath};
 }
 
 /**
