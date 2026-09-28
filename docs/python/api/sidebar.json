@@ -1,0 +1,90 @@
+[
+  {
+    "text": "Overview",
+    "link": "/python/api/"
+  },
+  {
+    "text": "Top-level package",
+    "link": "/python/api/package"
+  },
+  {
+    "text": "auth",
+    "link": "/python/api/auth"
+  },
+  {
+    "text": "config",
+    "link": "/python/api/config"
+  },
+  {
+    "text": "instance",
+    "link": "/python/api/instance"
+  },
+  {
+    "text": "clients",
+    "link": "/python/api/clients"
+  },
+  {
+    "text": "errors",
+    "link": "/python/api/errors"
+  },
+  {
+    "text": "logging",
+    "link": "/python/api/logging"
+  },
+  {
+    "text": "operations.code",
+    "link": "/python/api/operations/code"
+  },
+  {
+    "text": "operations.jobs",
+    "link": "/python/api/operations/jobs"
+  },
+  {
+    "text": "operations.sites",
+    "link": "/python/api/operations/sites"
+  },
+  {
+    "text": "operations.catalogs",
+    "link": "/python/api/operations/catalogs"
+  },
+  {
+    "text": "operations.bm_users",
+    "link": "/python/api/operations/bm_users"
+  },
+  {
+    "text": "operations.bm_roles",
+    "link": "/python/api/operations/bm_roles"
+  },
+  {
+    "text": "operations.users",
+    "link": "/python/api/operations/users"
+  },
+  {
+    "text": "operations.roles",
+    "link": "/python/api/operations/roles"
+  },
+  {
+    "text": "operations.orgs",
+    "link": "/python/api/operations/orgs"
+  },
+  {
+    "text": "operations.ods",
+    "link": "/python/api/operations/ods"
+  },
+  {
+    "text": "operations.metrics",
+    "link": "/python/api/operations/metrics"
+  },
+  {
+    "text": "operations.logs",
+    "link": "/python/api/operations/logs"
+  },
+  {
+    "text": "slas",
+    "link": "/python/api/slas"
+  },
+  {
+    "text": "sync",
+    "link": "/python/api/sync"
+  }
+]

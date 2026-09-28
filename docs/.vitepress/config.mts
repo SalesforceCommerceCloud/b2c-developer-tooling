@@ -4,6 +4,7 @@ import path from 'node:path';
 import {defineConfig, type DefaultTheme} from 'vitepress';
 import {groupIconMdPlugin, groupIconVitePlugin} from 'vitepress-plugin-group-icons';
 import typedocSidebar from '../api/typedoc-sidebar.json';
+import pythonApiSidebar from '../python/api/sidebar.json';
 import {generateReleaseNotes} from './releases/generate.js';
 
 const docsDirectory = path.resolve(import.meta.dirname, '..');
@@ -317,14 +318,29 @@ export default defineConfig({
       formatOptions: {dateStyle: 'medium'},
     },
     nav: [
-      {text: 'Docs', link: '/', activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/releases/|/cli/(?!overview))/`},
+      {
+        text: 'Docs',
+        link: '/',
+        activeMatch: `^(?!${guidesActiveMatch})(?!/api/|/python/|/releases/|/cli/(?!overview))/`,
+      },
       {text: 'Guides', link: '/guide/workflows', activeMatch: `^${guidesActiveMatch}`},
       {text: 'Reference', link: '/cli/', activeMatch: '^/cli/(?!overview)'},
       {text: 'Release Notes', link: '/releases/'},
       {
         text: 'SDKs',
-        activeMatch: '^/api/',
-        items: [{text: 'TypeScript SDK', link: '/api/'}],
+        activeMatch: '^/(api|python)/',
+        items: [
+          {text: 'TypeScript SDK', link: '/api/'},
+          {text: 'Python SDK', link: '/python/'},
+          {
+            text: 'Script API',
+            link: 'https://salesforcecommercecloud.github.io/b2c-dev-doc/docs/current/scriptapi/html/index.html',
+          },
+          {
+            text: 'B2C Commerce API',
+            link: 'https://developer.salesforce.com/docs/commerce/commerce-api/references/about-commerce-api/scapi-api-doc.html',
+          },
+        ],
       },
     ],
 
@@ -349,6 +365,22 @@ export default defineConfig({
           items: [{text: 'Overview', link: '/api/'}],
         },
         ...typedocSidebar.map((section) => ({...section, collapsed: true})),
+      ],
+      '/python/': [
+        {
+          text: 'Python SDK',
+          items: [
+            {text: 'Overview', link: '/python/'},
+            {text: 'Authentication', link: '/python/authentication'},
+            {text: 'Configuration', link: '/python/configuration'},
+            {text: 'Instance & Clients', link: '/python/instance-and-clients'},
+            {text: 'Operations', link: '/python/operations'},
+            {text: 'Synchronous API', link: '/python/sync-api'},
+            {text: 'SLAS Shopper Login', link: '/python/slas'},
+            {text: 'CLI Interoperability', link: '/python/cli-interop'},
+          ],
+        },
+        {text: 'API Reference', collapsed: false, items: pythonApiSidebar},
       ],
     },
 

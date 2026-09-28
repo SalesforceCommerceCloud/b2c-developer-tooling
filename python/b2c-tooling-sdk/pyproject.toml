@@ -55,8 +55,8 @@ dev = [
     "unasync>=0.6",
 ]
 docs = [
-    "mkdocs-material>=9.5",
-    "mkdocstrings[python]>=0.25",
+    # griffe reads docstrings for scripts/generate_api_docs.py (the VitePress API reference).
+    "griffe>=1.5",
     "nbconvert>=7.16",
     "jupyter>=1.0",
 ]

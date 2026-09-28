@@ -78,4 +78,4 @@ challenge = generate_code_challenge(verifier)
 
 ## API reference
 
-See the [SLAS section of the API reference](api-reference.md#slas-shopper-login).
+See the [SLAS section of the API reference](./api/slas.md).

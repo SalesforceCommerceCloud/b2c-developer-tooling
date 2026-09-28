@@ -143,11 +143,11 @@ for s in list_auth_sessions():
 ```
 
 Because the store is shared, the recommended workflow is: log in once
-interactively with the CLI (`b2c auth login`), then run Python automation that
+interactively with the CLI ([`b2c auth login`](/cli/auth#b2c-auth-login)), then run Python automation that
 picks up the same session with no browser prompt. See
 [CLI Interoperability](cli-interop.md) for file locations and the on-disk format.
 
 ## API reference
 
-See the [auth section of the API reference](api-reference.md#authentication) for
+See the [auth section of the API reference](./api/auth.md) for
 every class and helper.
