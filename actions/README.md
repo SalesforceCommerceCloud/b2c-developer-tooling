@@ -88,26 +88,27 @@ All actions accept auth inputs directly or read from `SFCC_*` environment variab
 
 **Recommended approach:** Store secrets in GitHub repository secrets and non-sensitive config in repository variables.
 
-| Input                    | Environment Variable          | Used By                         |
-| ------------------------ | ----------------------------- | ------------------------------- |
-| `client-id`              | `SFCC_CLIENT_ID`              | OAuth operations                |
-| `client-secret`          | `SFCC_CLIENT_SECRET`          | OAuth operations                |
-| `server`                 | `SFCC_SERVER`                 | All instance operations         |
-| `code-version`           | `SFCC_CODE_VERSION`           | Code deploy                     |
-| `username`               | `SFCC_USERNAME`               | WebDAV operations               |
-| `password`               | `SFCC_PASSWORD`               | WebDAV operations               |
-| `short-code`             | `SFCC_SHORTCODE`              | SCAPI operations                |
-| `tenant-id`              | `SFCC_TENANT_ID`              | SCAPI operations                |
-| `mrt-api-key`            | `MRT_API_KEY`                 | MRT operations                  |
-| `mrt-project`            | `MRT_PROJECT`                 | MRT operations                  |
-| `mrt-environment`        | `MRT_ENVIRONMENT`             | MRT operations                  |
-| `account-manager-host`   | `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager                 |
-| `webdav-server`          | `SFCC_WEBDAV_SERVER`          | Staging WebDAV (cert. hostname) |
-| `certificate`            | `SFCC_CERTIFICATE`            | Two-factor mTLS (PKCS12 path)   |
-| `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE` | Two-factor mTLS                 |
-| `selfsigned`             | `SFCC_SELFSIGNED`             | Allow self-signed server certs  |
+| Input                    | Environment Variable          | Used By                                                 |
+| ------------------------ | ----------------------------- | ------------------------------------------------------- |
+| `client-id`              | `SFCC_CLIENT_ID`              | OAuth operations                                        |
+| `client-secret`          | `SFCC_CLIENT_SECRET`          | OAuth operations                                        |
+| `server`                 | `SFCC_SERVER`                 | All instance operations                                 |
+| `code-version`           | `SFCC_CODE_VERSION`           | Code deploy                                             |
+| `username`               | `SFCC_USERNAME`               | WebDAV operations                                       |
+| `password`               | `SFCC_PASSWORD`               | WebDAV operations                                       |
+| `short-code`             | `SFCC_SHORTCODE`              | SCAPI operations                                        |
+| `tenant-id`              | `SFCC_TENANT_ID`              | SCAPI operations                                        |
+| `mrt-api-key`            | `MRT_API_KEY`                 | MRT operations                                          |
+| `mrt-project`            | `MRT_PROJECT`                 | MRT operations                                          |
+| `mrt-environment`        | `MRT_ENVIRONMENT`             | MRT operations                                          |
+| `account-manager-host`   | `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager                                         |
+| `webdav-server`          | `SFCC_WEBDAV_SERVER`          | Staging WebDAV (cert. hostname)                         |
+| `certificate`            | `SFCC_CERTIFICATE`            | Two-factor mTLS (PKCS12 path)                           |
+| `certificate-base64`     | `SFCC_CERTIFICATE`            | Two-factor mTLS (base64 PKCS12, decoded to a temp file) |
+| `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE` | Two-factor mTLS                                         |
+| `selfsigned`             | `SFCC_SELFSIGNED`             | Allow self-signed server certs                          |
 
-For staging environments that require a separate WebDAV hostname and a client certificate, see the [Staging Environments guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd.html#staging-environments-two-factor-mtls) for the full pattern (decoding a base64-encoded `.p12` from a secret + wiring it through `setup`).
+For staging environments that require a separate WebDAV hostname and a client certificate, see the [Staging Environments guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd.html#staging-environments-two-factor-mtls) for the full pattern. Pass a base64-encoded `.p12` secret to `certificate-base64` and `setup` decodes it to a temporary file for you.
 
 ## Plugins
 

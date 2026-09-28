@@ -137,27 +137,28 @@ Plugins are installed after the CLI; already-installed plugins are skipped by ex
 
 The setup action accepts the following inputs (each maps to the corresponding `SFCC_*` environment variable):
 
-| Input                    | Environment Variable          |
-| ------------------------ | ----------------------------- |
-| `client-id`              | `SFCC_CLIENT_ID`              |
-| `client-secret`          | `SFCC_CLIENT_SECRET`          |
-| `server`                 | `SFCC_SERVER`                 |
-| `code-version`           | `SFCC_CODE_VERSION`           |
-| `username`               | `SFCC_USERNAME`               |
-| `password`               | `SFCC_PASSWORD`               |
-| `short-code`             | `SFCC_SHORTCODE`              |
-| `tenant-id`              | `SFCC_TENANT_ID`              |
-| `account-manager-host`   | `SFCC_ACCOUNT_MANAGER_HOST`   |
-| `webdav-server`          | `SFCC_WEBDAV_SERVER`          |
-| `certificate`            | `SFCC_CERTIFICATE`            |
-| `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE` |
-| `selfsigned`             | `SFCC_SELFSIGNED`             |
-| `mrt-api-key`            | `MRT_API_KEY`                 |
-| `mrt-project`            | `MRT_PROJECT`                 |
-| `mrt-environment`        | `MRT_ENVIRONMENT`             |
-| `log-level`              | `SFCC_LOG_LEVEL`              |
+| Input                    | Environment Variable                        |
+| ------------------------ | ------------------------------------------- |
+| `client-id`              | `SFCC_CLIENT_ID`                            |
+| `client-secret`          | `SFCC_CLIENT_SECRET`                        |
+| `server`                 | `SFCC_SERVER`                               |
+| `code-version`           | `SFCC_CODE_VERSION`                         |
+| `username`               | `SFCC_USERNAME`                             |
+| `password`               | `SFCC_PASSWORD`                             |
+| `short-code`             | `SFCC_SHORTCODE`                            |
+| `tenant-id`              | `SFCC_TENANT_ID`                            |
+| `account-manager-host`   | `SFCC_ACCOUNT_MANAGER_HOST`                 |
+| `webdav-server`          | `SFCC_WEBDAV_SERVER`                        |
+| `certificate`            | `SFCC_CERTIFICATE`                          |
+| `certificate-base64`     | `SFCC_CERTIFICATE` (decoded to a temp file) |
+| `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE`               |
+| `selfsigned`             | `SFCC_SELFSIGNED`                           |
+| `mrt-api-key`            | `MRT_API_KEY`                               |
+| `mrt-project`            | `MRT_PROJECT`                               |
+| `mrt-environment`        | `MRT_ENVIRONMENT`                           |
+| `log-level`              | `SFCC_LOG_LEVEL`                            |
 
-The `webdav-server`, `certificate`, `certificate-passphrase`, and `selfsigned` inputs are only needed for staging environments that require a separate WebDAV hostname and a client certificate (mTLS). See [Staging Environments (Two-Factor mTLS)](#staging-environments-two-factor-mtls).
+The `webdav-server`, `certificate`, `certificate-base64`, `certificate-passphrase`, and `selfsigned` inputs are only needed for staging environments that require a separate WebDAV hostname and a client certificate (mTLS). See [Staging Environments (Two-Factor mTLS)](#staging-environments-two-factor-mtls).
 
 ### Run
 
@@ -356,9 +357,9 @@ b2c code deploy \
 
 ### GitHub Actions
 
-Staging mTLS works with the standard actions — the `setup` action accepts `webdav-server`, `certificate`, `certificate-passphrase`, and `selfsigned` inputs alongside the usual auth inputs.
+Staging mTLS works with the standard actions — the `setup` action accepts `webdav-server`, `certificate-base64`, `certificate-passphrase`, and `selfsigned` inputs alongside the usual auth inputs.
 
-Because the `.p12` is a binary file, store it as a base64-encoded GitHub secret and decode it to disk in a workflow step before calling `setup`. The `certificate` input then points at the decoded path.
+Because the `.p12` is a binary file, store it as a base64-encoded GitHub secret and pass it to `certificate-base64` (Actions v2.1.0 and later). `setup` decodes it to an owner-only file in the runner's temp directory and points `SFCC_CERTIFICATE` at it. To use a certificate file that's already on disk, pass its path to `certificate` instead.
 
 These are in addition to the [authentication](#authentication) secrets and variables — the same `SFCC_*` names used elsewhere map straight through to the `setup` inputs:
 
@@ -367,14 +368,14 @@ These are in addition to the [authentication](#authentication) secrets and varia
 | `SFCC_CLIENT_ID`                 | `client-id` → `SFCC_CLIENT_ID`                           | OAuth Client ID                          |
 | `SFCC_CLIENT_SECRET`             | `client-secret` → `SFCC_CLIENT_SECRET`                   | OAuth Client Secret                      |
 | `SFCC_CERTIFICATE_PASSPHRASE`    | `certificate-passphrase` → `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the `.p12`                |
-| `STAGING_CERTIFICATE_P12_BASE64` | _(none — decoded to a file)_                             | Base64-encoded `.p12` client certificate |
+| `STAGING_CERTIFICATE_P12_BASE64` | `certificate-base64` → `SFCC_CERTIFICATE` (decoded path) | Base64-encoded `.p12` client certificate |
 
 | Variable             | Maps to input → env var                | Description                                        |
 | -------------------- | -------------------------------------- | -------------------------------------------------- |
 | `SFCC_SERVER`        | `server` → `SFCC_SERVER`               | e.g. `staging-internal-ccdemo.demandware.net`      |
 | `SFCC_WEBDAV_SERVER` | `webdav-server` → `SFCC_WEBDAV_SERVER` | e.g. `cert.staging.internal.ccdemo.demandware.net` |
 
-`STAGING_CERTIFICATE_P12_BASE64` is the only value here that is **not** an `SFCC_*` environment variable — it holds the raw base64 of the certificate file, which a workflow step decodes to disk. The `certificate` input then points at that decoded path (the tooling reads the file path from `SFCC_CERTIFICATE`, not the certificate contents).
+`STAGING_CERTIFICATE_P12_BASE64` holds the base64 of the certificate file rather than a setting, so it isn't named like an `SFCC_*` environment variable.
 
 To create the base64 secret locally:
 
@@ -400,20 +401,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Decode the .p12 to a file inside the runner workspace
-      - name: Decode staging client certificate
-        run: |
-          echo "${{ secrets.STAGING_CERTIFICATE_P12_BASE64 }}" \
-            | base64 --decode > "$RUNNER_TEMP/staging-deploy.p12"
-          chmod 600 "$RUNNER_TEMP/staging-deploy.p12"
-
       - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
           client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
           server: ${{ vars.SFCC_SERVER }}
           webdav-server: ${{ vars.SFCC_WEBDAV_SERVER }}
-          certificate: ${{ runner.temp }}/staging-deploy.p12
+          certificate-base64: ${{ secrets.STAGING_CERTIFICATE_P12_BASE64 }}
           certificate-passphrase: ${{ secrets.SFCC_CERTIFICATE_PASSPHRASE }}
           selfsigned: 'true'
 
@@ -432,7 +426,7 @@ If a single workflow targets both a normal sandbox and a staging instance, run `
 :::
 
 ::: warning Cleanup
-The decoded `.p12` lives only inside the runner's ephemeral workspace and is destroyed when the job ends. Never commit the file or write it outside `$RUNNER_TEMP` / the workspace.
+`setup` writes the decoded `.p12` to `$RUNNER_TEMP`, which the runner clears after every job. Never commit the certificate or its base64 value to the repository.
 :::
 
 ## Patterns

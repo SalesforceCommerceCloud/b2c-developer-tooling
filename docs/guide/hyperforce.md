@@ -184,39 +184,39 @@ Store the `.p12` (base64-encoded) and its passphrase as separate secrets:
 base64 -i ci.p12 | tr -d '\n'
 ```
 
-In the pipeline, decode the certificate to a temporary file and deploy with the environment variables set. No separate WebDAV server or `selfsigned` setting is needed:
+No separate WebDAV server or `selfsigned` setting is needed.
 
-```bash
-echo "$STAGING_CERTIFICATE_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/ci.p12"
-chmod 600 "$RUNNER_TEMP/ci.p12"
+### GitHub Actions
 
-export SFCC_SERVER=staging-abcd-acme.demandware.net
-export SFCC_CERTIFICATE="$RUNNER_TEMP/ci.p12"
-# SFCC_CERTIFICATE_PASSPHRASE, SFCC_CLIENT_ID and SFCC_CLIENT_SECRET come from secrets
-
-b2c code deploy --activate
-```
-
-With GitHub Actions, pass the same values to the `setup` action:
+Pass the base64 secret to `certificate-base64` (Actions v2.1.0 and later). The action decodes it to an owner-only temporary file for you:
 
 ```yaml
-- name: Decode staging client certificate
-  run: |
-    echo "${{ secrets.STAGING_CERTIFICATE_P12_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/ci.p12"
-    chmod 600 "$RUNNER_TEMP/ci.p12"
-
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
   with:
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
     client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
     server: staging-abcd-acme.demandware.net
-    certificate: ${{ runner.temp }}/ci.p12
+    certificate-base64: ${{ secrets.STAGING_CERTIFICATE_P12_BASE64 }}
     certificate-passphrase: ${{ secrets.SFCC_CERTIFICATE_PASSPHRASE }}
-
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
-  with:
     code-version: staging-${{ github.run_number }}
     activate: true
+```
+
+The `setup`, `data-import`, `job-run`, and `webdav-upload` actions accept the same inputs.
+
+### Other CI Systems
+
+Decode the certificate to a temporary file and set the environment variables:
+
+```bash
+export SFCC_CERTIFICATE=$(mktemp)
+chmod 600 "$SFCC_CERTIFICATE"
+echo "$STAGING_CERTIFICATE_P12_BASE64" | base64 --decode > "$SFCC_CERTIFICATE"
+
+export SFCC_SERVER=staging-abcd-acme.demandware.net
+# SFCC_CERTIFICATE_PASSPHRASE, SFCC_CLIENT_ID and SFCC_CLIENT_SECRET come from secrets
+
+b2c code deploy --activate
 ```
 
 See [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls) for a complete workflow.

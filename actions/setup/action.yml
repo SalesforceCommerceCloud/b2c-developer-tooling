@@ -59,6 +59,9 @@ inputs:
   certificate:
     description: 'Path to PKCS12 client certificate for two-factor (mTLS) auth → SFCC_CERTIFICATE'
     required: false
+  certificate-base64:
+    description: 'Base64-encoded PKCS12 client certificate (e.g. from a secret); decoded to an owner-only file in the runner temp directory → SFCC_CERTIFICATE. Use instead of certificate.'
+    required: false
   certificate-passphrase:
     description: 'Passphrase for the PKCS12 client certificate → SFCC_CERTIFICATE_PASSPHRASE'
     required: false
@@ -143,6 +146,7 @@ runs:
         IN_ACCOUNT_MANAGER_HOST: ${{ inputs.account-manager-host }}
         IN_WEBDAV_SERVER: ${{ inputs.webdav-server }}
         IN_CERTIFICATE: ${{ inputs.certificate }}
+        IN_CERTIFICATE_BASE64: ${{ inputs.certificate-base64 }}
         IN_CERTIFICATE_PASSPHRASE: ${{ inputs.certificate-passphrase }}
         IN_SELFSIGNED: ${{ inputs.selfsigned }}
         IN_LOG_LEVEL: ${{ inputs.log-level }}
@@ -188,6 +192,24 @@ runs:
         set_env SFCC_ACCOUNT_MANAGER_HOST "$IN_ACCOUNT_MANAGER_HOST"
         set_env SFCC_WEBDAV_SERVER "$IN_WEBDAV_SERVER"
         set_env SFCC_CERTIFICATE "$IN_CERTIFICATE"
+
+        # Decode a base64-encoded .p12 (typically a repository secret) to an
+        # owner-only temp file so workflows don't need their own decode step.
+        # Whitespace is stripped first so line-wrapped base64 output works too.
+        if [ -n "$IN_CERTIFICATE_BASE64" ]; then
+          if [ -n "$IN_CERTIFICATE" ]; then
+            echo "::error::Set either certificate or certificate-base64, not both"
+            exit 1
+          fi
+          CERT_FILE=$(mktemp "${RUNNER_TEMP:-/tmp}/b2c-client-certificate-XXXXXXXX")
+          chmod 600 "$CERT_FILE"
+          if ! printf '%s' "$IN_CERTIFICATE_BASE64" | tr -d '[:space:]' | base64 --decode > "$CERT_FILE" || [ ! -s "$CERT_FILE" ]; then
+            rm -f "$CERT_FILE"
+            echo "::error::certificate-base64 is not a valid base64-encoded certificate"
+            exit 1
+          fi
+          set_env SFCC_CERTIFICATE "$CERT_FILE"
+        fi
         set_env SFCC_CERTIFICATE_PASSPHRASE "$IN_CERTIFICATE_PASSPHRASE"
         set_env SFCC_LOG_LEVEL "$IN_LOG_LEVEL"
 
