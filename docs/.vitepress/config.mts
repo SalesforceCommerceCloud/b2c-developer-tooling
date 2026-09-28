@@ -67,6 +67,12 @@ const previewBasePath = process.env.DOCS_BASE_PATH
 const siteBase = '/b2c-developer-tooling';
 const basePath = previewBasePath ?? (isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`);
 
+// Link unfurlers (Slack, Teams, LinkedIn) need absolute Open Graph URLs.
+const siteUrl = `https://salesforcecommercecloud.github.io${basePath}`;
+const siteTitle = 'Agentic B2C Developer Toolkit';
+const siteDescription =
+  'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE Extension for Salesforce B2C Commerce';
+
 const toolkitSidebar = [
   {text: 'Overview', link: '/'},
   {
@@ -209,18 +215,31 @@ const referenceSidebar = [
 ];
 
 export default defineConfig({
-  title: 'Agentic B2C Developer Toolkit',
-  description:
-    'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE Extension for Salesforce B2C Commerce',
+  title: siteTitle,
+  description: siteDescription,
   base: basePath,
   srcExclude: ['_partials/**', 'releases/_entries/**', 'public/releases/**'],
 
-  head: [['link', {rel: 'describedby', type: 'text/plain', href: `${basePath}llms.txt`}]],
+  head: [
+    ['link', {rel: 'describedby', type: 'text/plain', href: `${basePath}llms.txt`}],
+    ['meta', {property: 'og:site_name', content: siteTitle}],
+    ['meta', {property: 'og:type', content: 'website'}],
+    ['meta', {property: 'og:image', content: `${siteUrl}og-card.png`}],
+    ['meta', {property: 'og:image:width', content: '1200'}],
+    ['meta', {property: 'og:image:height', content: '630'}],
+    ['meta', {name: 'twitter:card', content: 'summary_large_image'}],
+  ],
 
   transformPageData(pageData, {siteConfig}) {
     if (!fs.existsSync(path.join(siteConfig.srcDir, pageData.relativePath))) return;
     const head = (pageData.frontmatter.head ??= []);
     head.push(['link', {rel: 'alternate', type: 'text/markdown', href: `${basePath}${pageData.relativePath}`}]);
+    const pagePath = pageData.relativePath.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '.html');
+    head.push(
+      ['meta', {property: 'og:title', content: pageData.title || siteTitle}],
+      ['meta', {property: 'og:description', content: pageData.description || siteDescription}],
+      ['meta', {property: 'og:url', content: `${siteUrl}${pagePath}`}],
+    );
   },
 
   // Git-based "Last updated" timestamps (overridable per-page via frontmatter)
