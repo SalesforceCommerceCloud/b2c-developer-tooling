@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-28T14:20:11.170Z",
+  "generatedAt": "2026-09-28T14:31:40.915Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -332,8 +332,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce.md",
-      "headings": "What Changes on Hyperforce • Migrating from cert.staging • Code Upload Certificates • How It Works • Prerequisites • Quick Start • Non-Interactive • Generated Files • Protect the CA Private Key • Issue Client Certificates • Configure the CLI • Renew Before Expiry • Bring Your Own CA • CI/CD on Hyperforce Staging • Troubleshooting",
-      "preview": "Deploy code to B2C Commerce on Hyperforce — what changes for staging code upload, migrating from cert.staging, and self-service two-factor (mTLS) code upload certificates with a 1-year maximum CA expiry."
+      "headings": "What Changes on Hyperforce • Migrating from cert.staging • Code Upload Certificates • Prerequisites • Quick Start • Non-Interactive • Generated Files • Protect the CA Private Key • Issue Client Certificates • Configure the CLI • Renew Before Expiry • Bring Your Own CA • CI/CD on Hyperforce Staging • Troubleshooting",
+      "preview": "Deploy code to B2C Commerce on Hyperforce — what changes for staging code upload, migrating from cert.staging, and setting up two-factor (mTLS) code upload certificates with the CLI."
     },
     {
       "id": "guide-ide-integration",
