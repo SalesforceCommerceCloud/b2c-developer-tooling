@@ -67,8 +67,10 @@ const previewBasePath = process.env.DOCS_BASE_PATH
 const siteBase = '/b2c-developer-tooling';
 const basePath = previewBasePath ?? (isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`);
 
-// Link unfurlers (Slack, Teams, LinkedIn) need absolute Open Graph URLs.
-const siteUrl = `https://salesforcecommercecloud.github.io${basePath}`;
+// Link unfurlers (Slack, Teams, LinkedIn) need absolute Open Graph URLs. PR previews
+// are served from a different host, which CI passes in as DOCS_SITE_ORIGIN.
+const siteOrigin = (process.env.DOCS_SITE_ORIGIN || 'https://salesforcecommercecloud.github.io').replace(/\/+$/, '');
+const siteUrl = `${siteOrigin}${basePath}`;
 const siteTitle = 'Agentic B2C Developer Toolkit';
 const siteDescription =
   'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE Extension for Salesforce B2C Commerce';
