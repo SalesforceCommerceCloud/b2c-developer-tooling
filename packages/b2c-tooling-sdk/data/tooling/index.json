@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-28T22:49:08.920Z",
+  "generatedAt": "2026-09-28T23:52:26.338Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -215,7 +215,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.md",
-      "headings": "b2c setup inspect • Usage • Flags • Examples • Output • Sensitive Values • See Also • Global Default Configuration • b2c setup default-config set • b2c setup default-config get • b2c setup default-config unset • b2c setup ide • Usage • Examples • b2c setup ide vscode-types • Usage • Flags • Examples • Output • b2c setup ide tsserver-plugin • Usage • Flags • Examples • Output • b2c setup instance list • Usage • Flags • Examples • Output • b2c setup instance create • Usage • Arguments • Flags • Examples • Interactive Mode • b2c setup instance remove • Usage • Arguments • Flags • Examples • b2c setup instance set-active • Usage • Arguments • Flags • Examples • How Active Instance Works • b2c setup skills • Usage • Arguments • Flags • Supported IDEs • Examples • Interactive Mode • Claude Code Recommendation • Skill Sets • Output • Environment • See Also",
+      "headings": "b2c setup inspect • Usage • Flags • Examples • Output • Sensitive Values • See Also • Global Default Configuration • b2c setup default-config set • b2c setup default-config get • b2c setup default-config unset • b2c setup ide • Usage • Examples • b2c setup ide vscode-types • Usage • Flags • Examples • Output • b2c setup ide tsserver-plugin • Usage • Flags • Examples • Output • b2c setup instance list • Usage • Flags • Examples • Output • b2c setup instance create • Usage • Arguments • Flags • Examples • Interactive Mode • b2c setup instance remove • Usage • Arguments • Flags • Examples • b2c setup instance set-active • Usage • Arguments • Flags • Examples • How Active Instance Works • b2c setup openshell • Usage • Flags • Examples • See Also • b2c setup skills • Usage • Arguments • Flags • Supported IDEs • Examples • Interactive Mode • Claude Code Recommendation • Skill Sets • Output • Environment • See Also",
       "preview": "Commands for viewing configuration, managing instances, installing AI agent skills, and generating IDE integration scripts."
     },
     {
@@ -314,7 +314,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md",
-      "headings": "Choose Your Connection • Configuration File • Single Instance • Shopper Authentication (SLAS) • Multiple Instances • Managing Instances with the CLI • Configuration File Selection • Global Default Configuration • Environment Variables • .env File • Storefront Next Compatibility • Check Your Configuration {#debugging-configuration} • Resolution Priority • Credential Grouping • Settings Reference {#supported-fields} • Instance and Site • Administrative Authentication {#oauth-scapi-ocapi} • Shopper Authentication • WebDAV and Certificates {#basic-authentication-webdav} • Code, Content, and Documentation • Sandboxes and Analytics • Managed Runtime • Other Environment Settings • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • CLI Flags • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • MRT API Key • Two-Factor Authentication (mTLS) • Troubleshooting • Next Steps",
+      "headings": "Choose Your Connection • Configuration File • Single Instance • Shopper Authentication (SLAS) • Multiple Instances • Managing Instances with the CLI • Configuration File Selection • Global Default Configuration • Environment Variables • .env File • Storefront Next Compatibility • Check Your Configuration {#debugging-configuration} • Resolution Priority • Credential Grouping • Settings Reference {#supported-fields} • Instance and Site • Administrative Authentication {#oauth-scapi-ocapi} • Client Authentication Method {#client-authentication-method} • Shopper Authentication • WebDAV and Certificates {#basic-authentication-webdav} • Code, Content, and Documentation • Sandboxes and Analytics • Managed Runtime • Other Environment Settings • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • CLI Flags • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • MRT API Key • Two-Factor Authentication (mTLS) • Troubleshooting • Next Steps",
       "preview": "Configure B2C Commerce connections for the CLI, MCP, and IDE extension, including SLAS credentials, named instances, and shared project defaults."
     },
     {
@@ -395,8 +395,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/openshell.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/openshell.md",
-      "headings": "OpenShell and Safety Mode • Requirements • 1. Build a sandbox image • 2. Define provider profiles • 3. Store the credentials • 4. Write a sandbox policy • 5. Run the CLI in the sandbox • Allow specific writes • Audit log {#audit-log} • How credentials are handled • Limitations",
-      "preview": "Run the B2C CLI and MCP server inside an NVIDIA OpenShell sandbox so AI agents never see your API client secret and can only reach the B2C Commerce hosts and operations you allow."
+      "headings": "OpenShell and Safety Mode • Requirements • Quick start • Do it yourself • Access levels • What works in the sandbox • Customize the policy • Agents and the MCP server • Audit log {#audit-log} • How credentials are handled • Limitations",
+      "preview": "Run the B2C CLI and MCP server inside an NVIDIA OpenShell sandbox so AI agents never see your secrets and can only reach the B2C Commerce hosts and operations you allow."
     },
     {
       "id": "guide-operations",

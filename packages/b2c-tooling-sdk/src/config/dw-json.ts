@@ -13,6 +13,7 @@
  */
 import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
+import type {ClientAuthMethod} from '../auth/client-credentials.js';
 import type {AuthMethod} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
 import type {LibraryEntry} from './types.js';
@@ -70,6 +71,8 @@ export interface DwJsonConfig {
   userAuth?: boolean;
   /** Account Manager hostname for OAuth */
   accountManagerHost?: string;
+  /** How client credentials are sent to Account Manager */
+  clientAuthMethod?: ClientAuthMethod;
   /** MRT project slug */
   mrtProject?: string;
   /** MRT environment name (e.g., staging, production) */

@@ -9,7 +9,7 @@ import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
-import {applyClientCredentials} from './client-credentials.js';
+import {applyClientCredentials, type ClientAuthMethod} from './client-credentials.js';
 
 // Module-level token cache to support multiple instances with same clientId
 const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
@@ -23,6 +23,8 @@ export interface OAuthConfig {
   clientSecret: string;
   scopes?: string[];
   accountManagerHost?: string;
+  /** How client credentials are sent to Account Manager (see {@link ClientAuthMethod}) */
+  clientAuthMethod?: ClientAuthMethod;
 }
 
 /**
@@ -415,7 +417,12 @@ export class OAuthStrategy implements AuthStrategy {
       params.append('scope', requestedScopes.join(' '));
     }
 
-    const authHeaders = applyClientCredentials(params, this.config.clientId, this.config.clientSecret);
+    const authHeaders = applyClientCredentials(
+      params,
+      this.config.clientId,
+      this.config.clientSecret,
+      this.config.clientAuthMethod,
+    );
 
     // Build request object for middleware
     let request = new Request(url, {

@@ -54,6 +54,7 @@ export function createScapiAuth(config: NormalizedConfig, cwd = process.cwd()) {
               clientId: config.clientId,
               clientSecret: config.clientSecret,
               accountManagerHost: config.accountManagerHost,
+              clientAuthMethod: config.clientAuthMethod,
               scopes,
             }).getTokenResponse(signal);
           }

@@ -10,6 +10,7 @@ import type {AuthMethod} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import type {UserAuthStrategy} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
+import {CLIENT_AUTH_METHODS} from '../auth/client-credentials.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
 import {createUserAuthStrategy} from '../auth/oauth-pkce-fallback.js';
 import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
@@ -109,6 +110,12 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       default: async () => process.env.SFCC_LOGIN_URL || undefined,
       helpGroup: 'AUTH',
     }),
+    'client-auth-method': Flags.option({
+      description: 'How the client ID and secret are sent to Account Manager (default: basic)',
+      options: CLIENT_AUTH_METHODS,
+      env: 'SFCC_CLIENT_AUTH_METHOD',
+      helpGroup: 'AUTH',
+    })(),
     'jwt-cert': Flags.string({
       description: 'Path to JWT certificate file (cert.pem) for JWT Bearer authentication',
       env: 'SFCC_JWT_CERT',
@@ -244,6 +251,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
               clientSecret: config.clientSecret,
               scopes: config.scopes,
               accountManagerHost,
+              clientAuthMethod: config.clientAuthMethod,
             });
           }
           break;

@@ -239,6 +239,7 @@ describe('cli/config', () => {
         'short-code': 'abc123',
         'tenant-id': 'my-tenant_001',
         'account-manager-host': 'account.demandware.com',
+        'client-auth-method': 'body',
         'auth-scope': ['sfcc.products', 'sfcc.orders'],
       };
 
@@ -249,6 +250,7 @@ describe('cli/config', () => {
       expect(result.shortCode).to.equal('abc123');
       expect(result.tenantId).to.equal('my-tenant_001');
       expect(result.accountManagerHost).to.equal('account.demandware.com');
+      expect(result.clientAuthMethod).to.equal('body');
       expect(result.scopes).to.deep.equal(['sfcc.products', 'sfcc.orders']);
     });
 

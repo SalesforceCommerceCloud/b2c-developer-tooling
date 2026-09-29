@@ -61,13 +61,28 @@ export function encodeBasicClientCredentials(clientId: string, clientSecret: str
 }
 
 /**
+ * How OAuth client credentials are sent to the token endpoint.
+ *
+ * - `basic`: `Authorization: Basic` header with each component form-url-encoded
+ *   per RFC 6749 §2.3.1 (`client_secret_basic`). The default.
+ * - `basic-unencoded`: `Authorization: Basic` header over the raw `id:secret`,
+ *   without per-component encoding. For proxies and brokers that substitute a
+ *   literal value into the decoded header. A secret containing `+` or `%` is
+ *   misread by Account Manager in this mode.
+ * - `body`: `client_id` and `client_secret` in the form-url-encoded request body
+ *   (`client_secret_post`).
+ */
+export type ClientAuthMethod = 'basic' | 'basic-unencoded' | 'body';
+
+/** All supported client authentication methods. */
+export const CLIENT_AUTH_METHODS = ['basic', 'basic-unencoded', 'body'] as const satisfies readonly ClientAuthMethod[];
+
+/**
  * Markers used by credential-brokering sandboxes (NVIDIA OpenShell) for the
  * placeholder values they expose in place of real secrets. The sandbox proxy
  * swaps the real secret in on the wire, but only where it recognizes the
  * placeholder: it matches a raw placeholder inside a decoded Basic header, so
- * the per-component form-url-encoding above (`:` -> `%3A`) hides it. In a
- * form-url-encoded request body the proxy decodes, resolves, and re-encodes the
- * value, which preserves the `+`/`%` handling for the real secret.
+ * the per-component form-url-encoding above (`:` -> `%3A`) hides it.
  */
 const CREDENTIAL_PLACEHOLDER_MARKERS = ['openshell:resolve:env:', 'OPENSHELL-RESOLVE-ENV-'];
 
@@ -82,27 +97,43 @@ export function isCredentialPlaceholder(value: string): boolean {
 }
 
 /**
- * Applies OAuth client authentication to a token request.
+ * Resolves the effective client authentication method. An explicit method
+ * always wins; otherwise a sandbox credential placeholder selects
+ * `basic-unencoded` (so the proxy can find it in the header) and everything
+ * else uses `basic`.
  *
- * Uses HTTP Basic (`client_secret_basic`) by default. When the secret is a
- * sandbox credential placeholder (see {@link isCredentialPlaceholder}), the
- * credentials are sent in the request body instead (`client_secret_post`) so the
- * sandbox proxy can resolve them. Account Manager accepts either form.
+ * @param clientSecret - The OAuth client password/secret
+ * @param method - The configured method, if any
+ */
+export function resolveClientAuthMethod(clientSecret: string, method?: ClientAuthMethod): ClientAuthMethod {
+  if (method) return method;
+  return isCredentialPlaceholder(clientSecret) ? 'basic-unencoded' : 'basic';
+}
+
+/**
+ * Applies OAuth client authentication to a token request using the method
+ * chosen by {@link resolveClientAuthMethod}. Account Manager accepts all of them.
  *
- * @param params - The token request body; credentials are appended in the body case
+ * @param params - The token request body; credentials are appended in the `body` case
  * @param clientId - The OAuth client identifier
  * @param clientSecret - The OAuth client password/secret
- * @returns Headers to add to the token request (empty in the body case)
+ * @param method - The configured client authentication method, if any
+ * @returns Headers to add to the token request (empty in the `body` case)
  */
 export function applyClientCredentials(
   params: URLSearchParams,
   clientId: string,
   clientSecret: string,
+  method?: ClientAuthMethod,
 ): Record<string, string> {
-  if (isCredentialPlaceholder(clientSecret)) {
-    params.set('client_id', clientId);
-    params.set('client_secret', clientSecret);
-    return {};
+  switch (resolveClientAuthMethod(clientSecret, method)) {
+    case 'basic-unencoded':
+      return {Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`};
+    case 'body':
+      params.set('client_id', clientId);
+      params.set('client_secret', clientSecret);
+      return {};
+    default:
+      return {Authorization: `Basic ${encodeBasicClientCredentials(clientId, clientSecret)}`};
   }
-  return {Authorization: `Basic ${encodeBasicClientCredentials(clientId, clientSecret)}`};
 }

@@ -292,6 +292,7 @@ export class B2CInstance {
       clientSecret: this.auth.oauth.clientSecret,
       scopes: this.auth.oauth.scopes,
       accountManagerHost: this.auth.oauth.accountManagerHost,
+      clientAuthMethod: this.auth.oauth.clientAuthMethod,
       redirectUri: this.auth.oauth.redirectUri,
       openBrowser: this.auth.oauth.openBrowser,
     };

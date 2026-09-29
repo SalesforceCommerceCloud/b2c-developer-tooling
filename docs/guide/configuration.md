@@ -298,6 +298,7 @@ Settings apply to the features that use them. CLI flags and environment override
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `client-id`<br>`SFCC_CLIENT_ID`                       | Account Manager API client ID.                                                                                                   |
 | `client-secret`<br>`SFCC_CLIENT_SECRET`               | Account Manager client secret.                                                                                                   |
+| `client-auth-method`<br>`SFCC_CLIENT_AUTH_METHOD`     | How the client ID and secret are sent to Account Manager; see [client authentication method](#client-authentication-method). |
 | `oauth-scopes`<br>`SFCC_OAUTH_SCOPES`                 | Requested OAuth scopes: a JSON string array or comma-separated environment value. Scope grants must be configured on the client. |
 | `jwt-cert-path`<br>`SFCC_JWT_CERT`                    | PEM certificate path for JWT authentication. CLI flag: `--jwt-cert`.                                                             |
 | `jwt-key-path`<br>`SFCC_JWT_KEY`                      | PEM private key path. CLI flag: `--jwt-key`.                                                                                     |
@@ -305,6 +306,18 @@ Settings apply to the features that use them. CLI flags and environment override
 | `auth-methods`<br>`SFCC_AUTH_METHODS`                 | Ordered JSON array or comma-separated environment value; see [authentication methods](#overriding-authentication-behavior).      |
 | `user-auth`                                           | Boolean shorthand for `"auth-methods": ["user"]`. Do not set both fields. CLI flag: `--user-auth`.                               |
 | `account-manager-host`<br>`SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname override.                                                                                               |
+
+### Client Authentication Method {#client-authentication-method}
+
+`client-auth-method` (`SFCC_CLIENT_AUTH_METHOD`, CLI flag `--client-auth-method`) controls how client credentials are sent in the token request:
+
+| Value             | Sends                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| `basic` (default) | A standard HTTP Basic `Authorization` header with the encoded client ID and secret.               |
+| `basic-unencoded` | A Basic header with the raw client ID and secret.                                                 |
+| `body`            | `client_id` and `client_secret` in the form-encoded request body. Use when a proxy or gateway requires it. |
+
+The default works for most setups. Inside an [OpenShell sandbox](./openshell), where the secret is a placeholder, the CLI and MCP server use `basic-unencoded` automatically unless you set a value.
 
 For certificate setup, see [JWT Authentication](./authentication#jwt-authentication-certificate-based). When sharing configuration across projects or processes, absolute certificate paths avoid ambiguity about the working directory.
 

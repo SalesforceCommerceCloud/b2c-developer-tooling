@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import type {ClientAuthMethod} from './client-credentials.js';
 
 /**
  * Extended RequestInit that supports undici dispatcher for TLS/mTLS.
@@ -107,6 +108,8 @@ export interface OAuthAuthConfig {
   clientSecret?: string;
   scopes?: string[];
   accountManagerHost?: string;
+  /** How client credentials are sent to Account Manager */
+  clientAuthMethod?: ClientAuthMethod;
   /** Path to JWT certificate file (cert.pem) for the JWT Bearer flow */
   jwtCertPath?: string;
   /** Path to JWT private key file (key.pem) for the JWT Bearer flow */
@@ -193,6 +196,8 @@ export interface AuthCredentials {
   scopes?: string[];
   /** Account Manager host (defaults to account.demandware.com) */
   accountManagerHost?: string;
+  /** How client credentials are sent to Account Manager */
+  clientAuthMethod?: ClientAuthMethod;
   /** Username for basic auth */
   username?: string;
   /** Password/access key for basic auth */

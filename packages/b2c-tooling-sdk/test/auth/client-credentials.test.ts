@@ -8,6 +8,7 @@ import {
   applyClientCredentials,
   encodeBasicClientCredentials,
   isCredentialPlaceholder,
+  resolveClientAuthMethod,
 } from '@salesforce/b2c-tooling-sdk/auth';
 
 /**
@@ -79,13 +80,39 @@ describe('auth/client-credentials', () => {
       expect(params.toString()).to.equal('grant_type=client_credentials');
     });
 
-    it('moves credentials into the body for a sandbox placeholder', () => {
+    it('uses an unencoded Basic header for a sandbox placeholder', () => {
       const placeholder = 'openshell:resolve:env:v1_SFCC_CLIENT_SECRET';
       const params = new URLSearchParams({grant_type: 'client_credentials'});
       const headers = applyClientCredentials(params, 'my-client-id', placeholder);
+      expect(headers).to.deep.equal({
+        Authorization: `Basic ${Buffer.from(`my-client-id:${placeholder}`).toString('base64')}`,
+      });
+      expect(params.toString()).to.equal('grant_type=client_credentials');
+    });
+
+    it('sends basic-unencoded credentials without form-url-encoding', () => {
+      const headers = applyClientCredentials(new URLSearchParams(), 'id', 'Xy9+Kq2z', 'basic-unencoded');
+      expect(headers).to.deep.equal({Authorization: `Basic ${Buffer.from('id:Xy9+Kq2z').toString('base64')}`});
+    });
+
+    it('moves credentials into the body when the method is body', () => {
+      const params = new URLSearchParams({grant_type: 'client_credentials'});
+      const headers = applyClientCredentials(params, 'my-client-id', 'Xy9+Kq2z', 'body');
       expect(headers).to.deep.equal({});
       expect(params.get('client_id')).to.equal('my-client-id');
-      expect(params.get('client_secret')).to.equal(placeholder);
+      expect(params.get('client_secret')).to.equal('Xy9+Kq2z');
+    });
+  });
+
+  describe('resolveClientAuthMethod', () => {
+    it('defaults to basic for a real secret and basic-unencoded for a placeholder', () => {
+      expect(resolveClientAuthMethod('Xy9+Kq2z')).to.equal('basic');
+      expect(resolveClientAuthMethod('openshell:resolve:env:v1_SFCC_CLIENT_SECRET')).to.equal('basic-unencoded');
+    });
+
+    it('lets an explicit method override detection', () => {
+      expect(resolveClientAuthMethod('openshell:resolve:env:v1_SFCC_CLIENT_SECRET', 'body')).to.equal('body');
+      expect(resolveClientAuthMethod('Xy9+Kq2z', 'basic-unencoded')).to.equal('basic-unencoded');
     });
   });
 });

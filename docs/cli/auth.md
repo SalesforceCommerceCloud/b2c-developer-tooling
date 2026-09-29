@@ -182,6 +182,7 @@ b2c auth token
 | `--client-id`            | `SFCC_CLIENT_ID`            | Client ID for OAuth                                                                                               |
 | `--client-secret`        | `SFCC_CLIENT_SECRET`        | Client Secret for OAuth                                                                                           |
 | `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                                                                         |
+| `--client-auth-method`   | `SFCC_CLIENT_AUTH_METHOD`   | How client credentials are sent: `basic` (default), `basic-unencoded`, or `body`. See [client authentication method](/guide/configuration#client-authentication-method) |
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com)                                                        |
 | `--short-code`           | `SFCC_SHORTCODE`            | SCAPI short code                                                                                                  |
 | `--tenant-id`            | `SFCC_TENANT_ID`            | Organization/tenant ID                                                                                            |

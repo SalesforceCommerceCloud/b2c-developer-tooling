@@ -463,6 +463,62 @@ b2c code list              # Uses staging
 b2c code list -i production # Uses production
 ```
 
+## b2c setup openshell
+
+::: warning Beta
+The OpenShell integration is in beta, and OpenShell itself is alpha software.
+:::
+
+Create an [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) sandbox for the B2C CLI from your current configuration. Your secrets are stored on the OpenShell gateway, and the sandbox can reach only the B2C Commerce hosts your configuration uses, at the access level you choose. Run the command again to apply changes. See [Sandboxing with OpenShell](../guide/openshell).
+
+### Usage
+
+```bash
+b2c setup openshell [FLAGS]
+```
+
+### Flags
+
+| Flag                | Description                                                                 | Default                   |
+| ------------------- | --------------------------------------------------------------------------- | ------------------------- |
+| `--name`            | Sandbox name                                                                | `b2c-<instance>`          |
+| `--directory`, `-d` | Directory for the generated files                                           | `.openshell/<sandbox>`    |
+| `--safety-level`    | What the sandbox may do on B2C hosts: `READ_ONLY`, `NO_DELETE`, or `NONE`   | `READ_ONLY`               |
+| `--allow-host`      | Additional host the sandbox may reach (repeatable)                          |                           |
+| `--mcp`             | Also install the B2C DX MCP server in the sandbox image                     | `false`                   |
+| `--image`           | Use this container image instead of building one                            |                           |
+| `--[no-]sandbox`    | Create the sandbox. Use `--no-sandbox` to only store the credentials        | `true`                    |
+| `--recreate`        | Delete and recreate an existing sandbox                                     | `false`                   |
+| `--force`           | Replace an edited `policy.yaml` with a newly generated one                  | `false`                   |
+| `--dry-run`         | Write the files and print the commands without running them                 | `false`                   |
+| `--json`            | Output results as JSON (never includes secrets)                             | `false`                   |
+
+Instance and authentication flags such as `--instance` select the configuration to use.
+
+### Examples
+
+```bash
+# Create a read-only sandbox for the active instance
+b2c setup openshell
+
+# Allow writes but not deletes
+b2c setup openshell --safety-level NO_DELETE
+
+# Create a sandbox for another instance
+b2c setup openshell --instance staging --name b2c-staging
+
+# Include the MCP server in the image
+b2c setup openshell --mcp
+
+# Review the generated files and commands without changing anything
+b2c setup openshell --dry-run
+```
+
+### See Also
+
+- [Sandboxing with OpenShell](../guide/openshell)
+- [Safety Mode](../guide/safety)
+
 ## b2c setup skills
 
 Install agent skills from the B2C Developer Tooling project to AI-powered IDEs.

@@ -88,7 +88,6 @@ const toolkitSidebar = [
       {text: 'Configuration', link: '/guide/configuration'},
       {text: 'Project Setup', link: '/guide/project-setup'},
       {text: 'Safety Mode', link: '/guide/safety'},
-      {text: 'Sandboxing with OpenShell', link: '/guide/openshell'},
     ],
   },
   {
@@ -148,6 +147,7 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Commerce Apps', link: '/guide/commerce-apps'},
       {text: 'Security', link: '/guide/security'},
+      {text: 'Sandboxing with OpenShell', link: '/guide/openshell'},
     ],
   },
   {

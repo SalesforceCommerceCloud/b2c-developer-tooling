@@ -1,6 +1,6 @@
 ---
-'@salesforce/b2c-tooling-sdk': patch
-'@salesforce/b2c-cli': patch
+'@salesforce/b2c-tooling-sdk': minor
+'@salesforce/b2c-cli': minor
 ---
 
-Client credentials authentication now works inside NVIDIA OpenShell sandboxes, so agents can use the CLI and MCP server without ever seeing your API client secret.
+Added the `client-auth-method` setting (`SFCC_CLIENT_AUTH_METHOD`, `--client-auth-method`) to choose how client credentials are sent to Account Manager: `basic` (default), `basic-unencoded`, or `body`. Client credentials now also work inside NVIDIA OpenShell sandboxes without extra configuration.

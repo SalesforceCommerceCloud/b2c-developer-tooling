@@ -206,6 +206,22 @@ describe('config/EnvSource', () => {
     });
   });
 
+  describe('clientAuthMethod (SFCC_CLIENT_AUTH_METHOD)', () => {
+    for (const value of ['basic', 'basic-unencoded', 'body']) {
+      it(`maps SFCC_CLIENT_AUTH_METHOD=${value} to clientAuthMethod`, () => {
+        const source = new EnvSource({SFCC_CLIENT_AUTH_METHOD: value});
+        const result = source.load({});
+        expect(result!.config.clientAuthMethod).to.equal(value);
+      });
+    }
+
+    it('ignores an invalid SFCC_CLIENT_AUTH_METHOD value', () => {
+      const source = new EnvSource({SFCC_CLIENT_AUTH_METHOD: 'header'});
+      const result = source.load({});
+      expect(result).to.be.undefined;
+    });
+  });
+
   describe('mrtBackend (MRT_BACKEND / SFCC_MRT_BACKEND)', () => {
     for (const value of ['auto', 'legacy', 'scapi']) {
       it(`maps MRT_BACKEND=${value} to mrtBackend`, () => {

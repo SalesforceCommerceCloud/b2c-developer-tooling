@@ -5,7 +5,13 @@
  */
 import {Flags} from '@oclif/core';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import {saveAuthSession, decodeJWT, applyClientCredentials} from '@salesforce/b2c-tooling-sdk/auth';
+import {
+  saveAuthSession,
+  decodeJWT,
+  applyClientCredentials,
+  CLIENT_AUTH_METHODS,
+  type ClientAuthMethod,
+} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 
@@ -48,6 +54,12 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
       default: async () => process.env.SFCC_LOGIN_URL || undefined,
       helpGroup: 'AUTH',
     }),
+    'client-auth-method': Flags.option({
+      description: 'How the client ID and secret are sent to Account Manager (default: basic)',
+      options: CLIENT_AUTH_METHODS,
+      env: 'SFCC_CLIENT_AUTH_METHOD',
+      helpGroup: 'AUTH',
+    })(),
     'auth-scope': Flags.string({
       description: 'OAuth scopes to request (comma-separated)',
       env: 'SFCC_OAUTH_SCOPES',
@@ -80,6 +92,7 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
         clientId: this.flags['client-id'] as string | undefined,
         clientSecret: this.flags['client-secret'] as string | undefined,
         accountManagerHost: this.flags['account-manager-host'] as string | undefined,
+        clientAuthMethod: this.flags['client-auth-method'] as ClientAuthMethod | undefined,
         scopes: scopes && scopes.length > 0 ? scopes : undefined,
       },
       this.getBaseConfigOptions(),
@@ -125,7 +138,12 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
     }
 
     const params = new URLSearchParams(grantPayload);
-    const authHeaders = applyClientCredentials(params, clientId, clientSecret);
+    const authHeaders = applyClientCredentials(
+      params,
+      clientId,
+      clientSecret,
+      this.resolvedConfig.values.clientAuthMethod,
+    );
     const url = `https://${accountManagerHost}/dwsso/oauth2/access_token`;
 
     const method = 'POST';
