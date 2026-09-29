@@ -222,10 +222,7 @@ see [Customize the policy](#customize-the-policy).
 
 ## What works in the sandbox
 
-The generated policy allows the hosts your configuration uses. Hosts you have
-overridden, such as `SFCC_ACCOUNT_MANAGER_HOST`, `SFCC_SANDBOX_API_HOST`,
-`SFCC_CIP_HOST`, or `MRT_CLOUD_ORIGIN`, are used instead of the defaults and
-passed to the sandbox.
+The generated policy allows the hosts your configuration uses.
 
 | Area                                          | Host                                                 |
 | --------------------------------------------- | ---------------------------------------------------- |
