@@ -12,10 +12,10 @@ Staging uploads need a second factor. As well as the API client credentials, the
 
 So there are two parts:
 
-| Part | What it is | How many | Where it's kept |
+| Part | What it is | Typically | Where it's kept |
 |------|------------|----------|-----------------|
-| **CA** (`ca.pem` + `ca.key`) | Signs client certificates. Its certificate is registered with eCDN for your staging tenant. It's never used to connect. | One per staging tenant (two while you renew) | A password manager or secrets vault |
-| **Client certificate** (`.p12` + passphrase) | Sent by the CLI on each code upload | One per CI pipeline and one per developer who uploads to staging | CI secrets, or the developer's machine |
+| **CA** (`ca.pem` + `ca.key`) | Signs client certificates. Its certificate is registered with eCDN for your staging tenant. It's never used to connect. | One per staging tenant. You can register several, for example while you renew. | A password manager or secrets vault |
+| **Client certificate** (`.p12` + passphrase) | Sent by the CLI on each code upload | One per CI pipeline and one per developer who uploads to staging. You can issue as many as you need. | CI secrets, or the developer's machine |
 
 Only code upload to staging needs a client certificate. This covers `b2c code deploy`, `b2c code watch`, `b2c webdav` commands, and the equivalent GitHub Actions. Business Manager login, API calls, and sandboxes don't need one.
 
@@ -37,7 +37,7 @@ You can create your CA before your realm is migrated. Until the migration, keep 
 ## Set Up Two-Factor Code Upload
 
 1. [Check the prerequisites](#step-1-check-the-prerequisites)
-2. [Create your CA](#step-2-create-your-ca) (once per staging tenant)
+2. [Create your CA](#step-2-create-your-ca) (usually once per staging tenant)
 3. [Issue a client certificate for CI](#step-3-issue-a-client-certificate-for-ci)
 4. [Configure your pipeline](#step-4-configure-your-pipeline)
 5. [Store the CA securely](#step-5-store-the-ca-securely)
@@ -54,7 +54,7 @@ You don't need to configure a hostname. When you register a CA, eCDN links it to
 
 ### Step 2: Create Your CA
 
-Do this **once per staging tenant**. Run the setup wizard from your project directory (the one containing `dw.json`):
+You usually need only one CA per staging tenant, so this is typically a **one-time step**. Run the setup wizard from your project directory (the one containing `dw.json`):
 
 ```bash
 b2c ecdn mtls setup --tenant-id zzxy_stg
