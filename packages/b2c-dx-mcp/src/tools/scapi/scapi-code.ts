@@ -10,6 +10,7 @@ import {
   mergeScapiSchemas,
   scapiTenantKey,
   ScapiLiveSchemaCache,
+  ScapiShopperSessions,
   runScapiCode,
   createScapiRequest,
   createScapiAuth,
@@ -74,7 +75,7 @@ async () => {
     fields: Object.fromEntries(fields.map(k => [k, body.properties[k]])), auth: op.auth, security: op.security};
 }`;
 
-const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin APIs when no dedicated tool fits. Discover endpoints with scapi_search; operations found with schemas:"live" (including custom APIs) are callable here for the same tenant. Otherwise fetch a custom API's live contract through scapi.request() in the same program first. Requests authenticate automatically. JSON requests; no Shopper execution or binary transfers.
+const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin or Shopper APIs when no dedicated tool fits. Discover endpoints with scapi_search; operations found with schemas:"live" (including custom APIs) are callable here for the same tenant. Otherwise fetch a custom API's live contract through scapi.request() in the same program first. Auth is automatic; Shopper APIs run as a guest whose session (basket) persists per site. JSON only; no binary transfers.
 Read skill://mcp/scapi/SKILL.md first.
 
 Reuse workflows with await codemode.run(name, input); describe first. async (input) receives input. Completed executionId enables scapi_snippet_save.
@@ -114,7 +115,7 @@ function failure(error: unknown, resolution?: ToolResolution): ToolResult {
     ...codeResult(
       {
         error: message,
-        ...(/^SCAPI_(ADMIN_|SHOPPER_|AUTH_|SCOPE_)/.test(message)
+        ...(/^SCAPI_(ADMIN_|SHOPPER_|REGISTERED_SHOPPER_|AUTH_|SCOPE_)/.test(message)
           ? {skillReferences: [MCP_SKILL_REFERENCES.scapiAuthentication]}
           : {}),
       },
@@ -129,6 +130,7 @@ export function createScapiCodeTools(
   snippetDirectory?: string,
   registry = new ScapiExecutionRegistry(),
   schemaCache = new ScapiLiveSchemaCache(),
+  shopperSessions = new ScapiShopperSessions(),
 ): McpTool[] {
   // Retain only source for the last 50 completed executions, until this server ends.
   const executions = new Map<string, string>();
@@ -279,6 +281,13 @@ export function createScapiCodeTools(
                 tenantId,
                 siteId,
                 auth: () => config.createOAuth(),
+                // Guest sessions outlive executions so shopper state (baskets) carries across them.
+                shopperAuth: shopperSessions.for({
+                  shortCode,
+                  tenantId,
+                  slasClientId: config.values.slasClientId,
+                  slasClientSecret: config.values.slasClientSecret,
+                }),
                 // Live contracts discovered for this tenant replace bundled ones; the user owns their accuracy.
                 documents: mergeScapiSchemas(loadScapiSchemas(), tenant ? schemaCache.get(tenant) : []),
                 onSchema(document, customProperties) {

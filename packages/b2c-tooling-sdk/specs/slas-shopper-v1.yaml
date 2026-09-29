@@ -42,12 +42,13 @@ paths:
               type: object
               required: [grant_type, channel_id]
               properties:
-                grant_type: {type: string, enum: [client_credentials, authorization_code_pkce]}
+                grant_type: {type: string, enum: [client_credentials, authorization_code_pkce, refresh_token]}
                 channel_id: {type: string}
                 client_id: {type: string}
                 code: {type: string}
                 code_verifier: {type: string}
                 redirect_uri: {type: string}
+                refresh_token: {type: string}
                 usid: {type: string}
       responses:
         '200':

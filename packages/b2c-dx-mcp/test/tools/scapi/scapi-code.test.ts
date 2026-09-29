@@ -292,8 +292,47 @@ describe('SCAPI code tools', function () {
     expect(load.called).to.equal(false);
   });
 
-  it('returns an authentication skill reference and resolution for missing Admin config or unsupported Shopper auth', async () => {
-    const config = createMockResolvedConfig({shortCode: 'test', tenantId: 'test_001'});
+  it('runs Shopper APIs with a guest session shared across executions', async () => {
+    const config = createMockResolvedConfig({
+      shortCode: 'test',
+      tenantId: 'test_001',
+      siteId: 'RefArch',
+      slasClientId: 'shopper-client',
+      slasClientSecret: 'shopper-secret',
+    });
+    const createOAuth = stub().throws(new Error('Admin auth must not load'));
+    config.createOAuth = createOAuth;
+    const requested: string[] = [];
+    stub(globalThis, 'fetch').callsFake(async (input) => {
+      const request = input as Request;
+      if (request.url.endsWith('/shopper/auth/v1/organizations/f_ecom_test_001/oauth2/token')) {
+        requested.push(`token:${new URLSearchParams(await request.text()).get('channel_id')}`);
+        return Response.json({
+          access_token: 'guest-token',
+          refresh_token: 'refresh',
+          expires_in: 1800,
+          token_type: 'BEARER',
+          usid: 'usid-1',
+          customer_id: 'guest',
+        });
+      }
+      requested.push(`${request.headers.get('authorization')} ${new URL(request.url).searchParams.get('siteId')}`);
+      return Response.json({id: 'p1'});
+    });
+    try {
+      const [, execute] = createScapiCodeTools(() => new Services({resolvedConfig: config}));
+      const code = `async () => (await scapi.request({method: 'GET', path: '/product/shopper-products/v1/organizations/{organizationId}/products/p1'})).data`;
+      expect(readJson(await execute.handler({skillRead: true, code}))).to.deep.include({result: {id: 'p1'}});
+      await execute.handler({skillRead: true, code});
+      expect(requested).to.deep.equal(['token:RefArch', 'Bearer guest-token RefArch', 'Bearer guest-token RefArch']);
+      expect(createOAuth.called).to.equal(false);
+    } finally {
+      restore();
+    }
+  });
+
+  it('returns an authentication skill reference and resolution for missing Admin or Shopper config', async () => {
+    const config = createMockResolvedConfig({shortCode: 'test', tenantId: 'test_001', siteId: 'RefArch'});
     const createOAuth = stub().throws(new Error('OAuth requires clientId'));
     config.createOAuth = createOAuth;
     const [, execute] = createScapiCodeTools(() => new Services({resolvedConfig: config}));
@@ -302,7 +341,7 @@ describe('SCAPI code tools', function () {
       code: 'async () => scapi.request({method:"GET",path:"/product/shopper-products/v1/organizations/{organizationId}/products/test"})',
     });
     expect(shopper.isError).to.equal(true);
-    expect(readJson(shopper)).to.have.property('error').that.includes('SCAPI_SHOPPER_AUTH_UNSUPPORTED');
+    expect(readJson(shopper)).to.have.property('error').that.includes('SCAPI_SHOPPER_CONFIG_MISSING');
     expect(readJson(shopper))
       .to.have.property('skillReferences')
       .that.deep.equals([{uri: 'skill://mcp/scapi/SKILL.md', section: 'authentication'}]);

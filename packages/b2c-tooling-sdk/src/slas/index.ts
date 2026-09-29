@@ -15,4 +15,4 @@
  */
 export type {SlasTokenConfig, SlasTokenResponse, SlasRegisteredLoginConfig} from './types.js';
 export {generateCodeChallenge, generateCodeVerifier} from './pkce.js';
-export {getGuestToken, getRegisteredToken} from './token.js';
+export {getGuestToken, getRegisteredToken, refreshShopperToken} from './token.js';

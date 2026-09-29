@@ -148,23 +148,36 @@ describe('SCAPI custom code mode', () => {
     await rejects(() => call({method: 'GET', path: 'https://untrusted.example/info'}, signal()), /without origin/);
   });
 
-  it('rejects Shopper operations before requesting an Admin token for them', async () => {
+  it('calls custom Shopper operations with the shopper token, not an Admin token', async () => {
     const contract = schema();
     contract.paths['/info'].get.security = [{ShopperToken: ['c_shopper_info']}];
     serveSchema(contract);
     let grants = 0;
-    const call = request(
-      {level: 'NONE'},
-      {
+    server.use(
+      http.get(origin + endpoint, ({request: req}) => {
+        expect(req.headers.get('authorization')).to.equal('Bearer shopper-token');
+        expect(new URL(req.url).searchParams.get('siteId')).to.equal(null);
+        return HttpResponse.json({ok: true});
+      }),
+    );
+    const call = createScapiRequest({
+      shortCode: 'test',
+      tenantId: 'test_001',
+      siteId: 'RefArch',
+      auth: {
         ...auth,
         getAuthorizationHeader: async () => {
           grants++;
           return 'Bearer test';
         },
       },
-    );
+      shopperAuth: {getAccessToken: async (siteId) => (siteId === 'RefArch' ? 'shopper-token' : ''), invalidate() {}},
+      safety: {level: 'NONE'},
+      documents: loadScapiSchemas(),
+      middlewareRegistry: new MiddlewareRegistry(),
+    });
     await discover(call);
-    await rejects(() => call({method: 'GET', path: endpoint}, signal()), /SCAPI_SHOPPER_AUTH_UNSUPPORTED/);
+    expect(await call({method: 'GET', path: endpoint}, signal())).to.deep.include({ok: true});
     expect(grants).to.equal(1);
   });
 

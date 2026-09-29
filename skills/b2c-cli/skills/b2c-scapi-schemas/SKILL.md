@@ -22,9 +22,9 @@ Custom-property expansion defaults to true; `expandAll: true` preserves full def
 For large schemas, fetch/filter through code mode as described in the MCP SCAPI skill.
 Use `scapi_custom_apis_get_status` for registration status. Live schema access needs
 `sfcc.scapi-schemas`. Prefer a dedicated task tool for execution, otherwise
-`scapi_execute` supports Admin JSON calls with configured auth/scopes. For custom
+`scapi_execute` supports Admin and guest Shopper JSON calls with configured auth/scopes. For custom
 Admin endpoints, fetch the live contract through `scapi.request` in each program
-before calling it; follow the MCP SCAPI skill. Shopper and binary execution are
+before calling it; follow the MCP SCAPI skill. Registered-shopper and binary execution are
 unsupported. Use docs tools for semantics
 and limits rather than duplicating contract discovery.
 

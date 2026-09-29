@@ -9,6 +9,8 @@ export {loadScapiSchemas, findScapiOperation, resolveScapiReference} from './cat
 export type {ApiDocument, ScapiSchemaEntry, ScapiSchemaDocument} from './catalog.js';
 export {ScapiLiveSchemaCache, createLiveScapiDocument, mergeScapiSchemas, scapiTenantKey} from './live.js';
 export type {ScapiLiveSchemaCacheOptions, ScapiLiveSchemaLoadOptions, ScapiLiveSchemaLoadResult} from './live.js';
+export {ScapiShopperSessions} from './shopper.js';
+export type {ScapiShopperAuth, ScapiShopperConfig} from './shopper.js';
 export {runScapiCode} from './runtime.js';
 export {createScapiAuth} from './auth-primitives.js';
 export type {ScapiCodeOptions, ScapiRuntimeControl} from './runtime.js';
@@ -22,5 +24,5 @@ export {
 export type {ScapiSnippet} from './snippets.js';
 export {createScapiRequest} from './request.js';
 export type {ScapiRequestOptions, ScapiConfirmation} from './request.js';
-export {getScapiAuthInfo} from './authentication.js';
-export type {ScapiAuthType, ScapiAuthInfo, ScapiAuthDiagnostic} from './authentication.js';
+export {getScapiAuthInfo, selectScapiAuth} from './authentication.js';
+export type {ScapiAuthType, ScapiAuthInfo, ScapiAuthDiagnostic, ScapiRequestAuth} from './authentication.js';

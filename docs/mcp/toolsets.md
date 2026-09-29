@@ -98,8 +98,13 @@ Custom attributes and custom Admin APIs are supported. Discovering your instance
 custom definitions requires the `sfcc.scapi-schemas` scope; custom APIs also require
 their declared scopes. See [code mode access](./security#scapi-code-mode).
 
-**Current limits:** Shopper APIs are available for reference only. Code mode does
-not yet run Shopper API requests or upload and download binary files.
+Shopper APIs run as a guest shopper using your SLAS client (`slasClientId`, and
+`slasClientSecret` for private clients) and site. A Storefront Next project's `.env`
+provides these. The guest session lasts for the MCP server session, so a basket
+created in one request is available to later ones.
+
+**Current limits:** Code mode does not yet run registered-shopper-only operations,
+trusted-system or trusted-agent on-behalf operations, or upload and download binary files.
 
 <ExamplePrompt>
 

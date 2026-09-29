@@ -27,17 +27,15 @@ async (input) => {
     query: input.query,
   });
   if (!result.ok) return {stage: 'endpoint', ...result};
-  return {status: result.status, fields: Object.fromEntries(
-    input.fields.map(name => [name, result.data[name]])
-  )};
-}
+  return {status: result.status, fields: Object.fromEntries(input.fields.map((name) => [name, result.data[name]]))};
+};
 ```
 
 - Schema lookup needs `sfcc.scapi-schemas`; execution needs the operation's declared
   `c_*` scope and tenant scope. Managed auth requests each; `sfcc.custom-apis` is
   for registration status, not custom business logic.
-- Only `AmOAuth2` execution is supported. A `ShopperToken` contract requires a
-  separate Shopper client; acquiring an Admin token does not enable it.
+- `AmOAuth2` contracts use Admin credentials; `ShopperToken` contracts use the SLAS
+  guest shopper (`slasClientId`, `siteId`). The declared security selects the credential.
 - Paths in custom schemas are endpoint-relative (`/info`); requests use
   `/custom/{apiName}/{apiVersion}/organizations/{organizationId}/info`.
 - Required parameters and JSON-body checks, SDK safety, cancellation, and execution
