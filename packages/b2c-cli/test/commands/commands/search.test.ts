@@ -77,4 +77,21 @@ describe('commands search', () => {
     expect(stdoutStub.calledOnce).to.equal(true);
     expect(String(stdoutStub.firstCall.args[0])).to.include('docs search');
   });
+
+  it('renders a table with every column in non-json mode', async () => {
+    const command: any = await createCommand({extended: true, limit: 3}, {query: 'deploy cartridges'});
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    const stdoutStub = sinon.stub(ux, 'stdout');
+    sinon.stub(command, 'log');
+
+    const result = (await command.run()) as SearchResponse;
+
+    expect(result.total).to.be.greaterThan(0);
+    const output = stdoutStub
+      .getCalls()
+      .map((c) => String(c.args[0]))
+      .join('\n');
+    expect(output).to.include('code deploy');
+    expect(output).to.include('Example');
+  });
 });

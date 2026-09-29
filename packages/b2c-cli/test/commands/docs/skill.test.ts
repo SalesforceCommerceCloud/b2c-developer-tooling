@@ -5,7 +5,7 @@
  */
 
 import {fileURLToPath} from 'node:url';
-import {Config} from '@oclif/core';
+import {Config, ux} from '@oclif/core';
 import type {GuidancePage, GuidanceRead} from '@salesforce/b2c-tooling-sdk/guidance';
 import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
@@ -87,6 +87,102 @@ describe('docs skill', () => {
 
     const all = (await run(['custom', 'api'], {all: true, search: true})) as GuidancePage;
     expect(new Set(all.entries.map((e) => e.id.split('/')[0])).size).to.be.greaterThan(1);
+  });
+
+  describe('human-readable output', () => {
+    async function runHuman(argv: string[], flags: Record<string, unknown> = {}) {
+      const command: any = await createTestCommand(
+        DocsSkill,
+        cliConfig,
+        {collection: 'b2c-cli', limit: 10, all: false, search: false, ...flags},
+        {},
+        argv,
+      );
+      sinon.stub(command, 'jsonEnabled').returns(false);
+      const stdout = sinon.stub(ux, 'stdout');
+      const write = sinon.stub(process.stdout, 'write').returns(true);
+      const stderr = sinon.stub(command, 'logToStderr');
+      sinon.stub(command, 'log');
+      try {
+        await command.run();
+      } finally {
+        write.restore();
+      }
+      return {
+        stdout: stdout
+          .getCalls()
+          .map((c) => String(c.args[0]))
+          .join('\n'),
+        written: write
+          .getCalls()
+          .map((c) => String(c.args[0]))
+          .join(''),
+        stderr: stderr
+          .getCalls()
+          .map((c) => String(c.args[0]))
+          .join('\n'),
+      };
+    }
+
+    it('renders the skill list as a table', async () => {
+      const {stdout} = await runHuman([]);
+
+      expect(stdout).to.include('b2c-code');
+      expect(stdout).to.include('Skill');
+    });
+
+    it('writes skill content to stdout and references to stderr', async () => {
+      const {written, stderr} = await runHuman(['b2c-mrt']);
+
+      expect(written).to.include('name: b2c-mrt');
+      expect(stderr).to.include('--file <path>');
+    });
+
+    it('renders search results', async () => {
+      expect((await runHuman(['site import'], {search: true})).stdout).to.include('b2c-site-import-export');
+    });
+
+    it('suggests other searches when nothing matches', async () => {
+      expect((await runHuman(['zzqqxxyy'], {search: true})).stdout).to.include('commands search');
+    });
+  });
+
+  it('lists available sections when a section is missing', async () => {
+    const command: any = await createTestCommand(
+      DocsSkill,
+      cliConfig,
+      {collection: 'b2c-cli', limit: 10, all: false, search: false, json: true, section: 'nope'},
+      {},
+      ['b2c-code'],
+    );
+    const errorStub = sinon.stub(command, 'error').throws(new Error('stop'));
+
+    try {
+      await command.run();
+      expect.fail('expected an error');
+    } catch (error) {
+      expect((error as Error).message).to.equal('stop');
+    }
+    expect(String(errorStub.firstCall.args[0])).to.include('Sections:');
+  });
+
+  it('requires a skill for --file', async () => {
+    const command: any = await createTestCommand(
+      DocsSkill,
+      cliConfig,
+      {collection: 'b2c-cli', limit: 10, all: false, search: false, json: true, file: 'x.md'},
+      {},
+      [],
+    );
+    const errorStub = sinon.stub(command, 'error').throws(new Error('stop'));
+
+    try {
+      await command.run();
+      expect.fail('expected an error');
+    } catch (error) {
+      expect((error as Error).message).to.equal('stop');
+    }
+    expect(String(errorStub.firstCall.args[0])).to.include('Specify a skill');
   });
 
   it('errors when the skill bundle is missing', async () => {
