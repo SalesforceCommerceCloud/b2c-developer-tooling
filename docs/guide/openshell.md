@@ -103,18 +103,15 @@ without changing anything. The files contain no secrets.
 
 ## Choose what the sandbox can do
 
-| `--safety-level`      | The sandbox can                |
-| --------------------- | ------------------------------ |
-| `READ_ONLY` (default) | Read                           |
-| `NO_DELETE`           | Read and write, but not delete |
-| `NONE`                | Do anything                    |
+| `--safety-level`      | The sandbox can                | Use it to                                               |
+| --------------------- | ------------------------------ | ------------------------------------------------------- |
+| `READ_ONLY` (default) | Read                           | Explore, review, and troubleshoot                       |
+| `NO_DELETE`           | Read and write, but not delete | Deploy code, run jobs, query analytics, and change data |
+| `NONE`                | Do anything                    | Trusted automation that must also delete                |
 
 ```bash
 b2c setup openshell --safety-level NO_DELETE
 ```
-
-Analytics queries (`b2c cip`) and some searches, such as job searches, need
-`NO_DELETE`.
 
 ## Allow more
 
@@ -125,24 +122,9 @@ To reach another host, add `--allow-host`:
 b2c setup openshell --allow-host registry.npmjs.org
 ```
 
-To allow specific operations, edit `.openshell/<sandbox name>/policy.yaml` and
-run `b2c setup openshell` again. Your edits are kept; use `--force` to start
-over from a newly generated policy. When something is blocked, the
-[audit log](#audit-log) shows the request to allow.
-
-::: details Example: allow code deployment in a read-only sandbox
-Add these rules under the instance host in `policy.yaml`. The `PATCH` rule is
-only needed for `--activate`:
-
-```yaml
-rules:
-  - {allow: {method: PUT, path: /on/demandware.servlet/webdav/Sites/Cartridges/**}}
-  - {allow: {method: POST, path: /on/demandware.servlet/webdav/Sites/Cartridges/**}}
-  - {allow: {method: DELETE, path: /on/demandware.servlet/webdav/Sites/Cartridges/**}}
-  - {allow: {method: PATCH, path: /s/-/dw/data/*/code_versions/*}}
-```
-
-:::
+You can also edit `.openshell/<sandbox name>/policy.yaml`, for example to
+restrict a host further, and run `b2c setup openshell` again. Your edits are
+kept; use `--force` to start over from a newly generated policy.
 
 ## Update a sandbox
 
