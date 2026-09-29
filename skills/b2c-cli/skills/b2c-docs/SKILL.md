@@ -1,6 +1,6 @@
 ---
 name: b2c-docs
-description: Search and read B2C Commerce documentation using the b2c CLI. Covers Script API reference (dw.* classes/modules), Developer Center guides (Commerce API, PWA Kit, SFRA, Storefront Next, B2C Commerce), Salesforce Help (Business Manager administration and merchandising), tooling documentation (CLI/MCP/SDK), standard job steps, and XSD schemas. Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context — even if they just say "how do I implement passwordless login" or "what methods does Basket have" or "how do I deploy a PWA Kit bundle" or "how do I import a site archive" or "what SCAPI endpoints are available for checkout".
+description: Search and read B2C Commerce documentation using the b2c CLI. Covers Script API reference (dw.* classes/modules), Developer Center guides (Commerce API, PWA Kit, SFRA, Storefront Next, B2C Commerce, OCAPI), Salesforce Help (Business Manager administration and merchandising), tooling documentation (CLI/MCP/SDK), standard job steps, and XSD schemas. Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context — even if they just say "how do I implement passwordless login" or "what methods does Basket have" or "how do I deploy a PWA Kit bundle" or "how do I import a site archive" or "what SCAPI endpoints are available for checkout".
 ---
 
 # B2C Docs Skill
@@ -15,7 +15,7 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 
 ## Key Features
 
-- **Multi-corpus search** — Search across Script API, Developer Center guides, Salesforce Help (admin + merchandising), internal tooling docs (guides, CLI reference, MCP, and VS Code extension), job steps, and schemas in a unified index
+- **Multi-corpus search** — Search across Script API, Developer Center guides, OCAPI reference, Salesforce Help (admin + merchandising), internal tooling docs (guides, CLI reference, MCP, and VS Code extension), job steps, and schemas in a unified index
 - **Workspace-aware search** — Auto-detects project type (cartridges, SFRA, PWA Kit, Storefront Next) and boosts relevant documentation while de-boosting competing storefront frameworks
 - **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`, `help-admin`, `help-merchant`, `help-kb`)
 - **Triage metadata** — Search results include `category`, `summary`, `keywords`, and `url` to help identify the right match without reading full content
@@ -114,7 +114,7 @@ The docs search understands which workspace framework your project uses and auto
 
 **Category boost mapping:**
 
-- Always relevant (any workspace): `b2c-commerce`, `tooling`
+- Always relevant (any workspace): `b2c-commerce`, `ocapi`, `tooling`
 - `cartridges` → `script-api`, `job-step`
 - `sfra` → `sfra`
 - `pwa-kit-v3` → `pwa-kit-managed-runtime`, `commerce-api`
@@ -239,6 +239,7 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 | `sfra`                    | Storefront Reference Architecture (SFRA) guides                                                                                  | `sfra/controllers-and-routes`                       |
 | `sfnext`                  | Storefront Next guides                                                                                                           | `sfnext/sfnext-get-started`                         |
 | `b2c-commerce`            | General B2C Commerce platform guides                                                                                             | `b2c-commerce/business-manager-overview`            |
+| `ocapi`                   | OCAPI reference — usage, hooks, settings, and best practices for the Open Commerce API                                           | `ocapi/ocapisettings`, `ocapi/bestpractices`        |
 | `tooling`                 | B2C CLI reference, guides, MCP docs, SDK guidance, and VS Code extension docs                                                    | `guide-authentication`, `cli-jobs`                  |
 | `job-step`                | Standard (system) job step catalog                                                                                               | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
 | `help-admin`              | Salesforce Help — administration/ops (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) | `help-admin/b2c_site_import_export`                 |

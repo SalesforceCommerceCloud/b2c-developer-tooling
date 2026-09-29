@@ -86,12 +86,12 @@ codex plugin marketplace remove b2c-developer-tooling
 
 ```bash
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-claude plugin install b2c@b2c-developer-tooling --scope project
-claude plugin install b2c-cli@b2c-developer-tooling --scope project
-# Optional: claude plugin install storefront-next@b2c-developer-tooling --scope project
+claude plugin install b2c@b2c-developer-tooling
+claude plugin install b2c-cli@b2c-developer-tooling
+# Optional: claude plugin install storefront-next@b2c-developer-tooling
 ```
 
-Start a new session after installation. Use `--scope user` instead for all projects.
+Start a new session after installation. To install for the current project only, run it from your project directory with `--scope project`.
 
 ::: details Update or remove
 
