@@ -45,7 +45,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-const CATEGORIES = ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'] as const;
+import {GUIDES_SOURCES} from './guides-sources.js';
 
 interface EnrichmentEntry {
   summary: string;
@@ -75,7 +75,7 @@ function resolveContentDir(): string {
   const configured = process.env.GUIDES_CONTENT_DIR;
   if (!configured) throw new Error('Set GUIDES_CONTENT_DIR to the local Developer Center source directory.');
   const contentDir = path.resolve(configured);
-  if (!CATEGORIES.some((category) => fs.existsSync(path.join(contentDir, category, 'guides')))) {
+  if (!GUIDES_SOURCES.some((source) => fs.existsSync(path.join(contentDir, source.dir)))) {
     throw new Error(`Developer Center guide content not found at ${contentDir}. Check GUIDES_CONTENT_DIR.`);
   }
   return contentDir;
@@ -105,8 +105,8 @@ function toExcerpt(md: string): string {
 function collectSources(contentDir: string): GuideSource[] {
   const sources: GuideSource[] = [];
   const seen = new Set<string>();
-  for (const category of CATEGORIES) {
-    for (const file of walkMarkdown(path.join(contentDir, category, 'guides'))) {
+  for (const {category, dir} of GUIDES_SOURCES) {
+    for (const file of walkMarkdown(path.join(contentDir, dir))) {
       const basename = path.basename(file, '.md');
       const id = `${category}/${basename}`;
       if (seen.has(id)) continue;

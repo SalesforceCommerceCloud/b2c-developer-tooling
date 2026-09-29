@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-25T17:45:15.608Z",
+  "generatedAt": "2026-09-29T17:50:15.302Z",
   "source": {
     "sha": "e76c7adf5ea5a63608773f7c94dee62e74c06943",
     "committedAt": "2026-09-25T15:46:30+02:00",
@@ -10201,6 +10201,1152 @@
       "relatedEntries": [
         "commerce-api/use-shopper-api",
         "commerce-api/coupons-giftcerts-bonus-products"
+      ]
+    },
+    {
+      "id": "ocapi/apiexplorer",
+      "title": "API Explorer",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/apiexplorer.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/apiexplorer.md",
+      "headings": "Log in to API Explorer • Select a Different Instance • Browse APIs • Try an HTTP Request • Running Requests Against Sandboxes Using the Shop API • Log Out",
+      "summary": "Interactively explore, browse, and test Open Commerce APIs using the API Explorer tool with Swagger UI.",
+      "keywords": [
+        "API Explorer",
+        "OCAPI",
+        "Open Commerce API",
+        "Swagger UI",
+        "test APIs",
+        "browse APIs",
+        "API documentation",
+        "interactive exploration",
+        "meta API",
+        "Swagger 2.0",
+        "demo metadata",
+        "API testing tool"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/apiusage",
+      "title": "OCAPI Usage",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/apiusage.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/apiusage.md",
+      "summary": "Learn how to use OCAPI including API exploration, batch requests, caching, CORS, customization, and optimization techniques.",
+      "keywords": [
+        "OCAPI usage",
+        "Open Commerce API",
+        "API Explorer",
+        "batch requests",
+        "OCAPI best practices",
+        "CORS",
+        "caching",
+        "client identification",
+        "expansions",
+        "custom properties",
+        "OCAPI customization",
+        "multipart requests"
+      ],
+      "relatedEntries": [
+        "ocapi/apiexplorer",
+        "ocapi/batchrequests",
+        "ocapi/bestpractices",
+        "ocapi/caching",
+        "ocapi/clientapplicationidentification",
+        "ocapi/cors",
+        "ocapi/customization",
+        "ocapi/customproperties",
+        "ocapi/expansions",
+        "ocapi/exportdataunitsconfiguration",
+        "ocapi/exportglobaldataconfiguration",
+        "ocapi/exportsitesconfiguration",
+        "ocapi/filtering",
+        "ocapi/flash",
+        "ocapi/exceptions",
+        "ocapi/http-headers",
+        "ocapi/hookcircuitbreaker",
+        "ocapi/httpmethods",
+        "ocapi/httpstatuscodesandfaults",
+        "ocapi/httpversions",
+        "ocapi/images",
+        "ocapi/globaljobs",
+        "ocapi/systemjobs",
+        "ocapi/jsonp",
+        "ocapi/jwt",
+        "ocapi/localization",
+        "ocapi/metadata",
+        "ocapi/oauth",
+        "ocapi/ocapisettings",
+        "ocapi/optimisticlocking",
+        "ocapi/pagination",
+        "ocapi/propertyselection",
+        "ocapi/queries",
+        "ocapi/dataformats",
+        "ocapi/resourcestates",
+        "ocapi/searchindexupdateconfiguration",
+        "ocapi/sessionbridge",
+        "ocapi/sitearchiveexportconfiguration",
+        "ocapi/sitearchiveimportconfiguration",
+        "ocapi/urlschema",
+        "ocapi/versioninganddeprecationpolicy"
+      ]
+    },
+    {
+      "id": "ocapi/batchrequests",
+      "title": "OCAPI Batch Requests",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/batchrequests.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/batchrequests.md",
+      "headings": "Batch Request Format • CORS Support • Formatting of Multipart Sub Requests • Example Batch Requests • Request Site Context • Limitations • Exceptions",
+      "summary": "Send up to 50 subrequests in a single multipart HTTP POST/OPTIONS request to reduce network overhead and API calls.",
+      "keywords": [
+        "OCAPI batch requests",
+        "multipart HTTP request",
+        "batch API",
+        "reduce network calls",
+        "subrequests",
+        "Content-Type multipart/mixed",
+        "batch endpoint",
+        "OCAPI batching",
+        "multiple API calls",
+        "request consolidation",
+        "OCAPI performance"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/bestpractices",
+      "title": "OCAPI Best Practices 24.5",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/bestpractices.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/bestpractices.md",
+      "headings": "Choosing OCAPI Instead of Controllers or Pipelines • OCAPI Cache Management • Improving OCAPI Request Performance Using Cache-Control Headers • Extending and Customizing OCAPI",
+      "summary": "Learn OCAPI best practices for building scalable, high-performance applications, including caching behavior and request optimization strategies.",
+      "keywords": [
+        "OCAPI best practices",
+        "OCAPI performance",
+        "OCAPI vs controllers",
+        "OCAPI caching",
+        "application tier cache",
+        "OCAPI requests",
+        "request optimization",
+        "batch requests",
+        "thread behavior",
+        "payload size",
+        "scalable OCAPI",
+        "OCAPI tuning"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/caching",
+      "title": "OCAPI Caching",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/caching.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/caching.md",
+      "headings": "Cache Time Configuration • HTTP Response Cache Headers • Query Parameters • Caching in the Meta API",
+      "summary": "Configure HTTP cache headers and max-age times for OCAPI Shop API resources to enable client and proxy caching.",
+      "keywords": [
+        "OCAPI caching",
+        "HTTP cache headers",
+        "max-age",
+        "cache control",
+        "Shop API caching",
+        "cache configuration",
+        "REST API caching",
+        "cache time settings",
+        "proxy cache",
+        "Business Manager cache",
+        "cache enablement",
+        "response caching"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/clientapplicationidentification",
+      "title": "OCAPI Client Application Identification",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/clientapplicationidentification.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/clientapplicationidentification.md",
+      "summary": "Identify client applications to OCAPI by obtaining and including a client ID in every API request using tokens, parameters, or headers.",
+      "keywords": [
+        "OCAPI client ID",
+        "client application identification",
+        "Open Commerce API authentication",
+        "x-dw-client-id header",
+        "client_id parameter",
+        "Bearer token",
+        "JWT issuer claim",
+        "Account Manager API client",
+        "OCAPI authorization",
+        "API client registration"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/cors",
+      "title": "CORS (Cross-Origin Resource Sharing)",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/cors.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/cors.md",
+      "headings": "CORS and the Open Commerce API • Configure Allowed Origin(s) • Examples",
+      "summary": "Enable browser-based cross-origin API requests securely using CORS headers and preflight mechanisms instead of same-origin policy restrictions.",
+      "keywords": [
+        "CORS",
+        "cross-origin resource sharing",
+        "cross-origin requests",
+        "XMLHttpRequest",
+        "preflight",
+        "HTTP headers",
+        "same origin policy",
+        "browser security",
+        "API access",
+        "credentials",
+        "OPTIONS request",
+        "JSONP alternative"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/customization",
+      "title": "OCAPI Customization",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/customization.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/customization.md",
+      "headings": "Customization Processing • The Modify <HTTP Method> Response Hooks",
+      "summary": "Customize Shop API resources using before, after, and modifyResponse hooks to augment server-side logic with custom script code.",
+      "keywords": [
+        "OCAPI hooks",
+        "Shop API customization",
+        "before hooks",
+        "after hooks",
+        "modifyResponse",
+        "extension points",
+        "basket calculations",
+        "checkout customization",
+        "server-side logic",
+        "API resource modification",
+        "convenience hooks",
+        "OCAPI extensions"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/customproperties",
+      "title": "OCAPI Custom Properties",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/customproperties.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/customproperties.md",
+      "headings": "Custom Properties Example • Custom Properties Value Types • Document Types Supporting Custom Properties • SHOP API • DATA API",
+      "summary": "Set and read custom properties on OCAPI business objects using c_ prefix with supported value types across SHOP and DATA APIs.",
+      "keywords": [
+        "OCAPI custom properties",
+        "c_ prefix",
+        "custom properties OCAPI",
+        "business object properties",
+        "OCAPI value types",
+        "SHOP API custom properties",
+        "DATA API custom properties",
+        "input output documents",
+        "OCAPI hooks",
+        "modify hooks",
+        "custom fields OCAPI"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/dataformats",
+      "title": "OCAPI Resource Data Formats",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/dataformats.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/dataformats.md",
+      "summary": "Learn how to specify JSON or XML data formats for OCAPI requests using URL parameters and HTTP headers.",
+      "keywords": [
+        "OCAPI data formats",
+        "JSON XML",
+        "content-type header",
+        "format parameter",
+        "REST API formats",
+        "OCAPI request formats",
+        "HTTP content negotiation",
+        "API response format",
+        "application/json",
+        "application/xml"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/exceptions",
+      "title": "OCAPI Global Exceptions",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/exceptions.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/exceptions.md",
+      "summary": "Reference for all OCAPI global exceptions with status codes, types, arguments, and descriptions for error handling.",
+      "keywords": [
+        "OCAPI exceptions",
+        "global exceptions",
+        "error handling",
+        "status codes",
+        "BodyDecodingException",
+        "EnumConstraintViolationException",
+        "HookStatusException",
+        "InvalidClientIdException",
+        "HTTP method override",
+        "exception types",
+        "OCAPI errors"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/expansions",
+      "title": "OCAPI Expansions",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/expansions.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/expansions.md",
+      "headings": "Base Resource • Sub Resource • Base Resource With Expand",
+      "summary": "Use OCAPI expand query parameter to include omitted subresource data in products and product_search API responses, reducing network traffic by default.",
+      "keywords": [
+        "OCAPI expansions",
+        "expand query parameter",
+        "products resource",
+        "product_search",
+        "subresources",
+        "API response optimization",
+        "network traffic reduction",
+        "comma-separated expansion",
+        "products prices variations",
+        "OCAPI response filtering"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/exportdataunitsconfiguration",
+      "title": "ExportDataUnitsConfiguration document",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/exportdataunitsconfiguration.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/exportdataunitsconfiguration.md",
+      "summary": "Configure which data units to export from a B2C Commerce site by specifying catalogs, inventories, libraries, customer lists, and global data.",
+      "keywords": [
+        "ExportDataUnitsConfiguration",
+        "site export",
+        "data units",
+        "export configuration",
+        "catalogs export",
+        "inventory export",
+        "libraries export",
+        "customer lists export",
+        "global data export",
+        "OCAPI export",
+        "data export settings"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/exportglobaldataconfiguration",
+      "title": "ExportGlobalDataConfiguration document",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/exportglobaldataconfiguration.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/exportglobaldataconfiguration.md",
+      "summary": "Configure which global data units to export from a B2C Commerce instance using ExportGlobalDataConfiguration document properties.",
+      "keywords": [
+        "ExportGlobalDataConfiguration",
+        "global data export",
+        "export configuration",
+        "OCAPI",
+        "data export settings",
+        "global preferences export",
+        "custom types export",
+        "job schedules export",
+        "metadata export",
+        "instance configuration export",
+        "selective data export",
+        "export options"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/exportsitesconfiguration",
+      "title": "ExportSitesConfiguration document",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/exportsitesconfiguration.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/exportsitesconfiguration.md",
+      "summary": "Configure which site-specific data units to export using boolean properties in the ExportSitesConfiguration document.",
+      "keywords": [
+        "ExportSitesConfiguration",
+        "site export configuration",
+        "export data units",
+        "site data export",
+        "OCAPI export",
+        "site configuration export",
+        "export settings",
+        "site backup",
+        "data export document",
+        "site preferences export"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/filtering",
+      "title": "OCAPI Filtering",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/filtering.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/filtering.md",
+      "summary": "Filter OCAPI resource instances by specifying parameters like type and direction to reduce result sets.",
+      "keywords": [
+        "OCAPI filtering",
+        "filter parameters",
+        "resource filtering",
+        "OCAPI query",
+        "result set filtering",
+        "resource type filtering",
+        "relationship filtering",
+        "OCAPI REST",
+        "filter syntax",
+        "cross_sell filter"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/flash",
+      "title": "OCAPI Flash",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/flash.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/flash.md",
+      "summary": "Use OCAPI Flash property to store special document information like basket submission errors and unavailable products.",
+      "keywords": [
+        "OCAPI Flash",
+        "basket flash",
+        "document property",
+        "addFlash",
+        "removeFlash",
+        "getFlashes",
+        "basket submission",
+        "product unavailable",
+        "flash messages",
+        "scripting API",
+        "basket errors",
+        "flash paths"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/get-started-with-ocapi",
+      "title": "Get Started With OCAPI",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/get-started-with-ocapi.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/get-started-with-ocapi.md",
+      "headings": "Shop API • Data API • Meta API • See Also",
+      "summary": "Learn how to access B2C Commerce resources using OCAPI with HTTP requests, including Shop API, Data API, and Meta API fundamentals.",
+      "keywords": [
+        "OCAPI",
+        "Open Commerce API",
+        "REST API",
+        "Shop API",
+        "Data API",
+        "Meta API",
+        "HTTP requests",
+        "client ID",
+        "API authentication",
+        "get started",
+        "API setup",
+        "commerce resources"
+      ]
+    },
+    {
+      "id": "ocapi/globaljobs",
+      "title": "Global Jobs",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/globaljobs.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/globaljobs.md",
+      "headings": "Full Active Data Index Update • Full Content Index Update • Full Product Index Update • Incremental Content Index Update • Incremental Product Index Update • Site Archive Export • Site Archive Import",
+      "summary": "Execute global jobs to build search indexes for active data and content across B2C Commerce sites using OCAPI.",
+      "keywords": [
+        "global jobs",
+        "search index update",
+        "active data index",
+        "content index",
+        "job execution",
+        "OCAPI jobs",
+        "sfcc-search-index",
+        "site scope",
+        "index building",
+        "SearchIndexUpdateConfiguration",
+        "JobExecution",
+        "full index update"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/hookcircuitbreaker",
+      "title": "OCAPI Hook Circuit Breaker",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/hookcircuitbreaker.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/hookcircuitbreaker.md",
+      "headings": "How It Works • Troubleshooting Hook Failures",
+      "summary": "Manage hook stability and prevent cascading failures using the Circuit Breaker feature that tracks failed hook executions and returns 503 errors.",
+      "keywords": [
+        "hook circuit breaker",
+        "OCAPI hooks",
+        "hook failures",
+        "503 service unavailable",
+        "extension point",
+        "HookCircuitBreakerException",
+        "circuit breaker states",
+        "hook monitoring",
+        "hook troubleshooting",
+        "hook rate limiting",
+        "HookInvocationException",
+        "half-open state"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/hooks-data",
+      "title": "OCAPI Hooks for Data API",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/hooks-data.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/hooks-data.md",
+      "headings": "Content • Content Folder • Customer • Customers • Customer Address • Customer Addresses • Object • Users",
+      "summary": "Execute custom logic after content asset creation, deletion, or update operations via OCAPI Data API hooks in version 24.5.",
+      "keywords": [
+        "OCAPI hooks",
+        "Data API",
+        "content hooks",
+        "afterCreate",
+        "afterDelete",
+        "afterUpdate",
+        "content asset",
+        "lifecycle hooks",
+        "dw.ocapi.data.content",
+        "trigger actions",
+        "API callbacks"
+      ]
+    },
+    {
+      "id": "ocapi/hooks-shop",
+      "title": "OCAPI Hooks for Shop API",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/hooks-shop.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/hooks-shop.md",
+      "headings": "Auth • Basket • Category • Content • Content Search • Custom Object • Customer • Customers • Customer Address • Customer Addresses • Folder • Gift Certificate • Order • Order Payment • Order Note • Order Notes • Order Payment Instruments • Order Payment Methods • Order Search • Price Adjustment Limits Hooks • Product • Product Shipping • Product List • Product Lists • Product Search • Promotion • Promotions • Search Suggestions • Site • Store • Stores",
+      "summary": "Intercept and customize customer authentication in Shop API using OCAPI hooks before and after POST /customers/auth requests.",
+      "keywords": [
+        "OCAPI hooks",
+        "Shop API authentication",
+        "beforePOST",
+        "afterPOST",
+        "customer auth",
+        "/customers/auth",
+        "auth hooks",
+        "authentication lifecycle",
+        "guest login refresh",
+        "authorization header",
+        "hook execution"
+      ]
+    },
+    {
+      "id": "ocapi/http-headers",
+      "title": "OCAPI Global HTTP Headers",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/http-headers.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/http-headers.md",
+      "summary": "Reference guide to OCAPI global HTTP headers for requests and responses, including CORS and character encoding.",
+      "keywords": [
+        "OCAPI headers",
+        "HTTP headers",
+        "CORS headers",
+        "Accept-Charset",
+        "Access-Control-Allow",
+        "request headers",
+        "response headers",
+        "OCAPI reference",
+        "cross-origin",
+        "preflight request",
+        "HTTP standards"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/httpmethods",
+      "title": "OCAPI HTTP Methods",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/httpmethods.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/httpmethods.md",
+      "headings": "GET • DELETE • PUT (Dev and Sandbox Instances Only) • PATCH • POST • HEAD • OPTIONS • Override HTTP Method • PATCH, POST, PUT With Empty Request Body",
+      "summary": "Learn how OCAPI supports RESTful HTTP methods (GET, DELETE, PUT) for retrieving, removing, and managing resources with proper status codes.",
+      "keywords": [
+        "HTTP methods",
+        "OCAPI",
+        "REST API",
+        "GET",
+        "DELETE",
+        "PUT",
+        "RESTful",
+        "status codes",
+        "RFC 2616",
+        "resource management",
+        "idempotent"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/httpstatuscodesandfaults",
+      "title": "OCAPI HTTP Status Codes and Faults",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/httpstatuscodesandfaults.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/httpstatuscodesandfaults.md",
+      "headings": "HTTP Status Codes • Fault Document • 400 (Bad Request) • 401 (Unauthorized) • 403 (Forbidden) • 404 (Not Found) • 405 (Method Not Allowed) • 406 (Not Acceptable) • 413 (Request Entity Too Large) • 414 (Request URI Too Long) • 415 (Unsupported Media Type) • 500 (Internal Server Error)",
+      "summary": "Understand OCAPI HTTP status codes and fault documents for handling errors in Open Commerce API requests.",
+      "keywords": [
+        "OCAPI HTTP status codes",
+        "API error handling",
+        "fault documents",
+        "400 Bad Request",
+        "401 Unauthorized",
+        "404 Not Found",
+        "500 Internal Server Error",
+        "HTTP response codes",
+        "Open Commerce API errors",
+        "REST API status codes",
+        "OCAPI faults",
+        "error responses"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/httpversions",
+      "title": "HTTP Versions",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/httpversions.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/httpversions.md",
+      "headings": "HTTP/1.1 • HTTP/2 • Additional Information",
+      "summary": "OCAPI supports HTTP/1.1 (case-insensitive headers) and HTTP/2 (lowercase headers required) with format differences and availability by instance type.",
+      "keywords": [
+        "HTTP versions",
+        "HTTP/1.1",
+        "HTTP/2",
+        "OCAPI",
+        "header names",
+        "case-insensitive",
+        "lowercase headers",
+        "instance group",
+        "production staging development",
+        "ODS sandbox",
+        "RFC 7540",
+        "RFC 2616"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/images",
+      "title": "OCAPI Images",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/images.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/images.md",
+      "summary": "OCAPI returns image URLs through the Shop API as absolute URLs for product and content images.",
+      "keywords": [
+        "OCAPI images",
+        "Shop API",
+        "image URLs",
+        "absolute URLs",
+        "Open Commerce API",
+        "product images",
+        "image endpoints",
+        "OCAPI Shop",
+        "content images",
+        "image resources"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/jsonp",
+      "title": "OCAPI JSONP",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/jsonp.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/jsonp.md",
+      "summary": "Use OCAPI's callback parameter to enable JSONP responses for cross-domain browser requests with wrapped JSON data.",
+      "keywords": [
+        "OCAPI JSONP",
+        "JSON with padding",
+        "callback parameter",
+        "cross-domain requests",
+        "JSONP",
+        "browser JavaScript",
+        "cross-origin",
+        "API response format",
+        "wrapped JSON",
+        "Open Commerce API"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/jwt",
+      "title": "OCAPI JWT",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/jwt.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/jwt.md",
+      "headings": "Preparation • Authentication Steps • External Authentication • JSON Web Token Details • Common JWT Scenario: Transferring a Basket From a Guest to a Registered Customer • JWT Examples",
+      "summary": "Use JWT authentication with OCAPI Shop API resources by obtaining tokens via /customers/auth or /customers/auth/trustedsystem endpoints after registering your client application.",
+      "keywords": [
+        "OCAPI JWT",
+        "JSON Web Token authentication",
+        "Shop API",
+        "customer auth",
+        "/customers/auth",
+        "OAuth token",
+        "client ID",
+        "trusted system",
+        "API authentication",
+        "OCAPI security",
+        "JWT token",
+        "Account Manager registration"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/localization",
+      "title": "OCAPI Localization",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/localization.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/localization.md",
+      "headings": "Shop API • Data API",
+      "summary": "Learn how to request localized content in OCAPI Shop API and Data API using locale parameters and fallback behavior.",
+      "keywords": [
+        "OCAPI localization",
+        "locale parameter",
+        "Shop API locale",
+        "Data API locale",
+        "language code country code",
+        "locale fallback",
+        "localized content",
+        "multi-locale",
+        "language fallback",
+        "locale format",
+        "OCAPI internationalization"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/metadata",
+      "title": "OCAPI Metadata",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/metadata.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/metadata.md",
+      "headings": "List of APIs • List of Versions • List of Resource Descriptions • List of Documents • Show Document Information",
+      "summary": "Access OCAPI metadata to discover available APIs, versions, resources, and documents with OAuth authentication.",
+      "keywords": [
+        "OCAPI metadata",
+        "meta API",
+        "API discovery",
+        "available APIs",
+        "API versions",
+        "resource descriptions",
+        "OCAPI settings",
+        "OAuth token",
+        "metadata caching",
+        "API documentation",
+        "Shop API metadata",
+        "Data API metadata"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/oauth",
+      "title": "OCAPI OAuth 2.0",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/oauth.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/oauth.md",
+      "headings": "Supported Grant Types • Basic Steps for Authentication and Authorization • Requesting an Access Token With the Client ID and Password • Requesting an Access Token Using a JWT and Key Pair • Token Response • Token Expiration • Calling the Shop or Data API",
+      "summary": "Authenticate OCAPI requests using OAuth 2.0 with client credentials grant or Business Manager user grant based on server-to-server or user interaction scenarios.",
+      "keywords": [
+        "OCAPI OAuth 2.0",
+        "OAuth authentication",
+        "client credentials grant",
+        "Business Manager user grant",
+        "Data API authentication",
+        "Shop API authentication",
+        "server-to-server OAuth",
+        "OCAPI authorization",
+        "OAuth 2.0 protocol",
+        "API access control"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/ocapisettings",
+      "title": "OCAPI Settings",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/ocapisettings.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/ocapisettings.md",
+      "headings": "Configuring OCAPI Settings in Business Manager • Site-Specific Vs. Global Settings: • Client Permissions: • JSON Document Format • Configuration Document • Client Document • Resource Document • VersionRange Document • Expansions • Customization",
+      "summary": "Configure OCAPI settings in Business Manager to manage client permissions, caching, and API behavior across sites or globally.",
+      "keywords": [
+        "OCAPI settings",
+        "configure OCAPI",
+        "Business Manager OCAPI",
+        "client permissions",
+        "OCAPI caching",
+        "global settings",
+        "site-specific settings",
+        "Open Commerce API",
+        "API configuration",
+        "OCAPI deprecation",
+        "SCAPI migration",
+        "JSON configuration"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/optimisticlocking",
+      "title": "OCAPI Optimistic Locking",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/optimisticlocking.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/optimisticlocking.md",
+      "headings": "Data Layer • Open Commerce API Layer",
+      "summary": "Understand OCAPI's two-level optimistic locking mechanism for preventing concurrent modification conflicts and handling HTTP 409 errors.",
+      "keywords": [
+        "optimistic locking",
+        "OCAPI",
+        "concurrent modification",
+        "HTTP 409",
+        "ConcurrentModificationException",
+        "data consistency",
+        "lost update problem",
+        "retry logic",
+        "conflict resolution",
+        "Commerce Cloud Digital"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/pagination",
+      "title": "OCAPI Pagination",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/pagination.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/pagination.md",
+      "summary": "Configure OCAPI pagination using start and count parameters to retrieve API collection data in manageable chunks with navigation links.",
+      "keywords": [
+        "OCAPI pagination",
+        "start parameter",
+        "count parameter",
+        "API paging",
+        "collection pagination",
+        "Open Commerce API",
+        "paginate results",
+        "next previous links",
+        "resource chunks",
+        "API response paging",
+        "pagination parameters",
+        "offset limit"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/propertyselection",
+      "title": "OCAPI Property Selection",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/propertyselection.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/propertyselection.md",
+      "headings": "Localized and SiteSpecific Properties",
+      "summary": "Use property selectors with the select parameter to reduce API response size by retrieving only needed resource properties.",
+      "keywords": [
+        "property selection",
+        "select parameter",
+        "OCAPI",
+        "resource properties",
+        "bandwidth optimization",
+        "property selectors",
+        "API filtering",
+        "complex properties",
+        "child document properties",
+        "array indexing",
+        "filter expression"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/queries",
+      "title": "Queries",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/queries.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/queries.md",
+      "headings": "query • match_all_query • term_query • text_query • boolean_query • filtered_query • nested_query",
+      "summary": "Use queries to selectively retrieve OCAPI data with match_all, term, text, boolean, and filtered query types to reduce bandwidth.",
+      "keywords": [
+        "OCAPI queries",
+        "query types",
+        "match_all_query",
+        "term_query",
+        "text_query",
+        "boolean_query",
+        "filtered_query",
+        "data filtering",
+        "search criteria",
+        "record selection",
+        "query syntax",
+        "OCAPI data retrieval"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/resourcestates",
+      "title": "OCAPI Resource States",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/resourcestates.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/resourcestates.md",
+      "headings": "What Is It Used For? • Resource State vs. Etag • How Does It Work? • Samples",
+      "summary": "Implement optimistic locking in OCAPI clients using resource state tokens to prevent concurrent update collisions.",
+      "keywords": [
+        "resource state",
+        "OCAPI resource state",
+        "optimistic locking",
+        "_resource_state",
+        "x-dw-resource-state",
+        "concurrency control",
+        "lost update problem",
+        "ETag alternative",
+        "collision prevention",
+        "resource state header",
+        "OCAPI locking"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/searchindexupdateconfiguration",
+      "title": "SearchIndexUpdateConfiguration document",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/searchindexupdateconfiguration.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/searchindexupdateconfiguration.md",
+      "summary": "Configure search index update settings with site scope properties for B2C Commerce OCAPI.",
+      "keywords": [
+        "search index update",
+        "SearchIndexUpdateConfiguration",
+        "site scope",
+        "search index configuration",
+        "OCAPI",
+        "index settings",
+        "search configuration",
+        "index update",
+        "site_scope",
+        "search indexing"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/sessionbridge",
+      "title": "OCAPI Session Bridge",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/sessionbridge.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/sessionbridge.md",
+      "headings": "Obtain JWT • Obtain Session",
+      "summary": "Enable seamless authentication between OCAPI and session-based storefronts by exchanging JWTs and session cookies without reauthentication.",
+      "keywords": [
+        "OCAPI session bridge",
+        "JWT session exchange",
+        "dwsid cookie",
+        "customers/auth resource",
+        "/sessions resource",
+        "Authorization Bearer token",
+        "session authentication",
+        "OCAPI authentication",
+        "guest customer JWT",
+        "registered customer session",
+        "dwsecuretoken",
+        "seamless authentication"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/sitearchiveexportconfiguration",
+      "title": "SiteArchiveExportConfiguration document",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/sitearchiveexportconfiguration.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/sitearchiveexportconfiguration.md",
+      "summary": "Configure site archive export jobs by specifying data units, export file path, and overwrite settings for OCAPI system jobs.",
+      "keywords": [
+        "SiteArchiveExportConfiguration",
+        "site archive export",
+        "OCAPI document",
+        "export configuration",
+        "data units export",
+        "system job",
+        "export file",
+        "IMPEX",
+        "overwrite export",
+        "archive export setup"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/sitearchiveimportconfiguration",
+      "title": "SiteArchiveImportConfiguration document",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/sitearchiveimportconfiguration.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/sitearchiveimportconfiguration.md",
+      "summary": "Configure site archive import settings including file path and merge mode for system jobs.",
+      "keywords": [
+        "SiteArchiveImportConfiguration",
+        "site archive import",
+        "import configuration",
+        "system job import",
+        "file_name property",
+        "merge mode",
+        "import mode",
+        "archive import setup",
+        "OCAPI import",
+        "site data import"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/systemjobs",
+      "title": "OCAPI System Jobs",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/systemjobs.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/systemjobs.md",
+      "summary": "Trigger and monitor predefined OCAPI system jobs via background job requests with job status responses.",
+      "keywords": [
+        "OCAPI system jobs",
+        "background jobs",
+        "job status",
+        "OCAPI Data API",
+        "sfcc- prefix",
+        "system job request",
+        "job triggering",
+        "job monitoring",
+        "predefined jobs",
+        "job ID",
+        "OCAPI request"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/urlschema",
+      "title": "OCAPI URL Syntax",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/urlschema.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/urlschema.md",
+      "headings": "Base URL • Extended URL • Version ID • Resource Type • Identifier • Multiple Identifiers • Action • Relationship Type",
+      "summary": "Learn how to construct OCAPI URLs using base URL and extended URL patterns for accessing Commerce Cloud API resources.",
+      "keywords": [
+        "OCAPI URL syntax",
+        "Open Commerce API URLs",
+        "base URL structure",
+        "extended URL patterns",
+        "OCAPI endpoints",
+        "Commerce Cloud API URLs",
+        "URL construction",
+        "API resource access",
+        "production instance URL",
+        "non-production instance URL",
+        "api_type",
+        "site_id"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
+      ]
+    },
+    {
+      "id": "ocapi/versioninganddeprecationpolicy",
+      "title": "OCAPI Versioning and Deprecation Policy",
+      "category": "ocapi",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/versioninganddeprecationpolicy.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/versioninganddeprecationpolicy.md",
+      "headings": "Version Creation and Deprecation • Version Numbers • Version Lifecycle • Version Metadata",
+      "summary": "Understand OCAPI versioning scheme, deprecation policy, and how version numbers are formatted in URLs and documents.",
+      "keywords": [
+        "OCAPI versioning",
+        "API deprecation policy",
+        "version numbers",
+        "API versioning strategy",
+        "OCAPI versions",
+        "version format",
+        "deprecated API versions",
+        "API version management",
+        "Commerce Cloud API versioning",
+        "version numbering scheme"
+      ],
+      "relatedEntries": [
+        "ocapi/apiusage"
       ]
     },
     {
