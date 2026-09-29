@@ -46,6 +46,10 @@ export type EnvironmentVariableEntry = components['schemas']['EnvironmentVariabl
 export type EnvironmentVariablesUpdateRequest = components['schemas']['EnvironmentVariablesUpdateRequest'];
 export type EnvironmentVariableUpdateEntry = components['schemas']['EnvironmentVariableUpdateEntry'];
 
+export type AccessControlHeaderEntry = components['schemas']['AccessControlHeader'];
+export type AccessControlHeaderResult = components['schemas']['AccessControlHeaderResult'];
+export type AccessControlHeaderCreateRequest = components['schemas']['AccessControlHeaderCreateRequest'];
+
 /** Publishing status of an environment variable (`pending` | `completed` | `failed`). */
 export type PublishingStatus = components['schemas']['PublishingStatus'];
 
