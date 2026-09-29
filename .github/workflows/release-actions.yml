@@ -8,6 +8,10 @@ on:
         required: true
         default: 'main'
         type: string
+      cli-version:
+        description: 'Exact CLI version to wait for on npm and smoke test (set by publish.yml; default: latest of the CLI major)'
+        required: false
+        type: string
 
 concurrency: release-github-actions
 
@@ -37,11 +41,35 @@ jobs:
         id: action-release
         run: node release-tooling/.github/scripts/validate-action-release.mjs release-source
 
-      - name: Install the compatible CLI major
+      # npm can take a few minutes to serve a just-published version. Wait for it so
+      # the smoke test runs against the new CLI and the tags aren't published before
+      # the CLI they install is available.
+      - name: Wait for CLI on npm
+        if: inputs.cli-version != ''
+        env:
+          CLI_VERSION: ${{ inputs.cli-version }}
+          CLI_MAJOR: ${{ steps.action-release.outputs.cli-major }}
+        run: |
+          if [ "${CLI_VERSION%%.*}" != "$CLI_MAJOR" ]; then
+            echo "::error::CLI $CLI_VERSION is not in the Action's CLI major ($CLI_MAJOR)"
+            exit 1
+          fi
+          for attempt in $(seq 1 30); do
+            if [ "$(npm view "@salesforce/b2c-cli@$CLI_VERSION" version 2>/dev/null)" = "$CLI_VERSION" ]; then
+              echo "@salesforce/b2c-cli@$CLI_VERSION is available on npm"
+              exit 0
+            fi
+            echo "Waiting for @salesforce/b2c-cli@$CLI_VERSION on npm (attempt $attempt/30)"
+            sleep 20
+          done
+          echo "::error::@salesforce/b2c-cli@$CLI_VERSION was not available on npm after 10 minutes"
+          exit 1
+
+      - name: Install the compatible CLI
         id: setup
         uses: ./release-source/actions/setup
         with:
-          version: ${{ steps.action-release.outputs.cli-major }}
+          version: ${{ inputs.cli-version || steps.action-release.outputs.cli-major }}
 
       - name: Smoke test command execution
         uses: ./release-source/actions/run
@@ -66,19 +94,42 @@ jobs:
             exit 1
           fi
 
+          # Only move the floating major tag forward. A maintenance release (e.g.
+          # CLI 2.3.1 published from release/2.3 after 2.5.0) gets its exact tag
+          # but leaves the floating tag on the newest release.
+          LATEST_IN_MAJOR=$(git ls-remote --tags --refs origin "refs/tags/${MAJOR_TAG}.*" \
+            | sed 's#.*refs/tags/##' | grep -E "^${MAJOR_TAG}\.[0-9]+\.[0-9]+$" | sort -V | tail -n1)
+          MOVE_MAJOR=true
+          if [ -n "$LATEST_IN_MAJOR" ] && [ "$LATEST_IN_MAJOR" != "$EXACT_TAG" ] \
+            && [ "$(printf '%s\n%s\n' "$LATEST_IN_MAJOR" "$EXACT_TAG" | sort -V | tail -n1)" = "$LATEST_IN_MAJOR" ]; then
+            MOVE_MAJOR=false
+          fi
+
           git tag -f "$EXACT_TAG" "$RELEASE_SHA"
-          git tag -f "$MAJOR_TAG" "$RELEASE_SHA"
-          git push --atomic --force origin "refs/tags/$EXACT_TAG" "refs/tags/$MAJOR_TAG"
+          if [ "$MOVE_MAJOR" = "true" ]; then
+            git tag -f "$MAJOR_TAG" "$RELEASE_SHA"
+            git push --atomic --force origin "refs/tags/$EXACT_TAG" "refs/tags/$MAJOR_TAG"
+          else
+            git push origin "refs/tags/$EXACT_TAG"
+          fi
 
           if [ -z "$REMOTE_EXACT" ]; then
             echo "Created immutable Action tag $EXACT_TAG"
           else
             echo "Immutable Action tag $EXACT_TAG already points to this release"
           fi
-          echo "Updated floating Action tag $MAJOR_TAG to $RELEASE_SHA"
+          if [ "$MOVE_MAJOR" = "true" ]; then
+            echo "Updated floating Action tag $MAJOR_TAG to $RELEASE_SHA"
+          else
+            echo "Left floating Action tag $MAJOR_TAG on newer release $LATEST_IN_MAJOR"
+          fi
 
           {
             echo "## GitHub Actions $EXACT_TAG"
             echo
-            echo "Published $EXACT_TAG and updated $MAJOR_TAG to \`$RELEASE_SHA\`."
+            if [ "$MOVE_MAJOR" = "true" ]; then
+              echo "Published $EXACT_TAG and updated $MAJOR_TAG to \`$RELEASE_SHA\`."
+            else
+              echo "Published $EXACT_TAG at \`$RELEASE_SHA\`; $MAJOR_TAG stays on $LATEST_IN_MAJOR."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

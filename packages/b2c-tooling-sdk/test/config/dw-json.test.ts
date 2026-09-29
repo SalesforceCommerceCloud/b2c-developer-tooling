@@ -15,6 +15,7 @@ import {
   addInstance,
   removeInstance,
   setActiveInstance,
+  updateInstanceConfig,
   type DwJsonMultiConfig,
 } from '@salesforce/b2c-tooling-sdk/config';
 
@@ -582,6 +583,96 @@ describe('config/dw-json', () => {
         expect.fail('should have thrown');
       } catch (err) {
         expect((err as Error).message).to.include('not found');
+      }
+    });
+  });
+  describe('updateInstanceConfig', () => {
+    it('updates the root config and replaces alias keys', async () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({hostname: 'stg.example.com', 'webdav-server': 'old.example.com', passphrase: 'old'}),
+      );
+
+      const result = await updateInstanceConfig({
+        certificate: './certs/dev.p12',
+        certificatePassphrase: 'new',
+        webdavHostname: 'cert.example.com',
+      });
+
+      expect(fs.realpathSync(result.path)).to.equal(fs.realpathSync(dwJsonPath));
+      const raw = JSON.parse(fs.readFileSync(dwJsonPath, 'utf8'));
+      expect(raw).to.deep.equal({
+        hostname: 'stg.example.com',
+        certificate: './certs/dev.p12',
+        'certificate-passphrase': 'new',
+        'webdav-hostname': 'cert.example.com',
+      });
+      const loaded = await loadDwJson();
+      expect(loaded?.config.webdavHostname).to.equal('cert.example.com');
+      expect(loaded?.config.certificatePassphrase).to.equal('new');
+    });
+
+    it('updates a named instance', async () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          configs: [
+            {name: 'dev', hostname: 'dev.example.com'},
+            {name: 'staging', hostname: 'stg.example.com', webdavHostname: 'old.example.com'},
+          ],
+        }),
+      );
+
+      const result = await updateInstanceConfig({webdavHostname: 'cert.example.com'}, {instance: 'staging'});
+
+      expect(result.name).to.equal('staging');
+      const raw = JSON.parse(fs.readFileSync(dwJsonPath, 'utf8'));
+      expect(raw.configs[0]).to.deep.equal({name: 'dev', hostname: 'dev.example.com'});
+      expect(raw.configs[1]).to.deep.equal({
+        name: 'staging',
+        hostname: 'stg.example.com',
+        'webdav-hostname': 'cert.example.com',
+      });
+    });
+
+    it('updates the active instance by default', async () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          configs: [
+            {name: 'dev', hostname: 'dev.example.com'},
+            {name: 'staging', hostname: 'stg.example.com', active: true},
+          ],
+        }),
+      );
+
+      const result = await updateInstanceConfig({certificate: 'a.p12'});
+
+      expect(result.name).to.equal('staging');
+      const raw = JSON.parse(fs.readFileSync(dwJsonPath, 'utf8'));
+      expect(raw.configs[1].certificate).to.equal('a.p12');
+      expect(raw.configs[0].certificate).to.be.undefined;
+    });
+
+    it('throws when the instance is not found', async () => {
+      fs.writeFileSync(path.join(tempDir, 'dw.json'), JSON.stringify({configs: [{name: 'dev'}]}));
+      try {
+        await updateInstanceConfig({certificate: 'a.p12'}, {instance: 'missing'});
+        expect.fail('Should have thrown');
+      } catch (err) {
+        expect((err as Error).message).to.include('not found');
+      }
+    });
+
+    it('throws when dw.json does not exist', async () => {
+      try {
+        await updateInstanceConfig({certificate: 'a.p12'});
+        expect.fail('Should have thrown');
+      } catch (err) {
+        expect((err as Error).message).to.include('No dw.json');
       }
     });
   });

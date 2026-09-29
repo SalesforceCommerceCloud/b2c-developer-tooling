@@ -60,10 +60,10 @@ b2c ecdn cache purge --zone my-zone --tag product-123 --tag category-456
 b2c ecdn certificates list --zone my-zone
 
 # add a new certificate
-b2c ecdn certificates add --zone my-zone --hostname www.example.com --certificate-file ./cert.pem --private-key-file ./key.pem
+b2c ecdn certificates add --zone my-zone --hostname www.example.com --type custom --certificate-file ./cert.pem --private-key-file ./key.pem
 
 # validate a custom hostname
-b2c ecdn certificates validate --zone my-zone --certificate-id abc123
+b2c ecdn certificates validate --zone my-zone --custom-hostname-id abc123
 ```
 
 ### Manage Rate Limiting Rules
@@ -92,7 +92,7 @@ b2c ecdn rate-limit delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701a
 b2c ecdn security get --zone my-zone
 
 # update security settings
-b2c ecdn security update --zone my-zone --ssl-mode full --min-tls-version 1.2 --always-use-https
+b2c ecdn security update --zone my-zone --security-level medium --always-use-https --tls13
 ```
 
 ### Speed Settings
@@ -102,7 +102,7 @@ b2c ecdn security update --zone my-zone --ssl-mode full --min-tls-version 1.2 --
 b2c ecdn speed get --zone my-zone
 
 # update speed settings
-b2c ecdn speed update --zone my-zone --browser-cache-ttl 14400 --auto-minify-html --auto-minify-css
+b2c ecdn speed update --zone my-zone --brotli on --http3 on --webp on
 ```
 
 ## Additional Topics

@@ -134,6 +134,7 @@ export {
   addInstance,
   removeInstance,
   setActiveInstance,
+  updateInstanceConfig,
 } from './dw-json.js';
 export type {
   DwJsonConfig,
@@ -143,6 +144,7 @@ export type {
   AddInstanceOptions,
   RemoveInstanceOptions,
   SetActiveInstanceOptions,
+  UpdateInstanceConfigOptions,
 } from './dw-json.js';
 
 // Instance management

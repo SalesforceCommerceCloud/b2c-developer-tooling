@@ -1,5 +1,24 @@
 # @salesforce/b2c-cli
 
+## 2.2.1
+
+### Patch Changes
+
+- [#717](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/717) [`443fa0b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/443fa0b9bd0abdd360077c51b692784eaa1827dd) - Clearer Hyperforce two-factor code upload guidance: a step-by-step setup that starts with CI pipelines, plus clearer `b2c ecdn mtls` prompts that separate the CA from the client certificate used for upload (Thanks [@clavery](https://github.com/clavery)!)
+
+## 2.2.0
+
+### Minor Changes
+
+- [#711](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/711) [`c6ed31d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c6ed31d3f71553e1fb921c7e4106fb81086afb7d) - GitHub Actions can now use a client certificate stored as a repository secret: pass a base64-encoded `.p12` as `certificate-base64` to `setup` and the root, `code-deploy`, `data-import`, `job-run`, and `webdav-upload` actions, so staging mTLS workflows no longer need their own decode step. GitHub Actions are now released with every CLI release at the same version. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#711](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/711) [`c6ed31d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c6ed31d3f71553e1fb921c7e4106fb81086afb7d) - Set up two-factor (mTLS) code upload for Hyperforce staging in one step: `b2c ecdn mtls setup` generates and uploads your CA, issues your client certificate, and configures `dw.json`, and you can issue more certificates for teammates and CI pipelines. See the new Hyperforce guide for the full workflow. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`b9972c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b9972c9b9db69b2b2b7c2229250d9aa9b4c665e3), [`ce3ed28`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ce3ed2816a5a84f363206079803f73fbd05f530f), [`c6ed31d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c6ed31d3f71553e1fb921c7e4106fb81086afb7d), [`61e3438`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/61e3438164ab2a74067d4444f87c2831b5c72bfc)]:
+  - @salesforce/b2c-tooling-sdk@2.2.0
+
 ## 2.1.0
 
 ### Minor Changes

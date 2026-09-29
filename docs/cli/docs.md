@@ -12,7 +12,9 @@ The corpus searched by `docs search` / `docs read` includes:
 
 - **Script API reference** — `dw.*` classes/modules for server-side scripting (category: `script-api`). Content is read online from developer.salesforce.com (cached locally after first read); the search index is bundled.
 - **Developer Center guides** — conceptual and how-to content from B2C Commerce Developer Center, organized into categories: `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`
+- **OCAPI reference** — Open Commerce API usage, hooks, settings, and best practices from B2C Commerce Developer Center (category: `ocapi`, e.g. `ocapi/ocapisettings`)
 - **Salesforce Help** — administration and merchandising documentation from help.salesforce.com, split into two categories: `help-admin` (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory ops) and `help-merchant` (catalogs, products, promotions, search, content, analytics, SEO). Each entry's `url` links the live Help article; content is read from the raw markdown source.
+- **Salesforce Help Knowledge Articles** — public, published B2C Commerce knowledge articles from help.salesforce.com (troubleshooting, how-to, and known-behavior answers), keyed by article number (category: `help-kb`, e.g. `help-kb/002772125`). Images from the original articles are omitted; follow the entry's `url` to view them.
 - **Tooling guides** — documentation for this CLI, MCP server, SDK, and VS Code extension (category: `tooling`)
 - **Standard job steps** — built-in job step type IDs (for example `ImportCatalog`, `ExportCatalog`, `ImportInventoryLists`) that you add to Business Manager job flows (category: `job-step`). Read the catalog overview with `b2c docs read job-steps`, or a specific step with `b2c docs read <TypeID>`. See the `b2c-cli:b2c-job` and `b2c:b2c-custom-job-steps` skills for how standard steps fit into job flows.
 - **XSD schemas** — import/export data format definitions
@@ -64,7 +66,7 @@ b2c docs search [query]
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
 | `--limit`, `-l`    | Maximum number of results to display                                                                                                                                                                                                                             | `20`                         |
 | `--offset`, `-o`   | Number of ranked results to skip (for pagination)                                                                                                                                                                                                                | `0`                          |
-| `--category`, `-c` | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant`                                                                                              | (none)                       |
+| `--category`, `-c` | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `ocapi`, `tooling`, `job-step`, `help-admin`, `help-merchant`, `help-kb`                                                                          | (none)                       |
 | `--workspace`      | Workspace awareness: `auto` (default, auto-detects project type), `all` (disable), or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`. Boosts relevant categories and de-boosts competing storefront frameworks | `auto`                       |
 | `--topics`         | Allowlist that bounds the whole corpus to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). `--category`/`--workspace` narrow within it; unknown names are ignored with a warning                                                                      | (all)                        |
 | `--list`           | List all available documentation entries                                                                                                                                                                                                                         | `false`                      |
@@ -94,6 +96,9 @@ b2c docs search "site import export" --category help-admin
 
 # Search Salesforce Help merchandising content (catalogs, promotions, search, ...)
 b2c docs search "price book assignment" --category help-merchant
+
+# Search Salesforce Help Knowledge Articles (troubleshooting, known issues, how-to)
+b2c docs search "code upload certificate hyperforce" --category help-kb
 
 # Find a standard job step by name
 b2c docs search ImportCatalog
@@ -210,6 +215,9 @@ b2c docs read commerce-api/slas-passwordless-login-registration
 # Read a Salesforce Help article by namespaced ID
 b2c docs read help-admin/b2c_site_import_export
 b2c docs read help-merchant/b2c_creating_price_books
+
+# Read a Salesforce Help Knowledge Article by article number
+b2c docs read help-kb/002772125
 
 # Read a standard job step's purpose + configuration parameters
 b2c docs read ImportCatalog

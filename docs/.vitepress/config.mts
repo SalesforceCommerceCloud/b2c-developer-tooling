@@ -38,19 +38,22 @@ function expandIncludes(file: string, ancestors = new Set<string>()): string {
     );
 }
 
-// Extract the committed Salesforce Help corpus tarball (docs/help-content.tar.gz)
-// into <outDir>/help so the converted .md pages are served verbatim at
-// <base>/help/<category>/<id>.md. The tarball is the committed artifact (one
-// file instead of ~1000 loose .md); the loose tree is git-ignored. No-op if the
-// tarball is absent so a partial checkout still builds.
+// Extract the committed Salesforce Help corpus tarballs into <outDir>/help so the
+// converted .md pages are served verbatim at <base>/help/<category>/<id>.md:
+// help-content.tar.gz (Help documentation) and help-kb-content.tar.gz (Help
+// Knowledge Articles). The tarballs are the committed artifacts (one file instead
+// of hundreds of loose .md); the loose tree is git-ignored. A missing tarball is
+// skipped so a partial checkout still builds.
 function extractHelpCorpus(srcDir: string, outDir: string) {
-  const tarball = path.join(srcDir, 'help-content.tar.gz');
-  if (!fs.existsSync(tarball)) {
-    console.warn(`[help-corpus] ${tarball} not found; skipping Help corpus extraction`);
-    return;
+  for (const name of ['help-content.tar.gz', 'help-kb-content.tar.gz']) {
+    const tarball = path.join(srcDir, name);
+    if (!fs.existsSync(tarball)) {
+      console.warn(`[help-corpus] ${tarball} not found; skipping`);
+      continue;
+    }
+    fs.mkdirSync(outDir, {recursive: true});
+    execFileSync('tar', ['-xzf', tarball, '-C', outDir], {stdio: 'inherit'});
   }
-  fs.mkdirSync(outDir, {recursive: true});
-  execFileSync('tar', ['-xzf', tarball, '-C', outDir], {stdio: 'inherit'});
 }
 
 // Build configuration from environment
@@ -151,6 +154,7 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
     collapsed: false,
     items: [
       {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
+      {text: 'Hyperforce', link: '/guide/hyperforce'},
       {text: 'Import Sets', link: '/guide/import-sets'},
       {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
     ],

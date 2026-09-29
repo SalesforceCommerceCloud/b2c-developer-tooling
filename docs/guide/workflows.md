@@ -20,6 +20,7 @@ See [Project Setup](./project-setup) for optional assistant instructions and tea
 ## Deployment and automation
 
 - [CI/CD with GitHub Actions](./ci-cd) - Automate builds and deployments.
+- [Hyperforce](./hyperforce) - Set up code upload certificates for staging and migrate from cert.staging.
 - [Import sets](./import-sets) - Apply metadata and project migrations.
 - [MRT utilities](./mrt-utilities) - Work with Managed Runtime deployments.
 

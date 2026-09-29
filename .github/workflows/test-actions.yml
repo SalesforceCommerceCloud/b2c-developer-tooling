@@ -134,6 +134,43 @@ jobs:
           [ "$fail" -eq 0 ] || { echo "Credential corruption detected"; exit 1; }
           echo "All credentials preserved verbatim"
 
+  # certificate-base64 is decoded to an owner-only file and exported as
+  # SFCC_CERTIFICATE. The fixture is line-wrapped like default `base64` output.
+  setup-certificate-base64:
+    name: 'Setup (certificate-base64)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run setup action with a base64 certificate
+        uses: ./actions/setup
+        with:
+          version: '2'
+          certificate-base64: |
+            YjJjIGNsaWVudCBjZXJ0aWZpY2F0ZSBmaXh0dXJlIHRoYXQgc3BhbnMgbW9yZSB0aGFuIG9uZSBs
+            aW5lIG9mIGJhc2U2NCBvdXRwdXQ=
+
+      - name: Verify certificate decoded
+        env:
+          EXPECTED: 'b2c client certificate fixture that spans more than one line of base64 output'
+        run: |
+          [ -f "$SFCC_CERTIFICATE" ] || { echo "SFCC_CERTIFICATE is not a file: $SFCC_CERTIFICATE"; exit 1; }
+          [ "$(cat "$SFCC_CERTIFICATE")" = "$EXPECTED" ] || { echo "Decoded certificate mismatch"; exit 1; }
+          [ "$(stat -c %a "$SFCC_CERTIFICATE")" = "600" ] || { echo "Certificate file is not owner-only"; exit 1; }
+          echo "certificate-base64 decoded to $SFCC_CERTIFICATE"
+
+      - name: Run setup action with invalid base64
+        id: invalid
+        continue-on-error: true
+        uses: ./actions/setup
+        with:
+          version: '2'
+          skip-if-present: 'true'
+          certificate-base64: 'not base64!!'
+
+      - name: Verify invalid base64 is rejected
+        run: '[ "${{ steps.invalid.outcome }}" = "failure" ] || { echo "Invalid base64 was accepted"; exit 1; }'
+
   setup-nightly:
     name: 'Setup (nightly)'
     runs-on: ubuntu-latest
