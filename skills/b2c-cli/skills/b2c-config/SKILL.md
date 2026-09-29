@@ -227,7 +227,7 @@ b2c setup openshell --dry-run
 openshell sandbox exec -n b2c-<instance> -- b2c code list
 ```
 
-Edit `.openshell/<sandbox>/policy.yaml` and re-run to apply it; use `--recreate` after changing secrets or configuration. Add hosts with `--allow-host`. Only client credentials work in the sandbox (no browser login). See the [OpenShell guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/openshell).
+Edit `.openshell/<sandbox>/policy.yaml` and re-run to apply it; use `--recreate` after changing secrets or configuration. Add hosts with `--allow-host`. Only client credentials work in the sandbox (no browser login). See the [Agent Sandboxing guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-sandboxing#openshell).
 
 ## Managing Instances
 

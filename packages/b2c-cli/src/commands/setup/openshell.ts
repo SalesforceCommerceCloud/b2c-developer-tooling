@@ -38,7 +38,7 @@ export default class SetupOpenShell extends InstanceCommand<typeof SetupOpenShel
       'commands.setup.openshell.description',
       '[BETA] Create an NVIDIA OpenShell sandbox for the B2C CLI from the current configuration',
     ),
-    '/guide/openshell.html',
+    '/guide/agent-sandboxing.html#openshell',
   );
 
   static enableJsonFlag = true;

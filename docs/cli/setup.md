@@ -469,7 +469,7 @@ b2c code list -i production # Uses production
 The OpenShell integration is in beta, and OpenShell itself is alpha software.
 :::
 
-Create an [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) sandbox for the B2C CLI from your current configuration. Your secrets are stored on the OpenShell gateway, and the sandbox can reach only the B2C Commerce hosts your configuration uses, at your [Safety Mode](../guide/safety) level. Run the command again to apply changes. See [Sandboxing with OpenShell](../guide/openshell).
+Create an [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) sandbox for the B2C CLI from your current configuration. Your secrets are stored on the OpenShell gateway, and the sandbox can reach only the B2C Commerce hosts your configuration uses, at your [Safety Mode](../guide/safety) level. Run the command again to apply changes. See [Agent Sandboxing](../guide/agent-sandboxing#openshell).
 
 ### Usage
 
@@ -519,7 +519,7 @@ b2c setup openshell --dry-run
 
 ### See Also
 
-- [Sandboxing with OpenShell](../guide/openshell)
+- [Agent Sandboxing](../guide/agent-sandboxing)
 - [Safety Mode](../guide/safety)
 
 ## b2c setup skills

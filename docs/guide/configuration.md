@@ -317,7 +317,7 @@ Settings apply to the features that use them. CLI flags and environment override
 | `basic-unencoded` | A Basic header with the raw client ID and secret.                                                 |
 | `body`            | `client_id` and `client_secret` in the form-encoded request body. Use when a proxy or gateway requires it. |
 
-The default works for most setups. Inside an [OpenShell sandbox](./openshell), where the secret is a placeholder, the CLI and MCP server use `basic-unencoded` automatically unless you set a value.
+The default works for most setups. Inside an [OpenShell sandbox](./agent-sandboxing#openshell), where the secret is a placeholder, the CLI and MCP server use `basic-unencoded` automatically unless you set a value.
 
 For certificate setup, see [JWT Authentication](./authentication#jwt-authentication-certificate-based). When sharing configuration across projects or processes, absolute certificate paths avoid ambiguity about the working directory.
 

@@ -2,4 +2,4 @@
 '@salesforce/b2c-dx-docs': patch
 ---
 
-Added a guide to running the CLI and MCP server in an NVIDIA OpenShell sandbox with `b2c setup openshell`, including access levels, customizing the policy, and the audit log.
+Added an Agent Sandboxing guide for running AI agents with the CLI and MCP server in a sandbox, starting with NVIDIA OpenShell and `b2c setup openshell`.

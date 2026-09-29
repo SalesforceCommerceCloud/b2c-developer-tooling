@@ -484,7 +484,7 @@ handling, and assistant approvals aligned with your intended access. See
 
 To enforce limits outside the CLI and MCP process, keep your API client secret
 out of the agent's environment, and record an audit log of every request, run
-your tools in a sandbox. See [Sandboxing with OpenShell](./openshell).
+your tools in a sandbox. See [Agent Sandboxing](./agent-sandboxing).
 
 ## Environment variables reference
 
