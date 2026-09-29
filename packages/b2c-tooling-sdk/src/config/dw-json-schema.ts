@@ -18,6 +18,7 @@
  *
  * @module config/dw-json-schema
  */
+import {CLIENT_AUTH_METHODS} from '../auth/client-credentials.js';
 import {CONFIG_KEY_ALIASES, kebabToCamelCase} from './mapping.js';
 
 /** A JSON Schema fragment (draft-07 subset). */
@@ -98,6 +99,12 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
   'account-manager-host': {
     type: 'string',
     description: 'Account Manager hostname override. Env: `SFCC_ACCOUNT_MANAGER_HOST`.',
+  },
+  'client-auth-method': {
+    type: 'string',
+    enum: [...CLIENT_AUTH_METHODS],
+    description:
+      'How client credentials are sent to Account Manager (default `basic`). Env: `SFCC_CLIENT_AUTH_METHOD`; flag: `--client-auth-method`.',
   },
 
   // Shopper authentication

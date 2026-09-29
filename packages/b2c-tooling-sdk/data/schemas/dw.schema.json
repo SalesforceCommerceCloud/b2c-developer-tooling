@@ -199,6 +199,24 @@
           "type": "string",
           "description": "Alternate spelling of `account-manager-host`. Account Manager hostname override. Env: `SFCC_ACCOUNT_MANAGER_HOST`."
         },
+        "client-auth-method": {
+          "type": "string",
+          "enum": [
+            "basic",
+            "basic-unencoded",
+            "body"
+          ],
+          "description": "How client credentials are sent to Account Manager (default `basic`). Env: `SFCC_CLIENT_AUTH_METHOD`; flag: `--client-auth-method`."
+        },
+        "clientAuthMethod": {
+          "type": "string",
+          "enum": [
+            "basic",
+            "basic-unencoded",
+            "body"
+          ],
+          "description": "Alternate spelling of `client-auth-method`. How client credentials are sent to Account Manager (default `basic`). Env: `SFCC_CLIENT_AUTH_METHOD`; flag: `--client-auth-method`."
+        },
         "slas-client-id": {
           "type": "string",
           "description": "Shopper Login and API Access Service (SLAS) client ID. Env: `SFCC_SLAS_CLIENT_ID`."

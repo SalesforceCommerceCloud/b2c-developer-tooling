@@ -30,6 +30,7 @@ const DW_JSON_CONFIG_KEYS = {
   authMethods: true,
   userAuth: true,
   accountManagerHost: true,
+  clientAuthMethod: true,
   mrtProject: true,
   mrtEnvironment: true,
   mrtApiKey: true,
