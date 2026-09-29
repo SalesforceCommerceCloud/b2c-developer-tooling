@@ -80,7 +80,10 @@ write code or choose API calls.
 | `scapi_execute`      | Read and manage B2C Commerce data through standard and custom Admin APIs. |
 | `scapi_snippet_save` | Save a workflow for reuse across sessions.                                |
 
-The standard API reference works offline without credentials. Working with your
+The standard API reference works offline without credentials. Ask your assistant to
+search your instance's live schemas to include your custom attributes, custom APIs,
+and APIs released after your installed version; this uses the Schemas API
+(`sfcc.scapi-schemas` scope), and the assistant can then call what it found. Working with your
 instance's data requires [OAuth credentials and scopes](../guide/authentication#configuring-scopes)
 for the requested operations.
 

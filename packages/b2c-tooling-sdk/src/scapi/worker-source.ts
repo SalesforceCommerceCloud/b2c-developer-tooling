@@ -51,7 +51,7 @@ process.on('message', async message => {
           parameters: [...(item.parameters || []), ...(item[method].parameters || [])],
           security: item[method].security ?? schema.security ?? []}, entry.id);
       }
-      spec.paths['/' + entry.id + path] = methods;
+      spec.paths['/' + entry.id + (entry.apiFamily === 'custom' ? '/organizations/{organizationId}' : '') + path] = methods;
     }
   }
   const scapi = {request: options => new Promise((resolve, reject) => {

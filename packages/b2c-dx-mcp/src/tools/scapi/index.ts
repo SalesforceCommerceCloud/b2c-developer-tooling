@@ -19,6 +19,7 @@ import {createMetricsGetTool} from './metrics-get.js';
 import {createScapiCustomApisStatusTool} from './scapi-custom-apis-get-status.js';
 import {createScapiSchemasListTool} from './scapi-schemas-list.js';
 import {createScapiCodeTools} from './scapi-code.js';
+import {ScapiLiveSchemaCache} from '@salesforce/b2c-tooling-sdk/scapi';
 import type {ScapiExecutionRegistry} from './execution-registry.js';
 
 /**
@@ -31,10 +32,12 @@ export function createScapiTools(
   loadServices: () => Promise<Services> | Services,
   executions?: ScapiExecutionRegistry,
 ): McpTool[] {
+  // Live contracts discovered by search or schema fetches are reused by execution for the same tenant.
+  const schemaCache = new ScapiLiveSchemaCache();
   return [
-    ...createScapiCodeTools(loadServices, undefined, executions),
+    ...createScapiCodeTools(loadServices, undefined, executions, schemaCache),
     createMetricsGetTool(loadServices),
     createScapiCustomApisStatusTool(loadServices),
-    createScapiSchemasListTool(loadServices),
+    createScapiSchemasListTool(loadServices, schemaCache),
   ];
 }

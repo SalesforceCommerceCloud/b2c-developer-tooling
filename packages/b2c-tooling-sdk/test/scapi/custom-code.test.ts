@@ -121,7 +121,7 @@ describe('SCAPI custom code mode', () => {
   it('rejects malformed live contracts', async () => {
     serveSchema({openapi: '3.0.0', paths: []});
     const call = request();
-    await rejects(() => discover(call), /SCAPI_CUSTOM_SCHEMA_INVALID/);
+    await rejects(() => discover(call), /SCAPI_SCHEMA_INVALID/);
     await rejects(() => call({method: 'GET', path: endpoint}, signal()), /SCAPI_CUSTOM_SCHEMA_REQUIRED/);
   });
 

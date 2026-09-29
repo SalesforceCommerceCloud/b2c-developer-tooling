@@ -14,6 +14,7 @@ import {globalMiddlewareRegistry, type MiddlewareRegistry} from '../clients/midd
 import {SafetyGuard, extractJobIdFromPath, type SafetyConfig} from '../safety/index.js';
 import {getLogger} from '../logging/logger.js';
 import {findScapiOperation, resolveScapiReference, type ApiDocument, type ScapiSchemaDocument} from './catalog.js';
+import {createLiveScapiDocument} from './live.js';
 import {
   scapiAuthError,
   scapiAuthResponse,
@@ -44,6 +45,8 @@ export interface ScapiRequestOptions {
   confirm?: (request: ScapiConfirmation, signal: AbortSignal) => Promise<void>;
   /** Called immediately before network dispatch, for tracking potentially applied writes. */
   onDispatch?: () => void;
+  /** Called with each contract fetched from the Schemas API; `customProperties` reports expand=custom_properties. */
+  onSchema?: (document: ScapiSchemaDocument, customProperties: boolean) => void;
 }
 
 /** Build one execution's SCAPI request helper. Auth, policy, and responses stay in the host. */
@@ -81,8 +84,9 @@ export function createScapiRequest(
       const id = `custom/${apiName}/${apiVersion}`;
       if (!documents.some((document) => document.entry.id === id))
         throw new Error(
-          `SCAPI_CUSTOM_SCHEMA_REQUIRED: Fetch /dx/scapi-schemas/v1/organizations/{organizationId}/schemas/${id} ` +
-            'with scapi.request in this execution before calling its endpoints. Inspect the contract and declared authentication.',
+          `SCAPI_CUSTOM_SCHEMA_REQUIRED: Search it with scapi_search schemas:"live", or fetch ` +
+            `/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/${id} with scapi.request in this execution, ` +
+            'before calling its endpoints. Inspect the contract and declared authentication.',
         );
     }
     const matched = findScapiOperation(documents, method, path);
@@ -284,40 +288,29 @@ export function createScapiRequest(
       }
     }
     const diagnostic = scapiAuthResponse(result.response.status, authContext);
-    // Only authenticated live schema responses extend this execution's custom API catalog.
+    // Authenticated live schema responses extend this execution's catalog, replacing bundled contracts.
     if (
       result.response.ok &&
       method === 'GET' &&
       matched.document.entry.id === 'dx/scapi-schemas/v1' &&
-      matched.parameters.apiFamily === 'custom'
+      matched.parameters.apiFamily &&
+      matched.parameters.apiName &&
+      matched.parameters.apiVersion
     ) {
-      const schema = data as ApiDocument | null;
-      if (
-        !schema ||
-        !/^3\./.test(schema.openapi) ||
-        !schema.paths ||
-        typeof schema.paths !== 'object' ||
-        Array.isArray(schema.paths)
-      )
-        throw new Error('SCAPI_CUSTOM_SCHEMA_INVALID: Expected an OpenAPI 3 contract with paths from the Schemas API.');
-      const {apiName, apiVersion} = matched.parameters;
-      const id = `custom/${apiName}/${apiVersion}`;
-      const document: ScapiSchemaDocument = {
-        entry: {
-          id,
-          apiFamily: 'custom',
-          apiName,
-          apiVersion,
-          schemaVersion: schema.info?.version ?? apiVersion,
-          status: 'live',
-          file: '',
-          source: url,
-        },
-        schema,
-      };
-      const previous = documents.findIndex((item) => item.entry.id === id);
-      if (previous < 0) documents.push(document);
-      else documents[previous] = document;
+      const {apiFamily, apiName, apiVersion} = matched.parameters;
+      let document: ScapiSchemaDocument | undefined;
+      try {
+        document = createLiveScapiDocument({apiFamily, apiName, apiVersion}, data);
+      } catch (error) {
+        // Custom endpoints are unreachable without their contract; standard reads remain plain data.
+        if (apiFamily === 'custom') throw error;
+      }
+      if (document) {
+        const previous = documents.findIndex((item) => item.entry.id === document.entry.id);
+        if (previous < 0) documents.push(document);
+        else documents[previous] = document;
+        options.onSchema?.(document, String(queryValues.expand ?? '').includes('custom_properties'));
+      }
     }
     return {status: result.response.status, ok: result.response.ok, data, ...(diagnostic ? {diagnostic} : {})};
   };

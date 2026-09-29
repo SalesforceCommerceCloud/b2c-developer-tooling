@@ -17,8 +17,13 @@ then pass `skillRead: true`. This does not authorize mutations.
 
 ## Discover
 
-Discovery is offline; no credentials or Schemas API needed. Schemas and responses
-can be huge. Return only what the next decision needs:
+Discovery defaults to the bundled standard contracts offline; no credentials needed.
+Pass `schemas: "live"` to search the configured tenant's Schemas API contracts
+instead: tenant `c_*` properties, custom APIs, and APIs newer than the bundle.
+Live search needs `sfcc.scapi-schemas`, uses the same project context as
+`scapi_execute`, and caches per tenant for the server session (`refresh: true` refetches). Contracts that
+failed to load are listed in `schemaFailures`. Schemas and responses can be huge.
+Return only what the next decision needs:
 
 1. Find APIs/operations through `spec.apis`/`spec.paths`; return method/path/operationId.
 2. Narrow by `api`, path, or `authType`; inspect required inputs and selected fields,
@@ -55,23 +60,27 @@ Do not fall back to a terminal merely because there is no dedicated job/site too
 
 Bundled schemas omit tenant `c_*` definitions. Known custom fields can be sent
 directly in standard Admin bodies; schema retrieval is optional. SCAPI validates
-the payload. To discover tenant fields, fetch the live schema with
-`scapi_schemas_list`: `includeSchemas: true`, `apiFamily`, `apiName`, `apiVersion`.
+the payload. To discover tenant fields, search with `schemas: "live"` (narrow with
+`api`), or fetch the live schema with `scapi_schemas_list`: `includeSchemas: true`,
+`apiFamily`, `apiName`, `apiVersion`.
 Custom-property expansion defaults to true; disable with `expandCustomProperties: false`.
 `expandAll: true` retains full definitions; it is separate from custom-property
 expansion. Large contracts: fetch through `scapi_execute` and return only relevant
 fields ([example](references/custom-properties.md)). Requires `sfcc.scapi-schemas`.
 Use the same project/instance for schema lookup and writes.
 
-Live reads do not change offline `spec`. If schema access fails, report it; use
+Live contracts found by `schemas: "live"` search, expanded `scapi_schemas_list`
+fetches, or Schemas API reads inside `scapi_execute` are cached for that tenant.
+`scapi_execute` then routes to them, replacing bundled versions; they never change
+the offline `spec`. If schema access fails, report it; use
 already-known fields or ask for missing details. The optional CLI equivalent is
 `b2c scapi schemas get`, which also expands custom properties by default.
 
-For custom endpoint contracts, use `scapi_schemas_list` with `apiFamily: "custom"`;
-check registration with `scapi_custom_apis_get_status` when needed. Execute Admin
-custom endpoints by fetching their live contract through `scapi.request` first
-in each program, then making declared calls. The read enables that contract for
-this execution only. Use `AmOAuth2` operations with their declared `c_*` scopes;
+For custom endpoint contracts, search with `schemas: "live"` or use
+`scapi_schemas_list` with `apiFamily: "custom"`; check registration with
+`scapi_custom_apis_get_status` when needed. Custom endpoints found through live
+search are callable from `scapi_execute` for the same tenant. Otherwise fetch the
+live contract through `scapi.request` in the program before making declared calls. Use `AmOAuth2` operations with their declared `c_*` scopes;
 Shopper operations remain unsupported. [Custom API workflow](references/custom-apis.md).
 
 ## Authentication

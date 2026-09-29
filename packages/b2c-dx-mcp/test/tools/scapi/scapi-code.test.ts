@@ -183,6 +183,84 @@ describe('SCAPI code tools', function () {
     expect(load.callCount).to.equal(2);
   });
 
+  it('searches live tenant contracts and executes them for the same tenant', async () => {
+    const widgets = {
+      openapi: '3.0.3',
+      info: {version: '1.2.0'},
+      security: [{AmOAuth2: ['sfcc.widgets']}],
+      paths: {
+        '/organizations/{organizationId}/widgets/{widgetId}': {
+          get: {
+            operationId: 'getWidget',
+            parameters: [{name: 'widgetId', in: 'path', required: true, schema: {type: 'string'}}],
+            responses: {'200': {content: {'application/json': {schema: {properties: {c_color: {type: 'string'}}}}}}},
+          },
+        },
+      },
+    };
+    const get = stub().callsFake(async (path: string, options: {params: {path: Record<string, string>}}) => {
+      if (path === '/organizations/{organizationId}/schemas')
+        return {
+          data: {
+            data: [
+              {apiFamily: 'product', apiName: 'widgets', apiVersion: 'v1', status: 'current'},
+              {apiFamily: 'product', apiName: 'broken', apiVersion: 'v1', status: 'current'},
+            ],
+          },
+          response: new Response(),
+        };
+      if (options.params.path.apiName === 'broken') return {error: {}, response: new Response(null, {status: 500})};
+      return {data: widgets, response: new Response()};
+    });
+    const config = createMockResolvedConfig({shortCode: 'test', tenantId: 'test_001'});
+    const requested: string[] = [];
+    stub(globalThis, 'fetch').callsFake(async (input) => {
+      requested.push((input as Request).url);
+      return Response.json({id: 'w1', c_color: 'blue'});
+    });
+    config.createOAuth = () => ({fetch: globalThis.fetch, getAuthorizationHeader: async () => 'Bearer test'});
+    const services = new Services({resolvedConfig: config});
+    stub(services, 'getScapiSchemasClient').returns({GET: get} as never);
+    try {
+      const code = `async () => scapi.request({method: 'GET', path: '/product/widgets/v1/organizations/{organizationId}/widgets/w1'})`;
+      const [, offline] = createScapiCodeTools(() => services);
+      expect(readJson(await offline.handler({skillRead: true, code})).error).to.include('SCAPI_OPERATION_NOT_FOUND');
+
+      const [search, execute] = createScapiCodeTools(() => services);
+      const found = readJson(
+        await search.handler({
+          skillRead: true,
+          schemas: 'live',
+          code: `async () => ({apis: spec.apis.map(a => [a.id, a.origin]),
+            color: spec.paths['/product/widgets/v1/organizations/{organizationId}/widgets/{widgetId}'].get
+              .responses['200'].content['application/json'].schema.properties.c_color.type})`,
+        }),
+      );
+      expect(found.result).to.deep.equal({apis: [['product/widgets/v1', 'live']], color: 'string'});
+      expect(found.schemaFailures).to.deep.equal([{api: 'product/broken/v1', error: 'HTTP 500'}]);
+      expect(found).to.have.property('resolution');
+      expect(get.getCalls().find((call) => call.args[1].params.query)?.args[1].params.query).to.deep.equal({
+        expand: 'custom_properties',
+      });
+
+      const executed = await execute.handler({skillRead: true, code});
+      expect(executed.isError).not.to.equal(true);
+      expect(readJson(executed).result).to.deep.include({ok: true, data: {id: 'w1', c_color: 'blue'}});
+      expect(requested).to.deep.equal([
+        'https://test.api.commercecloud.salesforce.com/product/widgets/v1/organizations/f_ecom_test_001/widgets/w1',
+      ]);
+
+      // Cached contracts are reused without refetching.
+      const calls = get.callCount;
+      await search.handler({skillRead: true, schemas: 'live', api: 'product/widgets/v1', code: 'async () => 1'});
+      expect(get.callCount).to.equal(calls);
+      const refresh = await search.handler({skillRead: true, refresh: true, code: 'async () => 1'});
+      expect(readJson(refresh).error).to.include('refresh requires schemas');
+    } finally {
+      restore();
+    }
+  });
+
   it('reports native JavaScript errors and accepts cancellation', async () => {
     const [search] = createScapiCodeTools(stub());
     const invalid = await search.handler({skillRead: true, code: 'async () => { const x: number = 1; return x; }'});
