@@ -28,7 +28,7 @@ claude plugin install b2c
 
 # CAP authoring skills (separate marketplace)
 claude plugin marketplace add SalesforceCommerceCloud/commerce-apps
-claude plugin install cap-dev --scope project
+claude plugin install cap-dev
 ```
 
 Add `--scope project` to any install to scope it to the current project instead of your user profile. The `b2c-cli` and `b2c` skills also install via `b2c setup skills`, and the `cap-dev` skills via `b2c setup skills cap-dev` for other agents (Cursor, Codex, Copilot). For full plugin management — listing, updating, and uninstalling — see the [Agent Skills & Plugins guide](/guide/agent-skills).
