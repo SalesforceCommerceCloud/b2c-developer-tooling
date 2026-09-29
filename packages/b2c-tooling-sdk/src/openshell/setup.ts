@@ -10,6 +10,7 @@
  * @module openshell/setup
  */
 import yaml from 'js-yaml';
+import {Minimatch} from 'minimatch';
 
 import {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from '../defaults.js';
 import {DEFAULT_CIP_HOST, DEFAULT_CIP_STAGING_HOST} from '../clients/cip.js';
@@ -17,16 +18,22 @@ import {DEFAULT_MRT_ORIGIN} from '../clients/mrt.js';
 import {getLogsWebSocketUrl} from '../operations/mrt/tail-logs.js';
 import type {ClientAuthMethod} from '../auth/client-credentials.js';
 import type {NormalizedConfig} from '../config/types.js';
+import type {SafetyLevel} from '../safety/safety-middleware.js';
+import type {SafetyRule} from '../safety/types.js';
 
-/** Sandbox network access levels. Named after the matching Safety Mode levels. */
-export type OpenShellAccessLevel = 'NONE' | 'NO_DELETE' | 'READ_ONLY';
+/** Sandbox access levels. These are the Safety Mode levels. */
+export type OpenShellAccessLevel = SafetyLevel;
 
-/** All supported sandbox network access levels. */
+/** All supported sandbox access levels. */
 export const OPENSHELL_ACCESS_LEVELS = [
-  'READ_ONLY',
-  'NO_DELETE',
   'NONE',
+  'NO_DELETE',
+  'NO_UPDATE',
+  'READ_ONLY',
 ] as const satisfies readonly OpenShellAccessLevel[];
+
+/** Path of the forwarded Safety Mode configuration inside the sandbox. */
+export const OPENSHELL_SAFETY_CONFIG_PATH = '/sandbox/.b2c/safety.json';
 
 /** A provider profile to register with the OpenShell gateway. */
 export interface OpenShellProfile {
@@ -62,14 +69,26 @@ export interface OpenShellSetup {
   env: Record<string, string>;
   /** Hosts the policy allows, for display */
   hosts: string[];
+  /** Safety Mode configuration (JSON) to upload to {@link OPENSHELL_SAFETY_CONFIG_PATH}, if any */
+  safetyConfig?: string;
+  /**
+   * Forwarded command rules that permit operations. The network policy can't
+   * express them, so the requests they permit may still be denied.
+   */
+  unmappedSafetyRules: SafetyRule[];
 }
 
 /** Options for {@link buildOpenShellSetup}. */
 export interface OpenShellSetupOptions {
   /** Sandbox name. Defaults to `b2c-<instance name or host prefix>`. */
   sandboxName?: string;
-  /** Network access level for B2C hosts. Defaults to `READ_ONLY`. */
+  /** Access level for B2C hosts, also applied to Safety Mode in the sandbox. Defaults to `NONE`. */
   accessLevel?: OpenShellAccessLevel;
+  /**
+   * Safety Mode settings to forward to the sandbox. `allow` and `confirm`
+   * rules for HTTP requests and jobs are also added to the network policy.
+   */
+  safety?: {confirm?: boolean; rules?: SafetyRule[]};
   /** Additional hosts to allow at the same access level (e.g. the sandbox API host) */
   allowHosts?: string[];
 }
@@ -87,6 +106,7 @@ const READ_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 const WRITE_METHODS = ['POST', 'PUT', 'PATCH'];
 const WEBDAV_READ_METHODS = ['PROPFIND'];
 const WEBDAV_WRITE_METHODS = ['MKCOL', 'MOVE', 'COPY'];
+const ALL_METHODS = [...READ_METHODS, ...WRITE_METHODS, 'DELETE', ...WEBDAV_READ_METHODS, ...WEBDAV_WRITE_METHODS];
 
 interface ProfileDefinition {
   id: string;
@@ -173,6 +193,8 @@ function hostOf(value: string): string {
 
 type Rule = {allow: {method: string; path: string}};
 
+// NO_UPDATE is enforced like NO_DELETE on the network. Safety Mode in the
+// sandbox blocks its reset, stop, and restart operations.
 function methodRules(level: OpenShellAccessLevel, webdav: boolean, path = '/**'): Rule[] {
   const methods = [...READ_METHODS];
   if (level !== 'READ_ONLY') methods.push(...WRITE_METHODS);
@@ -184,6 +206,27 @@ function methodRules(level: OpenShellAccessLevel, webdav: boolean, path = '/**')
     rules.push(...webdavMethods.map((method) => ({allow: {method, path: WEBDAV_PATH}})));
   }
   return rules;
+}
+
+/**
+ * Converts Safety Mode rules that permit HTTP requests or jobs into network
+ * rules, so exceptions to the level also work in the sandbox. Command rules
+ * can't be expressed as network rules.
+ */
+function safetyNetworkRules(rules: SafetyRule[]): Rule[] {
+  const result: Rule[] = [];
+  for (const rule of rules) {
+    if (rule.action === 'block' || rule.command !== undefined) continue;
+    if (rule.job !== undefined) {
+      result.push({allow: {method: 'POST', path: `/**/jobs/${rule.job}/executions`}});
+    } else if (rule.path !== undefined || rule.method !== undefined) {
+      const matcher = rule.method ? new Minimatch(rule.method, {nocase: true}) : undefined;
+      for (const method of ALL_METHODS.filter((m) => !matcher || matcher.match(m))) {
+        result.push({allow: {method, path: rule.path ?? '/**'}});
+      }
+    }
+  }
+  return result;
 }
 
 function endpoint(host: string, rules: unknown[], extra: Record<string, unknown> = {}): Record<string, unknown> {
@@ -202,7 +245,10 @@ function endpoint(host: string, rules: unknown[], extra: Record<string, unknown>
  * @param options - Sandbox name, access level, and extra hosts
  */
 export function buildOpenShellSetup(config: NormalizedConfig, options: OpenShellSetupOptions = {}): OpenShellSetup {
-  const accessLevel = options.accessLevel ?? 'READ_ONLY';
+  const accessLevel = options.accessLevel ?? 'NONE';
+  const safetyRules = options.safety?.rules ?? [];
+  const forwardSafety = safetyRules.length > 0 || options.safety?.confirm === true;
+  const extraRules = accessLevel === 'NONE' ? [] : safetyNetworkRules(safetyRules);
   const sandboxName = toSandboxName(
     options.sandboxName ?? config.instanceName ?? config.hostname?.split('.')[0] ?? 'sandbox',
   );
@@ -256,7 +302,7 @@ export function buildOpenShellSetup(config: NormalizedConfig, options: OpenShell
     addPolicy(
       'b2c_instance',
       'b2c-instance',
-      instanceHosts.map((host) => endpoint(host, methodRules(accessLevel, true), binding)),
+      instanceHosts.map((host) => endpoint(host, [...methodRules(accessLevel, true), ...extraRules], binding)),
     );
     setEnv('SFCC_SERVER', config.hostname);
     setEnv('SFCC_WEBDAV_SERVER', config.webdavHostname);
@@ -267,7 +313,10 @@ export function buildOpenShellSetup(config: NormalizedConfig, options: OpenShell
   // SCAPI Admin APIs use the OAuth access token; no stored secret.
   if (config.shortCode) {
     addPolicy('b2c_scapi', 'b2c-scapi', [
-      endpoint(`${config.shortCode}.api.commercecloud.salesforce.com`, methodRules(accessLevel, false)),
+      endpoint(`${config.shortCode}.api.commercecloud.salesforce.com`, [
+        ...methodRules(accessLevel, false),
+        ...extraRules,
+      ]),
     ]);
     setEnv('SFCC_SHORTCODE', config.shortCode);
   }
@@ -328,6 +377,7 @@ export function buildOpenShellSetup(config: NormalizedConfig, options: OpenShell
   // Match Safety Mode to the network policy so blocked operations fail early
   // with a clear message. Telemetry and update checks would only be denied.
   env.SFCC_SAFETY_LEVEL = accessLevel;
+  if (forwardSafety) env.SFCC_SAFETY_CONFIG = OPENSHELL_SAFETY_CONFIG_PATH;
   env.SFCC_DISABLE_TELEMETRY = 'true';
   env.B2C_SKIP_NEW_VERSION_CHECK = 'true';
 
@@ -342,7 +392,7 @@ export function buildOpenShellSetup(config: NormalizedConfig, options: OpenShell
       landlock: {compatibility: 'best_effort'},
       network_policies: policies,
     },
-    {lineWidth: -1, flowLevel: 6},
+    {lineWidth: -1, flowLevel: 6, noRefs: true},
   );
 
   const profileSources = [...new Set(providers.map((p) => p.source))];
@@ -353,6 +403,11 @@ export function buildOpenShellSetup(config: NormalizedConfig, options: OpenShell
     policy,
     env,
     hosts,
+    safetyConfig: forwardSafety
+      ? `${JSON.stringify({level: accessLevel, confirm: options.safety?.confirm, rules: safetyRules}, null, 2)}\n`
+      : undefined,
+    unmappedSafetyRules:
+      accessLevel === 'NONE' ? [] : safetyRules.filter((r) => r.action !== 'block' && r.command !== undefined),
   };
 }
 

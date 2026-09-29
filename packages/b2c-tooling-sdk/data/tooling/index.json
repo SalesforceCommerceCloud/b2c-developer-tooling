@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-28T23:52:26.338Z",
+  "generatedAt": "2026-09-29T01:12:31.351Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -395,7 +395,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/openshell.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/openshell.md",
-      "headings": "OpenShell and Safety Mode • Requirements • Quick start • Do it yourself • Access levels • What works in the sandbox • Customize the policy • Agents and the MCP server • Audit log {#audit-log} • How credentials are handled • Limitations",
+      "headings": "Requirements • Create a sandbox • Choose what the sandbox can do • Allow more • Update a sandbox • Agents and the MCP server • Audit log {#audit-log} • Limitations",
       "preview": "Run the B2C CLI and MCP server inside an NVIDIA OpenShell sandbox so AI agents never see your secrets and can only reach the B2C Commerce hosts and operations you allow."
     },
     {

@@ -61,9 +61,8 @@ export default class SetupOpenShell extends InstanceCommand<typeof SetupOpenShel
       description: 'Directory for the generated files (default: .openshell/<sandbox name>)',
     }),
     'safety-level': Flags.option({
-      description: 'Which B2C requests the sandbox may make',
+      description: 'Which B2C requests the sandbox may make (default: your Safety Mode level, or NONE)',
       options: OPENSHELL_ACCESS_LEVELS,
-      default: 'READ_ONLY',
     })(),
     'allow-host': Flags.string({
       description: 'Additional host the sandbox may reach (can be specified multiple times)',
@@ -106,10 +105,14 @@ export default class SetupOpenShell extends InstanceCommand<typeof SetupOpenShel
       ),
     );
 
+    // Carry the configured Safety Mode settings into the sandbox.
+    const safety = this.safetyGuard.config;
+    const accessLevel = flags['safety-level'] ?? safety.level;
     const setup = buildOpenShellSetup(config, {
       sandboxName: flags.name,
-      accessLevel: flags['safety-level'],
+      accessLevel,
       allowHosts: flags['allow-host'],
+      safety: {confirm: safety.confirm, rules: safety.rules},
     });
 
     if (setup.providers.length === 0) {
@@ -139,7 +142,7 @@ export default class SetupOpenShell extends InstanceCommand<typeof SetupOpenShel
     this.log(
       t('commands.setup.openshell.summary', 'Sandbox {{name}} ({{level}})', {
         name: setup.sandboxName,
-        level: flags['safety-level'],
+        level: accessLevel,
       }),
     );
     this.log(t('commands.setup.openshell.hosts', '  Allowed hosts: {{hosts}}', {hosts: setup.hosts.join(', ')}));
@@ -148,19 +151,36 @@ export default class SetupOpenShell extends InstanceCommand<typeof SetupOpenShel
         secrets: setup.providers.map((p) => p.envVar).join(', '),
       }),
     );
-    this.log(t('commands.setup.openshell.files', '  Files: {{dir}}', {dir: files.dir}));
-    if (!files.policyWritten) {
+    if (files.safetyConfig) {
       this.log(
+        t('commands.setup.openshell.safetyRules', '  Safety Mode rules: {{count}} (from your configuration)', {
+          count: safety.rules?.length ?? 0,
+        }),
+      );
+    }
+    if (setup.unmappedSafetyRules.length > 0) {
+      this.warn(
+        t(
+          'commands.setup.openshell.unmappedRules',
+          'The network policy may still block operations allowed by these command rules: {{rules}}. Edit policy.yaml to allow their requests.',
+          {rules: setup.unmappedSafetyRules.map((r) => r.command).join(', ')},
+        ),
+      );
+    }
+    this.log(t('commands.setup.openshell.files', '  Files: {{dir}}', {dir: files.dir}));
+    if (files.policyDiffers) {
+      this.warn(
         t(
           'commands.setup.openshell.policyKept',
-          '  Using the existing policy.yaml. Use --force to replace it with a newly generated one.',
+          'Using your edited {{policy}}, so changes to your settings (such as the safety level) are not applied to it. Use --force to replace it with a newly generated policy.',
+          {policy: files.policy},
         ),
       );
     }
 
     const response: SetupOpenShellResponse = {
       sandboxName: setup.sandboxName,
-      accessLevel: flags['safety-level'],
+      accessLevel,
       directory: files.dir,
       image,
       hosts: setup.hosts,

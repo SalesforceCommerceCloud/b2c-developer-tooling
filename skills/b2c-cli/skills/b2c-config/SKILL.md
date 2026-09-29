@@ -208,11 +208,14 @@ The B2C DX VS Code extension needs no setup — it injects the same TypeScript S
 
 ## OpenShell Sandbox (Beta)
 
-`b2c setup openshell` creates an NVIDIA OpenShell sandbox from the resolved configuration. Secrets stay on the OpenShell gateway, and the sandbox can reach only the B2C hosts in use, at the chosen access level. Requires the `openshell` CLI with a running gateway, and Docker.
+`b2c setup openshell` creates an NVIDIA OpenShell sandbox from the resolved configuration. Secrets stay on the OpenShell gateway, and the sandbox can reach only the B2C hosts in use, at the configured Safety Mode level (or `NONE` if unset); Safety Mode rules carry over. Requires the `openshell` CLI with a running gateway, and Docker.
 
 ```bash
-# Read-only sandbox for the active instance
+# Sandbox for the active instance at the configured Safety Mode level
 b2c setup openshell
+
+# Read-only sandbox
+b2c setup openshell --safety-level READ_ONLY
 
 # Allow writes but not deletes; include the MCP server
 b2c setup openshell --safety-level NO_DELETE --mcp

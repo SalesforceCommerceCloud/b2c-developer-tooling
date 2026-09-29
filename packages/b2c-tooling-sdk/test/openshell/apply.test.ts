@@ -85,11 +85,12 @@ describe('openshell/apply', () => {
       await fs.writeFile(path.join(dir, 'policy.yaml'), 'edited');
 
       const kept = await writeOpenShellFiles(setup, dir, OPTIONS);
-      expect(kept.policyWritten).to.equal(false);
+      expect(kept).to.include({policyWritten: false, policyDiffers: true});
       expect(await fs.readFile(kept.policy, 'utf8')).to.equal('edited');
 
       const forced = await writeOpenShellFiles(setup, dir, {...OPTIONS, force: true});
-      expect(forced.policyWritten).to.equal(true);
+      expect(forced).to.include({policyWritten: true, policyDiffers: false});
+      expect(await writeOpenShellFiles(setup, dir, OPTIONS)).to.include({policyWritten: false, policyDiffers: false});
       expect(await fs.readFile(forced.policy, 'utf8')).to.equal(setup.policy);
     });
   });
@@ -143,6 +144,31 @@ describe('openshell/apply', () => {
         'b2c-client-secret.yaml',
         'b2c-webdav-access-key.yaml',
       ]);
+    });
+
+    it('uploads forwarded Safety Mode rules', async () => {
+      const setup = buildOpenShellSetup(CONFIG, {safety: {rules: [{command: 'sandbox:delete', action: 'block'}]}});
+      const files = await writeOpenShellFiles(setup, dir, OPTIONS);
+      expect(await fs.readFile(files.safetyConfig!, 'utf8')).to.equal(setup.safetyConfig);
+      expect(await fs.readFile(files.script, 'utf8')).to.include(
+        `--upload ${files.safetyConfig}:/sandbox/.b2c/safety.json`,
+      );
+
+      const fresh = mockRunner([]);
+      await applyOpenShellSetup(setup, files, {...OPTIONS, secrets: SECRETS, run: fresh.run});
+      const create = fresh.calls.find((c) => c.args[0] === 'sandbox' && c.args[1] === 'create');
+      expect(create?.args).to.include.members(['--upload', '--no-git-ignore']);
+
+      const existing = mockRunner(['docker image inspect', 'openshell sandbox get']);
+      const steps = await applyOpenShellSetup(setup, files, {...OPTIONS, secrets: SECRETS, run: existing.run});
+      expect(steps.at(-1)?.command).to.equal(
+        `openshell sandbox upload --no-git-ignore b2c-abcd-001 ${files.safetyConfig} /sandbox/.b2c/safety.json`,
+      );
+
+      // Removed again once there is nothing to forward
+      const plain = await writeOpenShellFiles(buildOpenShellSetup(CONFIG), dir, OPTIONS);
+      expect(plain.safetyConfig).to.equal(undefined);
+      expect(await fs.readdir(dir)).to.not.include('safety.json');
     });
 
     it('recreates an existing sandbox when asked', async () => {

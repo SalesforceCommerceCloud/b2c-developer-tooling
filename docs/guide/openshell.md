@@ -19,11 +19,9 @@ everything else is locked down.
   server without seeing your API client secret, WebDAV access key, or MRT API
   key.
 - **Only B2C Commerce is reachable.** Every other host is blocked.
-- **Read-only by default**, enforced outside the sandbox so an agent can't
-  turn it off.
+- **Your [Safety Mode](./safety) level applies**, enforced outside the
+  sandbox so an agent can't turn it off.
 - **An audit log** of every request, including blocked ones.
-
-The sandbox also turns on [Safety Mode](./safety) at the same level.
 
 ## Requirements
 
@@ -90,7 +88,7 @@ openshell sandbox create \
   --env SFCC_USERNAME=me@example.com \
   --env SFCC_SHORTCODE=kv7kzm78 \
   --env SFCC_TENANT_ID=abcd_001 \
-  --env SFCC_SAFETY_LEVEL=READ_ONLY \
+  --env SFCC_SAFETY_LEVEL=NONE \
   --env SFCC_DISABLE_TELEMETRY=true \
   --env B2C_SKIP_NEW_VERSION_CHECK=true \
   --detach
@@ -103,15 +101,22 @@ without changing anything. The files contain no secrets.
 
 ## Choose what the sandbox can do
 
-| `--safety-level`      | The sandbox can                | Use it to                                               |
-| --------------------- | ------------------------------ | ------------------------------------------------------- |
-| `READ_ONLY` (default) | Read                           | Explore, review, and troubleshoot                       |
-| `NO_DELETE`           | Read and write, but not delete | Deploy code, run jobs, query analytics, and change data |
-| `NONE`                | Do anything                    | Trusted automation that must also delete                |
+The sandbox uses your [Safety Mode](./safety) level and rules. Without
+Safety Mode configured, it can do anything on the allowed hosts. To choose a
+level for the sandbox, add `--safety-level`:
+
+| `--safety-level` | The sandbox can                | Use it to                                               |
+| ---------------- | ------------------------------ | ------------------------------------------------------- |
+| `READ_ONLY`      | Read                           | Explore, review, and troubleshoot                       |
+| `NO_DELETE`      | Read and write, but not delete | Deploy code, run jobs, query analytics, and change data |
+| `NONE`           | Do anything                    | Trusted automation that must also delete                |
 
 ```bash
-b2c setup openshell --safety-level NO_DELETE
+b2c setup openshell --safety-level READ_ONLY
 ```
+
+Safety Mode rules that allow a request or job, such as a site archive export
+job, work in the sandbox too.
 
 ## Allow more
 
@@ -124,12 +129,14 @@ b2c setup openshell --allow-host registry.npmjs.org
 
 You can also edit `.openshell/<sandbox name>/policy.yaml`, for example to
 restrict a host further, and run `b2c setup openshell` again. Your edits are
-kept; use `--force` to start over from a newly generated policy.
+kept, but settings such as the safety level then no longer apply to it; use
+`--force` to start over from a newly generated policy.
 
 ## Update a sandbox
 
 Run `b2c setup openshell` again after changing the policy. After changing
-your secrets or configuration, add `--recreate` to rebuild the sandbox.
+your secrets, configuration, or Safety Mode settings, add `--recreate` to
+rebuild the sandbox.
 
 ## Agents and the MCP server
 

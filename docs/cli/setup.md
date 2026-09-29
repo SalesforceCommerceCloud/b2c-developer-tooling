@@ -469,7 +469,7 @@ b2c code list -i production # Uses production
 The OpenShell integration is in beta, and OpenShell itself is alpha software.
 :::
 
-Create an [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) sandbox for the B2C CLI from your current configuration. Your secrets are stored on the OpenShell gateway, and the sandbox can reach only the B2C Commerce hosts your configuration uses, at the access level you choose. Run the command again to apply changes. See [Sandboxing with OpenShell](../guide/openshell).
+Create an [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) sandbox for the B2C CLI from your current configuration. Your secrets are stored on the OpenShell gateway, and the sandbox can reach only the B2C Commerce hosts your configuration uses, at your [Safety Mode](../guide/safety) level. Run the command again to apply changes. See [Sandboxing with OpenShell](../guide/openshell).
 
 ### Usage
 
@@ -479,27 +479,30 @@ b2c setup openshell [FLAGS]
 
 ### Flags
 
-| Flag                | Description                                                                 | Default                   |
-| ------------------- | --------------------------------------------------------------------------- | ------------------------- |
-| `--name`            | Sandbox name                                                                | `b2c-<instance>`          |
-| `--directory`, `-d` | Directory for the generated files                                           | `.openshell/<sandbox>`    |
-| `--safety-level`    | What the sandbox may do on B2C hosts: `READ_ONLY`, `NO_DELETE`, or `NONE`   | `READ_ONLY`               |
-| `--allow-host`      | Additional host the sandbox may reach (repeatable)                          |                           |
-| `--mcp`             | Also install the B2C DX MCP server in the sandbox image                     | `false`                   |
-| `--image`           | Use this container image instead of building one                            |                           |
-| `--[no-]sandbox`    | Create the sandbox. Use `--no-sandbox` to only store the credentials        | `true`                    |
-| `--recreate`        | Delete and recreate an existing sandbox                                     | `false`                   |
-| `--force`           | Replace an edited `policy.yaml` with a newly generated one                  | `false`                   |
-| `--dry-run`         | Write the files and print the commands without running them                 | `false`                   |
-| `--json`            | Output results as JSON (never includes secrets)                             | `false`                   |
+| Flag                | Description                                                               | Default                           |
+| ------------------- | ------------------------------------------------------------------------- | --------------------------------- |
+| `--name`            | Sandbox name                                                              | `b2c-<instance>`                  |
+| `--directory`, `-d` | Directory for the generated files                                         | `.openshell/<sandbox>`            |
+| `--safety-level`    | What the sandbox may do on B2C hosts: `READ_ONLY`, `NO_DELETE`, or `NONE` | Your Safety Mode level, or `NONE` |
+| `--allow-host`      | Additional host the sandbox may reach (repeatable)                        |                                   |
+| `--mcp`             | Also install the B2C DX MCP server in the sandbox image                   | `false`                           |
+| `--image`           | Use this container image instead of building one                          |                                   |
+| `--[no-]sandbox`    | Create the sandbox. Use `--no-sandbox` to only store the credentials      | `true`                            |
+| `--recreate`        | Delete and recreate an existing sandbox                                   | `false`                           |
+| `--force`           | Replace an edited `policy.yaml` with a newly generated one                | `false`                           |
+| `--dry-run`         | Write the files and print the commands without running them               | `false`                           |
+| `--json`            | Output results as JSON (never includes secrets)                           | `false`                           |
 
 Instance and authentication flags such as `--instance` select the configuration to use.
 
 ### Examples
 
 ```bash
-# Create a read-only sandbox for the active instance
+# Create a sandbox for the active instance at your Safety Mode level
 b2c setup openshell
+
+# Read-only sandbox
+b2c setup openshell --safety-level READ_ONLY
 
 # Allow writes but not deletes
 b2c setup openshell --safety-level NO_DELETE
@@ -647,14 +650,14 @@ Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes
 
 ### Skill Sets
 
-| Skill Set               | Description                                                            |
-| ----------------------- | ---------------------------------------------------------------------- |
-| `b2c`                   | B2C Commerce development patterns and practices                        |
-| `b2c-cli`               | B2C CLI commands and operations                                        |
-| `b2c-ops` | Operator and administrator runbooks for job health, checkout failures, and incident triage |
-| `storefront-next`       | Storefront Next development — routing, components, deployment          |
-| `storefront-next-figma` | Storefront Next Figma design-kit workflows (requires Figma MCP server) |
-| `cap-dev`               | Commerce App Package scaffolding, validation, and submission           |
+| Skill Set               | Description                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| `b2c`                   | B2C Commerce development patterns and practices                                            |
+| `b2c-cli`               | B2C CLI commands and operations                                                            |
+| `b2c-ops`               | Operator and administrator runbooks for job health, checkout failures, and incident triage |
+| `storefront-next`       | Storefront Next development — routing, components, deployment                              |
+| `storefront-next-figma` | Storefront Next Figma design-kit workflows (requires Figma MCP server)                     |
+| `cap-dev`               | Commerce App Package scaffolding, validation, and submission                               |
 
 ### Output
 

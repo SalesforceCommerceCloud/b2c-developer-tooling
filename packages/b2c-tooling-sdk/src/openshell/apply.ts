@@ -14,7 +14,7 @@ import {existsSync} from 'node:fs';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type {OpenShellSetup} from './setup.js';
+import {OPENSHELL_SAFETY_CONFIG_PATH, type OpenShellSetup} from './setup.js';
 
 /** Result of running an external command. */
 export interface CommandResult {
@@ -46,8 +46,12 @@ export interface OpenShellFiles {
   dockerfile: string;
   script: string;
   profiles: Record<string, string>;
+  /** Safety Mode configuration uploaded to the sandbox, if any */
+  safetyConfig?: string;
   /** False when an existing policy file was kept */
   policyWritten: boolean;
+  /** True when a kept policy file differs from the generated policy */
+  policyDiffers: boolean;
 }
 
 /** Options shared by {@link writeOpenShellFiles} and {@link applyOpenShellSetup}. */
@@ -109,6 +113,9 @@ function sandboxCreateArgs(setup: OpenShellSetup, files: OpenShellFiles, image: 
     ...setup.providers.flatMap((p) => ['--provider', p.name]),
     '--no-auto-providers',
     ...Object.entries(setup.env).flatMap(([key, value]) => ['--env', `${key}=${value}`]),
+    ...(files.safetyConfig
+      ? ['--upload', `${files.safetyConfig}:${OPENSHELL_SAFETY_CONFIG_PATH}`, '--no-git-ignore']
+      : []),
     '--detach',
   ];
 }
@@ -165,9 +172,17 @@ export async function writeOpenShellFiles(
   if (policyWritten) {
     await fs.writeFile(policy, setup.policy);
   }
+  const policyDiffers = !policyWritten && (await fs.readFile(policy, 'utf8')) !== setup.policy;
 
   const dockerfile = path.join(absDir, 'Dockerfile');
   await fs.writeFile(dockerfile, options.dockerfile);
+
+  const safetyConfig = path.join(absDir, 'safety.json');
+  if (setup.safetyConfig) {
+    await fs.writeFile(safetyConfig, setup.safetyConfig);
+  } else {
+    await fs.rm(safetyConfig, {force: true});
+  }
 
   const files: OpenShellFiles = {
     dir: absDir,
@@ -175,7 +190,9 @@ export async function writeOpenShellFiles(
     dockerfile,
     script: path.join(absDir, 'setup.sh'),
     profiles,
+    safetyConfig: setup.safetyConfig ? safetyConfig : undefined,
     policyWritten,
+    policyDiffers,
   };
   await fs.writeFile(files.script, formatOpenShellScript(setup, files, options.image), {mode: 0o755});
   return files;
@@ -204,7 +221,8 @@ export interface ApplyOpenShellSetupOptions extends OpenShellApplyOptions {
  * 2. Builds the sandbox image if it does not exist.
  * 3. Imports each provider profile, or updates it if it exists.
  * 4. Creates each provider, or updates its secret if it exists.
- * 5. Creates the sandbox, or applies the policy to the existing sandbox.
+ * 5. Creates the sandbox, or applies the policy and Safety Mode configuration
+ *    to the existing sandbox.
  *
  * @returns The steps that were run
  */
@@ -276,16 +294,28 @@ export async function applyOpenShellSetup(
   if (sandboxExists && options.recreate) {
     await runStep(`Delete sandbox ${setup.sandboxName}`, 'openshell', ['sandbox', 'delete', setup.sandboxName]);
   }
-  await (sandboxExists && !options.recreate
-    ? runStep(`Apply policy to sandbox ${setup.sandboxName}`, 'openshell', [
-        'policy',
-        'set',
-        setup.sandboxName,
-        '--policy',
-        files.policy,
-        '--wait',
-      ])
-    : runStep(`Create sandbox ${setup.sandboxName}`, 'openshell', sandboxCreateArgs(setup, files, options.image)));
+  if (!sandboxExists || options.recreate) {
+    await runStep(`Create sandbox ${setup.sandboxName}`, 'openshell', sandboxCreateArgs(setup, files, options.image));
+    return steps;
+  }
+  await runStep(`Apply policy to sandbox ${setup.sandboxName}`, 'openshell', [
+    'policy',
+    'set',
+    setup.sandboxName,
+    '--policy',
+    files.policy,
+    '--wait',
+  ]);
+  if (files.safetyConfig) {
+    await runStep(`Upload Safety Mode configuration to ${setup.sandboxName}`, 'openshell', [
+      'sandbox',
+      'upload',
+      '--no-git-ignore',
+      setup.sandboxName,
+      files.safetyConfig,
+      OPENSHELL_SAFETY_CONFIG_PATH,
+    ]);
+  }
 
   return steps;
 }

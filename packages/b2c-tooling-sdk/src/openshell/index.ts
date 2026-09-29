@@ -29,7 +29,13 @@
  *
  * @module openshell
  */
-export {buildOpenShellDockerfile, buildOpenShellSetup, OPENSHELL_ACCESS_LEVELS, secretNeedsBodyAuth} from './setup.js';
+export {
+  buildOpenShellDockerfile,
+  buildOpenShellSetup,
+  OPENSHELL_ACCESS_LEVELS,
+  OPENSHELL_SAFETY_CONFIG_PATH,
+  secretNeedsBodyAuth,
+} from './setup.js';
 export type {
   OpenShellAccessLevel,
   OpenShellProfile,

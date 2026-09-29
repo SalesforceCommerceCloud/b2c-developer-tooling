@@ -9,8 +9,11 @@ import type {NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {
   buildOpenShellDockerfile,
   buildOpenShellSetup,
+  OPENSHELL_SAFETY_CONFIG_PATH,
   secretNeedsBodyAuth,
+  type OpenShellAccessLevel,
 } from '@salesforce/b2c-tooling-sdk/openshell';
+import type {SafetyRule} from '@salesforce/b2c-tooling-sdk/safety';
 
 interface Endpoint {
   host: string;
@@ -88,7 +91,7 @@ describe('openshell/setup', () => {
       expect(am.host).to.equal('account.demandware.com');
       expect(am.credential_binding).to.deep.equal({provider: 'b2c-abcd-001-client-secret'});
       expect(am.rules[0]).to.deep.equal({allow: {method: 'POST', path: '/dwsso/oauth2/access_token'}});
-      expect(methods(am, '/dw/rest/**')).to.deep.equal(['GET', 'HEAD', 'OPTIONS']);
+      expect(methods(am, '/dw/rest/**')).to.deep.equal(['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']);
       expect(policy.b2c_instance.endpoints[0].credential_binding).to.deep.equal({provider: 'b2c-abcd-001-webdav'});
       expect(policy.b2c_scapi.endpoints[0].host).to.equal('kv7kzm78.api.commercecloud.salesforce.com');
       expect(policy.b2c_scapi.endpoints[0]).to.not.have.property('credential_binding');
@@ -97,7 +100,7 @@ describe('openshell/setup', () => {
     });
 
     it('limits methods by access level', () => {
-      const instance = (level: 'NONE' | 'NO_DELETE' | 'READ_ONLY') =>
+      const instance = (level?: OpenShellAccessLevel) =>
         parsePolicy(buildOpenShellSetup(CONFIG, {accessLevel: level}).policy).network_policies.b2c_instance
           .endpoints[0];
       const webdav = '/on/demandware.servlet/webdav/**';
@@ -106,7 +109,39 @@ describe('openshell/setup', () => {
       expect(methods(instance('READ_ONLY'), webdav)).to.deep.equal(['PROPFIND']);
       expect(methods(instance('NO_DELETE'))).to.deep.equal(['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH']);
       expect(methods(instance('NO_DELETE'), webdav)).to.deep.equal(['PROPFIND', 'MKCOL', 'MOVE', 'COPY']);
+      expect(methods(instance('NO_UPDATE'))).to.deep.equal(methods(instance('NO_DELETE')));
       expect(methods(instance('NONE'))).to.include('DELETE');
+      expect(methods(instance())).to.deep.equal(methods(instance('NONE')));
+    });
+
+    it('forwards Safety Mode rules and adds exceptions to the network policy', () => {
+      const rules: SafetyRule[] = [
+        {job: 'sfcc-site-archive-export', action: 'allow'},
+        {method: 'POST', path: '/**/code_versions', action: 'confirm'},
+        {path: '/**/sites/*', action: 'allow'},
+        {method: 'DELETE', path: '/**', action: 'block'},
+        {command: 'ecdn:cache:purge', action: 'allow'},
+      ];
+      const setup = buildOpenShellSetup(CONFIG, {accessLevel: 'READ_ONLY', safety: {confirm: true, rules}});
+      expect(JSON.parse(setup.safetyConfig!)).to.deep.equal({level: 'READ_ONLY', confirm: true, rules});
+      expect(setup.env.SFCC_SAFETY_CONFIG).to.equal(OPENSHELL_SAFETY_CONFIG_PATH);
+      expect(setup.unmappedSafetyRules).to.deep.equal([rules[4]]);
+
+      const policy = parsePolicy(setup.policy).network_policies;
+      for (const endpoint of [policy.b2c_instance.endpoints[0], policy.b2c_scapi.endpoints[0]]) {
+        expect(methods(endpoint, '/**/jobs/sfcc-site-archive-export/executions')).to.deep.equal(['POST']);
+        expect(methods(endpoint, '/**/code_versions')).to.deep.equal(['POST']);
+        expect(methods(endpoint, '/**/sites/*')).to.include.members(['PUT', 'DELETE', 'MKCOL']);
+        expect(methods(endpoint)).to.deep.equal(['GET', 'HEAD', 'OPTIONS']);
+      }
+      expect(methods(policy.b2c_docs.endpoints[0])).to.deep.equal(['GET', 'HEAD', 'OPTIONS']);
+    });
+
+    it('forwards nothing without Safety Mode rules', () => {
+      const setup = buildOpenShellSetup(CONFIG, {safety: {confirm: false, rules: []}});
+      expect(setup.safetyConfig).to.equal(undefined);
+      expect(setup.env).to.not.have.property('SFCC_SAFETY_CONFIG');
+      expect(setup.env.SFCC_SAFETY_LEVEL).to.equal('NONE');
     });
 
     it('sets matching non-secret environment for the sandbox', () => {
@@ -147,7 +182,7 @@ describe('openshell/setup', () => {
     });
 
     it('allows the default service hosts', () => {
-      const setup = buildOpenShellSetup(CONFIG);
+      const setup = buildOpenShellSetup(CONFIG, {accessLevel: 'READ_ONLY'});
       const policy = parsePolicy(setup.policy).network_policies;
       expect(policy.b2c_sandbox_api.endpoints[0].host).to.equal('admin.dx.commercecloud.salesforce.com');
       expect(policy.b2c_cip.endpoints.map((e) => e.host)).to.deep.equal([
