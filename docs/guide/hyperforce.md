@@ -47,7 +47,7 @@ The person who manages the staging tenant does Steps 1–5. Developers only need
 
 ### Step 1: Check the Prerequisites
 
-- **A staging tenant on Hyperforce.** Its tenant ID ends in `_stg`, for example `zzxy_stg`.
+- **A staging tenant.** Its tenant ID ends in `_stg`, for example `zzxy_stg`. Your realm doesn't need to be migrated to Hyperforce yet. You can [set this up ahead of time](#what-changes-from-cert-staging).
 - **An API client with the `sfcc.cdn-zones.rw` scope**, plus the SCAPI short code and tenant ID in your configuration. See [SCAPI Authentication](/guide/authentication#scapi-authentication).
 
 ### Step 2: Create Your CA and a CI Client Certificate
@@ -300,7 +300,7 @@ Registered CAs are also listed in the staging Business Manager under **Administr
 
 | Symptom | What to check |
 |---------|---------------|
-| `Code upload custom hostname is missing in staging BM zone` | Your staging tenant isn't set up for two-factor code upload on Hyperforce yet. Check that your realm has been migrated, and contact Salesforce Support if the error persists. |
+| `Code upload custom hostname is missing in staging BM zone` | Your staging tenant isn't set up for two-factor code upload yet. Contact Salesforce Support. |
 | 401/403 from the API | The API client needs the `sfcc.cdn-zones.rw` scope, and the tenant must be a staging (`_stg`) tenant. |
 | `maximum CA expiry of 1 year` | Use a CA valid for 365 days or less. |
 | `not a CA certificate` | Register the CA that signs client certificates, not a client certificate. |
