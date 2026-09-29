@@ -36,6 +36,10 @@ before connecting sensitive environments, and review results before sharing them
 See [authentication setup](../guide/authentication) for API scopes and account
 permissions.
 
+To keep credentials out of your assistant's environment, control which hosts
+and operations it can reach, and keep an audit log of its requests, run the MCP
+server in a sandbox. See [Agent Sandboxing](../guide/agent-sandboxing).
+
 ## Deployments {#deployments}
 
 Cartridge deployment writes to the selected code version. MRT publishing uploads

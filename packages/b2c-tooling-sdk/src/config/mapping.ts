@@ -82,6 +82,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   selfsigned: 'selfSigned',
   'oauth-scopes': 'oauthScopes',
   'auth-methods': 'authMethods',
+  'client-auth-method': 'clientAuthMethod',
   'cip-host': 'cipHost',
   'api-backend': 'apiBackend',
   'mrt-backend': 'mrtBackend',
@@ -193,6 +194,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     instanceName: json.name,
     authMethods,
     accountManagerHost: json.accountManagerHost,
+    clientAuthMethod: json.clientAuthMethod,
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,
     mrtApiKey: json.mrtApiKey,
@@ -310,6 +312,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.accountManagerHost !== undefined) {
     result.accountManagerHost = config.accountManagerHost;
+  }
+  if (config.clientAuthMethod !== undefined) {
+    result.clientAuthMethod = config.clientAuthMethod;
   }
   if (config.autoUpload !== undefined) {
     result.autoUpload = config.autoUpload;
@@ -551,6 +556,7 @@ export function mergeConfigsWithProtection(
       siteId: overrides.siteId ?? base.siteId,
       authMethods: overrides.authMethods ?? base.authMethods,
       accountManagerHost: overrides.accountManagerHost ?? base.accountManagerHost,
+      clientAuthMethod: overrides.clientAuthMethod ?? base.clientAuthMethod,
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
       autoUpload: overrides.autoUpload ?? base.autoUpload,
@@ -657,6 +663,7 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
       clientSecret: config.clientSecret,
       scopes: config.scopes,
       accountManagerHost: config.accountManagerHost,
+      clientAuthMethod: config.clientAuthMethod,
       jwtCertPath: config.jwtCertPath,
       jwtKeyPath: config.jwtKeyPath,
       jwtPassphrase: config.jwtPassphrase,

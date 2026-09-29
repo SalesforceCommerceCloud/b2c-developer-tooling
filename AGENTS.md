@@ -155,6 +155,10 @@ See [CLI command development skill](./.claude/skills/cli-command-development/SKI
 - [Testing](./.claude/skills/testing/SKILL.md) - Mocha, Chai, MSW patterns
 - [Documentation](./.claude/skills/documentation/SKILL.md) - user guides, CLI reference, API docs
 
+## Pull Requests
+
+GUS work-item prefixes in PR titles must include `@`, for example `@W-24337127: Support OpenShell sandboxes`.
+
 ## Pre-Commit Checks
 
 Before committing code, always run lint to catch formatting and style issues:

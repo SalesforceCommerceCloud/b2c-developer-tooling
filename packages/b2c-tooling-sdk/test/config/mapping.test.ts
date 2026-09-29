@@ -217,6 +217,19 @@ describe('config/mapping', () => {
     });
   });
 
+  describe('mapDwJsonToNormalizedConfig - clientAuthMethod', () => {
+    it('passes clientAuthMethod through and back to dw.json', () => {
+      const result = mapDwJsonToNormalizedConfig({clientAuthMethod: 'body'});
+      expect(result.clientAuthMethod).to.equal('body');
+      expect(mapNormalizedConfigToDwJson(result).clientAuthMethod).to.equal('body');
+    });
+
+    it('keeps an override clientAuthMethod when merging', () => {
+      const {config} = mergeConfigsWithProtection({clientAuthMethod: 'body'}, {clientAuthMethod: 'basic'});
+      expect(config.clientAuthMethod).to.equal('body');
+    });
+  });
+
   describe('mapDwJsonToNormalizedConfig - userAuth shorthand', () => {
     it('collapses userAuth=true to authMethods=["user"]', () => {
       const result = mapDwJsonToNormalizedConfig({userAuth: true});

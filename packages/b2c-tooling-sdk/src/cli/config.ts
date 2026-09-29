@@ -12,6 +12,7 @@
  * @module cli/config
  */
 import type {AuthMethod} from '../auth/types.js';
+import type {ClientAuthMethod} from '../auth/client-credentials.js';
 import {ALL_AUTH_METHODS} from '../auth/types.js';
 import {resolveConfig, type NormalizedConfig, type ConfigSource, type ResolvedB2CConfig} from '../config/index.js';
 import {findDwJson} from '../config/dw-json.js';
@@ -66,6 +67,7 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
     tenantId: flags['tenant-id'] as string | undefined,
     authMethods,
     accountManagerHost: flags['account-manager-host'] as string | undefined,
+    clientAuthMethod: flags['client-auth-method'] as ClientAuthMethod | undefined,
     scopes: scopes && scopes.length > 0 ? scopes : undefined,
     // JWT Bearer auth flags
     jwtCertPath: flags['jwt-cert'] as string | undefined,

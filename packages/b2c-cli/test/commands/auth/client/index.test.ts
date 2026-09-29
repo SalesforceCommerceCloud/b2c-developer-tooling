@@ -136,6 +136,62 @@ describe('auth client', () => {
       expect(JSON.stringify(session)).to.not.include('test-client-secret');
     });
 
+    it('sends a sandbox credential placeholder in an unencoded Basic header', async () => {
+      const placeholder = 'openshell:resolve:env:v1_SFCC_CLIENT_SECRET';
+      const command = createCommand({});
+      Object.defineProperty(command, 'resolvedConfig', {
+        value: {
+          values: {accountManagerHost: TEST_HOST, clientId: 'test-client-id', clientSecret: placeholder},
+          hasOAuthConfig: () => true,
+        },
+        configurable: true,
+      });
+      let capturedAuth: null | string = null;
+
+      server.use(
+        http.post(TOKEN_URL, ({request}) => {
+          capturedAuth = request.headers.get('Authorization');
+          return HttpResponse.json({access_token: 'new-access-token', expires_in: 1800});
+        }),
+      );
+
+      await command.run();
+
+      expect(capturedAuth).to.equal(`Basic ${Buffer.from(`test-client-id:${placeholder}`).toString('base64')}`);
+    });
+
+    it('sends credentials in the body when clientAuthMethod is body', async () => {
+      const command = createCommand({});
+      Object.defineProperty(command, 'resolvedConfig', {
+        value: {
+          values: {
+            accountManagerHost: TEST_HOST,
+            clientAuthMethod: 'body',
+            clientId: 'test-client-id',
+            clientSecret: 'test-client-secret',
+          },
+          hasOAuthConfig: () => true,
+        },
+        configurable: true,
+      });
+      let capturedAuth: null | string = 'unset';
+      let capturedBody: undefined | URLSearchParams;
+
+      server.use(
+        http.post(TOKEN_URL, async ({request}) => {
+          capturedAuth = request.headers.get('Authorization');
+          capturedBody = new URLSearchParams(await request.text());
+          return HttpResponse.json({access_token: 'new-access-token', expires_in: 1800});
+        }),
+      );
+
+      await command.run();
+
+      expect(capturedAuth).to.equal(null);
+      expect(capturedBody?.get('client_id')).to.equal('test-client-id');
+      expect(capturedBody?.get('client_secret')).to.equal('test-client-secret');
+    });
+
     it('should extract user from id_token', async () => {
       const command = createCommand({});
 
