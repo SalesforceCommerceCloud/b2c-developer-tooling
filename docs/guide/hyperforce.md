@@ -173,7 +173,7 @@ Anyone with `ca.key` can issue client certificates that your staging instance tr
 
 Follow this step only if developers upload code to staging from their own machines. For example, they might test a build on staging before merging, or use `b2c code watch`.
 
-Each developer needs their own client certificate. Don't reuse the CI certificate. Issue one from the CA for each developer, named after their Business Manager username:
+Use the same CA you created in Step 2. Issue each developer their own client certificate from it, named after their Business Manager username, rather than sharing the CI certificate:
 
 ```bash
 b2c ecdn mtls issue --ca-cert-file ./mtls-certs/ca.pem --ca-key-file ./mtls-certs/ca.key --name jsmith
