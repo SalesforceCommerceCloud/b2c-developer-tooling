@@ -150,20 +150,29 @@ describe('openshell/apply', () => {
       const setup = buildOpenShellSetup(CONFIG, {safety: {rules: [{command: 'sandbox:delete', action: 'block'}]}});
       const files = await writeOpenShellFiles(setup, dir, OPTIONS);
       expect(await fs.readFile(files.safetyConfig!, 'utf8')).to.equal(setup.safetyConfig);
-      expect(await fs.readFile(files.script, 'utf8')).to.include(
-        `--upload ${files.safetyConfig}:/sandbox/.b2c/safety.json`,
-      );
+      expect(await fs.readFile(files.script, 'utf8'))
+        .to.include('--upload')
+        .and.include(':/sandbox/.b2c/safety.json');
 
       const fresh = mockRunner([]);
       await applyOpenShellSetup(setup, files, {...OPTIONS, secrets: SECRETS, run: fresh.run});
       const create = fresh.calls.find((c) => c.args[0] === 'sandbox' && c.args[1] === 'create');
-      expect(create?.args).to.include.members(['--upload', '--no-git-ignore']);
+      expect(create?.args).to.include.members([
+        '--upload',
+        `${files.safetyConfig}:/sandbox/.b2c/safety.json`,
+        '--no-git-ignore',
+      ]);
 
       const existing = mockRunner(['docker image inspect', 'openshell sandbox get']);
-      const steps = await applyOpenShellSetup(setup, files, {...OPTIONS, secrets: SECRETS, run: existing.run});
-      expect(steps.at(-1)?.command).to.equal(
-        `openshell sandbox upload --no-git-ignore b2c-abcd-001 ${files.safetyConfig} /sandbox/.b2c/safety.json`,
-      );
+      await applyOpenShellSetup(setup, files, {...OPTIONS, secrets: SECRETS, run: existing.run});
+      expect(existing.calls.at(-1)?.args).to.deep.equal([
+        'sandbox',
+        'upload',
+        '--no-git-ignore',
+        'b2c-abcd-001',
+        files.safetyConfig,
+        '/sandbox/.b2c/safety.json',
+      ]);
 
       // Removed again once there is nothing to forward
       const plain = await writeOpenShellFiles(buildOpenShellSetup(CONFIG), dir, OPTIONS);
