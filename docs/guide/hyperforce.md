@@ -14,10 +14,10 @@ So there are two parts:
 
 | Part | What it is | Typically | Where it's kept |
 |------|------------|----------|-----------------|
-| **CA** (`ca.pem` + `ca.key`) | Signs client certificates. Its certificate is registered with eCDN for your staging tenant. It's never used to connect. | One per staging tenant. You can register several, for example while you renew. | A password manager or secrets vault |
+| **CA** (`ca.pem` + `ca.key`) | Signs client certificates. Its certificate is registered with eCDN for your staging tenant. | One per staging tenant. You can register several, for example while you renew. | A password manager or secrets vault |
 | **Client certificate** (`.p12` + passphrase) | Sent by the CLI on each code upload | One per CI pipeline and one per developer who uploads to staging. You can issue as many as you need. | CI secrets, or the developer's machine |
 
-Only code upload to staging needs a client certificate. This covers `b2c code deploy`, `b2c code watch`, `b2c webdav` commands, and the equivalent GitHub Actions. Business Manager login, API calls, and sandboxes don't need one.
+Only code upload (WebDAV) to staging needs a client certificate. Business Manager, API calls, and sandboxes don't.
 
 ### What Changes from cert.staging
 
@@ -50,8 +50,6 @@ The person who manages the staging tenant does Steps 1–5. Developers only need
 - **A staging tenant on Hyperforce.** Its tenant ID ends in `_stg`, for example `zzxy_stg`.
 - **An API client with the `sfcc.cdn-zones.rw` scope**, plus the SCAPI short code and tenant ID in your configuration. See [SCAPI Authentication](/guide/authentication#scapi-authentication).
 
-You don't need to configure a hostname. When you register a CA, eCDN links it to your staging tenant's code upload hostname automatically. Salesforce sets up this hostname. You can't choose or change it.
-
 ### Step 2: Create Your CA and a CI Client Certificate
 
 You usually need only one CA per staging tenant, so this is typically a **one-time step**. Create the CA and a first client certificate with one command:
@@ -63,7 +61,7 @@ b2c ecdn mtls create --tenant-id zzxy_stg --generate \
 
 This creates **two separate certificates**. Each has its own name:
 
-1. **The CA** (`--name`). The command generates a CA valid for 1 year and registers its certificate with eCDN. The name is only a label. It appears in `b2c ecdn mtls list` and in Business Manager. Nothing ever connects with the CA.
+1. **The CA** (`--name`). The command generates a CA valid for 1 year and registers its certificate with eCDN. The name is only a label. It appears in `b2c ecdn mtls list` and in Business Manager.
 2. **A client certificate, signed by that CA** (`--client-name`). This `<client-name>.p12`, with a random passphrase, is what actually gets sent on code upload. Name it after the pipeline that will use it, for example `github-actions`.
 
 Files go to `./mtls-certs` unless you set `--out-dir`. At the end, the command prints the certificate path and passphrase, a `base64` command for CI, and the equivalent `dw.json` settings.
@@ -247,9 +245,7 @@ Issue a new client certificate from the existing CA, as in [Step 3](#step-3-add-
 
 ### Replace an Expiring Client Certificate
 
-A client certificate is valid for 365 days by default (`--days`), but never past its CA's expiry. A certificate issued late in the CA's life therefore expires with the CA. In that case, [renew the CA](#renew-the-ca) instead.
-
-Otherwise, issue a replacement from the same CA with the same name, then update the pipeline's secrets or the developer's `dw.json`:
+Issue a replacement from the same CA with the same name, then update the pipeline's secrets or the developer's `dw.json`. If the CA itself is also close to expiring, [renew the CA](#renew-the-ca) instead.
 
 ```bash
 b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-actions --output ./ci.p12 --force
@@ -304,7 +300,7 @@ Registered CAs are also listed in the staging Business Manager under **Administr
 
 | Symptom | What to check |
 |---------|---------------|
-| `Code upload custom hostname is missing in staging BM zone` | Salesforce hasn't set up the code upload hostname for your staging tenant yet, so there's nothing to link the CA to. You can't set this hostname up yourself. Check that your realm is on Hyperforce, and contact Salesforce Support if the error persists. |
+| `Code upload custom hostname is missing in staging BM zone` | Your staging tenant isn't set up for two-factor code upload on Hyperforce yet. Check that your realm has been migrated, and contact Salesforce Support if the error persists. |
 | 401/403 from the API | The API client needs the `sfcc.cdn-zones.rw` scope, and the tenant must be a staging (`_stg`) tenant. |
 | `maximum CA expiry of 1 year` | Use a CA valid for 365 days or less. |
 | `not a CA certificate` | Register the CA that signs client certificates, not a client certificate. |
