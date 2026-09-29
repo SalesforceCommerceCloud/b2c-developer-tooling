@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.10.2
+
+### Patch Changes
+
+- [#717](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/717) [`443fa0b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/443fa0b9bd0abdd360077c51b692784eaa1827dd) - Clearer Hyperforce two-factor code upload guidance: a step-by-step setup that starts with CI pipelines, plus clearer `b2c ecdn mtls` prompts that separate the CA from the client certificate used for upload (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.10.1
 
 ### Patch Changes
