@@ -206,7 +206,7 @@ export async function generateAndUploadCodeUploadCertificate(
     );
   }
 
-  progress('Issuing client certificate...');
+  progress(`Issuing client certificate "${options.clientName}" signed by the CA...`);
   const clientCert = issueClientCertificate({
     ca,
     commonName: options.clientName,

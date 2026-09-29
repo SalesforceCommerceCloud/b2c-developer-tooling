@@ -882,11 +882,16 @@ b2c ecdn mrt-rules rules delete --zone my-zone --ruleset-id abc123 --rule-id def
 
 ## mTLS Certificates (Organization Level)
 
-Code upload certificates enable two-factor (mTLS) code upload to staging instances. You upload a CA certificate to eCDN, then issue client certificates (`.p12`) signed by that CA for each user or pipeline. These commands require a staging tenant (`_stg`). For the complete workflow, security guidance, and renewal, see [Code Upload Certificates](/guide/hyperforce#code-upload-certificates).
+Code upload certificates enable two-factor (mTLS) code upload to staging instances. Two kinds of certificate are involved:
+
+- **A CA**, registered with eCDN for your staging tenant. It only signs client certificates and is never used to connect.
+- **Client certificates** (`.p12`) signed by that CA, one for each CI pipeline or developer. The CLI sends these on code upload.
+
+These commands require a staging tenant (`_stg`). Most users only need `setup` once, then `issue` for each pipeline or developer. For the complete step-by-step workflow, see [Set Up Two-Factor Code Upload](/guide/hyperforce#set-up-two-factor-code-upload).
 
 ### b2c ecdn mtls setup
 
-Interactively set up two-factor code upload: generate and upload a CA, issue your client certificate, and optionally update `dw.json` with the code upload hostname, certificate path, and passphrase. Requires an interactive terminal; use `create --generate` in scripts.
+The recommended way to start. It interactively generates a CA and registers it with eCDN, then issues a first client certificate for you from that CA. Finally, it can update `dw.json` with the client certificate path and passphrase. The wizard prompts for the CA name (a label) and the client certificate name separately. Requires an interactive terminal; use `create --generate` in scripts.
 
 ```bash
 b2c ecdn mtls setup --tenant-id zzxy_stg
@@ -914,7 +919,7 @@ b2c ecdn mtls list --tenant-id zzxy_stg
 
 ### b2c ecdn mtls create
 
-Upload a CA certificate for code upload authentication, either from existing PEM files or generated with `--generate`.
+Register a CA certificate for code upload without prompts. With `--generate`, it does the same job as `setup`. It generates a CA, registers it, and issues a first client certificate (named by `--client-name`) from it. With `--certificate-file` and `--private-key-file`, it registers a CA you already have.
 
 ```bash
 # Generate a CA, upload it, and issue a first client certificate
@@ -935,12 +940,12 @@ Uploaded CA certificates must be CA certificates valid for at most 1 year; the C
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--name` | Certificate name (required) | |
+| `--name` | Name (label) for the registered CA (required) | |
 | `--certificate-file` | Path to PEM-encoded CA certificate file | |
 | `--private-key-file` | Path to PEM-encoded CA private key file | |
-| `--generate` | Generate a new CA, upload it, and issue a client certificate | `false` |
+| `--generate` | Generate a new CA, register it, and issue a first client certificate from it | `false` |
 | `--out-dir` | Directory for generated files | `mtls-certs` |
-| `--client-name` | Common name for the generated client certificate (Business Manager username or API client ID recommended) | `<name>-client` |
+| `--client-name` | Name of the client certificate (`.p12`) issued from the new CA; this is the certificate used for code upload (Business Manager username or API client ID recommended) | `<name>-client` |
 | `--p12-passphrase` | Passphrase for the generated `.p12` (env: `SFCC_MTLS_P12_PASSPHRASE`) | Random |
 | `--ca-common-name` | Common name for the generated CA | Staging hostname if configured, else `<name> CA` |
 | `--ca-days` | CA validity in days (maximum 365) | `365` |
@@ -953,7 +958,7 @@ Provide either `--generate` or both `--certificate-file` and `--private-key-file
 
 ### b2c ecdn mtls issue
 
-Issue a client certificate (`.p12`) signed by an existing CA, for another user or a CI pipeline. Runs locally; no API call or authentication is needed.
+Issue a client certificate (`.p12`) signed by an existing CA, for a CI pipeline or developer. Runs locally; no API call or authentication is needed.
 
 ```bash
 b2c ecdn mtls issue --ca-cert-file ./mtls-certs/ca.pem --ca-key-file ./mtls-certs/ca.key --name jsmith

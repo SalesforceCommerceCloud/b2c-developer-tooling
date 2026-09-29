@@ -315,7 +315,7 @@ Upload files via WebDAV.
 ## Staging Environments (Two-Factor mTLS)
 
 ::: tip Hyperforce staging: create your certificates first
-On Hyperforce, you manage the CA for code upload client certificates yourself through eCDN. See [Code Upload Certificates](/guide/hyperforce#code-upload-certificates) to generate and upload a CA, then issue a dedicated `.p12` for each pipeline:
+On Hyperforce, you manage the CA for code upload client certificates yourself through eCDN. See [Set Up Two-Factor Code Upload](/guide/hyperforce#set-up-two-factor-code-upload) to create and register a CA once, then issue a dedicated `.p12` for each pipeline:
 
 ```bash
 b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-actions --output ./ci.p12

@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-28T15:26:31.315Z",
+  "generatedAt": "2026-09-29T02:06:06.784Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -332,8 +332,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce.md",
-      "headings": "What Changes on Hyperforce • Migrating from cert.staging • Code Upload Certificates • Prerequisites • Quick Start • Non-Interactive • Generated Files • Protect the CA Private Key • Issue Client Certificates • Configure the CLI • Renew Before Expiry • Bring Your Own CA • CI/CD on Hyperforce Staging • GitHub Actions • Other CI Systems • Troubleshooting",
-      "preview": "Deploy code to B2C Commerce on Hyperforce — what changes for staging code upload, migrating from cert.staging, and setting up two-factor (mTLS) code upload certificates with the CLI."
+      "headings": "What Is Two-Factor Code Upload? • What Changes from cert.staging • Who Needs a Client Certificate? • Set Up Two-Factor Code Upload • Step 1: Check the Prerequisites • Step 2: Create Your CA • Step 3: Issue a Client Certificate for CI • Step 4: Configure Your Pipeline • GitHub Actions • Bitbucket Pipelines • Other CI Systems • Step 5: Store the CA Securely • Step 6 (Optional): Set Up Local Code Upload • Over Time: Keeping Code Upload Working • Add a Pipeline or Developer • Replace an Expiring Client Certificate • Renew the CA • Rotate After a Leak or Offboarding • Reference • Bring Your Own CA • Command Reference • Troubleshooting",
+      "preview": "Deploy code to B2C Commerce on Hyperforce — what two-factor (mTLS) code upload to staging is, and step-by-step setup of client certificates for CI/CD pipelines and local development with the CLI."
     },
     {
       "id": "guide-ide-integration",

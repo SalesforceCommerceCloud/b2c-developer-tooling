@@ -103,14 +103,14 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     }
 
     const name = await input({
-      message: t('commands.ecdn.mtls.setup.namePrompt', 'Certificate name:'),
+      message: t('commands.ecdn.mtls.setup.namePrompt', 'CA name (a label shown in eCDN and Business Manager):'),
       default: 'code-upload',
       validate: (v) => v.trim().length > 0 || 'Name is required',
     });
     const clientName = await input({
       message: t(
         'commands.ecdn.mtls.setup.clientNamePrompt',
-        'Client certificate name (recommended: your Business Manager username or API client ID):',
+        'Client certificate name, for the .p12 you upload with (recommended: your Business Manager username):',
       ),
       default: this.resolvedConfig.values.username ?? os.userInfo().username,
       validate: (v) => v.trim().length > 0 || 'Name is required',

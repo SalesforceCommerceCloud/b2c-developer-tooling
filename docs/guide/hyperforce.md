@@ -1,104 +1,193 @@
 ---
-description: Deploy code to B2C Commerce on Hyperforce — what changes for staging code upload, migrating from cert.staging, and setting up two-factor (mTLS) code upload certificates with the CLI.
+description: Deploy code to B2C Commerce on Hyperforce — what two-factor (mTLS) code upload to staging is, and step-by-step setup of client certificates for CI/CD pipelines and local development with the CLI.
 ---
 
 # Deploying to Hyperforce
 
-Most deployment workflows work the same on Hyperforce. The main difference is two-factor (mTLS) code upload to **staging** instances, which uses client certificates signed by a certificate authority (CA) that you register with eCDN.
+Most deployment workflows work the same on Hyperforce. The one thing you must set up is **two-factor code upload** to your **staging** instance. Every code upload to staging needs a client certificate as well as your API credentials. On Hyperforce, you create and manage these certificates yourself. This page shows you how to do it with the CLI, starting with your CI/CD pipeline.
 
-## What Changes on Hyperforce
+## What Is Two-Factor Code Upload?
 
-- Code upload uses the standard staging hostname (`staging-<realm>-<customer>.demandware.net`). The separate `cert.staging.<realm>.<customer>.demandware.net` hostname is deactivated.
-- You provide the CA for client certificates and register it with eCDN yourself. Salesforce no longer provides a CA bundle.
-- Only code upload needs a client certificate. Regular Business Manager use doesn't.
-- The CA certificate has a maximum expiry of 1 year and must be renewed before it expires.
+Staging uploads need a second factor. As well as the API client credentials, the CLI sends a **client certificate** (a `.p12` file) when it connects to upload code. This is called mutual TLS (mTLS). Staging only accepts the upload if the certificate was signed by a **certificate authority (CA)** that you registered for your staging tenant.
 
-## Migrating from cert.staging
+So there are two parts:
 
-You can set up your CA ahead of the migration. Until your realm is migrated, keep using your existing client certificates with the `cert.staging` hostname. After the migration, switch to the new client certificates and the staging hostname in `dw.json` and CI.
+| Part | What it is | How many | Where it's kept |
+|------|------------|----------|-----------------|
+| **CA** (`ca.pem` + `ca.key`) | Signs client certificates. Its certificate is registered with eCDN for your staging tenant. It's never used to connect. | One per staging tenant (two while you renew) | A password manager or secrets vault |
+| **Client certificate** (`.p12` + passphrase) | Sent by the CLI on each code upload | One per CI pipeline and one per developer who uploads to staging | CI secrets, or the developer's machine |
 
-## Code Upload Certificates
+Only code upload to staging needs a client certificate. This covers `b2c code deploy`, `b2c code watch`, `b2c webdav` commands, and the equivalent GitHub Actions. Business Manager login, API calls, and sandboxes don't need one.
 
-The CLI generates your CA, uploads it to eCDN, and issues a client certificate (`.p12`) for each user or CI pipeline. The CA only signs client certificates and is never used to connect.
+### What Changes from cert.staging
 
-| Command | What it does |
-|---------|--------------|
-| [`b2c ecdn mtls setup`](/cli/ecdn#b2c-ecdn-mtls-setup) | Interactive wizard: generate and upload a CA, issue your client certificate, and update `dw.json` |
-| [`b2c ecdn mtls create --generate`](/cli/ecdn#b2c-ecdn-mtls-create) | The same, non-interactively |
-| [`b2c ecdn mtls issue`](/cli/ecdn#b2c-ecdn-mtls-issue) | Issue another client certificate from an existing CA (runs locally) |
-| [`b2c ecdn mtls list`](/cli/ecdn#b2c-ecdn-mtls-list) / [`get`](/cli/ecdn#b2c-ecdn-mtls-get) / [`delete`](/cli/ecdn#b2c-ecdn-mtls-delete) | Inspect and remove uploaded CAs |
+Before Hyperforce, Salesforce provided the CA, and code upload used a separate `cert.staging.<realm>.<customer>.demandware.net` hostname. On Hyperforce:
 
-### Prerequisites
+- **You provide the CA** and register it for your staging tenant. Salesforce no longer provides a CA bundle.
+- **Code upload uses the regular staging hostname** (`staging-<realm>-<customer>.demandware.net`). The `cert.staging` hostname is deactivated. You no longer need a separate WebDAV hostname (`webdav-hostname` / `webdav-server`) or the `selfsigned` setting.
+- **The CA expires after at most 1 year.** You must [renew it](#renew-before-expiry) before then.
 
-- A staging tenant (tenant ID ending in `_stg`, for example `zzxy_stg`).
-- An API client with the `sfcc.cdn-zones.rw` scope, and the SCAPI short code and tenant ID configured. See [SCAPI Authentication](/guide/authentication#scapi-authentication).
-- Your staging hostname (starting with `staging-`) in the staging Business Manager eCDN zone.
+You can create your CA before your realm is migrated. Until the migration, keep using your existing certificates with `cert.staging`. After it, switch your pipelines and `dw.json` to the new client certificates and the staging hostname.
 
-### Quick Start
+## Who Needs a Client Certificate?
 
-Run the wizard from your project directory (where `dw.json` lives):
+- **CI/CD pipelines that deploy to staging**, for example GitHub Actions or Bitbucket Pipelines. This is the most common case and the focus of the steps below.
+- **Developers who upload code straight to staging** from their own machine, using the CLI, the VS Code extension, UX Studio, or a WebDAV client. Many teams only deploy to staging from CI, so this is optional. See [Step 6](#step-6-optional-set-up-local-code-upload).
+
+## Set Up Two-Factor Code Upload
+
+1. [Check the prerequisites](#step-1-check-the-prerequisites)
+2. [Create your CA](#step-2-create-your-ca) (once per staging tenant)
+3. [Issue a client certificate for CI](#step-3-issue-a-client-certificate-for-ci)
+4. [Configure your pipeline](#step-4-configure-your-pipeline)
+5. [Store the CA securely](#step-5-store-the-ca-securely)
+6. [(Optional) Set up local code upload](#step-6-optional-set-up-local-code-upload)
+
+Steps 1–5 are done once by the person who manages the staging tenant. Developers only need Step 6, and only if they upload to staging directly.
+
+### Step 1: Check the Prerequisites
+
+- **A staging tenant on Hyperforce.** Its tenant ID ends in `_stg`, for example `zzxy_stg`.
+- **An API client with the `sfcc.cdn-zones.rw` scope**, plus the SCAPI short code and tenant ID in your configuration. See [SCAPI Authentication](/guide/authentication#scapi-authentication).
+
+You don't need to configure a hostname. When you register a CA, eCDN links it to your staging tenant's code upload hostname automatically. Salesforce sets up this hostname. You can't choose or change it.
+
+### Step 2: Create Your CA
+
+Do this **once per staging tenant**. Run the setup wizard from your project directory (the one containing `dw.json`):
 
 ```bash
 b2c ecdn mtls setup --tenant-id zzxy_stg
 ```
 
-The wizard asks for a certificate name, your client certificate name (default: your Business Manager username), and an output directory (default: `./mtls-certs`). It then:
+The wizard first lists any CAs already registered for the tenant. If one exists and hasn't expired, you probably don't need a new one. Skip to [Step 3](#step-3-issue-a-client-certificate-for-ci) and issue certificates from it.
 
-1. Generates a CA valid for 1 year and uploads it.
-2. Issues your client certificate (`<name>.p12`) with a random passphrase.
-3. Offers to update `dw.json` with the client certificate path and passphrase.
+The wizard creates **two separate certificates**. Each has its own name:
 
-Then deploy as usual:
+1. **The CA.** The wizard generates a CA valid for 1 year and registers its certificate with eCDN. The CA name (default: `code-upload`) is only a label. It appears in `b2c ecdn mtls list` and in Business Manager. Nothing ever connects with the CA.
+2. **A first client certificate, signed by that CA.** The client certificate name (default: your Business Manager username) identifies who uses it. This `<client-name>.p12`, with a random passphrase, is what the CLI actually sends on code upload. The wizard issues this one for you, the person running it. You issue more for pipelines and other developers in the next steps.
 
-```bash
-b2c code deploy
-```
+The wizard also asks for an output directory (default: `./mtls-certs`). Finally, it offers to update `dw.json` with your client certificate. You only need this to upload from your own machine (see [Step 6](#step-6-optional-set-up-local-code-upload)). If you only need CI, you can decline.
 
-#### Non-Interactive
+::: tip `setup` or `create`?
+Use **`b2c ecdn mtls setup`**. [`b2c ecdn mtls create --generate`](/cli/ecdn#b2c-ecdn-mtls-create) does the same job without prompts. It prints the `dw.json` settings instead of editing the file. You only need `create` for scripts that can't answer prompts, or to [bring your own CA](#bring-your-own-ca). Use one of them, not both.
+:::
 
-For scripts, use `create --generate`. It performs the same steps and prints the `dw.json` settings instead of editing the file. Add `--json` for machine-readable output.
-
-```bash
-b2c ecdn mtls create --tenant-id zzxy_stg --name code-upload --generate \
-  --out-dir ./mtls-certs --client-name jsmith
-```
-
-#### Generated Files
+The wizard writes these files to the output directory. Only the owner can read them. Existing files are only overwritten if you confirm (or pass `--force` to `create`):
 
 | File | Purpose |
 |------|---------|
-| `ca.pem` | CA certificate (uploaded to eCDN) |
+| `ca.pem` | CA certificate (registered with eCDN) |
 | `ca.key` | CA private key, used to issue client certificates |
-| `<client>.p12` | Client certificate used for code upload |
+| `<client-name>.p12` | Your client certificate, signed by the CA |
 | `.gitignore` | Keeps the directory out of source control |
 
-Files are written with owner-only permissions. Existing files are only overwritten if you pass `--force`.
+### Step 3: Issue a Client Certificate for CI
 
-### Protect the CA Private Key
+Give each pipeline its own client certificate. Don't reuse a developer's. Name it after the pipeline or the API client ID it deploys with:
+
+```bash
+b2c ecdn mtls issue \
+  --ca-cert-file ./mtls-certs/ca.pem --ca-key-file ./mtls-certs/ca.key \
+  --name github-actions --output ./mtls-certs/ci.p12
+```
+
+`issue` runs locally and doesn't make any API calls. It prints a random passphrase unless you set one with `--p12-passphrase`. Client certificates are valid for 365 days (`--days`), and never past the CA's expiry.
+
+The `.p12` is a binary file. Base64-encode it so you can store it as a CI secret:
+
+```bash
+base64 -i ./mtls-certs/ci.p12 | tr -d '\n'
+```
+
+Add these secrets to your CI system. They go alongside the `SFCC_CLIENT_ID` and `SFCC_CLIENT_SECRET` your pipeline already uses:
+
+| Secret | Value |
+|--------|-------|
+| `STAGING_CERTIFICATE_P12_BASE64` | The base64 output above |
+| `SFCC_CERTIFICATE_PASSPHRASE` | The passphrase printed by `issue` |
+
+Delete `ci.p12` from your machine once it's stored.
+
+### Step 4: Configure Your Pipeline
+
+Set the server to your staging hostname (`staging-<realm>-<customer>.demandware.net`) and pass in the certificate. Remove any `webdav-server` or `selfsigned` settings left over from `cert.staging`.
+
+#### GitHub Actions
+
+Pass the base64 secret to `certificate-base64` (Actions v2.2.0 and later). The action decodes it to a temporary file that only the runner user can read:
+
+```yaml
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
+  with:
+    client-id: ${{ secrets.SFCC_CLIENT_ID }}
+    client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
+    server: staging-abcd-acme.demandware.net
+    certificate-base64: ${{ secrets.STAGING_CERTIFICATE_P12_BASE64 }}
+    certificate-passphrase: ${{ secrets.SFCC_CERTIFICATE_PASSPHRASE }}
+    code-version: staging-${{ github.run_number }}
+    activate: true
+```
+
+The `setup`, `data-import`, `job-run`, and `webdav-upload` actions accept the same inputs. For a complete workflow, see [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls).
+
+#### Bitbucket Pipelines
+
+Add `SFCC_SERVER`, `SFCC_CLIENT_ID`, `SFCC_CLIENT_SECRET`, `SFCC_CERTIFICATE_PASSPHRASE`, and `STAGING_CERTIFICATE_P12_BASE64` as repository or deployment variables. Mark all of them except `SFCC_SERVER` as **Secured**. Then decode the certificate in the step:
+
+```yaml
+image: node:22
+
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Deploy to staging
+          deployment: staging
+          script:
+            - npm install -g @salesforce/b2c-cli
+            - export SFCC_CERTIFICATE=$(mktemp)
+            - echo "$STAGING_CERTIFICATE_P12_BASE64" | base64 --decode > "$SFCC_CERTIFICATE"
+            - b2c code deploy --activate
+```
+
+The CLI reads `SFCC_SERVER`, `SFCC_CLIENT_ID`, `SFCC_CLIENT_SECRET`, and `SFCC_CERTIFICATE_PASSPHRASE` straight from the environment.
+
+#### Other CI Systems
+
+Use the same approach in any CI system. Decode the certificate to a temporary file and set the environment variables:
+
+```bash
+export SFCC_CERTIFICATE=$(mktemp)
+echo "$STAGING_CERTIFICATE_P12_BASE64" | base64 --decode > "$SFCC_CERTIFICATE"
+
+export SFCC_SERVER=staging-abcd-acme.demandware.net
+# SFCC_CERTIFICATE_PASSPHRASE, SFCC_CLIENT_ID and SFCC_CLIENT_SECRET come from secrets
+
+b2c code deploy --activate
+```
+
+### Step 5: Store the CA Securely
 
 ::: danger Treat the CA private key like a password
 Anyone with `ca.key` can issue client certificates that your staging instance trusts for code upload.
 
-- Move `ca.key` and `ca.pem` to a secure location, such as a password manager or secrets vault. You only need them to issue new client certificates.
+- Move `ca.key` and `ca.pem` out of your project to a password manager or secrets vault. You only need them to issue new client certificates.
 - Never commit the CA key, `.p12` files, or passphrases to a source repository.
 - Don't share the CA. Give each user or pipeline its own client certificate instead.
 :::
 
-### Issue Client Certificates
+### Step 6 (Optional): Set Up Local Code Upload
 
-Issue a certificate for another developer or a CI pipeline from the existing CA:
+Follow this step only if developers upload code to staging from their own machines. For example, they might test a build on staging before merging, or use `b2c code watch`.
+
+Each developer needs their own client certificate. The wizard in [Step 2](#step-2-create-your-ca) already issued one for the person who ran it. For anyone else, issue one from the CA, named after their Business Manager username:
 
 ```bash
 b2c ecdn mtls issue --ca-cert-file ./mtls-certs/ca.pem --ca-key-file ./mtls-certs/ca.key --name jsmith
 ```
 
-Name the certificate after the Business Manager username or API client ID that will use it. The `.p12` is written next to the CA unless you set `--output`. A random passphrase is generated unless you set `--p12-passphrase`. Client certificates are valid for 365 days (`--days`), and never past the CA's expiry.
-
-Send the `.p12` and its passphrase to the user separately.
-
-### Configure the CLI
-
-Point the CLI at your `.p12` and its passphrase. Code upload uses the same staging hostname as everything else, so no separate `webdav-hostname` is needed. Use whichever option fits:
+Send the `.p12` and its passphrase to the developer separately. Then the developer points the CLI at the certificate using `dw.json`, flags, or environment variables:
 
 ::: code-group
 
@@ -128,107 +217,103 @@ b2c code deploy
 
 :::
 
-Use an absolute path in `dw.json`; relative paths are resolved from the directory you run the CLI in. `setup` updates `dw.json` for you; `create --generate` and `issue` print the settings to add. Flags and environment variables override `dw.json`. See [Two-Factor Authentication (mTLS)](/guide/configuration#two-factor-authentication-mtls) for details.
+Use an absolute path in `dw.json`. Relative paths are resolved from the directory where you run the CLI. Flags and environment variables override `dw.json`. See [Two-Factor Authentication (mTLS)](/guide/configuration#two-factor-authentication-mtls) for details.
 
 ::: warning
-If `dw.json` holds the passphrase, make sure `dw.json` is not committed to your repository.
+If `dw.json` holds the passphrase, make sure `dw.json` isn't committed to your repository.
 :::
 
-To check the certificate works, list the cartridges directory over WebDAV:
+To check that the certificate works, list the cartridges directory over WebDAV:
 
 ```bash
 b2c webdav ls --root cartridges
 ```
 
-The `.p12` files also work with UX Studio, the VS Code extension, and WebDAV clients such as Cyberduck.
+The same `.p12` also works with UX Studio, the VS Code extension, and WebDAV clients such as Cyberduck.
 
-### Renew Before Expiry
+## Over Time: Keeping Code Upload Working
 
-The CA certificate is valid for at most 1 year. Renew it before it expires to avoid disruption with code uploads. Follow the same steps if the CA key or a client certificate is compromised:
+Certificates expire, and teams change. This table shows when you need to act after the initial setup:
 
-1. Create a new CA with `b2c ecdn mtls setup` or `b2c ecdn mtls create --generate`. Several CAs can be active at once, so existing client certificates keep working.
-2. Re-issue each user's and pipeline's `.p12` from the new CA with `b2c ecdn mtls issue`.
-3. After confirming uploads work, delete the old CA:
+| When | What to do | Commands |
+|------|------------|----------|
+| Once, at the start | [Set up two-factor code upload](#set-up-two-factor-code-upload) (Steps 1–5) | `setup`, `issue` |
+| You add a pipeline or a developer | [Issue them a client certificate](#add-a-pipeline-or-developer) from the existing CA | `issue` |
+| A client certificate is about to expire | [Replace that client certificate](#replace-an-expiring-client-certificate) | `issue` |
+| The CA is about to expire (at least once a year) | [Renew the CA](#renew-the-ca) and re-issue every client certificate | `setup`, `issue`, `delete` |
+| A key leaks, or someone with a certificate leaves | [Rotate the CA](#rotate-after-a-leak-or-offboarding) right away | `setup`, `issue`, `delete` |
+
+::: tip Set reminders
+Nothing warns you before a certificate expires. Uploads just start failing. When you create the CA and each client certificate, add calendar reminders a few weeks before their expiry dates. To see the expiry date of each registered CA, run `b2c ecdn mtls list --tenant-id zzxy_stg`.
+:::
+
+### Add a Pipeline or Developer
+
+Issue a new client certificate from the existing CA, as in [Step 3](#step-3-issue-a-client-certificate-for-ci) (pipelines) or [Step 6](#step-6-optional-set-up-local-code-upload) (developers). You don't need to change the CA or any other certificates.
+
+### Replace an Expiring Client Certificate
+
+A client certificate is valid for 365 days by default (`--days`), but never past its CA's expiry. A certificate issued late in the CA's life therefore expires with the CA. In that case, [renew the CA](#renew-the-ca) instead.
+
+Otherwise, issue a replacement from the same CA with the same name, then update the pipeline's secrets or the developer's `dw.json`:
+
+```bash
+b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-actions --output ./ci.p12 --force
+```
+
+### Renew the CA
+
+The CA is valid for at most 1 year. When it expires, every client certificate it signed stops working. Renew it a few weeks early:
+
+1. Create a new CA with `b2c ecdn mtls setup`. Several CAs can be active at once, so existing client certificates keep working while you switch.
+2. Re-issue a `.p12` from the new CA for each pipeline and developer with `b2c ecdn mtls issue`, and update your CI secrets.
+3. Once uploads work with the new certificates, delete the old CA:
 
    ```bash
    b2c ecdn mtls list --tenant-id zzxy_stg
    b2c ecdn mtls delete --tenant-id zzxy_stg --certificate-id <old-certificate-id>
    ```
 
+Client certificates issued by a deleted CA stop working immediately.
+
+### Rotate After a Leak or Offboarding
+
+You can't revoke a single client certificate. Staging trusts every certificate signed by a registered CA until that certificate expires. If the CA key or a `.p12` and its passphrase leak, or someone who holds a certificate leaves, follow the [renewal steps](#renew-the-ca) straight away. Delete the old CA as soon as your pipelines are switched over.
+
+## Reference
+
 ### Bring Your Own CA
 
-To use a CA from your organization, upload it with `--certificate-file` and `--private-key-file` instead of `--generate`:
+To use a CA from your organization, register it with `create` instead of running the wizard:
 
 ```bash
 b2c ecdn mtls create --tenant-id zzxy_stg --name code-upload \
   --certificate-file ./ca.pem --private-key-file ./ca.key
 ```
 
-The certificate must be a CA certificate valid for at most 1 year. You can issue client certificates from it with `b2c ecdn mtls issue`.
+It must be a CA certificate that is valid for 1 year or less. You can issue client certificates from it with `b2c ecdn mtls issue`.
 
 For manual OpenSSL instructions, see the Salesforce Help article [B2C Commerce Hyperforce Code Upload Instructions for Staging](https://help.salesforce.com/s/articleView?id=002772125&type=1).
 
-Uploaded CAs are also listed in the staging Business Manager under **Administration > Site Development > Development Setup > Code Upload Certificate**.
+Registered CAs are also listed in the staging Business Manager under **Administration > Site Development > Development Setup > Code Upload Certificate**.
 
-## CI/CD on Hyperforce Staging
+### Command Reference
 
-Give each pipeline its own client certificate rather than sharing a user's:
-
-```bash
-b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-actions --output ./ci.p12
-```
-
-Store the `.p12` (base64-encoded) and its passphrase as separate secrets:
-
-```bash
-base64 -i ci.p12 | tr -d '\n'
-```
-
-No separate WebDAV server or `selfsigned` setting is needed.
-
-### GitHub Actions
-
-Pass the base64 secret to `certificate-base64` (Actions v2.2.0 and later). The action decodes it to an owner-only temporary file for you:
-
-```yaml
-- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
-  with:
-    client-id: ${{ secrets.SFCC_CLIENT_ID }}
-    client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
-    server: staging-abcd-acme.demandware.net
-    certificate-base64: ${{ secrets.STAGING_CERTIFICATE_P12_BASE64 }}
-    certificate-passphrase: ${{ secrets.SFCC_CERTIFICATE_PASSPHRASE }}
-    code-version: staging-${{ github.run_number }}
-    activate: true
-```
-
-The `setup`, `data-import`, `job-run`, and `webdav-upload` actions accept the same inputs.
-
-### Other CI Systems
-
-Decode the certificate to a temporary file and set the environment variables:
-
-```bash
-export SFCC_CERTIFICATE=$(mktemp)
-chmod 600 "$SFCC_CERTIFICATE"
-echo "$STAGING_CERTIFICATE_P12_BASE64" | base64 --decode > "$SFCC_CERTIFICATE"
-
-export SFCC_SERVER=staging-abcd-acme.demandware.net
-# SFCC_CERTIFICATE_PASSPHRASE, SFCC_CLIENT_ID and SFCC_CLIENT_SECRET come from secrets
-
-b2c code deploy --activate
-```
-
-See [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls) for a complete workflow.
+| Command | Use it to |
+|---------|-----------|
+| [`b2c ecdn mtls setup`](/cli/ecdn#b2c-ecdn-mtls-setup) | Create and register a CA, issue your client certificate, and update `dw.json` (interactive; recommended) |
+| [`b2c ecdn mtls create`](/cli/ecdn#b2c-ecdn-mtls-create) | Do the same without prompts (`--generate`), or register your own CA |
+| [`b2c ecdn mtls issue`](/cli/ecdn#b2c-ecdn-mtls-issue) | Issue a client certificate for a pipeline or developer from an existing CA (runs locally) |
+| [`b2c ecdn mtls list`](/cli/ecdn#b2c-ecdn-mtls-list) / [`get`](/cli/ecdn#b2c-ecdn-mtls-get) / [`delete`](/cli/ecdn#b2c-ecdn-mtls-delete) | View and remove registered CAs |
 
 ## Troubleshooting
 
 | Symptom | What to check |
 |---------|---------------|
-| `Code upload custom hostname is missing in staging BM zone` | The staging Business Manager eCDN zone needs a custom hostname starting with `staging-`. |
+| `Code upload custom hostname is missing in staging BM zone` | Salesforce hasn't set up the code upload hostname for your staging tenant yet, so there's nothing to link the CA to. You can't set this hostname up yourself. Check that your realm is on Hyperforce, and contact Salesforce Support if the error persists. |
 | 401/403 from the API | The API client needs the `sfcc.cdn-zones.rw` scope, and the tenant must be a staging (`_stg`) tenant. |
 | `maximum CA expiry of 1 year` | Use a CA valid for 365 days or less. |
-| `not a CA certificate` | Upload the CA that signs client certificates, not a client certificate. |
+| `not a CA certificate` | Register the CA that signs client certificates, not a client certificate. |
 | `CA private key does not match the CA certificate` | `issue` was given a key from a different CA. |
-| Uploads fail with a TLS handshake error | Check that `hostname` is the staging hostname and no legacy `webdav-hostname` is set, the `.p12` was issued by a CA that is still uploaded, and neither certificate has expired. |
-| `Invalid passphrase for certificate` | `certificate-passphrase` doesn't match the `.p12`. |
+| Uploads fail with a TLS handshake error | Check that the server is the staging hostname and that no `webdav-hostname` from `cert.staging` is set. Check that the `.p12` was issued by a CA that's still registered, and that neither certificate has expired. |
+| `Invalid passphrase for certificate` | The passphrase doesn't match the `.p12`. |
