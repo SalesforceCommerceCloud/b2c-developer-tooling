@@ -4,11 +4,11 @@ description: Deploy code to B2C Commerce on Hyperforce — what two-factor (mTLS
 
 # Deploying to Hyperforce
 
-Most deployment workflows work the same on Hyperforce. The one thing you must set up is **two-factor code upload** to your **staging** instance. Every code upload to staging needs a client certificate as well as your API credentials. On Hyperforce, you create and manage these certificates yourself. This page shows you how to do it with the CLI, starting with your CI/CD pipeline.
+Most deployment workflows work the same on Hyperforce. The one thing you must set up is **two-factor code upload** to your **staging** instance. Every code upload to staging needs a client certificate as well as your usual credentials. On Hyperforce, you create and manage these certificates yourself. This page shows you how to do it with the CLI, starting with your CI/CD pipeline.
 
 ## What Is Two-Factor Code Upload?
 
-Staging uploads need a second factor. As well as the API client credentials, the CLI sends a **client certificate** (a `.p12` file) when it connects to upload code. This is called mutual TLS (mTLS). Staging only accepts the upload if the certificate was signed by a **certificate authority (CA)** that you registered for your staging tenant.
+Staging uploads need a second factor. As well as the usual credentials (an API client, or a WebDAV username and access key), the CLI sends a **client certificate** (a `.p12` file) when it connects to upload code. This is called mutual TLS (mTLS). Staging only accepts the upload if the certificate was signed by a **certificate authority (CA)** that you registered for your staging tenant.
 
 So there are two parts:
 
@@ -37,13 +37,13 @@ You can create your CA before your realm is migrated. Until the migration, keep 
 ## Set Up Two-Factor Code Upload
 
 1. [Check the prerequisites](#step-1-check-the-prerequisites)
-2. [Create your CA](#step-2-create-your-ca) (usually once per staging tenant)
-3. [Issue a client certificate for CI](#step-3-issue-a-client-certificate-for-ci)
+2. [Create your CA and a CI client certificate](#step-2-create-your-ca-and-a-ci-client-certificate) (usually once per staging tenant)
+3. [Add the certificate to your CI secrets](#step-3-add-the-certificate-to-your-ci-secrets)
 4. [Configure your pipeline](#step-4-configure-your-pipeline)
 5. [Store the CA securely](#step-5-store-the-ca-securely)
 6. [(Optional) Set up local code upload](#step-6-optional-set-up-local-code-upload)
 
-Steps 1–5 are done once by the person who manages the staging tenant. Developers only need Step 6, and only if they upload to staging directly.
+The person who manages the staging tenant does Steps 1–5. Developers only need Step 6, and only if they upload to staging directly.
 
 ### Step 1: Check the Prerequisites
 
@@ -52,52 +52,49 @@ Steps 1–5 are done once by the person who manages the staging tenant. Develope
 
 You don't need to configure a hostname. When you register a CA, eCDN links it to your staging tenant's code upload hostname automatically. Salesforce sets up this hostname. You can't choose or change it.
 
-### Step 2: Create Your CA
+### Step 2: Create Your CA and a CI Client Certificate
 
-You usually need only one CA per staging tenant, so this is typically a **one-time step**. Run the setup wizard from your project directory (the one containing `dw.json`):
+You usually need only one CA per staging tenant, so this is typically a **one-time step**. Create the CA and a first client certificate with one command:
 
 ```bash
-b2c ecdn mtls setup --tenant-id zzxy_stg
+b2c ecdn mtls create --tenant-id zzxy_stg --generate \
+  --name code-upload --client-name github-actions
 ```
 
-The wizard first lists any CAs already registered for the tenant. If one exists and hasn't expired, you probably don't need a new one. Skip to [Step 3](#step-3-issue-a-client-certificate-for-ci) and issue certificates from it.
+This creates **two separate certificates**. Each has its own name:
 
-The wizard creates **two separate certificates**. Each has its own name:
+1. **The CA** (`--name`). The command generates a CA valid for 1 year and registers its certificate with eCDN. The name is only a label. It appears in `b2c ecdn mtls list` and in Business Manager. Nothing ever connects with the CA.
+2. **A client certificate, signed by that CA** (`--client-name`). This `<client-name>.p12`, with a random passphrase, is what actually gets sent on code upload. Name it after the pipeline that will use it, for example `github-actions`.
 
-1. **The CA.** The wizard generates a CA valid for 1 year and registers its certificate with eCDN. The CA name (default: `code-upload`) is only a label. It appears in `b2c ecdn mtls list` and in Business Manager. Nothing ever connects with the CA.
-2. **A first client certificate, signed by that CA.** The client certificate name (default: your Business Manager username) identifies who uses it. This `<client-name>.p12`, with a random passphrase, is what the CLI actually sends on code upload. The wizard issues this one for you, the person running it. You issue more for pipelines and other developers in the next steps.
+Files go to `./mtls-certs` unless you set `--out-dir`. At the end, the command prints the certificate path and passphrase, a `base64` command for CI, and the equivalent `dw.json` settings. Add `--json` for machine-readable output.
 
-The wizard also asks for an output directory (default: `./mtls-certs`). Finally, it offers to update `dw.json` with your client certificate. You only need this to upload from your own machine (see [Step 6](#step-6-optional-set-up-local-code-upload)). If you only need CI, you can decline.
+::: tip Prefer to be guided? Use `setup`
+`b2c ecdn mtls setup --tenant-id zzxy_stg` does the same thing interactively, with defaults for each value:
 
-::: tip `setup` or `create`?
-Use **`b2c ecdn mtls setup`**. [`b2c ecdn mtls create --generate`](/cli/ecdn#b2c-ecdn-mtls-create) does the same job without prompts. It prints the `dw.json` settings instead of editing the file. You only need `create` for scripts that can't answer prompts, or to [bring your own CA](#bring-your-own-ca). Use one of them, not both.
+- It lists any CAs already registered for the tenant.
+- It prompts for the CA name, client certificate name, and output directory.
+- It offers to write the client certificate to `dw.json`. Only say yes if you also want to upload from this machine (see [Step 6](#step-6-optional-set-up-local-code-upload)).
+
+Use either `create --generate` or `setup`, not both.
 :::
 
-The wizard writes these files to the output directory. Only the owner can read them. Existing files are only overwritten if you confirm (or pass `--force` to `create`):
+If a CA is already registered for the tenant (check with `b2c ecdn mtls list`) and hasn't expired, you probably don't need a new one. Instead, issue a client certificate from it with [`b2c ecdn mtls issue`](#add-a-pipeline-or-developer).
+
+These files are written to the output directory. Only the owner can read them. Existing files are only overwritten if you pass `--force` (or confirm in `setup`):
 
 | File | Purpose |
 |------|---------|
 | `ca.pem` | CA certificate (registered with eCDN) |
-| `ca.key` | CA private key, used to issue client certificates |
-| `<client-name>.p12` | Your client certificate, signed by the CA |
+| `ca.key` | CA private key, used to issue more client certificates |
+| `<client-name>.p12` | Client certificate, signed by the CA, used for code upload |
 | `.gitignore` | Keeps the directory out of source control |
 
-### Step 3: Issue a Client Certificate for CI
+### Step 3: Add the Certificate to Your CI Secrets
 
-Give each pipeline its own client certificate. Don't reuse a developer's. Name it after the pipeline or the API client ID it deploys with:
-
-```bash
-b2c ecdn mtls issue \
-  --ca-cert-file ./mtls-certs/ca.pem --ca-key-file ./mtls-certs/ca.key \
-  --name github-actions --output ./mtls-certs/ci.p12
-```
-
-`issue` runs locally and doesn't make any API calls. It prints a random passphrase unless you set one with `--p12-passphrase`. Client certificates are valid for 365 days (`--days`), and never past the CA's expiry.
-
-The `.p12` is a binary file. Base64-encode it so you can store it as a CI secret:
+The `.p12` is a binary file. Base64-encode it so you can store it as a CI secret. The [GitHub Actions](#github-actions) decode it for you. On other CI systems, you decode it with one line in the pipeline (see [Step 4](#step-4-configure-your-pipeline)).
 
 ```bash
-base64 -i ./mtls-certs/ci.p12 | tr -d '\n'
+base64 -i ./mtls-certs/github-actions.p12 | tr -d '\n'
 ```
 
 Add these secrets to your CI system. They go alongside the `SFCC_CLIENT_ID` and `SFCC_CLIENT_SECRET` your pipeline already uses:
@@ -105,9 +102,17 @@ Add these secrets to your CI system. They go alongside the `SFCC_CLIENT_ID` and 
 | Secret | Value |
 |--------|-------|
 | `STAGING_CERTIFICATE_P12_BASE64` | The base64 output above |
-| `SFCC_CERTIFICATE_PASSPHRASE` | The passphrase printed by `issue` |
+| `SFCC_CERTIFICATE_PASSPHRASE` | The passphrase printed by `create` |
 
-Delete `ci.p12` from your machine once it's stored.
+Once they're stored, delete the `.p12` from your machine.
+
+Give each pipeline its own client certificate. For a second pipeline, issue another certificate from the same CA. This runs locally and doesn't make any API calls:
+
+```bash
+b2c ecdn mtls issue \
+  --ca-cert-file ./mtls-certs/ca.pem --ca-key-file ./mtls-certs/ca.key \
+  --name bitbucket-pipelines
+```
 
 ### Step 4: Configure Your Pipeline
 
@@ -181,7 +186,7 @@ Anyone with `ca.key` can issue client certificates that your staging instance tr
 
 Follow this step only if developers upload code to staging from their own machines. For example, they might test a build on staging before merging, or use `b2c code watch`.
 
-Each developer needs their own client certificate. The wizard in [Step 2](#step-2-create-your-ca) already issued one for the person who ran it. For anyone else, issue one from the CA, named after their Business Manager username:
+Each developer needs their own client certificate. Don't reuse the CI certificate. Issue one from the CA for each developer, named after their Business Manager username:
 
 ```bash
 b2c ecdn mtls issue --ca-cert-file ./mtls-certs/ca.pem --ca-key-file ./mtls-certs/ca.key --name jsmith
@@ -237,11 +242,11 @@ Certificates expire, and teams change. This table shows when you need to act aft
 
 | When | What to do | Commands |
 |------|------------|----------|
-| Once, at the start | [Set up two-factor code upload](#set-up-two-factor-code-upload) (Steps 1–5) | `setup`, `issue` |
+| Once, at the start | [Set up two-factor code upload](#set-up-two-factor-code-upload) (Steps 1–5) | `create` (or `setup`) |
 | You add a pipeline or a developer | [Issue them a client certificate](#add-a-pipeline-or-developer) from the existing CA | `issue` |
 | A client certificate is about to expire | [Replace that client certificate](#replace-an-expiring-client-certificate) | `issue` |
-| The CA is about to expire (at least once a year) | [Renew the CA](#renew-the-ca) and re-issue every client certificate | `setup`, `issue`, `delete` |
-| A key leaks, or someone with a certificate leaves | [Rotate the CA](#rotate-after-a-leak-or-offboarding) right away | `setup`, `issue`, `delete` |
+| The CA is about to expire (at least once a year) | [Renew the CA](#renew-the-ca) and re-issue every client certificate | `create`, `issue`, `delete` |
+| A key leaks, or someone with a certificate leaves | [Rotate the CA](#rotate-after-a-leak-or-offboarding) right away | `create`, `issue`, `delete` |
 
 ::: tip Set reminders
 Nothing warns you before a certificate expires. Uploads just start failing. When you create the CA and each client certificate, add calendar reminders a few weeks before their expiry dates. To see the expiry date of each registered CA, run `b2c ecdn mtls list --tenant-id zzxy_stg`.
@@ -249,7 +254,7 @@ Nothing warns you before a certificate expires. Uploads just start failing. When
 
 ### Add a Pipeline or Developer
 
-Issue a new client certificate from the existing CA, as in [Step 3](#step-3-issue-a-client-certificate-for-ci) (pipelines) or [Step 6](#step-6-optional-set-up-local-code-upload) (developers). You don't need to change the CA or any other certificates.
+Issue a new client certificate from the existing CA, as in [Step 3](#step-3-add-the-certificate-to-your-ci-secrets) (pipelines) or [Step 6](#step-6-optional-set-up-local-code-upload) (developers). You don't need to change the CA or any other certificates.
 
 ### Replace an Expiring Client Certificate
 
@@ -265,7 +270,7 @@ b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-act
 
 The CA is valid for at most 1 year. When it expires, every client certificate it signed stops working. Renew it a few weeks early:
 
-1. Create a new CA with `b2c ecdn mtls setup`. Several CAs can be active at once, so existing client certificates keep working while you switch.
+1. Create a new CA with `b2c ecdn mtls create --generate` (or `setup`). Several CAs can be active at once, so existing client certificates keep working while you switch.
 2. Re-issue a `.p12` from the new CA for each pipeline and developer with `b2c ecdn mtls issue`, and update your CI secrets.
 3. Once uploads work with the new certificates, delete the old CA:
 
@@ -284,7 +289,7 @@ You can't revoke a single client certificate. Staging trusts every certificate s
 
 ### Bring Your Own CA
 
-To use a CA from your organization, register it with `create` instead of running the wizard:
+To use a CA from your organization, register it with `create`, passing your files instead of `--generate`:
 
 ```bash
 b2c ecdn mtls create --tenant-id zzxy_stg --name code-upload \
@@ -301,8 +306,8 @@ Registered CAs are also listed in the staging Business Manager under **Administr
 
 | Command | Use it to |
 |---------|-----------|
-| [`b2c ecdn mtls setup`](/cli/ecdn#b2c-ecdn-mtls-setup) | Create and register a CA, issue your client certificate, and update `dw.json` (interactive; recommended) |
-| [`b2c ecdn mtls create`](/cli/ecdn#b2c-ecdn-mtls-create) | Do the same without prompts (`--generate`), or register your own CA |
+| [`b2c ecdn mtls create`](/cli/ecdn#b2c-ecdn-mtls-create) | Create and register a CA and issue a first client certificate (`--generate`), or register your own CA |
+| [`b2c ecdn mtls setup`](/cli/ecdn#b2c-ecdn-mtls-setup) | Guided version of `create --generate`, with prompts, defaults, and an optional `dw.json` update |
 | [`b2c ecdn mtls issue`](/cli/ecdn#b2c-ecdn-mtls-issue) | Issue a client certificate for a pipeline or developer from an existing CA (runs locally) |
 | [`b2c ecdn mtls list`](/cli/ecdn#b2c-ecdn-mtls-list) / [`get`](/cli/ecdn#b2c-ecdn-mtls-get) / [`delete`](/cli/ecdn#b2c-ecdn-mtls-delete) | View and remove registered CAs |
 

@@ -156,7 +156,10 @@ export function clientCertificateNotice(options: {file: string; hostname?: strin
     '  The .p12 and its passphrase are credentials: store them securely, keep the',
     '  passphrase separate from the file, and never commit either to a repository.',
     '',
-    '  To upload code, add these settings to your instance in dw.json',
+    '  For CI, store the base64-encoded .p12 and the passphrase as secrets:',
+    `    base64 -i ${options.file} | tr -d '\\n'`,
+    '',
+    '  To upload from this machine, add these settings to your instance in dw.json',
     '  (or use --server, --certificate and --passphrase):',
     snippet,
   ].join('\n');
