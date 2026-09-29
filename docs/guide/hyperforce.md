@@ -23,9 +23,9 @@ Only code upload to staging needs a client certificate. This covers `b2c code de
 
 Before Hyperforce, Salesforce provided the CA, and code upload used a separate `cert.staging.<realm>.<customer>.demandware.net` hostname. On Hyperforce:
 
-- **You provide the CA** and register it for your staging tenant. Salesforce no longer provides a CA bundle.
+- **You provide the CA** and register it for your staging tenant. Salesforce no longer provides a CA bundle for Hyperforce realms.
 - **Code upload uses the regular staging hostname** (`staging-<realm>-<customer>.demandware.net`). The `cert.staging` hostname is deactivated. You no longer need a separate WebDAV hostname (`webdav-hostname` / `webdav-server`) or the `selfsigned` setting.
-- **The CA expires after at most 1 year.** You must [renew it](#renew-before-expiry) before then.
+- **The CA expires after at most 1 year.** You must [renew it](#renew-the-ca) before then.
 
 You can create your CA before your realm is migrated. Until the migration, keep using your existing certificates with `cert.staging`. After it, switch your pipelines and `dw.json` to the new client certificates and the staging hostname.
 
@@ -66,7 +66,7 @@ This creates **two separate certificates**. Each has its own name:
 1. **The CA** (`--name`). The command generates a CA valid for 1 year and registers its certificate with eCDN. The name is only a label. It appears in `b2c ecdn mtls list` and in Business Manager. Nothing ever connects with the CA.
 2. **A client certificate, signed by that CA** (`--client-name`). This `<client-name>.p12`, with a random passphrase, is what actually gets sent on code upload. Name it after the pipeline that will use it, for example `github-actions`.
 
-Files go to `./mtls-certs` unless you set `--out-dir`. At the end, the command prints the certificate path and passphrase, a `base64` command for CI, and the equivalent `dw.json` settings. Add `--json` for machine-readable output.
+Files go to `./mtls-certs` unless you set `--out-dir`. At the end, the command prints the certificate path and passphrase, a `base64` command for CI, and the equivalent `dw.json` settings.
 
 ::: tip Prefer to be guided? Use `setup`
 `b2c ecdn mtls setup --tenant-id zzxy_stg` does the same thing interactively, with defaults for each value:
@@ -74,20 +74,11 @@ Files go to `./mtls-certs` unless you set `--out-dir`. At the end, the command p
 - It lists any CAs already registered for the tenant.
 - It prompts for the CA name, client certificate name, and output directory.
 - It offers to write the client certificate to `dw.json`. Only say yes if you also want to upload from this machine (see [Step 6](#step-6-optional-set-up-local-code-upload)).
-
-Use either `create --generate` or `setup`, not both.
 :::
 
 If a CA is already registered for the tenant (check with `b2c ecdn mtls list`) and hasn't expired, you probably don't need a new one. Instead, issue a client certificate from it with [`b2c ecdn mtls issue`](#add-a-pipeline-or-developer).
 
-These files are written to the output directory. Only the owner can read them. Existing files are only overwritten if you pass `--force` (or confirm in `setup`):
-
-| File | Purpose |
-|------|---------|
-| `ca.pem` | CA certificate (registered with eCDN) |
-| `ca.key` | CA private key, used to issue more client certificates |
-| `<client-name>.p12` | Client certificate, signed by the CA, used for code upload |
-| `.gitignore` | Keeps the directory out of source control |
+The command writes `ca.pem` and `ca.key` (the CA) and `<client-name>.p12` (the client certificate) to the output directory.
 
 ### Step 3: Add the Certificate to Your CI Secrets
 
@@ -106,7 +97,7 @@ Add these secrets to your CI system. They go alongside the `SFCC_CLIENT_ID` and 
 
 Once they're stored, delete the `.p12` from your machine.
 
-Give each pipeline its own client certificate. For a second pipeline, issue another certificate from the same CA. This runs locally and doesn't make any API calls:
+Give each pipeline its own client certificate. For a second pipeline, issue another certificate from the same CA:
 
 ```bash
 b2c ecdn mtls issue \
@@ -120,7 +111,7 @@ Set the server to your staging hostname (`staging-<realm>-<customer>.demandware.
 
 #### GitHub Actions
 
-Pass the base64 secret to `certificate-base64` (Actions v2.2.0 and later). The action decodes it to a temporary file that only the runner user can read:
+Pass the base64 secret to `certificate-base64` (Actions v2.2.0 and later). The action decodes it for you:
 
 ```yaml
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v2
@@ -155,8 +146,6 @@ pipelines:
             - echo "$STAGING_CERTIFICATE_P12_BASE64" | base64 --decode > "$SFCC_CERTIFICATE"
             - b2c code deploy --activate
 ```
-
-The CLI reads `SFCC_SERVER`, `SFCC_CLIENT_ID`, `SFCC_CLIENT_SECRET`, and `SFCC_CERTIFICATE_PASSPHRASE` straight from the environment.
 
 #### Other CI Systems
 
