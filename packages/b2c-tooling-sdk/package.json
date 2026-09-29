@@ -75,6 +75,11 @@
       "types": "./dist/esm/schemas/index.d.ts",
       "default": "./dist/esm/schemas/index.js"
     },
+    "./openshell": {
+      "development": "./src/openshell/index.ts",
+      "types": "./dist/esm/openshell/index.d.ts",
+      "default": "./dist/esm/openshell/index.js"
+    },
     "./operations/logs": {
       "development": "./src/operations/logs/index.ts",
       "types": "./dist/esm/operations/logs/index.d.ts",

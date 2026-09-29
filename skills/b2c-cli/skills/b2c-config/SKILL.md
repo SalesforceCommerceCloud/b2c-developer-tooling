@@ -208,6 +208,29 @@ b2c setup ide tsserver-plugin --json
 
 The B2C DX VS Code extension needs no setup — it injects the same TypeScript Server plugin at runtime.
 
+## OpenShell Sandbox (Beta)
+
+`b2c setup openshell` creates an NVIDIA OpenShell sandbox from the resolved configuration. Secrets stay on the OpenShell gateway, and the sandbox can reach only the B2C hosts in use, at the configured Safety Mode level (or `NONE` if unset); Safety Mode rules carry over. Requires the `openshell` CLI with a running gateway, and Docker.
+
+```bash
+# Sandbox for the active instance at the configured Safety Mode level
+b2c setup openshell
+
+# Read-only sandbox
+b2c setup openshell --safety-level READ_ONLY
+
+# Allow writes but not deletes; include the MCP server
+b2c setup openshell --safety-level NO_DELETE --mcp
+
+# Write the policy, profiles, Dockerfile, and setup.sh without running anything
+b2c setup openshell --dry-run
+
+# Run a command in the sandbox
+openshell sandbox exec -n b2c-<instance> -- b2c code list
+```
+
+Edit `.openshell/<sandbox>/policy.yaml` and re-run to apply it; use `--recreate` after changing secrets or configuration. Add hosts with `--allow-host`. Only client credentials work in the sandbox (no browser login). See the [Agent Sandboxing guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-sandboxing#openshell).
+
 ## Managing Instances
 
 ### List Configured Instances

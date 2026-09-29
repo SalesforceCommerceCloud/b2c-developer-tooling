@@ -147,6 +147,50 @@ describe('auth/oauth', () => {
         expect(capturedAuth).to.equal(expected);
       });
 
+      it('sends a sandbox credential placeholder in an unencoded Basic header', async () => {
+        const clientSecret = 'openshell:resolve:env:v1_SFCC_CLIENT_SECRET';
+        let capturedAuth: null | string = null;
+
+        server.use(
+          http.post(AM_URL, ({request}) => {
+            capturedAuth = request.headers.get('Authorization');
+            return HttpResponse.json({access_token: createMockJWT({sub: 'test-client'}), expires_in: 1800});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({clientId: 'test-client', clientSecret});
+        await strategy.getTokenResponse();
+
+        expect(capturedAuth).to.equal(`Basic ${Buffer.from(`test-client:${clientSecret}`).toString('base64')}`);
+      });
+
+      it('sends credentials in the body when clientAuthMethod is body', async () => {
+        let capturedAuth: null | string = 'unset';
+        let capturedBody: URLSearchParams | undefined;
+
+        server.use(
+          http.post(AM_URL, async ({request}) => {
+            capturedAuth = request.headers.get('Authorization');
+            capturedBody = new URLSearchParams(await request.text());
+            return HttpResponse.json({access_token: createMockJWT({sub: 'test-client-body'}), expires_in: 1800});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-body',
+          clientSecret: 'Xy9+Kq2z',
+          scopes: ['sfcc.products'],
+          clientAuthMethod: 'body',
+        });
+        await strategy.getTokenResponse();
+
+        expect(capturedAuth).to.equal(null);
+        expect(capturedBody?.get('grant_type')).to.equal('client_credentials');
+        expect(capturedBody?.get('client_id')).to.equal('test-client-body');
+        expect(capturedBody?.get('client_secret')).to.equal('Xy9+Kq2z');
+        expect(capturedBody?.get('scope')).to.equal('sfcc.products');
+      });
+
       it('should handle token request without scopes', async () => {
         const mockToken = createMockJWT({sub: 'test-client-noscope'});
 

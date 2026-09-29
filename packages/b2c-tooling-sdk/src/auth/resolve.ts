@@ -28,6 +28,7 @@
  */
 
 import type {AuthStrategy, AuthMethod, AuthCredentials} from './types.js';
+import type {ClientAuthMethod} from './client-credentials.js';
 import {ALL_AUTH_METHODS} from './types.js';
 import {OAuthStrategy} from './oauth.js';
 import {JwtOAuthStrategy} from './oauth-jwt.js';
@@ -183,6 +184,7 @@ export function resolveAuthStrategy(
             clientSecret: credentials.clientSecret,
             scopes: credentials.scopes,
             accountManagerHost: credentials.accountManagerHost,
+            clientAuthMethod: credentials.clientAuthMethod,
           });
         }
         break;
@@ -248,6 +250,7 @@ export interface SystemOAuthCredentials {
   clientSecret?: string;
   scopes?: string[];
   accountManagerHost?: string;
+  clientAuthMethod?: ClientAuthMethod;
   jwtCertPath?: string;
   jwtKeyPath?: string;
   jwtPassphrase?: string;
@@ -278,7 +281,7 @@ export function resolveSystemOAuthStrategy(
   credentials: SystemOAuthCredentials,
   methods: AuthMethod[] = ['client-credentials', 'jwt'],
 ): AuthStrategy | undefined {
-  const {clientId, clientSecret, scopes, jwtCertPath, jwtKeyPath, jwtPassphrase} = credentials;
+  const {clientId, clientSecret, clientAuthMethod, scopes, jwtCertPath, jwtKeyPath, jwtPassphrase} = credentials;
   if (!clientId) {
     return undefined;
   }
@@ -289,7 +292,7 @@ export function resolveSystemOAuthStrategy(
 
   for (const method of methods) {
     if (method === 'client-credentials' && clientSecret) {
-      return new OAuthStrategy({clientId, clientSecret, scopes, accountManagerHost});
+      return new OAuthStrategy({clientId, clientSecret, scopes, accountManagerHost, clientAuthMethod});
     }
 
     if (method === 'jwt' && jwtCertPath && jwtKeyPath) {

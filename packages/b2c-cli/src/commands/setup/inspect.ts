@@ -314,6 +314,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ...(config.scopes ? [['scopes', config.scopes] as [string, unknown]] : []),
         ...(config.authMethods ? [['authMethods', config.authMethods] as [string, unknown]] : []),
         ...(config.accountManagerHost ? [['accountManagerHost', config.accountManagerHost] as [string, unknown]] : []),
+        ...(config.clientAuthMethod ? [['clientAuthMethod', config.clientAuthMethod] as [string, unknown]] : []),
       ],
       fieldSources,
       unmask,

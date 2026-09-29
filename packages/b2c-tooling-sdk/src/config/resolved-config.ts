@@ -83,6 +83,7 @@ export class ResolvedConfigImpl implements ResolvedB2CConfig {
       clientSecret: this.values.clientSecret,
       scopes: mergedScopes.length > 0 ? mergedScopes : undefined,
       accountManagerHost: this.values.accountManagerHost,
+      clientAuthMethod: this.values.clientAuthMethod,
       redirectUri: options?.redirectUri,
       openBrowser: options?.openBrowser,
     };
