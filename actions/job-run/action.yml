@@ -76,7 +76,7 @@ runs:
   using: 'composite'
   steps:
     - name: Ensure CLI is installed
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2.2.1
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2.3.0
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
@@ -121,7 +121,7 @@ runs:
 
     - name: Run job
       id: job
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2.2.1
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2.3.0
       with:
         command: ${{ steps.build-cmd.outputs.cmd }}
         json: 'true'

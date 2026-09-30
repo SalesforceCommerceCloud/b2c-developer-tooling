@@ -1,5 +1,13 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.4
+
+### Patch Changes
+
+- [#716](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/716) [`55da7a5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55da7a54be090007ea6aac64df36d53b7a4b5ffa) - Added an Agent Sandboxing guide for running AI agents with the CLI and MCP server in a sandbox, starting with NVIDIA OpenShell and `b2c setup openshell`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#720](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/720) [`c1b0c17`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c1b0c17e286a69a4945c9d66c0209c87b5441709) - AI assistant install instructions now default to user scope (available in all projects), with a note on installing for a single project. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.3
 
 ### Patch Changes
