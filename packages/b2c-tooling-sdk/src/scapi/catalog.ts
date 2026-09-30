@@ -20,6 +20,8 @@ export interface ScapiSchemaEntry {
   status: string;
   file: string;
   source: string;
+  /** Present on contracts fetched from the tenant's Schemas API; absent for the bundled corpus. */
+  origin?: 'live';
 }
 export interface ScapiSchemaDocument {
   entry: ScapiSchemaEntry;

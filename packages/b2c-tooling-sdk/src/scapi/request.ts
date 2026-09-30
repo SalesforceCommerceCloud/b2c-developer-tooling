@@ -14,9 +14,14 @@ import {globalMiddlewareRegistry, type MiddlewareRegistry} from '../clients/midd
 import {SafetyGuard, extractJobIdFromPath, type SafetyConfig} from '../safety/index.js';
 import {getLogger} from '../logging/logger.js';
 import {findScapiOperation, resolveScapiReference, type ApiDocument, type ScapiSchemaDocument} from './catalog.js';
+import {createLiveScapiDocument} from './live.js';
+import type {ScapiShopperAuth} from './shopper.js';
 import {
   scapiAuthError,
   scapiAuthResponse,
+  scapiShopperAuthError,
+  selectScapiAuth,
+  shopperTokenScopes,
   unsupportedScapiAuth,
   unsupportedScapiTransfer,
   isScapiTextMediaType,
@@ -36,7 +41,10 @@ export interface ScapiRequestOptions {
   shortCode: string;
   tenantId: string;
   siteId?: string;
+  /** Account Manager auth for operations declaring AmOAuth2. */
   auth: AuthStrategy | (() => AuthStrategy);
+  /** Guest shopper auth for operations declaring ShopperToken. Omit to reject Shopper operations. */
+  shopperAuth?: ScapiShopperAuth;
   safety: SafetyConfig;
   documents: ScapiSchemaDocument[];
   middlewareRegistry?: MiddlewareRegistry;
@@ -44,6 +52,8 @@ export interface ScapiRequestOptions {
   confirm?: (request: ScapiConfirmation, signal: AbortSignal) => Promise<void>;
   /** Called immediately before network dispatch, for tracking potentially applied writes. */
   onDispatch?: () => void;
+  /** Called with each contract fetched from the Schemas API; `customProperties` reports expand=custom_properties. */
+  onSchema?: (document: ScapiSchemaDocument, customProperties: boolean) => void;
 }
 
 /** Build one execution's SCAPI request helper. Auth, policy, and responses stay in the host. */
@@ -81,8 +91,9 @@ export function createScapiRequest(
       const id = `custom/${apiName}/${apiVersion}`;
       if (!documents.some((document) => document.entry.id === id))
         throw new Error(
-          `SCAPI_CUSTOM_SCHEMA_REQUIRED: Fetch /dx/scapi-schemas/v1/organizations/{organizationId}/schemas/${id} ` +
-            'with scapi.request in this execution before calling its endpoints. Inspect the contract and declared authentication.',
+          `SCAPI_CUSTOM_SCHEMA_REQUIRED: Search it with scapi_search schemas:"live", or fetch ` +
+            `/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/${id} with scapi.request in this execution, ` +
+            'before calling its endpoints. Inspect the contract and declared authentication.',
         );
     }
     const matched = findScapiOperation(documents, method, path);
@@ -90,11 +101,13 @@ export function createScapiRequest(
       throw new Error('SCAPI target differs from resolved organizationId.');
     const {schema} = matched.document;
     const {operation} = matched;
-    const security = operation.security ?? schema.security ?? [];
-    const admin = security.find(
-      (requirement: ApiDocument) => Array.isArray(requirement.AmOAuth2) && Object.keys(requirement).length === 1,
-    );
-    if (!admin) throw unsupportedScapiAuth(matched.document, operation);
+    const selected = selectScapiAuth(matched.document, operation);
+    if (!selected) throw unsupportedScapiAuth(matched.document, operation);
+    const shopper = selected.type === 'shopper';
+    if (shopper && !options.shopperAuth)
+      throw new Error(
+        `SCAPI_SHOPPER_AUTH_UNAVAILABLE: ${operation.operationId} (${matched.document.entry.id}) is a Shopper API and this host provides Admin authentication only.`,
+      );
     const transferLimit = unsupportedScapiTransfer(matched.document, operation);
     if (transferLimit)
       throw new Error(
@@ -129,17 +142,24 @@ export function createScapiRequest(
       if (!body?.content?.['application/json']) throw new Error('This operation does not accept a JSON body.');
       if (Buffer.byteLength(JSON.stringify(args.body)) > 1_048_576) throw new Error('SCAPI_REQUEST_TOO_LARGE');
     }
-    const scopes = admin.AmOAuth2 as string[];
+    const {scopes} = selected;
     // SCAPI standard contracts list ro/rw domain alternatives together; reuse SDK scope negotiation.
-    const alternatives = scopes.length === 2 && scopes.some((scope) => scopes.includes(`${scope}.rw`));
+    const alternatives = !shopper && scopes.length === 2 && scopes.some((scope) => scopes.includes(`${scope}.rw`));
     const candidates = alternatives
       ? [...scopes].sort((a, b) => Number(a.endsWith('.rw')) - Number(b.endsWith('.rw'))).map((scope) => [scope])
       : [scopes];
-    const authContext = {
+    // A shopper token is issued for one site (SLAS channel).
+    const shopperSiteId = typeof queryValues.siteId === 'string' ? queryValues.siteId : options.siteId;
+    if (shopper && !shopperSiteId)
+      throw new Error(
+        `SCAPI_ARGUMENT_INVALID: ${operation.operationId} is a Shopper API; set query.siteId or configure siteId for the selected project.`,
+      );
+    const authContext: Parameters<typeof scapiAuthError>[1] = {
       operationId: operation.operationId,
       api: matched.document.entry.id,
       candidates,
       tenantScope: buildTenantScope(options.tenantId),
+      ...(shopper ? {shopper: {siteId: shopperSiteId!}} : {}),
     };
     const querySerializer = (values: Record<string, unknown>) =>
       Object.entries(values)
@@ -188,30 +208,48 @@ export function createScapiRequest(
       )
         throw new Error('SCAPI_APPROVAL_MISMATCH: request changed after approval; no request sent.');
     };
-    let baseAuth: AuthStrategy;
-    try {
-      baseAuth = withScopes(typeof options.auth === 'function' ? options.auth() : options.auth, [
-        authContext.tenantScope,
-      ]);
-    } catch (error) {
-      throw scapiAuthError(error, authContext);
-    }
-    const auth: AuthStrategy = {
-      fetch: baseAuth.fetch.bind(baseAuth),
-      getAuthorizationHeader: async () => {
-        try {
-          if (baseAuth.getAccessTokenForCascade) return `Bearer ${await baseAuth.getAccessTokenForCascade(candidates)}`;
-          const scoped = withScopes(baseAuth, scopes);
-          if (!scoped.getAuthorizationHeader)
-            throw new Error(
-              'SCAPI_ADMIN_AUTH_UNSUPPORTED: The configured auth strategy cannot provide an authorization header. Use Account Manager OAuth credentials or a supported JWT strategy.',
-            );
-          return await scoped.getAuthorizationHeader();
-        } catch (error) {
-          throw scapiAuthError(error, authContext);
-        }
-      },
+    const adminAuth = (): AuthStrategy => {
+      let baseAuth: AuthStrategy;
+      try {
+        baseAuth = withScopes(typeof options.auth === 'function' ? options.auth() : options.auth, [
+          authContext.tenantScope,
+        ]);
+      } catch (error) {
+        throw scapiAuthError(error, authContext);
+      }
+      return {
+        fetch: baseAuth.fetch.bind(baseAuth),
+        getAuthorizationHeader: async () => {
+          try {
+            if (baseAuth.getAccessTokenForCascade)
+              return `Bearer ${await baseAuth.getAccessTokenForCascade(candidates)}`;
+            const scoped = withScopes(baseAuth, scopes);
+            if (!scoped.getAuthorizationHeader)
+              throw new Error(
+                'SCAPI_ADMIN_AUTH_UNSUPPORTED: The configured auth strategy cannot provide an authorization header. Use Account Manager OAuth credentials or a supported JWT strategy.',
+              );
+            return await scoped.getAuthorizationHeader();
+          } catch (error) {
+            throw scapiAuthError(error, authContext);
+          }
+        },
+      };
     };
+    const auth: AuthStrategy = shopper
+      ? {
+          fetch,
+          getAuthorizationHeader: async () => {
+            try {
+              const token = await options.shopperAuth!.getAccessToken(shopperSiteId!, signal);
+              authContext.shopper!.tokenScopes = shopperTokenScopes(token);
+              return `Bearer ${token}`;
+            } catch (error) {
+              signal.throwIfAborted();
+              throw scapiShopperAuthError(error, authContext);
+            }
+          },
+        }
+      : adminAuth();
     const client = createClient<ApiDocument>({
       baseUrl: origin,
       headers: {Accept: 'application/json, text/*'},
@@ -284,40 +322,30 @@ export function createScapiRequest(
       }
     }
     const diagnostic = scapiAuthResponse(result.response.status, authContext);
-    // Only authenticated live schema responses extend this execution's custom API catalog.
+    if (shopper && result.response.status === 401) options.shopperAuth?.invalidate(shopperSiteId!);
+    // Authenticated live schema responses extend this execution's catalog, replacing bundled contracts.
     if (
       result.response.ok &&
       method === 'GET' &&
       matched.document.entry.id === 'dx/scapi-schemas/v1' &&
-      matched.parameters.apiFamily === 'custom'
+      matched.parameters.apiFamily &&
+      matched.parameters.apiName &&
+      matched.parameters.apiVersion
     ) {
-      const schema = data as ApiDocument | null;
-      if (
-        !schema ||
-        !/^3\./.test(schema.openapi) ||
-        !schema.paths ||
-        typeof schema.paths !== 'object' ||
-        Array.isArray(schema.paths)
-      )
-        throw new Error('SCAPI_CUSTOM_SCHEMA_INVALID: Expected an OpenAPI 3 contract with paths from the Schemas API.');
-      const {apiName, apiVersion} = matched.parameters;
-      const id = `custom/${apiName}/${apiVersion}`;
-      const document: ScapiSchemaDocument = {
-        entry: {
-          id,
-          apiFamily: 'custom',
-          apiName,
-          apiVersion,
-          schemaVersion: schema.info?.version ?? apiVersion,
-          status: 'live',
-          file: '',
-          source: url,
-        },
-        schema,
-      };
-      const previous = documents.findIndex((item) => item.entry.id === id);
-      if (previous < 0) documents.push(document);
-      else documents[previous] = document;
+      const {apiFamily, apiName, apiVersion} = matched.parameters;
+      let document: ScapiSchemaDocument | undefined;
+      try {
+        document = createLiveScapiDocument({apiFamily, apiName, apiVersion}, data);
+      } catch (error) {
+        // Custom endpoints are unreachable without their contract; standard reads remain plain data.
+        if (apiFamily === 'custom') throw error;
+      }
+      if (document) {
+        const previous = documents.findIndex((item) => item.entry.id === document.entry.id);
+        if (previous < 0) documents.push(document);
+        else documents[previous] = document;
+        options.onSchema?.(document, String(queryValues.expand ?? '').includes('custom_properties'));
+      }
     }
     return {status: result.response.status, ok: result.response.ok, data, ...(diagnostic ? {diagnostic} : {})};
   };

@@ -232,7 +232,7 @@ describe('SCAPI code mode', function () {
     expect(orders.schema.paths['/organizations/{organizationId}/orders']?.get).not.to.have.property('auth');
   });
 
-  it('rejects Shopper execution before looking for Admin credentials or missing site parameters', async () => {
+  it('rejects Shopper execution without Shopper authentication before looking for Admin credentials', async () => {
     let authLoaded = false;
     const call = request({level: 'NONE'}, () => {
       authLoaded = true;
@@ -244,7 +244,7 @@ describe('SCAPI code mode', function () {
           request: call,
           code: `async () => scapi.request({method:'GET',path:'/product/shopper-products/v1/organizations/f_ecom_test_001/products/test'})`,
         }),
-      'SCAPI_SHOPPER_AUTH_UNSUPPORTED',
+      'SCAPI_SHOPPER_AUTH_UNAVAILABLE',
     );
     expect(authLoaded).to.equal(false);
   });

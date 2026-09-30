@@ -95,12 +95,13 @@ export interface paths {
                 content: {
                     "application/x-www-form-urlencoded": {
                         /** @enum {string} */
-                        grant_type: "client_credentials" | "authorization_code_pkce";
+                        grant_type: "client_credentials" | "authorization_code_pkce" | "refresh_token";
                         channel_id: string;
                         client_id?: string;
                         code?: string;
                         code_verifier?: string;
                         redirect_uri?: string;
+                        refresh_token?: string;
                         usid?: string;
                     };
                 };

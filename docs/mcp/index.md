@@ -89,7 +89,7 @@ without a separate CLI installation.
 
 [![ChatGPT reviewing MarketStreet promotions, summarizing four campaigns, and highlighting disabled promotions and potential schedule conflicts.](/screenshots/mcp-promotions-review.png)](/screenshots/mcp-promotions-review.png)
 
-Standard and custom Admin APIs support live requests. Shopper APIs are available for reference.
+Standard and custom Admin APIs support live requests, and Shopper APIs run as a guest shopper with your SLAS client.
 
 [CIP analytics](./toolsets#cip) helps explain sales changes, uncover search and
 promotion opportunities, and investigate API performance. Ask for a ready-to-use

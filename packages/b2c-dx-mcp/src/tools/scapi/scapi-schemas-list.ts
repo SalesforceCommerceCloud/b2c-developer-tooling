@@ -21,6 +21,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
 import {collapseOpenApiSchema, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
+import {createLiveScapiDocument, scapiTenantKey, type ScapiLiveSchemaCache} from '@salesforce/b2c-tooling-sdk/scapi';
 
 /**
  * Builds the base URL for a SCAPI API endpoint.
@@ -129,6 +130,7 @@ interface SchemaGetOutput {
  * @param params.organizationId - Organization ID
  * @param params.args - Input arguments with API identifiers
  * @param params.shortCode - Optional short code for building base URL
+ * @param params.schemaCache - Optional live contract cache shared with SCAPI code mode
  * @returns Schema fetch output
  */
 async function fetchSpecificSchema(params: {
@@ -136,8 +138,9 @@ async function fetchSpecificSchema(params: {
   organizationId: string;
   args: SchemasListInput;
   shortCode?: string;
+  schemaCache?: ScapiLiveSchemaCache;
 }): Promise<SchemaGetOutput> {
-  const {client, organizationId, args, shortCode} = params;
+  const {client, organizationId, args, shortCode, schemaCache} = params;
   const {apiFamily, apiName, apiVersion, expandAll, status} = args;
 
   // Warn if status filter was provided (it's ignored in fetch mode)
@@ -159,6 +162,18 @@ async function fetchSpecificSchema(params: {
     throw new Error(
       `Failed to fetch schema for ${apiFamily}/${apiName}/${apiVersion}: ${getSchemasApiError(error, response)}`,
     );
+  }
+
+  // Expanded tenant contracts become searchable and executable in SCAPI code mode.
+  if (schemaCache && shortCode && (args.expandCustomProperties !== false || apiFamily === 'custom')) {
+    try {
+      schemaCache.put(
+        scapiTenantKey(shortCode, organizationId),
+        createLiveScapiDocument({apiFamily: apiFamily!, apiName: apiName!, apiVersion: apiVersion!}, data),
+      );
+    } catch {
+      // Not a usable OpenAPI contract; still return it to the caller.
+    }
   }
 
   // Apply collapsing unless expandAll is requested
@@ -300,9 +315,13 @@ function getAvailableFilters(schemas: SchemaListItem[]): {
  * Lists or fetches SCAPI schema specifications; includes standard SCAPI and custom API as schema types.
  *
  * @param loadServices - Function that loads configuration and returns Services instance
+ * @param schemaCache - Optional live contract cache shared with SCAPI code mode
  * @returns MCP tool for listing/fetching SCAPI schemas
  */
-export function createScapiSchemasListTool(loadServices: () => Promise<Services> | Services): McpTool {
+export function createScapiSchemasListTool(
+  loadServices: () => Promise<Services> | Services,
+  schemaCache?: ScapiLiveSchemaCache,
+): McpTool {
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
@@ -362,7 +381,7 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
 
         // Execute appropriate mode
         if (isFetchMode) {
-          return fetchSpecificSchema({client, organizationId, args, shortCode});
+          return fetchSpecificSchema({client, organizationId, args, shortCode, schemaCache});
         }
 
         return fetchSchemasList({client, organizationId, args, shortCode});
