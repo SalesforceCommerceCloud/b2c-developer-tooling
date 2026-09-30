@@ -123,7 +123,7 @@ export class ScapiExecution {
       `${request.method} ${path}`,
       ...(Object.keys(request.query).length > 0 ? [`Query:\n${preview(request.query)}`] : []),
       ...(request.body === undefined ? [] : [`Body:\n${preview(request.body)}`]),
-      'Safety Mode requires approval. Declining stops this execution.',
+      'Safety Mode requires approval. Accept sends this request only; declining stops this execution.',
       earlierWrites ? `Earlier write requests sent: ${earlierWrites}; no rollback.` : 'No earlier writes.',
       `Execution: ${this.id}`,
     ].join('\n');
@@ -133,11 +133,8 @@ export class ScapiExecution {
         inputRequests: {
           [key]: inputRequired.elicit({
             message,
-            requestedSchema: {
-              type: 'object',
-              properties: {approve: {type: 'boolean', title: 'Approve this request only', default: false}},
-              required: ['approve'],
-            },
+            // No fields: the client's own accept/decline/cancel buttons carry the decision.
+            requestedSchema: {type: 'object', properties: {}},
           }),
         },
       }),
@@ -209,17 +206,19 @@ export class ScapiExecution {
     if (this.result) return this.result;
     if (round.responded) return this.wait(context);
     if (round !== this.pending) throw new Error('SCAPI_CONTINUATION_STALE: approval round is no longer pending.');
-    const response = context.inputResponses?.[round.key] as
-      | undefined
-      | {action?: unknown; content?: {approve?: unknown}};
+    const response = context.inputResponses?.[round.key] as undefined | {action?: unknown};
     if (!response) return this.wait(context);
     this.event = deferred<ToolResult>();
     round.responded = true;
     const result = this.wait(context);
-    if (!context.supportsElicitation || response.action !== 'accept' || response.content?.approve !== true) {
-      this.cancel('SCAPI_APPROVAL_DECLINED: execution cancelled without sending the pending request.');
-    } else {
+    if (context.supportsElicitation && response.action === 'accept') {
       round.decision.resolve();
+    } else if (response.action === 'cancel') {
+      this.cancel(
+        'SCAPI_APPROVAL_CANCELLED: approval dismissed; execution cancelled without sending the pending request.',
+      );
+    } else {
+      this.cancel('SCAPI_APPROVAL_DECLINED: execution cancelled without sending the pending request.');
     }
     return result;
   }
