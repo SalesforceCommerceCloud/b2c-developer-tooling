@@ -1,5 +1,18 @@
 # @salesforce/b2c-cli
 
+## 2.3.0
+
+### Minor Changes
+
+- [#716](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/716) [`55da7a5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55da7a54be090007ea6aac64df36d53b7a4b5ffa) - Added the `client-auth-method` setting (`SFCC_CLIENT_AUTH_METHOD`, `--client-auth-method`) to choose how client credentials are sent to Account Manager: `basic` (default), `basic-unencoded`, or `body`. Client credentials now also work inside NVIDIA OpenShell sandboxes without extra configuration. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#716](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/716) [`55da7a5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55da7a54be090007ea6aac64df36d53b7a4b5ffa) - Added `b2c setup openshell` (beta), which creates an NVIDIA OpenShell sandbox from your current configuration in one step. Agents in the sandbox can use the CLI and MCP server without seeing your secrets, and can only reach B2C Commerce, within your Safety Mode settings. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`c1b0c17`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c1b0c17e286a69a4945c9d66c0209c87b5441709), [`55da7a5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55da7a54be090007ea6aac64df36d53b7a4b5ffa), [`55da7a5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55da7a54be090007ea6aac64df36d53b7a4b5ffa), [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e), [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e)]:
+  - @salesforce/b2c-tooling-sdk@2.3.0
+
 ## 2.2.1
 
 ### Patch Changes
