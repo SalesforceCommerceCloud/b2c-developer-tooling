@@ -41,6 +41,7 @@ b2c webdav put --root=dynamic ./mock.vm MySite/mockData/
 b2c webdav get --root=dynamic MySite/mockData/mock.vm -o ./mock.vm
 ```
 
+The site ID directory is managed by the instance and must match an existing site.
 The same path format works with `rm`, `zip`, and `unzip`. This location is used by
 `dw.template.Velocity.renderTemplate()` for site-specific Velocity templates.
 
@@ -222,7 +223,7 @@ b2c webdav put ./file.tar.gz / --root=temp
 ### Notes
 
 - If `REMOTE` ends with `/` or is `/`, the source filename is used
-- Parent directories must exist (use `webdav mkdir` to create them)
+- Missing parent directories under the root are created automatically
 
 ---
 
