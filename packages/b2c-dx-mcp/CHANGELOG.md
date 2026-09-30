@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.2.1
+
+### Patch Changes
+
+- [#724](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/724) [`fe853db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fe853db0f916ae9f92fa225881a68bd961ea88c4) - SCAPI Safety Mode approvals now use the client's own Accept/Decline buttons instead of an extra "Approve this request only" checkbox, so clicking Accept in GUI clients such as the ChatGPT Work app no longer declines the request. Dismissing the prompt now reports `SCAPI_APPROVAL_CANCELLED`, separate from a decline. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 3.2.0
 
 ### Minor Changes
