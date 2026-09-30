@@ -14,7 +14,7 @@ export interface ScapiShopperConfig {
   tenantId: string;
   slasClientId?: string;
   slasClientSecret?: string;
-  /** Redirect URI registered on a public SLAS client. Defaults to http://localhost:3000/callback. */
+  /** Redirect URI registered on a public SLAS client. Defaults to `http://localhost:3000/callback`. */
   redirectUri?: string;
   middlewareRegistry?: MiddlewareRegistry;
 }
