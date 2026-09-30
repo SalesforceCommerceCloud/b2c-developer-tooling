@@ -92,7 +92,7 @@ runs:
   steps:
     - name: Setup B2C CLI
       id: setup
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2.3.0
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2.3.1
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
@@ -117,7 +117,7 @@ runs:
     - name: Run command
       id: command
       if: inputs.command != ''
-      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2.3.0
+      uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/run@v2.3.1
       with:
         command: ${{ inputs.command }}
         json: ${{ inputs.json }}

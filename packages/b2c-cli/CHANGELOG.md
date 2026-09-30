@@ -1,5 +1,11 @@
 # @salesforce/b2c-cli
 
+## 2.3.1
+
+### Patch Changes
+
+- [#726](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/726) [`c1d81b0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c1d81b0f7d9c986d3280ba0a663ff525048f3987) - Fix `webdav put` and `webdav mkdir` failing with `403 Forbidden` for the `dynamic`, `libraries`, and `catalogs` roots; the commands no longer try to create the WebDAV root directory itself (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.3.0
 
 ### Minor Changes
