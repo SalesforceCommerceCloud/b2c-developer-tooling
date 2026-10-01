@@ -65,11 +65,10 @@ describe('webdav put', () => {
 
     const result = await command.run();
 
-    // Parent dirs: Impex, Impex/src, Impex/src/instance
-    expect(mkcolStub.callCount).to.equal(3);
-    expect(mkcolStub.getCall(0).args[0]).to.equal('Impex');
-    expect(mkcolStub.getCall(1).args[0]).to.equal('Impex/src');
-    expect(mkcolStub.getCall(2).args[0]).to.equal('Impex/src/instance');
+    // Parent dirs (root itself is skipped): Impex/src, Impex/src/instance
+    expect(mkcolStub.callCount).to.equal(2);
+    expect(mkcolStub.getCall(0).args[0]).to.equal('Impex/src');
+    expect(mkcolStub.getCall(1).args[0]).to.equal('Impex/src/instance');
 
     expect(putStub.calledOnce).to.equal(true);
     expect(putStub.getCall(0).args[0]).to.equal('Impex/src/instance/export.zip');
@@ -108,5 +107,55 @@ describe('webdav put', () => {
     expect(putStub.getCall(0).args[2]).to.equal('application/xml');
     expect(result.remotePath).to.equal('Impex/src/instance/renamed.xml');
     expect(result.contentType).to.equal('application/xml');
+  });
+
+  it('never sends MKCOL to the WebDAV root (e.g. Dynamic rejects it with 403)', async () => {
+    const command: any = await createCommand({root: 'dynamic'}, {local: './sample.vm', remote: 'RefArch/aaa/'});
+
+    sinon.stub(command, 'ensureWebDavAuth').returns(void 0);
+    sinon.stub(command, 'log').returns(void 0);
+
+    sinon.stub(fs, 'existsSync').returns(true);
+    sinon.stub(fs, 'readFileSync').returns(Buffer.from('abc'));
+
+    const mkcolStub = sinon.stub().resolves(void 0);
+    const putStub = sinon.stub().resolves(void 0);
+
+    sinon.stub(command, 'instance').get(() => ({
+      webdav: {
+        mkcol: mkcolStub,
+        put: putStub,
+      },
+    }));
+
+    await command.run();
+
+    expect(mkcolStub.args.map((a) => a[0])).to.deep.equal(['Dynamic/RefArch', 'Dynamic/RefArch/aaa']);
+    expect(putStub.getCall(0).args[0]).to.equal('Dynamic/RefArch/aaa/sample.vm');
+  });
+
+  it('does not create any directories when uploading to the root', async () => {
+    const command: any = await createCommand({root: 'dynamic'}, {local: './sample.vm', remote: '/'});
+
+    sinon.stub(command, 'ensureWebDavAuth').returns(void 0);
+    sinon.stub(command, 'log').returns(void 0);
+
+    sinon.stub(fs, 'existsSync').returns(true);
+    sinon.stub(fs, 'readFileSync').returns(Buffer.from('abc'));
+
+    const mkcolStub = sinon.stub().resolves(void 0);
+    const putStub = sinon.stub().resolves(void 0);
+
+    sinon.stub(command, 'instance').get(() => ({
+      webdav: {
+        mkcol: mkcolStub,
+        put: putStub,
+      },
+    }));
+
+    await command.run();
+
+    expect(mkcolStub.called).to.equal(false);
+    expect(putStub.getCall(0).args[0]).to.equal('Dynamic/sample.vm');
   });
 });

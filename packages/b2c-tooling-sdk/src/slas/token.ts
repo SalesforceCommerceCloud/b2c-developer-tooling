@@ -250,3 +250,37 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
   checkResponse(tokenResponse, 'token exchange (authorization_code_pkce)', error);
   return data!;
 }
+
+/**
+ * Refreshes a shopper access token, keeping the shopper's session (usid).
+ *
+ * Private clients authenticate with HTTP Basic using the client secret.
+ *
+ * @param config - SLAS token configuration
+ * @param refreshToken - Refresh token from a previous token response
+ * @returns The token response including a new access_token and refresh_token
+ */
+export async function refreshShopperToken(config: SlasTokenConfig, refreshToken: string): Promise<SlasTokenResponse> {
+  const client = createSlasShopperClient(config);
+  const headers: Record<string, string> = {'Content-Type': 'application/x-www-form-urlencoded'};
+  if (config.slasClientSecret)
+    headers.Authorization = `Basic ${encodeBasicClientCredentials(config.slasClientId, config.slasClientSecret)}`;
+
+  const {
+    data,
+    error,
+    response: tokenResponse,
+  } = await client.POST('/oauth2/token', {
+    redirect: 'error',
+    headers,
+    body: {
+      grant_type: 'refresh_token',
+      client_id: config.slasClientId,
+      channel_id: config.siteId,
+      refresh_token: refreshToken,
+    },
+  });
+
+  checkResponse(tokenResponse, 'token refresh (refresh_token)', error);
+  return data!;
+}

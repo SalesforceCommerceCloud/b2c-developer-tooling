@@ -41,22 +41,22 @@ b2c ecdn mrt-rules delete --zone my-zone
 
 ## mTLS Certificates
 
-Code upload certificates enable two-factor (mTLS) code upload to staging instances (`_stg` tenants only). Upload a CA certificate to eCDN, then issue client certificates (`.p12`) signed by that CA for each user or pipeline. The CA private key must be kept secret (treat like a password); the CA certificate bundle must have a maximum validity of 1 year and be renewed before expiry. On Hyperforce, use the `staging-<realm>-<customer>.demandware.net` code upload hostname (not legacy `cert.staging.*`).
+Code upload certificates enable two-factor (mTLS) code upload to staging instances (`_stg` tenants only). There are two kinds: CAs registered with eCDN for the tenant (typically one, but several can be active, e.g. during renewal), which only sign certificates; and client certificates (`.p12`) signed by a CA (typically one per CI pipeline or developer, any number allowed), which the CLI sends on code upload. CI pipelines are the primary use case. Use `create --generate --name <ca-label> --client-name <pipeline>` once to create + register the CA and issue the first (CI) client cert, then `issue` for each additional pipeline/developer. `setup` is a guided, interactive version of `create --generate` with defaults and an optional dw.json update. `create` with `--certificate-file`/`--private-key-file` registers a bring-your-own CA. The code upload hostname is provisioned by Salesforce and linked automatically; users don't configure it. The CA private key must be kept secret (treat like a password); the CA certificate bundle must have a maximum validity of 1 year and be renewed before expiry. On Hyperforce, use the `staging-<realm>-<customer>.demandware.net` code upload hostname (not legacy `cert.staging.*`).
 
-For the complete workflow, security guidance, and renewal instructions, see [Deploying to Hyperforce: Code Upload Certificates](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce#code-upload-certificates).
+For the complete workflow, security guidance, and renewal instructions, see [Deploying to Hyperforce: Set Up Two-Factor Code Upload](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce#set-up-two-factor-code-upload).
 
 ```bash
-# interactive wizard: generate CA, upload, issue your client cert, update dw.json
-b2c ecdn mtls setup
+# typically once per tenant: generate + register CA, issue first client cert (e.g. for CI)
+b2c ecdn mtls create --name code-upload --generate --client-name github-actions
+b2c ecdn mtls create --name code-upload --generate --out-dir ./certs --client-name github-actions
 
-# non-interactive: generate CA + upload + issue first client cert
-b2c ecdn mtls create --name code-upload --generate
-b2c ecdn mtls create --name code-upload --generate --out-dir ./certs --client-name jsmith
+# guided/interactive version of create --generate (prompts, defaults, optional dw.json update)
+b2c ecdn mtls setup
 
 # upload an existing CA
 b2c ecdn mtls create --name code-upload --certificate-file ./ca.pem --private-key-file ./ca.key
 
-# issue additional client certificates (local-only, no API call)
+# issue a client certificate per CI pipeline / developer (local-only, no API call)
 b2c ecdn mtls issue --ca-cert-file ./certs/ca.pem --ca-key-file ./certs/ca.key --name jane.doe
 b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name ci --output ci.p12 --days 90
 

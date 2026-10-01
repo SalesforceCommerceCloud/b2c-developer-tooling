@@ -88,6 +88,7 @@ const CATEGORY_TAXONOMY: Record<DocCategory, {alwaysRelevant?: boolean}> = {
   sfnext: {},
   sfra: {},
   'b2c-commerce': {alwaysRelevant: true},
+  ocapi: {alwaysRelevant: true},
   tooling: {alwaysRelevant: true},
   // Salesforce Help corpora. Not `alwaysRelevant`: administrative/merchandising
   // Help is task-specific, so it is boosted only via explicit category/topic

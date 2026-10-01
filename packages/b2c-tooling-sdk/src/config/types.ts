@@ -11,6 +11,7 @@
  *
  * @module config/types
  */
+import type {ClientAuthMethod} from '../auth/client-credentials.js';
 import type {AuthMethod, AuthStrategy} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
 import type {SafetyLevel} from '../safety/safety-middleware.js';
@@ -71,6 +72,8 @@ export interface NormalizedConfig {
   authMethods?: AuthMethod[];
   /** Account Manager hostname for OAuth (default: account.demandware.com) */
   accountManagerHost?: string;
+  /** How client credentials are sent to Account Manager (default: basic) */
+  clientAuthMethod?: ClientAuthMethod;
 
   // Auth fields (JWT Bearer)
   /** Path to JWT certificate file (cert.pem) for JWT authentication */

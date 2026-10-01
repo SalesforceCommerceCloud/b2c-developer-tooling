@@ -50,7 +50,7 @@ export SFCC_USERNAME=your-bm-username
 export SFCC_PASSWORD=your-webdav-access-key
 ```
 
-Staging instances also require a client certificate (two-factor mTLS). See [Code Upload Certificates](/guide/hyperforce#code-upload-certificates) to create one.
+Staging instances also require a client certificate (two-factor mTLS). See [Set Up Two-Factor Code Upload](/guide/hyperforce#set-up-two-factor-code-upload) to create one.
 
 ### Code Version Operations (list, activate, delete)
 

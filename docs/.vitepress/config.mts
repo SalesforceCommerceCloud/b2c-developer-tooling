@@ -147,6 +147,7 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Commerce Apps', link: '/guide/commerce-apps'},
       {text: 'Security', link: '/guide/security'},
+      {text: 'Agent Sandboxing', link: '/guide/agent-sandboxing'},
     ],
   },
   {

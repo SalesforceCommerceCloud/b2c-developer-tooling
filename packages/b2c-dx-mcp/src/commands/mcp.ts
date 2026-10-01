@@ -220,7 +220,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     'docs-topics': Flags.string({
       description:
         'Limit the documentation exposed by the docs tools to these categories (comma-separated allowlist). ' +
-        'Options: script-api, job-step, commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce, tooling, ' +
+        'Options: script-api, job-step, commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce, ocapi, tooling, ' +
         'help-admin, help-merchant, help-kb. ' +
         'Bounds the whole docs corpus; per-call category/storefront narrow within it. Unknown names are ignored.',
       env: 'SFCC_DOCS_TOPICS',

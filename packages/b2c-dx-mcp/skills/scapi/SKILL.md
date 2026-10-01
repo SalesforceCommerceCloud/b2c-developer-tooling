@@ -17,8 +17,13 @@ then pass `skillRead: true`. This does not authorize mutations.
 
 ## Discover
 
-Discovery is offline; no credentials or Schemas API needed. Schemas and responses
-can be huge. Return only what the next decision needs:
+Discovery defaults to the bundled standard contracts offline; no credentials needed.
+Pass `schemas: "live"` to search the configured tenant's Schemas API contracts
+instead: tenant `c_*` properties, custom APIs, and APIs newer than the bundle.
+Live search needs `sfcc.scapi-schemas`, uses the same project context as
+`scapi_execute`, and caches per tenant for the server session (`refresh: true` refetches). Contracts that
+failed to load are listed in `schemaFailures`. Schemas and responses can be huge.
+Return only what the next decision needs:
 
 1. Find APIs/operations through `spec.apis`/`spec.paths`; return method/path/operationId.
 2. Narrow by `api`, path, or `authType`; inspect required inputs and selected fields,
@@ -55,24 +60,28 @@ Do not fall back to a terminal merely because there is no dedicated job/site too
 
 Bundled schemas omit tenant `c_*` definitions. Known custom fields can be sent
 directly in standard Admin bodies; schema retrieval is optional. SCAPI validates
-the payload. To discover tenant fields, fetch the live schema with
-`scapi_schemas_list`: `includeSchemas: true`, `apiFamily`, `apiName`, `apiVersion`.
+the payload. To discover tenant fields, search with `schemas: "live"` (narrow with
+`api`), or fetch the live schema with `scapi_schemas_list`: `includeSchemas: true`,
+`apiFamily`, `apiName`, `apiVersion`.
 Custom-property expansion defaults to true; disable with `expandCustomProperties: false`.
 `expandAll: true` retains full definitions; it is separate from custom-property
 expansion. Large contracts: fetch through `scapi_execute` and return only relevant
 fields ([example](references/custom-properties.md)). Requires `sfcc.scapi-schemas`.
 Use the same project/instance for schema lookup and writes.
 
-Live reads do not change offline `spec`. If schema access fails, report it; use
+Live contracts found by `schemas: "live"` search, expanded `scapi_schemas_list`
+fetches, or Schemas API reads inside `scapi_execute` are cached for that tenant.
+`scapi_execute` then routes to them, replacing bundled versions; they never change
+the offline `spec`. If schema access fails, report it; use
 already-known fields or ask for missing details. The optional CLI equivalent is
 `b2c scapi schemas get`, which also expands custom properties by default.
 
-For custom endpoint contracts, use `scapi_schemas_list` with `apiFamily: "custom"`;
-check registration with `scapi_custom_apis_get_status` when needed. Execute Admin
-custom endpoints by fetching their live contract through `scapi.request` first
-in each program, then making declared calls. The read enables that contract for
-this execution only. Use `AmOAuth2` operations with their declared `c_*` scopes;
-Shopper operations remain unsupported. [Custom API workflow](references/custom-apis.md).
+For custom endpoint contracts, search with `schemas: "live"` or use
+`scapi_schemas_list` with `apiFamily: "custom"`; check registration with
+`scapi_custom_apis_get_status` when needed. Custom endpoints found through live
+search are callable from `scapi_execute` for the same tenant. Otherwise fetch the
+live contract through `scapi.request` in the program before making declared calls. `AmOAuth2`
+and `ShopperToken` operations use their declared `c_*` scopes. [Custom API workflow](references/custom-apis.md).
 
 ## Authentication
 
@@ -80,14 +89,23 @@ Shopper operations remain unsupported. [Custom API workflow](references/custom-a
   or pass tokens first. For an explicitly requested token or external HTTP client,
   use `auth.accountManager()` / `auth.slas()` in `scapi_execute`:
   [token exports](references/tokens.md). These helpers are unavailable in search.
+- The operation's declared security selects the credential; there is no auth option.
 - Admin `AmOAuth2`: Account Manager credentials. Each request selects operation/tenant
   scopes and reuses suitable cached tokens; no upfront scope union.
+- Shopper `ShopperToken`: a SLAS guest shopper (`slasClientId`, plus `slasClientSecret`
+  for private clients; Storefront Next `.env` supplies both). Requests need `siteId`
+  (configured or `query.siteId`). The guest session is per site and persists across
+  executions for the server session, so baskets carry over. SLAS scopes are fixed on
+  the client, not requested per call; 401/403 diagnostics compare the token's scopes
+  with the operation's. `sfcc.shopper-standard` satisfies only operations that list it.
+  Public clients must allow redirect URI `http://localhost:3000/callback`.
 - Missing credentials: `config_inspect` with masking. `clientId` is Admin;
   `slasClientId` is Shopper. Configuration does not grant access.
 - Scope rejection: grant reported scopes in Account Manager; check extra configured
   scopes. Read/write alternatives are alternatives. Later failures do not undo writes.
-- Shopper requests through `scapi.request()` are unsupported; SLAS token export
-  is available for external clients.
+- Unsupported: registered-shopper-only operations (`RegisteredShopperToken`),
+  trusted-system/agent on-behalf tokens, and SLAS itself (`shopper/auth/v1`).
+  `auth.slas({flow: 'registered', ...})` exports a registered token for external clients.
   SLAS admin roles differ: [CLI/SDK](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas).
 - HTTP 401/403 retain `status`/`data` plus `diagnostic`; preserve these.
   A 403 alone does not prove missing scopes.

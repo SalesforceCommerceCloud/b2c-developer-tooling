@@ -7,6 +7,10 @@
 import {z} from 'zod';
 import {
   loadScapiSchemas,
+  mergeScapiSchemas,
+  scapiTenantKey,
+  ScapiLiveSchemaCache,
+  ScapiShopperSessions,
   runScapiCode,
   createScapiRequest,
   createScapiAuth,
@@ -36,19 +40,19 @@ function requireScapiSkill(read: boolean | undefined): void {
       'SCAPI_SKILL_REQUIRED: Read skill://mcp/scapi/SKILL.md through resources or skills_read, then retry with skillRead: true.',
     );
 }
-const searchDescription = `Discover bundled Admin/Shopper SCAPI contracts offline. Prefer dedicated tools when available.
-Read skill://mcp/scapi/SKILL.md first.
+const searchDescription = `Discover Admin/Shopper SCAPI contracts; prefer dedicated tools. Read skill://mcp/scapi/SKILL.md first.
+Default: bundled, offline. schemas:"live": tenant c_*, custom, newer APIs, reused by execute.
 
-Schemas can be huge. Discover operation IDs/paths first; then select required and task-relevant fields. Avoid whole operations or request/response trees. Local refs are expanded; recursive/deep refs remain $ref.
+Schemas can be huge. Find operation IDs/paths first; then select required and task fields, not whole trees. Local refs expand; recursive/deep refs remain $ref.
 
-Code objects (execute JavaScript, not these types):
+Code objects (write JavaScript, not these types):
 interface Operation {
   api: string; operationId: string; summary?: string;
   parameters: Array<{name: string; in: string; required?: boolean; schema?: unknown}>;
   requestBody?: {required?: boolean; content: Record<string, {schema: any}>};
   responses?: Record<string, unknown>;
   security: Array<Record<string, string[]>>;
-  auth: {types: string[]; schemes: string[]; executable: boolean}; // runtime support, not configured access
+  auth: {types: string[]; schemes: string[]; executable: boolean}; // runtime support, not access
 }
 declare const spec: {
   apis: Array<{id: string; apiFamily: string; apiName: string; apiVersion: string; authTypes: string[]}>;
@@ -71,7 +75,7 @@ async () => {
     fields: Object.fromEntries(fields.map(k => [k, body.properties[k]])), auth: op.auth, security: op.security};
 }`;
 
-const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin APIs when no dedicated tool fits. Discover standard endpoints with scapi_search; for custom APIs, fetch the live contract through scapi.request() in the same program first. Requests authenticate automatically. JSON requests; no Shopper execution or binary transfers.
+const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin or Shopper APIs when no dedicated tool fits. Discover endpoints with scapi_search; operations found with schemas:"live" (including custom APIs) are callable here for the same tenant. Otherwise fetch a custom API's live contract through scapi.request() in the same program first. Auth is automatic; Shopper APIs run as a guest whose session (basket) persists per site. JSON only; no binary transfers.
 Read skill://mcp/scapi/SKILL.md first.
 
 Reuse workflows with await codemode.run(name, input); describe first. async (input) receives input. Completed executionId enables scapi_snippet_save.
@@ -91,7 +95,13 @@ Example: inspect a campaign's promotions
 async () => codemode.run('builtin/campaign-promotions', {campaignId: 'selected-campaign', limit: 4})`;
 
 function codeResult(
-  data: {result?: unknown; executionId?: string; error?: string; skillReferences?: SkillReference[]},
+  data: {
+    result?: unknown;
+    executionId?: string;
+    error?: string;
+    schemaFailures?: Array<{api: string; error: string}>;
+    skillReferences?: SkillReference[];
+  },
   resolution?: ToolResolution,
 ): ToolResult {
   const result = resolution ? attachResolution(jsonResult(data, 0), resolution, 0) : jsonResult(data, 0);
@@ -105,7 +115,7 @@ function failure(error: unknown, resolution?: ToolResolution): ToolResult {
     ...codeResult(
       {
         error: message,
-        ...(/^SCAPI_(ADMIN_|SHOPPER_|AUTH_|SCOPE_)/.test(message)
+        ...(/^SCAPI_(ADMIN_|SHOPPER_|REGISTERED_SHOPPER_|AUTH_|SCOPE_)/.test(message)
           ? {skillReferences: [MCP_SKILL_REFERENCES.scapiAuthentication]}
           : {}),
       },
@@ -119,13 +129,21 @@ export function createScapiCodeTools(
   loadServices: ServicesLoader,
   snippetDirectory?: string,
   registry = new ScapiExecutionRegistry(),
+  schemaCache = new ScapiLiveSchemaCache(),
+  shopperSessions = new ScapiShopperSessions(),
 ): McpTool[] {
   // Retain only source for the last 50 completed executions, until this server ends.
   const executions = new Map<string, string>();
   const searchInput = {
+    ...createProjectContextInputSchema('configuration'),
     code,
     skillRead,
-    api: z.string().optional().describe('Limit schemas to family/name/version. Omit for all standard APIs.'),
+    api: z.string().optional().describe('Limit schemas to family/name/version. Omit for all APIs.'),
+    schemas: z
+      .enum(['bundled', 'live'])
+      .optional()
+      .describe('bundled (default, offline) or live tenant contracts from the Schemas API.'),
+    refresh: z.boolean().optional().describe('With schemas:"live", refetch instead of using cached contracts.'),
     authType: z
       .enum(['admin', 'shopper'])
       .optional()
@@ -163,25 +181,49 @@ export function createScapiCodeTools(
 
       effect: 'read',
       idempotent: true,
-      openWorld: false,
+      openWorld: true,
       async handler(args, context) {
+        let resolution: ToolResolution | undefined;
         try {
-          const input = z.object(searchInput).strict().parse(args);
+          const input = z.object(searchInput).strict().parse(args) as ProjectContextInput &
+            z.infer<z.ZodObject<typeof searchInput>>;
           requireScapiSkill(input.skillRead);
-          const documents = loadScapiSchemas().filter((document) => !input.api || document.entry.id === input.api);
-          if (documents.length === 0) throw new Error('Unknown schema ID. Omit api to discover available APIs.');
-          return codeResult({
-            result: await runScapiCode({
-              code: input.code,
-              documents,
-              authType: input.authType,
+          if (input.schemas !== 'live' && input.refresh !== undefined)
+            throw new Error('SCAPI_SEARCH_ARGUMENT_INVALID: refresh requires schemas:"live".');
+          let documents: ReturnType<typeof loadScapiSchemas>;
+          let failures: Array<{api: string; error: string}> = [];
+          if (input.schemas === 'live') {
+            const services = await loadServices(input);
+            resolution = services.getResolution();
+            // Throws with configuration guidance when shortCode, tenantId, or OAuth credentials are missing.
+            const client = services.getScapiSchemasClient();
+            const organizationId = services.getOrganizationId();
+            const tenant = scapiTenantKey(services.getShortCode()!, organizationId);
+            ({documents, failures} = await schemaCache.load(tenant, client, organizationId, {
+              api: input.api,
+              refresh: input.refresh,
               signal: context?.signal,
-              timeoutMs: 10_000,
-              snippets: loadScapiSnippets(snippetDirectory),
-            }),
+            }));
+            if (documents.length === 0 && failures.length === 0)
+              throw new Error('Unknown schema ID for this tenant. Omit api to discover available APIs.');
+          } else {
+            documents = loadScapiSchemas().filter((document) => !input.api || document.entry.id === input.api);
+            if (documents.length === 0)
+              throw new Error(
+                'Unknown schema ID. Omit api to discover available APIs, or use schemas:"live" for tenant and custom APIs.',
+              );
+          }
+          const result = await runScapiCode({
+            code: input.code,
+            documents,
+            authType: input.authType,
+            signal: context?.signal,
+            timeoutMs: 10_000,
+            snippets: loadScapiSnippets(snippetDirectory),
           });
+          return codeResult({result, ...(failures.length > 0 ? {schemaFailures: failures} : {})}, resolution);
         } catch (error) {
-          return failure(error);
+          return failure(error, resolution);
         }
       },
     },
@@ -222,6 +264,7 @@ export function createScapiCodeTools(
           resolution = services.getResolution();
           const config = services.getResolvedConfig();
           const {shortCode, tenantId, siteId} = config.values;
+          const tenant = shortCode && tenantId ? scapiTenantKey(shortCode, toOrganizationId(tenantId)) : undefined;
           const safetyEnvironment = Object.fromEntries(
             ['SFCC_SAFETY_LEVEL', 'SFCC_SAFETY_CONFIRM', 'SFCC_SAFETY_CONFIG'].map((name) => [
               name,
@@ -238,7 +281,20 @@ export function createScapiCodeTools(
                 tenantId,
                 siteId,
                 auth: () => config.createOAuth(),
-                documents: loadScapiSchemas(),
+                // Guest sessions outlive executions so shopper state (baskets) carries across them.
+                shopperAuth: shopperSessions.for({
+                  shortCode,
+                  tenantId,
+                  slasClientId: config.values.slasClientId,
+                  slasClientSecret: config.values.slasClientSecret,
+                }),
+                // Live contracts discovered for this tenant replace bundled ones; the user owns their accuracy.
+                documents: mergeScapiSchemas(loadScapiSchemas(), tenant ? schemaCache.get(tenant) : []),
+                onSchema(document, customProperties) {
+                  // Keep expanded tenant contracts from being replaced by unexpanded fetches.
+                  if (tenant && (customProperties || document.entry.apiFamily === 'custom'))
+                    schemaCache.put(tenant, document);
+                },
                 confirm: (request) => execution.confirm(request),
                 onDispatch: () => execution.markDispatched(),
                 safety: resolveEffectiveSafetyConfig(

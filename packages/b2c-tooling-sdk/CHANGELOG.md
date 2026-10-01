@@ -1,5 +1,19 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.3.0
+
+### Minor Changes
+
+- [#720](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/720) [`c1b0c17`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c1b0c17e286a69a4945c9d66c0209c87b5441709) - Docs search now includes the OCAPI reference from B2C Commerce Developer Center (usage, hooks, settings, and best practices), available under the new `ocapi` category (45 articles). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#716](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/716) [`55da7a5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55da7a54be090007ea6aac64df36d53b7a4b5ffa) - Added the `client-auth-method` setting (`SFCC_CLIENT_AUTH_METHOD`, `--client-auth-method`) to choose how client credentials are sent to Account Manager: `basic` (default), `basic-unencoded`, or `body`. Client credentials now also work inside NVIDIA OpenShell sandboxes without extra configuration. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#716](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/716) [`55da7a5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55da7a54be090007ea6aac64df36d53b7a4b5ffa) - Added `b2c setup openshell` (beta), which creates an NVIDIA OpenShell sandbox from your current configuration in one step. Agents in the sandbox can use the CLI and MCP server without seeing your secrets, and can only reach B2C Commerce, within your Safety Mode settings. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#723](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/723) [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e) - `scapi_search` can now search your instance's live SCAPI schemas with `schemas: "live"`, including your custom attributes, custom APIs, and APIs newer than the bundled reference. `scapi_execute` can then call what it found on the same instance. Offline search is still the default. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#723](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/723) [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e) - `scapi_execute` can now call Shopper APIs as a guest shopper using your SLAS client, so any Storefront Next project works out of the box. The guest session persists across executions, so baskets carry over. Registered-shopper-only operations are not yet supported. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.2.0
 
 ### Minor Changes

@@ -40,7 +40,10 @@ interface CreateOutput {
  */
 export default class EcdnMtlsCreate extends EcdnCommand<typeof EcdnMtlsCreate> {
   static description = withDocs(
-    t('commands.ecdn.mtls.create.description', 'Create an mTLS certificate for code upload authentication'),
+    t(
+      'commands.ecdn.mtls.create.description',
+      'Register a CA certificate for two-factor (mTLS) code upload; with --generate, also create the CA and issue a first client certificate',
+    ),
     '/cli/ecdn.html#b2c-ecdn-mtls-create',
   );
 
@@ -55,7 +58,7 @@ export default class EcdnMtlsCreate extends EcdnCommand<typeof EcdnMtlsCreate> {
   static flags = {
     ...EcdnCommand.baseFlags,
     name: Flags.string({
-      description: t('flags.name.description', 'Certificate name for identification'),
+      description: t('flags.name.description', 'Name (label) for the registered CA certificate'),
       required: true,
     }),
     'certificate-file': Flags.string({
@@ -81,7 +84,7 @@ export default class EcdnMtlsCreate extends EcdnCommand<typeof EcdnMtlsCreate> {
     'client-name': Flags.string({
       description: t(
         'flags.clientName.description',
-        'Common name for the generated client certificate (with --generate; default: <name>-client)',
+        'Name of the client certificate (.p12) issued from the new CA, used for code upload (with --generate; default: <name>-client)',
       ),
     }),
     'p12-passphrase': Flags.string({

@@ -12,6 +12,7 @@
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
 import type {AuthMethod} from '../../auth/types.js';
+import {CLIENT_AUTH_METHODS} from '../../auth/client-credentials.js';
 import {getPopulatedFields} from '../mapping.js';
 import type {ConfigSource, ConfigLoadResult, NormalizedConfig, ResolveConfigOptions} from '../types.js';
 import {getLogger} from '../../logging/logger.js';
@@ -60,6 +61,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_DOCS_CATEGORIES: 'docsCategories',
   SFCC_AUTH_METHODS: 'authMethods',
   SFCC_ACCOUNT_MANAGER_HOST: 'accountManagerHost',
+  SFCC_CLIENT_AUTH_METHOD: 'clientAuthMethod',
   SFCC_SANDBOX_API_HOST: 'sandboxApiHost',
   SFCC_API_BACKEND: 'apiBackend',
   SFCC_CIP_HOST: 'cipHost',
@@ -125,6 +127,7 @@ const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned']);
  */
 const ENUM_FIELDS: Partial<Record<keyof NormalizedConfig, readonly string[]>> = {
   apiBackend: ['ocapi', 'scapi', 'auto'],
+  clientAuthMethod: CLIENT_AUTH_METHODS,
   mrtBackend: ['auto', 'legacy', 'scapi'],
 };
 

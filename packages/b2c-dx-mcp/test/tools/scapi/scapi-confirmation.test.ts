@@ -29,7 +29,7 @@ function approve(prompt: ToolResult, decision?: unknown): ToolContext {
   return {
     ...capable,
     requestState: input.requestState,
-    inputResponses: {[Object.keys(input.inputRequests!)[0]]: decision ?? {action: 'accept', content: {approve: true}}},
+    inputResponses: {[Object.keys(input.inputRequests!)[0]]: decision ?? {action: 'accept'}},
   };
 }
 
@@ -94,6 +94,10 @@ describe('SCAPI retained confirmations', function () {
     expect(sent).to.have.length(1);
     expect(authenticate.callCount).to.equal(1);
     expect(message(prompt)).to.include('Earlier write requests sent: 1; no rollback.');
+    const request = Object.values((prompt as unknown as InputRequiredResult).inputRequests!)[0] as {
+      params: {requestedSchema: unknown};
+    };
+    expect(request.params.requestedSchema).to.deep.equal({type: 'object', properties: {}});
     const context = approve(prompt);
     const [result, duplicate] = await Promise.all([execute.handler(args, context), execute.handler(args, context)]);
     expect(result).to.deep.equal(duplicate);
@@ -167,11 +171,10 @@ describe('SCAPI retained confirmations', function () {
     expect(sent).to.have.length(2);
   });
 
-  for (const decision of [
-    {action: 'decline'},
-    {action: 'cancel'},
-    {action: 'accept', content: {approve: false}},
-    {action: 'accept', content: {approve: 'true'}},
+  for (const {decision, code} of [
+    {decision: {action: 'decline'}, code: 'SCAPI_APPROVAL_DECLINED'},
+    {decision: {action: 'cancel'}, code: 'SCAPI_APPROVAL_CANCELLED'},
+    {decision: {action: 'unexpected'}, code: 'SCAPI_APPROVAL_DECLINED'},
   ]) {
     it(`terminates the worker for ${JSON.stringify(decision)} even if code catches errors`, async () => {
       const {execute, authenticate} = fixture({
@@ -185,7 +188,7 @@ describe('SCAPI retained confirmations', function () {
       };
       const prompt = await execute.handler(args, capable);
       const result = await execute.handler(args, approve(prompt, decision));
-      expect(json(result).error).to.include('SCAPI_APPROVAL_DECLINED');
+      expect(json(result).error).to.include(code);
       expect(json(result).operations[0].status).to.equal('not_sent');
       expect(sent).to.have.length(0);
       expect(authenticate.called).to.equal(false);

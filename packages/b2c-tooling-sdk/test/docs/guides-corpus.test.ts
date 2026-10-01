@@ -63,9 +63,9 @@ describe('docs: Developer Center guides corpus', function () {
     if (!hasGuides) this.skip();
   });
 
-  it('indexes guides across the five Developer Center categories', () => {
+  it('indexes guides across the Developer Center categories', () => {
     const cats = new Set(listDocs().map((e) => e.category));
-    for (const c of ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce']) {
+    for (const c of ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce', 'ocapi']) {
       expect(cats.has(c as DocEntry['category']), `missing category ${c}`).to.equal(true);
     }
   });
@@ -83,9 +83,20 @@ describe('docs: Developer Center guides corpus', function () {
     expect(entry.filePath, 'guides are online-only, not bundled').to.equal(undefined);
   });
 
+  it('maps OCAPI prose reference pages to the b2c-commerce-ocapi URL path', () => {
+    const entry = listDocs('ocapi').find((e) => e.id === 'ocapi/ocapisettings');
+    expect(entry, 'ocapi/ocapisettings').to.not.equal(undefined);
+    expect(entry!.url).to.equal(
+      'https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/ocapisettings.html',
+    );
+    expect(entry!.sourceUrl).to.equal(entry!.url!.replace(/\.html$/, '.md'));
+  });
+
   it('preserves immediate Developer Center TOC neighbors as bidirectional related entries', () => {
     const guides = listDocs().filter((entry) =>
-      ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'].includes(entry.category ?? ''),
+      ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce', 'ocapi'].includes(
+        entry.category ?? '',
+      ),
     );
     const byId = new Map(guides.map((entry) => [entry.id, entry]));
     const workflow = byId.get('b2c-commerce/developer-workflow');

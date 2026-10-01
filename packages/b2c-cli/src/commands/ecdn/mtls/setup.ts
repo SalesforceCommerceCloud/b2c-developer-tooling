@@ -6,7 +6,6 @@
 import {Flags, ux} from '@oclif/core';
 import {confirm, input} from '@inquirer/prompts';
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import path from 'node:path';
 import {updateInstanceConfig} from '@salesforce/b2c-tooling-sdk/config';
 import type {MtlsCertificate} from '@salesforce/b2c-tooling-sdk/operations/mtls';
@@ -40,7 +39,7 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
   static description = withDocs(
     t(
       'commands.ecdn.mtls.setup.description',
-      'Interactively set up two-factor (mTLS) code upload: generate and upload a CA, issue a client certificate, and configure dw.json',
+      'Guided version of "ecdn mtls create --generate": prompts for names with defaults, generates and registers a CA, issues a client certificate, and optionally configures dw.json',
     ),
     '/cli/ecdn.html#b2c-ecdn-mtls-setup',
   );
@@ -103,16 +102,16 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     }
 
     const name = await input({
-      message: t('commands.ecdn.mtls.setup.namePrompt', 'Certificate name:'),
+      message: t('commands.ecdn.mtls.setup.namePrompt', 'CA name (a label shown in eCDN and Business Manager):'),
       default: 'code-upload',
       validate: (v) => v.trim().length > 0 || 'Name is required',
     });
     const clientName = await input({
       message: t(
         'commands.ecdn.mtls.setup.clientNamePrompt',
-        'Client certificate name (recommended: your Business Manager username or API client ID):',
+        'Client certificate name, for the .p12 you upload with (e.g. github-actions for a CI pipeline, or your Business Manager username):',
       ),
-      default: this.resolvedConfig.values.username ?? os.userInfo().username,
+      default: 'ci',
       validate: (v) => v.trim().length > 0 || 'Name is required',
     });
     const outDir = await input({
@@ -210,7 +209,7 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
       ux.stdout(
         t(
           'commands.ecdn.mtls.setup.noConfig',
-          'No dw.json found; configure "certificate" and "certificate-passphrase" manually.',
+          'No dw.json found; to upload from this machine, configure "certificate" and "certificate-passphrase" manually.',
         ),
       );
       return undefined;
@@ -219,10 +218,10 @@ export default class EcdnMtlsSetup extends EcdnCommand<typeof EcdnMtlsSetup> {
     const update = await confirm({
       message: t(
         'commands.ecdn.mtls.setup.updateConfig',
-        'Update {{path}} with the client certificate and passphrase?',
+        'Also use this certificate for code upload from this machine (updates {{path}})?',
         {path: dwJsonPath},
       ),
-      default: true,
+      default: false,
     });
     if (!update) {
       return undefined;

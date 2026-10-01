@@ -78,6 +78,7 @@ Repeat with these decisions:
 | Situation                                                                   | Expected result                                                                                             |
 | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Decline the first prompt                                                    | Execution ends with `SCAPI_APPROVAL_DECLINED`; no product request is sent.                                  |
+| Dismiss/cancel the first prompt                                             | Execution ends with `SCAPI_APPROVAL_CANCELLED`; no product request is sent.                                 |
 | Accept the first, decline the second                                        | First read completes; second is `not_sent`; the execution is cancelled.                                     |
 | Leave the prompt unanswered for over ten minutes or overnight, then approve | Execution resumes once, provided the server stayed connected and the client did not impose its own timeout. |
 | Spend over 30 seconds answering each prompt                                 | Execution still works: approval waits do not consume the active runtime budget.                             |

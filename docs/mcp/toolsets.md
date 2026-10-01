@@ -80,7 +80,10 @@ write code or choose API calls.
 | `scapi_execute`      | Read and manage B2C Commerce data through standard and custom Admin APIs. |
 | `scapi_snippet_save` | Save a workflow for reuse across sessions.                                |
 
-The standard API reference works offline without credentials. Working with your
+The standard API reference works offline without credentials. Ask your assistant to
+search your instance's live schemas to include your custom attributes, custom APIs,
+and APIs released after your installed version; this uses the Schemas API
+(`sfcc.scapi-schemas` scope), and the assistant can then call what it found. Working with your
 instance's data requires [OAuth credentials and scopes](../guide/authentication#configuring-scopes)
 for the requested operations.
 
@@ -95,8 +98,13 @@ Custom attributes and custom Admin APIs are supported. Discovering your instance
 custom definitions requires the `sfcc.scapi-schemas` scope; custom APIs also require
 their declared scopes. See [code mode access](./security#scapi-code-mode).
 
-**Current limits:** Shopper APIs are available for reference only. Code mode does
-not yet run Shopper API requests or upload and download binary files.
+Shopper APIs run as a guest shopper using your SLAS client (`slasClientId`, and
+`slasClientSecret` for private clients) and site. A Storefront Next project's `.env`
+provides these. The guest session lasts for the MCP server session, so a basket
+created in one request is available to later ones.
+
+**Current limits:** Code mode does not yet run registered-shopper-only operations,
+trusted-system or trusted-agent on-behalf operations, or upload and download binary files.
 
 <ExamplePrompt>
 
