@@ -98,6 +98,16 @@ These commands implement the SCAPI backend today:
 - `b2c mrt env var set` — set/update environment variables (merge)
 - `b2c mrt env var push` — sync a local `.env` file
 - `b2c mrt env var delete` — delete an environment variable
+- `b2c mrt env redirect list` — list URL redirects
+- `b2c mrt env redirect create` — create a URL redirect
+- `b2c mrt env redirect get` — get a single URL redirect
+- `b2c mrt env redirect update` — partially update a URL redirect
+- `b2c mrt env redirect delete` — delete a URL redirect
+- `b2c mrt env redirect clone` — clone redirects from a distinct source environment
+- `b2c mrt env access-control list` — list access control headers
+- `b2c mrt env access-control create` — create an access control header
+- `b2c mrt env access-control get` — get a single access control header
+- `b2c mrt env access-control delete` — delete an access control header
 
 Every other MRT command runs on the legacy MRT Cloud API. On those, `--mrt-backend scapi` errors with an actionable message, and `--mrt-backend auto` warns (only when SCAPI is actually configured) before using legacy.
 
