@@ -3,315 +3,133 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+
 import {expect} from 'chai';
-import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
+import {Config} from '@oclif/core';
 import MrtRedirectCreate from '../../../../../src/commands/mrt/env/redirect/create.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../../../helpers/test-setup.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import {stubParse} from '../../../../helpers/stub-parse.js';
 
 describe('mrt env redirect create', () => {
-  const hooks = createIsolatedConfigHooks();
+  let config: Config;
 
   beforeEach(async () => {
-    await hooks.beforeEach();
+    isolateConfig();
+    config = await Config.load();
   });
 
   afterEach(() => {
-    hooks.afterEach();
+    sinon.restore();
+    restoreConfig();
   });
 
-  async function createCommand(flags: Record<string, unknown>): Promise<any> {
-    return createTestCommand(MrtRedirectCreate, hooks.getConfig(), flags, {});
+  function createCommand(): any {
+    return new MrtRedirectCreate([], config);
   }
 
-  it('throws error when project is missing', async () => {
-    const command = await createCommand({environment: 'staging', from: '/old', to: '/new'});
+  function stubErrorToThrow(command: any): sinon.SinonStub {
+    return sinon.stub(command, 'error').throws(new Error('Expected error'));
+  }
 
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
+  function stubBackendContext(
+    command: any,
+    ctx: {preference?: string; scapiConnection?: unknown; legacyAuth?: unknown} = {},
+  ): void {
+    sinon.stub(command, 'getMrtBackendContext').returns({
+      preference: ctx.preference ?? 'auto',
+      scapiConnection: ctx.scapiConnection,
+      legacyAuth: 'legacyAuth' in ctx ? ctx.legacyAuth : {},
+    } as any);
+  }
+
+  it('calls command.error when project is missing', async () => {
+    const command = createCommand();
+
+    stubParse(command, {from: '/old', to: '/new', status: 301}, {});
+    await command.init();
+
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined, mrtEnvironment: 'staging'}}));
 
-    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+    const errorStub = stubErrorToThrow(command);
 
     try {
       await command.run();
-      expect.fail('Should have thrown');
+      expect.fail('Expected error');
     } catch {
-      expect(errorStub.called).to.be.true;
-      expect(errorStub.firstCall.args[0]).to.include('MRT project is required');
+      expect(errorStub.calledOnce).to.equal(true);
     }
   });
 
-  it('throws error when environment is missing', async () => {
-    const command = await createCommand({project: 'my-storefront', from: '/old', to: '/new'});
+  it('creates the redirect via the backend wrapper and returns raw under --json', async () => {
+    const command = createCommand();
 
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
+    stubParse(
+      command,
+      {from: '/old', to: '/new', status: 302, 'forward-querystring': true, 'forward-wildcard': false},
+      {},
+    );
+    await command.init();
+
+    stubBackendContext(command);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({
+      values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
+    }));
+
+    const raw = {from_path: '/old', to_url: '/new'};
+    const createStub = sinon.stub().resolves({
+      backend: 'legacy',
+      redirect: {id: '/old', source: '/old', destination: '/new', backend: 'legacy'},
+      raw,
+    });
+    command.operations = {...command.operations, createRedirectWithBackend: createStub};
+
+    const result = await command.run();
+
+    expect(createStub.calledOnce).to.equal(true);
+    const [input] = createStub.firstCall.args;
+    expect(input.preference).to.equal('auto');
+    expect(input.projectSlug).to.equal('my-project');
+    expect(input.environment).to.equal('staging');
+    expect(input.source).to.equal('/old');
+    expect(input.destination).to.equal('/new');
+    expect(input.httpStatusCode).to.equal(302);
+    expect(input.forwardQuerystring).to.equal(true);
+    expect(input.forwardWildcard).to.equal(false);
+    expect(result).to.deep.equal(raw);
+  });
+
+  it('forwards the resolved SCAPI backend context to the wrapper', async () => {
+    const command = createCommand();
+
+    stubParse(command, {from: '/old', to: '/new', status: 301, 'mrt-backend': 'scapi'}, {});
+    await command.init();
+
+    const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+    stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
     sinon
       .stub(command, 'resolvedConfig')
-      .get(() => ({values: {mrtProject: 'my-storefront', mrtEnvironment: undefined}}));
+      .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
 
-    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+    const createStub = sinon
+      .stub()
+      .resolves({backend: 'scapi', redirect: {id: 'uuid-1', backend: 'scapi'}, raw: {redirectId: 'uuid-1'}});
+    command.operations = {...command.operations, createRedirectWithBackend: createStub};
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      expect(errorStub.called).to.be.true;
-      expect(errorStub.firstCall.args[0]).to.include('MRT environment is required');
-    }
+    await command.run();
+
+    const [input] = createStub.firstCall.args;
+    expect(input.preference).to.equal('scapi');
+    expect(input.scapiConnection).to.equal(scapiConnection);
+    expect(input.source).to.equal('/old');
   });
 
-  it('creates redirect with default status 301', async () => {
-    const command = await createCommand({
-      json: true,
-      project: 'my-storefront',
-      environment: 'staging',
-      from: '/old-page',
-      to: '/new-page',
-    });
-
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
-    }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
-
-    const mockRedirect = {
-      from: '/old-page',
-      to: '/new-page',
-      status: 301,
-    };
-
-    const createStub = sinon.stub().resolves(mockRedirect);
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      if (!environment) {
-        this.error('MRT environment is required');
-      }
-      this.log('Creating redirect...');
-      return createStub();
-    };
-
-    const result = await command.run();
-
-    expect(result.from).to.equal('/old-page');
-    expect(result.to).to.equal('/new-page');
-    expect(result.status).to.equal(301);
-  });
-
-  it('creates redirect with 302 status', async () => {
-    const command = await createCommand({
-      json: true,
-      project: 'my-storefront',
-      environment: 'staging',
-      from: '/sale',
-      to: '/summer-sale',
-      status: 302,
-    });
-
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
-    }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
-
-    const mockRedirect = {
-      from: '/sale',
-      to: '/summer-sale',
-      status: 302,
-    };
-
-    const createStub = sinon.stub().resolves(mockRedirect);
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      if (!environment) {
-        this.error('MRT environment is required');
-      }
-      this.log('Creating redirect...');
-      return createStub();
-    };
-
-    const result = await command.run();
-
-    expect(result.status).to.equal(302);
-  });
-
-  it('creates redirect with forward-querystring', async () => {
-    const command = await createCommand({
-      json: true,
-      project: 'my-storefront',
-      environment: 'staging',
-      from: '/search',
-      to: '/new-search',
-      'forward-querystring': true,
-    });
-
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
-    }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
-
-    const mockRedirect = {
-      from: '/search',
-      to: '/new-search',
-      status: 301,
-      forwardQuerystring: true,
-    };
-
-    const createStub = sinon.stub().resolves(mockRedirect);
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      if (!environment) {
-        this.error('MRT environment is required');
-      }
-      this.log('Creating redirect...');
-      return createStub();
-    };
-
-    const result = await command.run();
-
-    expect(result.forwardQuerystring).to.be.true;
-  });
-
-  it('creates redirect with forward-wildcard', async () => {
-    const command = await createCommand({
-      json: true,
-      project: 'my-storefront',
-      environment: 'staging',
-      from: '/a/*',
-      to: '/b',
-      'forward-wildcard': true,
-    });
-
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
-    }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
-
-    const mockRedirect = {
-      from: '/a/*',
-      to: '/b',
-      status: 301,
-      forwardWildcard: true,
-    };
-
-    const createStub = sinon.stub().resolves(mockRedirect);
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      if (!environment) {
-        this.error('MRT environment is required');
-      }
-      this.log('Creating redirect...');
-      return createStub();
-    };
-
-    const result = await command.run();
-
-    expect(result.forwardWildcard).to.be.true;
-  });
-
-  it('creates redirect in non-JSON mode', async () => {
-    const command = await createCommand({
-      project: 'my-storefront',
-      environment: 'staging',
-      from: '/old',
-      to: '/new',
-    });
-
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
-    }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
-
-    const mockRedirect = {
-      from: '/old',
-      to: '/new',
-      status: 301,
-    };
-
-    const createStub = sinon.stub().resolves(mockRedirect);
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      if (!environment) {
-        this.error('MRT environment is required');
-      }
-      this.log('Creating redirect...');
-      return createStub();
-    };
-
-    const result = await command.run();
-
-    expect(result.from).to.equal('/old');
-  });
-
-  it('handles API errors', async () => {
-    const command = await createCommand({
-      project: 'my-storefront',
-      environment: 'staging',
-      from: '/old',
-      to: '/new',
-    });
-
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
-    }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
-
-    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      if (!environment) {
-        this.error('MRT environment is required');
-      }
-      this.log('Creating redirect...');
-      this.error('Failed to create redirect: API error');
-    };
-
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      expect(errorStub.called).to.be.true;
-      expect(errorStub.firstCall.args[0]).to.include('Failed to create redirect');
-    }
+  it('supports the SCAPI MRT backend', () => {
+    const command = createCommand();
+    expect(command.supportsScapiMrt()).to.equal(true);
   });
 });

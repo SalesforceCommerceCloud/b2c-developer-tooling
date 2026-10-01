@@ -76,6 +76,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/redirects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get redirects.
+         * @description Retrieves a paginated, orderable list of redirects on the environment.
+         */
+        get: operations["getRedirects"];
+        put?: never;
+        /**
+         * Create a redirect.
+         * @description Creates a redirect on the environment. Returns the created redirect.
+         */
+        post: operations["createRedirect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/redirects/{redirectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a redirect by ID.
+         * @description Retrieves a single redirect by its identifier.
+         */
+        get: operations["getRedirect"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a redirect.
+         * @description Deletes a redirect by its identifier. Returns 204 No Content on success.
+         */
+        delete: operations["deleteRedirect"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a redirect.
+         * @description Partially updates a redirect by its identifier. Only the supplied fields are changed.
+         */
+        patch: operations["updateRedirect"];
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/redirects/actions/clone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clone redirects from a source environment.
+         * @description Copies all redirects from a source environment into the environment in the request path. The source environment must differ from the destination environment. Returns 201 Created with no response body.
+         */
+        post: operations["cloneRedirects"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -195,6 +267,148 @@ export interface components {
              */
             value: string;
         };
+        /**
+         * Format: int32
+         * @description The HTTP status code returned for the redirect.
+         * @default 301
+         * @example 301
+         * @enum {integer}
+         */
+        RedirectHttpStatusCode: 301 | 302;
+        /** @description A URL redirect rule on the environment. */
+        Redirect: {
+            /**
+             * Format: uuid
+             * @description The unique identifier of the redirect, in UUID format.
+             * @example 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d
+             */
+            redirectId?: string;
+            /**
+             * @description The source path that triggers the redirect.
+             * @example /spring
+             */
+            source?: string;
+            /**
+             * @description The destination path or URL the request is redirected to.
+             * @example /summer-newbranding
+             */
+            destination?: string;
+            httpStatusCode?: components["schemas"]["RedirectHttpStatusCode"];
+            /**
+             * @description Whether the incoming query string is forwarded to the destination.
+             * @example false
+             */
+            forwardQuerystring?: boolean;
+            /**
+             * @description Whether a trailing wildcard match on the source is forwarded to the destination.
+             * @example false
+             */
+            forwardWildcard?: boolean;
+            publishingStatus?: components["schemas"]["PublishingStatus"];
+            /**
+             * @description The email address of the user who created the redirect. Null if no user is associated.
+             * @example dev@example.com
+             */
+            createdBy?: string | null;
+            /**
+             * @description The email address of the user who last modified the redirect. Null if no user is associated.
+             * @example dev@example.com
+             */
+            lastModifiedBy?: string | null;
+            /**
+             * Format: date-time
+             * @description The timestamp when the redirect was created.
+             * @example 2026-08-24T00:00:00.000Z
+             */
+            creationDate?: string;
+            /**
+             * Format: date-time
+             * @description The timestamp when the redirect was last modified.
+             * @example 2026-08-24T00:00:00.000Z
+             */
+            lastModified?: string;
+        };
+        /** @description Paginated result containing a list of redirects. */
+        RedirectResult: {
+            /**
+             * Format: int32
+             * @description Maximum number of records returned per request.
+             * @example 25
+             */
+            limit: number;
+            /**
+             * Format: int32
+             * @description Zero-based index of the first record included in the result.
+             * @example 0
+             */
+            offset: number;
+            /**
+             * Format: int32
+             * @description Total number of redirects matching the request.
+             * @example 3
+             */
+            total: number;
+            /** @description The list of redirects. May be empty. */
+            data: components["schemas"]["Redirect"][];
+        };
+        /** @description Request body to create a single redirect. */
+        RedirectCreateRequest: {
+            /**
+             * @description The source path that triggers the redirect.
+             * @example /spring
+             */
+            source: string;
+            /**
+             * @description The destination path or URL the request is redirected to.
+             * @example /summer-newbranding
+             */
+            destination: string;
+            httpStatusCode?: components["schemas"]["RedirectHttpStatusCode"];
+            /**
+             * @description Whether the incoming query string is forwarded to the destination.
+             * @default false
+             * @example false
+             */
+            forwardQuerystring: boolean;
+            /**
+             * @description Whether a trailing wildcard match on the source is forwarded to the destination.
+             * @default false
+             * @example false
+             */
+            forwardWildcard: boolean;
+        };
+        /** @description Request body to partially update a redirect. Only the supplied fields are changed. */
+        RedirectUpdateRequest: {
+            /**
+             * @description The source path that triggers the redirect.
+             * @example /spring
+             */
+            source?: string;
+            /**
+             * @description The destination path or URL the request is redirected to.
+             * @example /summer-2027
+             */
+            destination?: string;
+            httpStatusCode?: components["schemas"]["RedirectHttpStatusCode"];
+            /**
+             * @description Whether the incoming query string is forwarded to the destination.
+             * @example false
+             */
+            forwardQuerystring?: boolean;
+            /**
+             * @description Whether a trailing wildcard match on the source is forwarded to the destination.
+             * @example false
+             */
+            forwardWildcard?: boolean;
+        };
+        /** @description Request body to clone all redirects from a source environment into this environment. */
+        RedirectCloneRequest: {
+            /**
+             * @description The identifier of the environment to copy redirects from. Must differ from the environment in the request path.
+             * @example staging
+             */
+            sourceEnvironmentId: string;
+        };
     };
     responses: {
         /** @description Your access token is invalid or expired and can't be used to identify a user. */
@@ -245,6 +459,10 @@ export interface components {
         accessControlHeaderId: string;
         /** @description Attributes to order the returned access control headers by, in priority order (applied left to right). Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `id`, `publishing_status`. */
         accessControlHeaderOrderBy: string[];
+        /** @description The redirect identifier, in UUID format. */
+        redirectId: string;
+        /** @description Attributes to order the returned redirects by, in priority order (applied left to right). Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `last_modified`, `source`, `destination`, `last_modified_by`, `http_status_code`, `publishing_status`. */
+        redirectOrderBy: string[];
     };
     requestBodies: never;
     headers: never;
@@ -444,6 +662,210 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    getRedirects: {
+        parameters: {
+            query?: {
+                /** @description Attributes to order the returned redirects by, in priority order (applied left to right). Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `last_modified`, `source`, `destination`, `last_modified_by`, `http_status_code`, `publishing_status`. */
+                orderBy?: components["parameters"]["redirectOrderBy"];
+                /** @description Number of records to retrieve per request. Must be between 1 and 200. Defaults to 25. */
+                limit?: number;
+                /** @description Zero-based index of the first record to include in the result. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of redirects successfully retrieved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RedirectResult"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    createRedirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedirectCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Redirect successfully created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Redirect"];
+                };
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    getRedirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+                /** @description The redirect identifier, in UUID format. */
+                redirectId: components["parameters"]["redirectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect successfully retrieved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Redirect"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    deleteRedirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+                /** @description The redirect identifier, in UUID format. */
+                redirectId: components["parameters"]["redirectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect successfully deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    updateRedirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+                /** @description The redirect identifier, in UUID format. */
+                redirectId: components["parameters"]["redirectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedirectUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Redirect successfully updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Redirect"];
+                };
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    cloneRedirects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedirectCloneRequest"];
+            };
+        };
+        responses: {
+            /** @description Redirects successfully cloned into the destination environment. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["400BadRequest"];
             401: components["responses"]["401Unauthorized"];
             403: components["responses"]["403Forbidden"];
             404: components["responses"]["404NotFound"];
