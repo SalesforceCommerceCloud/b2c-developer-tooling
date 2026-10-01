@@ -72,7 +72,7 @@ process.on('message', async message => {
   });
   let runningSnippets = 0;
   const evaluate = (code, input) => new Function('spec', 'scapi', 'codemode', 'auth', 'organizationId', 'siteId', 'input',
-    'return (' + code + ')(input);')(spec, scapi, codemode, auth, message.organizationId, message.siteId, input);
+    'return (' + code.trim().replace(/;+$/, '') + '\n)(input);')(spec, scapi, codemode, auth, message.organizationId, message.siteId, input);
   const codemode = {
     search: (query = '') => snippetCall('search', String(query)),
     describe: name => snippetCall('describe', String(name)),

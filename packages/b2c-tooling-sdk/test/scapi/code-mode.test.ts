@@ -53,6 +53,11 @@ describe('SCAPI code mode', function () {
   afterEach(() => server.resetHandlers());
   after(() => server.close());
 
+  it('accepts trailing semicolons and line comments after the function', async () => {
+    expect(await runScapiCode({code: 'async () => ({ok: true});\n'})).to.deep.equal({ok: true});
+    expect(await runScapiCode({code: 'async () => ({ok: true}) // done'})).to.deep.equal({ok: true});
+  });
+
   it('restricts local development APIs without affecting parent-managed work', async () => {
     const cwd = mkdtempSync(join(tmpdir(), 'b2c code mode '));
     const file = join(cwd, 'fixture.txt');

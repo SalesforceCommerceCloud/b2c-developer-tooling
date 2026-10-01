@@ -15,6 +15,73 @@ Filesystem APIs, subprocesses, worker threads, and native addons are restricted.
 Read this skill once via resources or `skills_read`,
 then pass `skillRead: true`. This does not authorize mutations.
 
+## Code objects
+
+Write JavaScript against these objects, not TypeScript.
+
+`scapi_search`:
+
+```ts
+interface Operation {
+  api: string;
+  operationId: string;
+  summary?: string;
+  parameters: Array<{name: string; in: string; required?: boolean; schema?: unknown}>;
+  requestBody?: {required?: boolean; content: Record<string, {schema: any}>};
+  responses?: Record<string, unknown>;
+  security: Array<Record<string, string[]>>;
+  auth: {types: string[]; schemes: string[]; executable: boolean}; // runtime support, not access
+}
+declare const spec: {
+  apis: Array<{id: string; apiFamily: string; apiName: string; apiVersion: string; authTypes: string[]}>;
+  paths: Record<string, Record<string, Operation>>; // full paths, lowercase HTTP methods
+};
+```
+
+`scapi_execute` (`async (input) => ...` receives the tool's `input`):
+
+```ts
+declare const organizationId: string | undefined; // resolved tenant
+declare const siteId: string | undefined; // configured site
+declare const scapi: {
+  request(options: {
+    method: string;
+    path: string;
+    query?: Record<string, unknown>;
+    body?: unknown;
+  }): Promise<{status: number; ok: boolean; data: any; diagnostic?: {code: string; message: string}}>;
+};
+```
+
+Both tools also expose `codemode.search`/`codemode.describe`; `codemode.run` and
+`auth.*` are execute-only. See [Reusable workflows](#reusable-workflows) and [Authentication](#authentication).
+
+Search examples:
+
+```js
+// Find product operations
+async () =>
+  Object.entries(spec.paths)
+    .filter(([path]) => path.startsWith('/product/products/'))
+    .flatMap(([path, methods]) =>
+      Object.entries(methods).map(([method, op]) => ({method, path, operationId: op.operationId})),
+    );
+
+// Inspect only fields needed for creation
+async () => {
+  const op = spec.paths['/product/products/v1/organizations/{organizationId}/products/{productId}'].put;
+  const body = op.requestBody.content['application/json'].schema;
+  const fields = [...new Set([...(body.required ?? []), 'name', 'owningCatalogId', 'onlineFlag'])];
+  return {
+    parameters: op.parameters,
+    required: body.required,
+    fields: Object.fromEntries(fields.map((k) => [k, body.properties[k]])),
+    auth: op.auth,
+    security: op.security,
+  };
+};
+```
+
 ## Discover
 
 Discovery defaults to the bundled standard contracts offline; no credentials needed.
