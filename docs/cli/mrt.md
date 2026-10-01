@@ -17,7 +17,7 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt env`                  | `list`, `create`, `get`, `update`, `delete`, `invalidate`, `b2c` | Manage environments                    |
 | `mrt env var`              | `list`, `set`, `push`, `delete`                                  | Manage environment variables           |
 | `mrt env redirect`         | `list`, `create`, `delete`, `clone`                              | Manage URL redirects                   |
-| `mrt env access-control`   | `list`                                                           | Manage access control headers          |
+| `mrt env access-control`   | `list`, `create`, `get`, `delete`                               | Manage access control headers          |
 | `mrt bundle`               | `deploy`, `list`, `history`, `download`                          | Manage bundles and deployments         |
 | `mrt tail-logs`            |                                                                  | Tail real-time application logs        |
 | `mrt save-credentials`     |                                                                  | Save MRT credentials to ~/.mobify      |
@@ -51,7 +51,7 @@ MRT commands resolve configuration in the following order of precedence:
 
 MRT commands use API key authentication against the legacy MRT Cloud API. The API key is configured in the Managed Runtime dashboard.
 
-Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), and the `mrt env var` family (`list` / `set` / `push` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
+Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), the `mrt env var` family (`list` / `set` / `push` / `delete`), and the `mrt env access-control` family (`list` / `create` / `get` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
 
 ### Getting an API Key
 
@@ -629,6 +629,8 @@ b2c mrt env redirect clone -p my-storefront --from staging --to production --for
 
 ## Access Control Commands
 
+The `mrt env access-control` commands (`list` / `create` / `get` / `delete`) are [backend-aware](#mrt-backends): they honor `--mrt-backend` and, over SCAPI, use the Storefront Environments API (scopes `sfcc.storefront.environments` for reads, `sfcc.storefront.environments.rw` for writes). Header values are always masked by both backends — the CLI never displays or reconstructs the plaintext value. Under `--json`, each command returns the serving backend's native shape (see [JSON output is backend-specific](#json-output-is-backend-specific)).
+
 ### b2c mrt env access-control list
 
 List access control headers for an environment.
@@ -636,6 +638,40 @@ List access control headers for an environment.
 ```bash
 b2c mrt env access-control list -p my-storefront -e staging
 b2c mrt env access-control list -p my-storefront -e staging --json
+
+# Force the SCAPI backend
+b2c mrt env access-control list -p my-storefront -e staging --mrt-backend scapi
+```
+
+### b2c mrt env access-control create
+
+Create an access control header. The value is passed as a positional argument.
+
+```bash
+b2c mrt env access-control create my-secret-header-value -p my-storefront -e production
+
+# Force the SCAPI backend
+b2c mrt env access-control create my-secret-header-value -p my-storefront -e production --mrt-backend scapi
+```
+
+### b2c mrt env access-control get
+
+Get a single access control header by its ID (UUID).
+
+```bash
+b2c mrt env access-control get ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production
+b2c mrt env access-control get ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --json
+```
+
+### b2c mrt env access-control delete
+
+Delete an access control header by its ID (UUID).
+
+```bash
+b2c mrt env access-control delete ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production
+
+# Force the SCAPI backend
+b2c mrt env access-control delete ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --mrt-backend scapi
 ```
 
 ---
