@@ -32,67 +32,17 @@ const code = z
   .min(1)
   .max(32_768)
   .describe('JavaScript async arrow function. Return concise JSON. No filesystem or shell access.');
-const skillRead = z.boolean().optional().describe('True after reading the linked SCAPI skill.');
-const snippetDescription = `\nSnippets: await codemode.search(query) returns up to 10 names/descriptions/effects; await codemode.describe(name) returns source/inputSchema. Prefixes: builtin/, user/.`;
+const SCAPI_SKILL_REQUIRED =
+  'SCAPI_SKILL_REQUIRED: Read skill://mcp/scapi/SKILL.md through resources or skills_read, then retry with skillRead: true.';
+const skillRead = z
+  .literal(true, {error: SCAPI_SKILL_REQUIRED})
+  .describe('Required. Set true only after reading skill://mcp/scapi/SKILL.md (MCP resource, or skills_read({uri})).');
 function requireScapiSkill(read: boolean | undefined): void {
-  if (read !== true)
-    throw new Error(
-      'SCAPI_SKILL_REQUIRED: Read skill://mcp/scapi/SKILL.md through resources or skills_read, then retry with skillRead: true.',
-    );
+  if (read !== true) throw new Error(SCAPI_SKILL_REQUIRED);
 }
-const searchDescription = `Discover Admin/Shopper SCAPI contracts; prefer dedicated tools. Read skill://mcp/scapi/SKILL.md first.
-Default: bundled, offline. schemas:"live": tenant c_*, custom, newer APIs, reused by execute.
+const searchDescription = `Requires reading skill://mcp/scapi/SKILL.md first. Search SCAPI Admin/Shopper OpenAPI contracts by running JavaScript over \`spec\`, to find the operationId, path, inputs and scopes for a Commerce API task when no dedicated tool fits. Use cip_* for analytics and webdav_* for files. Searches the bundled contracts by default (offline, no credentials); schemas:"live" fetches the current contracts from the configured instance instead, including tenant c_* fields, custom APIs and APIs newer than the bundle.`;
 
-Schemas can be huge. Find operation IDs/paths first; then select required and task fields, not whole trees. Local refs expand; recursive/deep refs remain $ref.
-
-Code objects (write JavaScript, not these types):
-interface Operation {
-  api: string; operationId: string; summary?: string;
-  parameters: Array<{name: string; in: string; required?: boolean; schema?: unknown}>;
-  requestBody?: {required?: boolean; content: Record<string, {schema: any}>};
-  responses?: Record<string, unknown>;
-  security: Array<Record<string, string[]>>;
-  auth: {types: string[]; schemes: string[]; executable: boolean}; // runtime support, not access
-}
-declare const spec: {
-  apis: Array<{id: string; apiFamily: string; apiName: string; apiVersion: string; authTypes: string[]}>;
-  paths: Record<string, Record<string, Operation>>; // full paths, lowercase HTTP methods
-};
-
-Examples:
-// Find product operations
-async () => Object.entries(spec.paths)
-  .filter(([path]) => path.startsWith('/product/products/'))
-  .flatMap(([path, methods]) => Object.entries(methods)
-    .map(([method, op]) => ({method, path, operationId: op.operationId})))
-
-// Inspect only fields needed for creation
-async () => {
-  const op = spec.paths['/product/products/v1/organizations/{organizationId}/products/{productId}'].put;
-  const body = op.requestBody.content['application/json'].schema;
-  const fields = [...new Set([...(body.required ?? []), 'name', 'owningCatalogId', 'onlineFlag'])];
-  return {parameters: op.parameters, required: body.required,
-    fields: Object.fromEntries(fields.map(k => [k, body.properties[k]])), auth: op.auth, security: op.security};
-}`;
-
-const executeDescription = `Read, create, update, or delete Commerce records through SCAPI Admin or Shopper APIs when no dedicated tool fits. Discover endpoints with scapi_search; operations found with schemas:"live" (including custom APIs) are callable here for the same tenant. Otherwise fetch a custom API's live contract through scapi.request() in the same program first. Auth is automatic; Shopper APIs run as a guest whose session (basket) persists per site. JSON only; no binary transfers.
-Read skill://mcp/scapi/SKILL.md first.
-
-Reuse workflows with await codemode.run(name, input); describe first. async (input) receives input. Completed executionId enables scapi_snippet_save.
-Safety confirmation uses MCP elicitation. Protocol retries resume retained code; never replay it. Approval has no server deadline. Decline or cancel terminates execution without rollback. action:cancel needs executionId only (plus skillRead).
-
-Available in your code:
-declare const organizationId: string | undefined; // resolved tenant
-declare const siteId: string | undefined; // configured site
-declare const scapi: {
-  request(options: {method: string; path: string; query?: Record<string, unknown>; body?: unknown}):
-    Promise<{status: number; ok: boolean; data: any; diagnostic?: {code: string; message: string}}>;
-};
-
-Compose dependent requests; await each. Responses can be huge: filter/map/slice; return counts, selected rows and verification. Preserve failures. HTTP failures return ok:false; transport/auth/safety failures throw. SDK safety governs scapi.request. fetch/WebSocket are disabled. Optional auth.accountManager()/auth.slas() export tokens for external clients; see skill. Check writes before retrying.
-
-Example: inspect a campaign's promotions
-async () => codemode.run('builtin/campaign-promotions', {campaignId: 'selected-campaign', limit: 4})`;
+const executeDescription = `Requires reading skill://mcp/scapi/SKILL.md first. Run any SCAPI Admin or Shopper API operation (reads, writes, searches and actions) through scapi.request() in JavaScript. Covers most developer, merchant and administrator tasks: catalogs, products, pricing, promotions, orders, customers, inventory, sites, jobs, code versions, observability, and storefront flows such as baskets. Use it whenever no more specific tool fits. Find operations with scapi_search first. Auth is automatic; Shopper calls run as a per-site guest whose basket persists. Operations are governed by Safety Mode and may ask the user for confirmation.`;
 
 function codeResult(
   data: {
@@ -175,7 +125,7 @@ export function createScapiCodeTools(
     {
       name: 'scapi_search',
       title: 'SCAPI Spec Search',
-      description: searchDescription + snippetDescription,
+      description: searchDescription,
       inputSchema: searchInput,
       toolsets: ['SCAPI', 'PWAV3', 'STOREFRONTNEXT'],
 
@@ -230,7 +180,7 @@ export function createScapiCodeTools(
     {
       name: 'scapi_execute',
       title: 'SCAPI Code Executor',
-      description: executeDescription + snippetDescription,
+      description: executeDescription,
       inputSchema: executeInput,
       toolsets: ['SCAPI', 'PWAV3', 'STOREFRONTNEXT'],
 

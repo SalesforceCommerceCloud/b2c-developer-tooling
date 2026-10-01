@@ -101,6 +101,7 @@ function createCartridgeDeployTool(
       openWorld: true,
       description:
         'Find and deploy cartridges or selected files to B2C Commerce via WebDAV; overwrites matching remote files. ' +
+        'Prerequisites (instance, credentials, code version): skill://mcp/b2c-config/SKILL.md. ' +
         "After deployment, add new cartridges to the site's cartridge path in Business Manager: Sites → Manage Sites → Settings tab → Cartridges.",
       toolsets: ['CARTRIDGES'],
       requiresInstance: true,
