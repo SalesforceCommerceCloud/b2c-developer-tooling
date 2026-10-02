@@ -168,44 +168,81 @@ b2c mrt env var delete MY_VAR -p my-storefront -e production --mrt-backend scapi
 
 ## URL Redirects
 
+The `mrt env redirect` commands (`list` / `create` / `get` / `update` / `delete` / `clone`) are backend-aware: they honor `--mrt-backend` (`auto` / `legacy` / `scapi`) and, over SCAPI, use the Storefront Environments API (scopes `sfcc.storefront.environments` for reads, `sfcc.storefront.environments.rw` for writes). See the [MRT Backends](../SKILL.md#mrt-backends-legacy-vs-scapi) section for backend selection. The two backends identify a redirect differently — legacy keys on the source path (`from_path`), SCAPI keys on a redirect ID (UUID) — so `get` / `update` / `delete` take a neutral `identifier` positional (source path on legacy, UUID on SCAPI). Under `--json`, each command returns the serving backend's native shape.
+
 ### List Redirects
 
 ```bash
 b2c mrt env redirect list -p my-storefront -e production
 b2c mrt env redirect list -p my-storefront -e production --limit 50
 b2c mrt env redirect list -p my-storefront -e production --json
+
+# Force the SCAPI backend
+b2c mrt env redirect list -p my-storefront -e production --mrt-backend scapi
 ```
 
 ### Create Redirect
 
+Status defaults to `301` (permanent); pass `--status 302` for a temporary redirect. `--from` and `--to` also accept the SCAPI-aligned aliases `--source` and `--destination`.
+
 ```bash
-# Basic redirect
+# Permanent redirect (301, default)
 b2c mrt env redirect create -p my-storefront -e production \
   --from "/old-path" --to "/new-path"
 
-# Permanent redirect (301)
+# Temporary redirect (302), forwarding the wildcard portion of the path
 b2c mrt env redirect create -p my-storefront -e production \
-  --from "/legacy/*" --to "/modern/$1" --permanent
+  --from "/legacy/*" --to "/modern/$1" --status 302 --forward-wildcard
 
-# Temporary redirect (302, default)
+# Force the SCAPI backend
 b2c mrt env redirect create -p my-storefront -e production \
-  --from "/promo" --to "/sale"
+  --from "/promo" --to "/sale" --mrt-backend scapi
+```
+
+### Get Redirect
+
+Fetch a single redirect by its identifier — source path on legacy, redirect ID (UUID) on SCAPI.
+
+```bash
+b2c mrt env redirect get "/old-path" -p my-storefront -e production
+b2c mrt env redirect get 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d \
+  -p my-storefront -e production --mrt-backend scapi
+```
+
+### Update Redirect
+
+Partial update — only the fields you pass change; the source path cannot be changed.
+
+```bash
+# Change only the destination
+b2c mrt env redirect update "/old-path" -p my-storefront -e production --to "/new-path"
+
+# Change the status and disable query-string forwarding
+b2c mrt env redirect update 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d \
+  -p my-storefront -e production --status 302 --no-forward-querystring --mrt-backend scapi
 ```
 
 ### Delete Redirect
 
 ```bash
-b2c mrt env redirect delete abc-123 -p my-storefront -e production
-b2c mrt env redirect delete abc-123 -p my-storefront -e production --force
+b2c mrt env redirect delete "/old-path" -p my-storefront -e production
+b2c mrt env redirect delete "/old-path" -p my-storefront -e production --force
+
+# SCAPI — identify by redirect ID
+b2c mrt env redirect delete 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d \
+  -p my-storefront -e production --mrt-backend scapi
 ```
 
 ### Clone Redirects
 
-Copy redirects from one environment to another.
+Copy redirects from one environment to another within the same project. The source and target environments must differ.
 
 ```bash
-b2c mrt env redirect clone -p my-storefront \
-  --source staging --target production
+b2c mrt env redirect clone -p my-storefront --from staging --to production
+b2c mrt env redirect clone -p my-storefront --from staging --to production --force
+
+# Force the SCAPI backend
+b2c mrt env redirect clone -p my-storefront --from staging --to production --mrt-backend scapi
 ```
 
 ## Access Control Headers

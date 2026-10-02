@@ -3,16 +3,15 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags} from '@oclif/core';
+import {Args, ux} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {deleteRedirectWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {getRedirectWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
-import {confirm} from '../../../../prompts.js';
 
 /**
- * Delete a redirect from an MRT environment.
+ * Get a single redirect for an MRT environment.
  */
-export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDelete> {
+export default class MrtRedirectGet extends MrtCommand<typeof MrtRedirectGet> {
   static args = {
     identifier: Args.string({
       // Legacy keys a redirect by its source path (from_path); SCAPI keys it by
@@ -23,35 +22,26 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
   };
 
   static description = withDocs(
-    t('commands.mrt.redirect.delete.description', 'Delete a redirect from a Managed Runtime environment'),
-    '/cli/mrt.html#b2c-mrt-env-redirect-delete',
+    t('commands.mrt.redirect.get.description', 'Get a redirect for a Managed Runtime environment'),
+    '/cli/mrt.html#b2c-mrt-env-redirect-get',
   );
 
   static enableJsonFlag = true;
 
   static examples = [
     '<%= config.bin %> <%= command.id %> /old-page --project my-storefront --environment staging',
-    '<%= config.bin %> <%= command.id %> /old-page -p my-storefront -e staging --force',
     '<%= config.bin %> <%= command.id %> 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d -p my-storefront -e staging --mrt-backend scapi',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
-    force: Flags.boolean({
-      char: 'f',
-      description: 'Skip confirmation prompt',
-      default: false,
-    }),
   };
 
   protected operations = {
-    deleteRedirectWithBackend,
+    getRedirectWithBackend,
   };
 
-  async run(): Promise<{identifier: string; deleted: boolean}> {
-    // Prevent deletion in safe mode
-    this.assertDestructiveOperationAllowed('delete redirect');
-
+  async run(): Promise<unknown> {
     const {identifier} = this.args;
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
@@ -66,26 +56,9 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
       );
     }
 
-    const {force} = this.flags;
-
-    // Confirm deletion unless --force is specified
-    if (!force && !this.jsonEnabled()) {
-      const confirmed = await confirm(
-        t('commands.mrt.redirect.delete.confirm', 'Are you sure you want to delete redirect "{{identifier}}"?', {
-          identifier,
-        }),
-      );
-      if (!confirmed) {
-        this.log(t('commands.mrt.redirect.delete.cancelled', 'Deletion cancelled.'));
-        return {identifier, deleted: false};
-      }
-    }
-
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
-    this.log(t('commands.mrt.redirect.delete.deleting', 'Deleting redirect {{identifier}}...', {identifier}));
-
-    await this.operations.deleteRedirectWithBackend({
+    const result = await this.operations.getRedirectWithBackend({
       preference,
       scapiConnection,
       legacyAuth,
@@ -94,14 +67,26 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
       identifier,
       origin: this.resolvedConfig.values.mrtOrigin,
       onFallback: (reason) => this.warn(reason),
-      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Deleting redirect via backend'),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Getting redirect via backend'),
     });
 
     if (!this.jsonEnabled()) {
-      this.log(t('commands.mrt.redirect.delete.success', 'Redirect {{identifier}} deleted.', {identifier}));
+      const {redirect} = result;
+      ux.stdout(`ID:          ${redirect.id || '-'}`);
+      ux.stdout(`From:        ${redirect.source || '-'}`);
+      ux.stdout(`To:          ${redirect.destination || '-'}`);
+      ux.stdout(`HTTP:        ${redirect.httpStatusCode ?? 301}`);
+      ux.stdout(`Forward QS:  ${redirect.forwardQuerystring ? 'Yes' : 'No'}`);
+      ux.stdout(`Forward WC:  ${redirect.forwardWildcard ? 'Yes' : 'No'}`);
+      ux.stdout(`Status:      ${redirect.status ?? '-'}`);
+      ux.stdout(`Created:     ${redirect.createdAt ? new Date(redirect.createdAt).toLocaleString() : '-'}`);
+      if (redirect.createdBy) {
+        ux.stdout(`Created by:  ${redirect.createdBy}`);
+      }
     }
 
-    return {identifier, deleted: true};
+    // Under --json, emit the backend's native redirect response verbatim.
+    return result.raw;
   }
 
   protected override supportsScapiMrt(): boolean {
