@@ -70,7 +70,10 @@ describe('guidance bundler', () => {
   });
 
   it('rejects tooling docs links to HTML pages', () => {
-    writeSkill('alpha', '# Alpha\n\n[Guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/x)\n');
+    writeSkill(
+      'alpha',
+      '# Alpha\n\n[Guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/x)\n',
+    );
     expect(() => bundle()).to.throw('Markdown page');
   });
 
