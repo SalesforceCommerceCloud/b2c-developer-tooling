@@ -90,4 +90,4 @@ Tag each case with the backend it needs:
 
 ## Resolved
 
-- **Agents skipped the SCAPI skill.** Sonnet 5, Sonnet 5.5 and Opus 4.8 usually called `scapi_search` before reading `skill://mcp/scapi/SKILL.md`, then recovered from `SCAPI_SKILL_REQUIRED`; only Opus 5.5 followed the "read first" description text. Making `skillRead` a required `true` literal, and leading the shorter descriptions with the requirement, fixed it on Sonnet 5 and Sonnet 5.5 (Opus 4.8 not re-tested). `scapi/category-rules-execution` and `cip/promotion-roi-query` guard against regressions.
+- **Agents skipped the SCAPI skill.** Sonnet 5, Sonnet 5.5 and Opus 4.8 usually called `scapi_search` before reading `skill://mcp/b2c-mcp-scapi/SKILL.md`, then recovered from `SCAPI_SKILL_REQUIRED`; only Opus 5.5 followed the "read first" description text. Making `skillRead` a required `true` literal, and leading the shorter descriptions with the requirement, fixed it on Sonnet 5 and Sonnet 5.5 (Opus 4.8 not re-tested). `scapi/category-rules-execution` and `cip/promotion-roi-query` guard against regressions.

@@ -99,10 +99,10 @@ describe('SCAPI code mode over stdio', function () {
       const required = (await client.call('tools/call', {
         name: 'scapi_search',
         arguments: {code: 'async () => 1'},
-      })) as {isError?: boolean};
+      })) as {isError?: boolean; content: {text: string}[]};
       expect(required.isError).to.equal(true);
-      expect(readJson<{error: string}>(required).error).to.include('SCAPI_SKILL_REQUIRED');
-      const resource = (await client.call('resources/read', {uri: 'skill://mcp/scapi/SKILL.md'})) as {
+      expect(required.content[0].text).to.include('SCAPI_SKILL_REQUIRED: Read skill://mcp/b2c-mcp-scapi/SKILL.md');
+      const resource = (await client.call('resources/read', {uri: 'skill://mcp/b2c-mcp-scapi/SKILL.md'})) as {
         contents: {text: string}[];
       };
       expect(resource.contents[0].text).to.include('skillRead');
@@ -171,7 +171,7 @@ describe('SCAPI code mode over stdio', function () {
     const client = new McpE2EClient({args: ['--tools', 'skills_read,scapi_search']});
     await client.start();
     try {
-      const read = (await client.call('tools/call', {name: 'skills_read', arguments: {id: 'mcp/scapi'}})) as {
+      const read = (await client.call('tools/call', {name: 'skills_read', arguments: {id: 'mcp/b2c-mcp-scapi'}})) as {
         isError?: boolean;
       };
       expect(read.isError).not.to.equal(true);

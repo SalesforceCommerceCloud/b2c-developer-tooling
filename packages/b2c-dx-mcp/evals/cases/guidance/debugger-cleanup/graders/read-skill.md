@@ -1,5 +1,5 @@
 ---
 type: regex
 target: trace
-pattern: 'mcp/debugger'
+pattern: 'mcp/b2c-mcp-debugger'
 ---

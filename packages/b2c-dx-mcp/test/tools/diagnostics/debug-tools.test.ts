@@ -616,7 +616,9 @@ describe('tools/diagnostics', () => {
         skillReferences: {uri: string; section: string}[];
       }>(result);
       expect(json.breakpoints[0].verified).to.be.false;
-      expect(json.skillReferences).to.deep.equal([{uri: 'skill://mcp/debugger/SKILL.md', section: 'prerequisites'}]);
+      expect(json.skillReferences).to.deep.equal([
+        {uri: 'skill://mcp/b2c-mcp-debugger/SKILL.md', section: 'prerequisites'},
+      ]);
       expect(json.warnings).to.exist;
       expect(json.warnings![0]).to.include('could not be mapped back to a local file');
     });
@@ -988,7 +990,7 @@ describe('tools/diagnostics', () => {
       expect(json.halted).to.be.false;
       expect(json.timed_out).to.be.true;
       expect(json.warnings[0]).to.include('breakpoint remains armed');
-      expect(json.skillReferences).to.deep.equal([{uri: 'skill://mcp/debugger/SKILL.md', section: 'recovery'}]);
+      expect(json.skillReferences).to.deep.equal([{uri: 'skill://mcp/b2c-mcp-debugger/SKILL.md', section: 'recovery'}]);
       expect(json).not.to.have.property('hint');
     });
 

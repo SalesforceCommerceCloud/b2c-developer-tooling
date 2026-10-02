@@ -28,7 +28,7 @@ process. Counts describe indexed orders, not all checkout attempts or conversion
 
 Read [order-search recipe](references/order-evidence.md) before counting: it
 defines the site grant/index prerequisites, bounded request bodies, auth handling,
-and fault interpretation. For code mode, first read `skill://mcp/scapi/SKILL.md`.
+and fault interpretation. For code mode, first read `skill://mcp/b2c-mcp-scapi/SKILL.md`.
 If external requests are unavailable, report that evidence gap and continue with
 logs; do not deploy an OrderMgr endpoint to obtain access.
 

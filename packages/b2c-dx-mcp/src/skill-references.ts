@@ -12,9 +12,9 @@ export interface SkillReference {
 
 /** Targets must resolve through resources even when skills_read is not selected. */
 export const MCP_SKILL_REFERENCES = {
-  configSources: {uri: 'skill://mcp/b2c-config/SKILL.md', section: 'where-configuration-comes-from'},
-  debuggerPrerequisites: {uri: 'skill://mcp/debugger/SKILL.md', section: 'prerequisites'},
-  debuggerRecovery: {uri: 'skill://mcp/debugger/SKILL.md', section: 'recovery'},
-  scapiAuthentication: {uri: 'skill://mcp/scapi/SKILL.md', section: 'authentication'},
-  cipAccess: {uri: 'skill://mcp/cip/SKILL.md', section: 'configuration-and-access'},
+  configSources: {uri: 'skill://mcp/b2c-mcp-config/SKILL.md', section: 'where-configuration-comes-from'},
+  debuggerPrerequisites: {uri: 'skill://mcp/b2c-mcp-debugger/SKILL.md', section: 'prerequisites'},
+  debuggerRecovery: {uri: 'skill://mcp/b2c-mcp-debugger/SKILL.md', section: 'recovery'},
+  scapiAuthentication: {uri: 'skill://mcp/b2c-mcp-scapi/SKILL.md', section: 'authentication'},
+  cipAccess: {uri: 'skill://mcp/b2c-mcp-cip/SKILL.md', section: 'configuration-and-access'},
 } satisfies Record<string, SkillReference>;

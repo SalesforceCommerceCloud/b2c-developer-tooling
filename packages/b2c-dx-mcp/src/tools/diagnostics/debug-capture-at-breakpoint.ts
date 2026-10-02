@@ -66,7 +66,7 @@ export function createDebugCaptureAtBreakpointTool(
       description:
         'Add a breakpoint and wait for a halt; return stack, variables, and evaluations. ' +
         'Trigger a GET here or an external request concurrently. Capture does not resume by default. ' +
-        'Workflow: skill://mcp/debugger/SKILL.md.',
+        'Workflow: skill://mcp/b2c-mcp-debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string(),

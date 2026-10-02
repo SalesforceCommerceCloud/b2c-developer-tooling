@@ -66,8 +66,8 @@ Without `-i`, an active primary instance wins. A root-level primary configuratio
 
 ### MCP Project Context
 
-For MCP installation or tool selection, use `mcp/server` when
-available or the [MCP configuration guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration).
+For MCP installation or tool selection, use `mcp/b2c-mcp-server` when
+available or the [MCP configuration guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md) (`b2c docs read mcp-configuration`).
 These are client launch settings; `config_inspect` reports B2C values and sources,
 not enabled toolsets or client filters. Project `.env` does not select MCP tools.
 
@@ -101,7 +101,7 @@ Field names in `dw.json` accept **both camelCase and kebab-case** — they're eq
 
 Legacy aliases like `server` (for `hostname`) are also still supported. If a value isn't being picked up, casing is rarely the cause — check spelling, then run `b2c setup inspect` to see what the CLI actually parsed.
 
-For the full field reference, see the [Configuration guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration) (or `docs/guide/configuration.md` in the repo).
+For the full field reference, see the [Configuration guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md) (`b2c docs read guide-configuration`).
 
 ## Authentication
 
@@ -227,7 +227,7 @@ b2c setup openshell --dry-run
 openshell sandbox exec -n b2c-<instance> -- b2c code list
 ```
 
-Edit `.openshell/<sandbox>/policy.yaml` and re-run to apply it; use `--recreate` after changing secrets or configuration. Add hosts with `--allow-host`. Only client credentials work in the sandbox (no browser login). See the [Agent Sandboxing guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-sandboxing#openshell).
+Edit `.openshell/<sandbox>/policy.yaml` and re-run to apply it; use `--recreate` after changing secrets or configuration. Add hosts with `--allow-host`. Only client credentials work in the sandbox (no browser login). See the [Agent Sandboxing guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-sandboxing.md#openshell) (`b2c docs read guide-agent-sandboxing`).
 
 ## Managing Instances
 
@@ -435,7 +435,7 @@ curl -H "Authorization: Bearer $(b2c auth token)" \
 
 The token is obtained using the `clientId` and `clientSecret` from your configuration (dw.json or environment variables). If only `clientId` is configured, or `--user-auth` is used, an implicit OAuth flow is used (browser-based).
 
-**Note:** This command returns **admin** tokens for OCAPI/Admin APIs. For **shopper** tokens (SLAS), see the [b2c-slas skill](../b2c-slas/SKILL.md).
+**Note:** This command returns **admin** tokens for OCAPI/Admin APIs. For **shopper** tokens (SLAS), see the `b2c-slas` skill.
 
 > **Calling SCAPI Admin APIs (system or custom)?** The token must carry the tenant scope `SALESFORCE_COMMERCE_API:<tenant_id>` **plus** the API-specific scopes. `b2c auth token` does not add the tenant scope for you (unlike the SCAPI subcommands such as `b2c scapi custom status`), so pass it explicitly:
 >

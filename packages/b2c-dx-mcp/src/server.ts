@@ -28,6 +28,9 @@ import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import type {McpToolConfig, ToolContext} from './utils/types.js';
 
+/** MCP skills extension identifier (SEP-2640). */
+export const SKILLS_EXTENSION = 'io.modelcontextprotocol/skills';
+
 /**
  * Extended server options.
  */
@@ -93,6 +96,35 @@ export class B2CDxMcpServer extends McpServer {
       }
       throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Resource URI is not available.');
     });
+  }
+
+  /**
+   * Serve the MCP skills extension (SEP-2640): `skills/list` and `skills/get`.
+   * Register before connecting. `get` throws a ProtocolError for unknown skills.
+   */
+  public addSkillsExtension(skills: {list: () => unknown[]; get: (uri: string) => unknown}): void {
+    this.server.registerCapabilities({extensions: {[SKILLS_EXTENSION]: {}}});
+    this.server.setRequestHandler(
+      'skills/list',
+      {params: z.object({cursor: z.string().optional()}).loose().optional()},
+      async (params, context) => {
+        this.logRequestClient(context);
+        // One page: an issued cursor never exists, so any cursor is invalid.
+        if (params?.cursor !== undefined) throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Invalid cursor.');
+        const modern = Boolean(
+          (context.mcpReq?.envelope as Record<string, unknown> | undefined)?.[PROTOCOL_VERSION_META_KEY],
+        );
+        return {skills: skills.list(), ...(modern && {ttlMs: 300_000, cacheScope: 'private'})};
+      },
+    );
+    this.server.setRequestHandler(
+      'skills/get',
+      {params: z.object({uri: z.string()}).loose()},
+      async (params, context) => {
+        this.logRequestClient(context);
+        return {skill: skills.get(params.uri)};
+      },
+    );
   }
 
   /**

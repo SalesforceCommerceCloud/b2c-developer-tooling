@@ -6,12 +6,12 @@ description: Build backend integrations that sync data between B2C Commerce and 
 # SCAPI Admin APIs
 
 Build backend integrations or manage Commerce data through standard Admin APIs.
-Use [Shopper APIs](../b2c-scapi-shopper/SKILL.md) for storefront flows.
+Use the `b2c-scapi-shopper` skill for storefront flows.
 
 ## Tool choice
 
 When B2C MCP is available:
-- Prefer a dedicated task tool. Otherwise read `skill://mcp/scapi/SKILL.md` once
+- Prefer a dedicated task tool. Otherwise read `skill://mcp/b2c-mcp-scapi/SKILL.md` once
   through resources or `skills_read`, then use `skillRead: true`.
 - `scapi_search`: bundled standard contracts, offline. Find method/path/operationId,
   then inspect selected parameters, fields, and security scopes. Return compact projections.
@@ -47,7 +47,7 @@ an external client, token flow, or bulk import. There is no CLI code-mode equiva
 
 - [OAuth scopes](references/OAUTH-SCOPES.md): integration grants; compare with the operation's security.
 - [Integration patterns](references/INTEGRATION-PATTERNS.md): ETL, sync, bulk import.
-- [Configuration](../../../b2c-cli/skills/b2c-config/SKILL.md): CLI credentials and precedence.
+- `b2c-config` skill: CLI credentials and precedence.
 - Official docs: `commerce-api/authorization-for-admin-apis`, `commerce-api/auth-z-scope-catalog`,
   `commerce-api/timeouts-limits`, `commerce-api/throttle-rates`,
   `commerce-api/inventory-impex-best-practices`.

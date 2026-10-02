@@ -10,7 +10,7 @@ Browse standard or tenant-specific SCAPI OpenAPI contracts.
 ## Tool choice
 
 When B2C MCP is available, prefer `scapi_search` for Admin and Shopper contracts.
-Read `skill://mcp/scapi/SKILL.md` via resource or `skills_read` first; pass
+Read `skill://mcp/b2c-mcp-scapi/SKILL.md` via resource or `skills_read` first; pass
 `skillRead: true`. Discover method/path/operationId, then selected inputs and
 fields. The default searches bundled standard contracts offline; `schemas: "live"`
 searches the tenant's contracts (custom attributes, custom APIs, newer APIs) and

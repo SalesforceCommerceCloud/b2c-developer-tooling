@@ -1,6 +1,6 @@
 ---
-name: MCP CIP Analytics
-description: Discover and run CIP reports or analytics SQL for sales, merchandising, and technical operations. Resolve warehouse access, bound results, and interpret site/date scope.
+name: b2c-mcp-cip
+description: Required before cip_query. Discover and run CIP reports or analytics SQL for sales, merchandising, and technical operations; resolve warehouse access, bound results, and interpret site/date scope.
 ---
 
 # CIP analytics
@@ -8,7 +8,7 @@ description: Discover and run CIP reports or analytics SQL for sales, merchandis
 Use CIP for warehouse analytics: sales, products, promotions, search, payments,
 traffic, inventory, and API/controller trends. Use SCAPI for current records;
 logs/metrics for immediate diagnosis.
-Read this skill once through resources or `skills_read` (`mcp/cip`), then pass
+Read this skill once through resources or `skills_read` (`mcp/b2c-mcp-cip`), then pass
 `skillRead: true` to `cip_query`. Discovery needs no acknowledgment.
 
 ## Choose and discover
@@ -42,13 +42,13 @@ Reports & Dashboards data tracking enabled on supported 26.1+ environments.
 No data or rejected access does not establish zero sales or a healthy system.
 
 Missing values: `config_inspect` with masking; ask the user if the target cannot
-be determined. [MCP configuration](skill://mcp/b2c-config/SKILL.md) explains resolution.
+be determined. [MCP configuration](skill://mcp/b2c-mcp-config/SKILL.md) explains resolution.
 For CLI equivalents, configuration, host selection, and availability caveats:
 [existing CIP skill](skill://b2c-cli/b2c-cip/SKILL.md) (`skills_read` ID `b2c-cli/b2c-cip`)
-and [analytics guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac),
-plus the [CLI reference](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip).
-Read these conditionally, not as extra prerequisites. If that collection is
-excluded, use `docs_read` query `cli-cip` or the guide URL.
+and the analytics guide (`docs_read({query: "guide-analytics-reports-cip-ccac"})`,
+[online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac.md)), plus the CLI reference
+(`cli-cip`, [online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.md)).
+Read these conditionally, not as extra prerequisites.
 Official [JDBC setup and limits](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/jdbc_access_guide.html).
 
 ## Query and interpret
@@ -84,3 +84,5 @@ Read further only for an unresolved question:
   [starter queries](skill://b2c-cli/b2c-cip/references/STARTER_QUERIES.md), not the whole file.
 Stop when the report and evidence answer the task; no follow-up skill read is required.
 For incidents, correlate trends with logs and the relevant `b2c-ops` runbook.
+
+Other MCP workflows and runbooks: [skill index](skill://mcp/b2c-mcp-server/SKILL.md#skill-index).

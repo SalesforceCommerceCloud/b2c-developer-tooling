@@ -69,7 +69,7 @@ describe('SCAPI code tools', function () {
             });
             expect(result.isError, tool.name).to.equal(true);
             expect(readJson(result)).to.have.property('error').that.includes('SCAPI_SKILL_REQUIRED');
-            expect(readJson(result)).to.have.property('error').that.includes('skill://mcp/scapi/SKILL.md');
+            expect(readJson(result)).to.have.property('error').that.includes('skill://mcp/b2c-mcp-scapi/SKILL.md');
           }),
         ),
     );
@@ -344,7 +344,7 @@ describe('SCAPI code tools', function () {
     expect(readJson(shopper)).to.have.property('error').that.includes('SCAPI_SHOPPER_CONFIG_MISSING');
     expect(readJson(shopper))
       .to.have.property('skillReferences')
-      .that.deep.equals([{uri: 'skill://mcp/scapi/SKILL.md', section: 'authentication'}]);
+      .that.deep.equals([{uri: 'skill://mcp/b2c-mcp-scapi/SKILL.md', section: 'authentication'}]);
     expect(readJson(shopper)).to.have.property('resolution');
     expect(createOAuth.called).to.equal(false);
     const admin = await execute.handler({

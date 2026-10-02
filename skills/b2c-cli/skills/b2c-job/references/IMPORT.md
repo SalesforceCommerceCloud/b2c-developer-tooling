@@ -2,7 +2,7 @@
 
 ### Import Site Archives
 
-The `job import` command waits for the import job to complete by default. The same command imports a **job definition** (`jobs.xml` at the archive root) that registers a new runnable job on the instance — for the `jobs.xml` structure (job/flow/step, step `type`, the required `<triggers>` element), see the [jobs.xml Reference](../../../../b2c/skills/b2c-custom-job-steps/references/JOBS-XML.md).
+The `job import` command waits for the import job to complete by default. The same command imports a **job definition** (`jobs.xml` at the archive root) that registers a new runnable job on the instance — for the `jobs.xml` structure (job/flow/step, step `type`, the required `<triggers>` element), see the jobs.xml reference in the `b2c-custom-job-steps` skill.
 
 ```bash
 # import a local directory as a site archive (waits for completion by default)

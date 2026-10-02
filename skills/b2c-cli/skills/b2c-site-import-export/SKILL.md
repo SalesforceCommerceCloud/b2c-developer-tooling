@@ -48,7 +48,7 @@ review and trim before committing, preserving XSD-required fields.
 - Archive layout and XML workflows: [archive workflows](references/WORKFLOWS.md).
 - Attribute/type XML patterns: [metadata XML](references/METADATA-XML.md).
 - Remote imports, size splitting, and import-set options: [import options](references/IMPORT-OPTIONS.md).
-- Export flags, data units, and compact JSON results: [export reference](../b2c-job/references/EXPORT.md).
+- Export flags, data units, and compact JSON results: the export reference in the `b2c-job` skill.
 - Ordered migrations, naming, history, and recovery: `b2c-cli:b2c-import-set-migrations`.
 - Service configuration XML: `b2c:b2c-webservices`.
 

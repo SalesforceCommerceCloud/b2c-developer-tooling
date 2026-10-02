@@ -41,7 +41,7 @@ Try these prompts in fresh conversations:
    clean up a debugger session. Do not connect to an instance."
 3. "Find Storefront Next guidance for adding a component. Read only the relevant
    entrypoint and reference section."
-4. "Read `mcp/server` through MCP resources, then through `skills_read`.
+4. "Read `mcp/b2c-mcp-server` through MCP resources, then through `skills_read`.
    Compare the results."
 5. "This MCP was installed with only the MRT toolset. Explain how to enable
    configuration inspection and debugging while keeping MRT. Check the current
@@ -49,8 +49,9 @@ Try these prompts in fresh conversations:
 
 Look for short discovery calls, correct exact IDs, selective reference reads,
 and appropriate CLI/MCP preferences. The agent should not load the entire
-catalog's prose. Resource listings should contain `skill-index`, `mcp/server`,
-`mcp/b2c-config`, `mcp/debugger`, and `mcp/scapi`. Read `skill://index` to discover the full catalog, then read
+catalog's prose. Resource listings should contain `skill-index`, `b2c-mcp-server`,
+`b2c-mcp-config`, `b2c-mcp-debugger`, `b2c-mcp-scapi`, and `b2c-mcp-cip`; clients
+that support the MCP skills extension list the same five skills. Read `skill://index` to discover the full catalog, then read
 one relevant linked skill URI that is not individually listed. All skills remain
 available through `skills_read` by collection, query, or ID. Both readers should
 return identical skill text. Only SCAPI code mode requires a skill-read acknowledgment.
@@ -118,7 +119,7 @@ and an actual master catalog. In a fresh conversation:
 
 Look for targeted schema discovery, configured IDs, a GET/404 existence check,
 one create, and read-back. Before code-mode calls, the agent should read
-`skill://mcp/scapi/SKILL.md` through resources or `skills_read`, then pass
+`skill://mcp/b2c-mcp-scapi/SKILL.md` through resources or `skills_read`, then pass
 `skillRead: true` on both tools. Missing/false acknowledgment must fail before
 configuration loading or code execution; `config_inspect` stays ungated.
 No live Schemas API access is needed for standard

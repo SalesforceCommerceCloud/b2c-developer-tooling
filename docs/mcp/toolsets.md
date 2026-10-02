@@ -38,7 +38,10 @@ No B2C Commerce credentials required.
 
 The included [skill collections](../guide/agent-skills) complement documentation
 with development patterns and operational workflows. No separate skills
-installation is needed.
+installation is needed. Skills are also served as MCP resources (`skill://` URIs),
+and assistants that support the [MCP Skills extension](https://modelcontextprotocol.io/extensions/skills/overview)
+list the server's MCP workflow skills (`b2c-mcp-server`, `b2c-mcp-config`,
+`b2c-mcp-scapi`, `b2c-mcp-cip`, `b2c-mcp-debugger`) alongside their own skills.
 
 <ExamplePrompt>
 

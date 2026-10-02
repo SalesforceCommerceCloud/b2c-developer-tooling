@@ -137,18 +137,25 @@ export function createGuidanceTool(): McpTool {
   };
 }
 
-/** Advertise an index and featured skills; the template reads the entire available catalog. */
+function protocolError(error: unknown): ProtocolError {
+  const detail =
+    error instanceof GuidanceError
+      ? error
+      : new GuidanceError('SKILLS_UNAVAILABLE', 'Packaged skills are unavailable.');
+  return new ProtocolError(ProtocolErrorCode.InvalidParams, detail.message, {code: detail.code});
+}
+
+/**
+ * Advertise an index and featured skills; the template reads the entire available catalog.
+ * Also serves the MCP skills extension (skills/list, skills/get) over the same catalog.
+ */
 export function registerGuidanceResources(server: B2CDxMcpServer, includeSharedSkills = true): void {
   const catalog = catalogLoader(includeSharedSkills ? undefined : ['mcp'])();
   const read = async (uri: string): Promise<{contents: {uri: string; mimeType: string; text: string}[]}> => {
     try {
       return {contents: [{uri, mimeType: 'text/markdown', text: catalog.readResource(uri)}]};
     } catch (error) {
-      const detail =
-        error instanceof GuidanceError
-          ? error
-          : new GuidanceError('SKILLS_UNAVAILABLE', 'Packaged skills are unavailable.');
-      throw new ProtocolError(ProtocolErrorCode.InvalidParams, detail.message, {code: detail.code});
+      throw protocolError(error);
     }
   };
   server.registerResource(
@@ -182,4 +189,15 @@ export function registerGuidanceResources(server: B2CDxMcpServer, includeSharedS
     async (uri) => read(uri.toString()),
   );
   server.addResourceReader('skill://', read);
+  // Lists the featured MCP skills; skills/get answers for every served skill.
+  server.addSkillsExtension({
+    list: () => catalog.skills(),
+    get(uri) {
+      try {
+        return catalog.skill(uri);
+      } catch (error) {
+        throw protocolError(error);
+      }
+    },
+  });
 }
