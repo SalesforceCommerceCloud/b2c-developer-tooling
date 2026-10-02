@@ -13,15 +13,12 @@
  *
  * This is one of the SCAPI `Storefront` API family (`storefront/<api>/v1`): a
  * dedicated client per API, each with its own path segment, spec, and scope
- * family. This client currently covers the Environments API's
- * environment-variables sub-resource (read + merge-PATCH), the
- * access-control-headers sub-resource (list/create/get/delete), and the
- * redirects sub-resource (list/create/get/update/delete + clone action), which
- * is what the `mrt env var`, `mrt env access-control`, and `mrt env redirect`
- * commands need; the broader environment lifecycle surface is intentionally out
- * of scope. Sibling clients (`storefront-deployments`, `storefront-storefronts`)
- * follow the same pattern. The MRT-level composition of these clients lives in
- * `operations/mrt`.
+ * family. This client currently covers only the Environments API's
+ * environment-variables sub-resource (read + merge-PATCH), which is what the
+ * `mrt env var` commands need; the broader environment lifecycle surface is
+ * intentionally out of scope. Sibling clients (`storefront-deployments`,
+ * `storefront-storefronts`) follow the same pattern. The MRT-level composition
+ * of these clients lives in `operations/mrt`.
  *
  * ID mapping for B2C Commerce MRT:
  *   - `organizationId` = `f_ecom_<tenant>`
@@ -48,16 +45,6 @@ export type EnvironmentVariables = components['schemas']['EnvironmentVariables']
 export type EnvironmentVariableEntry = components['schemas']['EnvironmentVariableEntry'];
 export type EnvironmentVariablesUpdateRequest = components['schemas']['EnvironmentVariablesUpdateRequest'];
 export type EnvironmentVariableUpdateEntry = components['schemas']['EnvironmentVariableUpdateEntry'];
-
-export type AccessControlHeaderEntry = components['schemas']['AccessControlHeader'];
-export type AccessControlHeaderResult = components['schemas']['AccessControlHeaderResult'];
-export type AccessControlHeaderCreateRequest = components['schemas']['AccessControlHeaderCreateRequest'];
-
-export type RedirectEntry = components['schemas']['Redirect'];
-export type RedirectResult = components['schemas']['RedirectResult'];
-export type RedirectCreateRequest = components['schemas']['RedirectCreateRequest'];
-export type RedirectUpdateRequest = components['schemas']['RedirectUpdateRequest'];
-export type RedirectCloneRequest = components['schemas']['RedirectCloneRequest'];
 
 /** Publishing status of an environment variable (`pending` | `completed` | `failed`). */
 export type PublishingStatus = components['schemas']['PublishingStatus'];

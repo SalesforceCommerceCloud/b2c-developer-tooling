@@ -306,20 +306,6 @@ export {
   updateRedirect,
   deleteRedirect,
   cloneRedirects,
-  getRedirectsScapi,
-  createRedirectScapi,
-  getRedirectScapi,
-  updateRedirectScapi,
-  deleteRedirectScapi,
-  cloneRedirectsScapi,
-  listRedirectsWithBackend,
-  createRedirectWithBackend,
-  getRedirectWithBackend,
-  updateRedirectWithBackend,
-  deleteRedirectWithBackend,
-  cloneRedirectsWithBackend,
-  normalizeLegacyRedirect,
-  normalizeRedirectScapi,
 } from './redirect.js';
 export type {
   ListRedirectsOptions,
@@ -333,19 +319,6 @@ export type {
   MrtRedirect,
   PatchedMrtRedirect,
   RedirectHttpStatusCode,
-  ScapiRedirectInput,
-  MrtRedirectView,
-  MrtRedirectsView,
-  MrtRedirectResult,
-  MrtRedirectWriteResult,
-  MrtRedirectCloneResult,
-  RedirectBackendOptions,
-  ListRedirectsBackendOptions,
-  CreateRedirectBackendOptions,
-  GetRedirectBackendOptions,
-  UpdateRedirectBackendOptions,
-  DeleteRedirectBackendOptions,
-  CloneRedirectsBackendOptions,
 } from './redirect.js';
 
 // Access control header operations
@@ -354,16 +327,6 @@ export {
   createAccessControlHeader,
   getAccessControlHeader,
   deleteAccessControlHeader,
-  getAccessControlHeadersScapi,
-  createAccessControlHeaderScapi,
-  getAccessControlHeaderScapi,
-  deleteAccessControlHeaderScapi,
-  listAccessControlHeadersWithBackend,
-  createAccessControlHeaderWithBackend,
-  getAccessControlHeaderWithBackend,
-  deleteAccessControlHeaderWithBackend,
-  normalizeLegacyAccessControlHeader,
-  normalizeAccessControlHeaderScapi,
 } from './access-control.js';
 export type {
   ListAccessControlHeadersOptions,
@@ -372,15 +335,6 @@ export type {
   GetAccessControlHeaderOptions,
   DeleteAccessControlHeaderOptions,
   MrtAccessControlHeader,
-  MrtAccessControlHeaderView,
-  MrtAccessControlHeadersView,
-  MrtAccessControlHeaderResult,
-  MrtAccessControlWriteResult,
-  AccessControlBackendOptions,
-  ListAccessControlHeadersBackendOptions,
-  CreateAccessControlHeaderBackendOptions,
-  GetAccessControlHeaderBackendOptions,
-  DeleteAccessControlHeaderBackendOptions,
 } from './access-control.js';
 
 // Cache operations

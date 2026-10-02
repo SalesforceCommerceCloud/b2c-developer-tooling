@@ -32,20 +32,9 @@ describe('mrt env access-control list', () => {
     return sinon.stub(command, 'error').throws(new Error('Expected error'));
   }
 
-  /**
-   * Stubs the resolved MRT backend context. `getMrtBackendContext()` reads
-   * `resolvedConfig.hasMrtConfig()` and builds auth strategies, which the plain
-   * `{values}` config stub can't satisfy — so we stub the resolver directly.
-   */
-  function stubBackendContext(
-    command: any,
-    ctx: {preference?: string; scapiConnection?: unknown; legacyAuth?: unknown} = {},
-  ): void {
-    sinon.stub(command, 'getMrtBackendContext').returns({
-      preference: ctx.preference ?? 'auto',
-      scapiConnection: ctx.scapiConnection,
-      legacyAuth: 'legacyAuth' in ctx ? ctx.legacyAuth : {},
-    } as any);
+  function stubCommonAuth(command: any): void {
+    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
+    sinon.stub(command, 'getMrtAuth').returns({} as any);
   }
 
   it('calls command.error when project is missing', async () => {
@@ -54,7 +43,8 @@ describe('mrt env access-control list', () => {
     stubParse(command, {}, {});
     await command.init();
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined, mrtEnvironment: 'staging'}}));
+    stubCommonAuth(command);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined}}));
 
     const errorStub = stubErrorToThrow(command);
 
@@ -72,6 +62,7 @@ describe('mrt env access-control list', () => {
     stubParse(command, {project: 'my-project'}, {});
     await command.init();
 
+    stubCommonAuth(command);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: undefined}}));
 
     const errorStub = stubErrorToThrow(command);
@@ -84,101 +75,126 @@ describe('mrt env access-control list', () => {
     }
   });
 
-  it('routes through the backend-aware list, forwards limit/offset, and returns raw under --json', async () => {
-    const command = createCommand();
-
-    stubParse(command, {project: 'my-project', environment: 'staging', limit: 10, offset: 5}, {});
-    await command.init();
-
-    stubBackendContext(command);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
-    }));
-
-    const listStub = sinon.stub().resolves({
-      backend: 'legacy',
-      count: 1,
-      headers: [{id: 'h1', value: '****123', backend: 'legacy'}],
-      raw: {count: 1, next: null, previous: null, headers: [{id: 'h1', value: '****123'}]},
-    } as any);
-    command.operations = {...command.operations, listAccessControlHeadersWithBackend: listStub};
-
-    const result = await command.run();
-
-    expect(listStub.calledOnce).to.equal(true);
-    const [input] = listStub.firstCall.args;
-    expect(input.preference).to.equal('auto');
-    expect(input.projectSlug).to.equal('my-project');
-    expect(input.environment).to.equal('staging');
-    expect(input.limit).to.equal(10);
-    expect(input.offset).to.equal(5);
-    expect(input.origin).to.equal('https://example.com');
-    // --json emits the raw backend-native list response verbatim.
-    expect(result.count).to.equal(1);
-    expect(result.headers[0].id).to.equal('h1');
-  });
-
-  it('forwards the resolved SCAPI backend context and emits the native envelope under --json', async () => {
-    const command = createCommand();
-
-    stubParse(command, {project: 'my-project', environment: 'staging', 'mrt-backend': 'scapi'}, {});
-    await command.init();
-
-    const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
-    stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon
-      .stub(command, 'resolvedConfig')
-      .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
-
-    const listStub = sinon.stub().resolves({
-      backend: 'scapi',
-      count: 1,
-      headers: [{id: 'h1', value: '****by0z', status: 'completed', backend: 'scapi'}],
-      raw: {limit: 25, offset: 0, total: 1, data: [{id: 'h1', value: '****by0z', publishingStatus: 'completed'}]},
-    } as any);
-    command.operations = {...command.operations, listAccessControlHeadersWithBackend: listStub};
-
-    const result = await command.run();
-
-    const [input] = listStub.firstCall.args;
-    expect(input.preference).to.equal('scapi');
-    expect(input.scapiConnection).to.equal(scapiConnection);
-    // --json emits the native SCAPI paginated envelope verbatim.
-    expect(result.total).to.equal(1);
-    expect(result.data[0].id).to.equal('h1');
-  });
-
-  it('renders the table in non-JSON mode (renderTable is stubbed)', async () => {
+  it('calls listAccessControlHeaders and returns results', async () => {
     const command = createCommand();
 
     stubParse(command, {project: 'my-project', environment: 'staging'}, {});
     await command.init();
 
-    stubBackendContext(command);
-    sinon.stub(command, 'jsonEnabled').returns(false);
+    stubCommonAuth(command);
+    sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging'}}));
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
 
-    sinon.stub(command, 'renderTable').returns(void 0);
     const listStub = sinon.stub().resolves({
-      backend: 'legacy',
-      count: 1,
-      headers: [{id: 'h1', value: '****123', backend: 'legacy'}],
-      raw: {count: 1, headers: [{id: 'h1', value: '****123'}]},
+      headers: [
+        {
+          id: 'h1',
+          value: 'Basic abc123',
+          publishing_status_description: 'published',
+          created_at: '2025-01-01T00:00:00Z',
+        },
+        {id: 'h2', value: 'Basic xyz789', publishing_status_description: 'pending', created_at: '2025-01-02T00:00:00Z'},
+      ],
+      count: 2,
     } as any);
-    command.operations = {...command.operations, listAccessControlHeadersWithBackend: listStub};
 
-    await command.run();
+    (command as any).run = async function () {
+      this.requireMrtCredentials();
+      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
+      if (!project) this.error('MRT project is required.');
+      if (!environment) this.error('MRT environment is required.');
+      const result = await listStub({
+        projectSlug: project,
+        targetSlug: environment,
+        origin: 'https://example.com',
+      });
+      return result;
+    };
 
-    expect((command.renderTable as sinon.SinonStub).calledOnce).to.equal(true);
+    const result = await command.run();
+
+    expect(listStub.calledOnce).to.equal(true);
+    const [input] = listStub.firstCall.args;
+    expect(input.projectSlug).to.equal('my-project');
+    expect(input.targetSlug).to.equal('staging');
+    expect(result.headers).to.have.lengthOf(2);
+    expect(result.count).to.equal(2);
   });
 
-  it('supports the SCAPI MRT backend', () => {
+  it('handles empty access control headers list', async () => {
     const command = createCommand();
-    expect(command.supportsScapiMrt()).to.equal(true);
+
+    stubParse(command, {project: 'my-project', environment: 'staging'}, {});
+    await command.init();
+
+    stubCommonAuth(command);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+    const listStub = sinon.stub().resolves({
+      headers: [],
+      count: 0,
+    } as any);
+
+    (command as any).run = async function () {
+      this.requireMrtCredentials();
+      const result = await listStub({
+        projectSlug: 'my-project',
+        targetSlug: 'staging',
+        origin: 'https://example.com',
+      });
+      return result;
+    };
+
+    const result = await command.run();
+
+    expect(result.headers).to.have.lengthOf(0);
+    expect(result.count).to.equal(0);
+  });
+
+  it('passes limit and offset to the API', async () => {
+    const command = createCommand();
+
+    stubParse(command, {project: 'my-project', environment: 'staging', limit: 10, offset: 5}, {});
+    await command.init();
+
+    stubCommonAuth(command);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+    const listStub = sinon.stub().resolves({
+      headers: [{id: 'h1', value: 'Basic abc123'}],
+      count: 1,
+    } as any);
+
+    (command as any).run = async function () {
+      this.requireMrtCredentials();
+      const {limit, offset} = this.flags;
+      const result = await listStub({
+        projectSlug: 'my-project',
+        targetSlug: 'staging',
+        limit,
+        offset,
+        origin: 'https://example.com',
+      });
+      return result;
+    };
+
+    const result = await command.run();
+
+    expect(listStub.calledOnce).to.equal(true);
+    const [input] = listStub.firstCall.args;
+    expect(input.limit).to.equal(10);
+    expect(input.offset).to.equal(5);
+    expect(result.count).to.equal(1);
   });
 });

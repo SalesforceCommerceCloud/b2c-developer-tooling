@@ -16,8 +16,8 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt project notification` | `list`, `create`, `get`, `update`, `delete`                      | Manage deployment notifications        |
 | `mrt env`                  | `list`, `create`, `get`, `update`, `delete`, `invalidate`, `b2c` | Manage environments                    |
 | `mrt env var`              | `list`, `set`, `push`, `delete`                                  | Manage environment variables           |
-| `mrt env redirect`         | `list`, `create`, `get`, `update`, `delete`, `clone`             | Manage URL redirects                   |
-| `mrt env access-control`   | `list`, `create`, `get`, `delete`                                | Manage access control headers          |
+| `mrt env redirect`         | `list`, `create`, `delete`, `clone`                              | Manage URL redirects                   |
+| `mrt env access-control`   | `list`                                                           | Manage access control headers          |
 | `mrt bundle`               | `deploy`, `list`, `history`, `download`                          | Manage bundles and deployments         |
 | `mrt tail-logs`            |                                                                  | Tail real-time application logs        |
 | `mrt save-credentials`     |                                                                  | Save MRT credentials to ~/.mobify      |
@@ -51,7 +51,7 @@ MRT commands resolve configuration in the following order of precedence:
 
 MRT commands use API key authentication against the legacy MRT Cloud API. The API key is configured in the Managed Runtime dashboard.
 
-Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), the `mrt env var` family (`list` / `set` / `push` / `delete`), the `mrt env redirect` family (`list` / `create` / `get` / `update` / `delete` / `clone`), and the `mrt env access-control` family (`list` / `create` / `get` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
+Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), and the `mrt env var` family (`list` / `set` / `push` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
 
 ### Getting an API Key
 
@@ -98,16 +98,6 @@ These commands implement the SCAPI backend today:
 - `b2c mrt env var set` — set/update environment variables (merge)
 - `b2c mrt env var push` — sync a local `.env` file
 - `b2c mrt env var delete` — delete an environment variable
-- `b2c mrt env redirect list` — list URL redirects
-- `b2c mrt env redirect create` — create a URL redirect
-- `b2c mrt env redirect get` — get a single URL redirect
-- `b2c mrt env redirect update` — partially update a URL redirect
-- `b2c mrt env redirect delete` — delete a URL redirect
-- `b2c mrt env redirect clone` — clone redirects from a distinct source environment
-- `b2c mrt env access-control list` — list access control headers
-- `b2c mrt env access-control create` — create an access control header
-- `b2c mrt env access-control get` — get a single access control header
-- `b2c mrt env access-control delete` — delete an access control header
 
 Every other MRT command runs on the legacy MRT Cloud API. On those, `--mrt-backend scapi` errors with an actionable message, and `--mrt-backend auto` warns (only when SCAPI is actually configured) before using legacy.
 
@@ -586,8 +576,6 @@ b2c mrt env var delete MY_VAR -p my-storefront -e production --mrt-backend scapi
 
 ## URL Redirect Commands
 
-The `mrt env redirect` commands (`list` / `create` / `get` / `update` / `delete` / `clone`) are [backend-aware](#mrt-backends): they honor `--mrt-backend` and, over SCAPI, use the Storefront Environments API (scopes `sfcc.storefront.environments` for reads, `sfcc.storefront.environments.rw` for writes). The two backends identify a redirect differently — the legacy MRT Cloud API keys on the **source path** (`from_path`) while SCAPI keys on a **redirect ID** (UUID). The `get` / `update` / `delete` commands take a neutral `identifier` positional that is the source path on legacy and the redirect ID on SCAPI. Under `--json`, each command returns the serving backend's native shape (see [JSON output is backend-specific](#json-output-is-backend-specific)).
-
 ### b2c mrt env redirect list
 
 List URL redirects for an environment.
@@ -595,22 +583,19 @@ List URL redirects for an environment.
 ```bash
 b2c mrt env redirect list -p my-storefront -e production
 b2c mrt env redirect list -p my-storefront -e production --limit 50
-
-# Force the SCAPI backend
-b2c mrt env redirect list -p my-storefront -e production --mrt-backend scapi
 ```
 
 ### b2c mrt env redirect create
 
 Create a URL redirect.
 
-| Flag                    | Description                                        | Default |
-| ----------------------- | -------------------------------------------------- | ------- |
-| `--from`                | Source path (required; alias `--source`)           | —       |
-| `--to`                  | Destination path (required; alias `--destination`) | —       |
-| `--status`              | HTTP status code (`301` or `302`)                  | `301`   |
-| `--forward-querystring` | Forward query string parameters                    | `false` |
-| `--forward-wildcard`    | Forward the wildcard portion of the path           | `false` |
+| Flag                    | Description                              | Default |
+| ----------------------- | ---------------------------------------- | ------- |
+| `--from`                | Source path (required)                   | —       |
+| `--to`                  | Destination path (required)              | —       |
+| `--status`              | HTTP status code (`301` or `302`)        | `301`   |
+| `--forward-querystring` | Forward query string parameters          | `false` |
+| `--forward-wildcard`    | Forward the wildcard portion of the path | `false` |
 
 ```bash
 # Permanent redirect (default — 301)
@@ -620,75 +605,29 @@ b2c mrt env redirect create -p my-storefront -e production \
 # Temporary redirect
 b2c mrt env redirect create -p my-storefront -e production \
   --from "/legacy/*" --to "/modern/$1" --status 302 --forward-wildcard
-
-# Force the SCAPI backend
-b2c mrt env redirect create -p my-storefront -e production \
-  --from "/old-path" --to "/new-path" --mrt-backend scapi
-```
-
-### b2c mrt env redirect get
-
-Get a single URL redirect by its identifier — the source path on legacy, or the redirect ID (UUID) on SCAPI.
-
-```bash
-# Legacy — identify by source path
-b2c mrt env redirect get "/old-path" -p my-storefront -e production
-
-# SCAPI — identify by redirect ID
-b2c mrt env redirect get 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d \
-  -p my-storefront -e production --mrt-backend scapi
-```
-
-### b2c mrt env redirect update
-
-Update a URL redirect by its identifier. Only the fields you supply change (partial update) — the source path cannot be changed.
-
-| Flag                    | Description                              |
-| ----------------------- | ---------------------------------------- |
-| `--to`                  | New destination path                     |
-| `--status`              | HTTP status code (`301` or `302`)        |
-| `--forward-querystring` | Forward query string parameters (`--no-forward-querystring` to disable) |
-| `--forward-wildcard`    | Forward the wildcard portion of the path (`--no-forward-wildcard` to disable) |
-
-```bash
-# Change only the destination
-b2c mrt env redirect update "/old-path" -p my-storefront -e production --to "/new-path"
-
-# Change the status code and disable query-string forwarding
-b2c mrt env redirect update 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d \
-  -p my-storefront -e production --status 302 --no-forward-querystring --mrt-backend scapi
 ```
 
 ### b2c mrt env redirect delete
 
-Delete a URL redirect by its identifier — the source path on legacy, or the redirect ID (UUID) on SCAPI.
+Delete a URL redirect by its source path.
 
 ```bash
 b2c mrt env redirect delete "/old-path" -p my-storefront -e production
 b2c mrt env redirect delete "/old-path" -p my-storefront -e production --force
-
-# SCAPI — identify by redirect ID
-b2c mrt env redirect delete 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d \
-  -p my-storefront -e production --mrt-backend scapi
 ```
 
 ### b2c mrt env redirect clone
 
-Clone redirects from one environment to another within the same project. The source and target environments must differ.
+Clone redirects from one environment to another within the same project.
 
 ```bash
 b2c mrt env redirect clone -p my-storefront --from staging --to production
 b2c mrt env redirect clone -p my-storefront --from staging --to production --force
-
-# Force the SCAPI backend
-b2c mrt env redirect clone -p my-storefront --from staging --to production --mrt-backend scapi
 ```
 
 ---
 
 ## Access Control Commands
-
-The `mrt env access-control` commands (`list` / `create` / `get` / `delete`) are [backend-aware](#mrt-backends): they honor `--mrt-backend` and, over SCAPI, use the Storefront Environments API (scopes `sfcc.storefront.environments` for reads, `sfcc.storefront.environments.rw` for writes). Header values are always masked by both backends — the CLI never displays or reconstructs the plaintext value. Under `--json`, each command returns the serving backend's native shape (see [JSON output is backend-specific](#json-output-is-backend-specific)).
 
 ### b2c mrt env access-control list
 
@@ -697,40 +636,6 @@ List access control headers for an environment.
 ```bash
 b2c mrt env access-control list -p my-storefront -e staging
 b2c mrt env access-control list -p my-storefront -e staging --json
-
-# Force the SCAPI backend
-b2c mrt env access-control list -p my-storefront -e staging --mrt-backend scapi
-```
-
-### b2c mrt env access-control create
-
-Create an access control header. The value is passed as a positional argument.
-
-```bash
-b2c mrt env access-control create my-secret-header-value -p my-storefront -e production
-
-# Force the SCAPI backend
-b2c mrt env access-control create my-secret-header-value -p my-storefront -e production --mrt-backend scapi
-```
-
-### b2c mrt env access-control get
-
-Get a single access control header by its ID (UUID).
-
-```bash
-b2c mrt env access-control get ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production
-b2c mrt env access-control get ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --json
-```
-
-### b2c mrt env access-control delete
-
-Delete an access control header by its ID (UUID).
-
-```bash
-b2c mrt env access-control delete ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production
-
-# Force the SCAPI backend
-b2c mrt env access-control delete ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --mrt-backend scapi
 ```
 
 ---
