@@ -7,6 +7,7 @@
 import {expect} from 'chai';
 import {stub, restore} from 'sinon';
 import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {loadLocalScapiSchemas} from '@salesforce/b2c-tooling-sdk/scapi';
 import {mkdtempSync, mkdirSync, writeFileSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -433,5 +434,61 @@ describe('SCAPI code tools', function () {
       );
       expect(restricted.authenticate.called).to.equal(false);
     });
+  });
+
+  it('lets local contracts replace bundled and live ones in search and execution', async () => {
+    const operation = {get: {operationId: 'getZoneInsights', responses: {'200': {description: 'OK'}}}};
+    const contract = (api: string, path: string) => ({
+      openapi: '3.0.3',
+      info: {version: '1.0.0-beta'},
+      servers: [{url: `https://{shortCode}.api.commercecloud.salesforce.com/${api}`}],
+      security: [{AmOAuth2: ['sfcc.cdn-zones']}],
+      paths: {[path]: operation},
+    });
+    const directory = mkdtempSync(join(tmpdir(), 'b2c-local-scapi-'));
+    writeFileSync(
+      join(directory, 'zones.json'),
+      JSON.stringify(contract('cdn/zones/v1', '/organizations/{organizationId}/zones/{zoneId}/insights')),
+    );
+    const local = loadLocalScapiSchemas([directory]);
+    const get = stub().callsFake(async (path: string) =>
+      path === '/organizations/{organizationId}/schemas'
+        ? {data: {data: [{apiFamily: 'cdn', apiName: 'zones', apiVersion: 'v1'}]}, response: new Response()}
+        : {data: contract('cdn/zones/v1', '/organizations/{organizationId}/live-only'), response: new Response()},
+    );
+    const config = createMockResolvedConfig({shortCode: 'test', tenantId: 'test_001'});
+    const requested: string[] = [];
+    stub(globalThis, 'fetch').callsFake(async (input) => {
+      requested.push((input as Request).url);
+      return Response.json({ok: true});
+    });
+    config.createOAuth = () => ({fetch: globalThis.fetch, getAuthorizationHeader: async () => 'Bearer test'});
+    const services = new Services({resolvedConfig: config});
+    stub(services, 'getScapiSchemasClient').returns({GET: get} as never);
+    try {
+      const [search, execute] = createScapiCodeTools(() => services, undefined, undefined, undefined, undefined, local);
+      const code = `async () => ({origin: spec.apis[0].origin, paths: Object.keys(spec.paths)})`;
+      const expected = {
+        origin: 'local',
+        paths: ['/cdn/zones/v1/organizations/{organizationId}/zones/{zoneId}/insights'],
+      };
+      const found = await Promise.all(
+        (['bundled', 'live'] as const).map(async (schemas) =>
+          readJson(await search.handler({skillRead: true, schemas, api: 'cdn/zones/v1', code})),
+        ),
+      );
+      expect(found.map((data) => data.result)).to.deep.equal([expected, expected]);
+      const executed = await execute.handler({
+        skillRead: true,
+        code: `async () => scapi.request({method: 'GET', path: '/cdn/zones/v1/organizations/{organizationId}/zones/z1/insights'})`,
+      });
+      expect(readJson(executed).result).to.deep.include({ok: true});
+      expect(requested).to.deep.equal([
+        'https://test.api.commercecloud.salesforce.com/cdn/zones/v1/organizations/f_ecom_test_001/zones/z1/insights',
+      ]);
+    } finally {
+      restore();
+      rmSync(directory, {recursive: true, force: true});
+    }
   });
 });

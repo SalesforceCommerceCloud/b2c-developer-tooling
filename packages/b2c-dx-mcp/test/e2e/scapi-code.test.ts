@@ -5,7 +5,7 @@
  */
 
 import {expect} from 'chai';
-import {mkdtempSync, rmSync} from 'node:fs';
+import {mkdtempSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {McpE2EClient} from './stdio-client.js';
@@ -183,6 +183,40 @@ describe('SCAPI code mode over stdio', function () {
       expect(readJson<{result: number}>(result).result).to.be.greaterThan(0);
     } finally {
       await client.stop();
+    }
+  });
+
+  it('loads local contracts from --scapi-schemas', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'b2c-local-scapi-stdio-'));
+    writeFileSync(
+      join(directory, 'zones.json'),
+      JSON.stringify({
+        openapi: '3.0.3',
+        info: {version: '1.0.0-beta'},
+        servers: [{url: 'https://{shortCode}.api.commercecloud.salesforce.com/cdn/zones/v1'}],
+        paths: {'/organizations/{organizationId}/zones/{zoneId}/insights': {get: {responses: {'200': {}}}}},
+      }),
+    );
+    const client = new McpE2EClient({cwd: directory, args: ['--tools', 'scapi_search', '--scapi-schemas', '.']});
+    try {
+      await client.start();
+      const found = readJson<{result: unknown}>(
+        await client.call('tools/call', {
+          name: 'scapi_search',
+          arguments: {
+            skillRead: true,
+            api: 'cdn/zones/v1',
+            code: 'async () => [spec.apis[0].origin, Object.keys(spec.paths)]',
+          },
+        }),
+      );
+      expect(found.result).to.deep.equal([
+        'local',
+        ['/cdn/zones/v1/organizations/{organizationId}/zones/{zoneId}/insights'],
+      ]);
+    } finally {
+      await client.stop();
+      rmSync(directory, {recursive: true, force: true});
     }
   });
 });

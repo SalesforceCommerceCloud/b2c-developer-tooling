@@ -4,10 +4,11 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/** Bundled and live SCAPI contracts and local JavaScript execution with SDK-authenticated requests. @module scapi */
+/** Bundled, live, and local SCAPI contracts and local JavaScript execution with SDK-authenticated requests. @module scapi */
 export {loadScapiSchemas, findScapiOperation, resolveScapiReference} from './catalog.js';
 export type {ApiDocument, ScapiSchemaEntry, ScapiSchemaDocument} from './catalog.js';
 export {ScapiLiveSchemaCache, createLiveScapiDocument, mergeScapiSchemas, scapiTenantKey} from './live.js';
+export {loadLocalScapiSchemas} from './local.js';
 export type {ScapiLiveSchemaCacheOptions, ScapiLiveSchemaLoadOptions, ScapiLiveSchemaLoadResult} from './live.js';
 export {ScapiShopperSessions} from './shopper.js';
 export type {ScapiShopperAuth, ScapiShopperConfig} from './shopper.js';

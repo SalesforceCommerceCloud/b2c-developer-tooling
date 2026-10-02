@@ -75,6 +75,24 @@ up, copy the `scapi/snippets/` folder from your B2C data directory:
 These are the default locations; a custom B2C data directory changes the path.
 Built-in workflows update with the package and are separate from your saved files.
 
+## Local SCAPI contracts {#local-scapi-schemas}
+
+This is a developer option for beta and pre-release APIs that are not yet in the
+bundled or live contracts. Use `--scapi-schemas` or `SFCC_SCAPI_SCHEMAS` to give
+[SCAPI code mode](./toolsets#scapi-code-mode) your own OpenAPI 3 JSON files, or
+folders containing them, separated by commas:
+
+```bash
+npx -y @salesforce/b2c-dx-mcp@latest --scapi-schemas ./schemas/cdn-zones-v1.json
+```
+
+The API is identified by the `/<family>/<name>/<version>` path of the contract's
+`servers[0].url`. A local contract replaces the bundled or live contract for the same API, or
+adds a new one. Search results show it with `origin: "local"`. Relative paths
+resolve from `--project-directory` when it is set, or from the server's working
+directory otherwise. The server does not start if a contract is invalid.
+Safety Mode and request targeting work as they do for other contracts.
+
 ## Logging
 
 Use `--log-level debug` temporarily when investigating a connection or

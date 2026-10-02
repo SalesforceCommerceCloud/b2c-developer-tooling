@@ -146,6 +146,7 @@ import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {serveStdio} from '@modelcontextprotocol/server/stdio';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
+import {loadLocalScapiSchemas, type ScapiSchemaDocument} from '@salesforce/b2c-tooling-sdk/scapi';
 import {B2CDxMcpServer} from '../server.js';
 import {Services, type ServicesResolutionInputs} from '../services.js';
 import {ServerContext} from '../server-context.js';
@@ -224,6 +225,13 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         'help-admin, help-merchant, help-kb. ' +
         'Bounds the whole docs corpus; per-call category/storefront narrow within it. Unknown names are ignored.',
       env: 'SFCC_DOCS_TOPICS',
+    }),
+    'scapi-schemas': Flags.string({
+      description:
+        'Local SCAPI OpenAPI contracts for scapi_search and scapi_execute (comma-separated JSON files or directories). ' +
+        'Each replaces the bundled or live contract with the same family/name/version from servers[0].url, or adds an API. ' +
+        'Developer option for beta and pre-release APIs.',
+      env: 'SFCC_SCAPI_SCHEMAS',
     }),
   };
 
@@ -404,6 +412,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       // (--docs-topics / SFCC_DOCS_TOPICS), else config `docsCategories`
       // (dw.json `docs-categories`, SFCC_DOCS_CATEGORIES, package.json).
       docsTopics: this.flags['docs-topics'] ?? this.resolvedConfig?.values.docsCategories?.join(','),
+      scapiSchemas: this.loadLocalScapiSchemas(),
     };
 
     // Add toolsets to telemetry attributes
@@ -484,6 +493,29 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     });
 
     this.logger.info({version: this.config.version}, 'MCP Server running on stdio');
+  }
+
+  /** Load --scapi-schemas once at startup; relative paths resolve from the project directory. */
+  private loadLocalScapiSchemas(): readonly ScapiSchemaDocument[] | undefined {
+    const value = this.flags['scapi-schemas'];
+    if (!value) return undefined;
+    const base = this.flags['project-directory'] ?? process.cwd();
+    const paths = value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => path.resolve(base, entry));
+    let documents: ScapiSchemaDocument[];
+    try {
+      documents = loadLocalScapiSchemas(paths);
+    } catch (error) {
+      this.error(error instanceof Error ? error.message : String(error));
+    }
+    this.logger.info(
+      {scapiSchemas: documents.map((document) => document.entry.id)},
+      `Using ${documents.length} local SCAPI contract(s)`,
+    );
+    return documents;
   }
 
   /** Parse a project's .env without mutating the long-lived MCP process environment. */
