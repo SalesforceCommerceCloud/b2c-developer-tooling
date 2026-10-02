@@ -12,7 +12,6 @@ const groups = [
   {
     names: [
       'skills_read',
-      'scapi_search',
       'config_inspect',
       'debug_list_sessions',
       'docs_list',
@@ -38,6 +37,7 @@ const groups = [
       'logs_get_recent',
       'scapi_schemas_list',
       'scapi_custom_apis_get_status',
+      'scapi_search',
       'metrics_get',
       'logs_watch',
       'mrt_logs_watch',

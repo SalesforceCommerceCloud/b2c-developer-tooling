@@ -1,11 +1,12 @@
 ---
-name: b2c-config
-description: MCP configuration, authentication setup, external access grants, and masked inspection. Use for setup or unresolved configuration issues; routine config_inspect needs no skill read.
+name: b2c-mcp-config
+description: Resolve B2C MCP configuration, authentication, and external access grants with masked inspection. Use for setup, credential, or wrong-target issues; routine config_inspect needs no skill read.
 ---
 
 # MCP Configuration
 
-For MCP installation or tool selection, see [server setup](skill://mcp/server/SKILL.md).
+For MCP installation, tool selection, or other MCP workflows, see the
+[server skill index](skill://mcp/b2c-mcp-server/SKILL.md#skill-index).
 
 ## Inspect resolved values
 
@@ -72,15 +73,15 @@ pages; follow returned `nextOffset` when the needed topic lies later in an artic
 From the same project, `b2c setup inspect --json` uses the same resolver and
 default masking. Match the environment, `--config`, and `--instance` selections
 when comparing results. For CLI setup or configuration commands, consult
-[b2c-cli/b2c-config](skill://b2c-cli/b2c-config/SKILL.md) when the broader skill
-collections are enabled, or the shared configuration documentation below.
+[b2c-cli/b2c-config](skill://b2c-cli/b2c-config/SKILL.md) or the shared
+configuration documentation below.
 For authentication specifically, `skills_read({id: "b2c-cli/b2c-config", section: "authentication"})`.
 CLI browser-login instructions do not enable SCAPI Admin code-mode user auth.
 
 ## Further reading
 
-Read only for the configuration issue at hand:
+Read with `docs_read({query: ID})`, only for the configuration issue at hand:
 
-- [MCP configuration](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration)
-- [Shared configuration and precedence](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration)
-- [Authentication setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication)
+- MCP configuration: `mcp-configuration` ([online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md))
+- Shared configuration and precedence: `guide-configuration` ([online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md))
+- Authentication setup: `guide-authentication` ([online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md))

@@ -182,7 +182,7 @@ try {
     !catalog.tools.some((tool) => ['pwakit_get_guidelines', 'scapi_custom_api_generate_scaffold'].includes(tool.name)),
   );
   assert.ok(!catalog.tools.some((tool) => /^(sfnext_|figma_)/.test(tool.name)));
-  await request('resources/read', {uri: 'skill://mcp/scapi/SKILL.md'});
+  await request('resources/read', {uri: 'skill://mcp/b2c-mcp-scapi/SKILL.md'});
   const schemaSearch = await request('tools/call', {
     name: 'scapi_search',
     arguments: {
@@ -205,10 +205,10 @@ try {
   assert.deepEqual(snippet.inputSchema.required, ['productId', 'catalogId']);
   const resources = await request('resources/list');
   assert.deepEqual(resources.resources.map((resource) => resource.name).sort(), [
-    'mcp/b2c-config',
-    'mcp/debugger',
-    'mcp/scapi',
-    'mcp/server',
+    'mcp/b2c-mcp-config',
+    'mcp/b2c-mcp-debugger',
+    'mcp/b2c-mcp-scapi',
+    'mcp/b2c-mcp-server',
     'skill-index',
   ]);
   for (const resource of resources.resources) {
@@ -227,7 +227,7 @@ try {
   assert.equal(directory.total, manifest.entries.length);
   const hits = await guidance({query: 'deploy cartridges'});
   assert.ok(hits.entries.some((entry) => entry.id === 'b2c-cli/b2c-code'));
-  const read = await guidance({id: 'mcp/server'});
+  const read = await guidance({id: 'mcp/b2c-mcp-server'});
   const native = await request('resources/read', {uri: read.uri});
   assert.equal(read.content, native.contents[0].text);
   const project = join(testRoot, 'context-project');

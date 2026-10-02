@@ -749,5 +749,5 @@ content. Unpublished branch-only pages need no redirect when removed.
 - Use code blocks with language hints (`bash, `typescript)
 - Include practical examples for every command/function
 - Keep flag tables consistent across command docs
-- Use relative links for internal references
+- Use relative links for internal references in the docs site. Agent skills differ: follow the skill reference rules in `skills/README.md` (skill-name references, Markdown doc URLs with docs IDs)
 - Avoid emojis unless specifically requested

@@ -65,7 +65,7 @@ describe('CIP', () => {
     it('requires the CIP read acknowledgment before loading config or authenticating', async () => {
       const result = await tools[1].handler({sql: 'SELECT 1'});
       expect(result.isError).to.equal(true);
-      expect(json(result).error).to.include('skill://mcp/cip/SKILL.md');
+      expect(json(result).error).to.include('skill://mcp/b2c-mcp-cip/SKILL.md');
       expect(load.called).to.equal(false);
       expect(query.called).to.equal(false);
     });

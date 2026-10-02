@@ -10,9 +10,17 @@ import type MiniSearch from 'minisearch';
 import {createRankedIndex} from '../search/ranking.js';
 import {guidanceHeadings} from './markdown.js';
 import {GuidanceError} from './types.js';
-import type {GuidanceEntry, GuidanceManifest, GuidancePage, GuidanceRead, GuidanceRequest} from './types.js';
+import type {
+  GuidanceEntry,
+  GuidanceManifest,
+  GuidancePage,
+  GuidanceRead,
+  GuidanceRequest,
+  GuidanceSkill,
+} from './types.js';
 
 const PREFIX = 'skill://';
+const DIGEST = /^sha256:[0-9a-f]{64}$/;
 export const GUIDANCE_MAX_FILE_BYTES = 64 * 1024;
 export const GUIDANCE_INDEX_URI = 'skill://index';
 
@@ -77,13 +85,25 @@ export class GuidanceCatalog {
         !collectionIds.has(entry.collection) ||
         entry.id.split('/')[0] !== entry.collection ||
         (entry.featured !== undefined && typeof entry.featured !== 'boolean') ||
-        !entry.files.some((file) => file.path === entry.entrypoint)
+        !entry.files.some((file) => file.path === entry.entrypoint) ||
+        typeof entry.frontmatter !== 'object' ||
+        entry.frontmatter === null ||
+        Array.isArray(entry.frontmatter) ||
+        entry.frontmatter.name !== entry.id.split('/')[1] ||
+        typeof entry.frontmatter.description !== 'string'
       ) {
         fail('INVALID_MANIFEST', 'Invalid or duplicate skill entry.');
       }
       const paths = new Set<string>();
       for (const file of entry.files) {
-        if (!safePath(file.path) || !file.path.endsWith('.md') || paths.has(file.path)) {
+        if (
+          !safePath(file.path) ||
+          !file.path.endsWith('.md') ||
+          paths.has(file.path) ||
+          !Number.isSafeInteger(file.bytes) ||
+          typeof file.digest !== 'string' ||
+          !DIGEST.test(file.digest)
+        ) {
           fail('INVALID_MANIFEST', 'Invalid or duplicate skill file.');
         }
         paths.add(file.path);
@@ -106,12 +126,37 @@ export class GuidanceCatalog {
     return [...this.entries.values()]
       .filter((entry) => entry.featured)
       .map((entry) => ({
-        name: entry.id,
+        name: String(entry.frontmatter.name),
         title: entry.title,
-        description: entry.description.slice(0, 200),
+        description: entry.description,
         uri: guidanceUri(entry.id, entry.entrypoint),
         mimeType: 'text/markdown',
       }));
+  }
+
+  /** Featured skills as MCP skills extension entries; a deliberately partial listing. */
+  skills(): GuidanceSkill[] {
+    return [...this.entries.values()].filter((entry) => entry.featured).map((entry) => this.skillEntry(entry));
+  }
+
+  /** Entry for any exposed skill, listed or not, addressed by its exact SKILL.md URI. */
+  skill(uri: string): GuidanceSkill {
+    const {id, file} = this.parseUri(uri);
+    const entry = this.entries.get(id);
+    if (!entry || file !== entry.entrypoint) fail('NOT_FOUND', 'URI does not identify an available skill.');
+    return this.skillEntry(entry);
+  }
+
+  private skillEntry(entry: GuidanceEntry): GuidanceSkill {
+    return {
+      uri: guidanceUri(entry.id, entry.entrypoint),
+      frontmatter: entry.frontmatter,
+      resources: entry.files.map((file) => ({
+        uri: guidanceUri(entry.id, file.path),
+        digest: file.digest,
+        size: file.bytes,
+      })),
+    };
   }
 
   /** Resources and tool reads share full-file semantics and the same size limit. */
@@ -195,6 +240,10 @@ export class GuidanceCatalog {
     const bytes = readSafe(this.root, `${id}/${selected}`);
     if (bytes.length > GUIDANCE_MAX_FILE_BYTES) {
       fail('CONTENT_TOO_LARGE', 'Skill file exceeds 64 KiB; split the authored skill into references and rebuild.');
+    }
+    // Listed digests and sizes must describe the served bytes.
+    if (bytes.length !== metadata.bytes) {
+      fail('CONTENT_UNAVAILABLE', 'Packaged skills are inconsistent; rebuild or reinstall the MCP package.');
     }
     return {entry, file: selected, content: bytes.toString('utf8')};
   }

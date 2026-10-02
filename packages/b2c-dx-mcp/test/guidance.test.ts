@@ -79,7 +79,7 @@ describe('guidance distribution and result contracts', () => {
 
   it('does not load configuration for guidance and rejects unexpected input', async () => {
     const tool = createGuidanceTool();
-    const response = await tool.handler({id: 'mcp/server'});
+    const response = await tool.handler({id: 'mcp/b2c-mcp-server'});
     expect(response.isError).not.to.equal(true);
     expect(response.structuredContent).to.have.property('result');
     expect((await tool.handler({unexpected: true})).isError).to.equal(true);
@@ -87,7 +87,7 @@ describe('guidance distribution and result contracts', () => {
 
   it('returns section choices on a failed read without requiring the full skill', async () => {
     const tool = createGuidanceTool();
-    const uri = 'skill://mcp/server/SKILL.md';
+    const uri = 'skill://mcp/b2c-mcp-server/SKILL.md';
     const response = await tool.handler({uri, section: 'missing'});
     expect(response.isError).to.equal(true);
     const {error} = response.structuredContent as {error: {code: string; sections: {id: string}[]}};

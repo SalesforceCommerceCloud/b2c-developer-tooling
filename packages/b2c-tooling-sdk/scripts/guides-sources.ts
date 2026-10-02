@@ -33,6 +33,9 @@ export const GUIDES_SOURCES: readonly GuidesSource[] = [
   {category: 'sfnext', dir: 'sfnext/guides', urlPath: 'sfnext/guide'},
   {category: 'sfra', dir: 'sfra/guides', urlPath: 'sfra/guide'},
   {category: 'b2c-commerce', dir: 'b2c-commerce/guides', urlPath: 'b2c-commerce/guide'},
+  // Solution guides (bot management, caching, flash-sale traffic, industry playbooks).
+  // Published as `commerce-solutions` from the `solutions` content directory.
+  {category: 'commerce-solutions', dir: 'solutions/guides', urlPath: 'commerce-solutions/guide'},
   // OCAPI prose reference (usage, hooks, settings, best practices); the API specs
   // alongside these files are JSON and are not indexed.
   {

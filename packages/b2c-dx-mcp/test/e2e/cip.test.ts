@@ -48,8 +48,8 @@ describe('CIP over stdio', function () {
       content: {text: string}[];
     };
     expect(response.isError).to.equal(true);
-    expect(JSON.parse(response.content[0].text).error).to.include('CIP_SKILL_REQUIRED');
-    const {contents} = (await client.call('resources/read', {uri: 'skill://mcp/cip/SKILL.md'})) as {
+    expect(response.content[0].text).to.include('CIP_SKILL_REQUIRED: Read skill://mcp/b2c-mcp-cip/SKILL.md');
+    const {contents} = (await client.call('resources/read', {uri: 'skill://mcp/b2c-mcp-cip/SKILL.md'})) as {
       contents: {text: string}[];
     };
     expect(contents[0].text).to.include('skill://b2c-cli/b2c-cip/SKILL.md');

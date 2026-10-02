@@ -116,5 +116,5 @@ pnpm sfnext push -e <mrt-environment> -w
 - Connect an existing storefront: https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-connect-storefront.html
 - CLI reference (generate-cartridge / deploy-cartridge / push): https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-cli.html
 - SCAPI client (shopperExperience): https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-api-integration.html
-- Agentic B2C Developer Toolkit (plugins/MCP): https://salesforcecommercecloud.github.io/b2c-developer-tooling/
+- Agentic B2C Developer Toolkit (plugins/MCP): https://salesforcecommercecloud.github.io/b2c-developer-tooling/llms.txt
 - Classic PD concepts (background only — SFRA-era): https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-for-page-designer.html

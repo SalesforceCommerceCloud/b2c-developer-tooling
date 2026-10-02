@@ -29,6 +29,7 @@ function createMockServer(): B2CDxMcpServer & {registeredTools: string[]} {
     registeredTools,
     registerResource: stub(),
     addResourceReader: stub(),
+    addSkillsExtension: stub(),
     addTool(name: string) {
       registeredTools.push(name);
       return {name, enabled: true};

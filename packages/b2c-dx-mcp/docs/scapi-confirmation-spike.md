@@ -16,7 +16,7 @@ only its `safety` object for each scenario. Confirm the selected target through
 `config_inspect`. Global safety files and launch/project environment values also
 apply: review these when the effective behavior differs from the examples.
 
-Read `skill://mcp/scapi/SKILL.md` and use `skillRead: true` on code-mode calls.
+Read `skill://mcp/b2c-mcp-scapi/SKILL.md` and use `skillRead: true` on code-mode calls.
 The shared policy reference is `docs_read({query: "guide-safety"})`, or
 [Safety Mode](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.md).
 

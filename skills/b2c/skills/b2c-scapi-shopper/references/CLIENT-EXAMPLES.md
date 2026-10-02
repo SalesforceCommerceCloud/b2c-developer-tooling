@@ -50,7 +50,7 @@ b2c slas client create \
   --redirect-uri http://localhost:3000/callback
 ```
 
-See [b2c-slas skill](../../../../b2c-cli/skills/b2c-slas/SKILL.md) for full client management.
+See the `b2c-slas` skill for full client management.
 
 ### Get Guest Token
 
@@ -197,8 +197,7 @@ const order = await fetch(
 > Treat the returned `NEW` order as success. On a deterministic payment failure, call
 > `POST /orders/{orderNo}/actions/fail?reopenBasket=true` with an appropriate reason code. Preserve a
 > `CREATED` order when provider state is indeterminate. See
-> [b2c-hooks](../../b2c-hooks/SKILL.md#headless-order-payment-use-the-order-pi-authorization-seam) and
-> [b2c-ordering](../../b2c-ordering/SKILL.md). Confirm version-specific request fields with the Shopper
+> "Headless Order Payment" in the `b2c-hooks` skill and the `b2c-ordering` skill. Confirm version-specific request fields with the Shopper
 > Orders schema and hook signatures with `b2c docs read commerce-api/hook-method-details`.
 
 ### Shopper Customers
@@ -338,12 +337,12 @@ Find logs in Log Center under `scapi.verbose` category.
 
 ## Related Skills
 
-- [b2c-slas](../../../../b2c-cli/skills/b2c-slas/SKILL.md) - Create and manage SLAS clients
-- [b2c-slas-auth-patterns](../../b2c-slas-auth-patterns/SKILL.md) - Advanced auth: OTP, passkeys, session bridge
-- [b2c-scapi-schemas](../../../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
-- [b2c-custom-api-development](../../b2c-custom-api-development/SKILL.md) - Create custom endpoints
-- [b2c-hooks](../../b2c-hooks/SKILL.md) - Order-PI authorization hooks, default placement, and the single-phase `order.afterPOST` alternative
-- [b2c-ordering](../../b2c-ordering/SKILL.md) - Order lifecycle, status transitions, and failure handling
+- `b2c-slas` skill - Create and manage SLAS clients
+- `b2c-slas-auth-patterns` skill - Advanced auth: OTP, passkeys, session bridge
+- `b2c-scapi-schemas` skill - Browse OpenAPI schemas
+- `b2c-custom-api-development` skill - Create custom endpoints
+- `b2c-hooks` skill - Order-PI authorization hooks, default placement, and the single-phase `order.afterPOST` alternative
+- `b2c-ordering` skill - Order lifecycle, status transitions, and failure handling
 
 ## Reference Documentation
 

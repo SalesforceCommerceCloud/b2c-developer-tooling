@@ -44,7 +44,7 @@ This onboarding skill is part of the `b2c` plugin. For a full B2C Commerce setup
 | `gemini-cli`  | `gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling` (run in terminal, not inside the CLI) |
 | `other`       | Use the file-copy installer below |
 
-For clients without MCP-enabled plugin support, the `b2c-dx-mcp` server can be installed directly — see the [MCP installation docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation).
+For clients without MCP-enabled plugin support, the `b2c-dx-mcp` server can be installed directly — see the [MCP installation docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation.md).
 
 **Alternative — file-copy installer for any IDE** (also the right command to **update** already-installed skills or add a specific skill set):
 
@@ -149,6 +149,6 @@ Route by the answer:
 
 ## Reference
 
-- B2C CLI reference: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/
-- Install guide: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/install
-- Agent skills overview: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills
+- B2C CLI reference: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/index.md
+- Install guide: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation.md
+- Agent skills overview: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.md

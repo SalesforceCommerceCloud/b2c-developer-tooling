@@ -10,8 +10,9 @@ and manage your sites through requests in your assistant.
 
 Your assistant can find and read guidance from our B2C Commerce, B2C CLI,
 operations runbooks, and Storefront Next [skill collections](../guide/agent-skills) through the
-[`skills_read` tool](./toolsets#documentation). **No separate skills installation
-is needed.** Documentation and skills work without B2C Commerce credentials;
+[`skills_read` tool](./toolsets#documentation), MCP resources, or the
+[MCP Skills extension](./toolsets#documentation) in assistants that support it.
+**No separate skills installation is needed.** Documentation and skills work without B2C Commerce credentials;
 connected tasks use your existing [B2C configuration](../guide/configuration).
 
 ## Set up your assistant {#setup}

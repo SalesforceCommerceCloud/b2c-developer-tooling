@@ -1,6 +1,6 @@
 ---
-name: MCP SCAPI Code Mode
-description: Discover standard and live custom SCAPI contracts, compose Admin requests, and verify changes using configured authentication and safety rules.
+name: b2c-mcp-scapi
+description: Required before scapi_search or scapi_execute. Discover standard and live custom SCAPI contracts, compose Admin and Shopper requests, and verify changes under configured authentication and Safety Mode.
 ---
 
 # SCAPI Code Mode
@@ -8,7 +8,7 @@ description: Discover standard and live custom SCAPI contracts, compose Admin re
 Prefer dedicated tools. Otherwise discover with `scapi_search`, compose with
 `scapi_execute`. Use JavaScript async arrow functions; no TypeScript or imports.
 Warehouse reports/SQL use `cip_discover` / `cip_query`, not code mode;
-see [CIP analytics](skill://mcp/cip/SKILL.md).
+see [CIP analytics](skill://mcp/b2c-mcp-cip/SKILL.md).
 Use code mode for API discovery, request composition, and result processing.
 Use terminal/file tools for local development, builds, and filesystem work.
 Filesystem APIs, subprocesses, worker threads, and native addons are restricted.
@@ -173,16 +173,16 @@ and `ShopperToken` operations use their declared `c_*` scopes. [Custom API workf
 - Unsupported: registered-shopper-only operations (`RegisteredShopperToken`),
   trusted-system/agent on-behalf tokens, and SLAS itself (`shopper/auth/v1`).
   `auth.slas({flow: 'registered', ...})` exports a registered token for external clients.
-  SLAS admin roles differ: [CLI/SDK](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas).
+  SLAS admin roles differ: `docs_read({query: "cli-slas"})` ([online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.md)).
 - HTTP 401/403 retain `status`/`data` plus `diagnostic`; preserve these.
   A 403 alone does not prove missing scopes.
 
-For missing values or wrong targets, read [MCP configuration](skill://mcp/b2c-config/SKILL.md)
-(`skills_read` ID `mcp/b2c-config`). For external client/role/tenant-filter setup,
+For missing values or wrong targets, read [MCP configuration](skill://mcp/b2c-mcp-config/SKILL.md)
+(`skills_read` ID `mcp/b2c-mcp-config`). For external client/role/tenant-filter setup,
 use `docs_read({query: "guide-authentication"})`; official Admin authorization:
 `commerce-api/authorization-for-admin-apis`, scope definitions: `commerce-api/auth-z-scope-catalog`.
 For other access questions, search `docs_search` with the specific error and API.
-If docs are unavailable, use the [authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication).
+If docs are unavailable, use the [authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md).
 These are conditional setup references, not additional prerequisite reads.
 
 ## Compose and verify
@@ -265,6 +265,8 @@ For explicit save requests, see [saving](references/saving.md).
 
 No CLI code-mode equivalent. For missing settings such as promotion discounts,
 consider [XML archives](skill://b2c-cli/b2c-site-import-export/SKILL.md)
-([CLI docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs)).
+(`docs_read({query: "cli-jobs"})`, [online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs.md)).
 [Platform reference](https://developer.salesforce.com/docs/commerce/commerce-api/references).
-[Configuration/access](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration).
+Configuration/access: `docs_read({query: "mcp-configuration"})` ([online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md)).
+
+Other MCP workflows and runbooks: [skill index](skill://mcp/b2c-mcp-server/SKILL.md#skill-index).

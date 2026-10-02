@@ -7,7 +7,7 @@ description: Create, update, and manage SLAS (Shopper Login and API Access Servi
 
 Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) API clients and credentials.
 
-> **Important:** SLAS is for **shopper** (customer) authentication used by storefronts and headless commerce. For **admin** tokens (OCAPI, Admin APIs), use `b2c auth token` - see [b2c-config skill](../b2c-config/SKILL.md).
+> **Important:** SLAS is for **shopper** (customer) authentication used by storefronts and headless commerce. For **admin** tokens (OCAPI, Admin APIs), use `b2c auth token` - see the `b2c-config` skill.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli slas client list`).
 

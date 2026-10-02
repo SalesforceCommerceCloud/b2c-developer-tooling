@@ -56,9 +56,10 @@ enrichment. Sessions retain their original target. Skills never resolve a projec
 All tools are enabled by default; explicit selection customizes availability.
 Do not gate tool or skill availability behind release-maturity launch flags.
 Client tool discovery may be deferred: discover before recommending reconfiguration.
-Startup instructions must identify skill URIs as MCP resources and show the
-`skills_read({uri: "<URI>"})` fallback when enabled. Do not imply URI paths or MCP
-server names map to native client skill commands. Keep read parameter names
+Startup instructions must say to load skills through the client when it lists
+them (MCP skills extension), otherwise as MCP resources or with
+`skills_read({uri: "<URI>"})`. Do not imply URI paths or MCP server names map to
+native client skill commands. Keep read parameter names
 explicit in tool descriptions; discover schemas before invoking deferred tools.
 
 MCP skill resources and their index/template access remain available independently
@@ -66,8 +67,17 @@ of `skills_read`. That tool's selection enables the broader native collections.
 Apply the same exposure filter to indexing, listing, and direct URI reads.
 Return whole skill files or explicit sections by default. Optional read paging
 uses character offset/maxLength and totalLength/nextOffset, like docs_read.
-No content cursors or hashes. Split files over 64 KiB into authored references.
-Instructions and links must account for unavailable tools/collections.
+No content cursors. Split files over 64 KiB into authored references.
+Skill content assumes all toolsets are enabled; do not qualify links by tool or
+collection availability.
+
+The server implements the `io.modelcontextprotocol/skills` extension
+(`skills/list` for featured MCP skills, `skills/get` for any served skill), with
+generated per-file digests. Skill `name` equals its directory (MCP skills use
+the `b2c-mcp-` prefix). Reference other skills by name or `skill://` URI, never
+by relative path; link tooling docs to `.md` pages with their docs ID for
+`docs_read`. `generate:guidance` enforces these rules; see
+[MCP skill authoring](../../../packages/b2c-dx-mcp/docs/skills.md).
 
 ## Tool effects
 
@@ -99,7 +109,7 @@ already-supported SCAPI operations.
 ## CIP analytics
 
 Reuse SDK reports, SQL builders, metadata, and the native CIP client. Keep offline
-report discovery ungated; require `skill://mcp/cip/SKILL.md` acknowledgment before
+report discovery ungated; require `skill://mcp/b2c-mcp-cip/SKILL.md` acknowledgment before
 query configuration/authentication. Link existing CLI CIP guidance conditionally
 for configuration, production/staging availability, and larger exports. Resolve
 tenant-scoped client credentials and per-project Safety Mode while retaining
@@ -147,7 +157,7 @@ Bound waits and returned data. A tool must not await work that requires another
 tool call to release it: debugger capture returns while its trigger is halted.
 Explain pending work, retained breakpoints, cleanup, and resume behavior precisely.
 Skill acknowledgment is separate from mutation authorization. Code-mode tools
-require `skillRead: true` after reading `skill://mcp/scapi/SKILL.md` by resource or
+require `skillRead: true` after reading `skill://mcp/b2c-mcp-scapi/SKILL.md` by resource or
 `skills_read`. Check before configuration loading or execution. Put the URI once
 in each tool description; the flag refers to it. Use self-attestation, no dynamic
 receipt or tool-only read tracking. Keep simple inspection ungated. Add further

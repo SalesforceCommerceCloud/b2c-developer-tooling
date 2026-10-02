@@ -5,6 +5,7 @@
  */
 
 /* eslint-disable no-await-in-loop -- Discovery pages and dependent reads must run in protocol order. */
+import {createHash} from 'node:crypto';
 import {expect} from 'chai';
 import type {GuidanceRead, GuidancePage} from '@salesforce/b2c-tooling-sdk/guidance';
 import {McpE2EClient} from './stdio-client.js';
@@ -39,11 +40,11 @@ describe('guidance over real stdio', function () {
       const {resources} = (await restricted.call('resources/list')) as {resources: {uri: string}[]};
       expect(resources.map((resource) => resource.uri)).to.include.members([
         'skill://index',
-        'skill://mcp/server/SKILL.md',
-        'skill://mcp/b2c-config/SKILL.md',
-        'skill://mcp/debugger/SKILL.md',
-        'skill://mcp/scapi/SKILL.md',
-        'skill://mcp/cip/SKILL.md',
+        'skill://mcp/b2c-mcp-server/SKILL.md',
+        'skill://mcp/b2c-mcp-config/SKILL.md',
+        'skill://mcp/b2c-mcp-debugger/SKILL.md',
+        'skill://mcp/b2c-mcp-scapi/SKILL.md',
+        'skill://mcp/b2c-mcp-cip/SKILL.md',
       ]);
       for (const resource of resources) {
         const {contents} = (await restricted.call('resources/read', {uri: resource.uri})) as {
@@ -66,6 +67,8 @@ describe('guidance over real stdio', function () {
       ]) {
         const response = await restricted.request(id, 'resources/read', {uri: `skill://${id}/SKILL.md`});
         expect(response.error, id).to.exist;
+        const skill = await restricted.request(`get:${id}`, 'skills/get', {uri: `skill://${id}/SKILL.md`});
+        expect(skill.error?.code, id).to.equal(-32_602);
       }
     } finally {
       await restricted.stop();
@@ -125,16 +128,16 @@ describe('guidance over real stdio', function () {
     expect(new Set(ids.map((id) => id.split('/')[0]))).to.deep.equal(
       new Set(['b2c', 'b2c-cli', 'b2c-ops', 'mcp', 'storefront-next']),
     );
-    expect(ids).to.include('mcp/server');
+    expect(ids).to.include('mcp/b2c-mcp-server');
   });
 
   it('reads published MCP skills identically through resources and tools', async () => {
     for (const id of [
-      'mcp/server',
-      'mcp/cip',
-      'mcp/debugger',
-      'mcp/b2c-config',
-      'mcp/scapi',
+      'mcp/b2c-mcp-server',
+      'mcp/b2c-mcp-cip',
+      'mcp/b2c-mcp-debugger',
+      'mcp/b2c-mcp-config',
+      'mcp/b2c-mcp-scapi',
       'b2c-cli/b2c-code',
       'b2c-ops/b2c-production-triage',
       'b2c-ops/b2c-order-failure-triage',
@@ -173,19 +176,19 @@ describe('guidance over real stdio', function () {
     expect(response.structuredContent.error?.code).to.equal('NOT_FOUND');
     for (const suffix of ['../server/SKILL.md', '%2e%2e/server/SKILL.md', 'SKILL.md?x=1']) {
       const result = await client.request(`invalid-${suffix}`, 'resources/read', {
-        uri: `skill://mcp/server/${suffix}`,
+        uri: `skill://mcp/b2c-mcp-server/${suffix}`,
       });
       expect(result.error, suffix).to.exist;
     }
     for (const uri of [
-      'skill://mcp/../mcp/debugger/SKILL.md',
-      'skill://mcp/%64ebugger/SKILL.md',
-      'skill://mcp/debugger/SKILL.md?x=1',
+      'skill://mcp/../mcp/b2c-mcp-debugger/SKILL.md',
+      'skill://mcp/b2c-mcp-%64ebugger/SKILL.md',
+      'skill://mcp/b2c-mcp-debugger/SKILL.md?x=1',
     ]) {
       const result = await client.request(`invalid-${uri}`, 'resources/read', {uri});
       expect(result.error, uri).to.exist;
     }
-    const conflicting = await call({id: 'mcp/server', query: 'deploy'});
+    const conflicting = await call({id: 'mcp/b2c-mcp-server', query: 'deploy'});
     expect(conflicting.structuredContent.error?.code).to.equal('INVALID_REQUEST');
   });
 
@@ -194,20 +197,20 @@ describe('guidance over real stdio', function () {
       resources: {name: string; uri: string; description: string}[];
     };
     expect(listed.resources.map((resource) => resource.name).sort()).to.deep.equal([
-      'mcp/b2c-config',
-      'mcp/cip',
-      'mcp/debugger',
-      'mcp/scapi',
-      'mcp/server',
+      'b2c-mcp-cip',
+      'b2c-mcp-config',
+      'b2c-mcp-debugger',
+      'b2c-mcp-scapi',
+      'b2c-mcp-server',
       'skill-index',
     ]);
     for (const resource of listed.resources) {
       expect(resource.uri).to.equal(
-        resource.name === 'skill-index' ? 'skill://index' : `skill://${resource.name}/SKILL.md`,
+        resource.name === 'skill-index' ? 'skill://index' : `skill://mcp/${resource.name}/SKILL.md`,
       );
-      expect(resource.description.length).to.be.within(1, 200);
+      expect(resource.description.length).to.be.within(1, 1024);
     }
-    expect(Buffer.byteLength(JSON.stringify(listed))).to.be.lessThan(2000);
+    expect(Buffer.byteLength(JSON.stringify(listed))).to.be.lessThan(3000);
     const index = (await client.call('resources/read', {uri: 'skill://index'})) as {contents: {text: string}[]};
     expect(Buffer.byteLength(index.contents[0].text)).to.be.lessThan(16 * 1024);
     const links = [...index.contents[0].text.matchAll(/\[([^\]]+)\]\((skill:\/\/[^)]+)\)/g)];
@@ -223,6 +226,45 @@ describe('guidance over real stdio', function () {
       expect(read.uri).to.equal(uri);
       const native = (await client.call('resources/read', {uri})) as {contents: {text: string}[]};
       expect(native.contents[0].text.startsWith(read.content)).to.equal(true);
+    }
+  });
+
+  it('serves the skills extension with digests matching resource bytes', async () => {
+    const capabilities = client.initializeResult?.capabilities as {extensions?: Record<string, unknown>};
+    expect(capabilities.extensions).to.have.property('io.modelcontextprotocol/skills');
+    const {skills} = (await client.call('skills/list')) as {
+      skills: {uri: string; frontmatter: {name: string}; resources: {uri: string; digest: string; size: number}[]}[];
+    };
+    expect(skills.map((skill) => skill.frontmatter.name).sort()).to.deep.equal([
+      'b2c-mcp-cip',
+      'b2c-mcp-config',
+      'b2c-mcp-debugger',
+      'b2c-mcp-scapi',
+      'b2c-mcp-server',
+    ]);
+    for (const skill of skills) {
+      expect(skill.uri).to.equal(`skill://mcp/${skill.frontmatter.name}/SKILL.md`);
+      expect(skill.resources.map((resource) => resource.uri)).to.include(skill.uri);
+      for (const resource of skill.resources) {
+        const {contents} = (await client.call('resources/read', {uri: resource.uri})) as {contents: {text: string}[]};
+        const bytes = Buffer.from(contents[0].text, 'utf8');
+        expect(resource.size, resource.uri).to.equal(bytes.length);
+        expect(resource.digest, resource.uri).to.equal(`sha256:${createHash('sha256').update(bytes).digest('hex')}`);
+      }
+    }
+    const unlisted = (await client.call('skills/get', {uri: 'skill://b2c-cli/b2c-config/SKILL.md'})) as {
+      skill: {uri: string; frontmatter: {name: string}};
+    };
+    expect(unlisted.skill).to.include({uri: 'skill://b2c-cli/b2c-config/SKILL.md'});
+    expect(unlisted.skill.frontmatter.name).to.equal('b2c-config');
+    for (const [method, params] of [
+      ['skills/get', {uri: 'skill://mcp/b2c-mcp-missing/SKILL.md'}],
+      ['skills/get', {uri: 'skill://mcp/b2c-mcp-scapi/references/jobs.md'}],
+      ['skills/get', {uri: 'skill://index'}],
+      ['skills/list', {cursor: 'next'}],
+    ] as const) {
+      const response = await client.request(`${method}:${JSON.stringify(params)}`, method, params);
+      expect(response.error?.code, JSON.stringify(params)).to.equal(-32_602);
     }
   });
 

@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {createHash} from 'node:crypto';
 import {mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync, renameSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -21,6 +22,7 @@ describe('offline guidance catalog', () => {
   let root: string;
   let manifest: GuidanceManifest;
   const unicode = String.fromCodePoint(0x1f680);
+  const digest = (text: string) => `sha256:${createHash('sha256').update(text).digest('hex')}`;
   const content = `# Deploy\n\n${`Deploy cartridges ${unicode}.\n`.repeat(1000)}\n## Cleanup\n\nVerify deployment.\n`;
 
   beforeEach(() => {
@@ -47,12 +49,14 @@ describe('offline guidance catalog', () => {
         title: 'Deploy cartridges',
         description: 'Deploy cartridges with cleanup',
         entrypoint: 'SKILL.md',
+        frontmatter: {name: 'deploy', description: 'Deploy cartridges with cleanup', metadata: {owner: 'tools'}},
         featured: true,
         source: `skills/${id}/SKILL.md`,
         headings: 'Deploy Cleanup',
         files: files.map((file) => ({
           path: file.path,
           bytes: Buffer.byteLength(file.content),
+          digest: digest(file.content),
         })),
       });
     }
@@ -97,16 +101,60 @@ describe('offline guidance catalog', () => {
   });
 
   it('applies the same 64 KiB file limit to resource, tool, and section reads', () => {
-    const catalog = new GuidanceCatalog(root);
     const uri = 'skill://b2c/deploy/SKILL.md';
     const atLimit = 'x'.repeat(64 * 1024);
     writeFileSync(join(root, 'b2c/deploy/SKILL.md'), atLimit);
+    manifest.entries[0].files[0] = {path: 'SKILL.md', bytes: atLimit.length, digest: digest(atLimit)};
+    writeFileSync(join(root, 'index.json'), JSON.stringify(manifest));
+    const catalog = new GuidanceCatalog(root);
     expect((catalog.read({uri}) as GuidanceRead).content).to.equal(atLimit);
     expect(catalog.readResource(uri)).to.equal(atLimit);
     writeFileSync(join(root, 'b2c/deploy/SKILL.md'), `${atLimit}x`);
     expect(() => catalog.read({uri})).to.throw('exceeds 64 KiB');
     expect(() => catalog.readResource(uri)).to.throw('exceeds 64 KiB');
     expect(() => catalog.read({uri, section: 'cleanup'})).to.throw('exceeds 64 KiB');
+  });
+
+  it('rejects served bytes that differ from the listed size', () => {
+    const catalog = new GuidanceCatalog(root);
+    writeFileSync(join(root, 'b2c/deploy/references/cleanup.md'), '# Cleanup\nChanged.\n');
+    expect(() => catalog.readResource('skill://b2c/deploy/references/cleanup.md')).to.throw('inconsistent');
+  });
+
+  it('describes featured skills with verbatim frontmatter and every file digest', () => {
+    manifest.entries[1].featured = false;
+    writeFileSync(join(root, 'index.json'), JSON.stringify(manifest));
+    const catalog = new GuidanceCatalog(root, {allowNonGa: true});
+    const skill = {
+      uri: 'skill://b2c/deploy/SKILL.md',
+      frontmatter: {name: 'deploy', description: 'Deploy cartridges with cleanup', metadata: {owner: 'tools'}},
+      resources: [
+        {uri: 'skill://b2c/deploy/SKILL.md', digest: digest(content), size: Buffer.byteLength(content)},
+        {uri: 'skill://b2c/deploy/references/cleanup.md', digest: digest('# Cleanup\nDone.\n'), size: 16},
+      ],
+    };
+    expect(catalog.skills()).to.deep.equal([skill]);
+    expect(catalog.skill(skill.uri)).to.deep.equal(skill);
+    // Unlisted but served skills remain retrievable by URI.
+    expect(catalog.skill('skill://next/deploy/SKILL.md').uri).to.equal('skill://next/deploy/SKILL.md');
+    expect(catalog.resources()[0]).to.include({name: 'deploy', description: 'Deploy cartridges with cleanup'});
+    for (const uri of ['skill://b2c/deploy/references/cleanup.md', 'skill://b2c/missing/SKILL.md', 'skill://index']) {
+      expect(() => catalog.skill(uri), uri).to.throw(GuidanceError);
+    }
+    expect(() => new GuidanceCatalog(root).skill('skill://next/deploy/SKILL.md')).to.throw('not identify');
+  });
+
+  it('rejects manifests without valid digests or matching frontmatter names', () => {
+    for (const mutate of [
+      (m: GuidanceManifest) => (m.entries[0].files[0].digest = 'sha256:ABC'),
+      (m: GuidanceManifest) => (m.entries[0].frontmatter = {name: 'other', description: 'x'}),
+      (m: GuidanceManifest) => delete (m.entries[0] as Partial<GuidanceManifest['entries'][number]>).frontmatter,
+    ]) {
+      const copy = structuredClone(manifest);
+      mutate(copy);
+      writeFileSync(join(root, 'index.json'), JSON.stringify(copy));
+      expect(() => new GuidanceCatalog(root)).to.throw('Invalid');
+    }
   });
 
   it('has identical resource, ID, and URI reference reads and supports sections', () => {
@@ -158,7 +206,7 @@ describe('offline guidance catalog', () => {
     manifest.entries[0].featured = false;
     writeFileSync(join(root, 'index.json'), JSON.stringify(manifest));
     const catalog = new GuidanceCatalog(root, {allowNonGa: true});
-    expect(catalog.resources().map((resource) => resource.name)).to.deep.equal(['next/deploy']);
+    expect(catalog.resources().map((resource) => resource.uri)).to.deep.equal(['skill://next/deploy/SKILL.md']);
     const page = catalog.read({collection: 'b2c'}) as GuidancePage;
     expect(page.entries[0].id).to.equal('b2c/deploy');
     expect(page.entries[0].uri).to.equal('skill://b2c/deploy/SKILL.md');

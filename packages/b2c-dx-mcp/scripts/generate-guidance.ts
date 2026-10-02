@@ -4,16 +4,18 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {createHash} from 'node:crypto';
+import {isDeepStrictEqual} from 'node:util';
 import {mkdirSync, readFileSync, readdirSync, lstatSync, rmSync, writeFileSync} from 'node:fs';
-import {dirname, join, relative, resolve, sep, isAbsolute} from 'node:path';
+import {dirname, join, posix, relative, resolve, sep, isAbsolute} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {parse as parseYaml} from 'yaml';
 import {
   guidanceHeadings,
   GUIDANCE_MAX_FILE_BYTES,
   type GuidanceEntry,
   type GuidanceManifest,
 } from '@salesforce/b2c-tooling-sdk/guidance';
-import {parseSkillFrontmatter} from '@salesforce/b2c-tooling-sdk/skills';
 import {loadBuiltinScapiSnippets} from '@salesforce/b2c-tooling-sdk/scapi';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,7 +30,7 @@ const snippetIndex =
         `## ${snippet.name}\n\n${snippet.description}\n\nEffect: ${snippet.effect}.\n\nInput JSON Schema:\n\n\`\`\`json\n${JSON.stringify(snippet.inputSchema)}\n\`\`\`\n`,
     )
     .join('\n');
-writeFileSync(join(packageRoot, 'skills/scapi/references/snippets.md'), snippetIndex);
+writeFileSync(join(packageRoot, 'skills/b2c-mcp-scapi/references/snippets.md'), snippetIndex);
 const destination = join(packageRoot, 'content/guidance');
 const config = JSON.parse(readFileSync(join(packageRoot, 'skills/collections.json'), 'utf8')) as {
   version: number;
@@ -38,6 +40,41 @@ const config = JSON.parse(readFileSync(join(packageRoot, 'skills/collections.jso
 const plugins = JSON.parse(readFileSync(join(repoRoot, 'skills/plugins.json'), 'utf8')) as {plugins: {name: string}[]};
 const manifest: GuidanceManifest = {version: 1, collections: [], entries: []};
 const contentFiles = new Map<string, Buffer>();
+const DOCS_SITE = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/';
+
+/** Agent Skills frontmatter, rendered verbatim as JSON for the MCP skills extension. */
+function skillFrontmatter(content: string, folder: string, where: string): Record<string, unknown> {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(content);
+  if (!match) throw new Error(`Missing SKILL.md frontmatter: ${where}`);
+  let parsed: unknown;
+  try {
+    parsed = parseYaml(match[1]);
+  } catch (error) {
+    throw new Error(`Invalid SKILL.md frontmatter YAML: ${where}: ${(error as Error).message}`);
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`SKILL.md frontmatter must be a mapping: ${where}`);
+  }
+  const frontmatter = parsed as Record<string, unknown>;
+  // eslint-disable-next-line unicorn/prefer-structured-clone -- the JSON round-trip is the check; structuredClone keeps Dates.
+  if (!isDeepStrictEqual(JSON.parse(JSON.stringify(frontmatter)), frontmatter)) {
+    throw new Error(`SKILL.md frontmatter must be JSON-compatible (quote dates and similar values): ${where}`);
+  }
+  const {name, description} = frontmatter;
+  if (typeof name !== 'string' || name.length > 64 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
+    throw new Error(`Skill name must be 1-64 lowercase letters, digits, and single hyphens: ${where}`);
+  }
+  if (name !== folder) throw new Error(`Skill name "${name}" must equal its directory "${folder}": ${where}`);
+  if (typeof description !== 'string' || !description.trim() || description.length > 1024) {
+    throw new Error(`Skill description must be 1-1024 characters: ${where}`);
+  }
+  return frontmatter;
+}
+
+/** Link targets outside fenced code: [text](target). */
+function markdownLinks(content: string): string[] {
+  return [...content.replaceAll(/^(```|~~~)[\s\S]*?^\1/gm, '').matchAll(/\]\(([^)\s]+)\)/g)].map((match) => match[1]);
+}
 
 function markdownFiles(root: string, prefix = ''): string[] {
   if (lstatSync(root).isSymbolicLink()) throw new Error(`Symlink in guidance source: ${root}`);
@@ -87,16 +124,15 @@ for (const {plugin, directory, ...collection} of config.collections) {
     const root = join(source, folder.name);
     const files = markdownFiles(root);
     if (!files.includes(entrypoint)) throw new Error(`Missing ${entrypoint}: ${root}`);
-    const content = readFileSync(join(root, entrypoint), 'utf8');
-    const metadata = parseSkillFrontmatter(content);
-    if (!metadata) throw new Error(`Invalid guidance frontmatter: ${root}`);
     const id = `${collection.id}/${folder.name}`;
+    const frontmatter = skillFrontmatter(readFileSync(join(root, entrypoint), 'utf8'), folder.name, id);
     const entry: GuidanceEntry = {
       id,
       collection: collection.id,
-      title: metadata.name,
-      description: metadata.description,
+      title: frontmatter.name as string,
+      description: frontmatter.description as string,
       entrypoint,
+      frontmatter,
       source: relative(repoRoot, join(root, entrypoint)).split('\\').join('/'),
       headings: '',
       files: [],
@@ -108,11 +144,53 @@ for (const {plugin, directory, ...collection} of config.collections) {
         throw new Error(`Skill file exceeds 64 KiB: ${id}/${file}. Split it into focused references.`);
       }
       headings.push(...guidanceHeadings(bytes.toString('utf8')).map((heading) => heading.title));
-      entry.files.push({path: file, bytes: bytes.length});
+      entry.files.push({
+        path: file,
+        bytes: bytes.length,
+        digest: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
+      });
       contentFiles.set(`${id}/${file}`, bytes);
     }
     entry.headings = headings.join(' | ');
     manifest.entries.push(entry);
+  }
+}
+
+// Names label skills for hosts; keep them unique across every bundled collection.
+const names = new Map<string, string>();
+for (const entry of manifest.entries) {
+  const other = names.get(entry.title);
+  if (other) throw new Error(`Duplicate skill name "${entry.title}": ${other} and ${entry.id}`);
+  names.set(entry.title, entry.id);
+}
+
+// Skills install and serve independently: relative links stay inside the skill,
+// other skills are referenced by name or skill:// URI, and tooling docs use Markdown URLs.
+const bundled = new Set([...contentFiles.keys()].map((file) => `skill://${file}`));
+for (const entry of manifest.entries) {
+  for (const {path} of entry.files) {
+    const where = `${entry.id}/${path}`;
+    const content = contentFiles.get(where)!.toString('utf8');
+    for (const [uri] of content.matchAll(/skill:\/\/[\w./-]*\w/g)) {
+      if (uri !== 'skill://index' && !bundled.has(uri)) throw new Error(`Unknown skill URI ${uri} in ${where}`);
+    }
+    for (const target of markdownLinks(content)) {
+      const [location] = target.split('#');
+      if (!location || location.startsWith('skill://')) continue;
+      if (location.startsWith(DOCS_SITE)) {
+        const page = location.slice(DOCS_SITE.length);
+        if (page && page !== 'llms.txt' && !page.endsWith('.md')) {
+          throw new Error(`Link tooling docs to the Markdown page (${page}.md) in ${where}`);
+        }
+      } else if (!/^[a-z][a-z0-9+.-]*:/i.test(location)) {
+        const resolved = posix.normalize(posix.join(posix.dirname(path), location));
+        if (resolved.startsWith('../') || !entry.files.some((file) => file.path === resolved)) {
+          throw new Error(
+            `Relative link ${target} in ${where} must resolve to a file in the same skill; reference other skills by name`,
+          );
+        }
+      }
+    }
   }
 }
 

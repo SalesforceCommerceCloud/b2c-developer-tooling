@@ -65,7 +65,8 @@ const COMPETING_STOREFRONT_PENALTY = 0.3;
  * The storefront-FRAMEWORK guide categories: one per mutually-exclusive
  * storefront implementation. Only these are de-boosted when they belong to a
  * different storefront than the detected workspace. Reference/platform corpora
- * (`script-api`, `job-step`, `commerce-api`, `b2c-commerce`, `tooling`) are
+ * (`script-api`, `job-step`, `commerce-api`, `b2c-commerce`, `commerce-solutions`,
+ * `tooling`) are
  * never treated as "competing" — they apply across storefronts.
  */
 const STOREFRONT_FRAMEWORK_CATEGORIES: readonly DocCategory[] = ['sfra', 'pwa-kit-managed-runtime', 'sfnext'];
@@ -88,6 +89,7 @@ const CATEGORY_TAXONOMY: Record<DocCategory, {alwaysRelevant?: boolean}> = {
   sfnext: {},
   sfra: {},
   'b2c-commerce': {alwaysRelevant: true},
+  'commerce-solutions': {alwaysRelevant: true},
   ocapi: {alwaysRelevant: true},
   tooling: {alwaysRelevant: true},
   // Salesforce Help corpora. Not `alwaysRelevant`: administrative/merchandising

@@ -29,9 +29,9 @@ update process for live customer impact; do not wait for exact counts to escalat
 | Order records                | Discover Admin Orders contracts via code mode                    | A response enum does not establish supported status filters. See [failed-order triage](skill://b2c-ops/b2c-order-failure-triage/SKILL.md) for the demonstrated OCAPI fallback. |
 | Affected products/attributes | SCAPI Admin product reads; live schemas for tenant custom fields | Compare known IDs and selected fields. Shopper contracts are reference-only in this runtime.                                                                                   |
 | Suspected import/integration | [b2c-job-health](skill://b2c-ops/b2c-job-health/SKILL.md)        | Read the chosen job's log and check its actual data effects.                                                                                                                   |
-| Traffic/latency context      | Code mode Metrics where enabled; CLI `b2c metrics`               | Feature access and scopes vary. CIP/CCAC trends: `cip_discover` / `cip_query` after [CIP guidance](skill://mcp/cip/SKILL.md), with freshness/coverage limits. CLI fallback: `b2c cip`.                                                          |
+| Traffic/latency context      | Code mode Metrics where enabled; CLI `b2c metrics`               | Feature access and scopes vary. CIP/CCAC trends: `cip_discover` / `cip_query` after [CIP guidance](skill://mcp/b2c-mcp-cip/SKILL.md), with freshness/coverage limits. CLI fallback: `b2c cip`.                                                          |
 
-Read `skill://mcp/scapi/SKILL.md` before code mode; prefer dedicated tools when
+Read `skill://mcp/b2c-mcp-scapi/SKILL.md` before code mode; prefer dedicated tools when
 available. Discover operations/required fields before requests, compose bounded
 reads, and return selected evidence with errors and continuation. Read only the
 conditional reference needed; native assistants can use installed skill names.

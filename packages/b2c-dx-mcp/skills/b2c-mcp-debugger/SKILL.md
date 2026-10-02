@@ -1,6 +1,6 @@
 ---
-name: MCP Debugger Usage
-description: Bounded debugger capture, request triggering, state inspection, and reliable session cleanup.
+name: b2c-mcp-debugger
+description: Debug B2C Commerce server-side scripts with the MCP debugger tools, using bounded breakpoint capture, request triggering, state inspection, and reliable session cleanup.
 ---
 
 # MCP Debugger Usage
@@ -54,18 +54,19 @@ next breakpoint or request completion. End sessions explicitly.
   A timeout leaves the breakpoint armed. Check sessions for a late halt; end with
   `clear_breakpoints: true` when finished. Do not leave an unbounded capture waiting.
 - Configuration still unexplained after `config_inspect`: consult
-  [MCP configuration](skill://mcp/b2c-config/SKILL.md).
+  [MCP configuration](skill://mcp/b2c-mcp-config/SKILL.md).
 - Missing BM permission/access key: `docs_read({query: "mcp-security"})` for debugger
   requirements; `guide-authentication` for WebDAV key setup. For other setup issues,
   `docs_search` with the specific error. If docs tools are unavailable, use
-  [debugger access](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security#debugger)
-  and [WebDAV key setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication#webdav-access).
+  [debugger access](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/security.md#debugger)
+  and [WebDAV key setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md#webdav-access).
   General WebDAV OAuth instructions do not apply to the debugger.
 - Before repeating a failed request, check whether it already changed state.
 
 ## CLI or IDE, when requested
 
 For terminal debugging use `b2c debug cli`; for a DAP client use `b2c debug`.
-For those workflows, read [b2c-cli/b2c-debug](skill://b2c-cli/b2c-debug/SKILL.md)
-when the broader skill collections are enabled, or the
-[CLI debugger reference](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/debug).
+For those workflows, read [b2c-cli/b2c-debug](skill://b2c-cli/b2c-debug/SKILL.md) or the
+CLI debugger reference (`docs_read({query: "cli-debug"})`, [online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/debug.md)).
+
+Other MCP workflows and runbooks: [skill index](skill://mcp/b2c-mcp-server/SKILL.md#skill-index).

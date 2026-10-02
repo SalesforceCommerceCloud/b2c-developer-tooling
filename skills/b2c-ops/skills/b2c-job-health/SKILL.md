@@ -27,7 +27,7 @@ an incident. Do not invent impact from a red status alone.
 | Expected product/data change | Discover the relevant Admin operation and select affected fields | Relevant CLI/data workflow if supported                      |
 | Code-version clues           | `builtin/code-version-inspect` in code mode                  | `b2c code list`; modification time is not activation history |
 
-Read `skill://mcp/scapi/SKILL.md` before code mode. Use its search/discovery
+Read `skill://mcp/b2c-mcp-scapi/SKILL.md` before code mode. Use its search/discovery
 contract; project/instance context belongs on tool calls. Authentication is
 managed. Do not export tokens or use ambient fetch inside code mode.
 
@@ -72,4 +72,4 @@ No source access is required; case submission needs authorization.
 
 CLI-specific detail when needed: native `b2c-job`, MCP
 `skill://b2c-cli/b2c-job/SKILL.md`, or the
-[Jobs reference](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs).
+[Jobs reference](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs.md) (`b2c docs read cli-jobs`).

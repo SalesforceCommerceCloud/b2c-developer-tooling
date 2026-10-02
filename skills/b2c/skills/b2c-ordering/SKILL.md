@@ -106,7 +106,7 @@ server-side phase that creates, authorizes, and performs the Commerce-side place
 or when the processor cannot participate in order-PI authorization. That hook runs inside order
 creation's transaction: do not add a nested `Transaction.wrap`, and understand that `Status.ERROR`
 rolls back the Commerce order but not an external gateway side effect. See
-[b2c-hooks](../b2c-hooks/SKILL.md#alternative-authorize-and-place-in-orderafterpost).
+"Alternative: Authorize and Place in `order.afterPOST`" in the `b2c-hooks` skill.
 
 ## OrderMgr API Reference
 
@@ -388,4 +388,4 @@ exports.createOrderNo = function() {
 
 ## Related Skills
 
-- [b2c-hooks](../b2c-hooks/SKILL.md) - Order hooks (calculate, payment, createOrderNo)
+- `b2c-hooks` skill - Order hooks (calculate, payment, createOrderNo)

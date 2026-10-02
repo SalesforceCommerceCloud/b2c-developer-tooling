@@ -34,11 +34,43 @@ through the index or tool search without template argument completion.
 Passing the index URI to `skills_read` returns its normal paginated catalog
 listing, equivalent to an empty-argument call.
 
+## Skills extension (SEP-2640)
+
+The server declares the `io.modelcontextprotocol/skills` extension
+(`capabilities.extensions`) and implements:
+
+- `skills/list` returns the featured MCP skills, with no pagination. Each entry has
+  the entrypoint `uri`, the verbatim YAML `frontmatter` as JSON, and every bundled
+  file of the skill as a `{uri, digest, size}` resource. A `cursor` is rejected.
+  Modern-era requests (protocol 2026-07-28 and later) also receive
+  `ttlMs: 300000` and `cacheScope: "private"`.
+- `skills/get` returns any skill served by the current catalog, listed or not.
+  URIs that are not an available `SKILL.md` return `-32602`.
+
+Digests (`sha256:<hex>`) and sizes are computed at generation time over the exact
+bundled bytes, which `resources/read` returns unchanged. The catalog rejects a
+packaged file whose size no longer matches. Resource `name` is the frontmatter
+`name`; the description is the full frontmatter description.
+
+`generate:guidance` enforces the extension's skill rules, plus link rules for
+portable skills:
+
+- Frontmatter parses as a YAML mapping that round-trips through JSON. `name`
+  follows the Agent Skills naming rules, equals the skill directory, and is unique
+  across all collections. MCP-specific skills use the `b2c-mcp-` prefix.
+- Relative links resolve to a file in the same skill. Other skills are referenced
+  by name or `skill://` URI.
+- Every `skill://` token is `skill://index` or a bundled file.
+- Links to the tooling docs site end in `.md` (or are `llms.txt`). Add the docs
+  ID next to them so agents can read the page offline with `docs_read`.
+
 Entrypoints use `skill://<collection>/<entry>/SKILL.md` (for example,
-`skill://mcp/debugger/SKILL.md`); references use their relative path in place of
+`skill://mcp/b2c-mcp-debugger/SKILL.md`); references use their relative path in place of
 `SKILL.md`. URIs preserve collection, skill, and file identity. Resource
 descriptions state the task covered. Server instructions point to server setup,
 B2C configuration, debugging, and the index; none requires a universal read.
+`b2c-mcp-server` opens with a skill index (task to skill URI) that the other MCP
+skills link back to.
 
 Use "skills" in tool descriptions, resource metadata, and public documentation.
 `skills_read` and the resource template access the full catalog. Internal catalog
@@ -60,7 +92,7 @@ resource entrypoints concise; link broader skills by exact ID.
 | Platform development, CLI skills | Discover through the index or tool search; read through the resource template or tool.                             |
 
 Resource featuring and required acknowledgment are independent. SCAPI code-mode
-tools require `skillRead: true` after a resource or tool read of `mcp/scapi`.
+tools require `skillRead: true` after a resource or tool read of `mcp/b2c-mcp-scapi`.
 Other tools remain ungated. A gate belongs to a specific tool and names
 one skill; resource and tool reads satisfy the same requirement. General skills
 linked for extra detail are not automatically prerequisites.
