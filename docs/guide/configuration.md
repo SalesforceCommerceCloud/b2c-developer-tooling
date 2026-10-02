@@ -375,7 +375,7 @@ CIP requires client credentials and analytics access for the tenant; it does not
 | `mrt-project`<br>`MRT_PROJECT`         | Project slug; storefront ID for SCAPI MRT operations.            |
 | `mrt-environment`<br>`MRT_ENVIRONMENT` | Target environment name.                                         |
 | `mrt-origin`<br>`MRT_CLOUD_ORIGIN`     | MRT API origin override. JSON also accepts `cloudOrigin`.        |
-| `mrt-backend`<br>`MRT_BACKEND`         | `auto` (default), `legacy`, or `scapi` for supported operations. |
+| `mrt-backend`<br>`MRT_BACKEND`         | `legacy` (default), `auto`, or `scapi` for supported operations. |
 
 The `SFCC_`-prefixed forms of these variables are also supported, with the unprefixed names taking priority. `MRT_TARGET` is another environment-name alias. MRT CLI commands also accept `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` for the project. See [MRT backends](/cli/mrt#mrt-backends) for supported operations.
 

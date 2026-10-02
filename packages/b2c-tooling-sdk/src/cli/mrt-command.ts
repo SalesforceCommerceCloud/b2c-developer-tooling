@@ -55,7 +55,7 @@ const MRT_STATUS_URL = 'https://status.salesforce.com/instances/MANAGEDRUNTIMEAD
  * 4. Default: https://cloud.mobify.com
  *
  * Backend selection:
- * - `--mrt-backend` flag > `MRT_BACKEND` env (`SFCC_MRT_BACKEND` also supported) > `mrtBackend` dw.json > `auto`.
+ * - `--mrt-backend` flag > `MRT_BACKEND` env (`SFCC_MRT_BACKEND` also supported) > `mrtBackend` dw.json > `legacy`.
  */
 export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<T> {
   static baseFlags = {
@@ -95,7 +95,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       env: 'MRT_CREDENTIALS_FILE',
     }),
     'mrt-backend': Flags.option({
-      description: 'MRT backend: auto (prefer SCAPI MRT when configured, else legacy), legacy, or scapi',
+      description: 'MRT backend: legacy (default), auto (prefer SCAPI MRT when configured, else legacy), or scapi',
       options: ['auto', 'legacy', 'scapi'] as const,
       env: 'MRT_BACKEND',
       // MRT_BACKEND is the primary env var (validated by oclif against `options`).
@@ -157,9 +157,9 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     return loadConfig(flagConfig, options);
   }
 
-  /** Resolved `--mrt-backend` preference (default `'auto'`). */
+  /** Resolved `--mrt-backend` preference (default `'legacy'`). */
   protected get mrtBackendPreference(): 'auto' | 'legacy' | 'scapi' {
-    return this.resolvedConfig.values.mrtBackend ?? 'auto';
+    return this.resolvedConfig.values.mrtBackend ?? 'legacy';
   }
 
   /**

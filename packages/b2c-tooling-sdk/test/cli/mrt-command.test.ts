@@ -282,8 +282,14 @@ describe('cli/mrt-command', () => {
   });
 
   describe('mrtBackendPreference', () => {
-    it("defaults to 'auto' when unset", async () => {
+    it("defaults to 'legacy' when unset", async () => {
       stubParse(command, {'credentials-file': '/dev/null'});
+      await command.init();
+      expect(command.testMrtBackendPreference()).to.equal('legacy');
+    });
+
+    it('reflects an explicit --mrt-backend auto', async () => {
+      stubParse(command, {'mrt-backend': 'auto', 'credentials-file': '/dev/null'});
       await command.init();
       expect(command.testMrtBackendPreference()).to.equal('auto');
     });
@@ -447,7 +453,7 @@ describe('cli/mrt-command', () => {
       // SCAPI-eligible (short code + tenant + client-credentials) so auto → SCAPI,
       // but auto can still fall back to the legacy backend on a safe error, and the
       // legacy branch *honors* these flags — so warning up front would be misleading.
-      stubParse(command, {...SCAPI_FLAGS, 'client-id': 'client', 'client-secret': 'secret'});
+      stubParse(command, {...SCAPI_FLAGS, 'client-id': 'client', 'client-secret': 'secret', 'mrt-backend': 'auto'});
       await command.init();
       setRawArgv(command, ['-u', 'https://custom.example.com', '-c', '/tmp/.mobify']);
       const warnStub = sinon.stub(command, 'warn');
@@ -472,7 +478,7 @@ describe('cli/mrt-command', () => {
     });
 
     it('does not warn when no legacy flags were supplied', async () => {
-      stubParse(command, {...SCAPI_FLAGS, 'client-id': 'client', 'client-secret': 'secret'});
+      stubParse(command, {...SCAPI_FLAGS, 'client-id': 'client', 'client-secret': 'secret', 'mrt-backend': 'auto'});
       await command.init();
       setRawArgv(command, []);
       const warnStub = sinon.stub(command, 'warn');

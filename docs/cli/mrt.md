@@ -34,7 +34,7 @@ These flags are available on all MRT commands:
 | `--api-key`           | `MRT_API_KEY`        | MRT API key (legacy MRT Cloud API)                                                                                                                                                                                                                            |
 | `--project`, `-p`     | `MRT_PROJECT`        | MRT project slug — the SCAPI storefront ID (the same value). Aliases: `--storefront`, `-s` (interchangeable on every `mrt` command). `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` also supported. On `mrt project create`, this flag sets the new project's slug. |
 | `--environment`, `-e` | `MRT_ENVIRONMENT`    | Target environment (e.g., staging, production). `MRT_TARGET` also supported.                                                                                                                                                                                  |
-| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `auto` (default), `legacy`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends).                                                                                                                                 |
+| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `legacy` (default), `auto`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends).                                                                                                                                 |
 
 The SCAPI backend also honors the standard OAuth flags (`--client-id`, `--client-secret`, `--short-code`, `--tenant-id`, and the JWT flags). See [MRT Backends](#mrt-backends).
 
@@ -80,11 +80,11 @@ MRT is served by two backends:
 
 Select the backend with `--mrt-backend` (or `MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
-| Value            | Behavior                                                                                                                                                                                                                          |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `auto` (default) | Prefer SCAPI when its prerequisites are detected, otherwise use legacy. If a SCAPI request fails on a safe pre-execution error, `auto` falls back to legacy automatically (never for a 409 conflict, 429, 5xx, or network error). |
-| `legacy`         | Always use the legacy MRT Cloud API.                                                                                                                                                                                              |
-| `scapi`          | Always use SCAPI. Errors if the SCAPI prerequisites are missing — never silently falls back to legacy.                                                                                                                            |
+| Value              | Behavior                                                                                                                                                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `legacy` (default) | Always use the legacy MRT Cloud API.                                                                                                                                                                                              |
+| `auto`             | Prefer SCAPI when its prerequisites are detected, otherwise use legacy. If a SCAPI request fails on a safe pre-execution error, `auto` falls back to legacy automatically (never for a 409 conflict, 429, 5xx, or network error). |
+| `scapi`            | Always use SCAPI. Errors if the SCAPI prerequisites are missing — never silently falls back to legacy.                                                                                                                            |
 
 ### SCAPI-supported commands
 

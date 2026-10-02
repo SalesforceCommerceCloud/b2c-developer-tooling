@@ -19,8 +19,8 @@ Run `b2c setup inspect` to see the resolved configuration and which source provi
 
 Most MRT commands run against the legacy MRT Cloud API (API key). Several commands can also run over the SCAPI MRT backend: `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), the `mrt env var` family (`list` / `set` / `push` / `delete`), the `mrt env redirect` family (`list` / `create` / `get` / `update` / `delete` / `clone`), and the `mrt env access-control` family (`list` / `create` / `get` / `delete`). Choose with `--mrt-backend` (`MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
-- `auto` (default) — use SCAPI when it's configured (`--short-code` + `--tenant-id` + client-credentials or JWT Bearer auth), otherwise legacy. Falls back to legacy on safe pre-execution errors. Each command requests its own scopes: bundle commands use `sfcc.storefront.deployments[.rw]`; env var, redirect, and access-control commands use `sfcc.storefront.environments[.rw]` (reads accept either tier, writes require `.rw`).
-- `legacy` — always the MRT Cloud API.
+- `legacy` (default) — always the MRT Cloud API.
+- `auto` — use SCAPI when it's configured (`--short-code` + `--tenant-id` + client-credentials or JWT Bearer auth), otherwise legacy. Falls back to legacy on safe pre-execution errors. Each command requests its own scopes: bundle commands use `sfcc.storefront.deployments[.rw]`; env var, redirect, and access-control commands use `sfcc.storefront.environments[.rw]` (reads accept either tier, writes require `.rw`).
 - `scapi` — always SCAPI, with no fallback; errors if prerequisites are missing. Also errors on unsupported commands (every MRT command except the bundle, env var, redirect, and access-control commands above).
 
 Notes:
@@ -185,7 +185,7 @@ Configure MRT settings in your project's `dw.json`:
 export MRT_API_KEY=your-api-key
 export MRT_PROJECT=my-storefront
 export MRT_ENVIRONMENT=staging
-export MRT_BACKEND=auto        # auto (default) | legacy | scapi
+export MRT_BACKEND=legacy      # legacy (default) | auto | scapi
 ```
 
 ### ~/.mobify Config
