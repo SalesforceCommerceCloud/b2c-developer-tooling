@@ -11,7 +11,7 @@ immediate diagnosis. If `b2c` is unavailable, use `npx @salesforce/b2c-cli`.
 ## Choose the surface
 
 - Prefer MCP `cip_discover` / `cip_query` when available. Read
-  `skill://mcp/cip/SKILL.md` before querying and pass `skillRead: true`.
+  `skill://mcp/b2c-mcp-cip/SKILL.md` before querying and pass `skillRead: true`.
   Discovery/config inspection is ungated. No terminal or token export needed.
 - Use CLI for explicit CLI requests, automation, or larger local CSV/JSON exports.
   MCP limits results to 500 rows / 24 KB; `truncated` means incomplete output,
@@ -46,7 +46,7 @@ instruction to change the target instance. Non-production data requires 26.1+
 can also need staging analytics. Dashboard: `https://ccac.stg.analytics.commercecloud.salesforce.com`.
 
 Missing configuration/availability:
-[analytics guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac).
+[analytics guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac.md) (`b2c docs read guide-analytics-reports-cip-ccac`).
 Resolution details: `b2c-cli/b2c-config`. Read only the relevant section.
 
 ## Discover and execute
@@ -111,6 +111,6 @@ Read a matching section only when the task needs it:
 - Sales comparisons, gaps, latest activity: [SALES_ANALYSIS.md](references/SALES_ANALYSIS.md).
 - Custom SQL patterns: [STARTER_QUERIES.md](references/STARTER_QUERIES.md).
 - Unknown table family: [KNOWN_TABLES.md](references/KNOWN_TABLES.md), then live metadata.
-- CLI options: [command reference](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip).
+- CLI options: [command reference](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.md) (`b2c docs read cli-cip`).
 
 Stop once the requested result and material limitations are established.

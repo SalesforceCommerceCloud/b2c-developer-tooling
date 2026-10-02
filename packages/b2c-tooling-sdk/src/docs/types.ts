@@ -30,6 +30,8 @@ export const HELP_KB_DATA_DIR = path.join(packageRoot, 'data/help-kb');
  * - `job-step` — standard (system) job step reference
  * - `commerce-api` / `pwa-kit-managed-runtime` / `sfnext` / `sfra` / `b2c-commerce`
  *   — Developer Center prose guides, one category per Developer Center project
+ * - `commerce-solutions` — Developer Center B2C Commerce Solutions guides: bot management,
+ *   caching strategies, flash-sale traffic management, and industry solution playbooks
  * - `ocapi` — Developer Center OCAPI prose reference: usage, hooks, settings, and
  *   best practices for the Open Commerce API
  * - `tooling` — this project's own conceptual guides (CLI/MCP/SDK usage)
@@ -48,6 +50,7 @@ export type DocCategory =
   | 'sfnext'
   | 'sfra'
   | 'b2c-commerce'
+  | 'commerce-solutions'
   | 'ocapi'
   | 'tooling'
   | 'help-admin'

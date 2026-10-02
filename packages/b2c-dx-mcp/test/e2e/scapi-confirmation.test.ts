@@ -69,7 +69,7 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
       client.setRequestHandler('elicitation/create', async (request) => {
         const body = /Body:\n([\s\S]*?)\nSafety Mode/.exec(request.params.message)!;
         nonces.push(JSON.parse(body[1]).id);
-        return {action: 'accept', content: {approve: true}};
+        return {action: 'accept', content: {}};
       });
       await client.connect(transport);
       // Network access deliberately fails after approval; no live API is contacted.
@@ -118,7 +118,7 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
           arguments: {action: 'cancel', executionId, skillRead: true},
         });
         expect(json(cancelled).status).to.equal('cancelled');
-        return {action: 'accept', content: {approve: true}};
+        return {action: 'accept', content: {}};
       });
       await client.connect(transport);
       const result = await client.callTool({

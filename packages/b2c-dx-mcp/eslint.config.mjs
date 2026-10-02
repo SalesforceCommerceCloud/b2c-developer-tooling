@@ -16,6 +16,8 @@ headerPlugin.rules.header.meta.schema = false;
 
 export default [
   includeIgnoreFile(gitignorePath),
+  // Eval fixtures are sample B2C project files, not package source
+  {ignores: ['evals/fixtures/**']},
   ...oclif,
   prettierPlugin,
   {

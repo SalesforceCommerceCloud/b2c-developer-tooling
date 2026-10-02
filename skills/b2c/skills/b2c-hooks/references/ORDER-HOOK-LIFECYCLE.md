@@ -165,5 +165,5 @@ alignment, or explicit recovery control matters more than atomic one-request orc
 ## Cross-References
 
 - [B2C Hooks](../SKILL.md#headless-order-payment-use-the-order-pi-authorization-seam) — primary implementation guidance
-- [b2c-ordering](../../b2c-ordering/SKILL.md) — order statuses and Shopper Orders failure handling
+- `b2c-ordering` skill — order statuses and Shopper Orders failure handling
 - [OCAPI/SCAPI Hooks reference](./OCAPI-SCAPI-HOOKS.md) — hook signature list

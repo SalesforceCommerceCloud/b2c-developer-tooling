@@ -19,13 +19,13 @@ Custom API just to gain inspection access.
 Use configured hostname, site ID, and client ID from `config_inspect` or
 `b2c setup inspect`. Obtain an AM token through the CLI's `b2c auth token --json`
 for an external request, keeping it in memory and out of output/files. If using
-the MCP token helper, read `skill://mcp/scapi/references/tokens.md`; token export
+the MCP token helper, read `skill://mcp/b2c-mcp-scapi/references/tokens.md`; token export
 is only for the external client, never required for managed SCAPI calls.
 MCP Safety Mode does not protect an independently executed HTTP request.
 
 The OAuth client needs the site's OCAPI Shop resource grant for `POST /order_search`
 and a usable order search index. Use the
-[authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication)
+[authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md) (`b2c docs read guide-authentication`)
 and `docs_search` for current OCAPI Settings/order indexing instructions. Have
 the user authorize any grant or index maintenance; do not perform it to satisfy
 a read request.

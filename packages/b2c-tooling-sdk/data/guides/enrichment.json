@@ -6323,6 +6323,22 @@
       "requests per period"
     ]
   },
+  "commerce-api/cdn-rule-expression-fields": {
+    "summary": "Reference guide for operators, functions, and fields used in eCDN custom rule and rate limiting rule expressions with 4096 character limits.",
+    "keywords": [
+      "eCDN rule expressions",
+      "custom firewall rules",
+      "rate limiting rules",
+      "comparison operators",
+      "logical operators",
+      "expression fields",
+      "eCDN expressions",
+      "rule syntax",
+      "firewall rule expressions",
+      "CDN rule operators",
+      "expression functions"
+    ]
+  },
   "commerce-api/cdn-supported-csp-directives": {
     "summary": "Reference of supported Content Security Policy (CSP) directives for B2C Commerce, including allowed values and alerting status.",
     "keywords": [
@@ -7924,6 +7940,247 @@
       "order creation",
       "payment processing",
       "commerce API"
+    ]
+  },
+  "commerce-solutions/automotive-sk": {
+    "summary": "Build a digital-first automotive commerce platform connecting OEM, dealers, and customers for vehicle and aftermarket parts sales.",
+    "keywords": [
+      "automotive commerce",
+      "car buying digital",
+      "dealer platform",
+      "aftermarket parts ecommerce",
+      "OEM integration",
+      "digital retail automotive",
+      "vehicle sales online",
+      "automotive B2C",
+      "dealership ecommerce",
+      "digital purchasing experience"
+    ]
+  },
+  "commerce-solutions/bot-management": {
+    "summary": "Understand Salesforce B2C Commerce bot management approach, shared responsibilities, and configuration options for protecting storefronts.",
+    "keywords": [
+      "bot management",
+      "bot protection",
+      "storefront security",
+      "eCDN",
+      "bot detection",
+      "CDN configuration",
+      "platform availability",
+      "bot filtering",
+      "third-party bot solution",
+      "shared responsibility"
+    ]
+  },
+  "commerce-solutions/bot-mitigation-sk": {
+    "summary": "Protect flash sales from bot attacks by understanding malicious bot behavior and implementing mitigation strategies to ensure legitimate customer purchases.",
+    "keywords": [
+      "bot mitigation",
+      "flash sales",
+      "bot attacks",
+      "DDoS prevention",
+      "inventory protection",
+      "high-volume sales",
+      "security",
+      "storefront protection",
+      "malicious bots",
+      "site performance",
+      "anti-bot",
+      "hype sales"
+    ]
+  },
+  "commerce-solutions/caching-strategies-sk": {
+    "summary": "Implement efficient multi-layer caching strategies across browser, CDN, web server, application server, and database to optimize B2C Commerce website speed and resilience.",
+    "keywords": [
+      "caching strategies",
+      "B2C Commerce performance",
+      "CDN caching",
+      "cache layers",
+      "website speed optimization",
+      "content delivery",
+      "caching best practices",
+      "application server cache",
+      "browser cache",
+      "bot mitigation",
+      "scalability",
+      "throughput"
+    ]
+  },
+  "commerce-solutions/comm-and-media-sk": {
+    "summary": "B2C Commerce solution accelerates digital transformation for communications and media companies through omnichannel integration, customer lifetime value optimization, and pre-built accelerators.",
+    "keywords": [
+      "communications media commerce",
+      "CSP telco digital transformation",
+      "omnichannel integration",
+      "direct-to-consumer channels",
+      "customer lifetime value",
+      "cross-sell upsell",
+      "personalization recommendations",
+      "curbside pickup",
+      "commerce accelerators",
+      "service experience"
+    ]
+  },
+  "commerce-solutions/consumer-goods-sk": {
+    "summary": "Build a direct-to-consumer ecommerce presence for consumer goods brands with personalized shopping experiences, customer insights, and B2C/B2B commerce capabilities.",
+    "keywords": [
+      "consumer goods ecommerce",
+      "D2C direct to consumer",
+      "B2C Commerce solution",
+      "CPG packaged goods",
+      "brand experience",
+      "personalization merchandising",
+      "customer behavior insights",
+      "subscriptions payments",
+      "B2B Commerce retailers",
+      "omnichannel fulfillment"
+    ]
+  },
+  "commerce-solutions/grocery-sk": {
+    "summary": "Build an online grocery store with B2C Commerce supporting digital-first shopping and store pickup fulfillment.",
+    "keywords": [
+      "grocery e-commerce",
+      "online grocery",
+      "store pickup",
+      "grocery retail",
+      "food shopping",
+      "B2C grocery",
+      "digital grocery",
+      "grocery solution",
+      "online food sales",
+      "retail grocery platform",
+      "grocery fulfillment"
+    ]
+  },
+  "commerce-solutions/healthcare-life-sciences-sk": {
+    "summary": "B2C Commerce solution designed for healthcare and life sciences organizations to enable digital platforms for omnichannel sales, compliance, and patient engagement.",
+    "keywords": [
+      "healthcare ecommerce",
+      "life sciences commerce",
+      "B2B2C healthcare",
+      "medical device sales",
+      "pharmaceutical digital",
+      "omnichannel healthcare",
+      "healthcare compliance",
+      "patient-direct selling",
+      "payer portal",
+      "medical supplier platform",
+      "healthcare B2C",
+      "HLS commerce"
+    ]
+  },
+  "commerce-solutions/industry-solutions-overview": {
+    "summary": "Access industry-specific guides and toolkits for building commerce solutions on Salesforce Commerce Platform with best practices and code samples.",
+    "keywords": [
+      "industry solutions",
+      "commerce platform",
+      "digital transformation",
+      "industry guides",
+      "developer toolkits",
+      "commerce strategy",
+      "best practices",
+      "industry use cases",
+      "sample apps",
+      "blueprints",
+      "integration",
+      "Salesforce Commerce"
+    ]
+  },
+  "commerce-solutions/insurance-sk": {
+    "summary": "Build digital direct-to-consumer insurance storefronts using Salesforce B2C Commerce, Industries, and Marketing solutions.",
+    "keywords": [
+      "insurance commerce",
+      "D2C insurance",
+      "insurance digital transformation",
+      "insurance storefronts",
+      "InsurTech",
+      "property and casualty",
+      "insurance solutions",
+      "direct-to-consumer insurance",
+      "insurance toolkit",
+      "Salesforce Industries"
+    ]
+  },
+  "commerce-solutions/launching-flash-sale-sk": {
+    "summary": "Plan and execute a flash sale in 10 steps, from setting goals to preparing operations for traffic spikes.",
+    "keywords": [
+      "flash sale",
+      "quick sale",
+      "temporary promotion",
+      "discount campaign",
+      "high-volume sale",
+      "hype sale",
+      "inventory clearance",
+      "sales planning",
+      "ecommerce revenue",
+      "traffic preparation",
+      "launch strategy",
+      "seasonal sale"
+    ]
+  },
+  "commerce-solutions/manufacturing-sk": {
+    "summary": "Enable manufacturers to build B2B and B2C digital commerce channels for direct sales, reducing costs and improving customer satisfaction.",
+    "keywords": [
+      "manufacturing commerce",
+      "B2B B2C channels",
+      "direct-to-consumer",
+      "digital storefront",
+      "manufacturer ecommerce",
+      "B2B commerce solution",
+      "product ordering platform",
+      "distributor sales",
+      "digital buying channel",
+      "manufacturing digital transformation"
+    ]
+  },
+  "commerce-solutions/solutions-landing-overview": {
+    "summary": "Learn how to build commerce solutions on Salesforce B2C Commerce platform using APIs, industry guides, and developer toolkits.",
+    "keywords": [
+      "B2C Commerce Solutions",
+      "get started",
+      "commerce APIs",
+      "industry solutions",
+      "Salesforce Commerce Platform",
+      "developer guides",
+      "storefront applications",
+      "technical solutions",
+      "digital transformation",
+      "customer 360",
+      "commerce toolkits",
+      "platform features"
+    ]
+  },
+  "commerce-solutions/techinical-solutions-overview": {
+    "summary": "Learn to build scalable, high-performing B2C Commerce solutions using Salesforce Commerce API, Storefront Applications, and Page Designer.",
+    "keywords": [
+      "B2C Enterprise",
+      "B2C Commerce",
+      "technical guides",
+      "scalable solutions",
+      "Salesforce Commerce API",
+      "Storefront Applications",
+      "Page Designer",
+      "commerce development",
+      "enterprise architecture",
+      "developer tools",
+      "performance optimization"
+    ]
+  },
+  "commerce-solutions/traffic-management-sk": {
+    "summary": "Configure B2C Commerce storefronts to handle high-traffic flash sales through traffic management best practices and resource planning.",
+    "keywords": [
+      "flash sales",
+      "traffic management",
+      "high volume sales",
+      "hype sales",
+      "scalability",
+      "performance planning",
+      "load management",
+      "B2C Commerce support",
+      "sales event preparation",
+      "resource optimization",
+      "site capacity",
+      "ecommerce revenue"
     ]
   },
   "ocapi/apiexplorer": {
@@ -11034,6 +11291,23 @@
       "LocaleSwitcher"
     ]
   },
+  "sfnext/sfnext-link-storefront": {
+    "summary": "Link externally-created storefronts like PWA Kit and Storefront Next to B2C Commerce for Page Designer and Storefront Preview access.",
+    "keywords": [
+      "link storefront",
+      "existing storefront",
+      "PWA Kit",
+      "Storefront Next",
+      "Managed Runtime",
+      "MRT",
+      "Page Designer",
+      "Storefront Preview",
+      "connect storefront",
+      "associate storefront B2C",
+      "external storefront integration",
+      "storefront linking"
+    ]
+  },
   "sfnext/sfnext-load-more": {
     "summary": "Configure load-more pagination on product listing pages to keep shoppers browsing without page reloads or scroll loss.",
     "keywords": [
@@ -12466,6 +12740,23 @@
       "fallback UI",
       "Promise throwing",
       "concurrent rendering"
+    ]
+  },
+  "sfnext/sfnext-template-compare": {
+    "summary": "Choose a Storefront Next template in Business Manager or CLI that matches your store's needs, layout, theme, and product browsing requirements.",
+    "keywords": [
+      "storefront template",
+      "storefront next template",
+      "create storefront",
+      "sfnext template",
+      "template selection",
+      "business manager storefront",
+      "storefront layout",
+      "storefront theme",
+      "CLI template",
+      "storefront features",
+      "template preview",
+      "storefront setup"
     ]
   },
   "sfnext/sfnext-test-debug-section": {

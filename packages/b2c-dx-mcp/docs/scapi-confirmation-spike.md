@@ -16,7 +16,7 @@ only its `safety` object for each scenario. Confirm the selected target through
 `config_inspect`. Global safety files and launch/project environment values also
 apply: review these when the effective behavior differs from the examples.
 
-Read `skill://mcp/scapi/SKILL.md` and use `skillRead: true` on code-mode calls.
+Read `skill://mcp/b2c-mcp-scapi/SKILL.md` and use `skillRead: true` on code-mode calls.
 The shared policy reference is `docs_read({query: "guide-safety"})`, or
 [Safety Mode](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.md).
 
@@ -78,6 +78,7 @@ Repeat with these decisions:
 | Situation                                                                   | Expected result                                                                                             |
 | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Decline the first prompt                                                    | Execution ends with `SCAPI_APPROVAL_DECLINED`; no product request is sent.                                  |
+| Dismiss/cancel the first prompt                                             | Execution ends with `SCAPI_APPROVAL_CANCELLED`; no product request is sent.                                 |
 | Accept the first, decline the second                                        | First read completes; second is `not_sent`; the execution is cancelled.                                     |
 | Leave the prompt unanswered for over ten minutes or overnight, then approve | Execution resumes once, provided the server stayed connected and the client did not impose its own timeout. |
 | Spend over 30 seconds answering each prompt                                 | Execution still works: approval waits do not consume the active runtime budget.                             |

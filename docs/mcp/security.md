@@ -128,8 +128,8 @@ that API requires its own permissions.
 
 Code mode can export Account Manager or SLAS access tokens when you need them
 for a separate HTTP client. Normal SCAPI requests authenticate automatically;
-no token export is needed. Configuring SLAS does not enable Shopper execution
-through code mode.
+no token export is needed. Shopper API requests use a guest token that stays in
+the MCP server and is never shown to the assistant.
 Exported tokens are credentials and may appear in your assistant's conversation
 history. Requests made by an external client are outside MCP Safety Mode.
 

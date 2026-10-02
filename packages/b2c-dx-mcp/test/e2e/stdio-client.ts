@@ -55,6 +55,8 @@ export interface McpE2EClientOptions {
  * Use start() to perform MCP handshake (initialize + initialized), then request() for tools/list, tools/call, etc.
  */
 export class McpE2EClient {
+  /** Result of the initialize handshake (capabilities, serverInfo, instructions). */
+  initializeResult?: Record<string, unknown>;
   private nextId = 1;
   private readonly packageRoot: string;
   private pending = new Map<number | string, {resolve: (r: JsonRpcResponse) => void; reject: (e: Error) => void}>();
@@ -62,6 +64,7 @@ export class McpE2EClient {
   private readline: null | ReturnType<typeof createInterface> = null;
   private readonly serverArgs: string[];
   private readonly serverCwd: string;
+
   private readonly serverEnv: NodeJS.ProcessEnv;
 
   constructor(options: McpE2EClientOptions = {}) {
@@ -181,6 +184,7 @@ export class McpE2EClient {
     if (initResult.error) {
       throw new Error(`Initialize failed: ${initResult.error.message}`);
     }
+    this.initializeResult = initResult.result as Record<string, unknown>;
     this.sendNotification('notifications/initialized', {});
   }
 

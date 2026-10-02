@@ -77,7 +77,7 @@ describe('config_inspect tool', () => {
     const result = getResultJson<ConfigInspectOutput>(response);
     expect(result.warnings).to.deep.equal(['Unable to load selected source']);
     expect(result.skillReferences).to.deep.equal([
-      {uri: 'skill://mcp/b2c-config/SKILL.md', section: 'where-configuration-comes-from'},
+      {uri: 'skill://mcp/b2c-mcp-config/SKILL.md', section: 'where-configuration-comes-from'},
     ]);
     expect(result.config.clientSecret).to.equal('supe...REDACTED');
     expect(response.structuredContent).to.deep.equal(result);

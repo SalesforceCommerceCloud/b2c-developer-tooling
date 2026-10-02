@@ -10,8 +10,9 @@ and manage your sites through requests in your assistant.
 
 Your assistant can find and read guidance from our B2C Commerce, B2C CLI,
 operations runbooks, and Storefront Next [skill collections](../guide/agent-skills) through the
-[`skills_read` tool](./toolsets#documentation). **No separate skills installation
-is needed.** Documentation and skills work without B2C Commerce credentials;
+[`skills_read` tool](./toolsets#documentation), MCP resources, or the
+[MCP Skills extension](./toolsets#documentation) in assistants that support it.
+**No separate skills installation is needed.** Documentation and skills work without B2C Commerce credentials;
 connected tasks use your existing [B2C configuration](../guide/configuration).
 
 ## Set up your assistant {#setup}
@@ -89,7 +90,7 @@ without a separate CLI installation.
 
 [![ChatGPT reviewing MarketStreet promotions, summarizing four campaigns, and highlighting disabled promotions and potential schedule conflicts.](/screenshots/mcp-promotions-review.png)](/screenshots/mcp-promotions-review.png)
 
-Standard and custom Admin APIs support live requests. Shopper APIs are available for reference.
+Standard and custom Admin APIs support live requests, and Shopper APIs run as a guest shopper with your SLAS client.
 
 [CIP analytics](./toolsets#cip) helps explain sales changes, uncover search and
 promotion opportunities, and investigate API performance. Ask for a ready-to-use

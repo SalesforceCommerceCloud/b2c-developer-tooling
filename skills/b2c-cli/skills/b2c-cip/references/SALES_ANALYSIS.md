@@ -47,4 +47,4 @@ For unresolved field meaning, consult the specific official table article:
 [sales summary](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/jdbc_ccdw_aggr_sales_summary.html)
 or [site dimension](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/jdbc_ccdw_dim_site.html).
 For access/availability, use the
-[analytics guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac).
+[analytics guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac.md) (`b2c docs read guide-analytics-reports-cip-ccac`).

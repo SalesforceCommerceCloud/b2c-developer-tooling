@@ -220,7 +220,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     'docs-topics': Flags.string({
       description:
         'Limit the documentation exposed by the docs tools to these categories (comma-separated allowlist). ' +
-        'Options: script-api, job-step, commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce, ocapi, tooling, ' +
+        'Options: script-api, job-step, commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce, commerce-solutions, ocapi, tooling, ' +
         'help-admin, help-merchant, help-kb. ' +
         'Bounds the whole docs corpus; per-call category/storefront narrow within it. Unknown names are ignored.',
       env: 'SFCC_DOCS_TOPICS',
@@ -437,11 +437,11 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
             },
             instructions:
               'Discover tool schemas before calling. Prefer dedicated tools; otherwise scapi_search/scapi_execute for Commerce APIs. ' +
-              'Read skill:// URIs as MCP resources, or skill files with skills_read({uri: "<URI>"}) when enabled; not native skill commands. ' +
-              'SCAPI: first read skill://mcp/scapi/SKILL.md. ' +
-              'Analytics: cip_discover/cip_query; skill://mcp/cip/SKILL.md. ' +
-              'Skills: config skill://mcp/b2c-config/SKILL.md; debugging skill://mcp/debugger/SKILL.md; ' +
-              'setup/toolsets skill://mcp/server/SKILL.md; catalog skill://index (look for b2c-ops runbooks for operations and incidents).',
+              'Skills: load them through your client when it lists them; otherwise read skill:// URIs as MCP resources or with skills_read({uri: "<URI>"}). ' +
+              'SCAPI: first read skill://mcp/b2c-mcp-scapi/SKILL.md. ' +
+              'Analytics: cip_discover/cip_query; skill://mcp/b2c-mcp-cip/SKILL.md. ' +
+              'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; ' +
+              'skill index, setup and tool choice skill://mcp/b2c-mcp-server/SKILL.md; full catalog skill://index (b2c-ops runbooks for operations and incidents).',
           },
         );
 

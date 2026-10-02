@@ -210,9 +210,45 @@ b2c mrt env redirect clone -p my-storefront \
 
 ## Access Control Headers
 
+The `mrt env access-control` commands (`list` / `create` / `get` / `delete`) are backend-aware: they honor `--mrt-backend` (`auto` / `legacy` / `scapi`) and, over SCAPI, use the Storefront Environments API (scopes `sfcc.storefront.environments` for reads, `sfcc.storefront.environments.rw` for writes). See the [MRT Backends](../SKILL.md#mrt-backends-legacy-vs-scapi) section for backend selection. Header values are always masked by both backends. Under `--json`, each command returns the serving backend's native shape.
+
 ### List Access Control Headers
 
 ```bash
 b2c mrt env access-control list -p my-storefront -e staging
 b2c mrt env access-control list -p my-storefront -e production --json
+
+# Force the SCAPI backend
+b2c mrt env access-control list -p my-storefront -e staging --mrt-backend scapi
+```
+
+### Create an Access Control Header
+
+The header value is passed as a positional argument.
+
+```bash
+b2c mrt env access-control create my-secret-header-value -p my-storefront -e production
+
+# Force the SCAPI backend
+b2c mrt env access-control create my-secret-header-value -p my-storefront -e production --mrt-backend scapi
+```
+
+### Get an Access Control Header
+
+Fetch a single header by its ID (UUID).
+
+```bash
+b2c mrt env access-control get ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production
+b2c mrt env access-control get ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --json
+```
+
+### Delete an Access Control Header
+
+Delete a header by its ID (UUID).
+
+```bash
+b2c mrt env access-control delete ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production
+
+# Force the SCAPI backend
+b2c mrt env access-control delete ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --mrt-backend scapi
 ```

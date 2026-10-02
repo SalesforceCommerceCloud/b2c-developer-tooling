@@ -19,6 +19,8 @@ import {MCP_SKILL_REFERENCES} from '../../skill-references.js';
 import {resolveCipClient} from './client.js';
 
 const MAX_OUTPUT_BYTES = 24_000;
+const CIP_SKILL_REQUIRED =
+  'CIP_SKILL_REQUIRED: Read skill://mcp/b2c-mcp-cip/SKILL.md through resources or skills_read, then retry with skillRead: true.';
 const params = z
   .record(z.string(), z.string())
   .optional()
@@ -89,7 +91,11 @@ export function createCipTools(
   };
   const execution = {
     ...connection,
-    skillRead: z.boolean().optional().describe('True after reading the linked CIP skill.'),
+    skillRead: z
+      .literal(true, {error: CIP_SKILL_REQUIRED})
+      .describe(
+        'Required. Set true only after reading skill://mcp/b2c-mcp-cip/SKILL.md (MCP resource, or skills_read({uri})).',
+      ),
     report: z.string().min(1).max(100).optional().describe('Curated report name; supply report or sql.'),
     params,
     sql: z
@@ -190,7 +196,7 @@ export function createCipTools(
       openWorld: true,
       toolsets: ['CIP'],
       description:
-        'Query CIP analytics using a curated report or SQL. Read skill://mcp/cip/SKILL.md first. Returns bounded rows; filter/group in SQL. Warehouse data is not live SCAPI state.',
+        'Query CIP analytics using a curated report or SQL. Read skill://mcp/b2c-mcp-cip/SKILL.md first. Returns bounded rows; filter/group in SQL. Warehouse data is not live SCAPI state.',
       inputSchema: execution,
       async handler(args, context) {
         let resolution: ToolResolution | undefined;
@@ -198,10 +204,7 @@ export function createCipTools(
         try {
           const input = z.object(execution).strict().parse(args) as ProjectContextInput &
             z.infer<z.ZodObject<typeof execution>>;
-          if (input.skillRead !== true)
-            throw new Error(
-              'CIP_SKILL_REQUIRED: Read skill://mcp/cip/SKILL.md through resources or skills_read, then retry with skillRead: true.',
-            );
+          if (input.skillRead !== true) throw new Error(CIP_SKILL_REQUIRED);
           if (Number(Boolean(input.report)) + Number(Boolean(input.sql)) !== 1)
             throw new Error('Supply exactly one of report or sql.');
           if (input.sql && input.params)

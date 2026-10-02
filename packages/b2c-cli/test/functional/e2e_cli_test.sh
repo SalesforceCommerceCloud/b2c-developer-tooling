@@ -173,9 +173,93 @@ echo "SUCCESS: Code deployed"
 echo ""
 
 ################################################################################
-# 4. Import Site Data
+# 4. WebDAV Operations
 ################################################################################
-echo "Step 4: Importing site data..."
+echo "Step 4: Testing WebDAV operations..."
+
+# Only the roots granted by the sandbox's default client permissions are
+# reachable (DEFAULT_WEBDAV_PERMISSIONS: /impex, /cartridges, /static).
+WEBDAV_TMP=$(mktemp -d)
+WEBDAV_FILE="$WEBDAV_TMP/webdav-e2e.txt"
+echo "webdav e2e $(date +%s)" > "$WEBDAV_FILE"
+
+# Asserts that NAME is (or, with "absent", is not) an entry of DIR on ROOT.
+webdav_expect_entry() {
+    local root="$1" dir="$2" name="$3" mode="${4:-present}" found
+    found=$($CLI webdav ls "$dir" --root "$root" --server "$SERVER" --json \
+        | jq -r --arg name "$name" '[.entries[] | select(.displayName == $name)] | length')
+    if [ "$mode" == "absent" ] && [ "$found" != "0" ]; then
+        echo "FAILED: $root/$dir/$name should not exist"
+        exit 1
+    elif [ "$mode" == "present" ] && { [ -z "$found" ] || [ "$found" == "0" ]; }; then
+        echo "FAILED: $root/$dir/$name not found"
+        exit 1
+    fi
+}
+
+# Asserts that the remote file matches the local test file.
+webdav_expect_content() {
+    local root="$1" path="$2"
+    rm -f "$WEBDAV_TMP/downloaded"
+    $CLI webdav get "$path" --root "$root" --server "$SERVER" -o "$WEBDAV_TMP/downloaded"
+    if ! cmp -s "$WEBDAV_FILE" "$WEBDAV_TMP/downloaded"; then
+        echo "FAILED: Downloaded $root/$path does not match uploaded content"
+        exit 1
+    fi
+}
+
+webdav_roundtrip() {
+    local root="$1" base="$2"
+    local w=(--root "$root" --server "$SERVER")
+    echo "  Root: $root (base: $base)"
+
+    # mkdir -p semantics; repeating on an existing path must succeed
+    $CLI webdav mkdir "$base/a/b" "${w[@]}"
+    $CLI webdav mkdir "$base/a/b" "${w[@]}"
+
+    # put into an existing directory (keeps filename), then overwrite it
+    $CLI webdav put "$WEBDAV_FILE" "$base/a/b/" "${w[@]}"
+    $CLI webdav put "$WEBDAV_FILE" "$base/a/b/" "${w[@]}"
+    webdav_expect_entry "$root" "$base/a/b" "webdav-e2e.txt"
+    webdav_expect_content "$root" "$base/a/b/webdav-e2e.txt"
+
+    # put with missing parent directories and an explicit filename
+    $CLI webdav put "$WEBDAV_FILE" "$base/x/y/renamed.txt" "${w[@]}"
+    webdav_expect_content "$root" "$base/x/y/renamed.txt"
+
+    # leading slash is relative to the root
+    $CLI webdav put "$WEBDAV_FILE" "/$base/lead/" "${w[@]}"
+    webdav_expect_content "$root" "$base/lead/webdav-e2e.txt"
+
+    # zip, remove the source, and restore it with unzip
+    $CLI webdav zip "$base/a" "${w[@]}"
+    webdav_expect_entry "$root" "$base" "a.zip"
+    $CLI webdav rm "$base/a" --force "${w[@]}"
+    webdav_expect_entry "$root" "$base" "a" absent
+    $CLI webdav unzip "$base/a.zip" "${w[@]}"
+    webdav_expect_content "$root" "$base/a/b/webdav-e2e.txt"
+
+    # cleanup
+    local parent
+    parent=$(dirname "$base")
+    [ "$parent" == "." ] && parent="/"
+    $CLI webdav rm "$base" --force "${w[@]}"
+    webdav_expect_entry "$root" "$parent" "$(basename "$base")" absent
+}
+
+WEBDAV_BASE="webdav-e2e-$(date +%s)"
+webdav_roundtrip impex "src/$WEBDAV_BASE"
+webdav_roundtrip cartridges "e2e-test-version/$WEBDAV_BASE"
+webdav_roundtrip static "$WEBDAV_BASE"
+rm -rf "$WEBDAV_TMP"
+
+echo "SUCCESS: WebDAV operations verified"
+echo ""
+
+################################################################################
+# 5. Import Site Data
+################################################################################
+echo "Step 5: Importing site data..."
 
 $CLI job import "$SITE_ARCHIVE_PATH" \
     --server "$SERVER" \
@@ -185,10 +269,10 @@ echo "SUCCESS: Site data imported"
 echo ""
 
 ################################################################################
-# 5. Run Search Index Job
+# 6. Run Search Index Job
 ################################################################################
 sleep 4
-echo "Step 5: Running search index job..."
+echo "Step 6: Running search index job..."
 
 $CLI job run sfcc-search-index-product-full-update \
     --server "$SERVER" \
@@ -200,9 +284,9 @@ echo "SUCCESS: Search index job completed"
 echo ""
 
 ################################################################################
-# 6. Create SLAS Client
+# 7. Create SLAS Client
 ################################################################################
-echo "Step 6: Creating SLAS client..."
+echo "Step 7: Creating SLAS client..."
 
 # Let the CLI auto-generate a UUID4 client ID
 SLAS_CREATE_RESULT=$($CLI slas client create \
@@ -231,9 +315,9 @@ echo "  Tenant ID: $TENANT_ID"
 echo ""
 
 ################################################################################
-# 7. Test SLAS Guest Login
+# 8. Test SLAS Guest Login
 ################################################################################
-echo "Step 7: Testing SLAS guest login..."
+echo "Step 8: Testing SLAS guest login..."
 
 # Wait a moment for SLAS client to be ready and search index to be available
 sleep 10
@@ -268,9 +352,9 @@ echo "SUCCESS: Obtained shopper access token"
 echo ""
 
 ################################################################################
-# 8. Test Shopper Search
+# 9. Test Shopper Search
 ################################################################################
-echo "Step 8: Testing shopper product search..."
+echo "Step 9: Testing shopper product search..."
 
 # Extra curl headers apply only to this direct shopper-search request.
 CURL_HEADER_ARGS=()
@@ -296,9 +380,9 @@ fi
 echo ""
 
 ################################################################################
-# 9. Delete SLAS Client
+# 10. Delete SLAS Client
 ################################################################################
-echo "Step 9: Deleting SLAS client..."
+echo "Step 10: Deleting SLAS client..."
 
 $CLI slas client delete "$SLAS_CLIENT_ID" --tenant-id "$TENANT_ID"
 
@@ -309,9 +393,9 @@ echo "SUCCESS: SLAS client deleted"
 echo ""
 
 ################################################################################
-# 10. Delete Sandbox
+# 11. Delete Sandbox
 ################################################################################
-echo "Step 10: Deleting both sandboxes..."
+echo "Step 11: Deleting both sandboxes..."
 
 $CLI ods delete "$ODS_ID" --force
 

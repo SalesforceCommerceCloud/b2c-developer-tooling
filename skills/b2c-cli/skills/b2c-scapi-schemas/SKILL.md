@@ -9,10 +9,12 @@ Browse standard or tenant-specific SCAPI OpenAPI contracts.
 
 ## Tool choice
 
-When B2C MCP is available, prefer offline `scapi_search` for standard Admin and
-Shopper contracts. Read `skill://mcp/scapi/SKILL.md` via resource or `skills_read`
-first; pass `skillRead: true`. Discover method/path/operationId, then selected
-inputs and fields. No credentials or live Schemas API access needed.
+When B2C MCP is available, prefer `scapi_search` for Admin and Shopper contracts.
+Read `skill://mcp/b2c-mcp-scapi/SKILL.md` via resource or `skills_read` first; pass
+`skillRead: true`. Discover method/path/operationId, then selected inputs and
+fields. The default searches bundled standard contracts offline; `schemas: "live"`
+searches the tenant's contracts (custom attributes, custom APIs, newer APIs) and
+makes them callable from `scapi_execute`.
 
 Use `scapi_schemas_list` for live schemas, custom attributes, and custom APIs.
 For tenant fields, supply API family/name/version and `includeSchemas: true`.
@@ -20,9 +22,9 @@ Custom-property expansion defaults to true; `expandAll: true` preserves full def
 For large schemas, fetch/filter through code mode as described in the MCP SCAPI skill.
 Use `scapi_custom_apis_get_status` for registration status. Live schema access needs
 `sfcc.scapi-schemas`. Prefer a dedicated task tool for execution, otherwise
-`scapi_execute` supports Admin JSON calls with configured auth/scopes. For custom
+`scapi_execute` supports Admin and guest Shopper JSON calls with configured auth/scopes. For custom
 Admin endpoints, fetch the live contract through `scapi.request` in each program
-before calling it; follow the MCP SCAPI skill. Shopper and binary execution are
+before calling it; follow the MCP SCAPI skill. Registered-shopper and binary execution are
 unsupported. Use docs tools for semantics
 and limits rather than duplicating contract discovery.
 

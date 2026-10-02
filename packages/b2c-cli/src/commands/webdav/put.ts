@@ -122,16 +122,18 @@ export default class WebDavPut extends WebDavCommand<typeof WebDavPut> {
 
   /**
    * Ensures all parent directories exist for the given path.
+   * The WebDAV root itself is skipped: it always exists, and some roots
+   * (e.g. Dynamic, Libraries, Catalogs) reject MKCOL with 403.
    * Note: Sequential await is required here as each directory depends on its parent existing.
    */
   private async ensureParentDirectories(fullPath: string): Promise<void> {
-    const parts = fullPath.split('/').filter(Boolean);
+    const parts = fullPath.slice(this.rootPath.length).split('/').filter(Boolean);
     // Remove the filename, keep only directory parts
     parts.pop();
 
-    let currentPath = '';
+    let currentPath = this.rootPath;
     for (const part of parts) {
-      currentPath = currentPath ? `${currentPath}/${part}` : part;
+      currentPath = `${currentPath}/${part}`;
       // eslint-disable-next-line no-await-in-loop
       await this.instance.webdav.mkcol(currentPath);
     }

@@ -312,4 +312,4 @@ All operations accept `(client, tenantId, options?)` and return `Promise<Metrics
 - **404/category not enabled**: the category may not be enabled for your organization (closed beta)
 - **503/temporarily unavailable**: metrics service may be temporarily unavailable
 
-For full command reference, use `b2c metrics --help` and see [CLI docs](/cli/metrics) and [Metrics Guide](/guide/metrics).
+For full command reference, use `b2c metrics --help` and see [CLI docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/metrics.md) (`b2c docs read cli-metrics`) and [Metrics Guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/metrics.md) (`b2c docs read guide-metrics`).

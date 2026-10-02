@@ -76,6 +76,11 @@ Plugins listed in [`plugins.json`](./plugins.json) are zipped to `<name>-skills.
   for MCP bundling and in both marketplaces for native installation.
 - To make a new plugin installable via the B2C CLI, add it to [`plugins.json`](./plugins.json) and register a source in `packages/b2c-tooling-sdk/src/skills/sources.ts` (plus the `SkillSet` type in `types.ts`).
 - Add a changeset targeting `@salesforce/b2c-agent-plugins` for any skill content changes.
+- Skill references (enforced by `pnpm --filter @salesforce/b2c-dx-mcp run generate:guidance`):
+  - Relative links stay inside the skill directory (`references/X.md`, `../SKILL.md#section`).
+  - Refer to other skills by name ("see the `b2c-config` skill"), or by `skill://<collection>/<skill>/SKILL.md` in MCP skills. Never link another skill by relative path; skills install and serve independently.
+  - Link tooling docs to the Markdown page (`https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md`) and add the docs ID: `` (`b2c docs read guide-configuration`) `` in plugin skills, `docs_read({query: "guide-configuration"})` in MCP skills.
+  - The frontmatter `name` must equal the directory name and follow the [Agent Skills naming rules](https://agentskills.io/specification#name-field).
 
 See the repository [CLAUDE.md](../CLAUDE.md) and the [documentation skill](../.claude/skills/documentation/SKILL.md) for full contributor guidance.
 

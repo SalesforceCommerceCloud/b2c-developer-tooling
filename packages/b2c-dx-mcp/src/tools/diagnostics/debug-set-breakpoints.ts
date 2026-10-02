@@ -45,7 +45,7 @@ export function createDebugSetBreakpointsTool(
       openWorld: true,
       description:
         'Replace all session breakpoints. verified means local source mapping, not deployed-code validation. ' +
-        'Workflow: skill://mcp/debugger/SKILL.md.',
+        'Workflow: skill://mcp/b2c-mcp-debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string(),

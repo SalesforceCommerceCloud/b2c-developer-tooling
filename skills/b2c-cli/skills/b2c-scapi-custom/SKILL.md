@@ -9,7 +9,7 @@ Use the `b2c` CLI plugin to manage SCAPI Custom API endpoints and check their re
 
 When B2C MCP is available, prefer `scapi_custom_apis_get_status` for registration
 and `scapi_schemas_list` for live contracts. For Admin custom API execution, read
-`skill://mcp/scapi/SKILL.md`; fetch the contract through `scapi.request` in the
+`skill://mcp/b2c-mcp-scapi/SKILL.md`; fetch the contract through `scapi.request` in the
 program before calling its endpoints. Schema reads need `sfcc.scapi-schemas`;
 execution needs the declared `c_*` scope. Shopper execution is unsupported.
 

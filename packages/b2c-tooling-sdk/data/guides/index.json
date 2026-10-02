@@ -1,9 +1,9 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-29T17:50:15.302Z",
+  "generatedAt": "2026-10-02T13:34:04.021Z",
   "source": {
-    "sha": "e76c7adf5ea5a63608773f7c94dee62e74c06943",
-    "committedAt": "2026-09-25T15:46:30+02:00",
+    "sha": "33e6721c89b2e7c63ad2d99e9ad2a55cb7e8c9cd",
+    "committedAt": "2026-10-01T13:34:07-07:00",
     "ref": "main"
   },
   "entries": [
@@ -7665,6 +7665,31 @@
       ]
     },
     {
+      "id": "commerce-api/cdn-rule-expression-fields",
+      "title": "eCDN Rule Expression Fields",
+      "category": "commerce-api",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-rule-expression-fields.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-rule-expression-fields.md",
+      "headings": "Comparison Operators • Logical Operators • Functions • Fields",
+      "summary": "Reference guide for operators, functions, and fields used in eCDN custom rule and rate limiting rule expressions with 4096 character limits.",
+      "keywords": [
+        "eCDN rule expressions",
+        "custom firewall rules",
+        "rate limiting rules",
+        "comparison operators",
+        "logical operators",
+        "expression fields",
+        "eCDN expressions",
+        "rule syntax",
+        "firewall rule expressions",
+        "CDN rule operators",
+        "expression functions"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
+      ]
+    },
+    {
       "id": "commerce-api/cdn-supported-csp-directives",
       "title": "Supported CSP Directives",
       "category": "commerce-api",
@@ -7722,6 +7747,7 @@
         "commerce-api/cdn-zones-wafv2",
         "commerce-api/cdn-zones-custom-rules",
         "commerce-api/cdn-rate-limiting-rules",
+        "commerce-api/cdn-rule-expression-fields",
         "commerce-api/cdn-cache-rules",
         "commerce-api/cdn-zones-turnstile"
       ]
@@ -9260,7 +9286,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-best-practices.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-best-practices.md",
-      "headings": "Strict Client Auth • Passwordless Login • Refresh Token Service Protection • Delete Shopper Rate Limiting • Custom Header Forwarding • Preserve OAuth State in Trusted Agent On Behalf Flows • Handle the Audience (`aud`) Claim • Mitigate Guest Token Reuse • Recommended Guest Token Flow • Session Rotation Step 1: Get a Fresh Guest Token • Session Rotation Step 2: Swap Tokens in the Storefront • Result: Empty Order List Following Account Registration • Edge Cases to Consider",
+      "headings": "Strict Client Auth • Passwordless Login • Leaked Credentials on SLAS Login • Refresh Token Service Protection • Delete Shopper Rate Limiting • SCAPI Zone Rate Limiting • Custom Header Forwarding • Preserve OAuth State in Trusted Agent On Behalf Flows • Handle the Audience (`aud`) Claim • Mitigate Guest Token Reuse • Recommended Guest Token Flow • Session Rotation Step 1: Get a Fresh Guest Token • Session Rotation Step 2: Swap Tokens in the Storefront • Result: Empty Order List Following Account Registration • Edge Cases to Consider",
       "summary": "Best practices for SLAS including Strict Client Auth, passwordless login, refresh token protection, guest session rotation, and custom header forwarding.",
       "keywords": [
         "SLAS",
@@ -10201,6 +10227,342 @@
       "relatedEntries": [
         "commerce-api/use-shopper-api",
         "commerce-api/coupons-giftcerts-bonus-products"
+      ]
+    },
+    {
+      "id": "commerce-solutions/automotive-sk",
+      "title": "B2C Commerce Solution for Automotive",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/automotive-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/automotive-sk.md",
+      "headings": "Digital First Automotive Experience • Business Value • Automotive Use Cases • Platform Features and Accelerators • Top Features for Auto • Implementation Overview • Salesforce Commerce Platform • B2C Developer Tools • B2C Commerce • Salesforce Professional Services",
+      "summary": "Build a digital-first automotive commerce platform connecting OEM, dealers, and customers for vehicle and aftermarket parts sales.",
+      "keywords": [
+        "automotive commerce",
+        "car buying digital",
+        "dealer platform",
+        "aftermarket parts ecommerce",
+        "OEM integration",
+        "digital retail automotive",
+        "vehicle sales online",
+        "automotive B2C",
+        "dealership ecommerce",
+        "digital purchasing experience"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/bot-management",
+      "title": "Bot Management",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/bot-management.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/bot-management.md",
+      "headings": "Product Offering • Bot Management Strategy • Implementation Best Practices",
+      "summary": "Understand Salesforce B2C Commerce bot management approach, shared responsibilities, and configuration options for protecting storefronts.",
+      "keywords": [
+        "bot management",
+        "bot protection",
+        "storefront security",
+        "eCDN",
+        "bot detection",
+        "CDN configuration",
+        "platform availability",
+        "bot filtering",
+        "third-party bot solution",
+        "shared responsibility"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/bot-mitigation-sk",
+      "title": "Bot Mitigation Best Practices for Flash Sales",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/bot-mitigation-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/bot-mitigation-sk.md",
+      "headings": "Why Worry About Bots? • Bot Attack Vectors • Bot Mitigation Strategies Provided by B2C Commerce • Your Role in Bot Mitigation",
+      "summary": "Protect flash sales from bot attacks by understanding malicious bot behavior and implementing mitigation strategies to ensure legitimate customer purchases.",
+      "keywords": [
+        "bot mitigation",
+        "flash sales",
+        "bot attacks",
+        "DDoS prevention",
+        "inventory protection",
+        "high-volume sales",
+        "security",
+        "storefront protection",
+        "malicious bots",
+        "site performance",
+        "anti-bot",
+        "hype sales"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/caching-strategies-sk",
+      "title": "Caching Strategies for Salesforce B2C Commerce",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/caching-strategies-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/caching-strategies-sk.md",
+      "headings": "Example Use Case • Requirement • A Typical Solution • A Better Solution • Caching in Salesforce B2C Commerce • Page Caching • Examples of Different URLs • Personalized Caching • Implementation • Examples • Application Level Caching • Request Caching • Custom Objects • Custom Caches • File Caches • Session • Static Content Caching • Replications and Cache Clears • Performance Insights and Optimization • Key Pages • Example Scenario • Common Pitfalls • Note • Key Includes • Common Problems • Page Designer • Content Slots • Tooling",
+      "summary": "Implement efficient multi-layer caching strategies across browser, CDN, web server, application server, and database to optimize B2C Commerce website speed and resilience.",
+      "keywords": [
+        "caching strategies",
+        "B2C Commerce performance",
+        "CDN caching",
+        "cache layers",
+        "website speed optimization",
+        "content delivery",
+        "caching best practices",
+        "application server cache",
+        "browser cache",
+        "bot mitigation",
+        "scalability",
+        "throughput"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/comm-and-media-sk",
+      "title": "B2C Commerce Solution for Communications and Media",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/comm-and-media-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/comm-and-media-sk.md",
+      "headings": "Accelerate Your Integration to Communication and Media Cloud • Business Value • Communications and Media Developer Toolkit for B2C • Platform Features and Accelerators • Implementation Overview • Developer Journey • The Consumer Subscriber Journey • Browse and Configure • Basket Operations • Checkout • Additional Resources • B2C Developer Tools • B2C Commerce • Order Management • Salesforce Industries • Salesforce Professional Services • Tools",
+      "summary": "B2C Commerce solution accelerates digital transformation for communications and media companies through omnichannel integration, customer lifetime value optimization, and pre-built accelerators.",
+      "keywords": [
+        "communications media commerce",
+        "CSP telco digital transformation",
+        "omnichannel integration",
+        "direct-to-consumer channels",
+        "customer lifetime value",
+        "cross-sell upsell",
+        "personalization recommendations",
+        "curbside pickup",
+        "commerce accelerators",
+        "service experience"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/consumer-goods-sk",
+      "title": "Commerce Solution for Consumer Goods",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/consumer-goods-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/consumer-goods-sk.md",
+      "headings": "Consumer Good Companies Connect the Consumer • Business Value • Consumer Goods Use Cases • Platform Features and Accelerators • Top Features for Consumer Goods • Implementation Overview • Salesforce Commerce Platform • B2C Developer Tools • B2C Commerce • Order Management • B2B Commerce • Salesforce Professional Services • Additional Consumer Good Resources",
+      "summary": "Build a direct-to-consumer ecommerce presence for consumer goods brands with personalized shopping experiences, customer insights, and B2C/B2B commerce capabilities.",
+      "keywords": [
+        "consumer goods ecommerce",
+        "D2C direct to consumer",
+        "B2C Commerce solution",
+        "CPG packaged goods",
+        "brand experience",
+        "personalization merchandising",
+        "customer behavior insights",
+        "subscriptions payments",
+        "B2B Commerce retailers",
+        "omnichannel fulfillment"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/grocery-sk",
+      "title": "B2C Commerce Solution for Grocery",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/grocery-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/grocery-sk.md",
+      "headings": "Sell Groceries Online for Store Pickup • Business Value • Grocery Developer Toolkit • Grocery Developer Toolkit Use Cases • Platform Features & Accelerators • B2C Platform: Top Features for Grocery • B2C Platform: Toolkit Accelerators for Grocery • Implementation Overview • Storefront Plugins • Developer Journey • The Shopping-to-Store-Pickup Journey • Additional Grocery Resources • Salesforce Professional Services • Tools • Sample Apps",
+      "summary": "Build an online grocery store with B2C Commerce supporting digital-first shopping and store pickup fulfillment.",
+      "keywords": [
+        "grocery e-commerce",
+        "online grocery",
+        "store pickup",
+        "grocery retail",
+        "food shopping",
+        "B2C grocery",
+        "digital grocery",
+        "grocery solution",
+        "online food sales",
+        "retail grocery platform",
+        "grocery fulfillment"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/healthcare-life-sciences-sk",
+      "title": "B2C Commerce Solution for Healthcare and Life Sciences",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/healthcare-life-sciences-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/healthcare-life-sciences-sk.md",
+      "headings": "Digital and Direct Solution for HLS Companies • Business Value • Healthcare and Life Sciences Use Cases • Platform Features and Accelerators • Top Features for Healthcare and Life Sciences • Implementation Overview • B2C Developer Tools • B2C Commerce • Order Management • B2B Commerce • Salesforce Professional Services • Additional Consumer Good Resources",
+      "summary": "B2C Commerce solution designed for healthcare and life sciences organizations to enable digital platforms for omnichannel sales, compliance, and patient engagement.",
+      "keywords": [
+        "healthcare ecommerce",
+        "life sciences commerce",
+        "B2B2C healthcare",
+        "medical device sales",
+        "pharmaceutical digital",
+        "omnichannel healthcare",
+        "healthcare compliance",
+        "patient-direct selling",
+        "payer portal",
+        "medical supplier platform",
+        "healthcare B2C",
+        "HLS commerce"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/insurance-sk",
+      "title": "B2C Commerce Solutions for Insurance",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/insurance-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/insurance-sk.md",
+      "headings": "Reach Insurance Shoppers Directly with Salesforce Industries, Commerce, and Marketing • Business Value • Insurance Developer Toolkit • Insurance Use Cases • Platform Features and Accelerators • Implementation Overview • Developer Journey • Digital Quote-to-bind Insurance Journey • Additional Resources • B2C Developer Tools • B2C Commerce • Salesforce Industries • Salesforce Professional Services • Tools & Sample Apps",
+      "summary": "Build digital direct-to-consumer insurance storefronts using Salesforce B2C Commerce, Industries, and Marketing solutions.",
+      "keywords": [
+        "insurance commerce",
+        "D2C insurance",
+        "insurance digital transformation",
+        "insurance storefronts",
+        "InsurTech",
+        "property and casualty",
+        "insurance solutions",
+        "direct-to-consumer insurance",
+        "insurance toolkit",
+        "Salesforce Industries"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/launching-flash-sale-sk",
+      "title": "Launching a Successful Flash Sale",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/launching-flash-sale-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/launching-flash-sale-sk.md",
+      "headings": "1. Set Goals for Your Flash Sale • 2. Prepare Your Operations Team • 3. Identify Your Target Audience • The Trend of Purpose-Built Bots • 4. Track Trends • 5. Set Up the Promotion on Your Site • 6. Choose Your Marketing Platforms • 7. Promote Your Sale • Pay-Per-Click • Influencer Marketing • Email Nurture Campaigns • 8. Track the ROI on Your Sale • 9. Have Customer Service at the Ready • 10. Follow Up with Shoppers",
+      "summary": "Plan and execute a flash sale in 10 steps, from setting goals to preparing operations for traffic spikes.",
+      "keywords": [
+        "flash sale",
+        "quick sale",
+        "temporary promotion",
+        "discount campaign",
+        "high-volume sale",
+        "hype sale",
+        "inventory clearance",
+        "sales planning",
+        "ecommerce revenue",
+        "traffic preparation",
+        "launch strategy",
+        "seasonal sale"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/manufacturing-sk",
+      "title": "Consumer Solution for Manufacturing",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/manufacturing-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/manufacturing-sk.md",
+      "headings": "Power Manufacturing and Distribution With Digital Commerce • Business Value • Manufacturing Use Cases • B2B Commerce • B2C Commerce • Platform Features and Accelerators • Top Features for B2B Use Cases • Top Features for B2C Use Cases • Implementation Overview • Salesforce Commerce Platform • B2B Commerce • B2C Developer Tools • B2C Commerce • Order Management • Salesforce Professional Services • Additional Manufacturing Resources",
+      "summary": "Enable manufacturers to build B2B and B2C digital commerce channels for direct sales, reducing costs and improving customer satisfaction.",
+      "keywords": [
+        "manufacturing commerce",
+        "B2B B2C channels",
+        "direct-to-consumer",
+        "digital storefront",
+        "manufacturer ecommerce",
+        "B2B commerce solution",
+        "product ordering platform",
+        "distributor sales",
+        "digital buying channel",
+        "manufacturing digital transformation"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
+      ]
+    },
+    {
+      "id": "commerce-solutions/solutions-landing-overview",
+      "title": "Get Started with B2C Commerce Solutions",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/solutions-landing-overview.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/solutions-landing-overview.md",
+      "headings": "Industry Solutions • Technical Solutions • Retail Solutions",
+      "summary": "Learn how to build commerce solutions on Salesforce B2C Commerce platform using APIs, industry guides, and developer toolkits.",
+      "keywords": [
+        "B2C Commerce Solutions",
+        "get started",
+        "commerce APIs",
+        "industry solutions",
+        "Salesforce Commerce Platform",
+        "developer guides",
+        "storefront applications",
+        "technical solutions",
+        "digital transformation",
+        "customer 360",
+        "commerce toolkits",
+        "platform features"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/grocery-sk",
+        "commerce-solutions/comm-and-media-sk",
+        "commerce-solutions/insurance-sk",
+        "commerce-solutions/automotive-sk",
+        "commerce-solutions/consumer-goods-sk",
+        "commerce-solutions/manufacturing-sk",
+        "commerce-solutions/healthcare-life-sciences-sk",
+        "commerce-solutions/traffic-management-sk",
+        "commerce-solutions/launching-flash-sale-sk",
+        "commerce-solutions/bot-management",
+        "commerce-solutions/bot-mitigation-sk",
+        "commerce-solutions/caching-strategies-sk"
+      ]
+    },
+    {
+      "id": "commerce-solutions/traffic-management-sk",
+      "title": "Traffic Management for Flash Sales",
+      "category": "commerce-solutions",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/traffic-management-sk.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/traffic-management-sk.md",
+      "headings": "Engage Salesforce Early • Disable or Reschedule Jobs • Schedule Replication and Caching Activities Well before Your Sale • Block Unwanted Traffic by Using Built-in eCDN Functionality • Leverage the Web Services Framework for Third-Party Integrations • Avoid Making Product IDs Available Before the Sale • Set Up Real-time Rate Limiting Capabilities • Plan for Bot Mitigation • Consider a Lite Version of the PDP • Manage When Inventory Reservation Occurs • Set up a Raffle or Reservation System • Create a Virtual Waiting Room",
+      "summary": "Configure B2C Commerce storefronts to handle high-traffic flash sales through traffic management best practices and resource planning.",
+      "keywords": [
+        "flash sales",
+        "traffic management",
+        "high volume sales",
+        "hype sales",
+        "scalability",
+        "performance planning",
+        "load management",
+        "B2C Commerce support",
+        "sales event preparation",
+        "resource optimization",
+        "site capacity",
+        "ecommerce revenue"
+      ],
+      "relatedEntries": [
+        "commerce-solutions/solutions-landing-overview"
       ]
     },
     {
@@ -11331,7 +11693,7 @@
       "category": "ocapi",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/versioninganddeprecationpolicy.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/versioninganddeprecationpolicy.md",
-      "headings": "Version Creation and Deprecation • Version Numbers • Version Lifecycle • Version Metadata",
+      "headings": "Version Creation and Deprecation • Version Numbers • OCAPI Deprecation • Version Metadata",
       "summary": "Understand OCAPI versioning scheme, deprecation policy, and how version numbers are formatted in URLs and documents.",
       "keywords": [
         "OCAPI versioning",
@@ -13073,7 +13435,7 @@
       "category": "pwa-kit-managed-runtime",
       "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/pwa-site-prefs.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/pwa-site-prefs.md",
-      "headings": "Enable the MRT Data Store • Usage in ssr.js (Server Middleware) • Usage in React Components (Utilities) • Usage in React Components (Hooks) • Local Development • Data Store Structure",
+      "headings": "Prerequisites • Enable the MRT Data Store • Usage in ssr.js (Server Middleware) • Usage in React Components (Utilities) • Usage in React Components (Hooks) • Local Development • Data Store Structure",
       "summary": "Access site preferences from the MRT Data Store in composable storefronts instead of making SCAPI calls, with utilities for server middleware and React components.",
       "keywords": [
         "MRT Data Store",
@@ -13772,7 +14134,7 @@
       "category": "pwa-kit-managed-runtime",
       "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/using-the-managed-runtime-api.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/using-the-managed-runtime-api.md",
-      "headings": "Considerations • Before You Begin • Tutorial • List Environments • Create an Environment • Modify Proxy Configuration • Troubleshooting • Automation Users 🤖 • Rate Limits • How to Read the Numbers • Projects and Environments • Cache Invalidations • Default Rate Limits • Next Steps",
+      "headings": "Considerations • Before You Begin • Tutorial • List Environments • Create an Environment • Modify Proxy Configuration • Troubleshooting • Automation Users 🤖 • Rate Limits • How to Read the Numbers • Projects and Environments • Cache Invalidations • Default Rate Limits • Read-Only Mode During Maintenance • Next Steps",
       "summary": "Manage B2C Commerce Managed Runtime applications programmatically via API with authentication, rate limits, and administration capabilities.",
       "keywords": [
         "Managed Runtime API",
@@ -14167,32 +14529,6 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-customize-sf"
-      ]
-    },
-    {
-      "id": "sfnext/sfnext-connect-storefront",
-      "title": "Connect an Existing Storefront to B2C Commerce",
-      "category": "sfnext",
-      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-connect-storefront.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-connect-storefront.md",
-      "headings": "Prerequisites • Steps • See Also",
-      "summary": "Connect external storefronts (PWA Kit, Storefront Next) to B2C Commerce to enable Page Designer, Storefront Preview, and site preference syncing.",
-      "keywords": [
-        "connect storefront B2C Commerce",
-        "existing storefront integration",
-        "PWA Kit storefront",
-        "Storefront Next MRT",
-        "Managed Runtime connection",
-        "Page Designer storefront",
-        "Storefront Preview setup",
-        "Business Manager storefronts",
-        "CLI storefront configuration",
-        "MRT project connection",
-        "site preferences sync",
-        "external storefront linking"
-      ],
-      "relatedEntries": [
-        "sfnext/sfnext-get-started-section"
       ]
     },
     {
@@ -14622,9 +14958,10 @@
         "sfnext/sfnext-mrt-release-notes",
         "sfnext/sfnext-architecture",
         "sfnext/sfnext-browser-comp",
+        "sfnext/sfnext-template-compare",
         "sfnext/sfnext-quick-start-choice",
         "sfnext/sfnext-mrt-create-environment",
-        "sfnext/sfnext-connect-storefront",
+        "sfnext/sfnext-link-storefront",
         "sfnext/sfnext-github-connect"
       ]
     },
@@ -14887,6 +15224,32 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-link-storefront",
+      "title": "Link an Existing Storefront to B2C Commerce",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-link-storefront.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-link-storefront.md",
+      "headings": "Prerequisites • Steps • See Also",
+      "summary": "Link externally-created storefronts like PWA Kit and Storefront Next to B2C Commerce for Page Designer and Storefront Preview access.",
+      "keywords": [
+        "link storefront",
+        "existing storefront",
+        "PWA Kit",
+        "Storefront Next",
+        "Managed Runtime",
+        "MRT",
+        "Page Designer",
+        "Storefront Preview",
+        "connect storefront",
+        "associate storefront B2C",
+        "external storefront integration",
+        "storefront linking"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-load-more",
       "title": "Keep Shoppers Browsing with Load More Pagination",
       "category": "sfnext",
@@ -15099,7 +15462,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-api.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-api.md",
-      "headings": "Considerations for Using Managed Runtime API • Before You Begin • List Environments • Create an Environment • Modify Proxy Configuration • Troubleshoot the Managed Runtime API Requests • Set Up Automation Users • Managed Runtime API Rate Limits • Projects and Environments • Cache Invalidations • Default Rate Limits • Next Steps • See Also",
+      "headings": "Considerations for Using Managed Runtime API • Before You Begin • List Environments • Create an Environment • Modify Proxy Configuration • Troubleshoot the Managed Runtime API Requests • Set Up Automation Users • Managed Runtime API Rate Limits • Projects and Environments • Cache Invalidations • Default Rate Limits • Read-Only Mode During Maintenance • Next Steps • See Also",
       "summary": "Automate environment administration tasks using the Managed Runtime API with authentication and rate limit considerations.",
       "keywords": [
         "Managed Runtime API",
@@ -15327,7 +15690,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-release-notes.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-release-notes.md",
-      "headings": "<Date> - vx.y.z • <Release note title> • 8/25/2026 • 20-Second Rendering Timeout Now Strictly Enforced • Non-Production Environments Now Have Lower Capacity Limits • Log Center Logs and Metrics No Longer Require the Production Flag • Coming September 29, 2026: Production Flag Will Require a Staging or Production B2C Commerce Instance • Access Control Headers Limit Raised to 4 for Storefront Next Environments • Protected Storefront Now Enabled by Default • On-Demand Sandbox Instances Now Get Default eCDN Security Rules for Storefront Next • 7/28/2026 • SSR Bundle Size Limit Lowered to 247 MB",
+      "headings": "<Date> - vx.y.z • <Release note title> • 10/1/2026 • Managed Runtime Read-Only APIs During Maintenance • 8/25/2026 • 20-Second Rendering Timeout Now Strictly Enforced • Non-Production Environments Now Have Lower Capacity Limits • Log Center Logs and Metrics No Longer Require the Production Flag • Coming September 29, 2026: Production Flag Will Require a Staging or Production B2C Commerce Instance • Access Control Headers Limit Raised to 4 for Storefront Next Environments • Protected Storefront Now Enabled by Default • On-Demand Sandbox Instances Now Get Default eCDN Security Rules for Storefront Next • 7/28/2026 • SSR Bundle Size Limit Lowered to 247 MB",
       "summary": "Track Managed Runtime updates including rendering timeouts, capacity limits, environment settings, and security features.",
       "keywords": [
         "Managed Runtime",
@@ -16567,7 +16930,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.md",
-      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • September 1, 2026 - Storefront Next 1.3.0 • Show Estimated Delivery Dates on Your Storefront • Guest Shoppers Can Look Up Orders Quickly Without Registration • Get Delivery Estimates for a Product • August 18, 2026 - B2C Commerce 26.9 • Link Your Storefront to a GitHub Repository in Business Manager • August 4, 2026 - Storefront Next 1.2.0 • Streamline Sign-In with Passkeys • Manage Sites for Storefront Next in Business Manager • Send Storefront Next Analytics Events to Data 360 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
+      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • September 29, 2026 - B2C Commerce 26.10 • Start Faster with Footwear, Furniture, and Foundations Templates • September 1, 2026 - Storefront Next 1.3.0 • Show Estimated Delivery Dates on Your Storefront • Guest Shoppers Can Look Up Orders Quickly Without Registration • Get Delivery Estimates for a Product • August 18, 2026 - B2C Commerce 26.9 • Link Your Storefront to a GitHub Repository in Business Manager • August 4, 2026 - Storefront Next 1.2.0 • Streamline Sign-In with Passkeys • Manage Sites for Storefront Next in Business Manager • Send Storefront Next Analytics Events to Data 360 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
       "summary": "Track Storefront Next monthly release features including delivery dates, guest order lookup, passkeys, payments, and Order Management integration.",
       "keywords": [
         "Storefront Next",
@@ -17078,6 +17441,32 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-architecture"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-template-compare",
+      "title": "Storefront Next Template Features",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-template-compare.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-template-compare.md",
+      "headings": "Select a Template • Product Attributes • Foundations Attributes • Retail Next Attributes • Beauty Next Attributes • Footwear Next Attributes • Furniture Next Attributes",
+      "summary": "Choose a Storefront Next template in Business Manager or CLI that matches your store's needs, layout, theme, and product browsing requirements.",
+      "keywords": [
+        "storefront template",
+        "storefront next template",
+        "create storefront",
+        "sfnext template",
+        "template selection",
+        "business manager storefront",
+        "storefront layout",
+        "storefront theme",
+        "CLI template",
+        "storefront features",
+        "template preview",
+        "storefront setup"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
       ]
     },
     {

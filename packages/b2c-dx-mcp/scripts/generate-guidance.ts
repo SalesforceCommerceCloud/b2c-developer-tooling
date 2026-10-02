@@ -22,7 +22,7 @@ const snippetIndex =
         `## ${snippet.name}\n\n${snippet.description}\n\nEffect: ${snippet.effect}.\n\nInput JSON Schema:\n\n\`\`\`json\n${JSON.stringify(snippet.inputSchema)}\n\`\`\`\n`,
     )
     .join('\n');
-writeFileSync(join(packageRoot, 'skills/scapi/references/snippets.md'), snippetIndex);
+writeFileSync(join(packageRoot, 'skills/b2c-mcp-scapi/references/snippets.md'), snippetIndex);
 const config = JSON.parse(readFileSync(join(packageRoot, 'skills/collections.json'), 'utf8')) as {
   version: number;
   featuredResources?: string[];

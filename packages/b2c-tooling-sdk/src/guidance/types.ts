@@ -20,6 +20,8 @@ interface GuidanceCollectionMetadata extends GuidanceCollection {
 export interface GuidanceFile {
   path: string;
   bytes: number;
+  /** `sha256:<64 lowercase hex>` of the shipped bytes. */
+  digest: string;
 }
 
 /** One workflow entrypoint and its progressively disclosed supporting files. */
@@ -29,7 +31,9 @@ export interface GuidanceEntry {
   title: string;
   description: string;
   entrypoint: string;
-  /** Advertise this entrypoint individually in resources/list. Does not restrict reads. */
+  /** Entrypoint YAML frontmatter as JSON, verbatim; `name` equals the entry folder. */
+  frontmatter: Record<string, unknown>;
+  /** Advertise this entrypoint in resources/list and skills/list. Does not restrict reads. */
   featured?: boolean;
   source: string;
   headings: string;
@@ -65,6 +69,20 @@ export interface GuidanceSummary {
   /** Readable through the resource template, whether or not individually advertised. */
   uri: string;
   score?: number;
+}
+
+/** One file of a skill, as listed by the MCP skills extension (SEP-2640). */
+export interface GuidanceSkillResource {
+  uri: string;
+  digest: string;
+  size: number;
+}
+
+/** MCP skills extension entry: entrypoint URI, verbatim frontmatter, and every file. */
+export interface GuidanceSkill {
+  uri: string;
+  frontmatter: Record<string, unknown>;
+  resources: GuidanceSkillResource[];
 }
 
 /** Bounded directory or ranked search page. */

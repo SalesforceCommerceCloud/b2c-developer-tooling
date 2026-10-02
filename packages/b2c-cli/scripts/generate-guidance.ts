@@ -24,6 +24,8 @@ if (config.version !== 1) throw new Error('Unsupported guidance collections mani
 const result = bundleGuidance({
   repoRoot,
   collections: config.collections.filter((collection) => collection.plugin),
+  // Skills reference MCP-only collections; the MCP bundle validates those URIs.
+  checkSkillUris: false,
   destination: join(packageRoot, 'content/guidance'),
 });
 process.stdout.write(`Bundled ${result.entries} skills and ${result.files} Markdown files.\n`);

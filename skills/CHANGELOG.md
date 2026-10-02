@@ -1,5 +1,15 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.10.3
+
+### Patch Changes
+
+- [#720](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/720) [`c1b0c17`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c1b0c17e286a69a4945c9d66c0209c87b5441709) - Docs search now includes the OCAPI reference from B2C Commerce Developer Center (usage, hooks, settings, and best practices), available under the new `ocapi` category (45 articles). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#723](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/723) [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e) - `scapi_search` can now search your instance's live SCAPI schemas with `schemas: "live"`, including your custom attributes, custom APIs, and APIs newer than the bundled reference. `scapi_execute` can then call what it found on the same instance. Offline search is still the default. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#723](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/723) [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e) - `scapi_execute` can now call Shopper APIs as a guest shopper using your SLAS client, so any Storefront Next project works out of the box. The guest session persists across executions, so baskets carry over. Registered-shopper-only operations are not yet supported. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.10.2
 
 ### Patch Changes

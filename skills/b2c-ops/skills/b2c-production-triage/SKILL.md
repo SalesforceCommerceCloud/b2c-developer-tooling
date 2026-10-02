@@ -25,12 +25,12 @@ every available signal.
 ## Access and tools
 
 - Establish access: MCP, terminal/CLI, logs, data, source. Operator work does not
-  require a cartridge checkout. Credentials/setup issues: MCP `mcp/b2c-config`
+  require a cartridge checkout. Credentials/setup issues: MCP `mcp/b2c-mcp-config`
   section `setup-and-access`; native `b2c-config`/`b2c-auth`, or the
-  [authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication).
+  [authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md) (`b2c docs read guide-authentication`).
 
 Prefer dedicated MCP tools; discover available names once. Read
-`skill://mcp/scapi/SKILL.md` before using `scapi_search`/`scapi_execute`, as those
+`skill://mcp/b2c-mcp-scapi/SKILL.md` before using `scapi_search`/`scapi_execute`, as those
 tools require. Read only the matching runbook/reference, not every linked skill.
 Native assistants use the installed skill name; MCP can read these URIs or use
 `skills_read` with `collection: "b2c-ops"` and a task query.
@@ -42,7 +42,7 @@ Native assistants use the installed skill name; MCP can read these URIs or use
 | Checkout failures or orders down                          | Custom logs -> determine whether failures produce order records -> relevant data/traffic evidence                                           | [Checkout triage](skill://b2c-ops/b2c-checkout-triage/SKILL.md) distinguishes checkout symptoms from failed-order records.                                                   |
 | Find/count FAILED orders or investigate affected products | Verify Admin filter support; otherwise external OCAPI Shop order search -> safe IDs -> logs and selected Admin product reads                | [Failed-order triage](skill://b2c-ops/b2c-order-failure-triage/SKILL.md) owns enumeration, count/sample limits, and the workaround. No OCAPI helper exists inside code mode. |
 | Suspected code change                                     | Code mode `builtin/code-version-inspect`: active/rollback versions and activation/modification timestamps                                                                             | Current metadata is not a complete activation history. Corroborate with release records.                                                             |
-| Runtime-only defect                                       | [MCP debugger](skill://mcp/debugger/SKILL.md) on an authorized reproduction target                                                          | Operator handoff is valid without source access. Do not halt production requests for routine triage.                                                                         |
+| Runtime-only defect                                       | [MCP debugger](skill://mcp/b2c-mcp-debugger/SKILL.md) on an authorized reproduction target                                                          | Operator handoff is valid without source access. Do not halt production requests for routine triage.                                                                         |
 
 ## Checks and decisions
 

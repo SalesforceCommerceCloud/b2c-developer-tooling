@@ -11,7 +11,7 @@ import {Client, type ClientOptions} from '@modelcontextprotocol/client';
 import {StdioClientTransport} from '@modelcontextprotocol/client/stdio';
 
 const runJs = fileURLToPath(new URL('../../bin/run.js', import.meta.url));
-const skillUri = 'skill://mcp/debugger/SKILL.md';
+const skillUri = 'skill://mcp/b2c-mcp-debugger/SKILL.md';
 
 const modes: {name: string; negotiation: ClientOptions['versionNegotiation']; era: string}[] = [
   {name: 'legacy', negotiation: {mode: 'legacy'}, era: 'legacy'},
@@ -72,7 +72,7 @@ for (const mode of modes) {
       expect(result.isError).to.equal(true);
       expect(result.structuredContent).to.have.nested.property('error.code', 'NOT_FOUND');
       await Promise.all(
-        ['skill://mcp/../mcp/debugger/SKILL.md', 'skill://mcp/%64ebugger/SKILL.md'].map(async (uri) => {
+        ['skill://mcp/../mcp/b2c-mcp-debugger/SKILL.md', 'skill://mcp/b2c-mcp-%64ebugger/SKILL.md'].map(async (uri) => {
           let rejected = false;
           try {
             await client.readResource({uri});

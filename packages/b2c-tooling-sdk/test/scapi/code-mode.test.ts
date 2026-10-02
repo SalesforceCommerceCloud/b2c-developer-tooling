@@ -53,6 +53,11 @@ describe('SCAPI code mode', function () {
   afterEach(() => server.resetHandlers());
   after(() => server.close());
 
+  it('accepts trailing semicolons and line comments after the function', async () => {
+    expect(await runScapiCode({code: 'async () => ({ok: true});\n'})).to.deep.equal({ok: true});
+    expect(await runScapiCode({code: 'async () => ({ok: true}) // done'})).to.deep.equal({ok: true});
+  });
+
   it('restricts local development APIs without affecting parent-managed work', async () => {
     const cwd = mkdtempSync(join(tmpdir(), 'b2c code mode '));
     const file = join(cwd, 'fixture.txt');
@@ -232,7 +237,7 @@ describe('SCAPI code mode', function () {
     expect(orders.schema.paths['/organizations/{organizationId}/orders']?.get).not.to.have.property('auth');
   });
 
-  it('rejects Shopper execution before looking for Admin credentials or missing site parameters', async () => {
+  it('rejects Shopper execution without Shopper authentication before looking for Admin credentials', async () => {
     let authLoaded = false;
     const call = request({level: 'NONE'}, () => {
       authLoaded = true;
@@ -244,7 +249,7 @@ describe('SCAPI code mode', function () {
           request: call,
           code: `async () => scapi.request({method:'GET',path:'/product/shopper-products/v1/organizations/f_ecom_test_001/products/test'})`,
         }),
-      'SCAPI_SHOPPER_AUTH_UNSUPPORTED',
+      'SCAPI_SHOPPER_AUTH_UNAVAILABLE',
     );
     expect(authLoaded).to.equal(false);
   });

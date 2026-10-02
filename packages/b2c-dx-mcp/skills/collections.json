@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "featuredResources": ["mcp/server", "mcp/debugger", "mcp/b2c-config", "mcp/scapi", "mcp/cip"],
+  "featuredResources": ["mcp/b2c-mcp-server", "mcp/b2c-mcp-debugger", "mcp/b2c-mcp-config", "mcp/b2c-mcp-scapi", "mcp/b2c-mcp-cip"],
   "collections": [
     {
       "id": "b2c-cli",
