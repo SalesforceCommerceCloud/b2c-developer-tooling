@@ -28,54 +28,6 @@ export interface paths {
         patch: operations["updateEnvironmentVariables"];
         trace?: never;
     };
-    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/access-control-headers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get access control headers.
-         * @description Retrieves a paginated list of access control headers on the environment. Header values are returned masked and cannot be read back in plaintext.
-         */
-        get: operations["getAccessControlHeaders"];
-        put?: never;
-        /**
-         * Create an access control header.
-         * @description Creates a header-based access control rule on the environment. The created value is returned masked in the response.
-         */
-        post: operations["createAccessControlHeader"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/access-control-headers/{accessControlHeaderId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get an access control header by ID.
-         * @description Retrieves a single access control header by its identifier. The value is returned masked.
-         */
-        get: operations["getAccessControlHeader"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete an access control header.
-         * @description Deletes an access control header by its identifier. Returns 204 No Content on success.
-         */
-        delete: operations["deleteAccessControlHeader"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -138,63 +90,6 @@ export interface components {
         EnvironmentVariablesUpdateRequest: {
             [key: string]: components["schemas"]["EnvironmentVariableUpdateEntry"];
         };
-        /** @description A header-based access control rule on the environment. */
-        AccessControlHeader: {
-            /**
-             * Format: uuid
-             * @description The unique identifier of the access control header, in UUID format.
-             * @example ff832a9e-0e55-11ef-8f23-0242ac110002
-             */
-            id?: string;
-            /**
-             * @description The masked header value. Actual values are never returned in clear text.
-             * @example ****************by0z
-             */
-            value?: string;
-            /**
-             * @description The email address of the user who created the header. Null if no user is associated.
-             * @example dev@example.com
-             */
-            createdBy?: string | null;
-            /**
-             * Format: date-time
-             * @description The timestamp when the header was created.
-             * @example 2026-08-24T09:23:28.872916Z
-             */
-            creationDate?: string;
-            publishingStatus?: components["schemas"]["PublishingStatus"];
-        };
-        /** @description Paginated result containing a list of access control headers. */
-        AccessControlHeaderResult: {
-            /**
-             * Format: int32
-             * @description Maximum number of records returned per request.
-             * @example 25
-             */
-            limit: number;
-            /**
-             * Format: int32
-             * @description Zero-based index of the first record included in the result.
-             * @example 0
-             */
-            offset: number;
-            /**
-             * Format: int32
-             * @description Total number of access control headers matching the request.
-             * @example 3
-             */
-            total: number;
-            /** @description The list of access control headers. May be empty. */
-            data: components["schemas"]["AccessControlHeader"][];
-        };
-        /** @description Request body to create an access control header. */
-        AccessControlHeaderCreateRequest: {
-            /**
-             * @description The header value.
-             * @example jfoWikeaby0z
-             */
-            value: string;
-        };
     };
     responses: {
         /** @description Your access token is invalid or expired and can't be used to identify a user. */
@@ -241,10 +136,6 @@ export interface components {
         storefrontId: string;
         /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
         environmentId: string;
-        /** @description The access control header identifier, in UUID format. */
-        accessControlHeaderId: string;
-        /** @description Attributes to order the returned access control headers by, in priority order (applied left to right). Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `id`, `publishing_status`. */
-        accessControlHeaderOrderBy: string[];
     };
     requestBodies: never;
     headers: never;
@@ -310,140 +201,6 @@ export interface operations {
                 content?: never;
             };
             400: components["responses"]["400BadRequest"];
-            401: components["responses"]["401Unauthorized"];
-            403: components["responses"]["403Forbidden"];
-            404: components["responses"]["404NotFound"];
-        };
-    };
-    getAccessControlHeaders: {
-        parameters: {
-            query?: {
-                /** @description Attributes to order the returned access control headers by, in priority order (applied left to right). Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `id`, `publishing_status`. */
-                orderBy?: components["parameters"]["accessControlHeaderOrderBy"];
-                /** @description Number of records to retrieve per request. Must be between 1 and 200. Defaults to 25. */
-                limit?: number;
-                /** @description Zero-based index of the first record to include in the result. */
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
-                organizationId: components["parameters"]["organizationId"];
-                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
-                storefrontId: components["parameters"]["storefrontId"];
-                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
-                environmentId: components["parameters"]["environmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of access control headers successfully retrieved. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccessControlHeaderResult"];
-                };
-            };
-            401: components["responses"]["401Unauthorized"];
-            403: components["responses"]["403Forbidden"];
-            404: components["responses"]["404NotFound"];
-        };
-    };
-    createAccessControlHeader: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
-                organizationId: components["parameters"]["organizationId"];
-                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
-                storefrontId: components["parameters"]["storefrontId"];
-                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
-                environmentId: components["parameters"]["environmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AccessControlHeaderCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Access control header successfully created. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccessControlHeader"];
-                };
-            };
-            400: components["responses"]["400BadRequest"];
-            401: components["responses"]["401Unauthorized"];
-            403: components["responses"]["403Forbidden"];
-            404: components["responses"]["404NotFound"];
-        };
-    };
-    getAccessControlHeader: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
-                organizationId: components["parameters"]["organizationId"];
-                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
-                storefrontId: components["parameters"]["storefrontId"];
-                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
-                environmentId: components["parameters"]["environmentId"];
-                /** @description The access control header identifier, in UUID format. */
-                accessControlHeaderId: components["parameters"]["accessControlHeaderId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Access control header successfully retrieved. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccessControlHeader"];
-                };
-            };
-            401: components["responses"]["401Unauthorized"];
-            403: components["responses"]["403Forbidden"];
-            404: components["responses"]["404NotFound"];
-        };
-    };
-    deleteAccessControlHeader: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
-                organizationId: components["parameters"]["organizationId"];
-                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
-                storefrontId: components["parameters"]["storefrontId"];
-                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
-                environmentId: components["parameters"]["environmentId"];
-                /** @description The access control header identifier, in UUID format. */
-                accessControlHeaderId: components["parameters"]["accessControlHeaderId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Access control header successfully deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
             401: components["responses"]["401Unauthorized"];
             403: components["responses"]["403Forbidden"];
             404: components["responses"]["404NotFound"];
