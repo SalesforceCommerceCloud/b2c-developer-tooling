@@ -51,7 +51,7 @@ MRT commands resolve configuration in the following order of precedence:
 
 MRT commands use API key authentication against the legacy MRT Cloud API. The API key is configured in the Managed Runtime dashboard.
 
-Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), the `mrt env var` family (`list` / `set` / `push` / `delete`), the `mrt env redirect` family (`list` / `create` / `get` / `update` / `delete` / `clone`), and the `mrt env access-control` family (`list` / `create` / `get` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
+Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), the `mrt env var` family (`list` / `set` / `push` / `delete`), the `mrt env redirect` family (`list` / `create` / `get` / `update` / `delete` / `clone`), the `mrt env access-control` family (`list` / `create` / `get` / `delete`), and the `mrt project` family (`list` / `create` / `get` / `update` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
 
 ### Getting an API Key
 
@@ -76,7 +76,7 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 MRT is served by two backends:
 
 - **legacy** — the MRT Cloud API (`cloud.mobify.com`), authenticated with a per-user API key (`--api-key` / `~/.mobify`). This is the backend for every MRT command.
-- **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. Each supported command requires the SCAPI scopes for the API it maps to — the bundle commands (`bundle history`, `bundle list`, `bundle deploy`) map to the Storefront Deployments API and need `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw`, and the `env var` commands need `sfcc.storefront.environments` / `sfcc.storefront.environments.rw` (reads accept either scope; writes require `.rw`).
+- **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. Each supported command requires the SCAPI scopes for the API it maps to — the bundle commands (`bundle history`, `bundle list`, `bundle deploy`) map to the Storefront Deployments API and need `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw`, the `env var` and `env access-control` commands map to the Storefront Environments API and need `sfcc.storefront.environments` / `sfcc.storefront.environments.rw`, and the `project` commands map to the Storefront Storefronts API and need `sfcc.storefront.storefronts` / `sfcc.storefront.storefronts.rw` (reads accept either scope; writes require `.rw`).
 
 Select the backend with `--mrt-backend` (or `MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
@@ -108,6 +108,11 @@ These commands implement the SCAPI backend today:
 - `b2c mrt env access-control create` — create an access control header
 - `b2c mrt env access-control get` — get a single access control header
 - `b2c mrt env access-control delete` — delete an access control header
+- `b2c mrt project list` — list projects (storefronts)
+- `b2c mrt project create` — create a project (storefront)
+- `b2c mrt project get` — get a project (storefront)
+- `b2c mrt project update` — update a project (storefront)
+- `b2c mrt project delete` — delete a project (storefront)
 
 Every other MRT command runs on the legacy MRT Cloud API. On those, `--mrt-backend scapi` errors with an actionable message, and `--mrt-backend auto` warns (only when SCAPI is actually configured) before using legacy.
 
@@ -185,54 +190,67 @@ b2c mrt org b2c my-organization --json
 
 ## Project Commands
 
+The `mrt project` commands are [backend-aware](#mrt-backends): an MRT project **is** a SCAPI storefront, so over the SCAPI backend they map to the Storefront Storefronts API (scopes `sfcc.storefront.storefronts` / `.rw`, reads accept either). The SCAPI storefront ID is the project slug, and the organization is fixed by `--tenant-id` (SCAPI is scoped to one tenant, so `--organization` does not apply there). Because the two backends expose different fields, some flags are **legacy-only** and some are **SCAPI-only** — each is called out below, and a flag is validated only against the backend that will actually run. Under `--json`, each command returns the serving backend's native shape (see [JSON output is backend-specific](#json-output-is-backend-specific)). `mrt project member` and `mrt project notification` remain legacy-only.
+
 ### b2c mrt project list
 
-List MRT projects.
+List MRT projects (storefronts). `--organization` / `-o` filters the legacy backend only.
 
 ```bash
 b2c mrt project list
 b2c mrt project list --limit 10 --offset 0
+b2c mrt project list --mrt-backend scapi
 b2c mrt project list --json
 ```
 
 ### b2c mrt project create
 
-Create a new MRT project. The name is a positional argument; the organization is required via `--organization` / `-o`. To choose the new project's slug, pass `--project` / `--storefront` (`-p` / `-s`) — when omitted, MRT auto-generates the slug from the name.
+Create a new MRT project (storefront). The name is a positional argument.
+
+- **Legacy** requires `--organization` / `-o`. To choose the new project's slug, pass `--project` / `--storefront` (`-p` / `-s`) — when omitted, MRT auto-generates the slug from the name. `--url` and `--region` / `-r` are legacy-only.
+- **SCAPI** requires at least one `--site` (repeatable) and ignores `--organization`/`--url`/`--region`/slug (the storefront ID is generated server-side). `--type` selects the storefront type (defaults to `storefront_next`). Creation returns `202 Accepted` with the storefront provisioning asynchronously — poll `project get` to track `setupStatus`.
 
 ```bash
+# Legacy
 b2c mrt project create "My Storefront" --organization my-org
-b2c mrt project create "My Storefront" -o my-org --storefront my-storefront
-b2c mrt project create "My Storefront" -o my-org -s my-storefront
-b2c mrt project create "My Storefront" -o my-org --region us-east-1
+b2c mrt project create "My Storefront" -o my-org -s my-storefront --region us-east-1
+# SCAPI
+b2c mrt project create "My Storefront" --site RefArch --mrt-backend scapi
 ```
 
 ### b2c mrt project get
 
-Get details of an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`; `MRT_PROJECT` and `dw.json` also work).
+Get details of an MRT project (storefront). Provide the project slug (= storefront ID) as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`; `MRT_PROJECT` and `dw.json` also work).
 
 ```bash
 b2c mrt project get my-storefront
 b2c mrt project get --project my-storefront
-b2c mrt project get --storefront my-storefront --json
+b2c mrt project get --storefront my-storefront --mrt-backend scapi --json
 ```
 
 ### b2c mrt project update
 
-Update an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`); at least one of `--name`, `--url`, or `--region` must be supplied.
+Update an MRT project (storefront). Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`); at least one updatable field must be supplied.
+
+- **Legacy** honors `--name` / `-n`, `--url`, and `--region` / `-r`.
+- **SCAPI** cannot rename a storefront (no `--name`/`--url`). It honors `--region` / `-r` (converted to the SCAPI underscored form internally), `--ssr-architecture` (`x86` | `arm64`), `--allow-cookies` / `--no-allow-cookies`, `--preserve-proxy-user-agent` / `--no-preserve-proxy-user-agent`, and `--site` (repeatable). **`--site` fully replaces the storefront's assigned-sites set** — it is not incremental, so pass the complete desired set every time.
 
 ```bash
+# Legacy
 b2c mrt project update my-storefront --name "Updated Name"
 b2c mrt project update --project my-storefront --region us-east-1
-b2c mrt project update my-storefront --url https://www.example.com
+# SCAPI — replaces the full assigned-sites set with exactly these two
+b2c mrt project update my-storefront --site RefArch --site OtherSite --mrt-backend scapi
 ```
 
 ### b2c mrt project delete
 
-Delete an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`).
+Delete an MRT project (storefront). Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`). Over SCAPI, deletion returns `202 Accepted` and completes asynchronously.
 
 ```bash
 b2c mrt project delete my-storefront
 b2c mrt project delete --project my-storefront --force
+b2c mrt project delete my-storefront --mrt-backend scapi --force
 ```
 
 ---

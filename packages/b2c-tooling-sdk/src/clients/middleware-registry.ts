@@ -71,7 +71,8 @@ export type HttpClientType =
   | 'scapi-catalogs'
   | 'scapi'
   | 'storefront-deployments'
-  | 'storefront-environments';
+  | 'storefront-environments'
+  | 'storefront-storefronts';
 
 /**
  * Middleware interface compatible with openapi-fetch.
