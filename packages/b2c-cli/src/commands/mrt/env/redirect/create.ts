@@ -5,11 +5,7 @@
  */
 import {Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {
-  createRedirect,
-  type MrtRedirect,
-  type RedirectHttpStatusCode,
-} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {createRedirectWithBackend, type RedirectHttpStatusCode} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
 /**
@@ -27,16 +23,19 @@ export default class MrtRedirectCreate extends MrtCommand<typeof MrtRedirectCrea
     '<%= config.bin %> <%= command.id %> --project my-storefront --environment staging --from /old --to /new',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --from /sale --to /summer-sale --status 302',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --from "/a/*" --to /b --forward-wildcard',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --from /old --to /new --mrt-backend scapi',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
     from: Flags.string({
-      description: 'Source path to redirect from',
+      aliases: ['source'],
+      description: 'Source path to redirect from (alias: --source)',
       required: true,
     }),
     to: Flags.string({
-      description: 'Destination URL to redirect to',
+      aliases: ['destination'],
+      description: 'Destination URL to redirect to (alias: --destination)',
       required: true,
     }),
     status: Flags.integer({
@@ -54,9 +53,11 @@ export default class MrtRedirectCreate extends MrtCommand<typeof MrtRedirectCrea
     }),
   };
 
-  async run(): Promise<MrtRedirect> {
-    this.requireMrtCredentials();
+  protected operations = {
+    createRedirectWithBackend,
+  };
 
+  async run(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
@@ -71,53 +72,55 @@ export default class MrtRedirectCreate extends MrtCommand<typeof MrtRedirectCrea
     }
 
     const {
-      from: fromPath,
-      to: toUrl,
+      from: source,
+      to: destination,
       status,
-      'forward-querystring': forwardQs,
+      'forward-querystring': forwardQuerystring,
       'forward-wildcard': forwardWildcard,
     } = this.flags;
 
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
+
     this.log(
       t('commands.mrt.redirect.create.creating', 'Creating redirect {{from}} -> {{to}}...', {
-        from: fromPath,
-        to: toUrl,
+        from: source,
+        to: destination,
       }),
     );
 
-    try {
-      const result = await createRedirect(
-        {
-          projectSlug: project,
-          targetSlug: environment,
-          fromPath,
-          toUrl,
-          httpStatusCode: status as RedirectHttpStatusCode,
-          forwardQuerystring: forwardQs || undefined,
-          forwardWildcard: forwardWildcard || undefined,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    const result = await this.operations.createRedirectWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      source,
+      destination,
+      httpStatusCode: status as RedirectHttpStatusCode,
+      forwardQuerystring,
+      forwardWildcard,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Creating redirect via backend'),
+    });
 
+    if (!this.jsonEnabled()) {
       this.log(
         t('commands.mrt.redirect.create.success', 'Redirect created: {{from}} -> {{to}}', {
-          from: fromPath,
-          to: toUrl,
+          from: source,
+          to: destination,
         }),
       );
       this.log(
         t('commands.mrt.redirect.create.note', 'Note: Changes may take up to 20 minutes to take effect on your site.'),
       );
-
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.redirect.create.failed', 'Failed to create redirect: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
     }
+
+    // Under --json, emit the backend's native create response verbatim.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }
