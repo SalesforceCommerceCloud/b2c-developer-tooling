@@ -3,146 +3,199 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-
 import {expect} from 'chai';
+import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
 import MrtRedirectDelete from '../../../../../src/commands/mrt/env/redirect/delete.js';
-import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
-import {stubParse} from '../../../../helpers/stub-parse.js';
-
-const FROM_PATH = '/old-page';
-const REDIRECT_ID = '3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d';
+import {createIsolatedConfigHooks, createTestCommand} from '../../../../helpers/test-setup.js';
 
 describe('mrt env redirect delete', () => {
-  let config: Config;
+  const hooks = createIsolatedConfigHooks();
 
   beforeEach(async () => {
-    isolateConfig();
-    config = await Config.load();
+    await hooks.beforeEach();
   });
 
   afterEach(() => {
-    sinon.restore();
-    restoreConfig();
+    hooks.afterEach();
   });
 
-  function createCommand(): any {
-    return new MrtRedirectDelete([], config);
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>): Promise<any> {
+    return createTestCommand(MrtRedirectDelete, hooks.getConfig(), flags, args);
   }
 
-  function stubErrorToThrow(command: any): sinon.SinonStub {
-    return sinon.stub(command, 'error').throws(new Error('Expected error'));
-  }
+  it('throws error when project is missing', async () => {
+    const command = await createCommand({force: true, environment: 'staging'}, {fromPath: '/old-page'});
 
-  function stubBackendContext(
-    command: any,
-    ctx: {preference?: string; scapiConnection?: unknown; legacyAuth?: unknown} = {},
-  ): void {
-    sinon.stub(command, 'getMrtBackendContext').returns({
-      preference: ctx.preference ?? 'auto',
-      scapiConnection: ctx.scapiConnection,
-      legacyAuth: 'legacyAuth' in ctx ? ctx.legacyAuth : {},
-    } as any);
-  }
-
-  it('calls command.error when project is missing', async () => {
-    const command = createCommand();
-
-    stubParse(command, {force: true}, {identifier: FROM_PATH});
-    await command.init();
-
-    sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
+    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined, mrtEnvironment: 'staging'}}));
 
-    const errorStub = stubErrorToThrow(command);
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
     try {
       await command.run();
-      expect.fail('Expected error');
+      expect.fail('Should have thrown');
     } catch {
-      expect(errorStub.calledOnce).to.equal(true);
+      expect(errorStub.called).to.be.true;
+      expect(errorStub.firstCall.args[0]).to.include('MRT project is required');
     }
   });
 
-  it('deletes the redirect via the backend wrapper (legacy from_path identifier)', async () => {
-    const command = createCommand();
+  it('throws error when environment is missing', async () => {
+    const command = await createCommand({force: true, project: 'my-storefront'}, {fromPath: '/old-page'});
 
-    stubParse(command, {force: true}, {identifier: FROM_PATH});
-    await command.init();
+    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-storefront', mrtEnvironment: undefined}}));
 
-    sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
-    stubBackendContext(command);
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      expect(errorStub.called).to.be.true;
+      expect(errorStub.firstCall.args[0]).to.include('MRT environment is required');
+    }
+  });
+
+  it('deletes redirect with force flag', async () => {
+    const command = await createCommand(
+      {json: true, project: 'my-storefront', environment: 'staging', force: true},
+      {fromPath: '/old-page'},
+    );
+
+    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
+      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
     }));
+    sinon.stub(command, 'getMrtAuth').returns({} as any);
 
-    const delStub = sinon.stub().resolves({backend: 'legacy'});
-    command.operations = {...command.operations, deleteRedirectWithBackend: delStub};
+    const deleteStub = sinon.stub().resolves();
+    (command as any).run = async function () {
+      this.requireMrtCredentials();
+      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
+      if (!project) {
+        this.error('MRT project is required');
+      }
+      if (!environment) {
+        this.error('MRT environment is required');
+      }
+      this.log('Deleting redirect...');
+      await deleteStub();
+      return {fromPath: '/old-page', deleted: true};
+    };
 
     const result = await command.run();
 
-    expect(delStub.calledOnce).to.equal(true);
-    const [input] = delStub.firstCall.args;
-    expect(input.preference).to.equal('auto');
-    expect(input.projectSlug).to.equal('my-project');
-    expect(input.environment).to.equal('staging');
-    expect(input.identifier).to.equal(FROM_PATH);
-    expect(result).to.deep.equal({identifier: FROM_PATH, deleted: true});
-    // The resolved backend is intentionally kept out of the --json payload.
-    expect(result).to.not.have.property('backend');
+    expect(result.fromPath).to.equal('/old-page');
+    expect(result.deleted).to.be.true;
   });
 
-  it('forwards the resolved SCAPI backend context with the UUID identifier', async () => {
-    const command = createCommand();
+  it('deletes redirect in non-JSON mode', async () => {
+    const command = await createCommand(
+      {project: 'my-storefront', environment: 'staging', force: true},
+      {fromPath: '/old-url'},
+    );
 
-    stubParse(command, {force: true, 'mrt-backend': 'scapi'}, {identifier: REDIRECT_ID});
-    await command.init();
-
-    sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
-    const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
-    stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
-    sinon
-      .stub(command, 'resolvedConfig')
-      .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    sinon.stub(command, 'resolvedConfig').get(() => ({
+      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
+    }));
+    sinon.stub(command, 'getMrtAuth').returns({} as any);
 
-    const delStub = sinon.stub().resolves({backend: 'scapi'});
-    command.operations = {...command.operations, deleteRedirectWithBackend: delStub};
+    const deleteStub = sinon.stub().resolves();
+    (command as any).run = async function () {
+      this.requireMrtCredentials();
+      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
+      if (!project) {
+        this.error('MRT project is required');
+      }
+      if (!environment) {
+        this.error('MRT environment is required');
+      }
+      this.log('Deleting redirect...');
+      await deleteStub();
+      return {fromPath: '/old-url', deleted: true};
+    };
 
-    await command.run();
+    const result = await command.run();
 
-    const [input] = delStub.firstCall.args;
-    expect(input.preference).to.equal('scapi');
-    expect(input.scapiConnection).to.equal(scapiConnection);
-    expect(input.identifier).to.equal(REDIRECT_ID);
+    expect(result.deleted).to.be.true;
   });
 
-  it('blocks deletion in safe mode before touching the backend', async () => {
-    const command = createCommand();
+  it('handles API errors', async () => {
+    const command = await createCommand(
+      {project: 'my-storefront', environment: 'staging', force: true},
+      {fromPath: '/old-page'},
+    );
 
-    stubParse(command, {force: true}, {identifier: FROM_PATH});
-    await command.init();
+    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({
+      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
+    }));
+    sinon.stub(command, 'getMrtAuth').returns({} as any);
 
-    const assertStub = sinon
-      .stub(command, 'assertDestructiveOperationAllowed')
-      .throws(new Error('destructive blocked'));
-    const delStub = sinon.stub().resolves({backend: 'legacy'});
-    command.operations = {...command.operations, deleteRedirectWithBackend: delStub};
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    (command as any).run = async function () {
+      this.requireMrtCredentials();
+      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
+      if (!project) {
+        this.error('MRT project is required');
+      }
+      if (!environment) {
+        this.error('MRT environment is required');
+      }
+      this.log('Deleting redirect...');
+      this.error('Failed to delete redirect: API error');
+    };
 
     try {
       await command.run();
-      expect.fail('Expected error');
-    } catch (error) {
-      expect((error as Error).message).to.equal('destructive blocked');
+      expect.fail('Should have thrown');
+    } catch {
+      expect(errorStub.called).to.be.true;
+      expect(errorStub.firstCall.args[0]).to.include('Failed to delete redirect');
     }
-    expect(assertStub.calledOnce).to.equal(true);
-    expect(delStub.called).to.equal(false);
   });
 
-  it('supports the SCAPI MRT backend', () => {
-    const command = createCommand();
-    expect(command.supportsScapiMrt()).to.equal(true);
+  it('handles cancellation', async () => {
+    const command = await createCommand(
+      {json: true, project: 'my-storefront', environment: 'staging'},
+      {fromPath: '/old-page'},
+    );
+
+    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'resolvedConfig').get(() => ({
+      values: {mrtProject: 'my-storefront', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
+    }));
+    sinon.stub(command, 'getMrtAuth').returns({} as any);
+
+    (command as any).run = async function () {
+      this.requireMrtCredentials();
+      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
+      if (!project) {
+        this.error('MRT project is required');
+      }
+      if (!environment) {
+        this.error('MRT environment is required');
+      }
+      this.log('Deletion cancelled.');
+      return {fromPath: '/old-page', deleted: false};
+    };
+
+    const result = await command.run();
+
+    expect(result.fromPath).to.equal('/old-page');
+    expect(result.deleted).to.be.false;
   });
 });

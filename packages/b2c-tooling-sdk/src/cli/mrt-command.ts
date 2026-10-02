@@ -287,10 +287,9 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
    * Whether this command implements the SCAPI MRT backend. Defaults to `false`;
    * the supported commands (`mrt bundle history`, `mrt bundle list`,
    * `mrt bundle deploy` — both the local-build push and `<bundleId>` deploy —
-   * the `mrt env var` family: `list`, `set`, `delete`, `push`, the
-   * `mrt env redirect` family: `list`, `create`, `get`, `update`, `delete`,
-   * `clone`, and the `mrt env access-control` family: `list`, `create`, `get`,
-   * `delete`) override it to `true`. Used by {@link init} to reject an explicit `--mrt-backend scapi`
+   * the `mrt env var` family: `list`, `set`, `delete`, `push`, and the
+   * `mrt env access-control` family: `list`, `create`, `get`, `delete`) override
+   * it to `true`. Used by {@link init} to reject an explicit `--mrt-backend scapi`
    * on commands that would otherwise silently fall back to legacy — an explicit
    * SCAPI request must never be quietly downgraded.
    */
@@ -306,9 +305,8 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     if (!this.supportsScapiMrt() && this.mrtBackendPreference === 'scapi') {
       this.error(
         '--mrt-backend scapi is not supported by this command yet. The SCAPI MRT backend currently supports ' +
-          '"mrt bundle history", "mrt bundle list", "mrt bundle deploy", "mrt env var" (list/set/delete/push), ' +
-          '"mrt env redirect" (list/create/get/update/delete/clone), and "mrt env access-control" (list/create/get/delete). ' +
-          'Re-run with --mrt-backend legacy or auto.',
+          '"mrt bundle history", "mrt bundle list", "mrt bundle deploy", "mrt env var" (list/set/delete/push), and ' +
+          '"mrt env access-control" (list/create/get/delete). Re-run with --mrt-backend legacy or auto.',
       );
     }
   }

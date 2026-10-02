@@ -5,7 +5,7 @@
  */
 import {Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {cloneRedirectsWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {cloneRedirects, type CloneRedirectsResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 import {confirm} from '../../../../prompts.js';
 
@@ -23,7 +23,6 @@ export default class MrtRedirectClone extends MrtCommand<typeof MrtRedirectClone
   static examples = [
     '<%= config.bin %> <%= command.id %> --project my-storefront --from staging --to production',
     '<%= config.bin %> <%= command.id %> -p my-storefront --from staging --to production --force',
-    '<%= config.bin %> <%= command.id %> -p my-storefront --from staging --to production --mrt-backend scapi',
   ];
 
   static flags = {
@@ -43,11 +42,9 @@ export default class MrtRedirectClone extends MrtCommand<typeof MrtRedirectClone
     }),
   };
 
-  protected operations = {
-    cloneRedirectsWithBackend,
-  };
+  async run(): Promise<CloneRedirectsResult> {
+    this.requireMrtCredentials();
 
-  async run(): Promise<unknown> {
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
@@ -56,19 +53,7 @@ export default class MrtRedirectClone extends MrtCommand<typeof MrtRedirectClone
       );
     }
 
-    const {from: sourceEnvironment, to: targetEnvironment, force} = this.flags;
-
-    // Clone copies redirects from a *distinct* source environment. Both backends
-    // reject a same-environment clone; reject it up front for a uniform message.
-    if (sourceEnvironment === targetEnvironment) {
-      this.error(
-        t(
-          'commands.mrt.redirect.clone.sameSource',
-          'The source and destination environments must differ (both are "{{environment}}").',
-          {environment: sourceEnvironment},
-        ),
-      );
-    }
+    const {from: fromTarget, to: toTarget, force} = this.flags;
 
     // Confirm clone unless --force is specified
     if (!force && !this.jsonEnabled()) {
@@ -76,63 +61,49 @@ export default class MrtRedirectClone extends MrtCommand<typeof MrtRedirectClone
         t(
           'commands.mrt.redirect.clone.confirm',
           'WARNING: This will REPLACE all redirects in {{toTarget}} with redirects from {{fromTarget}}. Continue?',
-          {fromTarget: sourceEnvironment, toTarget: targetEnvironment},
+          {fromTarget, toTarget},
         ),
       );
       if (!confirmed) {
         this.log(t('commands.mrt.redirect.clone.cancelled', 'Clone cancelled.'));
-        return {cloned: false};
+        return {count: 0, redirects: []};
       }
     }
-
-    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
     this.log(
       t('commands.mrt.redirect.clone.cloning', 'Cloning redirects from {{fromTarget}} to {{toTarget}}...', {
-        fromTarget: sourceEnvironment,
-        toTarget: targetEnvironment,
+        fromTarget,
+        toTarget,
       }),
     );
 
-    const result = await this.operations.cloneRedirectsWithBackend({
-      preference,
-      scapiConnection,
-      legacyAuth,
-      projectSlug: project,
-      sourceEnvironment,
-      targetEnvironment,
-      origin: this.resolvedConfig.values.mrtOrigin,
-      onFallback: (reason) => this.warn(reason),
-      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Cloning redirects via backend'),
-    });
+    try {
+      const result = await cloneRedirects(
+        {
+          projectSlug: project,
+          fromTargetSlug: fromTarget,
+          toTargetSlug: toTarget,
+          origin: this.resolvedConfig.values.mrtOrigin,
+        },
+        this.getMrtAuth(),
+      );
 
-    if (!this.jsonEnabled()) {
-      // The legacy backend reports a cloned count; the SCAPI backend returns 201
-      // with no body, so phrase the success without a count there.
-      if (result.count === null) {
-        this.log(
-          t('commands.mrt.redirect.clone.successNoCount', 'Cloned redirects from {{fromTarget}} to {{toTarget}}.', {
-            fromTarget: sourceEnvironment,
-            toTarget: targetEnvironment,
-          }),
-        );
-      } else {
-        this.log(
-          t(
-            'commands.mrt.redirect.clone.success',
-            'Cloned {{count}} redirect(s) from {{fromTarget}} to {{toTarget}}.',
-            {count: result.count, fromTarget: sourceEnvironment, toTarget: targetEnvironment},
-          ),
+      this.log(
+        t('commands.mrt.redirect.clone.success', 'Cloned {{count}} redirect(s) from {{fromTarget}} to {{toTarget}}.', {
+          count: result.count,
+          fromTarget,
+          toTarget,
+        }),
+      );
+
+      return result;
+    } catch (error) {
+      if (error instanceof Error) {
+        this.error(
+          t('commands.mrt.redirect.clone.failed', 'Failed to clone redirects: {{message}}', {message: error.message}),
         );
       }
+      throw error;
     }
-
-    // Under --json, emit the backend's native clone response verbatim (the legacy
-    // clone result, or `null` for the SCAPI empty 201).
-    return result.raw;
-  }
-
-  protected override supportsScapiMrt(): boolean {
-    return true;
   }
 }
