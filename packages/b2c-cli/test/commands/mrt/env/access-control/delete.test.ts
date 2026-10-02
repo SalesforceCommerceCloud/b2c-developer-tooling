@@ -7,14 +7,13 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import MrtRedirectDelete from '../../../../../src/commands/mrt/env/redirect/delete.js';
+import MrtAccessControlDelete from '../../../../../src/commands/mrt/env/access-control/delete.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../../helpers/stub-parse.js';
 
-const FROM_PATH = '/old-page';
-const REDIRECT_ID = '3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d';
+const HEADER_ID = 'ff832a9e-0e55-11ef-8f23-0242ac110002';
 
-describe('mrt env redirect delete', () => {
+describe('mrt env access-control delete', () => {
   let config: Config;
 
   beforeEach(async () => {
@@ -28,7 +27,7 @@ describe('mrt env redirect delete', () => {
   });
 
   function createCommand(): any {
-    return new MrtRedirectDelete([], config);
+    return new MrtAccessControlDelete([], config);
   }
 
   function stubErrorToThrow(command: any): sinon.SinonStub {
@@ -49,7 +48,7 @@ describe('mrt env redirect delete', () => {
   it('calls command.error when project is missing', async () => {
     const command = createCommand();
 
-    stubParse(command, {force: true}, {identifier: FROM_PATH});
+    stubParse(command, {}, {id: HEADER_ID});
     await command.init();
 
     sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
@@ -65,10 +64,10 @@ describe('mrt env redirect delete', () => {
     }
   });
 
-  it('deletes the redirect via the backend wrapper (legacy from_path identifier)', async () => {
+  it('deletes the header via the backend wrapper', async () => {
     const command = createCommand();
 
-    stubParse(command, {force: true}, {identifier: FROM_PATH});
+    stubParse(command, {}, {id: HEADER_ID});
     await command.init();
 
     sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
@@ -79,7 +78,7 @@ describe('mrt env redirect delete', () => {
     }));
 
     const delStub = sinon.stub().resolves({backend: 'legacy'});
-    command.operations = {...command.operations, deleteRedirectWithBackend: delStub};
+    command.operations = {...command.operations, deleteAccessControlHeaderWithBackend: delStub};
 
     const result = await command.run();
 
@@ -88,16 +87,16 @@ describe('mrt env redirect delete', () => {
     expect(input.preference).to.equal('auto');
     expect(input.projectSlug).to.equal('my-project');
     expect(input.environment).to.equal('staging');
-    expect(input.identifier).to.equal(FROM_PATH);
-    expect(result).to.deep.equal({identifier: FROM_PATH, deleted: true});
+    expect(input.headerId).to.equal(HEADER_ID);
+    expect(result).to.deep.equal({id: HEADER_ID, project: 'my-project', environment: 'staging'});
     // The resolved backend is intentionally kept out of the --json payload.
     expect(result).to.not.have.property('backend');
   });
 
-  it('forwards the resolved SCAPI backend context with the UUID identifier', async () => {
+  it('forwards the resolved SCAPI backend context to the wrapper', async () => {
     const command = createCommand();
 
-    stubParse(command, {force: true, 'mrt-backend': 'scapi'}, {identifier: REDIRECT_ID});
+    stubParse(command, {'mrt-backend': 'scapi'}, {id: HEADER_ID});
     await command.init();
 
     sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
@@ -109,27 +108,27 @@ describe('mrt env redirect delete', () => {
       .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
 
     const delStub = sinon.stub().resolves({backend: 'scapi'});
-    command.operations = {...command.operations, deleteRedirectWithBackend: delStub};
+    command.operations = {...command.operations, deleteAccessControlHeaderWithBackend: delStub};
 
     await command.run();
 
     const [input] = delStub.firstCall.args;
     expect(input.preference).to.equal('scapi');
     expect(input.scapiConnection).to.equal(scapiConnection);
-    expect(input.identifier).to.equal(REDIRECT_ID);
+    expect(input.headerId).to.equal(HEADER_ID);
   });
 
   it('blocks deletion in safe mode before touching the backend', async () => {
     const command = createCommand();
 
-    stubParse(command, {force: true}, {identifier: FROM_PATH});
+    stubParse(command, {}, {id: HEADER_ID});
     await command.init();
 
     const assertStub = sinon
       .stub(command, 'assertDestructiveOperationAllowed')
       .throws(new Error('destructive blocked'));
     const delStub = sinon.stub().resolves({backend: 'legacy'});
-    command.operations = {...command.operations, deleteRedirectWithBackend: delStub};
+    command.operations = {...command.operations, deleteAccessControlHeaderWithBackend: delStub};
 
     try {
       await command.run();
@@ -139,6 +138,30 @@ describe('mrt env redirect delete', () => {
     }
     expect(assertStub.calledOnce).to.equal(true);
     expect(delStub.called).to.equal(false);
+  });
+
+  it('emits no human progress under --json', async () => {
+    const command = createCommand();
+
+    stubParse(command, {}, {id: HEADER_ID});
+    await command.init();
+
+    sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    stubBackendContext(command);
+    const logStub = sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({
+      values: {mrtProject: 'my-project', mrtEnvironment: 'staging'},
+    }));
+
+    const delStub = sinon.stub().resolves({backend: 'legacy'});
+    command.operations = {...command.operations, deleteAccessControlHeaderWithBackend: delStub};
+
+    const result = await command.run();
+
+    expect(delStub.calledOnce).to.equal(true);
+    expect(logStub.called, 'no human progress under --json').to.equal(false);
+    expect(result.id).to.equal(HEADER_ID);
   });
 
   it('supports the SCAPI MRT backend', () => {

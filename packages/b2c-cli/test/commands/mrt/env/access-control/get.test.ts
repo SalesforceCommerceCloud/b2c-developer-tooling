@@ -6,12 +6,14 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
-import MrtRedirectCreate from '../../../../../src/commands/mrt/env/redirect/create.js';
+import {Config, ux} from '@oclif/core';
+import MrtAccessControlGet from '../../../../../src/commands/mrt/env/access-control/get.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../../helpers/stub-parse.js';
 
-describe('mrt env redirect create', () => {
+const HEADER_ID = 'ff832a9e-0e55-11ef-8f23-0242ac110002';
+
+describe('mrt env access-control get', () => {
   let config: Config;
 
   beforeEach(async () => {
@@ -25,7 +27,7 @@ describe('mrt env redirect create', () => {
   });
 
   function createCommand(): any {
-    return new MrtRedirectCreate([], config);
+    return new MrtAccessControlGet([], config);
   }
 
   function stubErrorToThrow(command: any): sinon.SinonStub {
@@ -46,7 +48,7 @@ describe('mrt env redirect create', () => {
   it('calls command.error when project is missing', async () => {
     const command = createCommand();
 
-    stubParse(command, {from: '/old', to: '/new', status: 301}, {});
+    stubParse(command, {}, {id: HEADER_ID});
     await command.init();
 
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined, mrtEnvironment: 'staging'}}));
@@ -61,80 +63,101 @@ describe('mrt env redirect create', () => {
     }
   });
 
-  it('creates the redirect via the backend wrapper and returns raw under --json', async () => {
+  it('gets the header via the backend wrapper and returns the raw response under --json', async () => {
     const command = createCommand();
 
-    stubParse(
-      command,
-      {from: '/old', to: '/new', status: 302, 'forward-querystring': true, 'forward-wildcard': false},
-      {},
-    );
+    stubParse(command, {}, {id: HEADER_ID});
     await command.init();
 
     stubBackendContext(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({
       values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
     }));
 
-    const raw = {from_path: '/old', to_url: '/new'};
-    const createStub = sinon.stub().resolves({
+    const raw = {id: HEADER_ID, value: '****3456'};
+    const getStub = sinon.stub().resolves({
       backend: 'legacy',
-      redirect: {id: '/old', source: '/old', destination: '/new', backend: 'legacy'},
+      header: {id: HEADER_ID, value: '****3456', backend: 'legacy'},
       raw,
     });
-    command.operations = {...command.operations, createRedirectWithBackend: createStub};
+    command.operations = {...command.operations, getAccessControlHeaderWithBackend: getStub};
 
     const result = await command.run();
 
-    expect(createStub.calledOnce).to.equal(true);
-    const [input] = createStub.firstCall.args;
+    expect(getStub.calledOnce).to.equal(true);
+    const [input] = getStub.firstCall.args;
     expect(input.preference).to.equal('auto');
     expect(input.projectSlug).to.equal('my-project');
     expect(input.environment).to.equal('staging');
-    expect(input.source).to.equal('/old');
-    expect(input.destination).to.equal('/new');
-    expect(input.httpStatusCode).to.equal(302);
-    expect(input.forwardQuerystring).to.equal(true);
-    expect(input.forwardWildcard).to.equal(false);
+    expect(input.headerId).to.equal(HEADER_ID);
     expect(result).to.deep.equal(raw);
+  });
+
+  it('prints the header detail via ux.stdout in non-JSON mode', async () => {
+    const command = createCommand();
+
+    stubParse(command, {}, {id: HEADER_ID});
+    await command.init();
+
+    stubBackendContext(command);
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    sinon.stub(command, 'resolvedConfig').get(() => ({
+      values: {mrtProject: 'my-project', mrtEnvironment: 'staging'},
+    }));
+
+    const stdoutStub = sinon.stub(ux, 'stdout').returns(void 0);
+    const getStub = sinon.stub().resolves({
+      backend: 'scapi',
+      header: {
+        id: HEADER_ID,
+        value: '****3456',
+        status: 'completed',
+        createdAt: '2026-04-08T21:47:28.188965Z',
+        createdBy: 'dev@example.com',
+        backend: 'scapi',
+      },
+      raw: {id: HEADER_ID},
+    });
+    command.operations = {...command.operations, getAccessControlHeaderWithBackend: getStub};
+
+    await command.run();
+
+    expect(stdoutStub.called).to.equal(true);
+    const printed = stdoutStub
+      .getCalls()
+      .map((c) => String(c.args[0]))
+      .join('\n');
+    expect(printed).to.include(HEADER_ID);
+    expect(printed).to.include('****3456');
+    expect(printed).to.include('completed');
+    expect(printed).to.include('dev@example.com');
   });
 
   it('forwards the resolved SCAPI backend context to the wrapper', async () => {
     const command = createCommand();
 
-    stubParse(command, {from: '/old', to: '/new', status: 301, 'mrt-backend': 'scapi'}, {});
+    stubParse(command, {'mrt-backend': 'scapi'}, {id: HEADER_ID});
     await command.init();
 
     const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
     stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
     sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'log').returns(void 0);
     sinon
       .stub(command, 'resolvedConfig')
       .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
 
-    const createStub = sinon
+    const getStub = sinon
       .stub()
-      .resolves({backend: 'scapi', redirect: {id: 'uuid-1', backend: 'scapi'}, raw: {redirectId: 'uuid-1'}});
-    command.operations = {...command.operations, createRedirectWithBackend: createStub};
+      .resolves({backend: 'scapi', header: {id: HEADER_ID, backend: 'scapi'}, raw: {id: HEADER_ID}});
+    command.operations = {...command.operations, getAccessControlHeaderWithBackend: getStub};
 
     await command.run();
 
-    const [input] = createStub.firstCall.args;
+    const [input] = getStub.firstCall.args;
     expect(input.preference).to.equal('scapi');
     expect(input.scapiConnection).to.equal(scapiConnection);
-    expect(input.source).to.equal('/old');
-  });
-
-  it('accepts --source/--destination as aliases for --from/--to', async () => {
-    // Run the real oclif parser (not stubParse) so the alias wiring is exercised.
-    const command: any = new MrtRedirectCreate(['--source', '/old', '--destination', '/new'], config);
-    const {flags} = await command.parse(MrtRedirectCreate, ['--source', '/old', '--destination', '/new']);
-
-    expect(flags.from).to.equal('/old');
-    expect(flags.to).to.equal('/new');
+    expect(input.headerId).to.equal(HEADER_ID);
   });
 
   it('supports the SCAPI MRT backend', () => {
