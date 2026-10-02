@@ -29,11 +29,13 @@ export default class MrtRedirectCreate extends MrtCommand<typeof MrtRedirectCrea
   static flags = {
     ...MrtCommand.baseFlags,
     from: Flags.string({
-      description: 'Source path to redirect from',
+      aliases: ['source'],
+      description: 'Source path to redirect from (alias: --source)',
       required: true,
     }),
     to: Flags.string({
-      description: 'Destination URL to redirect to',
+      aliases: ['destination'],
+      description: 'Destination URL to redirect to (alias: --destination)',
       required: true,
     }),
     status: Flags.integer({

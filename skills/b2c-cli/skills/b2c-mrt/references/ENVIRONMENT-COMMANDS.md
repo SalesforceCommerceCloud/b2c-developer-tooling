@@ -183,7 +183,7 @@ b2c mrt env redirect list -p my-storefront -e production --mrt-backend scapi
 
 ### Create Redirect
 
-Status defaults to `301` (permanent); pass `--status 302` for a temporary redirect.
+Status defaults to `301` (permanent); pass `--status 302` for a temporary redirect. `--from` and `--to` also accept the SCAPI-aligned aliases `--source` and `--destination`.
 
 ```bash
 # Permanent redirect (301, default)

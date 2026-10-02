@@ -17,7 +17,7 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt env`                  | `list`, `create`, `get`, `update`, `delete`, `invalidate`, `b2c` | Manage environments                    |
 | `mrt env var`              | `list`, `set`, `push`, `delete`                                  | Manage environment variables           |
 | `mrt env redirect`         | `list`, `create`, `get`, `update`, `delete`, `clone`             | Manage URL redirects                   |
-| `mrt env access-control`   | `list`, `create`, `get`, `delete`                               | Manage access control headers          |
+| `mrt env access-control`   | `list`, `create`, `get`, `delete`                                | Manage access control headers          |
 | `mrt bundle`               | `deploy`, `list`, `history`, `download`                          | Manage bundles and deployments         |
 | `mrt tail-logs`            |                                                                  | Tail real-time application logs        |
 | `mrt save-credentials`     |                                                                  | Save MRT credentials to ~/.mobify      |
@@ -604,13 +604,13 @@ b2c mrt env redirect list -p my-storefront -e production --mrt-backend scapi
 
 Create a URL redirect.
 
-| Flag                    | Description                              | Default |
-| ----------------------- | ---------------------------------------- | ------- |
-| `--from`                | Source path (required)                   | —       |
-| `--to`                  | Destination path (required)              | —       |
-| `--status`              | HTTP status code (`301` or `302`)        | `301`   |
-| `--forward-querystring` | Forward query string parameters          | `false` |
-| `--forward-wildcard`    | Forward the wildcard portion of the path | `false` |
+| Flag                    | Description                                        | Default |
+| ----------------------- | -------------------------------------------------- | ------- |
+| `--from`                | Source path (required; alias `--source`)           | —       |
+| `--to`                  | Destination path (required; alias `--destination`) | —       |
+| `--status`              | HTTP status code (`301` or `302`)                  | `301`   |
+| `--forward-querystring` | Forward query string parameters                    | `false` |
+| `--forward-wildcard`    | Forward the wildcard portion of the path           | `false` |
 
 ```bash
 # Permanent redirect (default — 301)

@@ -128,6 +128,15 @@ describe('mrt env redirect create', () => {
     expect(input.source).to.equal('/old');
   });
 
+  it('accepts --source/--destination as aliases for --from/--to', async () => {
+    // Run the real oclif parser (not stubParse) so the alias wiring is exercised.
+    const command: any = new MrtRedirectCreate(['--source', '/old', '--destination', '/new'], config);
+    const {flags} = await command.parse(MrtRedirectCreate, ['--source', '/old', '--destination', '/new']);
+
+    expect(flags.from).to.equal('/old');
+    expect(flags.to).to.equal('/new');
+  });
+
   it('supports the SCAPI MRT backend', () => {
     const command = createCommand();
     expect(command.supportsScapiMrt()).to.equal(true);
