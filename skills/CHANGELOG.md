@@ -1,5 +1,15 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.10.4
+
+### Patch Changes
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - Documentation search now includes the B2C Commerce Solutions guides (bot management, caching strategies, flash-sale traffic, and industry solutions) in a new `commerce-solutions` category. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#734](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/734) [`bea5bdc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bea5bdc81ae9353848b38258de4e5a32a76da9ae) - The default `--mrt-backend` is now `legacy` (the MRT Cloud API) instead of `auto`. MRT commands no longer auto-detect and prefer the SCAPI backend unless you opt in. To restore the previous behavior — prefer SCAPI when short code, tenant ID, and client-credentials/JWT Bearer auth are configured, otherwise fall back to legacy — pass `--mrt-backend auto` (or set `MRT_BACKEND=auto` / `mrtBackend` in `dw.json`). Use `--mrt-backend scapi` to require SCAPI with no fallback. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - Skills now refer to each other by name instead of relative paths, so links work wherever a skill is installed. Documentation links point to Markdown pages and include the `b2c docs read` ID for offline reading. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.10.3
 
 ### Patch Changes

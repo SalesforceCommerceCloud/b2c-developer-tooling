@@ -1,5 +1,25 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.3.0
+
+### Minor Changes
+
+- [#733](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/733) [`5220490`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/52204901a68467980e86d6c399869c93a26ed64a) - Add `--scapi-schemas` (`SFCC_SCAPI_SCHEMAS`) so SCAPI code mode can use local OpenAPI contracts for beta and pre-release APIs. A local contract replaces the bundled or live contract for the same API, or adds a new one. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - Assistants that support the MCP Skills extension can now list and load the server's skills directly. MCP skills are renamed with a `b2c-mcp-` prefix (for example `skill://mcp/b2c-mcp-scapi/SKILL.md`), and the server skill now opens with an index of which skill covers each task. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - Documentation search now includes the B2C Commerce Solutions guides (bot management, caching strategies, flash-sale traffic, and industry solutions) in a new `commerce-solutions` category. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#730](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/730) [`9cca45e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9cca45e02cfaf40b8ad45ddf76e3468a1ae0f9f8) - Agents asking what's needed before a first cartridge deploy are now pointed to the configuration and authentication guidance, instead of answering from general knowledge. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#730](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/730) [`9cca45e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9cca45e02cfaf40b8ad45ddf76e3468a1ae0f9f8) - Agents now read the SCAPI and CIP skills before calling `scapi_search`, `scapi_execute` or `cip_query`, instead of being rejected and retrying. `skillRead` is now a required argument, and the SCAPI tool descriptions are shorter, with code-mode details moved into the SCAPI skill. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4), [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4), [`5220490`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/52204901a68467980e86d6c399869c93a26ed64a), [`bea5bdc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bea5bdc81ae9353848b38258de4e5a32a76da9ae), [`9cca45e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9cca45e02cfaf40b8ad45ddf76e3468a1ae0f9f8), [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4)]:
+  - @salesforce/b2c-tooling-sdk@2.4.0
+  - @salesforce/b2c-agent-plugins@1.10.4
+
 ## 3.2.1
 
 ### Patch Changes
