@@ -121,7 +121,7 @@ jobs:
           pnpm run test:e2e:ci && pnpm run lint
 
       - name: E2E Test Report
-        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
+        uses: dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a  # v3.2.0
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
         with:
           name: E2E Test Results (Node ${{ matrix.node-version }})
@@ -228,7 +228,7 @@ jobs:
           echo "Node version: $(node --version)"
           pnpm run test:e2e:ci && pnpm run lint
       - name: E2E Test Report
-        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
+        uses: dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a  # v3.2.0
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
         with:
           name: E2E Test Results (Windows Node ${{ matrix.node-version }})
@@ -250,7 +250,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: '22.x'
+          node-version: '22.23.3'
       - name: Setup pnpm
         uses: pnpm/action-setup@v5
       - name: Get pnpm store directory
