@@ -6,38 +6,53 @@
 import {Args, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getProject, type MrtProjectUpdate} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {getProjectWithBackend, type MrtProjectView} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
 /**
  * Print project details in a formatted display.
  */
-function printProjectDetails(project: MrtProjectUpdate): void {
+function printProjectDetails(project: MrtProjectView): void {
   const ui = cliui({width: process.stdout.columns || 80});
   const labelWidth = 16;
 
   ui.div('');
   ui.div({text: 'Name:', width: labelWidth}, {text: project.name});
-  ui.div({text: 'ID:', width: labelWidth}, {text: project.slug ?? ''});
-  ui.div({text: 'Organization:', width: labelWidth}, {text: project.organization ?? ''});
-  ui.div({text: 'Type:', width: labelWidth}, {text: project.project_type ?? '-'});
-  ui.div({text: 'Status:', width: labelWidth}, {text: project.deletion_status ?? 'active'});
+  ui.div({text: 'ID:', width: labelWidth}, {text: project.id});
 
-  if (project.ssr_region) {
-    ui.div({text: 'Region:', width: labelWidth}, {text: project.ssr_region});
+  if (project.organization) {
+    ui.div({text: 'Organization:', width: labelWidth}, {text: project.organization});
+  }
+
+  if (project.type) {
+    ui.div({text: 'Type:', width: labelWidth}, {text: project.type});
+  }
+
+  if (project.status) {
+    ui.div({text: 'Status:', width: labelWidth}, {text: project.status});
+  }
+
+  if (project.region) {
+    ui.div({text: 'Region:', width: labelWidth}, {text: project.region});
   }
 
   if (project.url) {
     ui.div({text: 'URL:', width: labelWidth}, {text: project.url});
   }
 
-  if (project.created_at) {
-    ui.div({text: 'Created:', width: labelWidth}, {text: new Date(project.created_at).toLocaleString()});
+  if (project.sites && project.sites.length > 0) {
+    ui.div({text: 'Sites:', width: labelWidth}, {text: project.sites.join(', ')});
   }
 
-  if (project.updated_at) {
-    ui.div({text: 'Updated:', width: labelWidth}, {text: new Date(project.updated_at).toLocaleString()});
+  if (project.createdAt) {
+    ui.div({text: 'Created:', width: labelWidth}, {text: new Date(project.createdAt).toLocaleString()});
   }
+
+  if (project.updatedAt) {
+    ui.div({text: 'Updated:', width: labelWidth}, {text: new Date(project.updatedAt).toLocaleString()});
+  }
+
+  ui.div({text: 'Backend:', width: labelWidth}, {text: project.backend});
 
   ux.stdout(ui.toString());
 }
@@ -65,6 +80,7 @@ export default class MrtProjectGet extends MrtCommand<typeof MrtProjectGet> {
   static examples = [
     '<%= config.bin %> <%= command.id %> my-storefront',
     '<%= config.bin %> <%= command.id %> --project my-storefront',
+    '<%= config.bin %> <%= command.id %> --storefront my-storefront --mrt-backend scapi',
     '<%= config.bin %> <%= command.id %> --storefront my-storefront --json',
   ];
 
@@ -72,36 +88,35 @@ export default class MrtProjectGet extends MrtCommand<typeof MrtProjectGet> {
     ...MrtCommand.baseFlags,
   };
 
-  async run(): Promise<MrtProjectUpdate> {
-    this.requireMrtCredentials();
+  protected operations = {
+    getProjectWithBackend,
+  };
 
+  async run(): Promise<unknown> {
     const slug = this.resolveProjectSlug(this.args.slug);
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
     this.log(t('commands.mrt.project.get.fetching', 'Fetching project "{{slug}}"...', {slug}));
 
-    try {
-      const result = await getProject(
-        {
-          projectSlug: slug,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    const result = await this.operations.getProjectWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: slug,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Getting project via backend'),
+    });
 
-      if (this.jsonEnabled()) {
-        return result;
-      }
-
-      printProjectDetails(result);
-
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.project.get.failed', 'Failed to get project: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
+    if (!this.jsonEnabled()) {
+      printProjectDetails(result.project);
     }
+
+    // Under --json, emit the backend's native project response verbatim.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

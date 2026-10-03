@@ -250,7 +250,25 @@ export type {
 } from './organization-member.js';
 
 // Project operations
-export {listProjects, createProject, getProject, updateProject, deleteProject} from './project.js';
+export {
+  listProjects,
+  createProject,
+  getProject,
+  updateProject,
+  deleteProject,
+  getStorefrontsScapi,
+  createStorefrontScapi,
+  getStorefrontByIdScapi,
+  updateStorefrontScapi,
+  deleteStorefrontScapi,
+  listProjectsWithBackend,
+  createProjectWithBackend,
+  getProjectWithBackend,
+  updateProjectWithBackend,
+  deleteProjectWithBackend,
+  normalizeLegacyProject,
+  normalizeProjectScapi,
+} from './project.js';
 export type {
   ListProjectsOptions,
   ListProjectsResult,
@@ -262,6 +280,16 @@ export type {
   MrtProjectUpdate,
   PatchedMrtProject,
   SsrRegion,
+  MrtProjectView,
+  MrtProjectsView,
+  MrtProjectResult,
+  MrtProjectWriteResult,
+  ProjectBackendOptions,
+  ListProjectsBackendOptions,
+  CreateProjectBackendOptions,
+  GetProjectBackendOptions,
+  UpdateProjectBackendOptions,
+  DeleteProjectBackendOptions,
 } from './project.js';
 
 // Member operations

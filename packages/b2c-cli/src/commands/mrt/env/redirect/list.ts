@@ -27,6 +27,17 @@ const COLUMNS: Record<string, ColumnDef<MrtRedirectView>> = {
     header: 'To',
     get: (r) => r.destination || '-',
   },
+  // Backward-compatible aliases for the pre-SCAPI column keys. `--columns
+  // fromPath,toUrl` worked before the source/destination rename, so retain them
+  // as aliases rather than breaking existing scripts.
+  fromPath: {
+    header: 'From',
+    get: (r) => r.source || '-',
+  },
+  toUrl: {
+    header: 'To',
+    get: (r) => r.destination || '-',
+  },
   status: {
     header: 'HTTP',
     get: (r) => r.httpStatusCode?.toString() ?? '301',
@@ -79,7 +90,8 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
       description: 'Offset for pagination',
     }),
     search: Flags.string({
-      description: 'Search term for filtering (legacy backend only)',
+      description:
+        'Filter by a case-insensitive substring of the redirect source path (legacy backend only; ignored on SCAPI)',
     }),
     ...columnFlagsFor(COLUMNS),
   };
@@ -127,7 +139,20 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
       search,
       origin: this.resolvedConfig.values.mrtOrigin,
       onFallback: (reason) => this.warn(reason),
-      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Listing redirects via backend'),
+      onResolve: (backend) => {
+        this.logger.debug({backend}, '[MRT] Listing redirects via backend');
+        // The SCAPI gateway does not yet accept a `search` query parameter, so
+        // the filter is dropped there. Warn rather than silently returning the
+        // full, unfiltered list.
+        if (backend === 'scapi' && search) {
+          this.warn(
+            t(
+              'commands.mrt.redirect.list.searchUnsupportedScapi',
+              '--search is not supported on the SCAPI backend yet and was ignored; results are unfiltered.',
+            ),
+          );
+        }
+      },
     });
 
     if (!this.jsonEnabled()) {

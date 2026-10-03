@@ -127,8 +127,13 @@ export default class MrtRedirectClone extends MrtCommand<typeof MrtRedirectClone
       }
     }
 
-    // Under --json, emit the backend's native clone response verbatim (the legacy
-    // clone result, or `null` for the SCAPI empty 201).
+    // Under --json, emit the legacy backend's native clone response verbatim.
+    // SCAPI returns an empty 201 (no body), so synthesize a stable object there
+    // rather than emitting a bare `null` — `count` is null since SCAPI reports no
+    // cloned count.
+    if (result.backend === 'scapi') {
+      return {from: sourceEnvironment, to: targetEnvironment, count: result.count};
+    }
     return result.raw;
   }
 

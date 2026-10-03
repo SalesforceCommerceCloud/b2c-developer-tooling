@@ -6,50 +6,72 @@ Detailed reference for MRT project, member, and notification commands.
 
 ## Project Management
 
+> **Backend-aware:** `mrt project list` / `create` / `get` / `update` / `delete` honor `--mrt-backend` (`auto` | `legacy` | `scapi`). An MRT project **is** a SCAPI storefront, so over SCAPI they map to the Storefront Storefronts API (scopes `sfcc.storefront.storefronts` / `.rw`); the storefront ID is the project slug and the organization is fixed by `--tenant-id`. Some flags are legacy-only and some are SCAPI-only (see below); a flag is validated only against the backend that will run. `member` and `notification` are legacy-only — `--mrt-backend scapi` on those errors with an actionable message. Under `--json`, each command returns the serving backend's native shape.
+
 ### List Projects
+
+`--organization` / `-o` filters the legacy backend only.
 
 ```bash
 b2c mrt project list
 b2c mrt project list --limit 10 --offset 0
+b2c mrt project list --mrt-backend scapi
 b2c mrt project list --json
 ```
 
 ### Create Project
 
-The positional argument is the project **name**; `--organization` / `-o` is required. Choose the new project's slug with `--project` / `--storefront` (`-p` / `-s`); when omitted, MRT auto-generates it from the name.
+The positional argument is the project **name**.
+
+- **Legacy:** `--organization` / `-o` is required. Choose the new project's slug with `--project` / `--storefront` (`-p` / `-s`); when omitted, MRT auto-generates it from the name. `--url` and `--region` / `-r` are legacy-only.
+- **SCAPI:** at least one `--site` (repeatable) is required; `--type` picks the storefront type (default `storefront_next`). `--organization`/`--url`/`--region`/slug do not apply (the storefront ID is server-generated). Returns `202` and provisions asynchronously — poll `project get` for `setupStatus`.
 
 ```bash
+# Legacy
 b2c mrt project create "My Storefront" --organization my-org
-b2c mrt project create "My Storefront" -o my-org --storefront my-storefront
 b2c mrt project create "My Storefront" -o my-org -s my-storefront --region us-east-1
+# SCAPI
+b2c mrt project create "My Storefront" --site RefArch --mrt-backend scapi
 ```
 
-> **Slug as positional or flag:** `get`, `update`, and `delete` accept the project slug **either** as a positional argument **or** via `-p` / `-s` / `--project` / `--storefront` (or `MRT_PROJECT` / `dw.json`). An explicit positional wins if both are given; at least one source must resolve.
+> **Slug as positional or flag:** `get`, `update`, and `delete` accept the project slug (= SCAPI storefront ID) **either** as a positional argument **or** via `-p` / `-s` / `--project` / `--storefront` (or `MRT_PROJECT` / `dw.json`). An explicit positional wins if both are given; at least one source must resolve.
 
 ### Get Project Details
 
 ```bash
 b2c mrt project get my-storefront            # positional
 b2c mrt project get --project my-storefront  # flag
-b2c mrt project get -p my-storefront --json
+b2c mrt project get -p my-storefront --mrt-backend scapi --json
 ```
 
 ### Update Project
 
+At least one updatable field must be supplied.
+
+- **Legacy:** `--name` / `-n`, `--url`, `--region` / `-r`.
+- **SCAPI:** cannot rename (no `--name`/`--url`). Honors `--region` / `-r`, `--ssr-architecture` (`x86` | `arm64`), `--allow-cookies` / `--no-allow-cookies`, `--preserve-proxy-user-agent` / `--no-preserve-proxy-user-agent`, and `--site` (repeatable). **`--site` fully replaces the assigned-sites set** — pass the complete desired set, not a delta.
+
 ```bash
+# Legacy
 b2c mrt project update my-storefront --name "Updated Name"
-b2c mrt project update --project my-storefront --name "Updated Name"
+# SCAPI — replaces the full assigned-sites set with exactly these two
+b2c mrt project update --project my-storefront --site RefArch --site OtherSite --mrt-backend scapi
 ```
 
 ### Delete Project
+
+Over SCAPI, deletion returns `202` and completes asynchronously.
 
 ```bash
 b2c mrt project delete my-storefront
 b2c mrt project delete --project my-storefront
 b2c mrt project delete -p my-storefront --force  # skip confirmation
+b2c mrt project delete my-storefront --mrt-backend scapi --force
 ```
 
 ## Member Management
+
+> `member` commands are legacy-only; they do not support `--mrt-backend scapi`.
 
 Members can have one of three roles: `admin`, `developer`, or `viewer`.
 
