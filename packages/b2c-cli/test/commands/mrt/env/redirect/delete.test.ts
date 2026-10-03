@@ -89,7 +89,9 @@ describe('mrt env redirect delete', () => {
     expect(input.projectSlug).to.equal('my-project');
     expect(input.environment).to.equal('staging');
     expect(input.identifier).to.equal(FROM_PATH);
-    expect(result).to.deep.equal({identifier: FROM_PATH, deleted: true});
+    // `fromPath` mirrors `identifier` for backward compatibility with scripts that
+    // read the legacy `--json` key.
+    expect(result).to.deep.equal({identifier: FROM_PATH, fromPath: FROM_PATH, deleted: true});
     // The resolved backend is intentionally kept out of the --json payload.
     expect(result).to.not.have.property('backend');
   });

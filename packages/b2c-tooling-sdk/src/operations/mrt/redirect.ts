@@ -998,7 +998,11 @@ export interface ListRedirectsBackendOptions extends RedirectBackendOptions {
   limit?: number;
   /** Pagination offset (forwarded to both backends). */
   offset?: number;
-  /** Legacy-only search term (ignored by the SCAPI backend). */
+  /**
+   * Case-insensitive substring filter on the redirect source path. Honored by
+   * the legacy backend only; the SCAPI gateway does not yet accept a `search`
+   * query parameter, so it is ignored there (the caller is warned).
+   */
   search?: string;
 }
 
@@ -1030,6 +1034,9 @@ export async function listRedirectsWithBackend(options: ListRedirectsBackendOpti
       onResolve,
     },
     {
+      // `search` is intentionally not forwarded here: the SCAPI gateway does not
+      // yet define a `search` query parameter and rejects the request if sent.
+      // The command warns when `--search` is combined with the SCAPI backend.
       scapi: () =>
         getRedirectsScapi(scapiConnection!, {
           storefrontId: projectSlug,

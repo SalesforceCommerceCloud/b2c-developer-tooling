@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteAccessControlHeaderWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
+import {confirm} from '../../../../prompts.js';
 
 /**
  * Delete an access control header from an MRT environment.
@@ -31,11 +32,17 @@ export default class MrtAccessControlDelete extends MrtCommand<typeof MrtAccessC
 
   static examples = [
     '<%= config.bin %> <%= command.id %> ff832a9e-0e55-11ef-8f23-0242ac110002 --project my-storefront --environment production',
+    '<%= config.bin %> <%= command.id %> ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --force',
     '<%= config.bin %> <%= command.id %> ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --mrt-backend scapi',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
+    force: Flags.boolean({
+      char: 'f',
+      description: 'Skip confirmation prompt',
+      default: false,
+    }),
   };
 
   protected operations = {
@@ -58,6 +65,25 @@ export default class MrtAccessControlDelete extends MrtCommand<typeof MrtAccessC
       this.error(
         'MRT environment is required. Provide --environment flag, set MRT_ENVIRONMENT, or set mrtEnvironment in dw.json.',
       );
+    }
+
+    const {force} = this.flags;
+
+    // Confirm deletion unless --force is specified. Removing an access control
+    // header can leave an environment publicly reachable, so prompt by default —
+    // matching `mrt env delete`, `mrt env redirect delete`, and `mrt project delete`.
+    if (!force && !this.jsonEnabled()) {
+      const confirmed = await confirm(
+        t(
+          'commands.mrt.access-control.delete.confirm',
+          'Are you sure you want to delete access control header "{{id}}"?',
+          {id},
+        ),
+      );
+      if (!confirmed) {
+        this.log(t('commands.mrt.access-control.delete.cancelled', 'Deletion cancelled.'));
+        return {id, project, environment};
+      }
     }
 
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
