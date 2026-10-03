@@ -334,6 +334,67 @@ xmllint --schema "$(b2c docs schema catalog --path)" catalog.xml --noout
 
 ---
 
+## b2c docs skill
+
+List, search, and read the agent skills bundled with the CLI. Skills are the workflow guides (the same content as the [agent skills plugins](../guide/agent-skills) and the MCP `skills_read` tool) that explain how to accomplish tasks with `b2c`. Topic and command help point to the relevant skill (for example `b2c code --help` ends with `b2c docs skill b2c-code`).
+
+### Usage
+
+```bash
+b2c docs skill [SKILL | TOPIC | QUERY...]
+```
+
+### Arguments
+
+Arguments are resolved in order:
+
+1. A skill name or ID: `b2c-code`, `code` (the `b2c-` prefix is optional), or `b2c/b2c-hooks` for another collection
+2. A command or topic: `code deploy`, `auth login`, `mrt env var` — reads the skill that covers it
+3. Anything else is used as a search query
+
+With no arguments, lists the skills in the collection.
+
+### Flags
+
+| Flag                 | Description                                                                              | Default   |
+| -------------------- | ---------------------------------------------------------------------------------------- | --------- |
+| `--collection`, `-c` | Skill collection: `b2c-cli`, `b2c` (cartridge development), `b2c-ops`, `storefront-next` | `b2c-cli` |
+| `--all`              | Use every collection instead of `--collection`                                           | `false`   |
+| `--search`, `-s`     | Search with the arguments instead of resolving a skill                                   | `false`   |
+| `--file`             | Read a reference file of the skill instead of `SKILL.md`                                 |           |
+| `--section`          | Read only one section (heading ID) of the file                                           |           |
+| `--limit`, `-l`      | Maximum search results (1-20)                                                            | `10`      |
+
+### Examples
+
+```bash
+# List CLI skills
+b2c docs skill
+
+# Read the skill for a command or topic
+b2c docs skill code deploy
+b2c docs skill sandbox
+
+# Read a reference file listed after the skill content
+b2c docs skill b2c-mrt --file references/ENVIRONMENT-COMMANDS.md
+
+# Search skills
+b2c docs skill --search "site import"
+
+# Browse or search other collections
+b2c docs skill --collection storefront-next
+b2c docs skill --all --search "custom api"
+
+# JSON output (for agents and scripts)
+b2c docs skill code --json
+```
+
+### Output
+
+Reading a skill writes its Markdown to stdout; available reference files are listed on stderr. Listing and searching print a table of skill names and descriptions. With `--json`, reads return the content with `sections` and `references`, and listing and searching return the matching entries.
+
+---
+
 ## b2c docs download
 
 Download Script API documentation from a B2C Commerce instance to a local directory.

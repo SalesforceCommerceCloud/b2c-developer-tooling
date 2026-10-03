@@ -39,6 +39,11 @@ process.env.SFCC_LOG_LEVEL = 'silent';
 // Prevent BaseCommand from running plugin hooks during tests
 process.env.B2C_SKIP_PLUGIN_HOOKS = '1';
 
+// Disable AI agent detection so tests behave the same whether they run under a
+// coding agent (Claude Code, Cursor, ...), in CI, or in a developer terminal.
+// Agent-specific behavior is tested with explicit environments.
+process.env.SFCC_AGENT = '0';
+
 export const mochaHooks = {
   beforeEach() {
     globalMiddlewareRegistry.clear();

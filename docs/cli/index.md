@@ -67,6 +67,19 @@ need approval stop in automated runs where nobody can answer. See the
 | Environment Variable         | Description                             |
 | ---------------------------- | --------------------------------------- |
 | `B2C_SKIP_NEW_VERSION_CHECK` | Skip the new version availability check |
+| `SFCC_AGENT`                 | Override AI agent detection (see below) |
+
+### AI Agents
+
+For everyone, `b2c --help` lists discovery commands (`b2c commands search`, [`b2c docs skill`](./docs#b2c-docs-skill), `b2c docs search`), and topic and command help end with the skill that covers them.
+
+The CLI detects when an AI coding agent (such as Claude Code, Cursor, Codex, Gemini CLI, GitHub Copilot, or OpenCode) runs it, using environment variables those tools set. When an agent is detected:
+
+- Interactive prompts are disabled. Commands that would ask for confirmation fail with a message that names the `--force` (or `--yes`) flag instead of waiting for input that never arrives. The same applies whenever no interactive terminal is available.
+- `b2c --help` adds an **Agent Guidance** section (read the task's skill with `b2c docs skill`, prefer `--json`, prompts are disabled); topic and command help add short **Agent Notes**.
+- The agent name is added to the HTTP User-Agent and to anonymous usage telemetry, so agent-driven usage can be measured. Agent session IDs are never sent; only a one-way hash is used to group commands from the same session.
+
+Set `SFCC_AGENT` to override detection: `SFCC_AGENT=0` treats the session as human-driven, and `SFCC_AGENT=1` (or an agent name, such as `SFCC_AGENT="My Agent"`) enables agent behavior for tools that are not detected automatically.
 
 ## Command Topics
 
@@ -112,6 +125,7 @@ All Account Manager commands are under the `am` topic:
 
 - [Setup Commands](./setup) - Configure instances, install IDE integrations, and install agent skills
 - [Auth Commands](./auth) - Authentication and token management
+- [Commands Search](./commands) - Find the CLI command for a task by keyword
 - [Docs Commands](./docs) - Search/read Script API, Developer Center guides, tooling docs, job steps, and XSD schemas; download docs from an instance
 - [Logging](./logging) - Log levels, output formats, and environment variables
 
@@ -123,4 +137,10 @@ Get help for any command:
 b2c --help
 b2c code --help
 b2c code deploy --help
+```
+
+Find a command for a task:
+
+```bash
+b2c commands search "deploy cartridges"
 ```

@@ -121,6 +121,10 @@ export type {
 // Instance creation utility (public API for CLI commands)
 export {createInstanceFromConfig, normalizeConfigKeys, resolveLibraryEntries} from './mapping.js';
 
+// dw.json JSON Schema (published as data/schemas/dw.schema.json)
+export {buildDwJsonSchema, DW_JSON_FIELDS, DW_JSON_SCHEMA_URL} from './dw-json-schema.js';
+export type {JsonSchema} from './dw-json-schema.js';
+
 // Low-level dw.json API (still available for advanced use)
 export {
   loadDwJson,

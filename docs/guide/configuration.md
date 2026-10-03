@@ -271,6 +271,19 @@ If a server override differs from the configured hostname, the lower-priority co
 
 Settings apply to the features that use them. CLI flags and environment overrides can be command-specific; use `b2c <command> --help` for that command's options.
 
+### Editor Validation (JSON Schema) {#json-schema}
+
+A JSON Schema for `dw.json` provides completion, hover descriptions, and validation in editors. The [IDE Extension](/vscode-extension/) applies it to every `dw.json` automatically. In other editors, add a `$schema` reference:
+
+```json
+{
+  "$schema": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/schemas/dw.schema.json",
+  "hostname": "abcd-001.dx.commercecloud.salesforce.com"
+}
+```
+
+The schema accepts every supported spelling (kebab-case, camelCase, and legacy aliases) and allows unknown fields used by other tools. It also ships with the SDK as `@salesforce/b2c-tooling-sdk/schemas/dw.schema.json`.
+
 ### Instance and Site
 
 | Field / environment variable              | Purpose                                                                                     |

@@ -4,12 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {randomBytes} from 'node:crypto';
+import {createHash, randomBytes} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {AppInsightsClient} from './app-insights-client.js';
 import type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} from './types.js';
 import {getLogger, type Logger} from '../logging/index.js';
+import {getAgentContext} from '../ux/agent-context.js';
 
 const generateRandomId = (): string => randomBytes(20).toString('hex');
 
@@ -43,6 +44,29 @@ function detectCI(): boolean {
     env.BITBUCKET_BUILD_NUMBER ||
     env.CODEBUILD_BUILD_ID,
   );
+}
+
+/**
+ * Agent attribution included with every event when an AI coding agent is detected.
+ *
+ * `agentSessionKey` lets analytics group events from one agent session (e.g. a
+ * Claude Code conversation) without sending the harness's raw session id: it is
+ * a truncated SHA-256 salted with the per-install `cliId`, so the same agent
+ * session cannot be correlated across installs.
+ */
+type AgentAttributes = Pick<TelemetryEventProperties, 'agent' | 'agentSessionKey' | 'isAgent'>;
+
+function buildAgentAttributes(cliId: string): AgentAttributes {
+  const context = getAgentContext();
+  if (!context.isAgentic || !context.harness) return {isAgent: false};
+  const attributes: AgentAttributes = {isAgent: true, agent: context.harness.id};
+  if (context.sessionId) {
+    attributes.agentSessionKey = createHash('sha256')
+      .update(`b2c-agent-session-v1\0${cliId}\0${context.harness.id}\0${context.sessionId}`)
+      .digest('hex')
+      .slice(0, 32);
+  }
+  return attributes;
 }
 
 /**
@@ -156,6 +180,7 @@ export class Telemetry {
   private flushIntervalMs: number | undefined;
   private flushTimer: ReturnType<typeof setInterval> | undefined;
   private isCI: boolean;
+  private agentAttributes: AgentAttributes;
 
   /**
    * Check if telemetry is disabled via environment variables.
@@ -186,6 +211,7 @@ export class Telemetry {
     this.version = options.version ?? '0.0.0';
     this.flushIntervalMs = options.flushIntervalMs;
     this.isCI = detectCI();
+    this.agentAttributes = buildAgentAttributes(this.cliId);
 
     if (process.env.SFCC_TELEMETRY_LOG === 'true') {
       this.traceLog = getLogger().child({component: 'telemetry'});
@@ -333,6 +359,7 @@ export class Telemetry {
       timestamp: String(Date.now()),
       processUptime: process.uptime() * 1000,
       isCI: this.isCI,
+      ...this.agentAttributes,
     };
   }
 
