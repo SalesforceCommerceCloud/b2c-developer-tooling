@@ -14,6 +14,8 @@ import {
   DataStoreServiceError,
   DataStoreUnavailableError,
 } from '@salesforce/mrt-utilities';
+// Internal detail, imported directly rather than through the package barrel.
+import {CircuitBreaker} from '../src/data-store/circuit-breaker.js';
 
 describe('DataStore', () => {
   let mockSend: sinon.SinonStub;
@@ -25,7 +27,9 @@ describe('DataStore', () => {
     (DataStore as unknown as {_instance: DataStore | null})._instance = null;
     DataStore._testDocumentClient = null;
     DataStore._testLogMRTError = null;
+    DataStore._testLogMRTEvent = null;
     DataStore._testRandom = null;
+    DataStore._testBreaker = null;
 
     mockSend = sinon.stub();
     mockDocumentClient = {send: mockSend} as unknown as DynamoDBDocumentClient;
@@ -41,7 +45,9 @@ describe('DataStore', () => {
     (DataStore as unknown as {_instance: DataStore | null})._instance = null;
     DataStore._testDocumentClient = null;
     DataStore._testLogMRTError = null;
+    DataStore._testLogMRTEvent = null;
     DataStore._testRandom = null;
+    DataStore._testBreaker = null;
     sinon.restore();
   });
 
@@ -349,6 +355,228 @@ describe('DataStore', () => {
 
           expect(mockSend.callCount).to.equal(1);
           expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(legacyKey);
+        });
+      }
+    });
+
+    describe('circuit breaker', () => {
+      beforeEach(() => {
+        // Silence the request-failure logs these tests deliberately provoke; tests that
+        // assert on logging install their own stubs.
+        DataStore._testLogMRTError = sinon.stub();
+        DataStore._testLogMRTEvent = sinon.stub();
+      });
+
+      // A breaker that trips after a single failure and never leaves open on its own, so
+      // integration tests can drive open/closed deterministically without a clock.
+      const makeBreaker = (overrides: Partial<Parameters<typeof CircuitBreaker>[0]> = {}) =>
+        new CircuitBreaker({
+          failureThreshold: 1,
+          throttleWeight: 2,
+          cooldownMs: 1_000,
+          halfOpenProbes: 1,
+          now: () => 0,
+          ...overrides,
+        });
+
+      const expectRejects = async (promise: Promise<unknown>, ErrorType: new (...args: never[]) => Error) => {
+        try {
+          await promise;
+          expect.fail('should have thrown');
+        } catch (e) {
+          expect(e).to.be.an.instanceOf(ErrorType);
+        }
+      };
+
+      it('fails fast without calling DynamoDB when the breaker is open', async () => {
+        const breaker = makeBreaker();
+        breaker.recordFailure(false); // trip it
+        expect(breaker.state).to.equal('open');
+        DataStore._testBreaker = breaker;
+
+        await expectRejects(DataStore.getDataStore().getEntry('my-key'), DataStoreServiceError);
+
+        expect(mockSend.callCount).to.equal(0);
+      });
+
+      it('accumulates service failures toward tripping and opens the breaker', async () => {
+        const breaker = makeBreaker({failureThreshold: 2});
+        DataStore._testBreaker = breaker;
+        mockSend.rejects(new Error('boom'));
+
+        const store = DataStore.getDataStore();
+        await expectRejects(store.getEntry('my-key'), DataStoreServiceError);
+        expect(breaker.state).to.equal('closed'); // 1 point < threshold 2
+        await expectRejects(store.getEntry('my-key'), DataStoreServiceError);
+        expect(breaker.state).to.equal('open'); // 2 points >= threshold
+
+        // Now open: the next call short-circuits without reaching DynamoDB.
+        expect(mockSend.callCount).to.equal(2);
+        await expectRejects(store.getEntry('my-key'), DataStoreServiceError);
+        expect(mockSend.callCount).to.equal(2);
+      });
+
+      it('weights a throttling failure heavier than a plain failure', async () => {
+        const breaker = makeBreaker({failureThreshold: 2, throttleWeight: 2});
+        DataStore._testBreaker = breaker;
+        const throttle = new Error('slow down');
+        throttle.name = 'ThrottlingException';
+        mockSend.rejects(throttle);
+
+        // A single throttle contributes 2 points, meeting the threshold on its own.
+        await expectRejects(DataStore.getDataStore().getEntry('my-key'), DataStoreServiceError);
+        expect(breaker.state).to.equal('open');
+      });
+
+      it('does not trip on a miss (a miss is a healthy response, not a failure)', async () => {
+        const breaker = makeBreaker({failureThreshold: 1});
+        DataStore._testBreaker = breaker;
+        mockSend.resolves({}); // miss
+
+        const store = DataStore.getDataStore();
+        for (let i = 0; i < 5; i++) {
+          await expectRejects(store.getEntry('my-key'), DataStoreNotFoundError);
+        }
+        expect(breaker.state).to.equal('closed');
+        expect(mockSend.callCount).to.equal(5);
+      });
+
+      it('recovers: a successful probe after cooldown closes the breaker', async () => {
+        let clock = 0;
+        const breaker = makeBreaker({failureThreshold: 1, cooldownMs: 1_000, now: () => clock});
+        DataStore._testBreaker = breaker;
+
+        const store = DataStore.getDataStore();
+        mockSend.rejects(new Error('boom'));
+        await expectRejects(store.getEntry('my-key'), DataStoreServiceError);
+        expect(breaker.state).to.equal('open');
+
+        // Still open before cooldown elapses: fails fast, no send.
+        clock = 999;
+        await expectRejects(store.getEntry('my-key'), DataStoreServiceError);
+        expect(mockSend.callCount).to.equal(1);
+
+        // After cooldown, a probe is admitted; a success closes the breaker.
+        clock = 1_000;
+        mockSend.resolves({Item: {value: {theme: 'dark'}}});
+        const result = await store.getEntry('my-key');
+        expect(result).to.deep.equal({key: 'my-key', value: {theme: 'dark'}});
+        expect(breaker.state).to.equal('closed');
+        expect(mockSend.callCount).to.equal(2);
+      });
+
+      it('admits only one probe when concurrent reads straddle the half-open transition', async () => {
+        let clock = 0;
+        const breaker = makeBreaker({failureThreshold: 1, cooldownMs: 1_000, halfOpenProbes: 1, now: () => clock});
+        DataStore._testBreaker = breaker;
+
+        const store = DataStore.getDataStore();
+        mockSend.rejects(new Error('boom'));
+        await expectRejects(store.getEntry('my-key'), DataStoreServiceError);
+        expect(breaker.state).to.equal('open');
+        expect(mockSend.callCount).to.equal(1);
+
+        // Cooldown elapsed: fire several reads concurrently. Each getEntry runs synchronously
+        // up to its `await ddb.send`, in call order — so the first is admitted as the probe
+        // and increments the in-flight count before the others check, and the rest fail fast.
+        // This proves a burst can't stampede a backend that may still be saturated.
+        clock = 1_000;
+        mockSend.onCall(1).resolves({Item: {value: {theme: 'dark'}}});
+
+        const results = await Promise.allSettled([
+          store.getEntry('my-key'),
+          store.getEntry('my-key'),
+          store.getEntry('my-key'),
+        ]);
+
+        // Exactly one call was admitted to DynamoDB as the probe; the other two rejected.
+        expect(mockSend.callCount).to.equal(2);
+        const fulfilled = results.filter((r) => r.status === 'fulfilled');
+        const rejected = results.filter((r) => r.status === 'rejected');
+        expect(fulfilled).to.have.lengthOf(1);
+        expect(rejected).to.have.lengthOf(2);
+        for (const r of rejected) {
+          expect((r as PromiseRejectedResult).reason).to.be.an.instanceOf(DataStoreServiceError);
+        }
+        // The admitted probe succeeded, closing the breaker.
+        expect(breaker.state).to.equal('closed');
+      });
+
+      it('re-opens if the half-open probe fails', async () => {
+        let clock = 0;
+        const breaker = makeBreaker({failureThreshold: 1, cooldownMs: 1_000, now: () => clock});
+        DataStore._testBreaker = breaker;
+        mockSend.rejects(new Error('boom'));
+
+        const store = DataStore.getDataStore();
+        await expectRejects(store.getEntry('my-key'), DataStoreServiceError);
+        expect(breaker.state).to.equal('open');
+
+        clock = 1_000; // probe admitted, but the backend is still failing
+        await expectRejects(store.getEntry('my-key'), DataStoreServiceError);
+        expect(breaker.state).to.equal('open');
+        expect(mockSend.callCount).to.equal(2);
+      });
+
+      it('emits an error log when opening and an event log on recovery', async () => {
+        let clock = 0;
+        const errorLog = sinon.stub();
+        const eventLog = sinon.stub();
+        DataStore._testLogMRTError = errorLog;
+        DataStore._testLogMRTEvent = eventLog;
+
+        const breaker = new CircuitBreaker({
+          failureThreshold: 1,
+          throttleWeight: 2,
+          cooldownMs: 1_000,
+          halfOpenProbes: 1,
+          now: () => clock,
+          onTransition: ({from, to, reason}) => {
+            const context = {from, to, reason};
+            if (to === 'open') {
+              errorLog('data_store', new Error(`Circuit breaker opened: ${reason}`), context);
+            } else {
+              eventLog('data_store', 'circuit breaker state change', context);
+            }
+          },
+        });
+        DataStore._testBreaker = breaker;
+
+        const store = DataStore.getDataStore();
+        mockSend.rejects(new Error('boom'));
+        await expectRejects(store.getEntry('my-key'), DataStoreServiceError);
+        // The opening call logs twice at error level: the failed request itself, and the
+        // breaker-opened transition. Find the transition one by its context shape.
+        const openTransitionCall = errorLog
+          .getCalls()
+          .find((c) => (c.args[2] as {to?: string} | undefined)?.to === 'open');
+        expect(openTransitionCall, 'expected an error log for the open transition').to.exist;
+        expect(openTransitionCall!.args[0]).to.equal('data_store');
+        expect(openTransitionCall!.args[2]).to.deep.include({from: 'closed', to: 'open'});
+        const errorLogsAfterOpen = errorLog.callCount;
+
+        clock = 1_000;
+        mockSend.resolves({Item: {value: {theme: 'dark'}}});
+        await store.getEntry('my-key');
+        // half-open then closed => two event logs; recovery adds no further error logs.
+        expect(errorLog.callCount).to.equal(errorLogsAfterOpen);
+        expect(eventLog.callCount).to.equal(2);
+        expect(eventLog.getCalls().map((c) => c.args[2].to)).to.deep.equal(['half-open', 'closed']);
+      });
+
+      for (const disabledValue of ['true', '1']) {
+        it(`bypasses the breaker entirely when disabled via the kill switch (${disabledValue})`, async () => {
+          process.env.MRT_DATA_STORE_CIRCUIT_BREAKER_DISABLED = disabledValue;
+          const breaker = makeBreaker();
+          breaker.recordFailure(false); // would be open
+          expect(breaker.state).to.equal('open');
+          DataStore._testBreaker = breaker;
+          mockSend.resolves({Item: {value: {theme: 'dark'}}});
+
+          // Breaker is open but disabled, so the read still reaches DynamoDB.
+          const result = await DataStore.getDataStore().getEntry('my-key');
+          expect(result).to.deep.equal({key: 'my-key', value: {theme: 'dark'}});
+          expect(mockSend.callCount).to.equal(1);
         });
       }
     });
