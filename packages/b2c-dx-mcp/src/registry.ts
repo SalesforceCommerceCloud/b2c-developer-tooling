@@ -6,6 +6,7 @@
 
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
+import type {ScapiSchemaDocument} from '@salesforce/b2c-tooling-sdk/scapi';
 import {DOC_CATEGORIES, resolveEnabledCategories, type DocCategory} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
 import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES, toToolAnnotations} from './utils/index.js';
@@ -40,6 +41,7 @@ export function createToolRegistry(
   serverContext?: ServerContext,
   detectedWorkspaces: readonly ProjectType[] = [],
   enabledDocCategories?: readonly DocCategory[],
+  scapiSchemas?: readonly ScapiSchemaDocument[],
 ): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
@@ -59,7 +61,7 @@ export function createToolRegistry(
     ...createDiagnosticsTools(loadServices, serverContext),
     ...createDocsTools(loadServices, {detectedWorkspaces, enabledCategories: enabledDocCategories}),
     ...createMrtTools(loadServices),
-    ...createScapiTools(loadServices, serverContext?.scapiExecutions),
+    ...createScapiTools(loadServices, serverContext?.scapiExecutions, scapiSchemas),
     createGuidanceTool(),
   ];
 
@@ -108,7 +110,7 @@ export async function registerToolsets(
   }
 
   // Tool availability is independent of the workspace. Explicit selection customizes the default catalog.
-  const toolRegistry = createToolRegistry(loadServices, serverContext, [], enabledDocCategories);
+  const toolRegistry = createToolRegistry(loadServices, serverContext, [], enabledDocCategories, flags.scapiSchemas);
   const existingToolNames = new Set(
     Object.values(toolRegistry)
       .flat()

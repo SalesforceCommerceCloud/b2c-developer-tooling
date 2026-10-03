@@ -89,7 +89,9 @@ Pass `schemas: "live"` to search the configured tenant's Schemas API contracts
 instead: tenant `c_*` properties, custom APIs, and APIs newer than the bundle.
 Live search needs `sfcc.scapi-schemas`, uses the same project context as
 `scapi_execute`, and caches per tenant for the server session (`refresh: true` refetches). Contracts that
-failed to load are listed in `schemaFailures`. Schemas and responses can be huge.
+failed to load are listed in `schemaFailures`. APIs with `origin: "local"` are
+developer-supplied beta contracts (`--scapi-schemas`). They replace the bundled and live versions in search and
+execution. Schemas and responses can be huge.
 Return only what the next decision needs:
 
 1. Find APIs/operations through `spec.apis`/`spec.paths`; return method/path/operationId.

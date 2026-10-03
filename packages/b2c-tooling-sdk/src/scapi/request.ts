@@ -343,7 +343,8 @@ export function createScapiRequest(
       if (document) {
         const previous = documents.findIndex((item) => item.entry.id === document.entry.id);
         if (previous < 0) documents.push(document);
-        else documents[previous] = document;
+        // Developer-supplied local contracts take precedence over the tenant's.
+        else if (documents[previous].entry.origin !== 'local') documents[previous] = document;
         options.onSchema?.(document, String(queryValues.expand ?? '').includes('custom_properties'));
       }
     }

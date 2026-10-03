@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {CallToolResult} from '@modelcontextprotocol/server';
+import type {ScapiSchemaDocument} from '@salesforce/b2c-tooling-sdk/scapi';
 import type {z, ZodRawShape} from 'zod';
 import type {Toolset} from './constants.js';
 
@@ -75,4 +76,9 @@ export interface StartupFlags {
    * corpus at startup; unset means all categories.
    */
   docsTopics?: string;
+  /**
+   * Developer-supplied SCAPI contracts loaded from `--scapi-schemas` / `SFCC_SCAPI_SCHEMAS`.
+   * They replace bundled and live contracts with the same id in scapi_search and scapi_execute.
+   */
+  scapiSchemas?: readonly ScapiSchemaDocument[];
 }

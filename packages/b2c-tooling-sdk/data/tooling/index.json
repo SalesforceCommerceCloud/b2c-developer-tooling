@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-29T03:08:34.690Z",
+  "generatedAt": "2026-10-02T16:58:10.211Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -503,7 +503,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md",
-      "headings": "Startup configuration {#advanced-manual-configuration} • Project defaults {#project-directory} • Tools and toolsets {#toolset-selection} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Logging",
+      "headings": "Startup configuration {#advanced-manual-configuration} • Project defaults {#project-directory} • Tools and toolsets {#toolset-selection} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Local SCAPI contracts {#local-scapi-schemas} • Logging",
       "preview": "Customize B2C MCP tools, documentation topics, startup defaults, and saved workflows."
     },
     {

@@ -20,8 +20,11 @@ export interface ScapiSchemaEntry {
   status: string;
   file: string;
   source: string;
-  /** Present on contracts fetched from the tenant's Schemas API; absent for the bundled corpus. */
-  origin?: 'live';
+  /**
+   * `live` for contracts fetched from the tenant's Schemas API; `local` for developer-supplied
+   * files (see `loadLocalScapiSchemas`); absent for the bundled corpus.
+   */
+  origin?: 'live' | 'local';
 }
 export interface ScapiSchemaDocument {
   entry: ScapiSchemaEntry;
