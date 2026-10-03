@@ -5,7 +5,7 @@
  */
 
 import type {APIGatewayProxyEvent, Context} from 'aws-lambda';
-import {PassThrough, type Writable} from 'stream';
+import {PassThrough, Writable} from 'stream';
 import {EventEmitter} from 'events';
 import type {Express} from 'express';
 import {expect} from 'chai';
@@ -429,6 +429,110 @@ describe('create-lambda-adapter', () => {
 
           // Should not throw
           expect(streamWithoutEnd.write.called).to.be.true;
+        });
+      });
+
+      describe('empty-body prelude (502 regression)', () => {
+        // The real AWS runtime interface client emits the status/headers metadata
+        // prelude LAZILY — only just before the first write to the response stream.
+        // A body-less response (redirect, 204/304, HEAD, bare res.end()) that reaches
+        // end() without ever writing therefore ships with no prelude, and the MRT
+        // streaming edge returns its own 502 InternalServerErrorException. This mock
+        // faithfully models that lazy behavior (unlike the identity `from` stub used
+        // elsewhere in this file, which cannot catch the bug) so these tests fail if
+        // the adapter ever stops forcing the prelude on the body-less path.
+        type RicStream = Writable & {
+          readonly preludeEmitted: boolean;
+          readonly metadata: {statusCode: number; headers: Record<string, any>; cookies?: string[]};
+          setMetadata: (m: any) => void;
+        };
+
+        function createRicStream(): RicStream {
+          let preludeEmitted = false;
+          let metadata: any;
+          const stream = new Writable({
+            write(_chunk, _enc, cb) {
+              // The RIC flushes the prelude immediately before the first body write.
+              preludeEmitted = true;
+              cb();
+            },
+          }) as RicStream;
+          Object.defineProperties(stream, {
+            preludeEmitted: {get: () => preludeEmitted},
+            metadata: {get: () => metadata},
+          });
+          stream.setMetadata = (m: any) => {
+            metadata = m;
+          };
+          return stream;
+        }
+
+        beforeEach(() => {
+          (globalThis as any).awslambda = {
+            HttpResponseStream: {
+              // Matches the real RIC: returns the SAME stream (which installs the
+              // lazy prelude hook), not a wrapper.
+              from(stream: RicStream, meta: any) {
+                stream.setMetadata(meta);
+                return stream;
+              },
+            },
+          };
+        });
+
+        const runHandler = async (wire: (app: Express) => void, acceptEncoding?: string): Promise<RicStream> => {
+          const app = express();
+          wire(app);
+          const stream = createRicStream();
+          const headers: Record<string, string> = {Host: 'example.com'};
+          if (acceptEncoding) headers['Accept-Encoding'] = acceptEncoding;
+          const event = createMockEvent({path: '/t', headers});
+          await createStreamingLambdaAdapter(app, stream)(event, createMockContext());
+          return stream;
+        };
+
+        it('emits the prelude for a bare res.end() with no body', async () => {
+          const stream = await runHandler((app) => app.get('/t', (_req, res) => res.end()));
+          expect(stream.preludeEmitted, 'no metadata prelude -> edge 502').to.be.true;
+        });
+
+        it('emits the prelude for a body-less redirect', async () => {
+          const stream = await runHandler((app) => app.get('/t', (_req, res) => res.redirect('/login')));
+          expect(stream.preludeEmitted, 'no metadata prelude -> edge 502').to.be.true;
+          expect(stream.metadata.statusCode).to.equal(302);
+        });
+
+        it('emits the prelude for a 204 No Content', async () => {
+          const stream = await runHandler((app) =>
+            app.get('/t', (_req, res) => {
+              res.status(204);
+              res.end();
+            }),
+          );
+          expect(stream.preludeEmitted, 'no metadata prelude -> edge 502').to.be.true;
+          expect(stream.metadata.statusCode).to.equal(204);
+        });
+
+        it('emits the prelude for a body-less compressed response', async () => {
+          const stream = await runHandler(
+            (app) =>
+              app.get('/t', (_req, res) => {
+                res.setHeader('Content-Type', 'text/html');
+                res.end();
+              }),
+            'gzip',
+          );
+          expect(stream.preludeEmitted, 'no metadata prelude -> edge 502').to.be.true;
+        });
+
+        it('emits the prelude when a body IS written (control)', async () => {
+          const stream = await runHandler((app) =>
+            app.get('/t', (_req, res) => {
+              res.setHeader('Content-Type', 'text/html');
+              res.end('<h1>hi</h1>');
+            }),
+          );
+          expect(stream.preludeEmitted).to.be.true;
         });
       });
 
