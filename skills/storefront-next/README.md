@@ -1,6 +1,6 @@
 # storefront-next
 
-Agent skills for building Salesforce B2C Storefront Next projects — React 19 storefronts with routing, data fetching, Page Designer, authentication, i18n, extensions, and deployment to Managed Runtime.
+Agent skills for building Salesforce B2C Storefront Next projects — React 19 storefronts with routing, data fetching, SCAPI, authentication, theming, Page Designer, extensions, SEO, security, testing, and deployment to Managed Runtime.
 
 Part of the [B2C Developer Tooling](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling) marketplace.
 
@@ -24,32 +24,53 @@ For file-copy install to any supported IDE, use `b2c setup skills storefront-nex
 
 ## What's included
 
-Skills covering the full Storefront Next development lifecycle:
+Skills covering the full Storefront Next development lifecycle. Start with **`sfnext-overview`**, which routes a task to the right skill and to the guidance that ships inside your project (`AGENTS.md`, `docs/`).
 
-- **`sfnext-project-setup`** — project creation, environment configuration, project structure
-- **`sfnext-routing`** — React Router 7 file-based routing with flat-routes conventions
-- **`sfnext-data-fetching`** — server-side loaders, actions, useScapiFetcher
-- **`sfnext-components`** — UI components, createPage HOC, shadcn/ui, Tailwind CSS v4
-- **`sfnext-create-component`** — design-system component authoring: layer model, CVA variants, data-slot, accessibility, Storybook coverage
-- **`sfnext-create-vertical`** — create a new brand theme / storefront variant via the brand token layer, typography, dark mode, and fixtures
-- **`sfnext-configuration`** — config.server.ts, environment variables, multi-site setup
-- **`sfnext-page-designer`** — Page Designer integration with React decorators and component registry
-- **`sfnext-extensions`** — extension system, target points, extension routes, and the base-audit decision gate (extend vs token/variant override)
-- **`sfnext-authentication`** — split-cookie SLAS architecture, auth middleware, session management
-- **`sfnext-i18n`** — internationalization with i18next, dual-instance server/client, namespaces
-- **`sfnext-state-management`** — React context, Zustand stores, basket provider
-- **`sfnext-testing`** — Vitest unit tests, Storybook stories, interaction and accessibility testing
-- **`sfnext-performance`** — bundle size limits, DynamicImage, parallel fetching, Lighthouse optimization
-- **`sfnext-scapi-management`** — manage typed SCAPI clients, discover API schemas before coding
-- **`sfnext-custom-apis`** — end-to-end custom API implementation and consumption
-- **`sfnext-deployment`** — build and deploy to Managed Runtime (MRT), cartridge deployment
-- **`sfnext-hybrid-storefronts`** — hybrid setup with SFRA/SiteGenesis, gradual migration, session bridging
+**Project and delivery**
+
+- **`sfnext-overview`** — start here: task-to-skill map, in-project guidance, CLI and MCP cheat sheet
+- **`sfnext-project-setup`** — create a storefront with `sfnext create-storefront`, prerequisites, project layout, scripts
+- **`sfnext-configuration`** — `config.server.ts`, `PUBLIC__` environment variables, multi-site, URLs, domains, base path
+- **`sfnext-deployment`** — build and push to Managed Runtime, Page Designer cartridge deployment, pre-launch checks
+- **`sfnext-quality-gates`** — lint, format, typecheck, bundle-size and Lighthouse budgets, pre-PR checklist
+
+**Application architecture**
+
+- **`sfnext-routing`** — flat-routes file conventions, layouts, site-aware links and navigation
+- **`sfnext-data-fetching`** — loaders, actions, API clients, `useScapiFetcher`, streaming
+- **`sfnext-revalidation`** — `shouldRevalidate` policies and keeping data fresh after mutations
+- **`sfnext-state-management`** — basket and auth providers, external stores, URL state, optimistic UI
+- **`sfnext-performance`** — Suspense, bundle budgets, images, metrics, performance review checklist
+
+**Commerce APIs and identity**
+
+- **`sfnext-scapi`** — typed SCAPI clients, custom attributes, and calling custom APIs from your storefront
+- **`sfnext-authentication`** — SLAS session cookies, auth middleware, login flows (passwordless, social, passkeys)
+- **`sfnext-hybrid-storefronts`** — run alongside SFRA/SiteGenesis with the hybrid proxy and shared sessions
+- **`sfnext-security`** — security headers, Content Security Policy contributors, Turnstile, cookie domain
+
+**UI and content**
+
+- **`sfnext-components`** — UI primitives, composite components, variants, Storybook coverage
+- **`sfnext-theming`** — rebrand your storefront: design tokens, palette, shape, typography, assets
+- **`sfnext-page-designer`** — Page Designer decorators, component registry, regions, cartridge metadata
+- **`sfnext-extensions`** — extension targets, installing and creating extensions, the extend-vs-edit decision
+- **`sfnext-i18n`** — translations, locales, currency
+- **`sfnext-accessibility`** — accessible components, a11y lint, Storybook and end-to-end accessibility checks
+- **`sfnext-testing`** — Vitest unit and route tests, Storybook tests, end-to-end tests
+
+**Features and integrations**
+
+- **`sfnext-commerce-features`** — which flags, Business Manager preferences, cartridges, or extensions each storefront feature needs
+- **`sfnext-analytics-consent`** — analytics adapters (Einstein, Active Data, Data 360) and tracking consent
+- **`sfnext-seo`** — SEO metadata, structured data, SEO URL rules, AI answer-engine readiness
 
 See [`skills/`](./skills/) for the full list.
 
 ## Related plugins
 
-- **[`storefront-next-figma`](../storefront-next-figma)** — design-kit companion: duplicate the Figma kit for a vertical and sync brand tokens. Pairs with `sfnext-create-vertical`. Requires the Figma MCP server.
+- **[`storefront-next-figma`](../storefront-next-figma)** — design-kit companion: duplicate the Storefront Next Figma kit and keep its brand variables in sync with your theme tokens. Pairs with `sfnext-theming`. Requires the Figma MCP server.
+- **[`figma-to-sfnext-pagedesigner`](../figma-to-sfnext-pagedesigner)** — turn Figma frames into Storefront Next Page Designer components. Requires the Figma MCP server.
 
 ## License
 

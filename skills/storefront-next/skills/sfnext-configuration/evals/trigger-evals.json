@@ -1,0 +1,5 @@
+[
+  {"query": "How do I add a new setting to config.server.ts and read it in a loader with getConfig?", "should_trigger": true},
+  {"query": "Set up a second site with its own locales and URL prefix in Storefront Next", "should_trigger": true},
+  {"query": "Push my built bundle to Managed Runtime staging", "should_trigger": false}
+]

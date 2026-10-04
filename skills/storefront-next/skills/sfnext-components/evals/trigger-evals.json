@@ -1,0 +1,5 @@
+[
+  {"query": "I need a new PromoBanner component in src/components with primary and muted variants, Tailwind token classes, and a Storybook story. What do I run to verify it?", "should_trigger": true},
+  {"query": "pnpm lint fails with a hard-coded color error on text-white in my Button variant, and my Card ignores the rounded corners I set. How do I fix both?", "should_trigger": true},
+  {"query": "Rebrand the storefront: new primary color, a different web font, and a dark header with my logo.", "should_trigger": false}
+]

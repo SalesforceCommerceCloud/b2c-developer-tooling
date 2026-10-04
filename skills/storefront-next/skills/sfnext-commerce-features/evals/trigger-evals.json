@@ -1,0 +1,5 @@
+[
+  {"query": "What do I need to turn on guest order lookup, and why does the order-lookup page return 404?", "should_trigger": true},
+  {"query": "Which extensions ship with the storefront and which ones are just mock data stubs?", "should_trigger": true},
+  {"query": "How do I write a new extension with a UITarget component and target-config.json?", "should_trigger": false}
+]

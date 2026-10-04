@@ -1,0 +1,5 @@
+[
+  {"query": "My storefront console says 'Refused to connect to https://api.segment.io' because it violates connect-src. How do I allow it?", "should_trigger": true},
+  {"query": "Enable Cloudflare Turnstile on our checkout registration action and roll it out in log-only mode first", "should_trigger": true},
+  {"query": "Why does the shopper get logged out after the SLAS refresh token expires and how do I protect my account route?", "should_trigger": false}
+]

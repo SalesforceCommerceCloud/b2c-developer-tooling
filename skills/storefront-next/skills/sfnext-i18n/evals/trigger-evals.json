@@ -1,0 +1,5 @@
+[
+  {"query": "Add Brazilian Portuguese (pt-BR) as a supported language for our Storefront Next site and translate the cart strings", "should_trigger": true},
+  {"query": "How do I translate a Zod validation message in my checkout form without it showing the raw key?", "should_trigger": true},
+  {"query": "Change the URL prefix so the storefront uses /:siteId/:localeId paths and add a new site to commerce.sites", "should_trigger": false}
+]

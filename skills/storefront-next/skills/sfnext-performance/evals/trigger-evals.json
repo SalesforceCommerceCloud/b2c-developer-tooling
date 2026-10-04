@@ -1,0 +1,5 @@
+[
+  {"query": "My Storefront Next product page LCP got worse after I added a reviews section; help me review my changes for performance", "should_trigger": true},
+  {"query": "How do I lazy load a modal and avoid shipping it in the main bundle in my storefront?", "should_trigger": true},
+  {"query": "Add alt text and keyboard focus handling to the image carousel", "should_trigger": false}
+]
