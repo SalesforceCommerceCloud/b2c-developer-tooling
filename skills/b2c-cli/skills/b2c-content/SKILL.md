@@ -163,7 +163,7 @@ See `b2c content --help` for a full list of available commands and options in th
 ## Troubleshooting
 
 - **"Library is required"** -- Set `--library` flag or configure `content-library` in `dw.json`.
-- **Authentication errors** -- Inspect resolved configuration first. SCAPI needs client-credentials or JWT authentication with `sfcc.jobs.rw` and the tenant scope; browser login is OCAPI/WebDAV-only. Use `b2c-cli:b2c-auth` for setup. `--library-file` skips the remote export job; add `--offline` to skip asset downloads too.
+- **Authentication errors** -- Inspect resolved configuration first. SCAPI needs client-credentials or JWT authentication with `sfcc.jobs.rw` and the tenant scope; browser login is OCAPI/WebDAV-only. Use `b2c-cli:b2c-config` for setup. `--library-file` skips the remote export job; add `--offline` to skip asset downloads too.
 - **Library not found** -- Verify the library ID matches exactly. For site-private libraries, add `--site-library`.
 - **No content found** -- Check that the page/content IDs exist. Use `b2c content list` to discover available IDs.
 - **Timeout errors** -- Large libraries may exceed the default timeout. Use `--timeout <seconds>` to increase it.
