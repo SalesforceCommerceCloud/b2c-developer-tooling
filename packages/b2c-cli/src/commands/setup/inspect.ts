@@ -142,7 +142,16 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
 
     // Include EnvSource so that SFCC_* environment variables are visible in inspect output.
     // Other commands handle env vars via oclif flag mappings, but inspect needs to show them
-    // as a config source since it doesn't have those flags.
+    // as a config source since it doesn't have those flags. Variables applied from the
+    // .env file are reported separately so their provenance is visible.
+    const fileKeys = new Set(this.envFile?.keys ?? []);
+    const shellEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !fileKeys.has(key)));
+    const fileEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key]) => fileKeys.has(key)));
+    const envSources = [new EnvSource(shellEnvironment)];
+    if (this.envFile) {
+      envSources.push(new EnvSource(fileEnvironment, {name: 'DotenvFile', location: this.envFile.path}));
+    }
+
     return loadConfig(
       {
         accountManagerHost,
@@ -153,7 +162,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         accountManagerHost,
         cloudOrigin,
       },
-      {before: [new EnvSource()]},
+      {before: envSources},
     );
   }
 
@@ -437,6 +446,18 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       for (const [index, source] of getSourceRows(sources).entries()) {
         ui.div({text: `  ${index + 1}. ${source.name}`, width: 34}, {text: source.location});
       }
+    }
+
+    const {configPath, defaultConfigPath} = this.getBaseConfigOptions();
+    if (configPath !== undefined && defaultConfigPath) {
+      ui.div({
+        text: t(
+          'commands.setup.inspect.globalDefaultSkipped',
+          'Global default dw.json not used: explicit config path ({{path}})',
+          {path: configPath === '' ? 'none' : configPath},
+        ),
+        padding: [1, 0, 0, 0],
+      });
     }
 
     ux.stdout(ui.toString());

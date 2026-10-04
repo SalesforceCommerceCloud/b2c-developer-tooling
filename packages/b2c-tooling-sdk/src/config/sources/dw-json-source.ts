@@ -32,11 +32,23 @@ function selectConfigPath(options: ResolveConfigOptions): string | undefined {
   return options.defaultConfigPath;
 }
 
-/** Select the ordered files that contribute instances to the effective catalog. */
+/**
+ * Select the ordered files that contribute instances to the effective catalog.
+ *
+ * An explicit config path is exact: it is the only file used, without the
+ * global default. An empty config path selects no dw.json at all. A discovered
+ * project dw.json is still supplemented by the global default.
+ */
 function selectConfigPaths(options: ResolveConfigOptions): string[] {
+  if (options.configPath === '') return [];
+  if (options.configPath !== undefined) {
+    const explicitPath = path.resolve(options.configPath);
+    return existsSync(explicitPath) ? [explicitPath] : [];
+  }
+
   const paths: string[] = [];
   const primaryPath = path.resolve(
-    options.configPath ?? path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json'),
+    path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json'),
   );
 
   if (existsSync(primaryPath)) paths.push(primaryPath);

@@ -22,19 +22,26 @@ The CLI **automatically detects** instance hostname, credentials, tenant ID, MRT
 
 Sources, in resolution order (highest priority first):
 
-1. **CLI flags and environment variables** — explicit values always win. Includes `.env` files in the current project directory (auto-loaded).
+1. **CLI flags and environment variables** — explicit values always win. Shell variables win over the env file; toolkit variables (`SFCC_*`, `MRT_*`) in the project's `.env` (or the file selected with `--dotenv-file` / `SFCC_DOTENV_FILE`) come next.
 2. **Plugin sources (high priority)** — custom configuration plugins (e.g., secret managers).
-3. **`dw.json`** — selected by `--config` / `SFCC_CONFIG`, the project's `.env`, the project-local file, or the shared global `dw.json`. Supports a single instance or a `configs[]` array with `active: true` / `-i <name>` selection.
-4. **`~/.mobify`** — home-directory file (MRT API key only).
-5. **Plugin sources (low priority)**.
-6. **`package.json`** under the `b2c` key — non-sensitive project defaults (e.g., `shortCode`, `clientId`, `mrtProject`). Sensitive fields like `clientSecret`/`password` are intentionally **not** allowed here.
+3. **`dw.json`** — selected by `--config` / `SFCC_CONFIG`, the env file, the project-local file, or the shared global `dw.json`. Supports a single instance or a `configs[]` array with `active: true` / `-i <name>` selection.
+4. **Storefront Next variables** — fallbacks that only fill fields missing from the selected `dw.json` entry (see below).
+5. **`~/.mobify`** — home-directory file (MRT API key only).
+6. **Plugin sources (low priority)**.
+7. **`package.json`** under the `b2c` key — non-sensitive project defaults (e.g., `shortCode`, `clientId`, `mrtProject`). Sensitive fields like `clientSecret`/`password` are intentionally **not** allowed here.
+
+Hostname protection applies between sources: if an env file's `SFCC_SERVER` differs from the selected `dw.json` entry's hostname, that whole entry is skipped (`HOSTNAME_MISMATCH` warning). If no source sets a tenant ID and the hostname is a sandbox hostname (`abcd-001.dx.commercecloud.salesforce.com`), the tenant ID is derived (`abcd_001`); a conflicting configured tenant ID produces a `TENANT_MISMATCH` warning.
+
+Use `--dotenv-file .env.staging` (or `SFCC_DOTENV_FILE`) to use another env file instead of `.env`; it replaces `.env` rather than layering on it. `--dotenv-file ""` uses no env file, and `--config ""` uses no `dw.json`.
 
 For unexpected values, inspect resolved configuration and sources with `config_inspect` or `b2c setup inspect`.
 
 ### Storefront Next Environment Compatibility
 
 The resolver accepts these Storefront Next variables as fallbacks, so a project
-can reuse its existing B2C Commerce and SLAS configuration:
+can reuse its existing B2C Commerce and SLAS configuration. The `PUBLIC__app__*`
+and `COMMERCE_API_SLAS_SECRET` variables rank below `dw.json`: with `-i stg`,
+stg's own tenant, short code, site, and SLAS client are kept and these only fill gaps.
 
 | Storefront Next variable                     | Resolved field     | Default toolkit variable  |
 | -------------------------------------------- | ------------------ | ------------------------- |
@@ -46,7 +53,7 @@ can reuse its existing B2C Commerce and SLAS configuration:
 | `MRT_PROJECT`                                | `mrtProject`       | `MRT_PROJECT`             |
 | `MRT_TARGET`                                 | `mrtEnvironment`   | `MRT_ENVIRONMENT`         |
 
-Explicit flags and default toolkit variables win over these fallbacks.
+Explicit flags, default toolkit variables, and the selected `dw.json` entry win over these fallbacks. `MRT_PROJECT` and `MRT_TARGET` are toolkit variables and keep toolkit priority.
 
 ### Shared Global Default
 
@@ -58,9 +65,9 @@ b2c setup default-config get
 b2c setup default-config unset
 ```
 
-The configuration-file selection order is: explicit `--config`; process `SFCC_CONFIG`; project `.env` `SFCC_CONFIG`; project-local `dw.json`; global default. The global file never replaces an explicit or project-local choice.
+The configuration-file selection order is: explicit `--config`; process `SFCC_CONFIG`; env file `SFCC_CONFIG`; project-local `dw.json`; global default. The global file never replaces an explicit or project-local choice. An explicit path (`--config` / `SFCC_CONFIG`) is used on its own, without the global file; `setup inspect` notes when the global default is skipped.
 
-The primary and global `dw.json` files form one instance catalog. `-i <name>` searches the primary file first and then the global file, with same-name primary entries shadowing global entries. Each selected instance is complete—its fields are not merged with a matching entry in the other file. Instance list/remove/set-active operate across both files; create writes to the primary file when present and otherwise to the global `dw.json`.
+A discovered project `dw.json` and the global `dw.json` form one instance catalog. `-i <name>` searches the primary file first and then the global file, with same-name primary entries shadowing global entries. Each selected instance is complete—its fields are not merged with a matching entry in the other file. Instance list/remove/set-active operate across both files; create writes to the primary file when present and otherwise to the global `dw.json`.
 
 Without `-i`, an active primary instance wins. A root-level primary configuration with no `active` field is its implicit default; set its root to `active: false` to opt it out and allow an active/default global instance to be selected. `b2c setup inspect` shows both files in its Sources section and marks the selected file.
 
@@ -75,7 +82,7 @@ Local MCP project tools accept `projectDirectory`. Tools that resolve B2C/MRT co
 
 1. Parses `.env` from `projectDirectory`.
 2. Applies all supported B2C/MRT environment variables from that file.
-3. Selects a `dw.json`-format configuration file in this order: per-call `configPath`; startup `--config` / `SFCC_CONFIG`; project `.env` `SFCC_CONFIG`; `${projectDirectory}/dw.json`; shared global default.
+3. Selects a `dw.json`-format configuration file in this order: per-call `configPath`; startup `--config` / `SFCC_CONFIG`; project `.env` `SFCC_CONFIG`; `${projectDirectory}/dw.json`; shared global default. An explicit path is used without the shared global default. Storefront Next variables from the project `.env` only fill gaps below `dw.json`.
 4. Resolves relative per-call `configPath` and project `.env` `SFCC_CONFIG` values from `projectDirectory`.
 5. Selects `instanceName`, when supplied, from the primary file first and then the shared global `dw.json`, without changing either file.
 6. Continues through the normal tooling configuration sources, including registered plugin sources, MRT credentials, and `package.json`.
@@ -319,12 +326,13 @@ Each value shows its source in brackets:
 
 Values are resolved with this priority (highest to lowest):
 
-1. CLI flags and environment variables
+1. CLI flags and environment variables (shell, then env file `SFCC_*`/`MRT_*`)
 2. Plugin sources (high priority)
 3. dw.json file
-4. ~/.mobify file (MRT API key only)
-5. Plugin sources (low priority)
-6. package.json `b2c` key
+4. Storefront Next variables (fallbacks)
+5. ~/.mobify file (MRT API key only)
+6. Plugin sources (low priority)
+7. package.json `b2c` key
 
 When troubleshooting, check the source column to understand which configuration is taking precedence.
 
@@ -395,7 +403,7 @@ With this configuration, `b2c content list` and `b2c content export homepage` de
 
 ### Wrong source taking precedence
 
-- Review the priority list in "How the CLI Discovers Configuration" above. Common surprise: env vars (or a `.env` file) override `dw.json`.
+- Review the priority list in "How the CLI Discovers Configuration" above. Common surprise: env vars (or a `.env` file) override `dw.json`, and an env file `SFCC_SERVER` with a different hostname skips the `dw.json` entry entirely. Storefront Next variables never override `dw.json`.
 
 ### Still stuck
 

@@ -5,12 +5,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// Load .env file if present (Node.js native support)
-try {
-  process.loadEnvFile();
-} catch {
-  // .env file not found or not readable, continue without it
-}
+// The project .env (or --dotenv-file / SFCC_DOTENV_FILE) is loaded by each command
+// before its flags are parsed, so it is not loaded here.
 
 import {execute} from '@oclif/core';
 

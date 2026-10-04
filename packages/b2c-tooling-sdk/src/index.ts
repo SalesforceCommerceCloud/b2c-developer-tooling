@@ -83,6 +83,7 @@ export {
   METRICS_DEFAULT_SCOPES,
   toOrganizationId,
   normalizeTenantId,
+  tenantIdFromSandboxHostname,
   buildTenantScope,
   getApiErrorMessage,
   isOcapiDeprecatedFault,

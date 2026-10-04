@@ -196,6 +196,7 @@ export {
   createCustomApisClient,
   toOrganizationId,
   normalizeTenantId,
+  tenantIdFromSandboxHostname,
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,

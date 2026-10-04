@@ -304,6 +304,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       ...baseOptions,
       ...mrt.options,
       configPath,
+      // The selected project's .env supplies Storefront Next fallbacks below dw.json.
+      envFile: projectEnvironment ? path.join(effectiveProjectDirectory, '.env') : baseOptions.envFile,
       instance: projectContext?.instanceName ?? baseOptions.instance,
       projectDirectory: effectiveProjectDirectory,
       workingDirectory: effectiveProjectDirectory,

@@ -407,4 +407,124 @@ suite('B2CExtensionConfig workspace discovery', () => {
       fs.rmSync(dir, {recursive: true, force: true});
     }
   });
+
+  suite('env file and instance selection', () => {
+    let dir: string;
+
+    setup(() => {
+      dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-env-file-selection-'));
+      fs.writeFileSync(
+        path.join(dir, 'dw.json'),
+        JSON.stringify({
+          configs: [
+            {name: 'dev', hostname: 'dev.invalid', 'short-code': 'devcode', active: true},
+            {name: 'stg', hostname: 'stg.invalid', 'short-code': 'stgcode'},
+          ],
+        }),
+      );
+      fs.writeFileSync(
+        path.join(dir, '.env'),
+        'PUBLIC__app__commerce__api__shortCode=envcode\nPUBLIC__app__defaultSiteId=RefArch\n',
+      );
+      fs.writeFileSync(path.join(dir, '.env.staging'), 'SFCC_SERVER=staging-env.invalid\nSFCC_CODE_VERSION=v2\n');
+    });
+
+    teardown(() => {
+      fs.rmSync(dir, {recursive: true, force: true});
+    });
+
+    test('Storefront Next variables only fill gaps below the selected instance', async () => {
+      const workspaceState = createMemoryMemento({
+        'b2c-dx.workspaceInstance': {name: 'stg', location: path.join(dir, 'dw.json')},
+      });
+      const provider = new B2CExtensionConfig(log, workspaceState, ambientEnvironment);
+
+      try {
+        const config = await provider.resolveForDirectory(dir);
+        assert.strictEqual(config.values.hostname, 'stg.invalid');
+        assert.strictEqual(config.values.shortCode, 'stgcode');
+        assert.strictEqual(config.values.siteId, 'RefArch');
+      } finally {
+        provider.dispose();
+      }
+    });
+
+    test('a selected env file replaces .env and its hostname replaces the dw.json entry', async () => {
+      const workspaceState = createMemoryMemento({'b2c-dx.workspaceEnvFile': path.join(dir, '.env.staging')});
+      const provider = new B2CExtensionConfig(log, workspaceState, ambientEnvironment);
+
+      try {
+        const config = await provider.resolveForDirectory(dir);
+        assert.strictEqual(config.values.hostname, 'staging-env.invalid');
+        assert.strictEqual(config.values.codeVersion, 'v2');
+        assert.strictEqual(config.values.shortCode, undefined, 'dev entry and .env must not contribute');
+        assert.strictEqual(config.values.siteId, undefined);
+        assert.ok(config.warnings.some((warning) => warning.code === 'HOSTNAME_MISMATCH'));
+      } finally {
+        provider.dispose();
+      }
+    });
+
+    test('env file None loads no env file', async () => {
+      const workspaceState = createMemoryMemento({'b2c-dx.workspaceEnvFile': null});
+      const provider = new B2CExtensionConfig(log, workspaceState, ambientEnvironment);
+
+      try {
+        const config = await provider.resolveForDirectory(dir);
+        assert.strictEqual(config.values.hostname, 'dev.invalid');
+        assert.strictEqual(config.values.siteId, undefined);
+      } finally {
+        provider.dispose();
+      }
+    });
+
+    test('a missing selected env file is reported', async () => {
+      const workspaceState = createMemoryMemento({'b2c-dx.workspaceEnvFile': path.join(dir, '.env.gone')});
+      const provider = new B2CExtensionConfig(log, workspaceState, ambientEnvironment);
+
+      try {
+        await assert.rejects(provider.resolveForDirectory(dir), /Env file not found/);
+      } finally {
+        provider.dispose();
+      }
+    });
+
+    test('instance None uses no dw.json entry', async () => {
+      const workspaceState = createMemoryMemento({'b2c-dx.workspaceInstanceNone': true});
+      const provider = new B2CExtensionConfig(log, workspaceState, ambientEnvironment);
+
+      try {
+        const config = await provider.resolveForDirectory(dir);
+        assert.strictEqual(config.values.hostname, undefined);
+        assert.strictEqual(config.values.siteId, 'RefArch');
+        assert.strictEqual(provider.isInstanceDisabled(), true);
+      } finally {
+        provider.dispose();
+      }
+    });
+
+    test('an empty SFCC_CONFIG uses no dw.json, matching the CLI', async () => {
+      const provider = new B2CExtensionConfig(log, undefined, {...ambientEnvironment, SFCC_CONFIG: ''});
+
+      try {
+        const config = await provider.resolveForDirectory(dir);
+        assert.strictEqual(config.values.hostname, undefined);
+      } finally {
+        provider.dispose();
+      }
+    });
+
+    test('selecting an instance clears None', async () => {
+      const workspaceState = createMemoryMemento({'b2c-dx.workspaceInstanceNone': true});
+      const provider = new B2CExtensionConfig(log, workspaceState, ambientEnvironment);
+
+      try {
+        await provider.selectInstanceForWorkspace({name: 'stg', location: path.join(dir, 'dw.json')});
+        assert.strictEqual(provider.isInstanceDisabled(), false);
+        assert.strictEqual(workspaceState.get('b2c-dx.workspaceInstanceNone'), undefined);
+      } finally {
+        provider.dispose();
+      }
+    });
+  });
 });

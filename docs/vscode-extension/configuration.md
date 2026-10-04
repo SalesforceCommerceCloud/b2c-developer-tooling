@@ -104,6 +104,8 @@ When your configuration defines multiple named instances (the recommended patter
 
 The picker distinguishes the instance **selected for this workspace** with a check mark and the shared **default instance** with a star. Use the star action on a row—or run **B2C DX: Set Default Instance**—to intentionally change the default used by other consumers. Run **B2C DX: Follow Default Instance** to remove the workspace-specific selection.
 
+The picker also offers **None** (use no `dw.json` instance). When the project has env files, an **Env File** section in the same picker lets you choose `.env`, another `.env.*` file, or none for this workspace; the selected instance and env file are both checked. Hover over the status bar item to see where each setting comes from, or run **B2C DX: Inspect Resolved Config** for every resolved value and its source.
+
 For named entries, setting the default writes `active: true`; a root configuration without an explicit `active` value remains an implicit default. This is equivalent to running `b2c setup instance set-active <name>` and is separate from selecting an instance only for VS Code.
 
 ## Safety Mode
