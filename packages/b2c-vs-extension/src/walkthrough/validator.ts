@@ -274,7 +274,6 @@ async function validateCommands(packageJson: PackageJsonConfig, result: Validati
     'b2c-dx.cli.verify',
     'b2c-dx.cli.update',
     'b2c-dx.walkthrough.chooseCredentialStorage',
-    'b2c-dx.walkthrough.inspectSetup',
     'b2c-dx.setup.connection',
     'b2c-dx.setup.oauth',
     'b2c-dx.setup.webdav',

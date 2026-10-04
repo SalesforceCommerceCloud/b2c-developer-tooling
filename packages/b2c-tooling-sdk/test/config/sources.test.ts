@@ -200,6 +200,21 @@ describe('config/sources', () => {
       expect(config.hostname).to.equal('explicit.demandware.net');
     });
 
+    it('warns when an explicit config path does not exist and does not fall back', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      fs.writeFileSync(defaultConfigPath, JSON.stringify({hostname: 'global.demandware.net'}));
+
+      const resolver = new ConfigResolver();
+      const {config, warnings} = await resolver.resolve(
+        {},
+        {configPath: path.join(tempDir, 'missing.json'), defaultConfigPath},
+      );
+
+      expect(config.hostname).to.be.undefined;
+      expect(warnings.map((warning) => warning.code)).to.deep.equal(['SOURCE_ERROR']);
+      expect(warnings[0].message).to.include('missing.json');
+    });
+
     it('prefers the explicit file default over an active global instance', async () => {
       const explicitConfigPath = path.join(tempDir, 'explicit.dw.json');
       const defaultConfigPath = path.join(tempDir, 'shared.dw.json');

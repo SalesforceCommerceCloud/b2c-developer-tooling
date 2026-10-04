@@ -680,7 +680,7 @@ describe('McpServerCommand', () => {
       }
     });
 
-    it('should retain the shared global fallback with a per-call configPath', async () => {
+    it('should not use the shared global default with a per-call configPath', async () => {
       const rootDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-explicit-config-global-'));
       const projectDirectory = path.join(rootDirectory, 'project');
       const configPath = path.join(projectDirectory, 'selected.dw.json');
@@ -707,9 +707,8 @@ describe('McpServerCommand', () => {
           }
         ).loadConfiguration({configPath, projectDirectory});
 
-        expect(config.values.hostname).to.equal('global-default.invalid');
-        expect(config.sources.some((source) => source.name === 'DwJsonSource' && source.location === defaultConfigPath))
-          .to.be.true;
+        expect(config.values.hostname).to.be.undefined;
+        expect(config.sources.some((source) => source.location === defaultConfigPath)).to.be.false;
       } finally {
         fs.rmSync(rootDirectory, {recursive: true, force: true});
       }

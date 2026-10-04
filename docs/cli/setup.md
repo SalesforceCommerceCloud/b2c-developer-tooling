@@ -134,7 +134,7 @@ with `"scope": "global"`.
 
 ## Global Default Configuration
 
-Use a global `dw.json` when you want the CLI, MCP server, and B2C DX VS Code extension to share instances across projects. An explicit `--config`, `SFCC_CONFIG`, project `.env` selection, or project-local `dw.json` remains the primary file.
+Use a global `dw.json` when you want the CLI, MCP server, and B2C DX VS Code extension to share instances across projects. A project-local `dw.json` remains the primary file, and the global file adds its instances. An explicit `--config` or `SFCC_CONFIG` path is used on its own, without the global file.
 
 Instances from the primary and global files are shown as one catalog. `--instance` / `-i` searches the primary file first, so a same-name primary instance shadows the global one. Instance fields are not combined across files.
 
