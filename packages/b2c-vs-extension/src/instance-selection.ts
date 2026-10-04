@@ -293,6 +293,13 @@ export function describeSource(source: ConfigSourceInfo): string {
   }
 }
 
+/** Where the hostname came from; a derived hostname names the source of the tenant ID it came from. */
+function describeHostSource(hostSource: ConfigSourceInfo, sources: ConfigSourceInfo[]): string {
+  if (hostSource.name !== 'SandboxTenantId') return describeSource(hostSource);
+  const tenantSource = sources.find((source) => usedFields(source).includes('tenantId'));
+  return `derived from tenant ID${tenantSource ? ` in ${describeSource(tenantSource)}` : ''}`;
+}
+
 /** Fields a source supplied that were actually used (not shadowed by a higher-priority source). */
 export function usedFields(source: ConfigSourceInfo): (keyof NormalizedConfig)[] {
   return source.fields.filter((field) => !source.fieldsIgnored?.includes(field));
@@ -333,7 +340,7 @@ export function describeInstanceStatus(
   }
 
   const tooltip = [`B2C Instance: ${label}`];
-  if (host) tooltip.push(`Host: ${host}${hostSource ? ` (${describeSource(hostSource)})` : ''}`);
+  if (host) tooltip.push(`Host: ${host}${hostSource ? ` (${describeHostSource(hostSource, sources)})` : ''}`);
 
   if (options.instanceDisabled) {
     tooltip.push('Instance: None (dw.json not used)');
@@ -384,8 +391,6 @@ export function describeInstanceStatus(
       tooltip.push(`Storefront Next fallback (${describeSource(source)}): ${fields.join(', ')}`);
     } else if (source.name === 'SandboxHostname') {
       tooltip.push(`Derived from hostname: ${fields.join(', ')}`);
-    } else if (source.name === 'SandboxTenantId') {
-      tooltip.push(`Derived from tenant ID: ${fields.join(', ')}`);
     }
   }
 

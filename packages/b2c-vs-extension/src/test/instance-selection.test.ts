@@ -443,8 +443,10 @@ suite('instance status', () => {
     );
 
     assert.strictEqual(result.text, '$(cloud) bjgk-005.dx.commercecloud.salesforce.com | .env');
-    assert.ok(result.tooltip.includes('Host: bjgk-005.dx.commercecloud.salesforce.com (tenant ID)'));
-    assert.ok(result.tooltip.includes('Derived from tenant ID: hostname'), result.tooltip.join('\n'));
+    assert.ok(
+      result.tooltip.includes('Host: bjgk-005.dx.commercecloud.salesforce.com (derived from tenant ID in .env)'),
+      result.tooltip.join('\n'),
+    );
   });
 
   test('describes disabled instance and env file selections in the tooltip', () => {
