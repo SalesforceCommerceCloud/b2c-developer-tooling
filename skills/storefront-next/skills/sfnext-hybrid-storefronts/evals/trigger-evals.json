@@ -1,0 +1,5 @@
+[
+  {"query": "We're migrating from SFRA page by page. Clicking the cart link in Storefront Next 404s in React Router; how do I make it go to SFRA?", "should_trigger": true},
+  {"query": "Running pnpm dev with HYBRID_PROXY_ENABLED, my login page is proxied to SFCC and I get logged out. The console says SFCC returned a redirect to 404.", "should_trigger": true},
+  {"query": "How do I set app.cookies.domain and the Content-Security-Policy for a single-host storefront with no SFRA?", "should_trigger": false}
+]

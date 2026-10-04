@@ -1,0 +1,5 @@
+[
+  {"query": "Focus doesn't move into the OTP dialog when it opens and screen readers don't announce the error, how do I fix and test this?", "should_trigger": true},
+  {"query": "pnpm a11y fails with a new serious color-contrast violation on the PDP in the baseline comparison, what do I do?", "should_trigger": true},
+  {"query": "Change the brand primary color token and regenerate the theme CSS", "should_trigger": false}
+]

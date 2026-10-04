@@ -7,7 +7,7 @@ description: Build or sync a Storefront Next vertical's Figma design kit — dup
 
 This skill is the entrypoint for setting up or syncing the **Figma design kit** for a Storefront Next vertical, so the kit stays aligned with the brand tokens defined in code.
 
-It is the design-kit companion to `sfnext-create-vertical` (in the `storefront-next` plugin): create or change the brand tokens in code first, then run this skill to mirror them in Figma.
+It is the design-kit companion to `sfnext-theming` (in the `storefront-next` plugin): create or change the brand tokens in code first, then run this skill to mirror them in Figma.
 
 ## Step 0 — Verify prerequisites (required)
 
@@ -121,8 +121,8 @@ All three must pass with zero errors and zero warnings.
 
 ## Related Skills
 
-- `storefront-next:sfnext-create-vertical` - Define the brand tokens in code (run this first)
-- `storefront-next:sfnext-create-component` - Author the React component a Code Connect mapping points to
+- `storefront-next:sfnext-theming` - Define the brand tokens in code (run this first)
+- `storefront-next:sfnext-components` - Author the React component a Code Connect mapping points to
 
 ## Reference Documentation
 

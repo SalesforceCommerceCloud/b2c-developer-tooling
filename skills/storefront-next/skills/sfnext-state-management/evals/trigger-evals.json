@@ -1,0 +1,5 @@
+[
+  {"query": "Where should I keep the state for an open filter drawer that several components in my Storefront Next app read?", "should_trigger": true},
+  {"query": "How do I show an optimistic remove-from-cart in the UI and read the basket with useBasket?", "should_trigger": true},
+  {"query": "Create an action route that adds a promo code to the basket", "should_trigger": false}
+]

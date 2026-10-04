@@ -1,0 +1,5 @@
+[
+  {"query": "My product.c_brandStory custom attribute shows up as unknown in TypeScript on the PDP. How do I get it typed in Storefront Next?", "should_trigger": true},
+  {"query": "I deployed a loyalty custom API to my sandbox. How do I register it in the storefront with sfnext scapi and call it from a route loader?", "should_trigger": true},
+  {"query": "How do I write the schema.yaml and api.json for a new custom API endpoint in my cartridge?", "should_trigger": false}
+]

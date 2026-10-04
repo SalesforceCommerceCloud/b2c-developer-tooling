@@ -1,0 +1,5 @@
+[
+  {"query": "Scaffold a new Storefront Next project with create-storefront and get it running locally", "should_trigger": true},
+  {"query": "pnpm install fails on my new storefront project, what Node and pnpm versions do I need?", "should_trigger": true},
+  {"query": "How do I add a PUBLIC__ override for a value in config.server.ts?", "should_trigger": false}
+]

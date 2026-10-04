@@ -1,0 +1,5 @@
+[
+  {"query": "pnpm lint is failing in CI with custom/color-linter and a biome format diff, how do I fix it?", "should_trigger": true},
+  {"query": "What commands should I run before opening a PR on my Storefront Next project?", "should_trigger": true},
+  {"query": "My product page loader is slow because it awaits three SCAPI calls serially, how do I stream the slow one?", "should_trigger": false}
+]

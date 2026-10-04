@@ -1,0 +1,5 @@
+[
+  {"query": "pnpm push says the build directory does not exist, how do I deploy my storefront to MRT staging?", "should_trigger": true},
+  {"query": "Deploy the Page Designer cartridge for my Storefront Next project and run through a pre-launch checklist", "should_trigger": true},
+  {"query": "Add a new member to my MRT project and create a redirect rule", "should_trigger": false}
+]

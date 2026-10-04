@@ -1,0 +1,5 @@
+[
+  {"query": "Adding an item to the cart on the product page re-runs the whole PDP loader; how do I stop that with shouldRevalidate?", "should_trigger": true},
+  {"query": "How do I use withRevalidateTags and shouldRevalidateForTags in my Storefront Next actions and routes?", "should_trigger": true},
+  {"query": "Write a loader that awaits the product and returns a promise for recommendations", "should_trigger": false}
+]

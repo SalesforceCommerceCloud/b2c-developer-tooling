@@ -1,0 +1,5 @@
+[
+  {"query": "Users get bounced to /login?error=session_expired after a while. How does the auth middleware decide that and how do I keep them logged in?", "should_trigger": true},
+  {"query": "After a guest logs in, their wishlist disappears. How do I merge the guest basket and wishlist in my custom login action using updateAuth?", "should_trigger": true},
+  {"query": "Our CSP blocks the Google sign-in popup and the Turnstile widget on the login page; which directives do I extend in config.server.ts?", "should_trigger": false}
+]
