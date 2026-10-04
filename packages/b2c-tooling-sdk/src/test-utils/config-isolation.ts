@@ -7,6 +7,12 @@ import {resetLogger} from '../logging/index.js';
 
 const ADDITIONAL_ENV_VARS = ['COMMERCE_API_SLAS_SECRET', 'LANGUAGE', 'NO_COLOR'];
 
+function isIsolatedEnvVar(key: string): boolean {
+  return (
+    key.startsWith('SFCC_') || key.startsWith('MRT_') || key.startsWith('PUBLIC__') || ADDITIONAL_ENV_VARS.includes(key)
+  );
+}
+
 interface IsolationState {
   savedEnvVars: Record<string, string | undefined>;
 }
@@ -19,15 +25,10 @@ export function isolateConfig(): void {
   const savedEnvVars: Record<string, string | undefined> = {};
 
   for (const key of Object.keys(process.env)) {
-    if (key.startsWith('SFCC_') || key.startsWith('MRT_') || key.startsWith('PUBLIC__')) {
+    if (isIsolatedEnvVar(key)) {
       savedEnvVars[key] = process.env[key];
       delete process.env[key];
     }
-  }
-
-  for (const key of ADDITIONAL_ENV_VARS) {
-    savedEnvVars[key] = process.env[key];
-    delete process.env[key];
   }
 
   process.env.SFCC_CONFIG = '/dev/null';
@@ -48,17 +49,13 @@ export function restoreConfig(): void {
   // Reset logger before restoring env vars
   resetLogger();
 
-  delete process.env.SFCC_CONFIG;
-  delete process.env.SFCC_DOTENV_FILE;
-  delete process.env.MRT_CREDENTIALS_FILE;
-  delete process.env.SFCC_LOG_LEVEL;
+  // Drop anything the test set, not just the variables isolateConfig() replaced
+  for (const key of Object.keys(process.env)) {
+    if (isIsolatedEnvVar(key)) delete process.env[key];
+  }
 
   for (const [key, value] of Object.entries(state.savedEnvVars)) {
-    if (value === undefined) {
-      delete process.env[key];
-    } else {
-      process.env[key] = value;
-    }
+    if (value !== undefined) process.env[key] = value;
   }
 
   state = null;
