@@ -10,7 +10,7 @@ You've got a connected instance, a deployed cartridge, and a scaffold workflow. 
 | Watch & auto-deploy | **B2C DX - Code Sync: Toggle Code Sync** |
 | Tail instance logs | **B2C DX - Logs: Start Tailing Logs** |
 | Switch active instance | Click the `$(cloud)` item in the status bar |
-| Inspect resolved config | **B2C DX: B2C Instance Config** |
+| Inspect resolved config | **B2C DX: Inspect Resolved Config** |
 
 ## Features worth exploring
 

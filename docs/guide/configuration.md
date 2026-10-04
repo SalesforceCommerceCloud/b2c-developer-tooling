@@ -138,10 +138,10 @@ The primary `dw.json` path is selected in this order:
 
 1. An explicit path, such as CLI `--config`.
 2. `SFCC_CONFIG` from the process environment.
-3. `SFCC_CONFIG` from the project's `.env`.
+3. `SFCC_CONFIG` from the env file (the project's `.env`, or the file given with `--dotenv-file`).
 4. `dw.json` in the project directory.
 
-A relative `SFCC_CONFIG` in `.env` is resolved from that project directory. The [global file](#global-default-configuration), when configured, also supplies available instances.
+A relative `SFCC_CONFIG` in `.env` is resolved from that project directory. The [global file](#global-default-configuration), when configured, also supplies available instances unless you pass an explicit path. An empty `--config ""` or `SFCC_CONFIG=` uses no `dw.json`.
 
 ```bash
 # Use another project directory
@@ -206,11 +206,13 @@ SFCC_SITE_ID=RefArch
 # SFCC_SLAS_CLIENT_SECRET=your-slas-client-secret
 ```
 
+To use another env file, such as `.env.staging`, pass `--dotenv-file .env.staging` (or set `SFCC_DOTENV_FILE`); it replaces `.env`.
+
 You do not need both file formats. Environment values override the selected `dw.json` entry, so keep instance-specific variables out of a shared shell environment if you regularly switch between named instances.
 
 ### Storefront Next Compatibility
 
-When you run the toolkit from a [Storefront Next](./storefront-next) project, its existing environment variables can supply the equivalent B2C Commerce settings. Toolkit-specific variables remain the default names and take priority when both forms are set.
+When you run the toolkit from a [Storefront Next](./storefront-next) project, its existing environment variables can fill in B2C Commerce settings that the selected `dw.json` instance doesn't set. Toolkit-specific variables remain the default names and take priority when both forms are set.
 
 | Storefront Next variable                     | `dw.json` field      | Default toolkit environment variable |
 | -------------------------------------------- | -------------------- | ------------------------------------ |
@@ -221,6 +223,8 @@ When you run the toolkit from a [Storefront Next](./storefront-next) project, it
 | `PUBLIC__app__defaultSiteId`                 | `site-id`            | `SFCC_SITE_ID`                       |
 | `MRT_PROJECT`                                | `mrt-project`        | `MRT_PROJECT`                        |
 | `MRT_TARGET`                                 | `mrt-environment`    | `MRT_ENVIRONMENT`                    |
+
+If nothing sets a hostname and the tenant ID is a sandbox tenant (`f_ecom_abcd_001` or `abcd_001`), the hostname is derived from it (`abcd-001.dx.commercecloud.salesforce.com`). A Storefront Next project that targets a sandbox doesn't need `SFCC_SERVER`.
 
 ## Check Your Configuration {#debugging-configuration}
 
@@ -250,8 +254,9 @@ With the built-in configuration sources, values take priority in this order:
 2. Process environment variables.
 3. The selected project's `.env`.
 4. The selected `dw.json` entry.
-5. `~/.mobify` for an MRT API key.
-6. `package.json` project defaults.
+5. [Storefront Next variables](#storefront-next-compatibility).
+6. `~/.mobify` for an MRT API key.
+7. `package.json` project defaults.
 
 Installed configuration plugins can supply values before or after the file sources. See [configuration plugins](./third-party-plugins) for available integrations or [Extending the CLI](./extending#custom-configuration-sources) for custom sources. Inspection shows which source supplied each value.
 
@@ -387,6 +392,7 @@ These are not `dw.json` fields:
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `SFCC_PROJECT_DIRECTORY`     | Project directory used for configuration lookup.                                                                |
 | `SFCC_CONFIG`                | Path to the primary connection file in `dw.json` format.                                                        |
+| `SFCC_DOTENV_FILE`           | Env file used instead of the project `.env` (same as `--dotenv-file`); empty for none.                          |
 | `SFCC_INSTANCE`              | Named instance to select.                                                                                       |
 | `MRT_CREDENTIALS_FILE`       | MRT CLI override for the `~/.mobify` credentials file.                                                          |
 | `SFCC_REDIRECT_URI`          | Account Manager browser-login redirect URI override.                                                            |

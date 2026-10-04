@@ -20,12 +20,13 @@ The extension uses the same configuration resolver as the B2C CLI. Environment v
 
 **A `dw.json` at your project root is the conventional setup** and is the easiest way for the extension to locate a B2C project nested inside a larger workspace. It is not required when another configuration source provides what you need.
 
-For the selected project, the extension loads all variables from its `.env` and supports a relative `.env` `SFCC_CONFIG` path. Process environment variables take priority over project `.env` values. Configuration files are selected in this order:
+For the selected project, the extension loads all variables from the selected env file (the project `.env` by default) and supports a relative `SFCC_CONFIG` path in it. Process environment variables take priority over env file values. Configuration files are selected in this order:
 
 1. Process `SFCC_CONFIG`
-2. Project `.env` `SFCC_CONFIG`
-3. Project-local `dw.json`
-4. The shared global default set with `b2c setup default-config set <path>`
+2. Env file `SFCC_CONFIG`
+3. Project-local `dw.json`, plus the shared global default set with `b2c setup default-config set <path>`
+
+An explicit `SFCC_CONFIG` path is used on its own, without the global default. An empty `SFCC_CONFIG` uses no `dw.json`.
 
 The global default is the same fallback used by the CLI and MCP server. The extension automatically refreshes when that shared setting changes.
 
@@ -103,6 +104,8 @@ To keep a particular project directory selected, right-click that folder in Expl
 When your configuration defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to open a quick pick. Selecting an instance applies it only to the current VS Code workspace and refreshes every extension view. Other VS Code workspaces, the CLI, and MCP continue using their own selection or the shared default.
 
 The picker distinguishes the instance **selected for this workspace** with a check mark and the shared **default instance** with a star. Use the star action on a row—or run **B2C DX: Set Default Instance**—to intentionally change the default used by other consumers. Run **B2C DX: Follow Default Instance** to remove the workspace-specific selection.
+
+The picker also offers **None** (use no `dw.json` instance). When the project has env files, an **Env File** section in the same picker lets you choose `.env`, another `.env.*` file, or none for this workspace; the selected instance and env file are both checked. Hover over the status bar item to see where each setting comes from, or run **B2C DX: Inspect Resolved Config** for every resolved value and its source.
 
 For named entries, setting the default writes `active: true`; a root configuration without an explicit `active` value remains an implicit default. This is equivalent to running `b2c setup instance set-active <name>` and is separate from selecting an instance only for VS Code.
 

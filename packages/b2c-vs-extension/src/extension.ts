@@ -13,7 +13,7 @@ import * as cp from 'child_process';
 import * as https from 'https';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {B2CExtensionConfig} from './config-provider.js';
+import {B2CExtensionConfig, listEnvFileCandidates} from './config-provider.js';
 import {workspaceHasDwJson, isUnscannableRoot, WORKSPACE_DISCOVERY_MAX_DEPTH} from './workspace-discovery.js';
 import {CartridgeService} from './cartridges/cartridge-service.js';
 import {registerCap} from './cap/index.js';
@@ -37,11 +37,18 @@ import {disposeTelemetry, initTelemetry, sendEvent, sendException} from './telem
 import {registerCipAnalytics} from './cip-analytics/index.js';
 import {
   acceptInstancePickerSelection,
+  buildEnvFilePickerEntries,
   buildInstancePickerEntries,
+  describeInstanceStatus,
   findInstanceNameRange,
   isWorkspaceInstanceSelected,
+  toEnvFileSelection,
   triggerInstancePickerButton,
+  type EnvFilePickerEntry,
+  type InstanceStatusOptions,
 } from './instance-selection.js';
+import {buildConfigInspection} from './config-inspect.js';
+import {renderConfigInspectPanel} from './config-inspect-panel.js';
 import {
   registerWalkthroughCommands,
   resetWorkspaceOnboardingIfFresh,
@@ -56,8 +63,9 @@ import {
 let authSessionBackend: VsCodeSecretsAuthSessionBackend | undefined;
 
 interface InstanceQuickPickItem extends vscode.QuickPickItem {
-  action?: 'follow';
+  action?: 'follow' | 'inspect' | 'none';
   instance?: InstanceInfo;
+  envFile?: EnvFilePickerEntry;
 }
 
 function applyLogLevel(log: vscode.OutputChannel): void {
@@ -612,6 +620,14 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   const instanceStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   instanceStatusBar.name = 'B2C Instance';
   instanceStatusBar.command = 'b2c-dx.instance.switch';
+  const getInstanceStatusOptions = (): InstanceStatusOptions => ({
+    envFile: configProvider.getActiveEnvFile(),
+    envFileProblem: configProvider.getEnvFileProblem(),
+    envFileSelection: configProvider.getEnvFileSelection(),
+    instanceDisabled: configProvider.isInstanceDisabled(),
+    workspaceSelected: Boolean(configProvider.getWorkspaceInstanceSelection()),
+  });
+
   const updateInstanceStatusBar = async () => {
     // This runs on the activation path (awaited below) and on every config
     // reset. It must never throw: listInstances() re-throws on a malformed
@@ -627,20 +643,12 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       // otherwise a misconfigured workspace shows "$(cloud) unnamed" instead
       // of the clearer "Not configured" state.
       if (config?.hasB2CInstanceConfig()) {
-        const workspaceSelection = configProvider.getWorkspaceInstanceSelection();
-        const instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
-        const defaultInstance = instances.find((instance) => instance.active);
-        const name = workspaceSelection?.name ?? config.values.instanceName ?? defaultInstance?.name;
-        const host = config.values.hostname ?? '';
-        const truncatedHost = host.length > 40 ? host.slice(0, 37) + '...' : host;
-        const display = name || truncatedHost || 'unnamed';
+        // The label comes from the sources that actually resolved, never from
+        // another file's active entry.
+        const status = describeInstanceStatus(config, getInstanceStatusOptions());
         const pinnedSuffix = configProvider.isProjectRootPinned() ? ' $(pinned)' : '';
-        instanceStatusBar.text = `$(cloud) ${display}${pinnedSuffix}`;
-        const tooltipLines = [`B2C Instance: ${name ?? 'unnamed'}`];
-        if (host) tooltipLines.push(`Host: ${host}`);
-        tooltipLines.push(
-          workspaceSelection ? 'Selection: This workspace' : 'Selection: Following the default instance',
-        );
+        instanceStatusBar.text = `${status.text}${pinnedSuffix}`;
+        const tooltipLines = [...status.tooltip];
         if (configProvider.isProjectRootPinned()) {
           tooltipLines.push(`Project root: ${getWorkingDirectory()} (pinned)`);
         }
@@ -668,40 +676,43 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   await updateInstanceStatusBar();
   configProvider.onDidReset(() => void updateInstanceStatusBar());
 
-  const instanceConfigScheme = 'b2c-instance-config';
-  const instanceConfigContents = new Map<string, string>();
-  const instanceConfigOnDidChange = new vscode.EventEmitter<vscode.Uri>();
-  const instanceConfigRegistration = vscode.workspace.registerTextDocumentContentProvider(instanceConfigScheme, {
-    onDidChange: instanceConfigOnDidChange.event,
-    provideTextDocumentContent(uri: vscode.Uri) {
-      return instanceConfigContents.get(uri.toString()) ?? '';
-    },
+  // Resolved config panel: the extension's own resolution, so it follows the
+  // workspace instance and env file selection.
+  let inspectPanel: vscode.WebviewPanel | undefined;
+  const renderInspectPanel = (): string => {
+    const config = configProvider.getConfig();
+    if (!config) return renderConfigInspectPanel(undefined, configProvider.getConfigError() ?? undefined);
+    const model = buildConfigInspection(config, getInstanceStatusOptions());
+    if (!config.hasB2CInstanceConfig()) model.label = 'No B2C instance configured';
+    return renderConfigInspectPanel(model);
+  };
+  configProvider.onDidReset(() => {
+    if (inspectPanel) inspectPanel.webview.html = renderInspectPanel();
   });
 
   const inspectInstanceDisposable = registerSafeCommand('b2c-dx.instance.inspect', async () => {
-    const config = configProvider.getConfig();
-    if (!config) {
-      vscode.window.showWarningMessage('B2C DX: No B2C Commerce configuration found.');
+    // Avoid rendering the empty state while a reset is still resolving.
+    await configProvider.ensureResolved();
+    if (inspectPanel) {
+      inspectPanel.webview.html = renderInspectPanel();
+      inspectPanel.reveal();
       return;
     }
-    const safeValues: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(config.values)) {
-      if (value === undefined) continue;
-      // Redact secrets
-      if (/secret|password|passphrase|apikey/i.test(key) && typeof value === 'string') {
-        safeValues[key] = value.slice(0, 4) + '****';
-      } else {
-        safeValues[key] = value;
-      }
-    }
-    const content = JSON.stringify(safeValues, null, 2);
-    const host = config.values.hostname ?? 'instance';
-    const uri = vscode.Uri.parse(`${instanceConfigScheme}:${host}.json`);
-    instanceConfigContents.set(uri.toString(), content);
-    instanceConfigOnDidChange.fire(uri);
-    const doc = await vscode.workspace.openTextDocument(uri);
-    await vscode.languages.setTextDocumentLanguage(doc, 'json');
-    await vscode.window.showTextDocument(doc, {preview: true});
+    inspectPanel = vscode.window.createWebviewPanel(
+      'b2c-dx.inspectConfig',
+      'B2C DX · Resolved Config',
+      vscode.ViewColumn.Active,
+      {enableScripts: true},
+    );
+    inspectPanel.onDidDispose(() => {
+      inspectPanel = undefined;
+    });
+    inspectPanel.webview.onDidReceiveMessage(async (message: {type?: string}) => {
+      // Reset re-reads dw.json and env files; onDidReset re-renders the panel.
+      if (message?.type === 'refresh') configProvider.reset();
+      else if (message?.type === 'selectInstance') await vscode.commands.executeCommand('b2c-dx.instance.switch');
+    });
+    inspectPanel.webview.html = renderInspectPanel();
   });
 
   const setDefaultButton: vscode.QuickInputButton = {
@@ -713,52 +724,100 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     tooltip: 'Open Configuration',
   };
 
-  const getDefaultInstanceSelection = async () => {
-    const result = await dwJsonSource.load(getInstanceCatalogOptions());
-    const name = result?.config.instanceName;
-    return name && result?.location ? {name, location: result.location} : undefined;
+  /** The default dw.json entry. Unnamed root entries have an empty name. */
+  const getDefaultInstance = async (): Promise<InstanceInfo | undefined> => {
+    let result: Awaited<ReturnType<typeof dwJsonSource.load>>;
+    try {
+      result = await dwJsonSource.load(getInstanceCatalogOptions());
+    } catch {
+      // A missing explicit config path is reported by configuration resolution.
+      return undefined;
+    }
+    if (!result?.location) return undefined;
+    return {
+      name: result.config.instanceName ?? '',
+      hostname: result.config.hostname,
+      location: result.location,
+      source: dwJsonSource.name,
+    };
   };
+
+  const getDefaultInstanceSelection = async () => {
+    const instance = await getDefaultInstance();
+    return instance?.location ? {name: instance.name, location: instance.location} : undefined;
+  };
+
+  /** Env file rows for the current project, or none when there is nothing to choose or undo. */
+  const getEnvFilePickerEntries = async (): Promise<EnvFilePickerEntry[]> => {
+    const workingDirectory = getWorkingDirectory();
+    const selection = configProvider.getEnvFileSelection();
+    const candidates = await listEnvFileCandidates(workingDirectory);
+    if (candidates.length === 0 && selection === undefined) return [];
+    return buildEnvFilePickerEntries(candidates, selection, workingDirectory);
+  };
+
+  const toEnvFileQuickPickItem = (entry: EnvFilePickerEntry): InstanceQuickPickItem => ({
+    label: `${entry.selected ? '$(check) ' : ''}${entry.kind === 'none' ? '$(circle-slash) ' : '$(file) '}${entry.label}`,
+    description: entry.kind === 'none' ? 'Use shell environment variables only' : undefined,
+    envFile: entry,
+  });
 
   const buildInstanceQuickPickItems = (
     instances: InstanceInfo[],
     defaultSelection: Awaited<ReturnType<typeof getDefaultInstanceSelection>>,
+    envFiles: EnvFilePickerEntry[],
   ): InstanceQuickPickItem[] => {
     const workspaceSelection = configProvider.getWorkspaceInstanceSelection();
     const options = getInstanceCatalogOptions();
-    return buildInstancePickerEntries(instances, workspaceSelection, defaultSelection, options.defaultConfigPath).map(
-      (entry): InstanceQuickPickItem => {
-        if (entry.kind === 'follow') {
-          return {
-            label: '$(sync) Follow Default Instance',
-            description: entry.description,
-            action: 'follow',
-          };
-        }
-        if (entry.kind === 'separator') {
-          return {
-            label: entry.scope === 'global' ? 'Global Configuration' : 'Project Configuration',
-            kind: vscode.QuickPickItemKind.Separator,
-          };
-        }
-
-        const instance = entry.instance!;
+    return buildInstancePickerEntries(instances, workspaceSelection, defaultSelection, options.defaultConfigPath, {
+      envFiles,
+      instanceDisabled: configProvider.isInstanceDisabled(),
+    }).map((entry): InstanceQuickPickItem => {
+      if (entry.kind === 'envFile') return toEnvFileQuickPickItem(entry.envFile!);
+      if (entry.kind === 'inspect') {
+        return {label: '$(inspect) Inspect Resolved Config', description: entry.description, action: 'inspect'};
+      }
+      if (entry.kind === 'none') {
         return {
-          label: `${entry.selected ? '$(check) ' : ''}${instance.name}`,
-          description: [entry.default ? '$(star-full) Default' : '', instance.hostname ?? '']
-            .filter(Boolean)
-            .join('  '),
-          detail:
-            workspaceSelection && isWorkspaceInstanceSelected(instance, workspaceSelection)
-              ? 'Selected for this workspace'
-              : undefined,
-          buttons: [
-            ...(entry.default ? [] : [setDefaultButton]),
-            ...(instance.location ? [openConfigurationButton] : []),
-          ],
-          instance,
+          label: `${entry.selected ? '$(check) ' : ''}$(circle-slash) None`,
+          description: entry.description,
+          action: 'none',
         };
-      },
-    );
+      }
+      if (entry.kind === 'follow') {
+        return {
+          label: '$(sync) Follow Default Instance',
+          description: entry.description,
+          action: 'follow',
+        };
+      }
+      if (entry.kind === 'separator') {
+        return {
+          label:
+            entry.scope === 'envFile'
+              ? 'Env File'
+              : entry.scope === 'global'
+                ? 'Global Configuration'
+                : 'Project Configuration',
+          kind: vscode.QuickPickItemKind.Separator,
+        };
+      }
+
+      const instance = entry.instance!;
+      return {
+        label: `${entry.selected ? '$(check) ' : ''}${instance.name || 'Unnamed (root entry)'}`,
+        description: [entry.default ? '$(star-full) Default' : '', instance.hostname ?? ''].filter(Boolean).join('  '),
+        detail:
+          workspaceSelection && isWorkspaceInstanceSelected(instance, workspaceSelection)
+            ? 'Selected for this workspace'
+            : undefined,
+        buttons: [
+          ...(entry.default || !instance.name ? [] : [setDefaultButton]),
+          ...(instance.location ? [openConfigurationButton] : []),
+        ],
+        instance,
+      };
+    });
   };
 
   const setInstanceAsDefault = async (instance: InstanceInfo): Promise<boolean> => {
@@ -786,15 +845,45 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }
   };
 
+  const showEnvFilePicker = async (): Promise<void> => {
+    const workingDirectory = getWorkingDirectory();
+    const entries = buildEnvFilePickerEntries(
+      await listEnvFileCandidates(workingDirectory),
+      configProvider.getEnvFileSelection(),
+      workingDirectory,
+    );
+    const picked = await vscode.window.showQuickPick(entries.map(toEnvFileQuickPickItem), {
+      title: 'Select Env File',
+      placeHolder: 'Select the env file for this workspace',
+    });
+    if (picked?.envFile) await configProvider.selectEnvFile(toEnvFileSelection(picked.envFile));
+  };
+
+  const loadInstancePickerItems = async (): Promise<InstanceQuickPickItem[]> => {
+    // A malformed dw.json must not hide None, the env files or Inspect.
+    let instances: InstanceInfo[] = [];
+    let defaultInstance: InstanceInfo | undefined;
+    try {
+      instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
+      defaultInstance = await getDefaultInstance();
+    } catch (err) {
+      log.appendLine(`[Config] Could not list instances: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    // Unnamed root entries are not listed by name; show the one in use as the default.
+    if (defaultInstance && !defaultInstance.name) instances.unshift(defaultInstance);
+    const defaultSelection = defaultInstance?.location
+      ? {name: defaultInstance.name, location: defaultInstance.location}
+      : undefined;
+    return buildInstanceQuickPickItems(instances, defaultSelection, await getEnvFilePickerEntries());
+  };
+
   const showInstancePicker = async (): Promise<void> => {
-    const instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
-    const defaultSelection = await getDefaultInstanceSelection();
     const quickPick = vscode.window.createQuickPick<InstanceQuickPickItem>();
     quickPick.title = 'Select B2C Instance';
-    quickPick.placeholder = 'Select an instance for this workspace';
+    quickPick.placeholder = 'Select an instance and env file for this workspace';
     quickPick.matchOnDescription = true;
     quickPick.matchOnDetail = true;
-    quickPick.items = buildInstanceQuickPickItems(instances, defaultSelection);
+    quickPick.items = await loadInstancePickerItems();
 
     await new Promise<void>((resolve) => {
       let finished = false;
@@ -829,7 +918,12 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
           void run(async () => {
             await acceptInstancePickerSelection(picked, {
               followDefault: () => configProvider.followDefaultInstance(),
+              inspect: async () => {
+                await vscode.commands.executeCommand('b2c-dx.instance.inspect');
+              },
+              selectEnvFile: (selection) => configProvider.selectEnvFile(selection),
               selectForWorkspace: (selection) => configProvider.selectInstanceForWorkspace(selection),
+              selectNone: () => configProvider.selectNoInstanceForWorkspace(),
             });
             finish();
           });
@@ -859,6 +953,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   };
 
   const switchInstanceDisposable = registerSafeCommand('b2c-dx.instance.switch', showInstancePicker);
+  const selectEnvFileDisposable = registerSafeCommand('b2c-dx.envFile.select', showEnvFilePicker);
 
   const setDefaultInstanceDisposable = registerSafeCommand('b2c-dx.instance.setDefault', async () => {
     const instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
@@ -1006,11 +1101,11 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     promptAgentDisposable,
     listWebDavDisposable,
     instanceStatusBar,
-    instanceConfigRegistration,
     inspectInstanceDisposable,
     switchInstanceDisposable,
     setDefaultInstanceDisposable,
     followDefaultInstanceDisposable,
+    selectEnvFileDisposable,
     setProjectRootDisposable,
     resetProjectRootDisposable,
     configChangeListener,

@@ -31,6 +31,8 @@ export function isolateConfig(): void {
   }
 
   process.env.SFCC_CONFIG = '/dev/null';
+  // Commands load no .env during tests
+  process.env.SFCC_DOTENV_FILE = '';
   process.env.MRT_CREDENTIALS_FILE = '/dev/null';
   process.env.SFCC_LOG_LEVEL = 'silent';
 
@@ -47,6 +49,7 @@ export function restoreConfig(): void {
   resetLogger();
 
   delete process.env.SFCC_CONFIG;
+  delete process.env.SFCC_DOTENV_FILE;
   delete process.env.MRT_CREDENTIALS_FILE;
   delete process.env.SFCC_LOG_LEVEL;
 

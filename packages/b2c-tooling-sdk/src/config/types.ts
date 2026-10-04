@@ -218,6 +218,7 @@ export type ConfigWarningCode =
   | 'HOSTNAME_MISMATCH'
   | 'CLIENT_ID_MISMATCH'
   | 'SLAS_CLIENT_ID_MISMATCH'
+  | 'TENANT_MISMATCH'
   | 'DEPRECATED_FIELD'
   | 'MISSING_REQUIRED'
   | 'SOURCE_ERROR';
@@ -280,9 +281,13 @@ export interface ConfigResolutionResult {
 export interface ResolveConfigOptions {
   /** Explicit instance name, or the name resolved from an earlier source during loading. */
   instance?: string;
-  /** Explicit path to config file (defaults to auto-discover) */
+  /**
+   * Explicit path to config file (defaults to auto-discover). An explicit path
+   * is used on its own, without {@link defaultConfigPath}. An empty string
+   * selects no dw.json at all.
+   */
   configPath?: string;
-  /** Global instance-catalog fallback used after an explicit or project-local dw.json */
+  /** Global instance-catalog fallback used after a discovered project-local dw.json */
   defaultConfigPath?: string;
   /** Starting directory for config file search */
   projectDirectory?: string;

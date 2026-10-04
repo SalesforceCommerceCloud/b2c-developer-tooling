@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-02T16:58:10.211Z",
+  "generatedAt": "2026-10-04T01:38:49.515Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -107,7 +107,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/index.md",
-      "headings": "Global Flags • Instance Flags • Authentication Flags • Safety Mode • Other Environment Variables • Command Topics • Instance Operations • Services • Development • Account Management • Setup & Utilities • Getting Help",
+      "headings": "Global Flags • Instance Flags • Configuration Flags • Authentication Flags • Safety Mode • Other Environment Variables • Command Topics • Instance Operations • Services • Development • Account Management • Setup & Utilities • Getting Help",
       "preview": "B2C CLI command reference with global flags and authentication options for managing Salesforce Commerce Cloud instances."
     },
     {
