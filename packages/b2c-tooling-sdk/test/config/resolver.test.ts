@@ -438,6 +438,30 @@ describe('config/resolver', () => {
         expect(warnings).to.be.empty;
       });
 
+      it('derives the hostname from a sandbox tenantId when no hostname is configured', async () => {
+        const resolver = new ConfigResolver([new MockSource('env', {tenantId: 'f_ecom_bjgk_005', shortCode: 'abc'})]);
+
+        const {config, sources, warnings} = await resolver.resolve();
+
+        expect(config.hostname).to.equal('bjgk-005.dx.commercecloud.salesforce.com');
+        expect(config.tenantId).to.equal('bjgk_005');
+        expect(sources.at(-1)).to.deep.include({name: 'SandboxTenantId', fields: ['hostname']});
+        expect(sources.map((source) => source.name)).to.not.include('SandboxHostname');
+        expect(warnings).to.be.empty;
+      });
+
+      it('does not derive a hostname from a non-sandbox tenantId or replace a configured hostname', async () => {
+        const production = await new ConfigResolver([new MockSource('env', {tenantId: 'zzxy_prd'})]).resolve();
+        const configured = await new ConfigResolver([
+          new MockSource('dw', {hostname: 'staging-realm-customer.demandware.net'}),
+          new MockSource('env', {tenantId: 'bjgk_005'}),
+        ]).resolve();
+
+        expect(production.config.hostname).to.be.undefined;
+        expect(configured.config.hostname).to.equal('staging-realm-customer.demandware.net');
+        expect(configured.sources.map((source) => source.name)).to.not.include('SandboxTenantId');
+      });
+
       it('does not derive tenantId from non-sandbox hostnames', async () => {
         const resolver = new ConfigResolver([
           new MockSource('dw', {hostname: 'staging-realm-customer.demandware.net'}),

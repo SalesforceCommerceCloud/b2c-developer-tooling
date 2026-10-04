@@ -197,6 +197,7 @@ export {
   toOrganizationId,
   normalizeTenantId,
   tenantIdFromSandboxHostname,
+  sandboxHostnameFromTenantId,
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,

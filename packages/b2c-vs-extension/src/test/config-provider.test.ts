@@ -392,6 +392,10 @@ suite('B2CExtensionConfig workspace discovery', () => {
       globalConfigPath,
       JSON.stringify({configs: [{name: 'development', hostname: 'development.invalid', active: true}]}),
     );
+    fs.writeFileSync(
+      path.join(ambientEnvironment.B2C_CONFIG_DIR!, 'b2c', 'settings.json'),
+      JSON.stringify({defaultConfigPath: globalConfigPath}),
+    );
     const workspaceState = createMemoryMemento({
       'b2c-dx.workspaceInstance': {name: 'removed', location: globalConfigPath},
     });
@@ -402,6 +406,35 @@ suite('B2CExtensionConfig workspace discovery', () => {
         provider.resolveForDirectory(projectDirectory),
         /Selected instance "removed" is no longer available/,
       );
+    } finally {
+      provider.dispose();
+      fs.rmSync(dir, {recursive: true, force: true});
+    }
+  });
+
+  test('drops a workspace selection whose file is no longer the global default', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-unset-global-instance-'));
+    const projectDirectory = path.join(dir, 'project');
+    const formerGlobalPath = path.join(dir, 'shared.json');
+    fs.mkdirSync(projectDirectory);
+    fs.writeFileSync(
+      path.join(projectDirectory, 'dw.json'),
+      JSON.stringify({name: 'project', hostname: 'project.invalid'}),
+    );
+    fs.writeFileSync(formerGlobalPath, JSON.stringify({configs: [{name: 'shared', hostname: 'global.invalid'}]}));
+    fs.writeFileSync(path.join(ambientEnvironment.B2C_CONFIG_DIR!, 'b2c', 'settings.json'), JSON.stringify({}));
+    const workspaceState = createMemoryMemento({
+      'b2c-dx.projectRoot': projectDirectory,
+      'b2c-dx.workspaceInstance': {name: 'shared', location: formerGlobalPath},
+    });
+    const provider = new B2CExtensionConfig(log, workspaceState, ambientEnvironment);
+
+    try {
+      await provider.ensureResolved();
+      assert.strictEqual(provider.getConfigError(), null);
+      assert.strictEqual(provider.getConfig()?.values.hostname, 'project.invalid');
+      assert.strictEqual(provider.getWorkspaceInstanceSelection(), undefined);
+      assert.strictEqual(workspaceState.get('b2c-dx.workspaceInstance'), undefined);
     } finally {
       provider.dispose();
       fs.rmSync(dir, {recursive: true, force: true});

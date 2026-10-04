@@ -431,6 +431,22 @@ suite('instance status', () => {
     assert.ok(result.tooltip.includes('Derived from hostname: tenantId'), result.tooltip.join('\n'));
   });
 
+  test('labels by the hostname derived from a Storefront Next tenant', () => {
+    const defaultEnv = path.resolve('/project/.env');
+    const result = status(
+      [
+        {name: 'StorefrontNextEnvSource', location: defaultEnv, fields: ['tenantId', 'shortCode']},
+        {name: 'SandboxTenantId', location: 'derived from tenant ID bjgk_005', fields: ['hostname']},
+      ],
+      {hostname: 'bjgk-005.dx.commercecloud.salesforce.com', tenantId: 'bjgk_005', shortCode: 'abc'},
+      {envFile: defaultEnv},
+    );
+
+    assert.strictEqual(result.text, '$(cloud) bjgk-005.dx.commercecloud.salesforce.com | .env');
+    assert.ok(result.tooltip.includes('Host: bjgk-005.dx.commercecloud.salesforce.com (tenant ID)'));
+    assert.ok(result.tooltip.includes('Derived from tenant ID: hostname'), result.tooltip.join('\n'));
+  });
+
   test('describes disabled instance and env file selections in the tooltip', () => {
     const result = status(
       [{name: 'EnvSource', location: 'environment variables', fields: ['hostname']}],

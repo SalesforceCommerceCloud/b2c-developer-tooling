@@ -12,7 +12,7 @@
  * @module config/resolver
  */
 import type {AuthCredentials} from '../auth/types.js';
-import {normalizeTenantId, tenantIdFromSandboxHostname} from '../clients/custom-apis.js';
+import {normalizeTenantId, sandboxHostnameFromTenantId, tenantIdFromSandboxHostname} from '../clients/custom-apis.js';
 import type {B2CInstance} from '../instance/index.js';
 import {getLogger} from '../logging/logger.js';
 import {
@@ -350,6 +350,21 @@ export class ConfigResolver {
     // full SCAPI organization ID (for example, Storefront Next configuration).
     if (config.tenantId) {
       config.tenantId = normalizeTenantId(config.tenantId);
+    }
+
+    // Sandbox tenant IDs determine the hostname, so a configuration with only a
+    // tenant (for example a Storefront Next organization ID) still reaches the
+    // instance. Other tenants are ambiguous and never derive a hostname.
+    if (!config.hostname && config.tenantId) {
+      const sandboxHostname = sandboxHostnameFromTenantId(config.tenantId);
+      if (sandboxHostname) {
+        config.hostname = sandboxHostname;
+        sourceInfos.push({
+          name: 'SandboxTenantId',
+          location: `derived from tenant ID ${config.tenantId}`,
+          fields: ['hostname'],
+        });
+      }
     }
 
     // Sandbox hostnames encode the tenant ID. Fill it in when nothing configured

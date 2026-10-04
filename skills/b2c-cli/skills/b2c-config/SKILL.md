@@ -30,7 +30,7 @@ Sources, in resolution order (highest priority first):
 6. **Plugin sources (low priority)**.
 7. **`package.json`** under the `b2c` key — non-sensitive project defaults (e.g., `shortCode`, `clientId`, `mrtProject`). Sensitive fields like `clientSecret`/`password` are intentionally **not** allowed here.
 
-Hostname protection applies between sources: if an env file's `SFCC_SERVER` differs from the selected `dw.json` entry's hostname, that whole entry is skipped (`HOSTNAME_MISMATCH` warning). If no source sets a tenant ID and the hostname is a sandbox hostname (`abcd-001.dx.commercecloud.salesforce.com`), the tenant ID is derived (`abcd_001`); a conflicting configured tenant ID produces a `TENANT_MISMATCH` warning.
+Hostname protection applies between sources: if an env file's `SFCC_SERVER` differs from the selected `dw.json` entry's hostname, that whole entry is skipped (`HOSTNAME_MISMATCH` warning). If no source sets a tenant ID and the hostname is a sandbox hostname (`abcd-001.dx.commercecloud.salesforce.com`), the tenant ID is derived (`abcd_001`); a conflicting configured tenant ID produces a `TENANT_MISMATCH` warning. Conversely, if no source sets a hostname and the tenant ID is a sandbox tenant (`abcd_001`, including a Storefront Next `f_ecom_abcd_001` organization ID), the hostname is derived (`abcd-001.dx.commercecloud.salesforce.com`).
 
 Use `--dotenv-file .env.staging` (or `SFCC_DOTENV_FILE`) to use another env file instead of `.env`; it replaces `.env` rather than layering on it. `--dotenv-file ""` uses no env file, and `--config ""` uses no `dw.json`.
 
@@ -386,7 +386,7 @@ With this configuration, `b2c content list` and `b2c content export homepage` de
 ### Missing `tenantId` / `shortCode`
 
 - These resolve from `dw.json`, `SFCC_TENANT_ID`/`SFCC_SHORTCODE`, or `package.json`. Run `b2c setup inspect` to see which source provided them.
-- For sandboxes, `tenantId` is derived from the hostname (replace `-` with `_`): `zzxy-001.dx...` → `zzxy_001`.
+- For sandboxes, `tenantId` is derived from the hostname (replace `-` with `_`): `zzxy-001.dx...` → `zzxy_001`. The reverse also applies: with a sandbox tenant ID and no hostname, the hostname is derived.
 
 ### MRT commands say "API key required"
 

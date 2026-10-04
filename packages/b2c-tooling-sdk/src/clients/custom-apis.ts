@@ -212,6 +212,29 @@ export function tenantIdFromSandboxHostname(hostname: string): string | undefine
   return `${match[1]}_${match[2]}`.toLowerCase();
 }
 
+/** Sandbox tenant IDs are a four-character realm and a three-digit instance number. */
+const SANDBOX_TENANT_ID_REGEX = /^([a-z\d]{4})_(\d{3})$/i;
+
+/**
+ * Derives the sandbox hostname from a sandbox tenant ID.
+ *
+ * Returns `undefined` for any tenant ID that doesn't follow the sandbox naming
+ * convention (for example a production `abcd_prd` tenant), whose hostname can't
+ * be inferred.
+ *
+ * @param tenantId - Tenant ID or organization ID
+ * @returns The sandbox hostname, or undefined
+ *
+ * @example
+ * sandboxHostnameFromTenantId('f_ecom_zzpq_013') // Returns 'zzpq-013.dx.commercecloud.salesforce.com'
+ * sandboxHostnameFromTenantId('zzxy_prd')        // Returns undefined
+ */
+export function sandboxHostnameFromTenantId(tenantId: string): string | undefined {
+  const match = normalizeTenantId(tenantId).match(SANDBOX_TENANT_ID_REGEX);
+  if (!match) return undefined;
+  return `${match[1]}-${match[2]}.dx.commercecloud.salesforce.com`.toLowerCase();
+}
+
 /**
  * Normalizes any parseable tenant/organization ID form to the canonical underscore format.
  *

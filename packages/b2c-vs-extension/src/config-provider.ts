@@ -45,6 +45,23 @@ interface SelectedEnvFile {
   problem?: string;
 }
 
+/**
+ * Whether a saved selection's file is still one the resolver reads instances
+ * from: the explicit config path, or the project dw.json and the global
+ * default. Entry-level problems (a removed name, a file mid-edit) are reported
+ * by resolution instead, so the selection is not dropped for them.
+ */
+function isInInstanceCatalog(
+  selection: WorkspaceInstanceSelection,
+  options: Pick<ResolveConfigOptions, 'configPath' | 'defaultConfigPath' | 'workingDirectory'>,
+): boolean {
+  const target = path.resolve(selection.location);
+  const {configPath, defaultConfigPath, workingDirectory} = options;
+  if (configPath !== undefined) return configPath !== '' && path.resolve(configPath) === target;
+  const candidates = [path.join(workingDirectory || process.cwd(), 'dw.json'), defaultConfigPath];
+  return candidates.some((candidate) => candidate !== undefined && path.resolve(candidate) === target);
+}
+
 /** Async existence check via vscode.workspace.fs (no sync IO on the hot path). */
 async function pathExists(p: string): Promise<boolean> {
   try {
@@ -486,7 +503,14 @@ export class B2CExtensionConfig implements vscode.Disposable {
       this.detectedDirectory = workingDirectory;
       this.log.appendLine(`[Config] Resolving config from ${workingDirectory || '(no working directory)'}`);
 
-      const {config, environment, envFile, envFileProblem} = await this.resolveProjectConfiguration(workingDirectory);
+      const {config, environment, envFile, envFileProblem, staleWorkspaceSelection} =
+        await this.resolveProjectConfiguration(workingDirectory);
+      if (staleWorkspaceSelection && staleWorkspaceSelection === this.workspaceInstanceSelection) {
+        // Forget it so the picker and tooltip show that the workspace follows the default.
+        this.workspaceInstanceSelection = undefined;
+        await this.workspaceState?.update(WORKSPACE_INSTANCE_KEY, undefined);
+        this.refreshWorkspaceInstanceWatcher();
+      }
       this.config = config;
       this.resolvedEnvironment = environment;
       this.activeEnvFile = envFile;
@@ -565,6 +589,8 @@ export class B2CExtensionConfig implements vscode.Disposable {
     envFile?: string;
     envFileProblem?: string;
     environment: Record<string, string | undefined>;
+    /** Saved workspace selection whose file is no longer in the instance catalog (ignored). */
+    staleWorkspaceSelection?: WorkspaceInstanceSelection;
   }> {
     const envFile = this.readSelectedEnvFile(workingDirectory);
     if (envFile.problem) this.log.appendLine(`[Config] Warning: ${envFile.problem}`);
@@ -584,7 +610,20 @@ export class B2CExtensionConfig implements vscode.Disposable {
     }
 
     const instanceDisabled = this.workspaceInstanceDisabled;
-    const workspaceSelection = instanceDisabled ? undefined : this.workspaceInstanceSelection;
+    let workspaceSelection = instanceDisabled ? undefined : this.workspaceInstanceSelection;
+    let staleWorkspaceSelection: WorkspaceInstanceSelection | undefined;
+    // A saved selection names an absolute file; it only applies while that file is
+    // still in the catalog (for example, not after the global default is unset).
+    if (
+      workspaceSelection &&
+      !isInInstanceCatalog(workspaceSelection, {workingDirectory, configPath, defaultConfigPath})
+    ) {
+      this.log.appendLine(
+        `[Config] Selected instance "${workspaceSelection.name}" is in ${workspaceSelection.location}, which is no longer an instance file for this project; following the default`,
+      );
+      staleWorkspaceSelection = workspaceSelection;
+      workspaceSelection = undefined;
+    }
     if (instanceDisabled) {
       this.log.appendLine('[Config] No instance selected for this workspace; dw.json is not used');
     } else if (workspaceSelection) {
@@ -623,6 +662,6 @@ export class B2CExtensionConfig implements vscode.Disposable {
         `Selected instance "${workspaceSelection.name}" is no longer available. Choose another instance or follow the default instance.`,
       );
     }
-    return {config, envFile: envFile.path, envFileProblem: envFile.problem, environment};
+    return {config, envFile: envFile.path, envFileProblem: envFile.problem, environment, staleWorkspaceSelection};
   }
 }

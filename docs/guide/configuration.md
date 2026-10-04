@@ -224,6 +224,8 @@ When you run the toolkit from a [Storefront Next](./storefront-next) project, it
 | `MRT_PROJECT`                                | `mrt-project`        | `MRT_PROJECT`                        |
 | `MRT_TARGET`                                 | `mrt-environment`    | `MRT_ENVIRONMENT`                    |
 
+If nothing sets a hostname and the tenant ID is a sandbox tenant (`f_ecom_abcd_001` or `abcd_001`), the hostname is derived from it (`abcd-001.dx.commercecloud.salesforce.com`). A Storefront Next project that targets a sandbox doesn't need `SFCC_SERVER`.
+
 ## Check Your Configuration {#debugging-configuration}
 
 For the CLI, inspect the selected connection and the source of each value:

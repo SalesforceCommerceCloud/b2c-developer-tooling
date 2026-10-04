@@ -286,6 +286,8 @@ export function describeSource(source: ConfigSourceInfo): string {
       return 'environment variables';
     case 'SandboxHostname':
       return 'hostname';
+    case 'SandboxTenantId':
+      return 'tenant ID';
     default:
       return source.name;
   }
@@ -382,6 +384,8 @@ export function describeInstanceStatus(
       tooltip.push(`Storefront Next fallback (${describeSource(source)}): ${fields.join(', ')}`);
     } else if (source.name === 'SandboxHostname') {
       tooltip.push(`Derived from hostname: ${fields.join(', ')}`);
+    } else if (source.name === 'SandboxTenantId') {
+      tooltip.push(`Derived from tenant ID: ${fields.join(', ')}`);
     }
   }
 

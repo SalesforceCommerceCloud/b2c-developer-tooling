@@ -84,6 +84,7 @@ export {
   toOrganizationId,
   normalizeTenantId,
   tenantIdFromSandboxHostname,
+  sandboxHostnameFromTenantId,
   buildTenantScope,
   getApiErrorMessage,
   isOcapiDeprecatedFault,
