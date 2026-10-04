@@ -30,6 +30,9 @@ function recordingActions(calls: Array<{action: string; selection?: unknown}>): 
     followDefault: async () => {
       calls.push({action: 'follow'});
     },
+    inspect: async () => {
+      calls.push({action: 'inspect'});
+    },
     selectEnvFile: async (selection) => {
       calls.push({action: 'envFile', selection});
     },
@@ -102,6 +105,7 @@ suite('instance selection', () => {
     assert.deepStrictEqual(
       entries.map((entry) => [entry.kind, entry.scope, entry.instance?.name, entry.selected, entry.default]),
       [
+        ['inspect', undefined, undefined, undefined, undefined],
         ['follow', undefined, undefined, undefined, undefined],
         ['none', undefined, undefined, false, undefined],
         ['separator', 'project', undefined, undefined, undefined],
@@ -157,13 +161,18 @@ suite('instance selection', () => {
     assert.deepStrictEqual(calls, [{action: 'follow'}]);
   });
 
-  test('accepting None or an env file row invokes only that action', async () => {
+  test('accepting Inspect, None or an env file row invokes only that action', async () => {
     const calls: Array<{action: string; selection?: unknown}> = [];
     const envFile = {kind: 'file' as const, path: '/project/.env.staging', label: '.env.staging', selected: false};
+    await acceptInstancePickerSelection({action: 'inspect'}, recordingActions(calls));
     await acceptInstancePickerSelection({action: 'none'}, recordingActions(calls));
     await acceptInstancePickerSelection({envFile}, recordingActions(calls));
 
-    assert.deepStrictEqual(calls, [{action: 'none'}, {action: 'envFile', selection: '/project/.env.staging'}]);
+    assert.deepStrictEqual(calls, [
+      {action: 'inspect'},
+      {action: 'none'},
+      {action: 'envFile', selection: '/project/.env.staging'},
+    ]);
   });
 
   test('maps env file rows to saved selections', () => {
@@ -361,6 +370,18 @@ suite('instance status', () => {
     );
 
     assert.strictEqual(result.text, '$(cloud) stg | .env.staging');
+  });
+
+  test('warns when the selected env file could not be used', () => {
+    const defaultEnv = path.resolve('/project/.env');
+    const result = status(
+      [{name: 'DwJsonSource', location: projectDwJson, fields: ['hostname', 'instanceName']}],
+      {hostname: 'stg.example.com', instanceName: 'stg'},
+      {envFile: defaultEnv, envFileSelection: envFile, envFileProblem: `Env file not found: ${envFile}`},
+    );
+
+    assert.strictEqual(result.text, '$(cloud) stg | .env $(warning)');
+    assert.ok(result.tooltip.includes(`Env file problem: Env file not found: ${envFile}`), result.tooltip.join('\n'));
   });
 
   test('labels a global unnamed entry as global', () => {

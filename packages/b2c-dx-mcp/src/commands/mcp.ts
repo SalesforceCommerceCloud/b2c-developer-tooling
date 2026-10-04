@@ -275,8 +275,10 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * 1. Per-call configPath
    * 2. Startup --config / SFCC_CONFIG
    * 3. SFCC_CONFIG from the selected project's .env
-   * 4. dw.json in the selected project directory
-   * 5. Shared default dw.json from the tooling settings
+   * 4. dw.json in the selected project directory, plus the shared default
+   *    dw.json from the tooling settings
+   *
+   * An explicit path (1-3) is used on its own; an empty one selects no dw.json.
    *
    * Values are then merged through the normal CLI resolver, including
    * environment, plugin, dw.json, ~/.mobify, and package.json sources.
@@ -295,11 +297,12 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         ? path.resolve(effectiveProjectDirectory ?? process.cwd(), projectContext.configPath)
         : undefined) ??
       baseOptions.configPath ??
-      (projectConfigPath && effectiveProjectDirectory
+      // An empty SFCC_CONFIG selects no dw.json, as in the CLI.
+      (projectConfigPath
         ? path.isAbsolute(projectConfigPath)
           ? projectConfigPath
           : path.resolve(effectiveProjectDirectory, projectConfigPath)
-        : undefined);
+        : projectConfigPath);
     const options: LoadConfigOptions = {
       ...baseOptions,
       ...mrt.options,
@@ -346,17 +349,18 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         path: path.resolve(effectiveProjectDirectory, projectContext.configPath),
         source: 'argument',
       };
-    } else if (baseOptions.configPath) {
-      primaryConfiguration = {path: path.resolve(baseOptions.configPath), source: 'server'};
-    } else if (projectConfigPath) {
+    } else if (baseOptions.configPath !== undefined) {
+      primaryConfiguration = {path: baseOptions.configPath && path.resolve(baseOptions.configPath), source: 'server'};
+    } else if (projectConfigPath === undefined) {
+      primaryConfiguration = {path: path.join(effectiveProjectDirectory, 'dw.json'), source: 'projectDirectory'};
+    } else {
       primaryConfiguration = {
-        path: path.isAbsolute(projectConfigPath)
-          ? projectConfigPath
-          : path.resolve(effectiveProjectDirectory, projectConfigPath),
+        path:
+          projectConfigPath && !path.isAbsolute(projectConfigPath)
+            ? path.resolve(effectiveProjectDirectory, projectConfigPath)
+            : projectConfigPath,
         source: 'projectEnvironment',
       };
-    } else {
-      primaryConfiguration = {path: path.join(effectiveProjectDirectory, 'dw.json'), source: 'projectDirectory'};
     }
 
     return Services.fromResolvedConfig(config, projectEnvironment, {
@@ -407,7 +411,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     const startupFlags: StartupFlags = {
       toolsets: this.flags.toolsets ? this.flags.toolsets.split(',').map((s) => s.trim()) : undefined,
       tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
-      configPath: this.flags.config,
+      configPath: this.getConfigPathFlag(),
       // Default project directory for tool calls. oclif handles the environment fallback.
       projectDirectory: this.flags['project-directory'],
       // Docs topic allowlist (bounds the docs corpus at startup). Flag first

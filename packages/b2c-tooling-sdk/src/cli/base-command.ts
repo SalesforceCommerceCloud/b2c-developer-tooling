@@ -30,7 +30,12 @@ import type {SafetyEvaluation} from '../safety/types.js';
 import {confirm as safetyConfirm} from '../ux/confirm.js';
 import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import {readB2CSettings} from '../config/settings.js';
-import {applyEnvFile, ENV_FILE_ENV_VAR, resolveEnvFilePath} from '../config/project-environment.js';
+import {
+  ENV_FILE_ENV_VAR,
+  loadEnvFileForArgv,
+  takePreloadedEnvFile,
+  type LoadedEnvFile,
+} from '../config/project-environment.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
 import {initializeFileAuthSessionStore} from '../auth/session-store.js';
@@ -448,16 +453,19 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    */
   protected getBaseConfigOptions(): LoadConfigOptions {
     const settings = readB2CSettings({configDirectory: this.config.configDir});
-    // oclif treats an empty env var as unset; an empty SFCC_CONFIG means "no dw.json".
-    const configPath = this.flags.config ?? (process.env.SFCC_CONFIG === '' ? '' : undefined);
     return {
       instance: this.flags.instance,
-      configPath,
+      configPath: this.getConfigPathFlag(),
       envFile: this.envFile?.path,
       defaultConfigPath: settings.defaultConfigPath,
       projectDirectory: this.flags['project-directory'],
       workingDirectory: this.flags['project-directory'],
     };
+  }
+
+  /** `--config` / `SFCC_CONFIG`; oclif treats an empty env var as unset, but empty means "no dw.json". */
+  protected getConfigPathFlag(): string | undefined {
+    return this.flags.config ?? (process.env.SFCC_CONFIG === '' ? '' : undefined);
   }
 
   protected async loadConfiguration(): Promise<ResolvedB2CConfig> {
@@ -471,20 +479,19 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * an empty value loads no env file. Shell variables always win over file values.
    */
   private loadEnvFile(): void {
-    const envFile = readRawFlag(this.argv, ['--dotenv-file']) ?? process.env[ENV_FILE_ENV_VAR];
-    const projectDirectory =
-      readRawFlag(this.argv, ['--project-directory', '--working-directory']) ??
-      (process.env.SFCC_PROJECT_DIRECTORY || process.env.SFCC_WORKING_DIRECTORY || undefined);
+    // The executable may already have applied this file; keep its keys for provenance.
+    const preloaded = takePreloadedEnvFile();
 
-    let envFilePath: string | undefined;
+    let loaded: LoadedEnvFile | undefined;
     try {
-      envFilePath = resolveEnvFilePath({envFile, projectDirectory});
+      loaded = loadEnvFileForArgv(this.argv);
     } catch (error) {
       this.error(error instanceof Error ? error.message : String(error));
     }
-    if (!envFilePath) return;
+    if (!loaded) return;
 
-    this.envFile = {path: envFilePath, keys: applyEnvFile(envFilePath)};
+    const keys = preloaded?.path === loaded.path ? [...new Set([...preloaded.keys, ...loaded.keys])] : loaded.keys;
+    this.envFile = {path: loaded.path, keys};
   }
 
   /**
@@ -595,11 +602,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     const hookOptions: ConfigSourcesHookOptions = {
       instance: this.flags.instance,
-      configPath: this.flags.config,
+      configPath: this.getConfigPathFlag(),
       flags,
       resolveOptions: {
         instance: this.flags.instance,
-        configPath: this.flags.config,
+        configPath: this.getConfigPathFlag(),
         accountManagerHost: flags['account-manager-host'] as string | undefined,
       },
     };
@@ -982,24 +989,4 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       },
     });
   }
-}
-
-/**
- * Reads a string flag value from raw argv (`--flag value` or `--flag=value`)
- * before oclif parses it. Stops at `--`.
- */
-function readRawFlag(argv: string[], names: string[]): string | undefined {
-  let value: string | undefined;
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--') break;
-    for (const name of names) {
-      if (arg === name && i + 1 < argv.length) {
-        value = argv[i + 1];
-      } else if (arg.startsWith(`${name}=`)) {
-        value = arg.slice(name.length + 1);
-      }
-    }
-  }
-  return value;
 }

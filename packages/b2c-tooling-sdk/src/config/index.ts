@@ -166,12 +166,15 @@ export type {B2CSettings, B2CSettingsPathOptions} from './settings.js';
 export {
   ENV_FILE_ENV_VAR,
   applyEnvFile,
+  loadEnvFileForArgv,
   mergeProjectEnvironment,
+  preloadEnvFile,
   readEnvFile,
   readProjectEnvironment,
   resolveEnvFilePath,
+  takePreloadedEnvFile,
 } from './project-environment.js';
-export type {EnvFileSelectionOptions} from './project-environment.js';
+export type {EnvFileSelectionOptions, LoadedEnvFile} from './project-environment.js';
 
 // Config sources (for direct use)
 export {DwJsonSource} from './sources/dw-json-source.js';

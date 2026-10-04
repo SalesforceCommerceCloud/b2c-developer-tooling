@@ -335,6 +335,18 @@ describe('config/resolver', () => {
         expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
       });
 
+      it('treats hostnames differing only in case, scheme, port or trailing slash as the same', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('env', {hostname: 'https://Example.demandware.net:443/'}),
+          new MockSource('dw', {hostname: 'example.demandware.net', clientId: 'dw-client'}),
+        ]);
+
+        const {config, warnings} = await resolver.resolve();
+
+        expect(config.clientId).to.equal('dw-client');
+        expect(warnings).to.be.empty;
+      });
+
       it('creates SOURCE_ERROR warning when source throws', async () => {
         // Create a source that throws an error
         const throwingSource: ConfigSource = {
@@ -458,6 +470,16 @@ describe('config/resolver', () => {
 
         expect(config.tenantId).to.equal('bjgk_005');
         expect(warnings.map((w) => w.code)).to.deep.equal(['TENANT_MISMATCH']);
+      });
+
+      it('compares the configured tenantId case-insensitively', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {hostname: 'zzpq-013.dx.commercecloud.salesforce.com', tenantId: 'ZZPQ_013'}),
+        ]);
+
+        const {warnings} = await resolver.resolve();
+
+        expect(warnings).to.be.empty;
       });
 
       it('never warns for non-sandbox hostnames', async () => {

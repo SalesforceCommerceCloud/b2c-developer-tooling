@@ -41,6 +41,8 @@ const B2C_ENV_LINE = new RegExp(
 interface SelectedEnvFile {
   path?: string;
   values: Record<string, string | undefined>;
+  /** Why the selected env file could not be used, when resolution fell back. */
+  problem?: string;
 }
 
 /** Async existence check via vscode.workspace.fs (no sync IO on the hot path). */
@@ -157,6 +159,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
   private workspaceInstanceDisabled: boolean;
   private envFileSelection: EnvFileSelection;
   private activeEnvFile: string | undefined;
+  private envFileProblem: string | undefined;
   private workspaceInstanceWatcher: vscode.FileSystemWatcher | undefined;
 
   private readonly _onDidReset = new vscode.EventEmitter<void>();
@@ -273,6 +276,11 @@ export class B2CExtensionConfig implements vscode.Disposable {
     return this.activeEnvFile;
   }
 
+  /** Why the selected env file could not be used in the current resolution, if it could not. */
+  getEnvFileProblem(): string | undefined {
+    return this.envFileProblem;
+  }
+
   /** Select the env file for this workspace: a path, `null` for none, or `undefined` for the default `.env`. */
   async selectEnvFile(selection: EnvFileSelection): Promise<void> {
     const normalized = typeof selection === 'string' ? path.resolve(selection) : selection;
@@ -310,12 +318,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
   /** Return the ordered primary and global files used by instance-management features. */
   getInstanceCatalogOptions(): ResolveConfigOptions {
     const workingDirectory = this.detectedDirectory;
-    let envFile: SelectedEnvFile = {values: {}};
-    try {
-      envFile = this.readSelectedEnvFile(workingDirectory);
-    } catch {
-      // Configuration resolution reports missing or malformed env files separately.
-    }
+    const envFile = this.readSelectedEnvFile(workingDirectory);
     return {
       workingDirectory,
       configPath: this.selectConfigPath(envFile),
@@ -370,6 +373,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     this.pinned = false;
     this.resolvedEnvironment = this.ambientEnvironment;
     this.activeEnvFile = undefined;
+    this.envFileProblem = undefined;
     // Re-resolve asynchronously, then fire the event so listeners get fresh data
     void this.resolveAsync().then(() => {
       this._onDidReset.fire();
@@ -482,10 +486,11 @@ export class B2CExtensionConfig implements vscode.Disposable {
       this.detectedDirectory = workingDirectory;
       this.log.appendLine(`[Config] Resolving config from ${workingDirectory || '(no working directory)'}`);
 
-      const {config, environment, envFile} = await this.resolveProjectConfiguration(workingDirectory);
+      const {config, environment, envFile, envFileProblem} = await this.resolveProjectConfiguration(workingDirectory);
       this.config = config;
       this.resolvedEnvironment = environment;
       this.activeEnvFile = envFile;
+      this.envFileProblem = envFileProblem;
 
       if (!config.hasB2CInstanceConfig()) {
         this.configError = 'No B2C Commerce instance configured.';
@@ -510,17 +515,32 @@ export class B2CExtensionConfig implements vscode.Disposable {
   /**
    * Read the env file selected for this workspace (or `<directory>/.env` by default).
    *
-   * @throws Error if an explicitly selected env file no longer exists
+   * A selected file that no longer exists falls back to the default `.env`, and
+   * an unreadable file contributes nothing; both are reported as `problem`.
    */
   private readSelectedEnvFile(workingDirectory: string): SelectedEnvFile {
     if (this.envFileSelection === null) return {values: {}};
-    const envFile = resolveEnvFilePath({
-      envFile: this.envFileSelection,
-      projectDirectory: workingDirectory || undefined,
-    });
+    const projectDirectory = workingDirectory || undefined;
+
+    let problem: string | undefined;
+    let envFile: string | undefined;
+    try {
+      envFile = resolveEnvFilePath({envFile: this.envFileSelection, projectDirectory});
+    } catch (error) {
+      problem = error instanceof Error ? error.message : String(error);
+      envFile = resolveEnvFilePath({projectDirectory});
+    }
     // Without a project directory, only an explicit selection applies (never the host's cwd).
-    if (!envFile || (!workingDirectory && this.envFileSelection === undefined)) return {values: {}};
-    return {path: envFile, values: readEnvFile(envFile)};
+    if (!envFile || (!workingDirectory && (problem || this.envFileSelection === undefined))) {
+      return {values: {}, problem};
+    }
+
+    try {
+      return {path: envFile, values: readEnvFile(envFile), problem};
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {values: {}, problem: `Could not read env file ${envFile}: ${message}`};
+    }
   }
 
   /**
@@ -543,9 +563,11 @@ export class B2CExtensionConfig implements vscode.Disposable {
   ): Promise<{
     config: ResolvedB2CConfig;
     envFile?: string;
+    envFileProblem?: string;
     environment: Record<string, string | undefined>;
   }> {
     const envFile = this.readSelectedEnvFile(workingDirectory);
+    if (envFile.problem) this.log.appendLine(`[Config] Warning: ${envFile.problem}`);
     if (envFile.path) this.log.appendLine(`[Config] Loaded env file: ${envFile.path}`);
 
     // SFCC_DOTENV_FILE is never honored from inside an env file (no chaining).
@@ -601,6 +623,6 @@ export class B2CExtensionConfig implements vscode.Disposable {
         `Selected instance "${workspaceSelection.name}" is no longer available. Choose another instance or follow the default instance.`,
       );
     }
-    return {config, envFile: envFile.path, environment};
+    return {config, envFile: envFile.path, envFileProblem: envFile.problem, environment};
   }
 }

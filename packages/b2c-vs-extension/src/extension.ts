@@ -63,7 +63,7 @@ import {
 let authSessionBackend: VsCodeSecretsAuthSessionBackend | undefined;
 
 interface InstanceQuickPickItem extends vscode.QuickPickItem {
-  action?: 'follow' | 'none';
+  action?: 'follow' | 'inspect' | 'none';
   instance?: InstanceInfo;
   envFile?: EnvFilePickerEntry;
 }
@@ -622,6 +622,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   instanceStatusBar.command = 'b2c-dx.instance.switch';
   const getInstanceStatusOptions = (): InstanceStatusOptions => ({
     envFile: configProvider.getActiveEnvFile(),
+    envFileProblem: configProvider.getEnvFileProblem(),
     envFileSelection: configProvider.getEnvFileSelection(),
     instanceDisabled: configProvider.isInstanceDisabled(),
     workspaceSelected: Boolean(configProvider.getWorkspaceInstanceSelection()),
@@ -690,6 +691,8 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   });
 
   const inspectInstanceDisposable = registerSafeCommand('b2c-dx.instance.inspect', async () => {
+    // Avoid rendering the empty state while a reset is still resolving.
+    await configProvider.ensureResolved();
     if (inspectPanel) {
       inspectPanel.webview.html = renderInspectPanel();
       inspectPanel.reveal();
@@ -723,7 +726,13 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   /** The default dw.json entry. Unnamed root entries have an empty name. */
   const getDefaultInstance = async (): Promise<InstanceInfo | undefined> => {
-    const result = await dwJsonSource.load(getInstanceCatalogOptions());
+    let result: Awaited<ReturnType<typeof dwJsonSource.load>>;
+    try {
+      result = await dwJsonSource.load(getInstanceCatalogOptions());
+    } catch {
+      // A missing explicit config path is reported by configuration resolution.
+      return undefined;
+    }
     if (!result?.location) return undefined;
     return {
       name: result.config.instanceName ?? '',
@@ -765,6 +774,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       instanceDisabled: configProvider.isInstanceDisabled(),
     }).map((entry): InstanceQuickPickItem => {
       if (entry.kind === 'envFile') return toEnvFileQuickPickItem(entry.envFile!);
+      if (entry.kind === 'inspect') {
+        return {label: '$(inspect) Inspect Resolved Config', description: entry.description, action: 'inspect'};
+      }
       if (entry.kind === 'none') {
         return {
           label: `${entry.selected ? '$(check) ' : ''}$(circle-slash) None`,
@@ -848,8 +860,15 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   };
 
   const loadInstancePickerItems = async (): Promise<InstanceQuickPickItem[]> => {
-    const instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
-    const defaultInstance = await getDefaultInstance();
+    // A malformed dw.json must not hide None, the env files or Inspect.
+    let instances: InstanceInfo[] = [];
+    let defaultInstance: InstanceInfo | undefined;
+    try {
+      instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
+      defaultInstance = await getDefaultInstance();
+    } catch (err) {
+      log.appendLine(`[Config] Could not list instances: ${err instanceof Error ? err.message : String(err)}`);
+    }
     // Unnamed root entries are not listed by name; show the one in use as the default.
     if (defaultInstance && !defaultInstance.name) instances.unshift(defaultInstance);
     const defaultSelection = defaultInstance?.location
@@ -899,6 +918,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
           void run(async () => {
             await acceptInstancePickerSelection(picked, {
               followDefault: () => configProvider.followDefaultInstance(),
+              inspect: async () => {
+                await vscode.commands.executeCommand('b2c-dx.instance.inspect');
+              },
               selectEnvFile: (selection) => configProvider.selectEnvFile(selection),
               selectForWorkspace: (selection) => configProvider.selectInstanceForWorkspace(selection),
               selectNone: () => configProvider.selectNoInstanceForWorkspace(),

@@ -20,6 +20,7 @@ import {
   getPopulatedFields,
   createInstanceFromConfig,
   normalizeOriginUrl,
+  isSameHostname,
 } from './mapping.js';
 import {DwJsonSource, MobifySource, PackageJsonSource} from './sources/index.js';
 import type {
@@ -231,7 +232,7 @@ export class ConfigResolver {
             hostnameProtection &&
             establishedHostname &&
             sourceConfig.hostname &&
-            sourceConfig.hostname !== establishedHostname
+            !isSameHostname(sourceConfig.hostname, establishedHostname)
           ) {
             sourceWarnings.push({
               code: 'HOSTNAME_MISMATCH',
@@ -363,7 +364,7 @@ export class ConfigResolver {
           location: `derived from hostname ${config.hostname}`,
           fields: ['tenantId'],
         });
-      } else if (config.tenantId !== sandboxTenantId) {
+      } else if (config.tenantId.toLowerCase() !== sandboxTenantId) {
         sourceWarnings.push({
           code: 'TENANT_MISMATCH',
           message: `Tenant ID "${config.tenantId}" does not match sandbox hostname "${config.hostname}" (tenant "${sandboxTenantId}").`,

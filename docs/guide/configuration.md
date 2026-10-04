@@ -138,10 +138,10 @@ The primary `dw.json` path is selected in this order:
 
 1. An explicit path, such as CLI `--config`.
 2. `SFCC_CONFIG` from the process environment.
-3. `SFCC_CONFIG` from the project's `.env`.
+3. `SFCC_CONFIG` from the env file (the project's `.env`, or the file given with `--dotenv-file`).
 4. `dw.json` in the project directory.
 
-A relative `SFCC_CONFIG` in `.env` is resolved from that project directory. The [global file](#global-default-configuration), when configured, also supplies available instances unless you pass an explicit path. An empty `--config ""` uses no `dw.json`.
+A relative `SFCC_CONFIG` in `.env` is resolved from that project directory. The [global file](#global-default-configuration), when configured, also supplies available instances unless you pass an explicit path. An empty `--config ""` or `SFCC_CONFIG=` uses no `dw.json`.
 
 ```bash
 # Use another project directory
@@ -390,6 +390,7 @@ These are not `dw.json` fields:
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `SFCC_PROJECT_DIRECTORY`     | Project directory used for configuration lookup.                                                                |
 | `SFCC_CONFIG`                | Path to the primary connection file in `dw.json` format.                                                        |
+| `SFCC_DOTENV_FILE`           | Env file used instead of the project `.env` (same as `--dotenv-file`); empty for none.                          |
 | `SFCC_INSTANCE`              | Named instance to select.                                                                                       |
 | `MRT_CREDENTIALS_FILE`       | MRT CLI override for the `~/.mobify` credentials file.                                                          |
 | `SFCC_REDIRECT_URI`          | Account Manager browser-login redirect URI override.                                                            |

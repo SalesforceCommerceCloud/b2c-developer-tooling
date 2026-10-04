@@ -8,6 +8,7 @@ import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {BaseCommand, ERROR_CODE, augmentDuplicateFlagError, classifyError} from '@salesforce/b2c-tooling-sdk/cli';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
+import {preloadEnvFile, takePreloadedEnvFile} from '@salesforce/b2c-tooling-sdk/config';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
@@ -143,6 +144,24 @@ describe('cli/base-command', () => {
 
       expect(process.env.SFCC_CODE_VERSION).to.equal('from-shell');
       expect(cmd.getEnvFile()?.keys).to.not.include('SFCC_CODE_VERSION');
+    });
+
+    it('keeps provenance for variables applied by the executable preload', async () => {
+      const argv = ['--project-directory', tempDir];
+      preloadEnvFile(argv);
+      const cmd = new TestBaseCommand(argv, config);
+      stubParse(cmd);
+
+      await cmd.init();
+
+      expect(process.env.SFCC_CODE_VERSION).to.equal('from-default');
+      expect(cmd.getEnvFile()?.keys).to.deep.equal(['SFCC_CODE_VERSION', 'SFCC_CONFIG']);
+      expect(takePreloadedEnvFile()).to.be.undefined;
+    });
+
+    it('defers a missing explicit env file from the preload to the command', () => {
+      expect(() => preloadEnvFile(['--dotenv-file', path.join(tempDir, 'missing.env')])).to.not.throw();
+      expect(takePreloadedEnvFile()).to.be.undefined;
     });
 
     it('fails for a missing explicit env file', async () => {

@@ -14,7 +14,7 @@ export interface WorkspaceInstanceSelection {
 export type InstanceConfigurationScope = 'project' | 'global';
 
 export interface InstancePickerEntry {
-  kind: 'envFile' | 'follow' | 'none' | 'separator' | 'instance';
+  kind: 'envFile' | 'follow' | 'inspect' | 'none' | 'separator' | 'instance';
   /** Section of an `instance` entry or a `separator`; env file rows use `envFile`. */
   scope?: InstanceConfigurationScope | 'envFile';
   instance?: InstanceInfo;
@@ -25,13 +25,14 @@ export interface InstancePickerEntry {
 }
 
 export interface InstancePickerSelection {
-  action?: 'follow' | 'none';
+  action?: 'follow' | 'inspect' | 'none';
   instance?: InstanceInfo;
   envFile?: EnvFilePickerEntry;
 }
 
 export interface InstancePickerSelectionActions {
   followDefault(): Promise<void>;
+  inspect(): Promise<void>;
   selectEnvFile(selection: EnvFileSelection): Promise<void>;
   selectForWorkspace(selection: WorkspaceInstanceSelection): Promise<void>;
   selectNone(): Promise<void>;
@@ -53,6 +54,8 @@ export interface InstanceStatusOptions {
   envFile?: string;
   /** The workspace's env file choice. */
   envFileSelection: EnvFileSelection;
+  /** Why the selected env file could not be used, if it could not. */
+  envFileProblem?: string;
   /** Whether the workspace selected no dw.json instance. */
   instanceDisabled: boolean;
   /** Whether the workspace selected an instance instead of following the default. */
@@ -129,6 +132,7 @@ export function buildInstancePickerEntries(
   const currentSelection = options.instanceDisabled ? undefined : (workspaceSelection ?? defaultSelection);
   const following = !workspaceSelection && !options.instanceDisabled;
   const entries: InstancePickerEntry[] = [
+    {kind: 'inspect', description: 'Show where each setting comes from'},
     {
       kind: 'follow',
       description: following
@@ -186,6 +190,10 @@ export async function acceptInstancePickerSelection(
 ): Promise<void> {
   if (picked.envFile) {
     await actions.selectEnvFile(toEnvFileSelection(picked.envFile));
+    return;
+  }
+  if (picked.action === 'inspect') {
+    await actions.inspect();
     return;
   }
   if (picked.action === 'follow') {
@@ -338,6 +346,10 @@ export function describeInstanceStatus(
   }
 
   let warning = false;
+  if (options.envFileProblem) {
+    tooltip.push(`Env file problem: ${options.envFileProblem}`);
+    warning = true;
+  }
   if (dwJson && !dwJsonUsed && dwJson.fieldsIgnored?.length) {
     const mismatch = config.warnings.find(
       (item) => item.code === 'HOSTNAME_MISMATCH' && item.details?.source === 'DwJsonSource',

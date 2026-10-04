@@ -20,12 +20,13 @@ The extension uses the same configuration resolver as the B2C CLI. Environment v
 
 **A `dw.json` at your project root is the conventional setup** and is the easiest way for the extension to locate a B2C project nested inside a larger workspace. It is not required when another configuration source provides what you need.
 
-For the selected project, the extension loads all variables from its `.env` and supports a relative `.env` `SFCC_CONFIG` path. Process environment variables take priority over project `.env` values. Configuration files are selected in this order:
+For the selected project, the extension loads all variables from the selected env file (the project `.env` by default) and supports a relative `SFCC_CONFIG` path in it. Process environment variables take priority over env file values. Configuration files are selected in this order:
 
 1. Process `SFCC_CONFIG`
-2. Project `.env` `SFCC_CONFIG`
-3. Project-local `dw.json`
-4. The shared global default set with `b2c setup default-config set <path>`
+2. Env file `SFCC_CONFIG`
+3. Project-local `dw.json`, plus the shared global default set with `b2c setup default-config set <path>`
+
+An explicit `SFCC_CONFIG` path is used on its own, without the global default. An empty `SFCC_CONFIG` uses no `dw.json`.
 
 The global default is the same fallback used by the CLI and MCP server. The extension automatically refreshes when that shared setting changes.
 

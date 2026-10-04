@@ -478,12 +478,13 @@ suite('B2CExtensionConfig workspace discovery', () => {
       }
     });
 
-    test('a missing selected env file is reported', async () => {
+    test('a missing selected env file falls back to the default .env', async () => {
       const workspaceState = createMemoryMemento({'b2c-dx.workspaceEnvFile': path.join(dir, '.env.gone')});
       const provider = new B2CExtensionConfig(log, workspaceState, ambientEnvironment);
 
       try {
-        await assert.rejects(provider.resolveForDirectory(dir), /Env file not found/);
+        const config = await provider.resolveForDirectory(dir);
+        assert.strictEqual(config.values.siteId, 'RefArch');
       } finally {
         provider.dispose();
       }

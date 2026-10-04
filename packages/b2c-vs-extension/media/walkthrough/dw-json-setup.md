@@ -43,7 +43,7 @@ So **environment variables always override `dw.json`** for the same field — us
 
 ## Inspecting what actually resolved
 
-Run **B2C DX - Getting Started: Inspect Resolved Config (b2c setup inspect)** any time. It prints every resolved field with its source: `dw.json`, `env (SFCC_CLIENT_SECRET)`, `keychain (b2c-cli/dev)`, etc. Add `--unmask` to show secret values too.
+Run **B2C DX: Inspect Resolved Config** any time, or pick it at the top of the instance picker. It lists every resolved field with its source (`dw.json`, an env file, environment variables, and so on). Secret values are never shown.
 
 ## Single vs. multi-instance dw.json
 

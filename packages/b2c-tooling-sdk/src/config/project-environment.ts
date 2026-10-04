@@ -95,3 +95,76 @@ export function applyEnvFile(filePath: string, env: Record<string, string | unde
 
   return applied;
 }
+
+/** An env file applied to the environment, with the variables it set. */
+export interface LoadedEnvFile {
+  path: string;
+  keys: string[];
+}
+
+const PRELOADED_ENV_FILE = Symbol.for('@salesforce/b2c-tooling-sdk/preloaded-env-file');
+
+/**
+ * Selects the env file for a command line and applies it without overriding
+ * variables that are already set.
+ *
+ * `--dotenv-file` / `SFCC_DOTENV_FILE` select the file; otherwise
+ * `<--project-directory>/.env` or `./.env` applies.
+ *
+ * @throws Error if an explicitly selected file does not exist
+ */
+export function loadEnvFileForArgv(
+  argv: string[],
+  env: Record<string, string | undefined> = process.env,
+): LoadedEnvFile | undefined {
+  const envFile = readRawFlag(argv, ['--dotenv-file']) ?? env[ENV_FILE_ENV_VAR];
+  const projectDirectory =
+    readRawFlag(argv, ['--project-directory', '--working-directory']) ??
+    (env.SFCC_PROJECT_DIRECTORY || env.SFCC_WORKING_DIRECTORY || undefined);
+
+  const filePath = resolveEnvFilePath({envFile, projectDirectory});
+  if (!filePath) return undefined;
+  return {path: filePath, keys: applyEnvFile(filePath, env)};
+}
+
+/**
+ * Applies the env file from an executable's entry point, before oclif starts,
+ * so hooks and plugins see its values. Errors are left for the command to
+ * report when it loads the env file again.
+ */
+export function preloadEnvFile(argv: string[] = process.argv.slice(2)): void {
+  try {
+    const loaded = loadEnvFileForArgv(argv);
+    if (loaded) (globalThis as Record<symbol, unknown>)[PRELOADED_ENV_FILE] = loaded;
+  } catch {
+    // Reported by the command.
+  }
+}
+
+/** Returns (and forgets) the env file applied by {@link preloadEnvFile}. */
+export function takePreloadedEnvFile(): LoadedEnvFile | undefined {
+  const store = globalThis as Record<symbol, unknown>;
+  const loaded = store[PRELOADED_ENV_FILE] as LoadedEnvFile | undefined;
+  delete store[PRELOADED_ENV_FILE];
+  return loaded;
+}
+
+/**
+ * Reads a string flag value from raw argv (`--flag value` or `--flag=value`)
+ * before oclif parses it. Stops at `--`.
+ */
+export function readRawFlag(argv: string[], names: string[]): string | undefined {
+  let value: string | undefined;
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--') break;
+    for (const name of names) {
+      if (arg === name && i + 1 < argv.length) {
+        value = argv[i + 1];
+      } else if (arg.startsWith(`${name}=`)) {
+        value = arg.slice(name.length + 1);
+      }
+    }
+  }
+  return value;
+}
