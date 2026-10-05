@@ -108,6 +108,8 @@ Field names in `dw.json` accept **both camelCase and kebab-case** — they're eq
 
 Legacy aliases like `server` (for `hostname`) are also still supported. If a value isn't being picked up, casing is rarely the cause — check spelling, then run `b2c setup inspect` to see what the CLI actually parsed.
 
+A JSON Schema for `dw.json` is published at `https://salesforcecommercecloud.github.io/b2c-developer-tooling/schemas/dw.schema.json` (the B2C DX VS Code extension applies it automatically). Add it as `"$schema"` in a `dw.json` for editor validation and completion.
+
 For the full field reference, see the [Configuration guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md) (`b2c docs read guide-configuration`).
 
 ## Authentication

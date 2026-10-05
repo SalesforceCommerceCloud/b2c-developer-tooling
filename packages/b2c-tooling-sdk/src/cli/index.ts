@@ -159,3 +159,14 @@ export {columnFlagsFor, selectColumns} from './columns.js';
 export type {ColumnFlags, ColumnFlagsOptions, WarnFn} from './columns.js';
 export {printFieldsBlock} from './details.js';
 export type {DetailField, DetailFieldObject, DetailSection, DetailValue, PrintFieldsBlockOptions} from './details.js';
+
+// Command search
+export {CommandSearchIndex} from './command-search.js';
+export type {
+  CommandSearchOptions,
+  CommandSearchResult,
+  SearchableCommand,
+  SearchableExample,
+  SearchableFlag,
+  SearchableTopic,
+} from './command-search.js';

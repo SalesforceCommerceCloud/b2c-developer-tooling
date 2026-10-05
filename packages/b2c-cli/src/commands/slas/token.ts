@@ -8,6 +8,7 @@ import {password as passwordPrompt} from '@inquirer/prompts';
 import {loadConfig, extractOAuthFlags} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {toOrganizationId, decodeJWT} from '@salesforce/b2c-tooling-sdk';
+import {isInteractive} from '@salesforce/b2c-tooling-sdk/ux';
 import {getGuestToken, getRegisteredToken, type SlasTokenConfig} from '@salesforce/b2c-tooling-sdk/slas';
 import {SlasClientCommand, normalizeClientResponse, parseUriList, type Client} from '../../utils/slas/client.js';
 import {t, withDocs} from '../../i18n/index.js';
@@ -296,7 +297,7 @@ export default class SlasToken extends SlasClientCommand<typeof SlasToken> {
     const flagPassword = this.flags['shopper-password'] as string | undefined;
     if (flagPassword) return flagPassword;
 
-    if (!process.stdin.isTTY) {
+    if (!isInteractive()) {
       this.error(
         t(
           'commands.slas.token.passwordRequired',

@@ -12,3 +12,9 @@
 export * from './types.js';
 export {GuidanceCatalog, guidanceUri, GUIDANCE_INDEX_URI, GUIDANCE_MAX_FILE_BYTES} from './catalog.js';
 export {guidanceHeadings, type GuidanceHeading} from './markdown.js';
+export {
+  bundleGuidance,
+  type BundleGuidanceOptions,
+  type BundleGuidanceResult,
+  type GuidanceCollectionSource,
+} from './bundle.js';

@@ -276,6 +276,26 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 | `coupon`    | Coupon codes import/export    |
 | `jobs`      | Job step definitions          |
 
+## Finding CLI Commands
+
+`b2c docs search` searches documentation. To find **which `b2c` command performs a task**, search the CLI's own commands instead:
+
+```bash
+b2c commands search "deploy cartridges"
+b2c commands search "environment variables" --topic mrt --json
+```
+
+## Reading Agent Skills
+
+The CLI bundles its agent skills (workflow guides like this one). Read the skill for a command or topic, or search them, without installing a plugin:
+
+```bash
+b2c docs skill                          # list b2c-cli skills
+b2c docs skill code deploy              # skill covering a command or topic
+b2c docs skill --search "site import"   # search skills
+b2c docs skill --all --search "hooks"   # include b2c, b2c-ops, storefront-next
+```
+
 ## More Commands
 
 See `b2c docs --help` for a full list of available commands and options.

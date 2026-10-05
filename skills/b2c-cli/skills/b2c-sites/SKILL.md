@@ -95,7 +95,7 @@ Site reads and cartridge-path writes run over SCAPI (the `site/sites` API) when 
 ```bash
 b2c sites list
 # then use the ID in other commands
-b2c site-import upload --site RefArch ...
+b2c job export --site RefArch --site-data content,site_preferences
 ```
 
 **Checking site status:** The status column shows the storefront status (online/offline) for each site, useful for verifying deployment state.

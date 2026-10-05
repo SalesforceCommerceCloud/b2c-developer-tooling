@@ -25,6 +25,11 @@ import {join} from 'node:path';
 // Prevent BaseCommand from running plugin hooks during tests
 process.env.B2C_SKIP_PLUGIN_HOOKS = '1';
 
+// Disable AI agent detection so tests behave the same whether they run under a
+// coding agent (Claude Code, Cursor, ...), in CI, or in a developer terminal.
+// Agent-specific behavior is tested with explicit environments.
+process.env.SFCC_AGENT = '0';
+
 // Isolate the auth-session store to a unique per-process temp dir. Both
 // the test setup and BaseCommand.init() will use this path, so tests
 // (or parallel mocha workers) don't race on the developer's real auth file.

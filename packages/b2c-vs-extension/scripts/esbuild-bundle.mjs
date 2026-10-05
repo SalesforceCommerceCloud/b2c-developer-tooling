@@ -52,6 +52,13 @@ const htmlLanguageServiceEsmEntry = path.join(
 // resources/xsd-mappings.json before any bundling happens.
 syncXsd({pkgRoot});
 
+// Bundle the SDK's generated dw.json JSON Schema (package.json#contributes.jsonValidation).
+fs.mkdirSync(path.join(pkgRoot, 'resources', 'schemas'), {recursive: true});
+fs.copyFileSync(
+  path.join(sdkRoot, 'data', 'schemas', 'dw.schema.json'),
+  path.join(pkgRoot, 'resources', 'schemas', 'dw.schema.json'),
+);
+
 // In CJS there is no import.meta; SDK's version.js uses createRequire(import.meta.url). Shim it.
 // Use globalThis so the value is visible inside all module wrappers in the bundle.
 const IMPORT_META_URL_SHIM =

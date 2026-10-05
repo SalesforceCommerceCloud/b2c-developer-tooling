@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
+import {confirm, isInteractive} from '@salesforce/b2c-tooling-sdk/ux';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {withDocs} from '../../i18n/index.js';
 
@@ -27,9 +27,10 @@ export default class SetupIndex extends BaseCommand<typeof SetupIndex> {
 
   async run(): Promise<void> {
     const hasInstance = this.resolvedConfig.hasB2CInstanceConfig();
-    const isTTY = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+    // Only offer the wizard to a human at a terminal; agents and pipes get help.
+    const interactive = isInteractive() && Boolean(process.stdout.isTTY);
 
-    if (!hasInstance && isTTY) {
+    if (!hasInstance && interactive) {
       const shouldCreate = await confirm('No instance configured. Would you like to set one up?', {defaultYes: true});
 
       if (shouldCreate) {

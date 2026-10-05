@@ -7,5 +7,6 @@ node_modules
 *.vsix
 /coverage
 resources/xsd/
+resources/schemas/
 resources/xsd-catalog.xml
 resources/xml-validation.generated.json

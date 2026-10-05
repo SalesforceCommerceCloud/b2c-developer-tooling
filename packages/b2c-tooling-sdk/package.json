@@ -29,6 +29,7 @@
       "default": "./dist/esm/scapi/index.js"
     },
     "./package.json": "./package.json",
+    "./schemas/dw.schema.json": "./data/schemas/dw.schema.json",
     ".": {
       "development": "./src/index.ts",
       "types": "./dist/esm/index.d.ts",
@@ -272,6 +273,8 @@
     "check:guides-links": "tsx scripts/check-guides-links.ts",
     "generate:tooling-index": "tsx scripts/generate-tooling-index.ts",
     "check:tooling-index": "tsx scripts/generate-tooling-index.ts --check",
+    "generate:dw-json-schema": "tsx scripts/generate-dw-json-schema.ts",
+    "check:dw-json-schema": "tsx scripts/generate-dw-json-schema.ts --check",
     "generate:help-corpus": "tsx scripts/generate-help-corpus.ts",
     "enrich:docs": "tsx scripts/enrich-docs.ts"
   },

@@ -48,6 +48,12 @@
   ],
   "main": "./dist/extension.cjs",
   "contributes": {
+    "jsonValidation": [
+      {
+        "fileMatch": "dw.json",
+        "url": "./resources/schemas/dw.schema.json"
+      }
+    ],
     "typescriptServerPlugins": [
       {
         "name": "@salesforce/b2c-script-types",
