@@ -31,6 +31,12 @@ import {confirm as safetyConfirm} from '../ux/confirm.js';
 import {getAgentContext, isInteractive} from '../ux/agent-context.js';
 import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import {readB2CSettings} from '../config/settings.js';
+import {
+  ENV_FILE_ENV_VAR,
+  loadEnvFileForArgv,
+  takePreloadedEnvFile,
+  type LoadedEnvFile,
+} from '../config/project-environment.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
 import {initializeFileAuthSessionStore} from '../auth/session-store.js';
@@ -175,7 +181,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       helpGroup: 'GLOBAL',
     }),
     config: Flags.string({
-      description: 'Path to config file (in dw.json format; defaults to ./dw.json)',
+      description: 'Path to config file (in dw.json format; defaults to ./dw.json; empty for none)',
       env: 'SFCC_CONFIG',
       helpGroup: 'GLOBAL',
     }),
@@ -183,6 +189,12 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       char: 'i',
       description: 'Instance name from configuration file (i.e. dw.json, etc)',
       env: 'SFCC_INSTANCE',
+      helpGroup: 'GLOBAL',
+    }),
+    // Not named --env-file: Node consumes --env-file anywhere in argv, even after the script name.
+    'dotenv-file': Flags.string({
+      description: 'Path to .env file used instead of ./.env (empty for none)',
+      env: ENV_FILE_ENV_VAR,
       helpGroup: 'GLOBAL',
     }),
     'project-directory': Flags.string({
@@ -223,11 +235,20 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   /** Telemetry instance for tracking command events */
   protected telemetry?: Telemetry;
 
+  /**
+   * Env file loaded for this command, with the variables it applied
+   * (variables already set in the shell are not overridden).
+   */
+  protected envFile?: {keys: string[]; path: string};
+
   /** Start time for command duration tracking */
   private commandStartTime?: number;
 
   public async init(): Promise<void> {
     await super.init();
+
+    // Env file variables must be in place before parsing so env-backed flags see them.
+    this.loadEnvFile();
 
     const {args, flags} = await this.parse({
       flags: this.ctor.flags,
@@ -441,15 +462,43 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const settings = readB2CSettings({configDirectory: this.config.configDir});
     return {
       instance: this.flags.instance,
-      configPath: this.flags.config,
+      configPath: this.getConfigPathFlag(),
+      envFile: this.envFile?.path,
       defaultConfigPath: settings.defaultConfigPath,
       projectDirectory: this.flags['project-directory'],
       workingDirectory: this.flags['project-directory'],
     };
   }
 
+  /** `--config` / `SFCC_CONFIG`; oclif treats an empty env var as unset, but empty means "no dw.json". */
+  protected getConfigPathFlag(): string | undefined {
+    return this.flags.config ?? (process.env.SFCC_CONFIG === '' ? '' : undefined);
+  }
+
   protected async loadConfiguration(): Promise<ResolvedB2CConfig> {
     return loadConfig({}, this.getBaseConfigOptions());
+  }
+
+  /**
+   * Selects and loads the env file before flags are parsed.
+   *
+   * `--dotenv-file` / `SFCC_DOTENV_FILE` replace the default `<project-directory>/.env`;
+   * an empty value loads no env file. Shell variables always win over file values.
+   */
+  private loadEnvFile(): void {
+    // The executable may already have applied this file; keep its keys for provenance.
+    const preloaded = takePreloadedEnvFile();
+
+    let loaded: LoadedEnvFile | undefined;
+    try {
+      loaded = loadEnvFileForArgv(this.argv);
+    } catch (error) {
+      this.error(error instanceof Error ? error.message : String(error));
+    }
+    if (!loaded) return;
+
+    const keys = preloaded?.path === loaded.path ? [...new Set([...preloaded.keys, ...loaded.keys])] : loaded.keys;
+    this.envFile = {path: loaded.path, keys};
   }
 
   /**
@@ -560,11 +609,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     const hookOptions: ConfigSourcesHookOptions = {
       instance: this.flags.instance,
-      configPath: this.flags.config,
+      configPath: this.getConfigPathFlag(),
       flags,
       resolveOptions: {
         instance: this.flags.instance,
-        configPath: this.flags.config,
+        configPath: this.getConfigPathFlag(),
         accountManagerHost: flags['account-manager-host'] as string | undefined,
       },
     };

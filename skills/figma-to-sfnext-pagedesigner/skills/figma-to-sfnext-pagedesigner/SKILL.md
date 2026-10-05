@@ -1,6 +1,7 @@
 ---
 name: figma-to-sfnext-pagedesigner
-description: Convert a Figma frame into one or more live Storefront Next Page Designer blocks in one shot. Use whenever the user provides a Figma URL and wants the design to become merchant-authorable Page Designer components in a Storefront Next project. Requires the Figma MCP server (and a browser MCP for visual validation).
+description: >-
+  Convert a Figma frame into merchant-authorable Storefront Next Page Designer blocks: splits the frame into sections, proposes attributes with defaults from the design copy, reconciles brand tokens, writes React components with @Component/@AttributeDefinition metadata, a required fallback and (for catalog sections) a product loader, generates and deploys the Business Manager cartridge JSON, and checks design fidelity. Use when the user gives a Figma URL (with node-id) and wants it to become Page Designer components in a Storefront Next project. Requires the Figma MCP server; a browser MCP is recommended. Do not use for plain React/Tailwind without Page Designer, for SFRA/ISML (use `b2c:b2c-page-designer`), or for the Page Designer API reference (use `storefront-next:sfnext-page-designer`).
 ---
 
 # Skill: figma-to-sfnext-pagedesigner
@@ -13,8 +14,9 @@ Convert a Figma frame into one or more live Storefront Next Page Designer blocks
 
 - **Figma MCP server** configured in your AI tool — the skill reads design context through it. Without it, the skill can only act as a manual checklist.
 - **Browser MCP** (Playwright or similar) — for the Phase 5 visual validation. Optional but recommended.
-- A **Storefront Next** project in a git repo, with the `sfnext` CLI available (`pnpm sfnext …`).
-- `gh` CLI authenticated (`gh auth status`) if you want the skill to clone/push for you.
+- A **Storefront Next** project in a git repo (Node >= 24, pnpm >= 10.28), with the `sfnext` CLI available (`pnpm sfnext …`).
+- A B2C instance and credentials for `pnpm cartridge:deploy` (see `b2c-cli:b2c-code`), and MRT access for `pnpm push` (see `b2c-cli:b2c-mrt`).
+- `gh` CLI authenticated (`gh auth status`) only if you want the skill to clone the repo for you.
 - A Figma frame URL that includes a `node-id`.
 
 ## When to use
@@ -23,7 +25,10 @@ Invoke this skill (`/figma-to-sfnext-pagedesigner`) whenever the user provides a
 
 Do NOT invoke this when:
 - The user only wants React/Tailwind code (no PD integration needed) — use the `figma-design-to-code` skill directly.
-- The target project is SFRA/ISML, not Storefront Next.
+- The target project is SFRA/ISML, not Storefront Next (use `b2c:b2c-page-designer`).
+- The user wants to sync a design kit or Code Connect mappings from brand tokens (use `storefront-next-figma:sfnext-create-figma-kit`).
+
+For the decorator, registry, loader and `<Region>` reference used throughout, see `storefront-next:sfnext-page-designer`.
 
 ---
 
@@ -33,10 +38,10 @@ Do NOT invoke this when:
 |---|---|
 | Figma node URL (must include `node-id`) | `https://www.figma.com/design/abc123/...?node-id=1-2` |
 | Git repo URL (or a local path to the project) | `https://github.com/org/my-storefront` |
-| PD group (palette folder) | `Content` |
+| PD group (palette folder; the generated id is `<Group>.<typeId>`) | `Content` |
 | Target branch | `main` or a feature branch name |
 
-Do not ask the user for typeIds, display names, or descriptions upfront — derive these from the section names discovered in the frame and confirm them in the approval gate (Phase 1, step 4).
+Use camelCase typeIds (for example `heroBanner`). Do not ask the user for typeIds, display names, or descriptions upfront — derive these from the section names discovered in the frame and confirm them in the approval gate (Phase 1, step 4).
 
 If the Figma URL has no `node-id` query param, stop and ask the user to select the frame in Figma and copy the link — never guess a node ID.
 
@@ -62,7 +67,7 @@ All file writes in Phases 1–3 operate on this local clone.
 
 1. Read `references/PAGE-DESIGNER-SFN.md` (bundled alongside this skill) — mental model for PD + Storefront Next.
 2. Read the `figma-design-to-code` skill (from the official Figma plugin, if installed) — it governs correct `get_design_context` usage. If it isn't available, fall back to `get_design_context` + a screenshot and treat the design tokens as reference only.
-3. Read `src/theme/tokens/brand.css` — know which design tokens exist AND their current values, so you can spot where the Figma design diverges and needs a token update (Phase 1b.1), not just which classes are available.
+3. Read `src/theme/tokens/core.css` (and `brand.css`, `header.css` as needed; see `storefront-next:sfnext-theming`) — know which design tokens exist AND their current values, so you can spot where the Figma design diverges and needs a token update (Phase 1b.1), not just which classes are available.
 4. Scan `src/components/` — identify shared atoms to reuse rather than rebuild.
 
 ---
@@ -127,7 +132,7 @@ Mark layout-only props (padding, rotation, shadow) as **hardcoded** — do not l
 
 Walking a Figma design into the codebase is **not just adding new components — it also means updating the base design tokens the whole storefront already uses** wherever the design diverges from them. This is easy to miss: you build the new block correctly against existing tokens, but the design actually specifies a *different* primary color / radius / font, and the existing token is now wrong. The block looks right; the rest of the storefront (buttons, links, focus rings) is now off-brand.
 
-For each section, before finalizing fields, compare the Figma design's core visual values against what's in `src/theme/tokens/brand.css` (and any shadcn/tailwind theme vars — `--primary`, `--accent`, `--background`, `--foreground`, `--radius`, font families):
+For each section, before finalizing fields, compare the Figma design's core visual values against what's in `src/theme/tokens/core.css` and `brand.css` (and any shadcn/tailwind theme vars — `--primary`, `--accent`, `--background`, `--foreground`, `--ui-radius`, font families):
 
 - **Primary / accent / brand colors** — if the Figma design's buttons, links, or highlights use a color that differs from the current `--primary` / `--accent` token value, that's a **token update**, not a per-component override. Do NOT hardcode the new hex in the block; update the token so every existing component (buttons, badges, focus states) inherits it.
 - **Typography** — heading/body font family, weights, and scale. If the design uses a different type family than the token defines, flag the font token for update.
@@ -137,11 +142,11 @@ Produce a **token diff table** for the approval gate:
 
 ```
 ── Token reconciliation ──────────────────────────────────────
-  Token             Current (brand.css)   Figma design    Action
+  Token             Current (core.css)    Figma design    Action
   --------------------------------------------------------------
   --primary         #1f2a44               #E11D48         UPDATE (primary buttons are pink in design)
-  --radius          0.5rem                0.75rem         UPDATE
-  --font-heading    "Inter"               "Playfair"      UPDATE
+  --ui-radius       0.5rem                0.75rem         UPDATE
+  --font-sans       "Inter"               "Playfair"      UPDATE
   --accent          #f5a623               #f5a623         keep (matches)
 ```
 
@@ -162,12 +167,12 @@ Update the tables to reflect corrections, then confirm once more if changes were
 
 ### 1d — Apply approved token updates, then write the React component (after approval)
 
-**First, apply any token updates approved in 1b.1.** Edit `src/theme/tokens/brand.css` (and any theme var file) to the new values *before* writing components, so the new block and all existing components render against the corrected tokens. This is a real edit to the base design — commit it alongside the new component in Phase 4.
+**First, apply any token updates approved in 1b.1.** Edit the token file in `src/theme/tokens/` where the variable lives (`core.css` for the palette and shape, `header.css` for header/footer, `brand.css` for `--brand-*`; fonts are in `src/theme/tailwind.css`) to the new values *before* writing components, so the new block and all existing components render against the corrected tokens. This is a real edit to the base design — commit it alongside the new component in Phase 4.
 
 Then, for each section, write `src/components/<name>/index.tsx`:
 - Props typed as a plain TypeScript interface — all approved authorable fields plus any layout-only props needed for rendering.
-- No decorator imports yet.
-- Use brand tokens from `brand.css` as Tailwind utilities or CSS variables — no hardcoded hex. If the design needed a shared value changed (primary color, radius, font), that lives in the updated token, not in the component.
+- No decorator imports yet; add them in Phase 2. Also plan a lightweight `fallback` export (Phase 2f).
+- Use theme tokens (`src/theme/tokens/*.css`) as Tailwind utilities or CSS variables — no hardcoded hex. If the design needed a shared value changed (primary color, radius, font), that lives in the updated token, not in the component.
 - Reuse existing shared components where they match design intent.
 
 ---
@@ -181,15 +186,13 @@ Using the approved field plan from Phase 1, edit `src/components/<name>/index.ts
 ### 2a — Imports (add at top)
 
 ```tsx
-import { Component } from '@/lib/decorators/component';
-import { AttributeDefinition } from '@/lib/decorators/attribute-definition';
-import { RegionDefinition } from '@/lib/decorators';
+import { AttributeDefinition, Component, RegionDefinition } from '@/lib/decorators';
+import { type Image } from '@/types';
 ```
 
 ### 2b — Metadata class (insert above the default export)
 
 ```tsx
-/* v8 ignore start */
 @Component('typeId', { name: 'Display Name', description: 'Description', group: 'Content' })
 @RegionDefinition([])
 export class <Name>Metadata {
@@ -200,12 +203,15 @@ export class <Name>Metadata {
     ctaLabel?: string;
 
     @AttributeDefinition({ id: 'backgroundImage', name: 'Background Image', type: 'image', required: true })
-    backgroundImage?: string;
+    backgroundImage?: Image;
 }
-/* v8 ignore end */
 ```
 
 Rules:
+- The metadata class must be `export`ed, and each class field name must equal its attribute `id`; the field name is the prop name the component receives.
+- `typeId` must be a string literal in camelCase. `group` is the palette folder; the registry id becomes `<Group>.<typeId>` (for example `Content.heroBanner`).
+- An `image` attribute delivers an `Image` object (`{ url, metaData?, focalPoint? }`, from `@/types`), not a string. Render it with `image.url`.
+- A `markup` attribute delivers raw HTML; render it with `dangerouslySetInnerHTML` only from trusted Page Designer content.
 - Set `defaultValue` for every `string`, `markup`, and `boolean` field using the value from the approved field plan.
 - Do **not** set `defaultValue` on `image`, `url`, `product`, or `category` fields — these require real assets the Figma mock cannot provide.
 - Only include props marked authorable in the plan. Layout props are not attributes.
@@ -223,7 +229,7 @@ Apply these rules to each authorable prop name:
 | Long body copy / rich text | `markup` |
 | Anything else | `string` |
 
-For product reference props → `product`. For category reference props → `category`.
+For product reference props → `product`. For category reference props → `category`. Other supported types are `text`, `file`, `page`, `enum`, `custom` and `cms_record`; see `storefront-next:sfnext-page-designer`.
 
 ### 2d — Regions (if has_regions = true)
 
@@ -256,16 +262,17 @@ product1Id?: string;
 product2Id?: string;
 ```
 
-**Loader** — the thing the registry imports as `loader` MUST be a callable function. A top-level async function is the simplest correct shape:
+**Loader** — `componentData` is the whole SCAPI component object, so merchant-set attributes live at `componentData.data.*`. The loader runs on the server only (it may import `*.server` modules; the component file must not). The thing the registry imports as `loader` MUST be a callable function. A top-level async function is the simplest correct shape:
 
 ```tsx
-export async function loader({ componentData, context }: { componentData: any; context: any }) {
-    const productId: string = componentData.data?.productId
+import type { LoaderFunctionArgs } from 'react-router'
+import { fetchProductById } from '@/lib/api/products.server'
+
+export async function loader({ componentData, context }: { componentData: { data?: Record<string, unknown> }; context: LoaderFunctionArgs['context'] }) {
+    const productId = componentData.data?.productId as string | undefined
     if (!productId) return null
 
-    const product = await context.shopperProducts.getProduct({
-        parameters: { id: productId, allImages: true },
-    })
+    const product = await fetchProductById(context, productId)
     return { product }
 }
 ```
@@ -293,18 +300,14 @@ export const loader = loaders.server   // ✅ callable — NOT `export { loader 
 For multi-product blocks, fetch in parallel:
 
 ```tsx
-export async function loader({ componentData, context }: { componentData: any; context: any }) {
+export async function loader({ componentData, context }: { componentData: { data?: Record<string, unknown> }; context: LoaderFunctionArgs['context'] }) {
     const ids = ['product1Id', 'product2Id', 'product3Id']
-        .map((k) => componentData.data?.[k] as string)
-        .filter(Boolean)
+        .map((k) => componentData.data?.[k] as string | undefined)
+        .filter((id): id is string => Boolean(id))
+    if (ids.length === 0) return null
 
-    const products = await Promise.all(
-        ids.map((id) =>
-            context.shopperProducts.getProduct({
-                parameters: { id, allImages: true },
-            })
-        )
-    )
+    // One batched SCAPI call for all slots
+    const products = await fetchProductsByIds(context, ids)
     return { products }
 }
 ```
@@ -318,9 +321,11 @@ export default function ProductRow({ product1Id, data }: ProductRowProps & { dat
 }
 ```
 
-**Flag `needs_server_loader = true`** in the prop triage and add `{ loader: 'loader' }` to the registry entry (Phase 3).
+**Flag `needs_server_loader = true`** in the prop triage. The registry records the `loader` flag for you (Phase 3).
 
-**Fallback skeleton:** for product blocks, export a skeleton so the Suspense boundary shows something while the loader runs:
+### 2f — Fallback (required for every block)
+
+Every component must export a lightweight `fallback` with reserved height; it renders in a Suspense boundary while the loader or component chunk loads:
 
 ```tsx
 export function fallback() {
@@ -328,32 +333,18 @@ export function fallback() {
 }
 ```
 
-Register it: `{ loader: 'loader', fallback: 'fallback' }`
 
 ---
 
-## Phase 3 — Registry
+## Phase 3 — Verify the registry entry (no manual edit)
 
-Add one import line to `src/lib/page-designer/static-registry.ts`.
+`src/lib/page-designer/static-registry.ts` is generated. When `pnpm dev` or `pnpm build` starts, the Vite plugin scans `src/components` for `@Component` and rewrites the block between the `STATIC_REGISTRY_START` / `STATIC_REGISTRY_END` markers, including `{ loader: 'loader' }` and `{ fallback: 'fallback' }` flags. Do not hand-edit it.
 
-Find the block where `registerImporter` calls are grouped (they are alphabetical by group then typeId in practice) and insert:
+Run `pnpm dev` (or `pnpm build`) once, then confirm the file contains an entry for `'<Group>.<typeId>'` with the expected flags. A missing entry means the metadata class is not exported, the `typeId` is not a string literal, or the component is not under `src/components`.
 
-```ts
-targetRegistry.registerImporter(
-    'Group.typeId',
-    () => import('../../components/<name>/index')
-);
-```
+### Placing the blocks on a page
 
-If the component has a loader, add the second argument:
-
-```ts
-targetRegistry.registerImporter(
-    'Group.typeId',
-    () => import('../../components/<name>/index'),
-    { loader: 'loader' }
-);
-```
+Blocks appear in regions of a page. Merchants place them in Business Manager, but the page route must render that region: use `fetchPageWithComponentData` and `<Region page={...} regionId="..." />` (routes such as home already do). See `storefront-next:sfnext-page-designer` for routes, aspect types and `critical` regions. Do not pass `componentData` to `<Region>`.
 
 ---
 
@@ -365,23 +356,23 @@ targetRegistry.registerImporter(
 pnpm cartridge:generate
 ```
 
-Confirm the expected JSON files were written under `cartridges/`. If this fails, fix before committing — a broken decorator parse blocks the deploy too.
+Confirm the expected JSON files were written under `cartridges/app_storefrontnext_base/cartridge/experience/`, then run `pnpm cartridge:validate` to check them against the schemas. If either fails, fix before committing — a broken decorator parse blocks the deploy too.
 
 ### 4b — Commit
 
-Commit the new component file(s), the registry edit, the generated cartridge JSON, **and any token updates from Phase 1d**. If the token changes were substantial, keep them in a separate commit (e.g. `chore: align brand tokens with Figma design`) so the rebrand is reviewable on its own.
+Commit the new component file(s), the regenerated registry, the generated cartridge JSON, **and any token updates from Phase 1d**. If the token changes were substantial, keep them in a separate commit (e.g. `chore: align brand tokens with Figma design`) so the rebrand is reviewable on its own.
 
 ### 4c — Deploy
 
 Two commands make the block live — run them directly against the target instance/environment:
 
-1. **Cartridge deploy** (`pnpm cartridge:deploy` / `sfnext deploy-cartridge`) — uploads the cartridge JSON to B2C. The new component types appear in the Page Designer palette after this.
+1. **Cartridge deploy** (`pnpm cartridge:deploy` / `sfnext deploy-cartridge`; `-- --delete` removes old cartridge files first) — uploads the cartridge JSON to B2C. The new component types appear in the Page Designer palette after this. The optional MCP tool `cartridge_deploy` does the same.
 
-2. **MRT deploy** (`pnpm push` / `sfnext push`) — deploys the storefront bundle to MRT so the new React components render. If the project sets `GENERATE_AND_DEPLOY_CARTRIDGE_ON_MRT_PUSH = true`, the cartridge deploy runs automatically as part of `pnpm push`.
+2. **MRT deploy** (`pnpm push` / `sfnext push`) — deploys the storefront bundle to Managed Runtime so the new React components render (see `storefront-next:sfnext-deployment`).
 
 Then tell the user: open Business Manager → Page Designer → the target page, and the new blocks appear in the component palette ready to author — text fields pre-filled with the copy from the Figma design; they just swap in real images, URLs, and product IDs.
 
-If a deploy command fails, re-run it with `--log-level trace` for full diagnostics, and consult the `b2c` and `b2c-cli` skills (if installed) — they cover auth, WebDAV, and deploy troubleshooting in depth.
+If a deploy command fails, re-run it with `--log-level trace` for full diagnostics, and consult the `b2c-cli:b2c-code` and `b2c-cli:b2c-mrt` skills (if installed) — they cover auth, WebDAV, and deploy troubleshooting in depth.
 
 ---
 
@@ -393,7 +384,7 @@ If a deploy command fails, re-run it with `--log-level trace` for full diagnosti
    ```
    cartridges/app_storefrontnext_base/cartridge/experience/components/<Group>/<typeId>.json
    ```
-2. If browser MCP is available: open Business Manager → Merchant Tools → Content → Experience Manager → Page Designer, confirm each component appears in the component palette under its group.
+2. If browser MCP is available: open Business Manager → Merchant Tools → Content → Page Designer, confirm each component appears in the component palette under its group.
 
 ### 5b — Visual design match (Chrome)
 
@@ -421,13 +412,14 @@ If `pnpm dev` is not running or browser MCP is unavailable, explicitly tell the 
 | Symptom | Fix |
 |---|---|
 | `get_design_context` returns no Code Connect hints | Project has no `.figma.ts` files yet — use raw design tokens and screenshot as reference only. |
-| `cartridge:generate` exits with decorator parse error | The metadata class must be a `class` (not interface) and decorators must be on class fields, not function params. |
+| `cartridge:generate` exits with decorator parse error or an invalid attribute config | The metadata class must be an exported `class` (not interface) and decorators must be on class fields, not function params. Check `typeId` is a literal and attribute options (for example `searching`) are valid. |
 | Component not appearing in PD palette after deploy | Check BM → Administration → Site Development → Development Setup for cartridge assignment; the storefront cartridge must be in the cartridge path. |
-| `cartridge:deploy` / `push` fails (auth, WebDAV, or connection error) | Re-run the command with `--log-level trace` for full diagnostics, and consult the `b2c` / `b2c-cli` skills (if installed) — they cover auth and deploy troubleshooting. |
-| `markup` type attribute renders as escaped HTML | Use `dangerouslySetInnerHTML={{ __html: props.bodyText }}` for markup-typed attributes — they send raw HTML. |
-| Registry entry causes a Vite HMR error | Ensure the import path resolves — run `pnpm build` to get a full error trace. |
+| `cartridge:deploy` / `push` fails (auth, WebDAV, or connection error) | Re-run the command with `--log-level trace` for full diagnostics, and consult the `b2c-cli:b2c-code` / `b2c-cli:b2c-mrt` skills (if installed) — they cover auth and deploy troubleshooting. |
+| `markup` type attribute renders as escaped HTML | Use `dangerouslySetInnerHTML={{ __html: bodyText }}` for markup-typed attributes — they send raw HTML. |
+| Component missing from `static-registry.ts` | The metadata class is not exported, `typeId` is not a literal, or the file is outside `src/components`. Restart `pnpm dev` and re-check. More symptoms: `storefront-next:sfnext-page-designer` (Troubleshooting). |
 | Product block renders as a blank/empty space, no error | The export named `loader` is not callable (a `{ server: fn }` object, or `export { loader } from './loaders'` re-exporting that object). The loader never runs, `data` is `undefined`, and `return null` hides the block. Fix: export a callable — `export const loader = loaders.server` or a plain `export async function loader(...)`. Verify with `typeof loader === 'function'`. See Phase 2e. |
-| New block looks right but the rest of the storefront is off-brand (wrong button colour, radius, font) | A shared value in the Figma design diverged from an existing token and was missed. Update the token in `src/theme/tokens/brand.css` (Phase 1b.1 / 1d), don't hardcode it in the block. |
+| New block looks right but the rest of the storefront is off-brand (wrong button colour, radius, font) | A shared value in the Figma design diverged from an existing token and was missed. Update the token in `src/theme/tokens/` (Phase 1b.1 / 1d), don't hardcode it in the block. |
+| Block shows only its skeleton or nothing | The component has no `fallback` export, or the page route does not render the region. See Phase 3. |
 
 ---
 
@@ -436,9 +428,20 @@ If `pnpm dev` is not running or browser MCP is unavailable, explicitly tell the 
 A completed block's `src/components/<name>/index.tsx` contains, in order:
 
 1. Imports — React/Tailwind, shared components, and the PD decorators (`Component`, `AttributeDefinition`, `RegionDefinition`).
-2. A `/* v8 ignore start */ … /* v8 ignore end */`-wrapped `@Component`-decorated metadata class declaring each authorable attribute with its `type`, `required`, and (for string/markup/boolean) `defaultValue`.
+2. An exported `@Component`-decorated metadata class declaring each authorable attribute with its `type`, `required`, and (for string/markup/boolean) `defaultValue`.
 3. A plain TypeScript props interface.
-4. For product blocks: a callable `export async function loader(...)` and an optional `export function fallback()` skeleton.
+4. A required `export function fallback()` skeleton, and for product blocks a callable `export async function loader(...)`.
 5. The default-exported React component, destructuring both the PD attributes and `data` (the loader return).
 
-Brand values come from `brand.css` tokens as Tailwind utilities/CSS variables — never hardcoded hex.
+Brand values come from theme tokens as Tailwind utilities/CSS variables — never hardcoded hex.
+
+## Related Skills
+
+- `storefront-next:sfnext-page-designer` - decorators, registry, loaders, `<Region>`, troubleshooting
+- `storefront-next:sfnext-theming` - brand tokens and theme files
+- `storefront-next:sfnext-components` - component conventions
+- `storefront-next:sfnext-deployment` - shipping the storefront bundle
+- `storefront-next-figma:sfnext-create-figma-kit` - building the Figma kit from your tokens
+- `b2c-cli:b2c-code` - cartridge and code-version deployment
+- `b2c-cli:b2c-mrt` - Managed Runtime deploys
+- `b2c:b2c-page-designer` - classic Page Designer

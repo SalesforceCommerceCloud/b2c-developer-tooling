@@ -1,116 +1,79 @@
-# Extension Examples Reference
+# Extension Examples
 
-## Store Locator Extension
+Read the shipped extensions in `src/extensions/` before writing your own; these three cover the common shapes. Confirm paths in your project, since extensions evolve.
 
-A complete extension adding store locator functionality:
+## Simplest: BNPL (one slot, one API module)
+
+```
+src/extensions/bnpl/
+├── target-config.json
+├── components/            # includes components/target/bnpl-target.tsx
+├── context/               # bnpl-context
+├── lib/api/bnpl.server.ts # mock provider calls; replace bodies for a real provider
+├── locales/
+└── README.md
+```
+
+```json
+{
+  "components": [
+    { "targetId": "sfcc.pdp.bnpl.message", "path": "extensions/bnpl/components/target/bnpl-target.tsx", "order": 0 }
+  ]
+}
+```
+
+The target component is a thin default-exported adapter: it reads a context (`useBnpl()`), returns `null` when there is nothing to show, and wraps streamed promises in `Suspense`/`Await`. Keep slot components small and null-safe, because the slot renders wherever the base places it.
+
+## Several slots: Ratings and Reviews
+
+Three entries in one `target-config.json` fill three different places:
+
+| targetId | Component |
+|----------|-----------|
+| `sfcc.pdp.reviews.section` | `components/target/reviews-section-target.tsx` |
+| `sfcc.pdp.reviews.rating` | `components/target/reviews-summary-target.tsx` |
+| `sfcc.account.orderDetail.lineReview` | `components/target/order-line-review-target.tsx` |
+
+It also has `context/`, `providers/`, `routes/`, `lib/` and `locales/`. Pattern: one target adapter per slot, shared logic in context and `lib`.
+
+## Routes, provider, middleware: Store Locator
 
 ```
 src/extensions/store-locator/
-├── target-config.json
-├── components/
-│   ├── store-locator-badge.tsx    # Badge in header
-│   └── store-locator-map.tsx      # Map component
-├── routes/
-│   └── store-locator.tsx          # /store-locator page
-├── locales/
-│   ├── en-US/translations.json
-│   └── de-DE/translations.json
-└── providers/
-    └── store-provider.tsx         # Store data context
+├── target-config.json              # sfcc.header.before.cart -> components/header/store-locator-badge.tsx
+├── components/  context/  hooks/  stores/  locales/  tests/
+├── middlewares/                    # wired into base files via SFDC_EXT_ markers
+├── providers/store-locator.tsx     # mounted in root.tsx via @sfdc-extension-block markers
+└── routes/
+    ├── _app.store-locator.tsx          # page inside the app layout
+    ├── action.set-selected-store.ts    # action route
+    └── resource.stores.ts              # resource (JSON) route
 ```
 
-### target-config.json
+This extension needs edits outside its folder (for example `root.tsx` and other base components), which is why it uses `SFDC_EXT_STORE_LOCATOR` markers; see [CLI and Install](CLI-AND-INSTALL.md). Route file names follow flat-route conventions: `_app.` prefix for routes in the app layout, `action.` and `resource.` for non-UI routes.
 
-```json
-{
-  "components": [
-    {
-      "targetId": "header.after.logo",
-      "path": "extensions/store-locator/components/store-locator-badge.tsx",
-      "order": 0
-    }
-  ],
-  "contextProviders": [
-    {
-      "path": "extensions/store-locator/providers/store-provider.tsx",
-      "order": 0
-    }
-  ]
+## Wrapper slot
+
+A slot that has children keeps the base content and lets the extension decorate it (for example `sfcc.emailSignUp.consent.marketing`). The component receives `children`:
+
+```tsx
+import type { ReactNode } from 'react';
+
+export default function ConsentWrapper({ children }: { children?: ReactNode }) {
+    return <div className="rounded border p-2">{children}</div>;
 }
 ```
 
-### Route
+Use `pnpm extensions:list` to see which slots are wrappers in your project.
 
-```typescript
-// src/extensions/store-locator/routes/store-locator.tsx
-import { createApiClients } from '@/lib/api-clients';
-import { useTranslation } from 'react-i18next';
+## Server hook: fraud check
 
-export function loader({ context }: LoaderFunctionArgs) {
-    const clients = createApiClients(context);
-    return {
-        stores: clients.shopperStores.getStores({...}).then(({ data }) => data),
-    };
-}
+See [Action Hooks](ACTION-HOOKS.md) for a `sfcc.checkout.fraud.beforePlace` handler and the blocking rules.
 
-export default function StoreLocatorPage({ loaderData }) {
-    const { t } = useTranslation('extStoreLocator');
+## Checklist for a new extension
 
-    return (
-        <div>
-            <h1>{t('title')}</h1>
-            {/* Render store map and list */}
-        </div>
-    );
-}
-```
-
-### Translations
-
-```json
-// src/extensions/store-locator/locales/en-US/translations.json
-{
-  "title": "Find a Store",
-  "searchPlaceholder": "Enter city or zip code",
-  "noResults": "No stores found nearby"
-}
-```
-
-## Integration Marker Patterns
-
-### Single-Line Import
-
-```typescript
-/** @sfdc-extension-line SFDC_EXT_STORE_LOCATOR */
-import StoreLocatorBadge from '@extensions/store-locator/components/store-locator-badge';
-```
-
-### Block Integration
-
-```typescript
-/* @sfdc-extension-block-start SFDC_EXT_STORE_LOCATOR */
-<Link to="/store-locator" className="flex items-center gap-2">
-    <MapPinIcon className="h-4 w-4" />
-    <span>{t('storeLocator')}</span>
-</Link>
-/* @sfdc-extension-block-end SFDC_EXT_STORE_LOCATOR */
-```
-
-## BOPIS Extension (Buy Online, Pick Up In Store)
-
-```json
-{
-  "components": [
-    {
-      "targetId": "product.detail.fulfillment",
-      "path": "extensions/bopis/components/pickup-selector.tsx",
-      "order": 0
-    },
-    {
-      "targetId": "cart.item.fulfillment",
-      "path": "extensions/bopis/components/pickup-info.tsx",
-      "order": 0
-    }
-  ]
-}
-```
+1. Run the [Base Audit](BASE-AUDIT.md) gate.
+2. `sfnext extensions create -n "Name" -d "..."`.
+3. Add components, then `target-config.json` entries with `sfcc.` target ids from `pnpm extensions:list`.
+4. Add `locales/<lang>/translations.json` and use the `ext<PascalName>` namespace.
+5. Run `pnpm dev`, check the slot in the browser, then `pnpm typecheck && pnpm lint`.

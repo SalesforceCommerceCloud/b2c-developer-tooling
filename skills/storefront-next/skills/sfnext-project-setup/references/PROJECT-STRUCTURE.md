@@ -1,99 +1,61 @@
-# Project Structure Reference
+# Project Structure
 
-## Top-Level Files
+A short map of a Storefront Next project. The project's `AGENTS.md` ("Project Structure") is authoritative and kept current; use `ls` on the project rather than trusting any long listing, including this one.
 
-| File               | Purpose                                                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------ |
-| `config.server.ts` | Centralized configuration with typed defaults; environment variables override these values |
-| `.env.default`     | Template of all supported environment variables; copy to `.env` for local development      |
-| `.env`             | Local environment overrides (git-ignored)                                                  |
-| `vite.config.ts`   | Vite build configuration including plugins (static registry, etc.)                         |
-| `package.json`     | Dependencies, scripts, and bundle size limits (`bundlesize` config)                        |
-| `tsconfig.json`    | TypeScript configuration with `@/` path alias mapping to `src/`                            |
+## Top level
 
-## Source Directory (`src/`)
+| Path | Purpose |
+| --- | --- |
+| `AGENTS.md`, `CLAUDE.md` | Rules and doc index for coding agents |
+| `config.server.ts` | Typed defaults for the whole app (`metadata`, `runtime`, `app`). Edited by you; overridden per environment with `PUBLIC__` env vars |
+| `config-meta.json`, `config-metadata/` | Values `sfnext create-storefront` prompts for; config metadata |
+| `.env.default` / `.env` | Required credentials and MRT target. Only `.env` is read |
+| `package.json` | Scripts, dependencies, and `storefrontNext` (`templateRelease`, `templateVersion`, `minSdkVersion`) |
+| `react-router.config.ts`, `vite.config.ts`, `vite-plugins/` | Framework and build config; plugins for bundle size, env validation, hybrid proxy, server-only-config guard |
+| `components.json` | shadcn config (CSS entry is `src/theme/index.css`) |
+| `cartridges/app_storefrontnext_base/` | Base cartridge; Page Designer metadata is generated into it |
+| `docs/` | `README-*.md` guides, `COMPATIBILITY.md`, `migrations/` upgrade guides |
+| `instructions/` | Install/uninstall instructions for extensions (`.mdc`) |
+| `e2e/` | Playwright end-to-end and accessibility suite (its own package) |
+| `scripts/` | Helper scripts behind `lint:a11y`, `lint:css`, `bundlesize:compare`, `storybook:test`, `extensions:list`, ... |
+| `.storybook/`, `.github/`, `.devcontainer/`, `.claude/skills/sync-shadcn` | Storybook, CI workflows, dev container, in-project skill for syncing shadcn primitives |
+| `public/` | Static assets (fonts, images, robots.txt, favicon) |
 
-### `src/routes/`
+## `src/`
 
-File-based routing using React Router 7 flat-routes convention. File names map to URL paths:
+| Path | Notes |
+| --- | --- |
+| `routes/` | Flat file routes. Families: `_app.*` (storefront shell), `_checkout.*`, `_empty.*` (login, signup, maintenance; minimal chrome), `action.*` (server mutations), `resource.*` (resource routes). Products and categories are splats: `_app.p.$.tsx`, `_app.c.$.tsx`. Orders use `$orderNo`. See `storefront-next:sfnext-routing` |
+| `routes.ts`, `route-paths.ts` | Route registration and typed path helpers (`routeHref`) |
+| `root.tsx`, `entry.client.tsx`, `entry.server.tsx`, `app-wrapper.tsx` | App shell and entry points. `root.tsx` imports `src/theme/index.css` |
+| `components/` | Feature components; `components/ui/` holds UI primitives you own; `components/link` is the site-aware `Link`/`NavLink` |
+| `hooks/` | Includes `use-navigate` and `use-current-site-and-locale-ref` |
+| `providers/` | React context providers |
+| `lib/` | Domain folders (`auth/`, `cart/`, `checkout/`, `product/`, `order/`, ...), `api-clients.server.ts` (`createApiClients(context)`), `url.server.ts` (`buildUrlFromContext`), `page-designer/` (registry, loader), `decorators/`, `revalidation/` |
+| `middlewares/` | Server middlewares (`app-config`, `site-context`, `i18next`, `auth`, `basket`, `security-headers`, `logging`, ...). Ordering is in `src/server/middleware-registry.ts` |
+| `scapi/` | Generated and custom SCAPI clients (`@/scapi` barrel); see `storefront-next:sfnext-scapi` |
+| `extensions/` | Optional feature modules; `config.json` is the extension registry; per-extension `config.ts` / `server-config.ts` feed app config |
+| `targets/` | UI target (extension point) system |
+| `theme/` | `index.css` entry, `base.css`, `tailwind.css`, `tokens/`, `overrides/`, `animations.css`; see `storefront-next:sfnext-theming` |
+| `locales/` | One folder per language-region (`en-US`, `de-DE`, ...) with `translations.json`; see `storefront-next:sfnext-i18n` |
+| `types/config.ts` | `AppConfig` / `Config` types and the `getConfig` / `useConfig` type augmentation |
+| `analytics/`, `design-system/`, `test-utils/` | Tracking components, design-system docs stories, shared test helpers (`@/test-utils/config`, `context-provider`, `request-helpers`, ...) |
 
-| File                                | URL                                  |
-| ----------------------------------- | ------------------------------------ |
-| `_app.tsx`                          | Layout wrapper (no URL segment)      |
-| `_app._index.tsx`                   | `/` (home page)                      |
-| `_app.product.$productId.tsx`       | `/product/:productId`                |
-| `_app.category.$categoryId.tsx`     | `/category/:categoryId`              |
-| `_app.cart.tsx`                     | `/cart`                              |
-| `resource.api.client.$resource.tsx` | Resource route for `useScapiFetcher` |
+## Where to look for each concern
 
-Each route module can export: `loader`, `action`, `default` (component), `meta`, `handle`, `ErrorBoundary`.
+| Concern | Start here |
+| --- | --- |
+| Data loading, Suspense, state, images | `AGENTS.md` "Performance & Data Rules", `docs/README-DATA.md`, `README-SUSPENSE.md`, `README-STATE.md` |
+| All config options | `docs/README-CONFIG.md` (required/optional tables), `docs/README-CONFIG-OPTIONS.md` |
+| Multi-site, locale URLs, SEO routes | `docs/README-MULTI-SITE.md` |
+| Auth and cookies | `docs/README-AUTH.md` |
+| Page Designer | `docs/README-PAGE-DESIGNER.md` |
+| Upgrading | `docs/COMPATIBILITY.md`, `docs/migrations/` |
 
-### `src/components/`
+## Page Designer metadata
 
-Reusable UI components organized in directories:
+Component metadata is generated from decorators by `pnpm cartridge:generate` (also run by `pnpm build`) into `cartridges/app_storefrontnext_base/`, validated with `pnpm cartridge:validate`, and deployed to the B2C instance with `pnpm cartridge:deploy` (not part of `pnpm push`). See `storefront-next:sfnext-deployment` and `storefront-next:sfnext-page-designer`.
 
-```
-src/components/product-tile/
-├── index.tsx              # Component implementation
-├── index.test.tsx         # Vitest unit tests
-└── stories/
-    └── index.stories.tsx  # Storybook stories
-```
+## Adding UI primitives
 
-**`src/components/ui/`** — shadcn/ui components added via `npx shadcn@latest add <name>`. These are copied into your codebase and can be customized directly.
-
-### `src/config/`
-
-Configuration system:
-
-- `schema.ts` — TypeScript type definitions for the config shape
-- `context.tsx` — React context provider (`ConfigProvider`) and `useConfig()` hook
-- `index.ts` — Exports `getConfig()` and `useConfig()`
-
-### `src/lib/`
-
-Utilities and shared logic:
-
-- `api-clients.ts` — `createApiClients(context)` factory for SCAPI clients
-- `utils.ts` — `cn()` class name utility (merges Tailwind classes)
-- `registry.ts` — Page Designer component registry
-- `static-registry.ts` — Auto-generated by Vite plugin (do not edit)
-
-### `src/locales/`
-
-Translation files organized by locale:
-
-```
-src/locales/
-├── en-US/translations.json
-├── de-DE/translations.json
-└── fr-FR/translations.json
-```
-
-### `src/middlewares/`
-
-Server middleware:
-
-- `auth.server.ts` — SLAS authentication, token management, `getAuth(context)`
-- `basket.server.ts` — Basket middleware and request-context basket resource helpers
-
-### `src/extensions/`
-
-Extension modules with their own routes, components, translations, and providers. Extensions typically include `target-config.json` (for `targetId` component/provider insertion) and are registered in `src/extensions/config.json`.
-
-### `src/test-utils/`
-
-Shared test utilities:
-
-- `config.ts` — Mock configuration for tests
-- `context-provider-utils.ts` — Context provider helpers
-- `context-provider.tsx` — Test wrapper providers
-
-## Build Output
-
-- `build/` — Production build output (server and client bundles)
-- `coverage/` — Test coverage reports
-
-## Cartridges
-
-- `cartridges/` — Page Designer cartridge with experience metadata (component/page JSON definitions generated by MCP tools)
+The project ships an in-project `sync-shadcn` skill (`.claude/skills/sync-shadcn`) and `scripts/upgrade-shadcn.js` for pulling updated shadcn primitives into `src/components/ui/` without losing local changes. Prefer that over a raw `npx shadcn add`.

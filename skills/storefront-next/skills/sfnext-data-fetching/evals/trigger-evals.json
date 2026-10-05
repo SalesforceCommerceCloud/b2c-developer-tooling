@@ -1,0 +1,5 @@
+[
+  {"query": "Add a loader on my Storefront Next page that awaits the product and streams recommendations so the page doesn't block", "should_trigger": true},
+  {"query": "How do I write a createBasketAction handler that returns a validation error?", "should_trigger": true},
+  {"query": "My product grid re-fetches every time I add an item to the cart; how do I stop loaders re-running after actions?", "should_trigger": false}
+]

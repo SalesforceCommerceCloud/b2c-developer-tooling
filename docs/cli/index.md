@@ -18,6 +18,17 @@ These flags are available on all commands that interact with B2C instances:
 | `--webdav-server`      | `SFCC_WEBDAV_SERVER` | Secure WebDAV hostname |
 | `--code-version`, `-v` | `SFCC_CODE_VERSION`  | Code version           |
 
+### Configuration Flags
+
+| Flag                  | Environment Variable     | Description                                                           |
+| --------------------- | ------------------------ | --------------------------------------------------------------------- |
+| `--config`            | `SFCC_CONFIG`            | `dw.json` path, used without the global default; empty for none       |
+| `--instance`, `-i`    | `SFCC_INSTANCE`          | Named instance to select                                              |
+| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Project directory for configuration lookup                            |
+| `--dotenv-file`       | `SFCC_DOTENV_FILE`       | Env file to use instead of the project's `.env`; empty for none       |
+
+See [Configuration](/guide/configuration#configuration-file-selection) for how these files are selected.
+
 ### Authentication Flags
 
 | Flag               | Environment Variable | Description                        |

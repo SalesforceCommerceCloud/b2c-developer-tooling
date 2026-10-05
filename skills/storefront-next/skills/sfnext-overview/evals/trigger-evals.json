@@ -1,0 +1,5 @@
+[
+  {"query": "I just opened a Storefront Next project for the first time - where do I start and which commands exist?", "should_trigger": true},
+  {"query": "Which Storefront Next skill or doc covers what I need to do? I'm not sure where to look", "should_trigger": true},
+  {"query": "Add a custom engagement adapter that respects the consent banner", "should_trigger": false}
+]

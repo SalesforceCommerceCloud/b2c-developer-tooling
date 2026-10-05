@@ -1,93 +1,39 @@
-# SCAPI Fetcher Reference
+# `useScapiFetcher`
 
-## How useScapiFetcher Works
+`import { useScapiFetcher } from '@/hooks/use-scapi-fetcher'`
 
-```
-Component calls useScapiFetcher()
-        ↓
-Hook builds URL: /resource/api/client/{encoded-params}
-        ↓
-fetcher.load() or fetcher.submit()
-        ↓
-resource.api.client.$resource.ts loader/action runs ON SERVER
-        ↓
-createApiClients(context) makes SCAPI call (server-side)
-        ↓
-JSON response returned to component
+A typed wrapper over React Router's `useFetcher` that calls a Shopper client method through a single resource route (`src/routes/resource.api.client.$resource.ts`). The request is encoded (base64url of `[client, method, options]`) into `/resource/api/client/:resource`, executed on the server, and the SCAPI `data` is returned unwrapped.
+
+```tsx
+const product = useScapiFetcher('shopperProducts', 'getProduct', {
+    params: { path: { id: variantId }, query: { expand: ['availability', 'prices'] } },
+});
+
+useEffect(() => {
+    if (variantId && product.state === 'idle' && !product.data && !product.errors) void product.load();
+}, [variantId, product]);  // keep deps stable; see checklist
 ```
 
-Even though `useScapiFetcher` is called from the browser, the actual SCAPI requests happen **on the server** through the resource route, keeping credentials secure.
+Returned object: `.load()` (GET), `.submit(payload, opts)` (mutation), `.data`, `.errors`, `.success`, plus the fetcher fields such as `.state`.
 
-## API
+Real users: `src/providers/basket.tsx` (`shopperBasketsV2.getBasket`) and `src/components/cart-item-modal/*` (`shopperProducts.getProduct`).
 
-```typescript
-const fetcher = useScapiFetcher(
-    clientName,    // SCAPI client: 'shopperSearch', 'shopperProducts', etc.
-    methodName,    // Method: 'getSearchSuggestions', 'productSearch', etc.
-    parameters     // SCAPI parameters object
-);
+## Server allowlist (`src/lib/scapi/resource-policy.ts`)
 
-// Properties
-fetcher.data       // Response data (undefined until loaded)
-fetcher.state      // 'idle' | 'loading' | 'submitting'
-fetcher.load()     // Trigger a GET request
-fetcher.submit()   // Trigger a POST request
-```
+- Loaders: `shopperBasketsV2.getBasket`, `shopperProducts.getProduct`, `shopperProducts.getProducts`, `shopperSearch.getSearchSuggestions`.
+- Actions: `shopperCustomers.createCustomerAddress`, `updateCustomerAddress`, `removeCustomerAddress`, `updateCustomer`, `updateCustomerPassword`.
 
-## loader vs useScapiFetcher
+Everything else is rejected. `organizationId`, `siteId` and `locale` are set by the server, and request bodies and headers are sanitized. The older "helpers" overload is unsupported.
 
-| Scenario | Use |
-|----------|-----|
-| Load product data on page visit | `loader` |
-| Load checkout data | `loader` |
-| Search suggestions as user types | `useScapiFetcher` |
-| Update customer profile in modal | `useScapiFetcher` |
-| Load recommendations after page loads | `useScapiFetcher` |
-| Fetch bonus products when modal opens | `useScapiFetcher` |
-| Infinite scroll / Load more | `useScapiFetcher` |
+Need something else (recommendations, category products, your own custom API)? Create a `resource.*` route with a `loader`. Pattern: same-origin check, input validation, `Cache-Control: no-store` for personalized output (`resource.recommendations.ts`, `resource.category-products.ts`). To allow another client call, change `resource-policy.ts` deliberately and add a test; do not widen it casually.
 
-## Timeline Comparison
+## Related hooks
 
-```
-loader (Server):
-  [navigate] → [server fetch] → [stream to client]
-  Data available: Streamed during render via Suspense
+- `useScapiFetcherEffect(fetcher, { onSuccess, onError })` runs callbacks once per completed request.
+- `useScapiFetchClient` (`@/hooks/use-scapi-fetch`) is a lower-level, non-fetcher variant for one-off calls.
 
-useScapiFetcher:
-  [render] → [user action] → [fetch] → [re-render]
-  Data available: AFTER user action, component re-renders
-```
+## When not to use it
 
-## Complete Example: Search Suggestions
+If the data is knowable at request time, fetch it in the loader. Mounting a component that fires `useScapiFetcher().load()` in an effect for data the route could have streamed adds a waterfall; see the performance review checklist in `storefront-next:sfnext-performance`.
 
-```typescript
-import { useScapiFetcher } from '@/hooks/use-scapi-fetcher';
-import { useMemo, useCallback } from 'react';
-
-export function useSearchSuggestions({ q, limit, currency }) {
-    const parameters = useMemo(
-        () => ({
-            params: {
-                query: { q, limit, currency }
-            }
-        }),
-        [q, limit, currency]
-    );
-
-    const fetcher = useScapiFetcher(
-        'shopperSearch',
-        'getSearchSuggestions',
-        parameters
-    );
-
-    const refetch = useCallback(async () => {
-        await fetcher.load();
-    }, [fetcher]);
-
-    return {
-        data: fetcher.data,
-        isLoading: fetcher.state === 'loading',
-        refetch
-    };
-}
-```
+Calls made through `useScapiFetcher().load()` are fetcher loads, not submissions, so they do not revalidate other loaders. `.submit()` is a submission and does.

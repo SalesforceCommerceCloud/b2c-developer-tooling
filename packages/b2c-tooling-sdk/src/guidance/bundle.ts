@@ -86,19 +86,38 @@ function markdownLinks(content: string): string[] {
   return [...content.replaceAll(/^(```|~~~)[\s\S]*?^\1/gm, '').matchAll(/\]\(([^)\s]+)\)/g)].map((match) => match[1]);
 }
 
+/** One skill's Markdown files, bundled or validated only. */
+interface SkillSource {
+  id: string;
+  files: string[];
+  content: Map<string, string>;
+}
+
 /**
  * Skills install and serve independently: relative links stay inside the skill,
- * other skills are referenced by name or skill:// URI, and tooling docs use Markdown URLs.
+ * other skills are referenced by name (`<plugin>:<skill>`) or skill:// URI, and
+ * tooling docs use Markdown URLs.
  */
-function validateLinks(manifest: GuidanceManifest, contentFiles: Map<string, Buffer>, checkSkillUris: boolean): void {
-  const bundled = new Set([...contentFiles.keys()].map((file) => `skill://${file}`));
-  for (const entry of manifest.entries) {
-    for (const {path} of entry.files) {
-      const where = `${entry.id}/${path}`;
-      const content = contentFiles.get(where)!.toString('utf8');
+function validateLinks(
+  sources: SkillSource[],
+  bundled: Set<string>,
+  pluginSkills: Map<string, Set<string>>,
+  checkSkillUris: boolean,
+): void {
+  const pluginNames = [...pluginSkills.keys()].sort((a, b) => b.length - a.length);
+  const skillReference = new RegExp(`(?<![\\w/@.-])(${pluginNames.join('|')}):([a-z0-9][a-z0-9-]*)`, 'g');
+  for (const source of sources) {
+    for (const [path, content] of source.content) {
+      const where = `${source.id}/${path}`;
       for (const [uri] of content.matchAll(/skill:\/\/[\w./-]*\w/g)) {
-        if (checkSkillUris && uri !== 'skill://index' && !bundled.has(uri))
+        if (checkSkillUris && uri !== 'skill://index' && !bundled.has(uri)) {
           throw new Error(`Unknown skill URI ${uri} in ${where}`);
+        }
+      }
+      if (pluginNames.length > 0) {
+        for (const [reference, plugin, skill] of content.matchAll(skillReference)) {
+          if (!pluginSkills.get(plugin)!.has(skill)) throw new Error(`Unknown skill ${reference} in ${where}`);
+        }
       }
       for (const target of markdownLinks(content)) {
         const [location] = target.split('#');
@@ -110,7 +129,7 @@ function validateLinks(manifest: GuidanceManifest, contentFiles: Map<string, Buf
           }
         } else if (!/^[a-z][a-z0-9+.-]*:/i.test(location)) {
           const resolved = posix.normalize(posix.join(posix.dirname(path), location));
-          if (resolved.startsWith('../') || !entry.files.some((file) => file.path === resolved)) {
+          if (resolved.startsWith('../') || !source.files.includes(resolved)) {
             throw new Error(
               `Relative link ${target} in ${where} must resolve to a file in the same skill; reference other skills by name`,
             );
@@ -119,6 +138,45 @@ function validateLinks(manifest: GuidanceManifest, contentFiles: Map<string, Buf
       }
     }
   }
+}
+
+/**
+ * Every released plugin ships as installable skills, bundled or not: validates
+ * unbundled plugins by the bundle's rules and collects every plugin's skill names
+ * so `<plugin>:<skill>` references resolve.
+ */
+function pluginSkillSources(
+  repoRoot: string,
+  plugins: {name: string}[],
+  bundledPlugins: Set<string>,
+): {pluginSkills: Map<string, Set<string>>; sources: SkillSource[]} {
+  const pluginSkills = new Map<string, Set<string>>();
+  const sources: SkillSource[] = [];
+  for (const {name: plugin} of plugins) {
+    const source = join(repoRoot, 'skills', plugin, 'skills');
+    const folders = readdirSync(source, {withFileTypes: true}).filter(
+      (folder) => folder.isDirectory() && !folder.name.startsWith('.'),
+    );
+    pluginSkills.set(plugin, new Set(folders.map((folder) => folder.name)));
+    if (bundledPlugins.has(plugin)) continue;
+    for (const folder of folders) {
+      const id = `${plugin}/${folder.name}`;
+      const root = join(source, folder.name);
+      const files = markdownFiles(root);
+      if (!files.includes('SKILL.md')) throw new Error(`Missing SKILL.md: ${root}`);
+      const content = new Map<string, string>();
+      for (const file of files) {
+        const bytes = readFileSync(join(root, file));
+        if (bytes.length > GUIDANCE_MAX_FILE_BYTES) {
+          throw new Error(`Skill file exceeds 64 KiB: ${id}/${file}. Split it into focused references.`);
+        }
+        content.set(file, bytes.toString('utf8'));
+      }
+      skillFrontmatter(content.get('SKILL.md')!, folder.name, id);
+      sources.push({id, files, content});
+    }
+  }
+  return {pluginSkills, sources};
 }
 
 function markdownFiles(root: string, prefix = ''): string[] {
@@ -222,7 +280,20 @@ export function bundleGuidance(options: BundleGuidanceOptions): BundleGuidanceRe
     if (other) throw new Error(`Duplicate skill name "${entry.title}": ${other} and ${entry.id}`);
     names.set(entry.title, entry.id);
   }
-  validateLinks(manifest, contentFiles, options.checkSkillUris ?? true);
+  const bundledPlugins = new Set(
+    options.collections.map((collection) => collection.plugin).filter(Boolean) as string[],
+  );
+  const plugin = pluginSkillSources(repoRoot, plugins.plugins, bundledPlugins);
+  const sources: SkillSource[] = [
+    ...manifest.entries.map((entry) => ({
+      id: entry.id,
+      files: entry.files.map((file) => file.path),
+      content: new Map(entry.files.map(({path}) => [path, contentFiles.get(`${entry.id}/${path}`)!.toString('utf8')])),
+    })),
+    ...plugin.sources,
+  ];
+  const bundled = new Set([...contentFiles.keys()].map((file) => `skill://${file}`));
+  validateLinks(sources, bundled, plugin.pluginSkills, options.checkSkillUris ?? true);
 
   const resources = options.featuredResources ?? [];
   if (

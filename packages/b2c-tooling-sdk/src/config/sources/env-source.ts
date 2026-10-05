@@ -17,8 +17,13 @@ import {getPopulatedFields} from '../mapping.js';
 import type {ConfigSource, ConfigLoadResult, NormalizedConfig, ResolveConfigOptions} from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
-/** Storefront Next variables accepted as fallbacks for equivalent toolkit settings. */
-const STOREFRONT_NEXT_ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
+/**
+ * Storefront Next variables accepted as fallbacks for equivalent toolkit settings.
+ *
+ * These are read by {@link StorefrontNextEnvSource}, which sits below dw.json:
+ * they only fill settings that the selected instance and toolkit variables leave unset.
+ */
+export const STOREFRONT_NEXT_ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   PUBLIC__app__commerce__api__clientId: 'slasClientId',
   PUBLIC__app__commerce__api__organizationId: 'tenantId',
   PUBLIC__app__commerce__api__shortCode: 'shortCode',
@@ -30,8 +35,6 @@ const STOREFRONT_NEXT_ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
  * Mapping of CLI environment variable names and aliases to NormalizedConfig fields.
  */
 const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
-  // Storefront Next aliases — listed first so toolkit-specific names win
-  ...STOREFRONT_NEXT_ENV_VAR_MAP,
   // sfcc-ci legacy aliases — listed first so canonical names below take precedence
   SFCC_OAUTH_CLIENT_ID: 'clientId',
   SFCC_OAUTH_CLIENT_SECRET: 'clientSecret',
@@ -83,28 +86,6 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   MRT_BACKEND: 'mrtBackend',
 };
 
-/**
- * Reads only the Storefront Next compatibility variables.
- *
- * Used by the CLI as a lower-priority fallback after oclif has resolved explicit
- * flags and the toolkit's canonical environment variables.
- *
- * @internal
- */
-export function getStorefrontNextEnvironmentConfig(
-  env: Record<string, string | undefined> = process.env,
-): Partial<NormalizedConfig> {
-  const config: Partial<NormalizedConfig> = {};
-  for (const [envVar, configField] of Object.entries(STOREFRONT_NEXT_ENV_VAR_MAP)) {
-    const value = env[envVar];
-    if (value !== undefined && value !== '') {
-      (config as Record<string, unknown>)[configField] = value;
-    }
-  }
-
-  return config;
-}
-
 /** Fields that should be parsed as comma-separated arrays. */
 const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
   'scopes',
@@ -132,6 +113,50 @@ const ENUM_FIELDS: Partial<Record<keyof NormalizedConfig, readonly string[]>> = 
 };
 
 /**
+ * Maps environment variables to config fields, applying enum, boolean and array parsing.
+ */
+function readEnvironmentConfig(
+  env: Record<string, string | undefined>,
+  map: Record<string, keyof NormalizedConfig>,
+  sourceName: string,
+): NormalizedConfig {
+  const logger = getLogger();
+  const config: NormalizedConfig = {};
+
+  for (const [envVar, configField] of Object.entries(map)) {
+    const value = env[envVar];
+    if (value === undefined || value === '') continue;
+
+    const allowed = ENUM_FIELDS[configField];
+    if (allowed && !allowed.includes(value)) {
+      logger.warn(`[${sourceName}] Ignoring ${envVar}: "${value}" is not one of ${allowed.join(', ')}`);
+      continue;
+    }
+
+    if (BOOLEAN_FIELDS.has(configField)) {
+      (config as Record<string, unknown>)[configField] = value === 'true' || value === '1';
+    } else if (ARRAY_FIELDS.has(configField)) {
+      (config as Record<string, unknown>)[configField] = value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean) as string[] | AuthMethod[];
+    } else {
+      (config as Record<string, unknown>)[configField] = value;
+    }
+  }
+
+  return config;
+}
+
+/** Options for environment-backed config sources. */
+export interface EnvSourceOptions {
+  /** Source name for diagnostics (default: `EnvSource`) */
+  name?: string;
+  /** Location reported for diagnostics (default: `environment variables`) */
+  location?: string;
+}
+
+/**
  * Configuration source that reads CLI configuration environment variables.
  *
  * Priority -10 (higher than dw.json at 0), matching CLI behavior where
@@ -140,6 +165,9 @@ const ENUM_FIELDS: Partial<Record<keyof NormalizedConfig, readonly string[]>> = 
  * Not added to default sources — opt-in only. The CLI handles env vars
  * via oclif flag `env:` mappings; this source is for consumers like
  * the VS Code extension that call `resolveConfig()` directly.
+ *
+ * Storefront Next variables are not read here; add a
+ * {@link StorefrontNextEnvSource} for those.
  *
  * @example
  * ```typescript
@@ -153,52 +181,70 @@ const ENUM_FIELDS: Partial<Record<keyof NormalizedConfig, readonly string[]>> = 
  * @internal
  */
 export class EnvSource implements ConfigSource {
-  readonly name = 'EnvSource';
+  readonly name: string;
   readonly priority = -10;
 
   private readonly env: Record<string, string | undefined>;
+  private readonly location: string;
 
   /**
    * @param env - Environment object to read from. Defaults to `process.env`.
+   * @param options - Diagnostic name and location
    */
-  constructor(env?: Record<string, string | undefined>) {
+  constructor(env?: Record<string, string | undefined>, options: EnvSourceOptions = {}) {
     this.env = env ?? process.env;
+    this.name = options.name ?? 'EnvSource';
+    this.location = options.location ?? 'environment variables';
   }
 
   load(_options: ResolveConfigOptions): ConfigLoadResult | undefined {
     const logger = getLogger();
-    const config: NormalizedConfig = {};
-
-    for (const [envVar, configField] of Object.entries(ENV_VAR_MAP)) {
-      const value = this.env[envVar];
-      if (value === undefined || value === '') continue;
-
-      const allowed = ENUM_FIELDS[configField];
-      if (allowed && !allowed.includes(value)) {
-        logger.warn(`[EnvSource] Ignoring ${envVar}: "${value}" is not one of ${allowed.join(', ')}`);
-        continue;
-      }
-
-      if (BOOLEAN_FIELDS.has(configField)) {
-        (config as Record<string, unknown>)[configField] = value === 'true' || value === '1';
-      } else if (ARRAY_FIELDS.has(configField)) {
-        (config as Record<string, unknown>)[configField] = value
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean) as string[] | AuthMethod[];
-      } else {
-        (config as Record<string, unknown>)[configField] = value;
-      }
-    }
+    const config = readEnvironmentConfig(this.env, ENV_VAR_MAP, this.name);
 
     const fields = getPopulatedFields(config);
     if (fields.length === 0) {
-      logger.trace('[EnvSource] No supported B2C environment variables found');
+      logger.trace(`[${this.name}] No supported B2C environment variables found`);
       return undefined;
     }
 
-    logger.trace({fields}, '[EnvSource] Loaded config from environment variables');
+    logger.trace({fields}, `[${this.name}] Loaded config from environment variables`);
 
-    return {config, location: 'environment variables'};
+    return {config, location: this.location};
+  }
+}
+
+/**
+ * Configuration source for Storefront Next environment variables
+ * (`PUBLIC__app__commerce__api__*`, `COMMERCE_API_SLAS_SECRET`, `PUBLIC__app__defaultSiteId`).
+ *
+ * Priority 1 (just below dw.json at 0): these values are borrowed from the
+ * storefront app, so they only fill settings that flags, toolkit variables and
+ * the selected dw.json instance leave unset. Credential pairs are still merged
+ * as a group, so a Storefront Next SLAS secret is never paired with a
+ * different source's SLAS client ID.
+ *
+ * @internal
+ */
+export class StorefrontNextEnvSource implements ConfigSource {
+  readonly name: string;
+  readonly priority = 1;
+
+  private readonly env: Record<string, string | undefined>;
+  private readonly location: string;
+
+  /**
+   * @param env - Environment object to read from. Defaults to `process.env`.
+   * @param options - Diagnostic name and location
+   */
+  constructor(env?: Record<string, string | undefined>, options: EnvSourceOptions = {}) {
+    this.env = env ?? process.env;
+    this.name = options.name ?? 'StorefrontNextEnvSource';
+    this.location = options.location ?? 'environment variables';
+  }
+
+  load(_options: ResolveConfigOptions): ConfigLoadResult | undefined {
+    const config = readEnvironmentConfig(this.env, STOREFRONT_NEXT_ENV_VAR_MAP, this.name);
+    if (getPopulatedFields(config).length === 0) return undefined;
+    return {config, location: this.location};
   }
 }

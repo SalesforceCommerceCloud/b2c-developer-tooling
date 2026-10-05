@@ -17,7 +17,7 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt env`                  | `list`, `create`, `get`, `update`, `delete`, `invalidate`, `b2c` | Manage environments                    |
 | `mrt env var`              | `list`, `set`, `push`, `delete`                                  | Manage environment variables           |
 | `mrt env redirect`         | `list`, `create`, `delete`, `clone`                              | Manage URL redirects                   |
-| `mrt env access-control`   | `list`, `create`, `get`, `delete`                               | Manage access control headers          |
+| `mrt env access-control`   | `list`                                                           | Manage access control headers          |
 | `mrt bundle`               | `deploy`, `list`, `history`, `download`                          | Manage bundles and deployments         |
 | `mrt tail-logs`            |                                                                  | Tail real-time application logs        |
 | `mrt save-credentials`     |                                                                  | Save MRT credentials to ~/.mobify      |
@@ -34,7 +34,7 @@ These flags are available on all MRT commands:
 | `--api-key`           | `MRT_API_KEY`        | MRT API key (legacy MRT Cloud API)                                                                                                                                                                                                                            |
 | `--project`, `-p`     | `MRT_PROJECT`        | MRT project slug — the SCAPI storefront ID (the same value). Aliases: `--storefront`, `-s` (interchangeable on every `mrt` command). `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` also supported. On `mrt project create`, this flag sets the new project's slug. |
 | `--environment`, `-e` | `MRT_ENVIRONMENT`    | Target environment (e.g., staging, production). `MRT_TARGET` also supported.                                                                                                                                                                                  |
-| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `auto` (default), `legacy`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends).                                                                                                                                 |
+| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `legacy` (default), `auto`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends).                                                                                                                                 |
 
 The SCAPI backend also honors the standard OAuth flags (`--client-id`, `--client-secret`, `--short-code`, `--tenant-id`, and the JWT flags). See [MRT Backends](#mrt-backends).
 
@@ -51,7 +51,7 @@ MRT commands resolve configuration in the following order of precedence:
 
 MRT commands use API key authentication against the legacy MRT Cloud API. The API key is configured in the Managed Runtime dashboard.
 
-Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), the `mrt env var` family (`list` / `set` / `push` / `delete`), and the `mrt env access-control` family (`list` / `create` / `get` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
+Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), and the `mrt env var` family (`list` / `set` / `push` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
 
 ### Getting an API Key
 
@@ -80,11 +80,11 @@ MRT is served by two backends:
 
 Select the backend with `--mrt-backend` (or `MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
 
-| Value            | Behavior                                                                                                                                                                                                                          |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `auto` (default) | Prefer SCAPI when its prerequisites are detected, otherwise use legacy. If a SCAPI request fails on a safe pre-execution error, `auto` falls back to legacy automatically (never for a 409 conflict, 429, 5xx, or network error). |
-| `legacy`         | Always use the legacy MRT Cloud API.                                                                                                                                                                                              |
-| `scapi`          | Always use SCAPI. Errors if the SCAPI prerequisites are missing — never silently falls back to legacy.                                                                                                                            |
+| Value              | Behavior                                                                                                                                                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `legacy` (default) | Always use the legacy MRT Cloud API.                                                                                                                                                                                              |
+| `auto`             | Prefer SCAPI when its prerequisites are detected, otherwise use legacy. If a SCAPI request fails on a safe pre-execution error, `auto` falls back to legacy automatically (never for a 409 conflict, 429, 5xx, or network error). |
+| `scapi`            | Always use SCAPI. Errors if the SCAPI prerequisites are missing — never silently falls back to legacy.                                                                                                                            |
 
 ### SCAPI-supported commands
 
@@ -629,8 +629,6 @@ b2c mrt env redirect clone -p my-storefront --from staging --to production --for
 
 ## Access Control Commands
 
-The `mrt env access-control` commands (`list` / `create` / `get` / `delete`) are [backend-aware](#mrt-backends): they honor `--mrt-backend` and, over SCAPI, use the Storefront Environments API (scopes `sfcc.storefront.environments` for reads, `sfcc.storefront.environments.rw` for writes). Header values are always masked by both backends — the CLI never displays or reconstructs the plaintext value. Under `--json`, each command returns the serving backend's native shape (see [JSON output is backend-specific](#json-output-is-backend-specific)).
-
 ### b2c mrt env access-control list
 
 List access control headers for an environment.
@@ -638,40 +636,6 @@ List access control headers for an environment.
 ```bash
 b2c mrt env access-control list -p my-storefront -e staging
 b2c mrt env access-control list -p my-storefront -e staging --json
-
-# Force the SCAPI backend
-b2c mrt env access-control list -p my-storefront -e staging --mrt-backend scapi
-```
-
-### b2c mrt env access-control create
-
-Create an access control header. The value is passed as a positional argument.
-
-```bash
-b2c mrt env access-control create my-secret-header-value -p my-storefront -e production
-
-# Force the SCAPI backend
-b2c mrt env access-control create my-secret-header-value -p my-storefront -e production --mrt-backend scapi
-```
-
-### b2c mrt env access-control get
-
-Get a single access control header by its ID (UUID).
-
-```bash
-b2c mrt env access-control get ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production
-b2c mrt env access-control get ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --json
-```
-
-### b2c mrt env access-control delete
-
-Delete an access control header by its ID (UUID).
-
-```bash
-b2c mrt env access-control delete ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production
-
-# Force the SCAPI backend
-b2c mrt env access-control delete ff832a9e-0e55-11ef-8f23-0242ac110002 -p my-storefront -e production --mrt-backend scapi
 ```
 
 ---

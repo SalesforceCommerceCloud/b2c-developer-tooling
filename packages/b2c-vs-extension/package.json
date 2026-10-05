@@ -908,7 +908,7 @@
       },
       {
         "command": "b2c-dx.instance.inspect",
-        "title": "B2C Instance Config",
+        "title": "Inspect Resolved Config",
         "category": "B2C DX"
       },
       {
@@ -924,6 +924,11 @@
       {
         "command": "b2c-dx.instance.followDefault",
         "title": "Follow Default Instance",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.envFile.select",
+        "title": "Select Env File",
         "category": "B2C DX"
       },
       {
@@ -1260,11 +1265,6 @@
         "category": "B2C DX - Getting Started"
       },
       {
-        "command": "b2c-dx.walkthrough.inspectSetup",
-        "title": "Inspect Resolved Config (b2c setup inspect)",
-        "category": "B2C DX - Getting Started"
-      },
-      {
         "command": "b2c-dx.setup.connection",
         "title": "Setup · Connection (instance + hostname)",
         "category": "B2C DX - Getting Started"
@@ -1367,7 +1367,7 @@
           {
             "id": "configure-instance",
             "title": "Phase 2 · Configure your instance",
-            "description": "Run the configuration wizard. Non-secret fields (hostname, code-version, short-code, tenant-id, mrtProject, mrtEnvironment) go into `dw.json`; secret pairs (OAuth `client-id`+`client-secret`, Basic `username`+`password`, MRT API key) are placed independently — Keychain, `pass`, env vars, or dw.json — per the documented Credential Grouping rule.\n\n[Run setup wizard](command:b2c-dx.walkthrough.chooseCredentialStorage) · [Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) · [Create dw.json (manual)](command:b2c-dx.walkthrough.createDwJson)",
+            "description": "Run the configuration wizard. Non-secret fields (hostname, code-version, short-code, tenant-id, mrtProject, mrtEnvironment) go into `dw.json`; secret pairs (OAuth `client-id`+`client-secret`, Basic `username`+`password`, MRT API key) are placed independently — Keychain, `pass`, env vars, or dw.json — per the documented Credential Grouping rule.\n\n[Run setup wizard](command:b2c-dx.walkthrough.chooseCredentialStorage) · [Inspect resolved config](command:b2c-dx.instance.inspect) · [Create dw.json (manual)](command:b2c-dx.walkthrough.createDwJson)",
             "media": {
               "markdown": "media/walkthrough/dw-json-setup.md"
             },
@@ -1381,7 +1381,7 @@
           {
             "id": "connect",
             "title": "Phase 3 · Connect & authenticate",
-            "description": "Verify your config resolves and the extension can reach your instance. The selected instance shows in the status bar (bottom-left).\n\nOAuth fields (`client-id`, `client-secret`, `short-code`) unlock the Sandbox Explorer and API Browser; basic auth (`username`, `password`) is enough for WebDAV and cartridge deploys.\n\n[Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) — runs `b2c setup inspect` and shows where each value came from (file / env / keychain).\n\n[Inspect selected instance](command:b2c-dx.instance.inspect) · [Open Realm Explorer](command:workbench.view.extension.b2c-dx-sandboxes)",
+            "description": "Verify your config resolves and the extension can reach your instance. The selected instance shows in the status bar (bottom-left).\n\nOAuth fields (`client-id`, `client-secret`, `short-code`) unlock the Sandbox Explorer and API Browser; basic auth (`username`, `password`) is enough for WebDAV and cartridge deploys.\n\n[Inspect resolved config](command:b2c-dx.instance.inspect) shows where each value came from (dw.json, env file, environment, keychain).\n\n[Open Realm Explorer](command:workbench.view.extension.b2c-dx-sandboxes)",
             "media": {
               "markdown": "media/walkthrough/oauth-setup.md"
             },
@@ -1955,10 +1955,6 @@
         },
         {
           "command": "b2c-dx.walkthrough.chooseCredentialStorage",
-          "when": "config.b2c-dx.features.onboarding"
-        },
-        {
-          "command": "b2c-dx.walkthrough.inspectSetup",
           "when": "config.b2c-dx.features.onboarding"
         },
         {

@@ -71,10 +71,14 @@ export function createLiveScapiDocument(
   };
 }
 
-/** Bundled contracts with live contracts replacing any with the same id. */
-export function mergeScapiSchemas(bundled: ScapiSchemaDocument[], live: ScapiSchemaDocument[]): ScapiSchemaDocument[] {
+/** Bundled contracts, replaced by live contracts, replaced by local contracts with the same id. */
+export function mergeScapiSchemas(
+  bundled: readonly ScapiSchemaDocument[],
+  live: readonly ScapiSchemaDocument[],
+  local: readonly ScapiSchemaDocument[] = [],
+): ScapiSchemaDocument[] {
   const byId = new Map(bundled.map((document) => [document.entry.id, document]));
-  for (const document of live) byId.set(document.entry.id, document);
+  for (const document of [...live, ...local]) byId.set(document.entry.id, document);
   return [...byId.values()];
 }
 

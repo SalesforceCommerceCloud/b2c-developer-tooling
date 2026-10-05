@@ -16,6 +16,7 @@ import {
   createScapiAuth,
   loadScapiSnippets,
   saveScapiSnippet,
+  type ScapiSchemaDocument,
 } from '@salesforce/b2c-tooling-sdk/scapi';
 import {toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
 import {getB2CConfigDirectory} from '@salesforce/b2c-tooling-sdk/config';
@@ -83,7 +84,10 @@ export function createScapiCodeTools(
   registry = new ScapiExecutionRegistry(),
   schemaCache = new ScapiLiveSchemaCache(),
   shopperSessions = new ScapiShopperSessions(),
+  localSchemas: readonly ScapiSchemaDocument[] = [],
 ): McpTool[] {
+  // Developer-supplied contracts (--scapi-schemas) replace bundled and live ones with the same id.
+  const local = (api?: string) => localSchemas.filter((document) => !api || document.entry.id === api);
   // Retain only source for the last 50 completed executions, until this server ends.
   const executions = new Map<string, string>();
   const searchInput = {
@@ -156,10 +160,13 @@ export function createScapiCodeTools(
               refresh: input.refresh,
               signal: context?.signal,
             }));
+            documents = mergeScapiSchemas([], documents, local(input.api));
             if (documents.length === 0 && failures.length === 0)
               throw new Error('Unknown schema ID for this tenant. Omit api to discover available APIs.');
           } else {
-            documents = loadScapiSchemas().filter((document) => !input.api || document.entry.id === input.api);
+            documents = mergeScapiSchemas(loadScapiSchemas(), [], local()).filter(
+              (document) => !input.api || document.entry.id === input.api,
+            );
             if (documents.length === 0)
               throw new Error(
                 'Unknown schema ID. Omit api to discover available APIs, or use schemas:"live" for tenant and custom APIs.',
@@ -240,8 +247,9 @@ export function createScapiCodeTools(
                   slasClientId: config.values.slasClientId,
                   slasClientSecret: config.values.slasClientSecret,
                 }),
-                // Live contracts discovered for this tenant replace bundled ones; the user owns their accuracy.
-                documents: mergeScapiSchemas(loadScapiSchemas(), tenant ? schemaCache.get(tenant) : []),
+                // Live contracts discovered for this tenant replace bundled ones, and local ones replace both;
+                // the user owns their accuracy.
+                documents: mergeScapiSchemas(loadScapiSchemas(), tenant ? schemaCache.get(tenant) : [], localSchemas),
                 onSchema(document, customProperties) {
                   // Keep expanded tenant contracts from being replaced by unexpanded fetches.
                   if (tenant && (customProperties || document.entry.apiFamily === 'custom'))

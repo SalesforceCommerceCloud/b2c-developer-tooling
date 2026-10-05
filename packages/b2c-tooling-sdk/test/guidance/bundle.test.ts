@@ -14,8 +14,13 @@ describe('guidance bundler', () => {
   let repoRoot: string;
   let destination: string;
 
-  function writeSkill(name: string, body = '# Skill\n', frontmatter = `name: ${name}\ndescription: ${name} skill`) {
-    const dir = join(repoRoot, 'skills/demo/skills', name);
+  function writeSkill(
+    name: string,
+    body = '# Skill\n',
+    frontmatter = `name: ${name}\ndescription: ${name} skill`,
+    plugin = 'demo',
+  ) {
+    const dir = join(repoRoot, 'skills', plugin, 'skills', name);
     mkdirSync(join(dir, 'references'), {recursive: true});
     writeFileSync(join(dir, 'SKILL.md'), `---\n${frontmatter}\n---\n${body}`);
     writeFileSync(join(dir, 'references/extra.md'), '# Extra\n');
@@ -34,7 +39,8 @@ describe('guidance bundler', () => {
     repoRoot = mkdtempSync(join(tmpdir(), 'b2c-bundle-'));
     destination = join(repoRoot, 'out');
     mkdirSync(join(repoRoot, 'skills'), {recursive: true});
-    writeFileSync(join(repoRoot, 'skills/plugins.json'), JSON.stringify({plugins: [{name: 'demo'}]}));
+    writeFileSync(join(repoRoot, 'skills/plugins.json'), JSON.stringify({plugins: [{name: 'demo'}, {name: 'other'}]}));
+    mkdirSync(join(repoRoot, 'skills/other/skills'), {recursive: true});
   });
 
   afterEach(() => {
@@ -82,6 +88,24 @@ describe('guidance bundler', () => {
 
     expect(() => bundle()).to.throw('Unknown skill URI skill://other/gamma/SKILL.md');
     expect(bundle(false).entries).to.equal(1);
+  });
+
+  it('resolves <plugin>:<skill> references across bundled and unbundled plugins', () => {
+    writeSkill('gamma', '# Gamma\n', undefined, 'other');
+    writeSkill('alpha', '# Alpha\n\nUse other:gamma, then demo:alpha.\n');
+    expect(bundle().entries).to.equal(1);
+
+    writeSkill('alpha', '# Alpha\n\nUse other:missing.\n');
+    expect(() => bundle()).to.throw('Unknown skill other:missing in demo/alpha/SKILL.md');
+  });
+
+  it('validates skills in plugins that are not bundled', () => {
+    writeSkill('alpha');
+    writeSkill('gamma', '# Gamma\n\nSee [x](../alpha/SKILL.md).\n', undefined, 'other');
+    expect(() => bundle()).to.throw('other/gamma/SKILL.md must resolve to a file in the same skill');
+
+    writeSkill('gamma', '# Gamma\n', 'name: wrong\ndescription: mismatched', 'other');
+    expect(() => bundle()).to.throw('must equal its directory');
   });
 
   it('preserves the previous bundle when validation fails', () => {

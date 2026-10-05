@@ -55,7 +55,7 @@ const MRT_STATUS_URL = 'https://status.salesforce.com/instances/MANAGEDRUNTIMEAD
  * 4. Default: https://cloud.mobify.com
  *
  * Backend selection:
- * - `--mrt-backend` flag > `MRT_BACKEND` env (`SFCC_MRT_BACKEND` also supported) > `mrtBackend` dw.json > `auto`.
+ * - `--mrt-backend` flag > `MRT_BACKEND` env (`SFCC_MRT_BACKEND` also supported) > `mrtBackend` dw.json > `legacy`.
  */
 export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<T> {
   static baseFlags = {
@@ -95,7 +95,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       env: 'MRT_CREDENTIALS_FILE',
     }),
     'mrt-backend': Flags.option({
-      description: 'MRT backend: auto (prefer SCAPI MRT when configured, else legacy), legacy, or scapi',
+      description: 'MRT backend: legacy (default), auto (prefer SCAPI MRT when configured, else legacy), or scapi',
       options: ['auto', 'legacy', 'scapi'] as const,
       env: 'MRT_BACKEND',
       // MRT_BACKEND is the primary env var (validated by oclif against `options`).
@@ -157,9 +157,9 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     return loadConfig(flagConfig, options);
   }
 
-  /** Resolved `--mrt-backend` preference (default `'auto'`). */
+  /** Resolved `--mrt-backend` preference (default `'legacy'`). */
   protected get mrtBackendPreference(): 'auto' | 'legacy' | 'scapi' {
-    return this.resolvedConfig.values.mrtBackend ?? 'auto';
+    return this.resolvedConfig.values.mrtBackend ?? 'legacy';
   }
 
   /**
@@ -287,9 +287,8 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
    * Whether this command implements the SCAPI MRT backend. Defaults to `false`;
    * the supported commands (`mrt bundle history`, `mrt bundle list`,
    * `mrt bundle deploy` — both the local-build push and `<bundleId>` deploy —
-   * the `mrt env var` family: `list`, `set`, `delete`, `push`, and the
-   * `mrt env access-control` family: `list`, `create`, `get`, `delete`) override
-   * it to `true`. Used by {@link init} to reject an explicit `--mrt-backend scapi`
+   * and the `mrt env var` family: `list`, `set`, `delete`, `push`) override it
+   * to `true`. Used by {@link init} to reject an explicit `--mrt-backend scapi`
    * on commands that would otherwise silently fall back to legacy — an explicit
    * SCAPI request must never be quietly downgraded.
    */
@@ -305,8 +304,8 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     if (!this.supportsScapiMrt() && this.mrtBackendPreference === 'scapi') {
       this.error(
         '--mrt-backend scapi is not supported by this command yet. The SCAPI MRT backend currently supports ' +
-          '"mrt bundle history", "mrt bundle list", "mrt bundle deploy", "mrt env var" (list/set/delete/push), and ' +
-          '"mrt env access-control" (list/create/get/delete). Re-run with --mrt-backend legacy or auto.',
+          '"mrt bundle history", "mrt bundle list", "mrt bundle deploy", and "mrt env var" (list/set/delete/push). ' +
+          'Re-run with --mrt-backend legacy or auto.',
       );
     }
   }

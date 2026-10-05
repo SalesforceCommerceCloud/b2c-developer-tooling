@@ -12,6 +12,8 @@ import {
   createCustomApisClient,
   toOrganizationId,
   normalizeTenantId,
+  tenantIdFromSandboxHostname,
+  sandboxHostnameFromTenantId,
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
@@ -329,6 +331,37 @@ describe('clients/custom-apis', () => {
     });
   });
 
+  describe('tenantIdFromSandboxHostname', () => {
+    it('derives the tenant from sandbox hostnames', () => {
+      expect(tenantIdFromSandboxHostname('zzpq-013.dx.commercecloud.salesforce.com')).to.equal('zzpq_013');
+      expect(tenantIdFromSandboxHostname('BJGK-005.dx.commercecloud.salesforce.com')).to.equal('bjgk_005');
+      expect(tenantIdFromSandboxHostname('zzpq-019.sandbox.us03.dx.commercecloud.salesforce.com')).to.equal('zzpq_019');
+    });
+
+    it('returns undefined for other hostnames', () => {
+      expect(tenantIdFromSandboxHostname('staging-realm-customer.demandware.net')).to.be.undefined;
+      expect(tenantIdFromSandboxHostname('zzpq-013.example.com')).to.be.undefined;
+      expect(tenantIdFromSandboxHostname('zzpq-prd.dx.commercecloud.salesforce.com')).to.be.undefined;
+      expect(tenantIdFromSandboxHostname('zzpq-013.dx.commercecloud.salesforce.com.evil.com')).to.be.undefined;
+    });
+  });
+
+  describe('sandboxHostnameFromTenantId', () => {
+    it('derives the hostname from sandbox tenant and organization IDs', () => {
+      const hostname = 'bjgk-005.dx.commercecloud.salesforce.com';
+      expect(sandboxHostnameFromTenantId('bjgk_005')).to.equal(hostname);
+      expect(sandboxHostnameFromTenantId('f_ecom_bjgk_005')).to.equal(hostname);
+      expect(sandboxHostnameFromTenantId('BJGK-005')).to.equal(hostname);
+    });
+
+    it('returns undefined for other tenant IDs', () => {
+      expect(sandboxHostnameFromTenantId('zzxy_prd')).to.be.undefined;
+      expect(sandboxHostnameFromTenantId('zzxy_stg')).to.be.undefined;
+      expect(sandboxHostnameFromTenantId('abc_005')).to.be.undefined;
+      expect(sandboxHostnameFromTenantId('staging-realm-customer.demandware.net')).to.be.undefined;
+    });
+  });
+
   describe('normalizeTenantId', () => {
     it('returns canonical tenant ID unchanged', () => {
       expect(normalizeTenantId('abcd_123')).to.equal('abcd_123');
@@ -348,6 +381,13 @@ describe('clients/custom-apis', () => {
 
     it('extracts tenant from hostname', () => {
       expect(normalizeTenantId('abcd-123.dx.commercecloud.salesforce.com')).to.equal('abcd_123');
+    });
+
+    it('returns non-sandbox hostnames unchanged', () => {
+      expect(normalizeTenantId('staging-realm-customer.demandware.net')).to.equal(
+        'staging-realm-customer.demandware.net',
+      );
+      expect(normalizeTenantId(' abcd-123.example.com ')).to.equal('abcd-123.example.com');
     });
 
     it('trims whitespace', () => {

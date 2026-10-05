@@ -167,8 +167,20 @@ export {
 export type {B2CSettings, B2CSettingsPathOptions} from './settings.js';
 
 // Project-scoped environment loading
-export {mergeProjectEnvironment, readProjectEnvironment} from './project-environment.js';
+export {
+  ENV_FILE_ENV_VAR,
+  applyEnvFile,
+  loadEnvFileForArgv,
+  mergeProjectEnvironment,
+  preloadEnvFile,
+  readEnvFile,
+  readProjectEnvironment,
+  resolveEnvFilePath,
+  takePreloadedEnvFile,
+} from './project-environment.js';
+export type {EnvFileSelectionOptions, LoadedEnvFile} from './project-environment.js';
 
 // Config sources (for direct use)
 export {DwJsonSource} from './sources/dw-json-source.js';
-export {EnvSource} from './sources/env-source.js';
+export {EnvSource, StorefrontNextEnvSource, STOREFRONT_NEXT_ENV_VAR_MAP} from './sources/env-source.js';
+export type {EnvSourceOptions} from './sources/env-source.js';

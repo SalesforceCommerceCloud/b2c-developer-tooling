@@ -53,7 +53,7 @@ These flags are available on all metrics commands.
 
 | Flag                  | Environment Variable     | Description                                                                 |
 | --------------------- | ------------------------ | --------------------------------------------------------------------------- |
-| `--config`            | `SFCC_CONFIG`            | Path to config file (in `dw.json` format; defaults to `./dw.json`)          |
+| `--config`            | `SFCC_CONFIG`            | Path to config file (in `dw.json` format; defaults to `./dw.json`; empty for none) |
 | `-i`, `--instance`    | `SFCC_INSTANCE`          | Instance name from configuration file (e.g. `dw.json`)                      |
 | `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Project directory                                                           |
 | `-L`, `--lang`        |                          | Language for messages (e.g., `en`, `de`). Also respects `LANGUAGE` env var  |

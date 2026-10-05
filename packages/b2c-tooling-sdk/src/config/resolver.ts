@@ -12,7 +12,7 @@
  * @module config/resolver
  */
 import type {AuthCredentials} from '../auth/types.js';
-import {normalizeTenantId} from '../clients/custom-apis.js';
+import {normalizeTenantId, sandboxHostnameFromTenantId, tenantIdFromSandboxHostname} from '../clients/custom-apis.js';
 import type {B2CInstance} from '../instance/index.js';
 import {getLogger} from '../logging/logger.js';
 import {
@@ -20,6 +20,7 @@ import {
   getPopulatedFields,
   createInstanceFromConfig,
   normalizeOriginUrl,
+  isSameHostname,
 } from './mapping.js';
 import {DwJsonSource, MobifySource, PackageJsonSource} from './sources/index.js';
 import type {
@@ -172,6 +173,8 @@ export class ConfigResolver {
     const sourceWarnings: ConfigWarning[] = [];
     const baseConfig: NormalizedConfig = {};
     const hostnameProtection = options.hostnameProtection !== false;
+    // Name of the source that set baseConfig.hostname (for mismatch messages)
+    let hostnameSourceName: string | undefined;
 
     // Create enriched options that will be updated with accumulated config values.
     // This allows later sources (like plugins) to use values discovered by earlier sources (like dw.json).
@@ -220,21 +223,26 @@ export class ConfigResolver {
         }
         if (fields.length > 0) {
           // Early hostname mismatch detection: if this source provides a hostname
-          // that conflicts with the override, skip this source entirely.
-          // This prevents instance-bound sources from blocking fields in later
+          // that conflicts with the override or with a higher-priority source,
+          // skip this source entirely. Its values belong to a different instance.
+          // This also prevents instance-bound sources from blocking fields in later
           // non-instance-bound sources (e.g., password-store providing shortCode).
+          const establishedHostname = overrides.hostname ?? baseConfig.hostname;
           if (
             hostnameProtection &&
-            overrides.hostname &&
+            establishedHostname &&
             sourceConfig.hostname &&
-            sourceConfig.hostname !== overrides.hostname
+            !isSameHostname(sourceConfig.hostname, establishedHostname)
           ) {
             sourceWarnings.push({
               code: 'HOSTNAME_MISMATCH',
-              message: `Server override "${overrides.hostname}" differs from config file "${sourceConfig.hostname}". Config file values ignored.`,
+              message: overrides.hostname
+                ? `Server override "${overrides.hostname}" differs from config file "${sourceConfig.hostname}". Config file values ignored.`
+                : `Hostname "${establishedHostname}" from ${hostnameSourceName} differs from ${source.name} hostname "${sourceConfig.hostname}". ${source.name} values ignored.`,
               details: {
-                providedHostname: overrides.hostname,
+                providedHostname: establishedHostname,
                 configHostname: sourceConfig.hostname,
+                source: source.name,
               },
             });
 
@@ -286,6 +294,7 @@ export class ConfigResolver {
             }
 
             (baseConfig as Record<string, unknown>)[key] = value;
+            if (fieldKey === 'hostname') hostnameSourceName = source.name;
           }
 
           sourceInfos.push({
@@ -341,6 +350,42 @@ export class ConfigResolver {
     // full SCAPI organization ID (for example, Storefront Next configuration).
     if (config.tenantId) {
       config.tenantId = normalizeTenantId(config.tenantId);
+    }
+
+    // Sandbox tenant IDs determine the hostname, so a configuration with only a
+    // tenant (for example a Storefront Next organization ID) still reaches the
+    // instance. Other tenants are ambiguous and never derive a hostname.
+    if (!config.hostname && config.tenantId) {
+      const sandboxHostname = sandboxHostnameFromTenantId(config.tenantId);
+      if (sandboxHostname) {
+        config.hostname = sandboxHostname;
+        sourceInfos.push({
+          name: 'SandboxTenantId',
+          location: `derived from tenant ID ${config.tenantId}`,
+          fields: ['hostname'],
+        });
+      }
+    }
+
+    // Sandbox hostnames encode the tenant ID. Fill it in when nothing configured
+    // it, and flag a configured tenant that contradicts the sandbox hostname.
+    // Other hostnames are ambiguous, so they never derive or warn.
+    const sandboxTenantId = config.hostname ? tenantIdFromSandboxHostname(config.hostname) : undefined;
+    if (sandboxTenantId) {
+      if (!config.tenantId) {
+        config.tenantId = sandboxTenantId;
+        sourceInfos.push({
+          name: 'SandboxHostname',
+          location: `derived from hostname ${config.hostname}`,
+          fields: ['tenantId'],
+        });
+      } else if (config.tenantId.toLowerCase() !== sandboxTenantId) {
+        sourceWarnings.push({
+          code: 'TENANT_MISMATCH',
+          message: `Tenant ID "${config.tenantId}" does not match sandbox hostname "${config.hostname}" (tenant "${sandboxTenantId}").`,
+          details: {tenantId: config.tenantId, hostname: config.hostname, hostnameTenantId: sandboxTenantId},
+        });
+      }
     }
 
     // Combine source warnings with merge warnings

@@ -22,8 +22,13 @@ import type {
 } from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
-/** Select the explicit, project-local, or global-default dw.json path. */
+/**
+ * Select the explicit, project-local, or global-default dw.json path.
+ *
+ * @throws Error if an empty config path selected no dw.json
+ */
 function selectConfigPath(options: ResolveConfigOptions): string | undefined {
+  if (options.configPath === '') throw new Error('No dw.json is selected (empty config path).');
   if (options.configPath) return options.configPath;
 
   const projectConfigPath = path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json');
@@ -32,11 +37,23 @@ function selectConfigPath(options: ResolveConfigOptions): string | undefined {
   return options.defaultConfigPath;
 }
 
-/** Select the ordered files that contribute instances to the effective catalog. */
+/**
+ * Select the ordered files that contribute instances to the effective catalog.
+ *
+ * An explicit config path is exact: it is the only file used, without the
+ * global default. An empty config path selects no dw.json at all. A discovered
+ * project dw.json is still supplemented by the global default.
+ */
 function selectConfigPaths(options: ResolveConfigOptions): string[] {
+  if (options.configPath === '') return [];
+  if (options.configPath !== undefined) {
+    const explicitPath = path.resolve(options.configPath);
+    return existsSync(explicitPath) ? [explicitPath] : [];
+  }
+
   const paths: string[] = [];
   const primaryPath = path.resolve(
-    options.configPath ?? path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json'),
+    path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json'),
   );
 
   if (existsSync(primaryPath)) paths.push(primaryPath);
@@ -153,6 +170,11 @@ export class DwJsonSource implements ConfigSource {
    */
   async load(options: ResolveConfigOptions): Promise<ConfigLoadResult | undefined> {
     const logger = getLogger();
+
+    // Reported as a SOURCE_ERROR warning; an explicit path never falls back to another file.
+    if (options.configPath && !existsSync(path.resolve(options.configPath))) {
+      throw new Error(`Config file not found: ${path.resolve(options.configPath)}`);
+    }
 
     const configPaths = selectConfigPaths(options);
     let result: Awaited<ReturnType<typeof loadDwJson>>;

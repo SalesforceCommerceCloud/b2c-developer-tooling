@@ -327,16 +327,6 @@ export {
   createAccessControlHeader,
   getAccessControlHeader,
   deleteAccessControlHeader,
-  getAccessControlHeadersScapi,
-  createAccessControlHeaderScapi,
-  getAccessControlHeaderScapi,
-  deleteAccessControlHeaderScapi,
-  listAccessControlHeadersWithBackend,
-  createAccessControlHeaderWithBackend,
-  getAccessControlHeaderWithBackend,
-  deleteAccessControlHeaderWithBackend,
-  normalizeLegacyAccessControlHeader,
-  normalizeAccessControlHeaderScapi,
 } from './access-control.js';
 export type {
   ListAccessControlHeadersOptions,
@@ -345,15 +335,6 @@ export type {
   GetAccessControlHeaderOptions,
   DeleteAccessControlHeaderOptions,
   MrtAccessControlHeader,
-  MrtAccessControlHeaderView,
-  MrtAccessControlHeadersView,
-  MrtAccessControlHeaderResult,
-  MrtAccessControlWriteResult,
-  AccessControlBackendOptions,
-  ListAccessControlHeadersBackendOptions,
-  CreateAccessControlHeaderBackendOptions,
-  GetAccessControlHeaderBackendOptions,
-  DeleteAccessControlHeaderBackendOptions,
 } from './access-control.js';
 
 // Cache operations
