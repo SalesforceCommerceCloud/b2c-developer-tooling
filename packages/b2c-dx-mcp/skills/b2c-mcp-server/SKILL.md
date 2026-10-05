@@ -99,7 +99,9 @@ Use a skill's listed name or URI; do not derive names from the server name.
 Relative links resolve against the linking skill's directory.
 Skills cite documentation IDs as `b2c docs read <id>` or `docs_read({query: "<id>"})`;
 read them with `docs_read({query: "<id>"})` (no terminal needed). Online links
-point to the same pages as Markdown.
+point to the same pages as Markdown. Doc IDs are lookup keys: when citing
+sources to the user, link the doc's `url` from `docs_read`, unless they ask for
+IDs or Markdown links (`sourceUrl`).
 Result `skillReferences` point to optional detail for observed conditions:
 read the URI, or pass its URI and `section` to `skills_read`. Skills are
 directory-agnostic.

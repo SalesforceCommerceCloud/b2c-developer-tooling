@@ -45,7 +45,8 @@ export function createDocsReadTool(
       openWorld: true,
       description:
         'Read a B2C Commerce (SFCC/Demandware) Script API reference, job step, developer guide, admin/merchant help article, or tooling doc by ID or fuzzy query. ' +
-        'Use docs_search to find IDs.' +
+        'Use docs_search to find IDs. ' +
+        'Cite docs by entry.url, not ID, unless asked for IDs or Markdown links (entry.sourceUrl).' +
         enabledCategoriesNote(enabledCategories),
       toolsets: [...TOOLSETS],
       inputSchema: {

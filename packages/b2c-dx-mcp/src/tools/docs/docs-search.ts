@@ -89,7 +89,8 @@ export function createDocsSearchTool(
       openWorld: false,
       description:
         'Search B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
-        'Use for natural-language queries or unknown IDs; call docs_read with a result ID.' +
+        'Use for natural-language queries or unknown IDs; call docs_read with a result ID. ' +
+        'Cite via docs_read url, not result IDs.' +
         enabledCategoriesNote(enabledCategories) +
         detectedWorkspaceNote(detectedWorkspaces),
       toolsets: [...TOOLSETS],
