@@ -164,15 +164,54 @@ for (const entry of manifest.entries) {
   names.set(entry.title, entry.id);
 }
 
+// Every released plugin ships as installable skills, bundled or not: validate unbundled plugins
+// by the same rules and collect skill names so `<plugin>:<skill>` references resolve.
+type SkillSource = {id: string; files: string[]; content: Map<string, string>};
+const skillSources: SkillSource[] = manifest.entries.map((entry) => ({
+  id: entry.id,
+  files: entry.files.map((file) => file.path),
+  content: new Map(entry.files.map(({path}) => [path, contentFiles.get(`${entry.id}/${path}`)!.toString('utf8')])),
+}));
+const bundledPlugins = new Set(config.collections.map((collection) => collection.plugin).filter(Boolean));
+const pluginSkills = new Map<string, Set<string>>();
+for (const {name: plugin} of plugins.plugins) {
+  const source = join(repoRoot, 'skills', plugin, 'skills');
+  const folders = readdirSync(source, {withFileTypes: true}).filter(
+    (folder) => folder.isDirectory() && !folder.name.startsWith('.'),
+  );
+  pluginSkills.set(plugin, new Set(folders.map((folder) => folder.name)));
+  if (bundledPlugins.has(plugin)) continue;
+  for (const folder of folders) {
+    const id = `${plugin}/${folder.name}`;
+    const root = join(source, folder.name);
+    const files = markdownFiles(root);
+    if (!files.includes('SKILL.md')) throw new Error(`Missing SKILL.md: ${root}`);
+    const content = new Map<string, string>();
+    for (const file of files) {
+      const bytes = readFileSync(join(root, file));
+      if (bytes.length > GUIDANCE_MAX_FILE_BYTES) {
+        throw new Error(`Skill file exceeds 64 KiB: ${id}/${file}. Split it into focused references.`);
+      }
+      content.set(file, bytes.toString('utf8'));
+    }
+    skillFrontmatter(content.get('SKILL.md')!, folder.name, id);
+    skillSources.push({id, files, content});
+  }
+}
+
 // Skills install and serve independently: relative links stay inside the skill,
 // other skills are referenced by name or skill:// URI, and tooling docs use Markdown URLs.
 const bundled = new Set([...contentFiles.keys()].map((file) => `skill://${file}`));
-for (const entry of manifest.entries) {
-  for (const {path} of entry.files) {
-    const where = `${entry.id}/${path}`;
-    const content = contentFiles.get(where)!.toString('utf8');
+const pluginNames = [...pluginSkills.keys()].sort((a, b) => b.length - a.length);
+const skillReference = new RegExp(`(?<![\\w/@.-])(${pluginNames.join('|')}):([a-z0-9][a-z0-9-]*)`, 'g');
+for (const source of skillSources) {
+  for (const [path, content] of source.content) {
+    const where = `${source.id}/${path}`;
     for (const [uri] of content.matchAll(/skill:\/\/[\w./-]*\w/g)) {
       if (uri !== 'skill://index' && !bundled.has(uri)) throw new Error(`Unknown skill URI ${uri} in ${where}`);
+    }
+    for (const [reference, plugin, skill] of content.matchAll(skillReference)) {
+      if (!pluginSkills.get(plugin)!.has(skill)) throw new Error(`Unknown skill ${reference} in ${where}`);
     }
     for (const target of markdownLinks(content)) {
       const [location] = target.split('#');
@@ -184,7 +223,7 @@ for (const entry of manifest.entries) {
         }
       } else if (!/^[a-z][a-z0-9+.-]*:/i.test(location)) {
         const resolved = posix.normalize(posix.join(posix.dirname(path), location));
-        if (resolved.startsWith('../') || !entry.files.some((file) => file.path === resolved)) {
+        if (resolved.startsWith('../') || !source.files.includes(resolved)) {
           throw new Error(
             `Relative link ${target} in ${where} must resolve to a file in the same skill; reference other skills by name`,
           );
