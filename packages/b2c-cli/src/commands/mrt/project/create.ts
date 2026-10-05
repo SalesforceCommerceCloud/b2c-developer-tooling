@@ -41,6 +41,12 @@ const SSR_REGIONS = [
 
 type SsrRegion = (typeof SSR_REGIONS)[number];
 
+// Mirrors the SCAPI Storefronts `StorefrontCreateType` enum, which currently
+// allows only `storefront_next`: "Only `storefront_next` is currently supported
+// by the create-new-storefront flow." The broader `StorefrontType` enum
+// (`pwa_kit`, `headless`, `unknown`) describes *existing* storefronts for
+// read/categorization and is not accepted on create, so we deliberately do not
+// expose those here — passing one would be rejected by the gateway.
 const STOREFRONT_TYPES = ['storefront_next'] as const;
 
 type StorefrontCreateType = (typeof STOREFRONT_TYPES)[number];
