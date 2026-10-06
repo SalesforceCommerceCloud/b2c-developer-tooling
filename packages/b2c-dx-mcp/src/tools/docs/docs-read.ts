@@ -11,7 +11,7 @@ import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, errorResult, jsonResult} from '../adapter.js';
-import {enabledCategoriesNote} from './topics.js';
+import {DOCS_CITATION_NOTE, enabledCategoriesNote} from './topics.js';
 import {workspaceInputSchema, resolveProjectWorkspace, type WorkspaceContextInput} from './storefront.js';
 
 /** Default maximum characters of content returned per read call, to bound the inline payload. */
@@ -24,6 +24,7 @@ interface ReadInput extends WorkspaceContextInput {
 }
 
 interface ReadOutput {
+  citation: string;
   content: string;
   entry: DocEntry;
   totalLength: number;
@@ -46,7 +47,7 @@ export function createDocsReadTool(
       description:
         'Read a B2C Commerce (SFCC/Demandware) Script API reference, job step, developer guide, admin/merchant help article, or tooling doc by ID or fuzzy query. ' +
         'Use docs_search to find IDs. ' +
-        'Cite docs by entry.url, not ID, unless asked for IDs or Markdown links (entry.sourceUrl).' +
+        'Cite by entry.url (sourceUrl for Markdown); never show doc IDs.' +
         enabledCategoriesNote(enabledCategories),
       toolsets: [...TOOLSETS],
       inputSchema: {
@@ -83,6 +84,7 @@ export function createDocsReadTool(
         const end = offset + slice.length;
         const truncated = end < totalLength;
         return {
+          citation: DOCS_CITATION_NOTE,
           entry: found.entry,
           content: slice,
           totalLength,
