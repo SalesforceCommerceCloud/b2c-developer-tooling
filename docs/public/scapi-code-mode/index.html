@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>B2C MCP: tools, documentation, skills and code mode</title>
+<style>
+  :root {
+    --bg: #0b1020; --bg2: #121a33; --card: #172243; --line: #2a3a6b;
+    --text: #e8ecf8; --dim: #9fb0d9; --teal: #4fd1c5; --amber: #f6ad55;
+    --red: #fc8181; --green: #68d391; --violet: #b794f4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  main { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+  .slide { height: 100vh; scroll-snap-align: start; padding: 5vh 7vw 6vh; display: flex; flex-direction: column;
+    justify-content: center; position: relative; border-bottom: 1px solid #0000;
+    background: radial-gradient(1200px 600px at 85% -10%, #1b2a5c55, transparent), var(--bg); }
+  .slide.alt { background: radial-gradient(1000px 600px at 10% 110%, #1d3a4f55, transparent), var(--bg); }
+  .kicker { color: var(--teal); text-transform: uppercase; letter-spacing: .14em; font-size: 2.1vh; font-weight: 700; margin-bottom: 1.6vh; }
+  h1 { font-size: 6.6vh; line-height: 1.05; margin: 0 0 2vh; letter-spacing: -.02em; }
+  h2 { font-size: 4.4vh; line-height: 1.12; margin: 0 0 2.6vh; letter-spacing: -.01em; }
+  h3 { font-size: 2.3vh; margin: 0 0 1vh; color: var(--teal); }
+  p, li { font-size: 2.5vh; line-height: 1.45; color: var(--text); }
+  .dim { color: var(--dim); }
+  .reflinks a { color: var(--teal); text-decoration: none; border-bottom: 1px solid #2c8d86; }
+  .lead { font-size: 3vh; color: var(--dim); max-width: 60ch; }
+  ul { margin: 0; padding-left: 2.6vh; } li { margin: .7vh 0; }
+  code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  code { background: #0006; border: 1px solid var(--line); padding: .1em .4em; border-radius: 6px; font-size: .88em; color: #ffd9a8; }
+  b, strong { color: #fff; }
+  .grid { display: grid; gap: 2.2vh; }
+  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: repeat(4, 1fr); }
+  .card { background: linear-gradient(180deg, var(--card), #131c3a); border: 1px solid var(--line); border-radius: 14px; padding: 2.2vh 2.4vh; }
+  .card p, .card li { font-size: 2.1vh; margin: .5vh 0; }
+  .card.teal { border-color: #2c8d86; } .card.amber { border-color: #b57a35; } .card.red { border-color: #b24a4a; } .card.green { border-color: #3c8a5d; }
+  .big { font-size: 5vh; font-weight: 800; letter-spacing: -.02em; }
+  .tag { display: inline-block; font-size: 1.7vh; font-weight: 700; padding: .35vh 1.1vh; border-radius: 999px; border: 1px solid var(--line); margin: .3vh .4vh .3vh 0; color: var(--dim); }
+  .tag.t { color: var(--teal); border-color: #2c8d86; } .tag.a { color: var(--amber); border-color: #b57a35; }
+  .tag.r { color: var(--red); border-color: #b24a4a; } .tag.g { color: var(--green); border-color: #3c8a5d; } .tag.v { color: var(--violet); border-color: #7a58b5; }
+  .loop { display: grid; grid-template-columns: 1fr 3vh 1fr 3vh 1fr; grid-template-rows: auto 4vh auto; align-items: stretch; background: #0e1630; border: 1px solid var(--line); border-radius: 14px; padding: 2.4vh 1.6vw; }
+  .loop .n { border: 1px solid var(--teal); background: #12334a; border-radius: 8px; padding: 1.8vh .8vw; display: flex; flex-direction: column; justify-content: center; }
+  .loop .n.b { border-color: #f6ad55; background: #3a280f; }
+  .loop .n b { font-size: 2vh; } .loop .n span { font-size: 1.7vh; color: #b9c6e8; margin-top: .4vh; } .loop .n span.m { font-family: ui-monospace, monospace; font-size: 1.3vh; white-space: nowrap; }
+  .loop .ar { display: flex; align-items: center; justify-content: center; font-size: 2.6vh; color: #9fb0d9; }
+  .diagram { background: #0e1630; border: 1px solid var(--line); border-radius: 14px; padding: 1.6vh 2vw; display: flex; justify-content: center; align-items: center; }
+  .diagram svg { max-height: 66vh; width: auto !important; max-width: 100% !important; height: auto; }
+  .diagram foreignObject p, .diagram foreignObject span, .diagram foreignObject div { font-size: 16px !important; line-height: 1.4 !important; margin: 0 !important; color: inherit; }
+  pre.mermaid { margin: 0; color: transparent; }
+  pre.mermaid[data-processed] { color: inherit; }
+  table { border-collapse: collapse; width: 100%; font-size: 2.1vh; }
+  th, td { text-align: left; padding: 1vh 1.4vh; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--teal); font-size: 1.8vh; text-transform: uppercase; letter-spacing: .08em; }
+  .flow { display: flex; align-items: stretch; gap: 1vw; flex-wrap: nowrap; }
+  .step { flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.8vh 1.4vh; }
+  .step .n { color: var(--teal); font-weight: 800; font-size: 2vh; }
+  .step p { font-size: 1.9vh; margin: .5vh 0 0; color: var(--dim); }
+  .step b { font-size: 2.1vh; }
+  .arrow { align-self: center; color: var(--teal); font-size: 3vh; }
+  .branch { display: flex; gap: 1.2vw; margin-top: 2vh; }
+  .branch > div { flex: 1; border-radius: 12px; padding: 1.4vh 1.6vh; font-size: 2vh; border: 1px solid; }
+  .b-allow { border-color: #3c8a5d; background: #12301f66; } .b-block { border-color: #b24a4a; background: #3a141466; } .b-conf { border-color: #b57a35; background: #3a280f66; }
+  .token { font-family: ui-monospace, Menlo, monospace; font-size: 3.2vh; background: #0008; border: 1px solid var(--line); border-radius: 12px; padding: 2vh 2.4vh; display: inline-block; }
+  .token .id { color: var(--teal); } .token .rd { color: var(--amber); } .token .mac { color: var(--violet); } .token .dot { color: var(--dim); }
+  .prompt, .prompt b { color: #1a1f33; }
+  .prompt { background: #f4f5f8; color: #1a1f33; border-radius: 14px; padding: 2.4vh 2.8vh; max-width: 62ch; font-size: 2.1vh; line-height: 1.5; box-shadow: 0 20px 60px #0009; }
+  .prompt .mono { white-space: pre-wrap; display: block; font-size: 1.9vh; }
+  .prompt .btns { margin-top: 2vh; display: flex; gap: 1vw; justify-content: flex-end; }
+  .prompt .btns span { padding: .9vh 2vh; border-radius: 8px; font-weight: 700; font-size: 2vh; border: 1px solid #b6bccf; }
+  .prompt .btns .ok { background: #1a5fff; color: #fff; border-color: #1a5fff; }
+  .prompt .hl { background: #fff2cc; padding: 0 .3em; border-radius: 4px; }
+  .quote { border-left: .6vh solid var(--teal); padding-left: 2vh; font-size: 3.2vh; line-height: 1.35; max-width: 56ch; }
+  .split { display: grid; grid-template-columns: 1.15fr 1fr; gap: 3vw; align-items: center; }
+  .mt { margin-top: 2vh; }
+  .center { text-align: center; }
+  .foot { position: absolute; left: 7vw; bottom: 2.2vh; font-size: 1.5vh; color: #6f81b3; }
+  /* chrome */
+  #bar { position: fixed; top: 0; left: 0; height: .5vh; background: linear-gradient(90deg, var(--teal), var(--violet)); width: 0; z-index: 10; transition: width .25s; }
+  #count { position: fixed; right: 2vw; bottom: 2vh; font-size: 1.6vh; color: #6f81b3; z-index: 10; }
+  #hint { position: fixed; left: 50%; transform: translateX(-50%); bottom: 1.4vh; font-size: 1.4vh; color: #4d5f91; z-index: 10; }
+  /* speaker notes */
+  .notes { display: none; position: absolute; left: 0; right: 0; bottom: 0; background: #05080fee; border-top: 2px solid var(--amber);
+    padding: 1.6vh 7vw 2.4vh; max-height: 36vh; overflow: auto; z-index: 5; }
+  .notes h4 { margin: 0 0 .6vh; color: var(--amber); font-size: 1.6vh; letter-spacing: .12em; text-transform: uppercase; }
+  .notes li, .notes p { font-size: 1.95vh; color: #e7d9bf; margin: .4vh 0; }
+  body.show-notes .notes { display: block; }
+  @media print { main { height: auto; overflow: visible; } .slide { page-break-after: always; } #bar,#count,#hint { display: none; } }
+</style>
+</head>
+<body>
+<div id="bar"></div><div id="count"></div><div id="hint">↑ ↓ / space to move · N speaker notes · F fullscreen</div>
+<main id="deck">
+
+<!-- 1 TITLE -->
+<section class="slide">
+  <div class="kicker">Agentic B2C Developer Toolkit · B2C MCP</div>
+  <h1>Tools, documentation, skills, and APIs</h1>
+  <p class="lead">The B2C MCP gives your AI assistant tools, docs and skills for B2C Commerce, with Code Mode for the APIs and a debugger for the inner loop.</p>
+  <div class="mt">
+    <span class="tag t">Code Mode for SCAPI</span><span class="tag a">Safety Mode</span><span class="tag v">MCP elicitation</span><span class="tag g">Skills (SEP-2640)</span><span class="tag g">3,000+ docs</span><span class="tag t">Script debugger</span>
+  </div>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Three things to leave with: (1) how it runs, (2) where the trust boundary is, (3) how a human approval pauses a running program without replaying it.</li>
+    <li>Everything here is read from source on <code>main</code>; paths on the last slide.</li></ul></aside>
+</section>
+<section class="slide alt">
+  <div class="kicker">MCP in 60 seconds</div>
+  <h2>Four ideas from MCP</h2>
+  <div class="grid g4">
+    <div class="card teal"><h3>Tools</h3><p>Actions the <b>model</b> chooses to call, with a typed input schema.</p><p class="dim"><code>scapi_execute</code>, <code>docs_search</code>, <code>cip_query</code></p></div>
+    <div class="card"><h3>Resources</h3><p>Content addressed by <b>URI</b> that a client can read into context. Read-only, no side effects.</p><p class="dim"><code>skill://mcp/b2c-mcp-scapi/SKILL.md</code></p></div>
+    <div class="card amber"><h3>Elicitation</h3><p>The <b>server</b> asks the <b>user</b> a question mid-task. The client renders it and returns the answer.</p><p class="dim">Our Safety Mode approvals</p></div>
+    <div class="card green"><h3>Extensions</h3><p>Optional protocol additions a server <b>declares</b> when it connects. Clients that don't know them ignore them.</p><p class="dim">Skills: <code>io.modelcontextprotocol/skills</code></p></div>
+  </div>
+  <p class="mt dim" style="font-size:2.2vh">A <b>host</b> (IDE or chat app) embeds the model and one <b>client</b> per server. Our server speaks JSON-RPC to it over stdio or HTTP and never talks to the model directly.</p>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Roles of control: tools are model-controlled, resources are application-controlled, elicitation is server-initiated but user-answered.</li>
+    <li>Everything later maps back to these four: code mode is a <b>tool</b>; skills are <b>resources</b> delivered by an <b>extension</b>; Safety Mode approvals are <b>elicitation</b>.</li>
+    <li>The model only sees what the host decides to put in context: tool descriptions, and whatever resources get read.</li></ul></aside>
+</section>
+<section class="slide">
+  <div class="kicker">Skills · why they exist</div>
+  <h2>A tool list says what exists. It doesn't say what to do.</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Skills live outside the server</h3><p>Skills usually live <b>outside</b> the MCP server: a separate repo, plugin or folder to find and install, on its own version. They drift from the server, and nobody who connects the server knows a companion skill exists.</p></div>
+    <div class="card"><h3>Too big for descriptions</h3><p>Tool descriptions, schemas and server <code>instructions</code> have to stay small: they ride along in context on every turn. A real workflow is hundreds of lines of conditional detail, needed only sometimes.</p></div>
+    <div class="card"><h3>No convention</h3><p>Everyone invented their own <code>skill://</code> layout, with different rules for paths and sub-files.</p></div>
+  </div>
+  <p class="quote mt" style="font-size:2.8vh">We don't hand an agent raw SCAPI and hope. Where the right move isn't obvious, we write it down and ship it with the tools.</p>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Cards one and three follow the SEP-2640 motivation (fragmented distribution, inconsistent ad-hoc conventions). Card two is our own argument: the SEP only names server <code>instructions</code>, but the same limit applies to tool descriptions and schemas, which also ride in context every turn. Say it as our experience, not as the SEP's words. SEP status: Final, Extensions track, created 2026-04-23.</li>
+    <li>An Agent Skill is just a directory with a <code>SKILL.md</code> (YAML name + description, then markdown) and optional <code>references/</code>. Progressive disclosure: the model sees descriptions first, bodies and references only when needed.</li>
+    <li>Our case is concrete: hundreds of operations, Admin vs Shopper auth (AmOAuth2 vs ShopperToken), OAuth scopes, and known traps like <code>status=failed</code> returning HTTP 400.</li></ul></aside>
+</section>
+<section class="slide alt">
+  <div class="kicker">Skills · SEP-2640</div>
+  <h2>Skills are resources, plus a thin convention</h2>
+  <div class="split">
+    <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant C as MCP client
+    participant S as b2c MCP server
+    S-->>C: capability: io.modelcontextprotocol/skills
+    C->>S: skills/list
+    S-->>C: uri, name, description (+ sha256 digests)
+    Note over C: the model sees descriptions only
+    C->>S: resources/read skill://mcp/b2c-mcp-scapi/SKILL.md
+    S-->>C: SKILL.md
+    C->>S: resources/read .../references/... (only if needed)
+</pre>
+    </div>
+    <div>
+      <ul>
+        <li>Every file in a skill is a resource: <code>skill://&lt;path&gt;/&lt;file&gt;</code></li>
+        <li><code>skills/list</code> advertises skills; <code>skills/get</code> fetches one by URI, even if unlisted</li>
+        <li>Digests let a host verify what it read is what was listed</li>
+        <li><b>Ours:</b> 75 skills in five collections: development, CLI, operations, Storefront Next, and MCP usage</li>
+        <li>Clients that ignore <code>io.modelcontextprotocol/skills</code> still get them as plain resources, or through the <code>skills_read</code> tool</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Implemented in <code>guidance.ts</code> + <code>server.ts</code> (<code>addSkillsExtension</code>). We list the <i>featured</i> MCP skills; <code>skills/get</code> answers for any skill we serve. Single page, no cursors; on 2026-07-28 the list carries a 5 minute private cache hint.</li>
+    <li>Digests are SHA-256 of the exact bytes we serve, computed at bundle time.</li>
+    <li><code>skills_read</code> exists because many clients don't surface resources to the model. It can list, search, and read by id/uri/section, so it doubles as skill discovery.</li>
+    <li>Same content ships as an installable plugin for Claude Code, Codex, Cursor, Copilot. MCP users need no separate install.</li></ul></aside>
+</section>
+<section class="slide">
+  <div class="kicker">Skills · beyond reference</div>
+  <h2>Runbooks: encode the judgment, not just the API</h2>
+  <div class="split">
+    <div>
+      <h3>b2c-ops, for operators and incident response</h3>
+      <table>
+        <tr><td class="mono">b2c-production-triage</td><td>Scope an incident, correlate evidence, hand off</td></tr>
+        <tr><td class="mono">b2c-job-health</td><td>Review scheduled work, investigate failures</td></tr>
+        <tr><td class="mono">b2c-checkout-triage</td><td>Broad checkout and payment symptoms</td></tr>
+        <tr><td class="mono">b2c-order-failure-triage</td><td>Find FAILED orders, quantify, correlate</td></tr>
+      </table>
+    </div>
+    <div class="card teal">
+      <h3>Inside order-failure-triage</h3>
+      <ul>
+        <li>Fix the time window and a comparison period first; ask, never assume</li>
+        <li>Which tool for which need, <b>with its limit</b>: SCAPI <code>status=failed</code> has returned HTTP 400, so use the OCAPI <code>order_search</code> fallback</li>
+        <li>Discover <code>custom-*</code> log categories; defaults miss payment integrations</li>
+        <li>Bounded investigation, a checkpoint before any intervention, a handoff</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>This is the "agents don't just get raw SCAPI" point. The expensive knowledge is what a senior operator knows: where the API lies, what to check first, when to stop and hand off.</li>
+    <li>A skill grants no access. A plugin install adds guidance only; the MCP/CLI and credentials are separate. MCP users get the runbooks bundled.</li>
+    <li>Runbooks are honest about gaps too: code mode has no OCAPI request helper, and its Safety Mode doesn't cover external HTTP.</li></ul></aside>
+</section>
+<section class="slide alt">
+  <div class="kicker">Docs · the knowledge underneath</div>
+  <h2>3,000+ articles for developers, merchants and admins</h2>
+  <div class="split">
+    <div>
+      <table>
+        <tr><td class="mono">692</td><td>Developer guides: B2C, Storefront Next, Commerce API, PWA Kit, SFRA, OCAPI</td></tr>
+        <tr><td class="mono">1,200</td><td>Salesforce Help: 626 merchant, 574 administrator</td></tr>
+        <tr><td class="mono">381</td><td>Salesforce Help knowledge base articles</td></tr>
+        <tr><td class="mono">673</td><td>Reference: 545 Script API classes, 70 job steps, 58 XSD schemas</td></tr>
+        <tr><td class="mono">63</td><td>B2C tooling docs: CLI, SDK and MCP</td></tr>
+      </table>
+      <p class="dim" style="font-size:1.9vh;margin:1.6vh 0 0"><b>Search:</b> <code>MiniSearch</code>, a small in-memory full-text index. Words are tokenized and ranked BM25-style across title, headings, keywords and summary (title weighs most), with prefix and typo tolerance. Results are then re-ranked for the detected project: a PWA Kit repo lifts PWA Kit and Commerce API docs and demotes SFRA and Storefront Next guides.</p>
+    </div>
+    <div class="card">
+      <h3>Built so an agent can triage</h3>
+      <ul>
+        <li><code>docs_search</code> returns summary, keywords, category and URL, so it can pick before it reads</li>
+        <li>For guides and knowledge base articles, Claude Haiku writes summaries and keywords at build time, so plain-language queries find the right doc</li>
+        <li><code>docs_read</code> returns <b>clean markdown</b> for every article, not HTML pages, fetched online from the canonical source (not bundled)</li>
+        <li>Indexed by title and headings; that beat full-body search in our evals</li>
+        <li>Narrow by category when the question is clearly merchant, admin or developer</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Markdown everywhere: guides are fetched as their published <code>.md</code> twin, Help and knowledge base articles are converted to markdown and hosted on our docs site, tooling docs are <code>.md</code>, and Script API classes and job steps are bundled as markdown. Agents read and quote markdown far more reliably than scraped HTML (no nav, scripts or layout noise, fewer tokens). Only the XSD schemas are not markdown, they are served as schema files through the <code>docs_schema_*</code> tools.</li>
+    <li>Ranking: MiniSearch (in-process, no service) with field boosts title 3, id 2.5, keywords 2, headings 2, summary 1.5; fuzzy 0.2 and prefix on. Class-name lookups like "ProductMgr" still come first.</li>
+    <li>Project-aware re-ranking: the server detects the workspace (cartridges, SFRA, PWA Kit v3, Storefront Next). Relevant categories are boosted (platform docs, OCAPI and tooling always; Script API and job steps for cartridges; PWA Kit and Commerce API for PWA Kit; Storefront Next and Commerce API for Storefront Next). Competing storefront guides get a 0.3 multiplier. It is a demotion, not a filter, so a strong exact match can still surface. Help corpora are never blanket-boosted; they are reached by category.</li>
+    <li>Counts come from the checked-in indexes: 692 + 1,200 + 381 + 673 (545 + 70 + 58) + 63 = 3,009.</li>
+    <li>Why docs matter alongside skills: a skill says what to do; docs say what a setting or error <i>means</i>. A merchant question like "why isn't my promotion applying" is a Help-article question, not an API one.</li>
+    <li>Wording rule for the knowledge-base corpus: "Salesforce Help knowledge base" only. Don't describe where it came from.</li>
+    <li>Online vs bundled: guides, Salesforce Help and knowledge base article bodies are fetched from the canonical URL at read time (memory + disk cache with a TTL, 10 s fetch timeout). Bundled and offline: the search indexes (about 2.7 MB for those three corpora), Script API reference, job steps, tooling docs and XSD schemas.</li>
+    <li>Enrichment: optional build-time step (<code>enrich:docs</code>), no-op without an API key, output committed as <code>enrichment.json</code>. Covers all 692 guides and all 381 knowledge base articles. Not applied to Salesforce Help (1,200), which carries a summary from each article's own short description, nor to the reference corpora. It improves recall for agentic queries ("configure sites.js locale currency" finds "Multiple Sites"). The index is title + headings with no body text; earlier evals favored that over full-body search. (The guides sidecar file holds 809 entries; 117 are stale leftovers.)</li></ul></aside>
+</section>
+<section class="slide">
+  <div class="kicker">Debugger · closing the inner loop</div>
+  <h2>The agent can run the code, stop it, and look inside</h2>
+  <div class="split mt" style="align-items:center;grid-template-columns:1.3fr 1fr">
+    <div class="loop">
+      <div class="n a" style="grid-area:1/1"><b>1 Edit</b><span>change the cartridge</span></div>
+      <div class="ar" style="grid-area:1/2">→</div>
+      <div class="n a" style="grid-area:1/3"><b>2 Deploy</b><span class="m">cartridge_deploy</span></div>
+      <div class="ar" style="grid-area:1/4">→</div>
+      <div class="n a" style="grid-area:1/5"><b>3 Trigger</b><span>request or job</span></div>
+      <div class="ar" style="grid-area:2/5">↓</div>
+      <div class="ar" style="grid-area:2/1">↑</div>
+      <div class="n b" style="grid-area:3/1"><b>6 Understand</b><span>docs + logs explain it</span></div>
+      <div class="ar" style="grid-area:3/2">←</div>
+      <div class="n b" style="grid-area:3/3"><b>5 Inspect</b><span>stack, variables, evaluate</span></div>
+      <div class="ar" style="grid-area:3/4">←</div>
+      <div class="n b" style="grid-area:3/5"><b>4 Break + capture</b><span class="m">debug_capture_at_breakpoint</span></div>
+    </div>
+    <ul style="font-size:2.1vh">
+      <li>A real script debugger on a B2C instance: <b>breakpoints, stepping, stack and variables, evaluate</b></li>
+      <li>Agents stop guessing from logs and <b>read the actual runtime state</b></li>
+      <li>A <code>b2c-mcp-debugger</code> skill carries the workflow and recovery steps</li>
+      <li>Same debugger for IDEs (DAP) and the CLI; logs tools cover what the debugger doesn't</li>
+    </ul>
+  </div>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li><b>Agentic inner loop.</b> The inner loop is the tight edit, build, run, debug cycle a developer repeats locally, before CI or review. "Agentic" means the agent drives that cycle itself: it changes code, runs it, reads what happened, and goes around again. Until now the weak link was <i>observing</i> the run: agents had logs and guesses. The debugger gives them the same eyes a developer has.</li>
+    <li>Tools (nine): <code>debug_start_session</code>, <code>debug_set_breakpoints</code>, <code>debug_wait_for_stop</code>, <code>debug_inspect</code>, <code>debug_evaluate</code>, <code>debug_control</code> (resume/step), <code>debug_capture_at_breakpoint</code> (set a breakpoint, wait for the halt, return stack, variables and evaluations in one call), <code>debug_list_sessions</code>, <code>debug_end_session</code>.</li>
+    <li>Capture is the one to demo: trigger a GET (or an external request) concurrently, get the state back, and it does not resume by default.</li>
+    <li>Needs BM Basic Auth for a user with WebDAV_Manage_Customization. Starting a session replaces any other remote debugger client. <code>debug_evaluate</code> can call functions and change remote state, so say that out loud; point to it as a place Safety Mode thinking applies.</li>
+    <li>Combined with the rest: skills tell it how to debug, docs explain Script API behaviour and error codes, <code>logs_*</code> and <code>mrt_logs_watch</code> add the log view, <code>cartridge_deploy</code> pushes the fix, code mode checks the data side effects.</li>
+    <li>Also available as <code>b2c debug cli</code> (REPL and JSONL <code>--rpc</code>) and a DAP adapter for IDEs.</li></ul></aside>
+</section>
+<section class="slide alt">
+  <div class="kicker">Intro to Code Mode</div>
+  <h2>Let the model write code, not tool calls</h2>
+  <div class="grid g2" style="gap:2vw">
+    <div>
+      <h3 style="color:var(--amber)">Tool calling: every hop passes through the model</h3>
+      <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    participant M as Model
+    participant T as Tools
+    M->>T: call A
+    T-->>M: result A
+    M->>T: call B (copy from A)
+    T-->>M: result B
+    M->>T: call C (copy from B)
+    T-->>M: result C
+</pre>
+      </div>
+    </div>
+    <div>
+      <h3>Code Mode: the code is the plan</h3>
+      <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    participant M as Model
+    participant X as Sandbox
+    participant T as Tools
+    M->>X: one program
+    X->>T: call A
+    T-->>X: result A
+    X->>T: call B (uses A)
+    T-->>X: result B
+    X-->>M: final answer only
+</pre>
+      </div>
+    </div>
+  </div>
+  <p class="mt" style="font-size:2.1vh">Cloudflare applied it to its own API: an MCP server with just two tools, <code>search()</code> and <code>execute()</code>, over an OpenAPI spec. By their numbers, 2,500+ endpoints cost about 1,000 tokens of context.</p>
+  <p class="dim reflinks" style="font-size:1.7vh;margin:1.2vh 0 0">Cloudflare, who introduced the pattern: <a href="https://blog.cloudflare.com/code-mode/">blog.cloudflare.com/code-mode</a> · <a href="https://blog.cloudflare.com/code-mode-mcp/">blog.cloudflare.com/code-mode-mcp</a> · <a href="https://developers.cloudflare.com/agents/tools/codemode/">developers.cloudflare.com/agents/tools/codemode</a> · <a href="https://developers.cloudflare.com/agents/tools/codemode/openapi/">codemode/openapi</a></p>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Why not one tool per operation: hundreds of Admin and Shopper operations bloat context and still miss tenant <code>c_*</code> fields and custom APIs (live contracts from the Schemas API cover those). Tasks are multi-step, and every hop is a model round trip. Dedicated tools are still preferred when one fits; code mode is the "no specific tool fits" path.</li>
+    <li>Say it up front: Code Mode is Cloudflare's idea and name. We are applying the pattern to SCAPI, not claiming it.</li>
+    <li>Why it works, in their words: models have seen huge amounts of real code but few real tool calls (tool-call tokens exist mostly in synthetic training data), and chained tool calls waste tokens copying intermediate results through the model.</li>
+    <li>Their sandbox: V8 isolates (Dynamic Workers), no network, only bindings; the supervisor holds the tokens so generated code cannot leak keys. Ours: a local Node child process, same trust split, but explicitly not a security sandbox.</li>
+    <li>Shared vocabulary: <code>search</code>/<code>execute</code>, <code>codemode.search</code>/<code>describe</code>, snippets, approvals. Cloudflare's docs list approvals and replay in their durable runtime; we park a live worker instead of replaying (later slides).</li>
+    <li>The 1,000 token and 2,500 endpoint figures are Cloudflare's claims about their API, not ours. Their docs still label Code Mode experimental.</li>
+    <li>Sources: blog.cloudflare.com/code-mode/ · blog.cloudflare.com/code-mode-mcp/ · developers.cloudflare.com/agents/tools/codemode/ (and /openapi/)</li></ul></aside>
+</section>
+<section class="slide">
+  <div class="kicker">Our implementation · SCAPI</div>
+  <h2>The agent writes a small async function. We run it.</h2>
+  <p class="quote" style="font-size:2.2vh;margin:1.2vh 0 1.4vh;max-width:none"><b>Read the skill first.</b> Both tools refuse to run until the agent has read the companion <code>b2c-mcp-scapi</code> skill and passes <code>skillRead: true</code>. The skill is what teaches it auth, scopes and the traps.</p>
+  <div class="split">
+    <div>
+<div class="dim" style="font-size:1.9vh"><b>1 · scapi_search</b>: find the operation, its path and auth</div>
+      <pre class="card mono" style="font-size:1.65vh;line-height:1.45;margin:.6vh 0 0;color:#cfe3ff">async () =&gt; Object.entries(spec.paths)
+  .flatMap(([path, ops]) =&gt; Object.entries(ops).map(
+    ([method, op]) =&gt; ({operationId: op.operationId, method, path,
+                       security: op.security})))
+  .filter(o =&gt; /^(create|update)Product$/.test(o.operationId))</pre>
+      <div class="dim" style="font-size:1.9vh;margin-top:1.6vh"><b>2 · scapi_execute</b>: call it</div>
+      <pre class="card mono" style="font-size:1.65vh;line-height:1.45;margin:.6vh 0 0;color:#cfe3ff">async (input) =&gt; {
+  const path = '/product/products/v1/organizations/'
+             + '{organizationId}/products/' + input.id;
+  const r = await scapi.request({method: 'GET', path});
+  if (r.status === 404) {
+    await scapi.request({method: 'PUT', path,
+                         body: {id: input.id,
+                                name: {default: input.name}}});
+  }
+  return (await scapi.request({method: 'GET', path})).data;
+}</pre>
+    </div>
+    <div class="grid" style="gap:1.4vh">
+      <div class="card teal"><h3>scapi_search</h3><p>Find the right operation: run code over the OpenAPI contracts (<code>spec</code>) for operationId, path, inputs, auth and scopes. Offline by default. Can't make requests. Want the raw OpenAPI document instead? <code>scapi_schemas_list</code> fetches it live.</p></div>
+      <div class="card teal"><h3>scapi_execute</h3><p>Same sandbox plus <code>scapi.request</code>, <code>auth</code>, <code>codemode</code>. Governed by Safety Mode.</p></div>
+      <div class="card"><h3>scapi_snippet_save</h3><p>Keep a finished run as a reusable <code>user/…</code> snippet. We ship <code>builtin/</code> ones for common workflows; the agent can read and adapt them, not just run them as-is.</p></div>
+    </div>
+  </div>
+  <p class="dim mt" style="font-size:1.9vh;margin-top:1.8vh"><b>Next:</b> as shipped the schemas were missing prose because of a doc bug in the schemas API (@W-24425030, Thanks Fabian!), fixing that now and adding ranked fuzzy search (<code>spec.search()</code>) so discovery goes beyond regex over <code>operationId</code>.</p>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li><code>spec</code> is a queryable, ref-resolved view, not the published file: one merged <code>paths</code> (57 APIs, 594 operations), output capped around 24 KB, so the agent slices (names, types, required) rather than dumping an operation. For the full OpenAPI document with no code, <code>scapi_schemas_list</code> with <code>includeSchemas</code> plus family/name/version fetches it live from the tenant (needs the <code>sfcc.scapi-schemas</code> scope; also the route for custom APIs and tenant <code>c_*</code> fields). Not a bundled/offline path.</li>
+    <li><b>Improvements (not built yet).</b> (1) The Schemas API returns no operation <code>summary</code>/<code>description</code> or <code>info.description</code> (verified raw over HTTP, 61 APIs / 671 operations); the published specs have them, e.g. <code>createBasket</code>'s one-open-basket rule and the 400 "Customer Baskets Quota Exceeded" message. Plan: overlay published prose onto the bundled contracts by <code>operationId</code>; the bundled Shopper Products is also stale (1.12.0 vs 1.13.1 live). (2) A <code>spec.search(query)</code> helper using MiniSearch (as docs and Cloudflare's <code>cf cli search</code> do) over operationId words, path, API name, parameters and the restored prose; rebuilt for <code>schemas:"live"</code>, with the bundled prose overlaid by operationId. Cloudflare's Code Mode search is plain JS over the spec, so this would go beyond it. The Admin API published specs source is still open.</li>
+    <li><code>scapi_snippet_save</code> is a footnote; mention, don't dwell. Seven built-ins ship (create-product; campaign-promotions, failed-job-triage, job-execution-review/inspect, code-version-inspect, site-cartridge-inspect). <code>codemode.describe(name)</code> returns the source, so the agent can read it and tweak it; <code>codemode.run(name, input)</code> is optional, not required.</li>
+    <li>Same <code>search</code> + <code>execute</code> shape Cloudflare popularized, pointed at SCAPI's OpenAPI contracts.</li>
+    <li>The only exits from the function are <code>scapi.request</code>, <code>auth.*</code> and <code>codemode.*</code>.</li>
+    <li>This is the bridge from skills to code mode: the tool descriptions say it, and a missing <code>skillRead</code> returns <code>SCAPI_SKILL_REQUIRED</code> with the URI to read. It is an honor-system gate (the server can't verify the read), but it reliably routes the agent through the skill. Skill gate: the model must read <code>skill://mcp/b2c-mcp-scapi/SKILL.md</code> and pass <code>skillRead: true</code> before either tool works.</li>
+    <li><code>{organizationId}</code> is a placeholder; the parent substitutes the configured tenant and rejects any other org.</li></ul></aside>
+</section>
+<section class="slide alt">
+  <div class="kicker">Skills · how tools lean on them</div>
+  <h2>Three strengths of nudge</h2>
+  <div class="grid g3">
+    <div class="card red">
+      <h3>Required: a gate</h3>
+      <p><code>scapi_search</code>, <code>scapi_execute</code> and <code>cip_*</code> take <code>skillRead: true</code>. Without it the call fails and names the file to read.</p>
+      <p class="dim"><code>SCAPI_SKILL_REQUIRED: Read skill://mcp/b2c-mcp-scapi/SKILL.md …</code></p>
+    </div>
+    <div class="card amber">
+      <h3>Suggested: a pointer</h3>
+      <p>Tool descriptions and server instructions point at a skill: config prerequisites for cartridge tools, the debugger workflow, which tool fits which job.</p>
+      <p class="dim">Nothing enforces it.</p>
+    </div>
+    <div class="card green">
+      <h3>Reactive: a hint in the error</h3>
+      <p>An auth or scope failure comes back with <code>skillReferences</code>: a URI and the exact section to read.</p>
+      <p class="dim">Detail for a condition we saw, never a prerequisite.</p>
+    </div>
+  </div>
+  <p class="mt dim" style="font-size:2.1vh">Strictest where the cost of guessing is highest: arbitrary code against live APIs. <code>skillRead</code> is an honor-system flag; it records that the model claims to have read it.</p>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>The gate is <code>z.literal(true)</code> with a custom error, so the failure message teaches the fix and the model self-corrects in one retry.</li>
+    <li>Be upfront: nothing verifies the read happened. It is a strong prompt, not a security control. Safety Mode is the actual control.</li>
+    <li>Suggested pointers live in tool descriptions (cartridges, debugger) and the server <code>instructions</code>. Reactive ones come from <code>MCP_SKILL_REFERENCES</code> in <code>skill-references.ts</code>.</li>
+    <li>Design stance in that file: references are "optional detail for an observed condition; never a prerequisite or approval".</li></ul></aside>
+</section>
+<section class="slide">
+  <div class="kicker">Architecture</div>
+  <h2>Two processes. The trust lives in the parent.</h2>
+  <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  A["Agent / MCP client"] -- "tools/call" --> P
+  subgraph P["MCP server  (parent process)"]
+    direction TB
+    R["Execution registry"]
+    subgraph K["b2c-tooling-sdk"]
+      direction TB
+      G["Safety Mode<br/>SafetyGuard"]
+      T["Credentials<br/>AmOAuth2 + SLAS guest"]
+      H["HTTP + size caps"]
+    end
+  end
+  P <-- "IPC: request / reply" --> W
+  subgraph W["Worker  (child process)"]
+    direction TB
+    X["node --permission<br/>128 MB, no secrets in env"]
+    Y["agent code runs here"]
+  end
+  H -- "HTTPS + token" --> S["SCAPI"]
+  classDef par fill:#12334a,stroke:#4fd1c5,color:#e8ecf8;
+  classDef chi fill:#3a280f,stroke:#f6ad55,color:#e8ecf8;
+  class R,G,T,H par
+  class X,Y chi
+  style K fill:#1b1840,stroke:#a78bfa,stroke-width:2px,color:#e8ecf8
+</pre>
+  </div>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>The purple box is <code>@salesforce/b2c-tooling-sdk</code>: SafetyGuard, the auth strategies (Account Manager, SLAS), the SCAPI request layer with its size caps, and the worker runtime all live there. The MCP package adds the tool surface, the execution registry and elicitation. The same SDK powers the CLI.</li>
+    <li>The worker never holds a token. Account Manager (AmOAuth2) tokens and SLAS guest sessions live in the parent; the worker only gets <code>{status, ok, data}</code> back.</li>
+    <li>Worker env is scrubbed to PATH / SYSTEMROOT / TEMP. Callbacks are stripped from the IPC <code>run</code> message; the child gets data only.</li>
+    <li>Execution is per call: fresh worker, SIGKILLed when done, cancelled, timed out or over the console limit.</li></ul></aside>
+</section>
+<section class="slide alt">
+  <div class="kicker">The worker</div>
+  <h2>A guardrail, not a fortress</h2>
+  <div class="grid g2">
+    <div class="card green">
+      <h3>What it does restrict</h3>
+      <ul>
+        <li>Node <code>--permission</code>: no filesystem, subprocesses, worker threads, native addons</li>
+        <li><code>fetch</code> / <code>WebSocket</code> replaced with a thrower</li>
+        <li>No credentials: env scrubbed, tokens stay in the parent</li>
+        <li>Must <code>await</code> every call before returning; JSON result only</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Limits per execution</h3>
+      <table>
+        <tr><td>Code</td><td>32 KiB</td></tr>
+        <tr><td>Active runtime</td><td>30 s (max 60) · search 10 s</td></tr>
+        <tr><td>Heap / console</td><td>128 MB / 64 KiB</td></tr>
+        <tr><td>Result</td><td>24 KB default</td></tr>
+        <tr><td>Calls</td><td>20 requests</td></tr>
+        <tr><td>Response</td><td>1 MiB each · 5 MiB total</td></tr>
+        <tr><td>Concurrent executions</td><td>4 per server</td></tr>
+      </table>
+    </div>
+  </div>
+  <p class="dim mt" style="font-size:2.1vh">The source says it plainly: "local execution, not a security sandbox." The threat model is a cooperative agent that makes mistakes.</p>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Be upfront: network blocking is a JS-level override. I believe <code>--permission</code> doesn't cover raw <code>https</code> modules; <b>not tested</b>. The credential story holds anyway: nothing sensitive is in the worker. Exception: tokens the agent explicitly exports with <code>auth.*</code>.</li>
+    <li>Denied access surfaces as <code>SCAPI_RUNTIME_RESTRICTED</code> with advice to use terminal/file tools instead.</li></ul></aside>
+</section>
+<section class="slide">
+  <div class="kicker">Safety Mode</div>
+  <h2>One policy format, resolved per execution</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Evaluation order</h3>
+      <p><span class="tag a">1</span> Temporary allows (approved requests)</p>
+      <p><span class="tag a">2</span> Rules in order, <b>first match wins</b>: <code>allow</code> · <code>block</code> · <code>confirm</code></p>
+      <p><span class="tag a">3</span> Level default: <code>NONE</code> · <code>NO_DELETE</code> · <code>READ_ONLY</code></p>
+      <p class="dim" style="font-size:1.9vh">A level violation becomes <code>confirm</code> if <code>confirm: true</code>, else <code>block</code>. An explicit <code>block</code> rule is never overridden.</p>
+    </div>
+    <div class="card">
+      <h3>Where the policy comes from</h3>
+      <ul>
+        <li><code>dw.json</code> <code>safety</code> for the selected instance</li>
+        <li>Global <code>safety.json</code></li>
+        <li><code>SFCC_SAFETY_LEVEL / _CONFIRM / _CONFIG</code></li>
+      </ul>
+      <p class="dim" style="font-size:1.9vh">Strictest level wins · instance rules before global rules · any source can enable confirm. <b>Off by default.</b></p>
+    </div>
+  </div>
+<pre class="card mono mt" style="font-size:1.8vh;margin-bottom:0;color:#cfe3ff;line-height:1.45">{
+  "safety": {
+    "level": "READ_ONLY",
+    "rules": [
+      {
+        "method": "PUT",
+        "path": "/product/products/v1/organizations/*/products/*",
+        "action": "confirm"
+      }
+    ]
+  }
+}</pre>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Every request goes through one per-request <code>SafetyGuard</code> in the parent; an approval never exempts a concurrent or later request. Escape hatch: <code>auth.accountManager()</code> / <code>auth.slas()</code> can export a token for an external client, and that use is <b>outside</b> Safety Mode.</li>
+    <li>Same config format for CLI, IDE extension and MCP. Code mode needs no extra setup.</li>
+    <li>POST-based searches (e.g. job-execution-search) need an explicit <code>allow</code> under READ_ONLY.</li>
+    <li>This example: reads flow, product PUTs prompt, everything else that writes is blocked.</li></ul></aside>
+</section>
+<section class="slide alt">
+  <div class="kicker">MCP concept · elicitation</div>
+  <h2>How does a server ask the user a question?</h2>
+  <div class="grid g2" style="gap:2vw">
+    <div>
+      <h3 style="color:var(--amber)">MCP 2025: one call, kept open</h3>
+      <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant C as Client
+    participant S as Server
+    C->>S: tools/call
+    S->>C: elicitation/create
+    C->>U: show form
+    U-->>C: answer
+    C-->>S: answer
+    S-->>C: tool result
+</pre>
+      </div>
+      <p class="dim" style="font-size:2vh;margin:1vh 0 0">The server <b>sends a request to the client</b> while the tool call is still open. Needs a long-lived, two-way connection.</p>
+    </div>
+    <div>
+      <h3>MCP 2026-07-28: stateless, two calls</h3>
+      <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant C as Client
+    participant S as Server
+    C->>S: tools/call
+    S-->>C: input_required + requestState
+    C->>U: show form
+    U-->>C: answer
+    C->>S: tools/call + requestState + answer
+    S-->>C: tool result
+</pre>
+      </div>
+      <p class="dim" style="font-size:2vh;margin:1vh 0 0">The server <b>never calls the client</b>. The first call <b>ends</b> with "I need input"; the client calls again carrying the state back. Nothing is held open.</p>
+    </div>
+  </div>
+  <p class="mt" style="font-size:2.2vh">Same human prompt, same word: <b>elicitation</b>. What changed is the plumbing, so any server instance can serve the retry. We serve both: one handler, and for 2025 clients a bridge turns <code>input_required</code> into a real <code>elicitation/create</code>. A client with no elicitation support never gets a write: nothing is sent.</p>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Stateless means the <b>protocol</b> keeps no per-connection state. <code>requestState</code> is how the server hands its state to the client and gets it back.</li>
+    <li>Why it changed: server-to-client requests need a persistent bidirectional channel, which fights load balancers and serverless.</li>
+    <li>"Input request" is the umbrella: elicit (form), elicitUrl, createMessage (sampling), listRoots. "Elicitation" is still what users see.</li>
+    <li>For most servers the state in <code>requestState</code> is small and self-contained. Code mode's state is a live worker process, so ours is a signed pointer to something held in server memory.</li>
+    <li>Our handler can't tell which era it's in: same <code>requestState</code> path, same registry. Legacy bridge details: SDK shim, capped at 20 rounds per call; the patched SDK's <code>roundTimeoutMs: 0</code> removes the server-side timer. Clients may impose their own timeout on a long-open prompt. Without form elicitation: <code>SCAPI_CONFIRMATION_UNSUPPORTED</code>.</li>
+    <li>The old in-handler <code>elicitInput()</code> is deprecated and throws on a 2026-07-28 request.</li></ul></aside>
+</section>
+<section class="slide">
+  <div class="kicker">Approval flow</div>
+  <h2>Three layers of waiting</h2>
+  <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant C as MCP client
+    participant S as MCP server
+    participant W as Worker
+    participant API as SCAPI
+    U->>C: "Update the product name"
+    C->>S: tools/call scapi_execute (code)
+    S->>W: spawn, run the agent's code
+    W->>S: IPC request (PUT /product/...)
+    Note over S: policy says confirm.<br/>Park the request, pause the 30s clock
+    S-->>C: input_required + elicitation (requestState)
+    Note over W: still awaiting its IPC reply
+    C->>U: Accept / Decline / Cancel
+    U-->>C: Accept
+    C->>S: tools/call (same args + requestState + answer)
+    Note over S: verify token + args,<br/>resume the parked request
+    S->>API: PUT (re-checked, unchanged)
+    API-->>S: 200
+    S-->>W: IPC reply
+    S-->>C: tool result (after the program finishes)
+</pre>
+  </div>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>The three layers: the worker waits on an unanswered IPC reply; the parent holds a parked promise; the tool call is not waiting at all, it already returned.</li>
+    <li>Setup: the worker is halfway through a loop holding variables and earlier results. Replaying would resend earlier writes; blocking the tool call is impossible because the newer protocol has no server-to-client request channel. So: park the work, return a question.</li>
+    <li>Resume, if asked: the retry carries a signed <code>requestState</code> token (execution id + round + HMAC over the args). The server finds the parked worker, and any change to code, input or target is rejected. The model never builds these calls.</li>
+    <li>Your question answered: the request promise is blocked; the tool call is not. Elicitation is driven from the MCP server (parent), never the worker. The worker is not signalled.</li>
+    <li>Empty form schema on purpose: the client's own Accept / Decline / Cancel carry the decision.</li>
+    <li>The 30 s runtime budget only counts running time; <code>pauseTimeout</code> stops it while the prompt is open. Prompts have no server-side deadline.</li>
+    <li>The prompt result also carries <code>_meta</code>: executionId, status, operations so far.</li></ul></aside>
+</section>
+<section class="slide alt">
+  <div class="kicker">What the user sees</div>
+  <h2>Exact request, pinned</h2>
+  <div class="split">
+    <div class="prompt">
+      <b>Approve SCAPI operation: createProduct</b>
+      <span class="mono">Organization: f_ecom_zzpq_013
+PUT /product/products/v1/organizations/…/products/test-001
+Body:
+{
+  "name": "Test product",
+  "onlineFlag": false
+}
+Safety Mode requires approval. Accept sends this request only; declining stops this execution.
+No earlier writes.
+Execution: 4b2e…</span>
+      <div class="btns"><span>Decline</span><span>Cancel</span><span class="ok">Accept</span></div>
+    </div>
+    <div>
+      <ul>
+        <li>Preview: pretty-printed, <code>≤5 lines / 400 chars</code>, truncation marked, credential-like keys redacted</li>
+        <li>Approval covers the <b>full</b> original body</li>
+        <li>URL, method and body are re-checked right before dispatch: <code>SCAPI_APPROVAL_MISMATCH</code> if anything changed</li>
+        <li>Accepting one request never approves the next, even an identical one</li>
+        <li>Decline or cancel stops the whole execution. Earlier writes stay (no rollback); the result lists what completed, and what was <code>not_sent</code> or <code>unknown</code></li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Ledger statuses: completed, failed, awaiting_confirmation, in_flight, not_sent, unknown. "Dispatched" is marked right before the network call, so a kill can honestly say not_sent vs unknown (might have applied). Decline gives <code>SCAPI_APPROVAL_DECLINED</code>, dismiss gives <code>SCAPI_APPROVAL_CANCELLED</code>; also explicit <code>action:"cancel"</code>, client abort, timeout, shutdown. Last 50 finished executions are retained so late retries get the stored result. 4 active executions per server.</li>
+    <li>Args are <code>structuredClone</code>d at entry so the code can't mutate the request while the prompt is open.</li>
+    <li>Illustrative values in the mock; real text comes from <code>ScapiExecution.confirm()</code>.</li>
+    <li>The client's generic "allow this tool?" dialog is separate and does not approve a specific request.</li></ul></aside>
+</section>
+<section class="slide">
+  <div class="kicker">Putting it together</div>
+  <h2>Not four features. One loop.</h2>
+  <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  Q["Task:<br/>orders are failing since Friday"] --> SK["Skill (runbook)<br/>what to check, in what order,<br/>known traps"]
+  SK --> CM["Code mode<br/>query, correlate, act<br/>in one program"]
+  SK --> DOC["Docs<br/>what does this error<br/>or setting mean?"]
+  DOC --> CM
+  CM --> SM["Safety Mode + elicitation<br/>reads flow, writes ask a human"]
+  classDef a fill:#12334a,stroke:#4fd1c5,color:#e8ecf8;
+  classDef b fill:#3a280f,stroke:#f6ad55,color:#e8ecf8;
+  class SK,DOC a
+  class CM,SM b
+</pre>
+  </div>
+  <ul class="mt" style="column-count:2;column-gap:3vw;font-size:2.1vh">
+    <li>Skills make code mode <b>safe to hand over</b>: the agent knows the traps before it writes code</li>
+    <li>Code mode makes skills <b>executable</b>: a runbook step can be one bounded program</li>
+    <li>Docs supply <b>meaning</b>, for merchant and admin questions no API answers</li>
+    <li>The debugger lets the agent <b>observe what actually ran</b>, closing the agentic inner loop</li>
+    <li>Safety Mode and elicitation keep the human in the loop</li>
+  </ul>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li><b>Q&amp;A: honest limits.</b> Not a hostile-code sandbox (cooperative agent; network blocking is a JS override, <code>--permission</code> coverage of raw <code>https</code> untested). Safety Mode governs requests through <code>scapi.request</code>, not the agent's other tools or exported tokens. Off by default (level NONE); no rollback by design, the ledger says what happened. Needs a client that can prompt; state is in-memory per stdio server. For hard enforcement, sandbox the server with the client secret out of the agent's environment.</li>
+    <li>What's next: other MCP tools get the same policy via SDK client middleware. <code>block</code> works; <code>confirm</code> fails with <code>SafetyConfirmationRequired</code> since there is no approval UI. Simple extension: catch it in <code>runWithSafety</code>, return an <code>input_required</code> elicitation, verify the token on retry, <code>temporarilyAllow</code>, re-run. Safe for single-request tools; multi-write tools need care since a re-run repeats earlier steps. Not prototyped.</li>
+    <li>Say these before someone asks. Docs: <code>docs/guide/safety.md</code>, <code>docs/mcp/security.md</code>, <code>docs/guide/agent-sandboxing</code>.</li>
+    <li>Say it plainly: none of these was designed as a combined system, and each is useful alone. The properties on the right appear when they meet.</li>
+    <li>Example thread: the order-failure runbook (skill) tells the agent SCAPI can't filter failed orders and to use the OCAPI fallback; code mode runs the bounded queries; docs explain the failure code; any write is confirmed by a person.</li>
+    <li>Not claiming autonomy: the human approves writes, and skills are guidance, not guarantees.</li></ul></aside>
+</section>
+
+<section class="slide alt">
+  <div class="kicker">Also in the box</div>
+  <h2>Important tools we didn't have time for</h2>
+  <div class="grid g2">
+    <div class="card"><h3>CIP analytics</h3><p><code>cip_discover</code> finds curated reports and warehouse tables; <code>cip_query</code> runs a report or SQL against the Commerce Intelligence warehouse with bounded rows. Historical analytics, not live state.</p></div>
+    <div class="card"><h3>Metrics</h3><p><code>metrics_get</code> reads SCAPI observability time series by category and range. Closed beta; needs the <code>sfcc.metrics</code> scope.</p></div>
+    <div class="card"><h3>WebDAV</h3><p><code>webdav_list</code>, <code>webdav_get</code> and <code>webdav_put</code> browse and move files on the instance: logs, impex, static content.</p></div>
+    <div class="card"><h3>Config inspect</h3><p><code>config_inspect</code> shows the resolved configuration and which source supplied each value, secrets masked. The first thing an agent should call when a tool can't connect.</p></div>
+  </div>
+  <aside class="notes"><h4>Notes</h4><ul>
+    <li>Each has a skill (<code>b2c-mcp-cip</code>, <code>b2c-mcp-config</code>, etc.), so the same nudge pattern applies. <code>cip_query</code> descriptions require reading the CIP skill first.</li>
+    <li>CIP vs SCAPI: the warehouse is delayed analytics; SCAPI is live state. Pick by question.</li>
+    <li>Metrics API is SCAPI observability/metrics/v1, closed beta.</li>
+    <li>Config inspect pairs with the debugger and code mode: most "it doesn't work" cases are configuration.</li></ul></aside>
+</section>
+
+</main>
+
+<script src="vendor/mermaid.min.js"></script>
+<script>
+(async () => {
+  const deck = document.getElementById('deck');
+  const slides = [...deck.querySelectorAll('.slide')];
+  const bar = document.getElementById('bar'), count = document.getElementById('count');
+  let idx = 0;
+
+  const update = () => {
+    idx = Math.round(deck.scrollTop / deck.clientHeight);
+    bar.style.width = ((idx + 1) / slides.length * 100) + '%';
+    count.textContent = (idx + 1) + ' / ' + slides.length;
+    // Keep the URL on the current slide so refresh/share/bookmark land here (replace: no history spam).
+    if (location.hash !== '#' + (idx + 1)) history.replaceState(null, '', '#' + (idx + 1));
+  };
+  const fromHash = () => {
+    const n = parseInt(location.hash.slice(1), 10);
+    return Number.isFinite(n) ? Math.max(0, Math.min(slides.length - 1, n - 1)) : 0;
+  };
+  const go = (i) => { idx = Math.max(0, Math.min(slides.length - 1, i)); deck.scrollTo({top: idx * deck.clientHeight}); };
+  deck.addEventListener('scroll', update, {passive: true});
+  window.addEventListener('resize', () => { deck.style.scrollBehavior = 'auto'; deck.scrollTop = idx * deck.clientHeight; deck.style.scrollBehavior = ''; });
+  window.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (['ArrowDown', 'ArrowRight', 'PageDown', ' ', 'j'].includes(k)) { e.preventDefault(); go(idx + 1); }
+    else if (['ArrowUp', 'ArrowLeft', 'PageUp', 'k'].includes(k)) { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') go(0);
+    else if (k === 'End') go(slides.length - 1);
+    else if (k === 'n' || k === 'N') document.body.classList.toggle('show-notes');
+    else if (k === 'f' || k === 'F') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+  });
+  if (location.hash) {
+    deck.style.scrollBehavior = 'auto';
+    idx = fromHash();
+    deck.scrollTop = idx * deck.clientHeight;
+    deck.style.scrollBehavior = '';
+  }
+  window.addEventListener('hashchange', () => { if (fromHash() !== idx) go(fromHash()); });
+  update();
+
+  if (window.mermaid) {
+    mermaid.initialize({
+      startOnLoad: false, theme: 'base', securityLevel: 'loose',
+      themeVariables: {
+        darkMode: true, background: 'transparent', fontFamily: '-apple-system, Segoe UI, Inter, sans-serif', fontSize: '16px',
+        primaryColor: '#172243', primaryTextColor: '#e8ecf8', primaryBorderColor: '#4fd1c5', lineColor: '#9fb0d9',
+        secondaryColor: '#12334a', tertiaryColor: '#0e1630', textColor: '#e8ecf8',
+        actorBkg: '#172243', actorBorder: '#4fd1c5', actorTextColor: '#e8ecf8', actorLineColor: '#3a4a7e',
+        signalColor: '#cfd9f5', signalTextColor: '#e8ecf8', labelBoxBkgColor: '#172243', labelBoxBorderColor: '#4fd1c5', labelTextColor: '#e8ecf8',
+        noteBkgColor: '#3a280f', noteTextColor: '#ffe3b8', noteBorderColor: '#b57a35',
+        sequenceNumberColor: '#0b1020', activationBkgColor: '#2a3a6b',
+        clusterBkg: '#0e1630', clusterBorder: '#2a3a6b', edgeLabelBackground: '#0e1630'
+      },
+      sequence: {mirrorActors: false, useMaxWidth: false, messageMargin: 34, boxMargin: 8, noteMargin: 8, actorMargin: 60},
+      flowchart: {useMaxWidth: false, curve: 'basis', htmlLabels: false, nodeSpacing: 40, rankSpacing: 70, padding: 14}
+    });
+    try { await document.fonts.ready; } catch (e) { /* proceed */ }
+    try { await mermaid.run({querySelector: 'pre.mermaid'}); } catch (e) { console.error('mermaid failed', e); }
+  }
+})();
+</script>
+</body>
+</html>
