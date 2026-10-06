@@ -140,7 +140,33 @@ export type {
 } from './env-var.js';
 
 // Environment (target) operations
-export {cloneEnv, createEnv, deleteEnv, getEnv, waitForEnv, listEnvs, updateEnv} from './env.js';
+export {
+  cloneEnv,
+  createEnv,
+  deleteEnv,
+  getEnv,
+  waitForEnv,
+  listEnvs,
+  updateEnv,
+  getEnvironmentsScapi,
+  createEnvironmentScapi,
+  cloneEnvironmentScapi,
+  getEnvironmentByIdScapi,
+  updateEnvironmentScapi,
+  deleteEnvironmentScapi,
+  setPrimaryEnvironmentScapi,
+  createCacheInvalidationScapi,
+  listEnvironmentsWithBackend,
+  createEnvironmentWithBackend,
+  cloneEnvironmentWithBackend,
+  getEnvironmentWithBackend,
+  updateEnvironmentWithBackend,
+  deleteEnvironmentWithBackend,
+  setPrimaryEnvironmentWithBackend,
+  invalidateCacheWithBackend,
+  normalizeLegacyEnv,
+  normalizeEnvironmentScapi,
+} from './env.js';
 export type {
   CloneEnvOptions,
   CreateEnvOptions,
@@ -155,6 +181,21 @@ export type {
   MrtEnvironmentState,
   MrtEnvironmentUpdate,
   PatchedMrtEnvironment,
+  MrtEnvironmentView,
+  MrtEnvironmentsView,
+  MrtEnvironmentResult,
+  MrtEnvironmentWriteResult,
+  MrtCacheInvalidationResult,
+  ScapiCloneEnvironmentFlags,
+  EnvBackendOptions,
+  ListEnvironmentsBackendOptions,
+  CreateEnvironmentBackendOptions,
+  CloneEnvironmentBackendOptions,
+  GetEnvironmentBackendOptions,
+  UpdateEnvironmentBackendOptions,
+  DeleteEnvironmentBackendOptions,
+  SetPrimaryEnvironmentBackendOptions,
+  InvalidateCacheBackendOptions,
 } from './env.js';
 
 // Deployment operations

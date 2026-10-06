@@ -32,9 +32,15 @@ describe('mrt env invalidate', () => {
     return sinon.stub(command, 'error').throws(new Error('Expected error'));
   }
 
-  function stubCommonAuth(command: any): void {
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
+  function stubBackendContext(
+    command: any,
+    ctx: {preference?: string; scapiConnection?: unknown; legacyAuth?: unknown} = {},
+  ): void {
+    sinon.stub(command, 'getMrtBackendContext').returns({
+      preference: ctx.preference ?? 'auto',
+      scapiConnection: ctx.scapiConnection,
+      legacyAuth: 'legacyAuth' in ctx ? ctx.legacyAuth : {},
+    } as any);
   }
 
   it('calls command.error when project is missing', async () => {
@@ -43,8 +49,7 @@ describe('mrt env invalidate', () => {
     stubParse(command, {pattern: '/*'}, {});
     await command.init();
 
-    stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined, mrtEnvironment: 'production'}}));
 
     const errorStub = stubErrorToThrow(command);
 
@@ -62,7 +67,6 @@ describe('mrt env invalidate', () => {
     stubParse(command, {project: 'my-project', pattern: '/*'}, {});
     await command.init();
 
-    stubCommonAuth(command);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: undefined}}));
 
     const errorStub = stubErrorToThrow(command);
@@ -75,17 +79,15 @@ describe('mrt env invalidate', () => {
     }
   });
 
-  it('calls command.error when pattern does not start with /', async () => {
+  it('calls command.error when the pattern does not start with /', async () => {
     const command = createCommand();
 
     stubParse(command, {project: 'my-project', environment: 'production', pattern: 'invalid-pattern'}, {});
     await command.init();
 
-    stubCommonAuth(command);
     sinon.stub(command, 'resolvedConfig').get(() => ({
       values: {mrtProject: 'my-project', mrtEnvironment: 'production', mrtOrigin: 'https://example.com'},
     }));
-    sinon.stub(command, 'log').returns(void 0);
 
     const errorStub = stubErrorToThrow(command);
 
@@ -98,13 +100,13 @@ describe('mrt env invalidate', () => {
     }
   });
 
-  it('calls invalidateCache and returns result on success', async () => {
+  it('routes through the backend-aware invalidation on the legacy backend and returns raw under --json', async () => {
     const command = createCommand();
 
     stubParse(command, {project: 'my-project', environment: 'production', pattern: '/*'}, {});
     await command.init();
 
-    stubCommonAuth(command);
+    stubBackendContext(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({
@@ -112,62 +114,48 @@ describe('mrt env invalidate', () => {
     }));
 
     const invalidateStub = sinon.stub().resolves({
-      result: 'Cache invalidation request accepted.',
+      backend: 'legacy',
+      raw: {result: 'Cache invalidation request accepted.', slug: 'production'},
     } as any);
-
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
-      if (!project) this.error('MRT project is required.');
-      if (!environment) this.error('MRT environment is required.');
-      const {pattern} = this.flags;
-      if (!pattern.startsWith('/')) this.error('Pattern must start with a forward slash (/).');
-      const result = await invalidateStub({
-        projectSlug: project,
-        targetSlug: environment,
-        pattern,
-        origin: 'https://example.com',
-      });
-      return result;
-    };
+    command.operations = {...command.operations, invalidateCacheWithBackend: invalidateStub};
 
     const result = await command.run();
 
     expect(invalidateStub.calledOnce).to.equal(true);
     const [input] = invalidateStub.firstCall.args;
     expect(input.projectSlug).to.equal('my-project');
-    expect(input.targetSlug).to.equal('production');
+    expect(input.environment).to.equal('production');
     expect(input.pattern).to.equal('/*');
     expect(result.result).to.include('Cache invalidation request accepted');
   });
 
-  it('handles API errors during cache invalidation', async () => {
+  it('invalidates via the SCAPI backend and returns a null raw (empty 202)', async () => {
     const command = createCommand();
 
-    stubParse(command, {project: 'my-project', environment: 'production', pattern: '/products/*'}, {});
+    stubParse(command, {project: 'my-project', environment: 'production', pattern: '/*', 'mrt-backend': 'scapi'}, {});
     await command.init();
 
-    stubCommonAuth(command);
+    const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+    stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+    sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-project', mrtEnvironment: 'production', mrtOrigin: 'https://example.com'},
+      values: {mrtProject: 'my-project', mrtEnvironment: 'production', mrtBackend: 'scapi'},
     }));
 
-    const errorStub = stubErrorToThrow(command);
+    const invalidateStub = sinon.stub().resolves({backend: 'scapi', raw: null} as any);
+    command.operations = {...command.operations, invalidateCacheWithBackend: invalidateStub};
 
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
-      if (!project) this.error('MRT project is required.');
-      if (!environment) this.error('MRT environment is required.');
-      this.error('Failed to invalidate cache: Not Found');
-    };
+    const result = await command.run();
 
-    try {
-      await command.run();
-      expect.fail('Expected error');
-    } catch {
-      expect(errorStub.calledOnce).to.equal(true);
-    }
+    const [input] = invalidateStub.firstCall.args;
+    expect(input.preference).to.equal('scapi');
+    expect(input.scapiConnection).to.equal(scapiConnection);
+    expect(result).to.equal(null);
+  });
+
+  it('supports the SCAPI MRT backend', () => {
+    const command = createCommand();
+    expect(command.supportsScapiMrt()).to.equal(true);
   });
 });

@@ -3,46 +3,17 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags, ux} from '@oclif/core';
-import cliui from 'cliui';
+import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {cloneEnv, waitForEnv, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {cloneEnvironmentWithBackend, waitForEnv} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
-
-function printEnvDetails(env: MrtEnvironment, project: string): void {
-  const ui = cliui({width: process.stdout.columns || 80});
-  const labelWidth = 18;
-
-  ui.div('');
-  ui.div({text: 'Slug:', width: labelWidth}, {text: env.slug ?? ''});
-  ui.div({text: 'Name:', width: labelWidth}, {text: env.name ?? ''});
-  ui.div({text: 'Project:', width: labelWidth}, {text: project});
-  ui.div({text: 'State:', width: labelWidth}, {text: env.state ?? 'unknown'});
-
-  if (env.ssr_region) {
-    ui.div({text: 'Region:', width: labelWidth}, {text: env.ssr_region});
-  }
-
-  if (env.hostname) {
-    ui.div({text: 'Hostname:', width: labelWidth}, {text: env.hostname});
-  }
-
-  if (env.ssr_external_hostname) {
-    ui.div({text: 'External Host:', width: labelWidth}, {text: env.ssr_external_hostname});
-  }
-
-  if (env.ssr_external_domain) {
-    ui.div({text: 'External Domain:', width: labelWidth}, {text: env.ssr_external_domain});
-  }
-
-  ux.stdout(ui.toString());
-}
+import {printEnvView} from './get.js';
 
 export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
   static args = {
     slug: Args.string({
-      description: 'Slug for the new environment created by the clone',
-      required: true,
+      description: 'Slug for the new environment created by the clone (legacy backend; SCAPI generates the ID)',
+      required: false,
     }),
   };
 
@@ -57,18 +28,23 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
     '<%= config.bin %> <%= command.id %> staging-copy -p my-storefront -e staging',
     '<%= config.bin %> <%= command.id %> qa -p my-storefront -e staging --clone-redirects --clone-env-vars',
     '<%= config.bin %> <%= command.id %> qa -p my-storefront -e staging --external-hostname qa.example.com --certificate-id 123 --wait',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --name "QA" --mrt-backend scapi',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
+    name: Flags.string({
+      char: 'n',
+      description: 'Display name for the new environment (required on the SCAPI backend)',
+    }),
     'external-hostname': Flags.string({
-      description: 'Full external hostname for the new environment (required for non-MRT-managed certs)',
+      description: 'Full external hostname for the new environment (legacy backend only)',
     }),
     'external-domain': Flags.string({
-      description: 'External domain for Universal PWA SSR (e.g., example.com)',
+      description: 'External domain for Universal PWA SSR (e.g., example.com) (legacy backend only)',
     }),
     'certificate-id': Flags.integer({
-      description: 'ID of the certificate to associate with the new environment (required for custom domains)',
+      description: 'ID of the certificate to associate with the new environment (legacy backend only)',
     }),
     'clone-redirects': Flags.boolean({
       description: 'Clone redirects from the source environment',
@@ -84,7 +60,7 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
     }),
     wait: Flags.boolean({
       char: 'w',
-      description: 'Wait for the new environment to be ready before returning',
+      description: 'Wait for the new environment to be ready before returning (legacy backend only)',
       default: false,
     }),
     'poll-interval': Flags.integer({
@@ -100,13 +76,11 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
   };
 
   protected operations = {
-    cloneEnv,
+    cloneEnvironmentWithBackend,
     waitForEnv,
   };
 
-  async run(): Promise<MrtEnvironment> {
-    this.requireMrtCredentials();
-
+  async run(): Promise<unknown> {
     const {slug} = this.args;
     const {mrtProject: project, mrtEnvironment: fromSlug} = this.resolvedConfig.values;
 
@@ -120,11 +94,12 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
         'Source environment is required. Provide --environment / -e, set MRT_ENVIRONMENT, or set mrtEnvironment in dw.json.',
       );
     }
-    if (fromSlug === slug) {
+    if (slug && fromSlug === slug) {
       this.error(`Source and destination environment slugs must differ (both are "${slug}").`);
     }
 
     const {
+      name: displayName,
       'external-hostname': externalHostname,
       'external-domain': externalDomain,
       'certificate-id': certificateId,
@@ -136,38 +111,56 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
       timeout,
     } = this.flags;
 
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
+    const scapi = preference === 'scapi' || (preference === 'auto' && Boolean(scapiConnection));
+
+    if (scapi) {
+      if (!displayName) {
+        this.error('The SCAPI MRT backend requires --name to clone an environment.');
+      }
+    } else if (!slug) {
+      this.error('The legacy MRT backend requires a slug argument for the new environment.');
+    }
+
     this.log(
       t('commands.mrt.env.clone.cloning', 'Cloning environment "{{fromSlug}}" → "{{slug}}" in {{project}}...', {
         fromSlug,
-        slug,
+        slug: slug ?? displayName,
         project,
       }),
     );
 
-    try {
-      let result = await this.operations.cloneEnv(
-        {
-          projectSlug: project,
-          slug,
-          fromSlug,
-          externalHostname,
-          externalDomain,
-          certificateId,
-          cloneRedirects: cloneRedirectsFlag,
-          cloneEnvironmentVariables: cloneEnvVarsFlag,
-          cloneB2cTargetInfo: cloneB2cInfoFlag,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    const result = await this.operations.cloneEnvironmentWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      slug,
+      displayName,
+      sourceEnvironment: fromSlug,
+      cloneRedirects: cloneRedirectsFlag,
+      cloneEnvironmentVariables: cloneEnvVarsFlag,
+      cloneB2cTargetInfo: cloneB2cInfoFlag,
+      externalHostname,
+      externalDomain,
+      certificateId,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Cloning environment via backend'),
+    });
 
-      if (wait) {
+    let env = result.environment;
+    let raw = result.raw;
+
+    // --wait polls the legacy MRT Cloud API until the new environment is ready.
+    // The SCAPI backend has no equivalent polling helper yet.
+    if (wait) {
+      if (result.backend === 'legacy') {
         this.log(t('commands.mrt.env.clone.waiting', 'Waiting for environment "{{slug}}" to be ready...', {slug}));
-
-        result = await this.operations.waitForEnv(
+        const ready = await this.operations.waitForEnv(
           {
             projectSlug: project,
-            slug,
+            slug: env.id,
             origin: this.resolvedConfig.values.mrtOrigin,
             pollIntervalSeconds: pollInterval,
             timeoutSeconds: timeout,
@@ -180,25 +173,35 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
               );
             },
           },
-          this.getMrtAuth(),
+          legacyAuth!,
+        );
+        raw = ready;
+        env = {
+          id: ready.slug ?? env.id,
+          name: ready.name,
+          status: ready.state || undefined,
+          region: ready.ssr_region || undefined,
+          architecture: ready.ssr_architecture ?? undefined,
+          isProduction: ready.is_production ?? undefined,
+          backend: 'legacy',
+        };
+      } else {
+        this.warn(
+          '--wait is not supported on the SCAPI MRT backend yet; returning the created environment immediately.',
         );
       }
-
-      if (this.jsonEnabled()) {
-        return result;
-      }
-
-      this.log(t('commands.mrt.env.clone.success', 'Environment cloned successfully.'));
-      printEnvDetails(result, project);
-
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.env.clone.failed', 'Failed to clone environment: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
     }
+
+    if (!this.jsonEnabled()) {
+      this.log(t('commands.mrt.env.clone.success', 'Environment cloned successfully.'));
+      printEnvView(env, project);
+    }
+
+    // Under --json, emit the backend's native response verbatim.
+    return raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }
