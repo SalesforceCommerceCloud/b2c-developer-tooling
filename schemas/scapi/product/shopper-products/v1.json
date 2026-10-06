@@ -2,7 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Shopper Products",
-    "version": "1.12.0",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/shopper-products/shopper-products-oas-v1-public.yaml)\n\n# API Overview\n\nThe Shopper Products API enables you to access product details for products that are online, merchandised to a particular site catalog, and ready to be sold. You can use these product details to merchandise the product on other ecommerce channels. To set up category navigation paths on other commerce apps or storefronts, you can use the Categories API.\n\n## Authentication & Authorization\n\nThe client requesting the product information must have access to the Products resource. The Shopper Products API requires a shopper access token from the Shopper Login and API Access Service (SLAS).\n\nYou must include the relevant scopes in the client ID used to generate the SLAS token. For a full list of required permissions, see the [Authorization Scopes Catalog.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html)\n\nFor details on how to request a shopper access token from SLAS, see the guest user flows for [public clients](https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-public-client.html#guest-user) and [private clients](https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-private-client.html#guest-user) in the SLAS guides.\n\n## Customization\n\n### Custom Properties\n\nThis API supports custom properties (prefixed with `c_`). For details, see [Custom Properties.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/custom-properties.html)\n\n### Hooks\n\nFor details on working with hooks, see [Extensibility with Hooks.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/extensibility_via_hooks.html)\n\n## Request Details\n\n### Property Selection\n\nThis API supports the `select` query parameter for filtering response properties. For details, see [Property Selection.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html)\n\n### URL Encoding\n\nIf resource identifiers in request parameters contain commas (`,`) or percent signs (`%`), they must be URL encoded. For details, see [Encode URL Special Characters.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/url-encode.html)\n\n## Response Details\n\n### Personalization\n\nResponses from this API can be personalized using the [Shopper Context API.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/shopper-context-api.html) By setting context attributes such as customer group, source code, or store ID, you can retrieve personalized promotions, pricing, and shipping methods. For details on how personalization interacts with caching, see [Personalized Caching.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html#personalized-caching)\n\n### Caching\n\nCaching is provided for this API. For details, see [Server-Side Web-Tier Caching.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html)\n\n### Timeouts\n\nShopper API requests must respond within 10 seconds, including any hook execution. If a response exceeds this threshold, an HTTP 504 status code is returned. For details, see [Timeouts and Limits.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/timeouts-limits.html)\n\n### Error Handling\n\nError responses follow the [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) problem detail format. To trace errors, include a `correlation-id` header in your request — the response returns it as `x-correlation-id`. For details, see [HTTP Status Codes and Errors.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/error-response-codes.html)\n\n## Use Cases\n\n### Get a Single Product\n\nRetrieve product details by ID. Replace `{access_token}` with a valid SLAS token.\n\n```sh\ncurl \"https://{shortCode}.api.commercecloud.salesforce.com/product/shopper-products/v1/organizations/{organizationId}/products/25695327M?siteId=RefArch\" \\\n  -H \"Authorization: Bearer {access_token}\"\n```\n\n### Get Multiple Products\n\nRetrieve up to 24 products in a single request:\n\n```sh\ncurl \"https://{shortCode}.api.commercecloud.salesforce.com/product/shopper-products/v1/organizations/{organizationId}/products?ids=25695327M,25519318M&siteId=RefArch\" \\\n  -H \"Authorization: Bearer {access_token}\"\n```\n\n### Populate Product Listing Pages\n\nUse the Shopper Product API so that a customer, browsing on a commerce shopping app built using Commerce Cloud APIs, can see a list of products. For example, hydrate a list of products (max 24). The API returns product details including images, prices, promotions, and product availability.\n\n![b2c-commerce-shopper-products-screenshot-1.png](https://resources.docs.salesforce.com/rel1/doc/en-us/static/misc/b2c-commerce-shopper-products-screenshot-1.png)\n\n### Get Variation Product Details on an Ecommerce Channel\n\nUse the API so that a customer, browsing on a commerce shopping app built using Commerce Cloud APIs, can switch between different variation products. The API returns product details including images, prices, promotions, and available to sell inventory.\n\n![b2c-commerce-shopper-products-screenshot-2.png](https://resources.docs.salesforce.com/rel1/doc/en-us/static/misc/b2c-commerce-shopper-products-screenshot-2.png)\n\n### Retrieve Promotion Information\n\nPromotions provide discounts to shoppers when they meet certain purchase requirements.\n\nPromotion information is described in detail in [Promotion Details](https://developer.salesforce.com/docs/commerce/commerce-api/guide/promotion-details.html), but the following list provides several key points:\n\n- Pricing discounts for basket and shipping promotions are NEVER returned by the 'getProduct' or 'getProducts' endpoint.\n- Promotional pricing is ONLY returned for products that are included with non-conditional promotions.\n- Callout messages are ALWAYS returned by the 'getProduct' and 'getProducts' endpoints.\n\nBy default, 'getProduct' and 'getProducts' return promotion information for a queried product. Promotion information includes both pricing and callout message information. However, the specific pricing and callout information that is fetched is determined by:\n\n- Promotion Type\n- Product Type\n- Product Purchase Requirements\n\nSome promotions can be displayed on a Product Data Page (PDP) or Product Listing page (PLP), while other promotions are displayed in the context of a basket, such as an order level promotion: \"add the product to your basket to view price information\". It is important to understand what is included in the response when designing a PDP or PLP on top of SCAPI to ensure your design aligns with implementable features.\n\n#### Shopper Personalization\n\nThe SCAPI response can be personalized using the Shopper Context API or hooks. By setting specific values in the Shopper Context API, you can modify the response of the 'getProduct' or 'getProducts' endpoint based on the shopper's context. For instance, you can offer a 5% discount or free shipping to shoppers using mobile devices.\n\n#### JWA Caching\n\nThe response is cached in JWA, which means promotion data contained in the response is also cached based on the TTL (Time to Live) specified in the Business Manager [Feature Switches](https://help.salesforce.com/s/articleView?id=cc.b2c_feature_switches.htm&type=5) configuration.\nWhen the shopper context value is updated, a check is conducted to see if the updated shopper context affects the retrieval of product-promotion data. If it does, then the response is fetched from the source and cached in the JWA.\n\nFor details, see [Server-Side Web-Tier Caching.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html)\n\n## Resources\n\n### Product\n\nA full representation of a product or service that is to merchandise. A ready to merchandise product is one that is online, categorized, and published to a channel. The information associated with a product includes, the product name, description, custom and system attributes, variations, price, availability, and images.\n\n### Category\n\nCategories and subcategories are the structure by which products are organized and grouped in a catalog and on a storefront. Categories can have relationships to other categories. Further, each category can provide context that is inherited by subcategories. For example, a category can have an assigned attribute. A product assigned to that category or any subcategory inherits the categories’s attribute value. Once the product is removed from the category, the attribute value is no longer inherited by the product. You can also use category linking for site hierarchical navigation. For example, inside the Clothing category you may have Men’s, and inside the Men’s category you may have Pants.\n\nCategories are not tags.\n\n## Related APIs\n\n- [Products (Admin)](https://developer.salesforce.com/docs/commerce/commerce-api/references/products?meta=Summary) — Manage product catalogs, variations, and options.",
+    "version": "1.13.1",
     "x-api-type": "Shopper",
     "x-api-family": "Product"
   },
@@ -11,6 +12,7 @@
       "url": "https://{shortCode}.api.commercecloud.salesforce.com/product/shopper-products/v1",
       "variables": {
         "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
           "default": "shortCode"
         }
       }
@@ -19,26 +21,35 @@
   "paths": {
     "/organizations/{organizationId}/products": {
       "get": {
+        "summary": "Returns product details for multiple products.",
+        "description": "Allows access to multiple product details with a single request. Only products that are online and assigned to a site catalog are returned. The maximum number of product IDs that you can request is 24. In addition to product details, the availability, images, price, bundled_products, set_products, recommendations, product options, variations, shipping_methods, and promotions for the products are included, as applicable.",
         "operationId": "getProducts",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "ids",
             "in": "query",
+            "description": "The IDs of the requested products (comma-separated, max 24 IDs).",
             "required": true,
             "style": "form",
             "explode": false,
             "schema": {
               "type": "array",
+              "example": [
+                "apple-ipod-shuffle",
+                "apple-ipod-nano"
+              ],
               "items": {
                 "allOf": [
                   {
@@ -47,16 +58,25 @@
                 ]
               },
               "maxItems": 100
-            }
+            },
+            "example": "apple-ipod-shuffle,apple-ipod-nano"
           },
           {
             "name": "inventoryIds",
             "in": "query",
+            "description": "The optional inventory list IDs, for which the availability should be shown (comma-separated, max 5 inventoryListIDs).",
             "required": false,
             "style": "form",
             "explode": false,
             "schema": {
               "type": "array",
+              "example": [
+                "Site1InventoryList",
+                "Site2InventoryList",
+                "Site3InventoryList",
+                "Site4InventoryList",
+                "Site5InventoryList"
+              ],
               "items": {
                 "allOf": [
                   {
@@ -65,16 +85,22 @@
                 ]
               },
               "maxItems": 5
-            }
+            },
+            "example": "Site1InventoryList,Site2InventoryList,Site3InventoryList,Site4InventoryList,Site5InventoryList"
           },
           {
             "name": "expand",
             "in": "query",
+            "description": "All expand parameters except page_meta_tags and slug are used for the request when no expand parameter is provided.\nThe value \"none\" may be used to turn off all expand options.\nThe page_meta_tags expand value is optional and available starting from B2C Commerce version 25.2.\nThe availability expand is deprecated. Use the Shopper Availability API instead for better caching performance.\nThe primary_category expand returns the full breadcrumb path (root to leaf) for each product's primary category.\nThe slug expand populates the slug field on the product. Available starting from B2C Commerce version 26.8.",
             "required": false,
             "style": "form",
             "explode": false,
             "schema": {
               "type": "array",
+              "example": [
+                "prices",
+                "promotions"
+              ],
               "items": {
                 "type": "string",
                 "enum": [
@@ -91,50 +117,66 @@
                   "recommendations",
                   "shipping_methods",
                   "page_meta_tags",
-                  "primary_category"
-                ]
+                  "primary_category",
+                  "slug"
+                ],
+                "example": "promotions"
               }
-            }
+            },
+            "example": "prices,promotions"
           },
           {
             "name": "allImages",
             "in": "query",
+            "description": "The flag that indicates whether to retrieve the whole image model for the requested product.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
-              "type": "boolean"
+              "type": "boolean",
+              "example": true
             }
           },
           {
             "name": "imgTypes",
             "in": "query",
+            "description": "Filters product images by viewType with optional count limits per type. This parameter requires the images expand parameter.\nWhen used, the response includes the imageGroups property filtered by the specified image types.\nThe format is a comma-separated list of image types with optional counts: <viewType>:<count>,<viewType>:<count>.\nIf the count is omitted, all images of that type are returned. If specified, the count limits the number of images returned for that type.\nFor example, imgTypes=large:2,small:1 returns up to 2 large images and 1 small image per product in the imageGroups.\nIf imgTypes is used without expand=images, it is ignored and imageGroups aren't included in the response.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "large:3,small:1",
               "maxLength": 50
-            }
+            },
+            "example": "large:3,small:1"
           },
           {
             "name": "perPricebook",
             "in": "query",
+            "description": "The flag that indicates whether to retrieve the per PriceBook prices and tiered prices (if available) for requested Products. Available end of June, 2021.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
-              "type": "boolean"
+              "type": "boolean",
+              "example": true
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
@@ -145,56 +187,65 @@
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/Select"
+            },
+            "examples": {
+              "select": {
+                "value": "(**)"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "currency",
             "in": "query",
+            "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/CurrencyCode"
+            },
+            "examples": {
+              "CurrencyCode": {
+                "value": "USD"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. Set to `none` to opt out of personalized response handling so the response is safe to cache at the CDN layer.\n\nWhen set to `none`, the server skips applying personalization to the response.\n\nSetting `personalized=none` is necessary but not sufficient for CDN caching: a response is only cached when the endpoint is also cacheable in the [server-side web-tier cache](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html), subject to its TTLs and invalidation. A call that is uncacheable in the web tier is not cached at the CDN either. See [CDN caching](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html).",
             "required": false,
             "style": "form",
             "explode": true,
@@ -202,12 +253,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -233,6 +286,14 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetProductsBadRequestResponseExample": {
+                    "$ref": "#/components/examples/GetProductsBadRequestResponseExample"
+                  },
+                  "MalformedSelectorResponseExample": {
+                    "$ref": "#/components/examples/MalformedSelectorResponseExample"
+                  }
                 }
               }
             }
@@ -259,21 +320,26 @@
     },
     "/organizations/{organizationId}/products/{id}": {
       "get": {
+        "summary": "Returns product details for a single product.",
+        "description": "Allows access to product details for a single product ID. Only products that are online and assigned to a site catalog are returned. In addition to product details, the availability, images, price, bundled_products, set_products, recommendations, product options, variations, shipping_methods, and promotions for the products are included, as applicable.",
         "operationId": "getProduct",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "id",
             "in": "path",
+            "description": "The ID of the requested product.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -284,11 +350,19 @@
           {
             "name": "inventoryIds",
             "in": "query",
+            "description": "The optional inventory list IDs, for which the availability should be shown (comma-separated, max 5 inventoryListIDs).",
             "required": false,
             "style": "form",
             "explode": false,
             "schema": {
               "type": "array",
+              "example": [
+                "Site1InventoryList",
+                "Site2InventoryList",
+                "Site3InventoryList",
+                "Site4InventoryList",
+                "Site5InventoryList"
+              ],
               "items": {
                 "allOf": [
                   {
@@ -297,16 +371,22 @@
                 ]
               },
               "maxItems": 5
-            }
+            },
+            "example": "Site1InventoryList,Site2InventoryList,Site3InventoryList,Site4InventoryList,Site5InventoryList"
           },
           {
             "name": "expand",
             "in": "query",
+            "description": "All expand parameters except page_meta_tags and slug are used for the request when no expand parameter is provided.\nThe value \"none\" may be used to turn off all expand options.\nThe page_meta_tags expand value is optional and available starting from B2C Commerce version 25.2.\nThe availability expand is deprecated. Use the Shopper Availability API instead for better caching performance.\nThe primary_category expand returns the full breadcrumb path (root to leaf) for the product's primary category.\nThe slug expand populates the slug field on the product. Available starting from B2C Commerce version 26.8.",
             "required": false,
             "style": "form",
             "explode": false,
             "schema": {
               "type": "array",
+              "example": [
+                "prices",
+                "promotions"
+              ],
               "items": {
                 "type": "string",
                 "enum": [
@@ -323,40 +403,50 @@
                   "recommendations",
                   "shipping_methods",
                   "page_meta_tags",
-                  "primary_category"
-                ]
+                  "primary_category",
+                  "slug"
+                ],
+                "example": "links"
               }
-            }
+            },
+            "example": "prices,promotions"
           },
           {
             "name": "allImages",
             "in": "query",
+            "description": "The flag that indicates whether to retrieve the whole image model for the requested product.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
-              "type": "boolean"
+              "type": "boolean",
+              "example": true
             }
           },
           {
             "name": "imgTypes",
             "in": "query",
+            "description": "Filters product images by viewType with optional count limits per type. This parameter requires the images expand parameter.\nWhen used, the response includes the imageGroups property filtered by the specified image types.\nThe format is a comma-separated list of image types with optional counts: <viewType>:<count>,<viewType>:<count>.\nIf the count is omitted, all images of that type are returned. If specified, the count limits the number of images returned for that type.\nFor example, imgTypes=large:2,small:1 returns up to 2 large images and 1 small image per product in the imageGroups.\nIf imgTypes is used without expand=images, it is ignored and imageGroups aren't included in the response.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "large:3,small:1",
               "maxLength": 50
-            }
+            },
+            "example": "large:3,small:1"
           },
           {
             "name": "perPricebook",
             "in": "query",
+            "description": "The flag that indicates whether to retrieve the per PriceBook prices and tiered prices (if available) for requested Products. Available end of June, 2021.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
-              "type": "boolean"
+              "type": "boolean",
+              "example": true
             }
           },
           {
@@ -367,66 +457,81 @@
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/Select"
+            },
+            "examples": {
+              "select": {
+                "value": "(**)"
+              }
             }
           },
           {
             "name": "currency",
             "in": "query",
+            "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/CurrencyCode"
+            },
+            "examples": {
+              "CurrencyCode": {
+                "value": "USD"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. Set to `none` to opt out of personalized response handling so the response is safe to cache at the CDN layer.\n\nWhen set to `none`, the server skips applying personalization to the response.\n\nSetting `personalized=none` is necessary but not sufficient for CDN caching: a response is only cached when the endpoint is also cacheable in the [server-side web-tier cache](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html), subject to its TTLs and invalidation. A call that is uncacheable in the web tier is not cached at the CDN either. See [CDN caching](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html).",
             "required": false,
             "style": "form",
             "explode": true,
@@ -434,12 +539,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -455,6 +562,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Product"
+                },
+                "examples": {
+                  "GetProductResponseExample": {
+                    "$ref": "#/components/examples/GetProductResponseExample"
+                  }
                 }
               }
             }
@@ -465,6 +577,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedSelectorResponseExample": {
+                    "$ref": "#/components/examples/MalformedSelectorResponseExample"
+                  }
                 }
               }
             }
@@ -478,6 +595,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetProductNotFoundResponseExample": {
+                    "$ref": "#/components/examples/GetProductNotFoundResponseExample"
+                  }
                 }
               }
             }
@@ -501,21 +623,26 @@
     },
     "/organizations/{organizationId}/products/{productId}/images": {
       "get": {
+        "summary": "Returns product image data for a single product.",
+        "description": "Returns a Product document for the specified product ID, focused on imageGroups and related image fields. Only\nonline products assigned to a site catalog are returned.\n\nUse the following parameters to control image output:\nimgTypes — Filters which catalog view types to include, with optional per-type image limits. Defaults to all\nview types with a 200-image cap per type.\n\nallImages — Controls whether the full image model is returned.\n\nvariationAttribute — Narrows image selection by variation context. Applies only when allImages is true.",
         "operationId": "getProductImages",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "productId",
             "in": "path",
+            "description": "The ID of the product whose images to retrieve.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -526,35 +653,45 @@
           {
             "name": "imgTypes",
             "in": "query",
+            "description": "Comma-separated list of view types to include in the response, with optional per-type image limits. Each item is\neither viewType or viewType:count. If omitted, all catalog view types are returned, up to 200 images per view\ntype. If present, only the listed view types are included. The image count defaults to 200 per view type when\nno limit is specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "large:3,small:1",
               "maxLength": 50
-            }
+            },
+            "example": "large:3,small:1"
           },
           {
             "name": "allImages",
             "in": "query",
+            "description": "When true, returns all variation-specific image groups rather than only the best-matching group\nfor the product's variation attribute values. Default: false.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": false
             }
           },
           {
             "name": "variationAttribute",
             "in": "query",
+            "description": "Variation attribute values used to filter image groups when allImages=true.\nFormat: <attributeId>=<value>. This parameter can be repeated for multiple attributes.\nExample: color=red&variationAttribute=size=L",
             "required": false,
             "style": "form",
             "explode": false,
             "schema": {
               "type": "array",
+              "example": [
+                "color=red"
+              ],
               "items": {
                 "type": "string",
+                "example": "color=red",
                 "maxLength": 256,
                 "minLength": 1
               }
@@ -563,51 +700,55 @@
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. Set to `none` to opt out of personalized response handling so the response is safe to cache at the CDN layer.\n\nWhen set to `none`, the server skips applying personalization to the response.\n\nSetting `personalized=none` is necessary but not sufficient for CDN caching: a response is only cached when the endpoint is also cacheable in the [server-side web-tier cache](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html), subject to its TTLs and invalidation. A call that is uncacheable in the web tier is not cached at the CDN either. See [CDN caching](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html).",
             "required": false,
             "style": "form",
             "explode": true,
@@ -615,12 +756,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -636,6 +779,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProductImages"
+                },
+                "examples": {
+                  "GetProductImagesResponseExample": {
+                    "$ref": "#/components/examples/GetProductImagesResponseExample"
+                  }
                 }
               }
             }
@@ -646,6 +794,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetProductImagesBadRequestResponseExample": {
+                    "$ref": "#/components/examples/GetProductImagesBadRequestResponseExample"
+                  }
                 }
               }
             }
@@ -659,6 +812,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetProductImagesNotFoundResponseExample": {
+                    "$ref": "#/components/examples/GetProductImagesNotFoundResponseExample"
+                  }
                 }
               }
             }
@@ -711,86 +869,102 @@
     },
     "/organizations/{organizationId}/products/{productId}/prices": {
       "get": {
+        "summary": "Returns price details for a single product.",
+        "description": "Returns price details for a single product that is online and assigned to a site catalog. Returns the effective sales price, tiered prices, and per-pricebook prices. Prices are personalized by customer group and pricebook. Responses are not CDN-cached but are eligible for JWA caching with a 15-minute TTL.",
         "operationId": "getProductPrices",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "productId",
             "in": "path",
+            "description": "The ID of the product whose prices to retrieve.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/ProductId"
-            }
+            },
+            "example": "apple-ipod-shuffle"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "currency",
             "in": "query",
+            "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/CurrencyCode"
+            },
+            "examples": {
+              "CurrencyCode": {
+                "value": "USD"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. Set to `none` to opt out of personalized response handling so the response is safe to cache at the CDN layer.\n\nWhen set to `none`, the server skips applying personalization to the response.\n\nSetting `personalized=none` is necessary but not sufficient for CDN caching: a response is only cached when the endpoint is also cacheable in the [server-side web-tier cache](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html), subject to its TTLs and invalidation. A call that is uncacheable in the web tier is not cached at the CDN either. See [CDN caching](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html).",
             "required": false,
             "style": "form",
             "explode": true,
@@ -798,12 +972,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -819,6 +995,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PricesResult"
+                },
+                "examples": {
+                  "GetProductPricesResponseExample": {
+                    "$ref": "#/components/examples/GetProductPricesResponseExample"
+                  }
                 }
               }
             }
@@ -829,6 +1010,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetProductPricesBadRequestResponseExample": {
+                    "$ref": "#/components/examples/GetProductPricesBadRequestResponseExample"
+                  }
                 }
               }
             }
@@ -842,6 +1028,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetProductPricesNotFoundResponseExample": {
+                    "$ref": "#/components/examples/GetProductPricesNotFoundResponseExample"
+                  }
                 }
               }
             }
@@ -894,86 +1085,102 @@
     },
     "/organizations/{organizationId}/products/{productId}/promotions": {
       "get": {
+        "summary": "Returns active promotion details for a single product.",
+        "description": "Returns active promotion details for a single product that is online and assigned to a site catalog. Active promotions are filtered by customer group, campaign date range, and time slot. Promotions are personalized. Responses are not CDN-cached but are eligible for JWA caching with a 15-minute TTL.",
         "operationId": "getProductPromotions",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "productId",
             "in": "path",
+            "description": "The ID of the product whose promotions to retrieve.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/ProductId"
-            }
+            },
+            "example": "apple-ipod-shuffle"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "currency",
             "in": "query",
+            "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/CurrencyCode"
+            },
+            "examples": {
+              "CurrencyCode": {
+                "value": "USD"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. Set to `none` to opt out of personalized response handling so the response is safe to cache at the CDN layer.\n\nWhen set to `none`, the server skips applying personalization to the response.\n\nSetting `personalized=none` is necessary but not sufficient for CDN caching: a response is only cached when the endpoint is also cacheable in the [server-side web-tier cache](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html), subject to its TTLs and invalidation. A call that is uncacheable in the web tier is not cached at the CDN either. See [CDN caching](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html).",
             "required": false,
             "style": "form",
             "explode": true,
@@ -981,12 +1188,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -1002,6 +1211,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PromotionsResult"
+                },
+                "examples": {
+                  "GetProductPromotionsResponseExample": {
+                    "$ref": "#/components/examples/GetProductPromotionsResponseExample"
+                  }
                 }
               }
             }
@@ -1012,6 +1226,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetProductPromotionsBadRequestResponseExample": {
+                    "$ref": "#/components/examples/GetProductPromotionsBadRequestResponseExample"
+                  }
                 }
               }
             }
@@ -1025,6 +1244,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetProductPromotionsNotFoundResponseExample": {
+                    "$ref": "#/components/examples/GetProductPromotionsNotFoundResponseExample"
+                  }
                 }
               }
             }
@@ -1077,26 +1301,35 @@
     },
     "/organizations/{organizationId}/categories": {
       "get": {
+        "summary": "Returns category and subcategory details for one or more categories.",
+        "description": "When you use the URL template, the server returns multiple categories (a result object of category documents). You can use this template to obtain up to 50 categories in a single request. You must enclose the list of IDs in parentheses. If a category identifier contains parenthesis or the separator sign, you must URL encode the character.",
         "operationId": "getCategories",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "ids",
             "in": "query",
+            "description": "The comma separated list of category IDs or slugs (max 50). For each value, if a category exists with that value as its ID, it is returned (ID takes precedence). Otherwise, the value is treated as a slug. If a slug is provided, it must be URL-encoded (for example, `mens%2Fclothing` for the slug `mens/clothing`).",
             "required": true,
             "style": "form",
             "explode": false,
             "schema": {
               "type": "array",
+              "example": [
+                "electronics-digital-cameras",
+                "electronics-televisions"
+              ],
               "items": {
                 "allOf": [
                   {
@@ -1105,11 +1338,13 @@
                 ]
               },
               "maxItems": 50
-            }
+            },
+            "example": "electronics-digital-cameras,electronics-televisions"
           },
           {
             "name": "levels",
             "in": "query",
+            "description": "Specifies how many levels of nested subcategories you want the server to return. The default value is 1. Valid values are 0, 1, or 2. Only online subcategories are returned.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -1121,57 +1356,62 @@
                 1,
                 2
               ],
+              "example": 1,
               "minimum": 0
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. Set to `none` to opt out of personalized response handling so the response is safe to cache at the CDN layer.\n\nWhen set to `none`, the server skips applying personalization to the response.\n\nSetting `personalized=none` is necessary but not sufficient for CDN caching: a response is only cached when the endpoint is also cacheable in the [server-side web-tier cache](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html), subject to its TTLs and invalidation. A call that is uncacheable in the web tier is not cached at the CDN either. See [CDN caching](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html).",
             "required": false,
             "style": "form",
             "explode": true,
@@ -1179,12 +1419,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -1200,6 +1442,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CategoryResult"
+                },
+                "examples": {
+                  "GetCategoriesResponseExample": {
+                    "$ref": "#/components/examples/GetCategoriesResponseExample"
+                  }
                 }
               }
             }
@@ -1210,6 +1457,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetCategoriesBadRequestResponseExample": {
+                    "$ref": "#/components/examples/GetCategoriesBadRequestResponseExample"
+                  }
                 }
               }
             }
@@ -1236,11 +1488,14 @@
     },
     "/organizations/{organizationId}/categories/{id}": {
       "get": {
+        "summary": "Returns category and subcategory details for a single category.",
+        "description": "When you use the URL template, the server returns a category identified by the ID. By default, the server\nalso returns the first level of subcategories, but you can specify an additional level using the levels\nparameter.\n\nThis endpoint fetches both online and offline categories. For offline categories, only the top-level \ncategory is returned, not offline subcategories.\n\nUsing a large value for levels can cause performance issues when there is a large and deep category tree.",
         "operationId": "getCategory",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "The ID or slug of the requested category. If a category exists with the given value as its ID, it is returned (ID takes precedence). Otherwise, the value is treated as a slug. If a slug is provided, it must be URL-encoded (for example, `mens%2Fclothing` for the slug `mens/clothing`).",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -1251,16 +1506,19 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "levels",
             "in": "query",
+            "description": "Specifies how many levels of nested subcategories you want the server to return. The default value is 1. Valid values are 0, 1, or 2. Only online subcategories are returned.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -1272,57 +1530,62 @@
                 1,
                 2
               ],
+              "example": 1,
               "minimum": 0
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. Set to `none` to opt out of personalized response handling so the response is safe to cache at the CDN layer.\n\nWhen set to `none`, the server skips applying personalization to the response.\n\nSetting `personalized=none` is necessary but not sufficient for CDN caching: a response is only cached when the endpoint is also cacheable in the [server-side web-tier cache](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html), subject to its TTLs and invalidation. A call that is uncacheable in the web tier is not cached at the CDN either. See [CDN caching](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html).",
             "required": false,
             "style": "form",
             "explode": true,
@@ -1330,12 +1593,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -1351,6 +1616,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Category"
+                },
+                "examples": {
+                  "GetCategoryResponseExample": {
+                    "$ref": "#/components/examples/GetCategoryResponseExample"
+                  }
                 }
               }
             }
@@ -1361,6 +1631,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetCategoryBadRequestResponseExample": {
+                    "$ref": "#/components/examples/GetCategoryBadRequestResponseExample"
+                  }
                 }
               }
             }
@@ -1374,6 +1649,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetCategoryNotFoundResponseExample": {
+                    "$ref": "#/components/examples/GetCategoryNotFoundResponseExample"
+                  }
                 }
               }
             }
@@ -1400,42 +1680,59 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
         "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
       },
       "ProductId": {
         "type": "string",
+        "description": "The id (SKU) of the product.",
+        "example": "apple-ipod-classic",
         "maxLength": 100,
         "minLength": 1
       },
       "InventoryId": {
         "type": "string",
+        "description": "The inventory ID.",
+        "example": "Site1InventoryList",
         "maxLength": 256,
         "minLength": 1
       },
       "SiteId": {
         "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
         "maxLength": 32,
         "minLength": 1
       },
       "Select": {
         "type": "string",
+        "description": "The property selector declaring which fields are included into the response payload. You can specify a single field name, a comma-separated list of names or work with wildcards. You can also specify array operations and filter expressions. The actual selector value must be enclosed within parentheses. For more information, please read the documentation about property selectors [here](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html).",
+        "example": "(name,id,variationAttributes.(**))",
         "minLength": 1,
         "pattern": "^[(].*[)]$"
       },
       "LanguageCountry": {
         "type": "string",
+        "description": "A concatenated version of the standard Language and Country codes, combined with a hyphen '`-`'.",
+        "example": "en-US",
         "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
       },
       "LanguageCode": {
         "type": "string",
+        "description": "A two letter lowercase language code conforming to the [ISO 639-1](https://www.iso.org/iso-639-language-codes.html) standard. Additionally, this may be used to submit requests with the header parameter `Accept-Language`, following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766).",
+        "example": "en",
         "pattern": "^[a-z][a-z]$"
       },
       "DefaultFallback": {
         "type": "string",
         "default": "default",
+        "description": "A specialized value indicating the system default values for locales.",
+        "example": "default",
         "pattern": "^default$"
       },
       "LocaleCode": {
+        "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
         "oneOf": [
           {
             "$ref": "#/components/schemas/LanguageCountry"
@@ -1450,17 +1747,27 @@
       },
       "CurrencyCode": {
         "type": "string",
+        "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
+        "example": "USD",
         "pattern": "^([A-Z][A-Z][A-Z]|N/A)$"
       },
       "Product": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Any product that is sold, shown alone, and does not have variations such as different sizes or colors. A product has no reliance on any other product for inheritance. *A product has a SKU and can have a product option, which has a different SKU*.",
         "properties": {
           "brand": {
-            "type": "string"
+            "type": "string",
+            "description": "The product's brand.",
+            "example": "Apple"
           },
           "bundledProducts": {
             "type": "array",
+            "description": "The array of all bundled products of this product.",
             "items": {
               "$ref": "#/components/schemas/BundledProduct"
             }
@@ -1469,23 +1776,28 @@
             "$ref": "#/components/schemas/CurrencyCode"
           },
           "ean": {
-            "type": "string"
+            "type": "string",
+            "description": "The European Article Number of the product.",
+            "example": "8essdf9w3"
           },
           "fetchDate": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "example": 5
           },
           "id": {
             "$ref": "#/components/schemas/ProductId"
           },
           "imageGroups": {
             "type": "array",
+            "description": "The array of product image groups.",
             "items": {
               "$ref": "#/components/schemas/ImageGroup"
             }
           },
           "inventories": {
             "type": "array",
+            "description": "The array of product inventories explicitly requested via the 'inventory_ids' query parameter. This property\n is only returned in context of the 'availability' expansion.",
             "items": {
               "$ref": "#/components/schemas/Inventory"
             }
@@ -1495,70 +1807,99 @@
               {
                 "$ref": "#/components/schemas/Inventory"
               }
-            ]
+            ],
+            "description": "The site default inventory information. This property is only\n returned in context of the 'availability' expansion."
           },
           "longDescription": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized product's long description.",
+            "example": "Awesome long description of product"
           },
           "manufacturerName": {
-            "type": "string"
+            "type": "string",
+            "description": "The product's manufacturer name.",
+            "example": "Apple"
           },
           "manufacturerSku": {
-            "type": "string"
+            "type": "string",
+            "description": "The product's manufacturer SKU.",
+            "example": "2ND8834"
           },
           "master": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Master"
               }
-            ]
+            ],
+            "description": "The master product information, only for types: master, variation group, and variant."
           },
           "minOrderQuantity": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The minimum order quantity for this product.",
+            "example": 2
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized product name.",
+            "example": "Apple IPod Classic"
           },
           "options": {
             "type": "array",
+            "description": "The array of product options, only for type option. This array can be empty.",
             "items": {
               "$ref": "#/components/schemas/Option"
             }
           },
           "pageDescription": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized product's page description.",
+            "example": "Really good Product"
           },
           "pageKeywords": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized product's page description.",
+            "example": "Ipod, Music Player"
           },
           "pageTitle": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized product's page title.",
+            "example": "Apple IPod Classic"
           },
           "pageMetaTags": {
             "type": "array",
+            "description": "Page Meta tags associated with the given product.",
             "items": {
               "$ref": "#/components/schemas/PageMetaTag"
             }
           },
           "price": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The sales price of the product. In case of complex products, like master or set, this is the minimum price of\n related child products.",
+            "example": 59.99
           },
           "pricePerUnit": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The price per unit if defined for the product",
+            "example": 19.99
           },
           "pricePerUnitMax": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The max price per unit typically for a master product's variant.",
+            "example": 29.99
           },
           "priceMax": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The maximum sales of related child products in complex products like master or set.",
+            "example": 69.99
           },
           "priceRanges": {
             "type": "array",
+            "description": "Array of one or more price range objects representing one or more Pricebooks in context for the site.",
             "items": {
               "$ref": "#/components/schemas/PriceRange"
             }
@@ -1568,36 +1909,63 @@
             "additionalProperties": {
               "type": "number",
               "format": "double"
-            }
+            },
+            "description": "The prices map with pricebook IDs and their values."
           },
           "primaryCategoryId": {
-            "type": "string"
+            "type": "string",
+            "description": "The ID of the products primary category.",
+            "example": "electronics"
           },
           "primaryCategory": {
             "type": "object",
+            "description": "The primary category of the product, including its full ancestor breadcrumb path (root to leaf,\nroot category node excluded). Only present when the primary_category expand is requested.",
             "properties": {
               "id": {
                 "type": "string",
+                "description": "The ID of the primary category.",
+                "example": "electronics-digital-media-players",
                 "maxLength": 256,
                 "minLength": 1
               },
               "name": {
                 "type": "string",
+                "description": "The localized name of the primary category.",
+                "example": "iPod & MP3 Players",
+                "maxLength": 256,
+                "minLength": 1
+              },
+              "slug": {
+                "type": "string",
+                "description": "SEO path persisted for the primary category. This property is omitted when no category URL mapping exists for the requested locale.",
+                "example": "electronics/ipod-mp3-players",
                 "maxLength": 256,
                 "minLength": 1
               },
               "parentCategoryTree": {
                 "type": "array",
+                "description": "The list of ancestor categories from root to the primary category (root category node excluded).",
                 "items": {
                   "type": "object",
                   "properties": {
                     "id": {
                       "type": "string",
+                      "description": "The ID of the ancestor category.",
+                      "example": "electronics",
                       "maxLength": 256,
                       "minLength": 1
                     },
                     "name": {
                       "type": "string",
+                      "description": "The name of the ancestor category.",
+                      "example": "Electronics",
+                      "maxLength": 256,
+                      "minLength": 1
+                    },
+                    "slug": {
+                      "type": "string",
+                      "description": "SEO path persisted for the primary category. This property is omitted when no category URL mapping exists for the requested locale.",
+                      "example": "electronics/ipod-mp3-players",
                       "maxLength": 256,
                       "minLength": 1
                     }
@@ -1608,40 +1976,57 @@
           },
           "productLinks": {
             "type": "array",
+            "description": "The array of source and target product links information.",
             "items": {
               "$ref": "#/components/schemas/ProductLink"
             }
           },
           "productPromotions": {
             "type": "array",
+            "description": "An array of active customer product promotions for this product, sorted by promotion priority\nusing SORT_BY_EXCLUSIVITY ordering (exclusivity → rank → promotion class → discount type →\nbest discount → ID). This array can be empty. Coupon promotions are not returned in this array.\nSee [PromotionPlan.SORT_BY_EXCLUSIVITY](https://salesforcecommercecloud.github.io/b2c-dev-doc/docs/current/scriptapi/html/index.html?target=class_dw_campaign_PromotionPlan.html) for more details.",
             "items": {
               "$ref": "#/components/schemas/ProductPromotion"
             }
           },
           "recommendations": {
             "type": "array",
+            "description": "Returns a list of recommendations.",
             "items": {
               "$ref": "#/components/schemas/Recommendation"
             }
           },
           "setProducts": {
             "type": "array",
+            "description": "The array of set products of this product.",
             "items": {
               "$ref": "#/components/schemas/Product"
             }
           },
           "shortDescription": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized product short description.",
+            "example": "Awesome Product"
+          },
+          "slug": {
+            "type": "string",
+            "description": "The SEO URL slug for the product. Only present when the slug expand is requested and the slug feature is enabled.",
+            "example": "modern-dress-shirt/74974310M.html",
+            "maxLength": 256
           },
           "slugUrl": {
-            "type": "string"
+            "type": "string",
+            "description": "The complete link to this product's storefront page.",
+            "example": "https://www.example.com/on/store/Sites-MySite/default/Product-Show?pid=MyProduct"
           },
           "stepQuantity": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The steps in which the order amount of the product can be\n increased.",
+            "example": 2
           },
           "tieredPrices": {
             "type": "array",
+            "description": "The document represents list of tiered prices if the product is a variant",
             "items": {
               "$ref": "#/components/schemas/ProductPriceTable"
             }
@@ -1651,36 +2036,48 @@
               {
                 "$ref": "#/components/schemas/ProductType"
               }
-            ]
+            ],
+            "description": "The product type information. Can be one or more of the following values: item, master, variation_group, variant, bundle, and set."
           },
           "unit": {
-            "type": "string"
+            "type": "string",
+            "description": "The sales unit of the product.",
+            "example": "lbs"
           },
           "upc": {
-            "type": "string"
+            "type": "string",
+            "description": "The Universal Product Code (UPC).",
+            "example": "JSDU876"
           },
           "validFrom": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The time a product is valid from.",
+            "example": "9999-12-31T00:00:00Z"
           },
           "validTo": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The time a product is valid to.",
+            "example": "9999-12-31T23:59:59Z"
           },
           "variants": {
             "type": "array",
+            "description": "The array of actual variants. Only for master, variation group, and variant types. This array can be empty.",
             "items": {
               "$ref": "#/components/schemas/Variant"
             }
           },
           "variationAttributes": {
             "type": "array",
+            "description": "Sorted array of variation attributes information. Only for master,\n variation group, and variant types. This array can be empty.",
             "items": {
               "$ref": "#/components/schemas/VariationAttribute"
             }
           },
           "variationGroups": {
             "type": "array",
+            "description": "The array of actual variation groups. Only for master, variation group, and variant types. This array can be empty.",
             "items": {
               "$ref": "#/components/schemas/VariationGroup"
             }
@@ -1689,10 +2086,12 @@
             "type": "object",
             "additionalProperties": {
               "type": "string"
-            }
+            },
+            "description": "The actual variation attribute ID - value pairs. Only for variant and\n variation group types."
           },
           "shippingMethods": {
             "type": "array",
+            "description": "The array of applicable shipping methods for this product. This array can be empty.\nThis property is only returned in context of the 'shipping_methods' expansion.",
             "items": {
               "$ref": "#/components/schemas/ShippingMethod"
             }
@@ -1704,20 +2103,25 @@
       },
       "BundledProduct": {
         "type": "object",
+        "description": "A bundle of products that can be bought together (all or nothing). Each product in the bundle can itself be bought independently, but this is outside of the context of the bundle. A bundle is a purchasing convenience. *Product bundle has a SKU and price.*",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "example": "823476"
           },
           "product": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Product"
               }
-            ]
+            ],
+            "description": "The product being bundled."
           },
           "quantity": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "For the product being bundled, the quantity added to the bundle.",
+            "example": 5
           }
         },
         "required": [
@@ -1728,19 +2132,28 @@
       },
       "Image": {
         "type": "object",
+        "description": "Product image",
         "properties": {
           "alt": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized alternative text of the image.",
+            "example": "Apple iPod Shuffle, large"
           },
           "disBaseLink": {
-            "type": "string"
+            "type": "string",
+            "description": "Base URL for the Dynamic Image Service (DIS) address. This is only shown if the image is stored on the server and DIS is enabled.",
+            "example": "https://example.com/images/large/ipod-shuffle-silver.jpg"
           },
           "link": {
             "type": "string",
+            "description": "The URL of the actual image.",
+            "example": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dwc2/images/large/ipod-shuffle.jpg",
             "minLength": 1
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized title of the image.",
+            "example": "Apple iPod Shuffle"
           }
         },
         "required": [
@@ -1749,32 +2162,43 @@
       },
       "VariationAttributeValue": {
         "type": "object",
+        "description": "Document representing a variation attribute value.",
         "properties": {
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized description of the variation value.",
+            "example": "Color of the product"
           },
           "image": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Image"
               }
-            ]
+            ],
+            "description": "The first product image for the configured viewtype and this variation value."
           },
           "imageSwatch": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Image"
               }
-            ]
+            ],
+            "description": "The first product image for the configured viewtype and this variation value (typically the swatch image)."
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized display name of the variation value.",
+            "example": "Red"
           },
           "orderable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether at least one variant with this variation attribute value is available to sell.",
+            "example": true
           },
           "value": {
             "type": "string",
+            "description": "The actual variation value.",
+            "example": "red",
             "minLength": 1
           }
         },
@@ -1784,16 +2208,22 @@
       },
       "VariationAttribute": {
         "type": "object",
+        "description": "Document representing a variation attribute.",
         "properties": {
           "id": {
             "type": "string",
+            "description": "The ID of the variation attribute.",
+            "example": "color",
             "minLength": 1
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized display name of the variation attribute.",
+            "example": "Color"
           },
           "values": {
             "type": "array",
+            "description": "The sorted array of variation values. This array can be empty.",
             "items": {
               "$ref": "#/components/schemas/VariationAttributeValue"
             }
@@ -1805,21 +2235,26 @@
       },
       "ImageGroup": {
         "type": "object",
+        "description": "Document representing an image group containing a list of images for a particular view type and an optional variation value.",
         "properties": {
           "images": {
             "type": "array",
+            "description": "The images of the image group.",
             "items": {
               "$ref": "#/components/schemas/Image"
             }
           },
           "variationAttributes": {
             "type": "array",
+            "description": "Returns a list of variation attributes applying to this image group.",
             "items": {
               "$ref": "#/components/schemas/VariationAttribute"
             }
           },
           "viewType": {
-            "type": "string"
+            "type": "string",
+            "description": "The image view type.",
+            "example": "hi-res"
           }
         },
         "required": [
@@ -1829,30 +2264,43 @@
       },
       "Inventory": {
         "type": "object",
+        "description": "Document representing inventory information of the current product for a particular inventory list.",
         "properties": {
           "ats": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The Available To Sell (ATS) of the product. If it is infinity, the return value is 999999. The value can be overwritten by the\n OCAPI setting 'product.inventory.ats.max_threshold'.",
+            "example": 15
           },
           "backorderable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the product is backorderable.",
+            "example": true
           },
           "id": {
             "$ref": "#/components/schemas/InventoryId"
           },
           "inStockDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "A flag indicating the date when the product will be in stock.",
+            "example": "9999-12-31T00:00:00Z"
           },
           "orderable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether at least one of the products is available to sell.",
+            "example": true
           },
           "preorderable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the product is preorderable.",
+            "example": false
           },
           "stockLevel": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The stock level of the product. If it is infinity, the return value is 999999. The value can be overwritten by the\n OCAPI setting 'product.inventory.stock_level.max_threshold'.",
+            "example": 10
           }
         },
         "required": [
@@ -1861,41 +2309,50 @@
       },
       "Price": {
         "type": "number",
-        "format": "double"
+        "format": "double",
+        "description": "Document representing a price for a product",
+        "example": 12.99
       },
       "Master": {
         "type": "object",
+        "description": "The master product is a representation of a group of variant products. This is a non-buyable entity, provides inheritable attributes for its product variants, and is used for navigation. *Doesn't have a SKU.*",
         "properties": {
           "masterId": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/ProductId"
               }
-            ]
+            ],
+            "description": "The ID (SKU) of the master product."
           },
           "orderable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether at least one of the variants can be ordered.",
+            "example": true
           },
           "price": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Price"
               }
-            ]
+            ],
+            "description": "The minimum sales price of the related variants."
           },
           "priceMax": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Price"
               }
-            ]
+            ],
+            "description": "The maximum sales price of the related variants."
           },
           "prices": {
             "type": "object",
             "additionalProperties": {
               "type": "number",
               "format": "double"
-            }
+            },
+            "description": "List of sale prices."
           }
         },
         "required": [
@@ -1904,26 +2361,34 @@
       },
       "OptionValue": {
         "type": "object",
+        "description": "Document representing an option value.",
         "properties": {
           "default": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether this option value is the default one.",
+            "example": true
           },
           "id": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/ProductId"
               }
-            ]
+            ],
+            "description": "The ID of the option value.",
+            "example": "5YR"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized name of the option value.",
+            "example": "5 Year Warranty"
           },
           "price": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Price"
               }
-            ]
+            ],
+            "description": "The effective price of the option value."
           }
         },
         "required": [
@@ -1932,25 +2397,35 @@
       },
       "Option": {
         "type": "object",
+        "description": "Product options enable you to sell configurable products that have optional accessories, upgrades, or additional services. Options are always purchased with a product and can't be purchased separately. *Product Option has a SKU and a price associated with it.*",
         "properties": {
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized description of the option.",
+            "example": "Get this Option"
           },
           "id": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/ProductId"
               }
-            ]
+            ],
+            "description": "The ID of the option.",
+            "example": "Warranty"
           },
           "image": {
-            "type": "string"
+            "type": "string",
+            "description": "The URL to the option image.",
+            "example": "https://www.exampleimage.com/images/optionImage.jpg"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized name of the option.",
+            "example": "Warranty"
           },
           "values": {
             "type": "array",
+            "description": "The array of option values. This array can be empty.",
             "items": {
               "$ref": "#/components/schemas/OptionValue"
             }
@@ -1961,66 +2436,90 @@
         ]
       },
       "PageMetaTag": {
+        "type": "object",
+        "description": "Document representing a Page Meta Tag object.",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "The ID of the Page Meta Tag.",
+            "example": "title",
+            "maxLength": 100
           },
           "value": {
-            "type": "string"
+            "type": "string",
+            "description": "Locale-specific value of the Page Meta Tag, evaluated by resolving the rule set for the given Business Manager ID.",
+            "example": "Buy the Long Sleeve Covered Placket Blouse for USD 61.99."
           },
           "type": {
             "type": "string",
+            "description": "The kind of Page Meta Tag, indicating how the storefront should render the value.\nDocumented values are `name`, `property`, `title`, and `jsonld`:\n  * `name` — render as `<meta name=\"...\">`.\n  * `property` — render as `<meta property=\"...\">` (e.g. Open Graph tags).\n  * `title` — render as the HTML `<title>` element.\n  * `jsonld` — JSON-LD structured data, intended for rendering inside `<script type=\"application/ld+json\">`.\nThe field may be absent when the kind cannot be determined. Clients should treat unknown values as opaque so additional kinds can be introduced without breaking the contract.",
+            "example": "name",
             "maxLength": 64
           }
         }
       },
       "PriceRange": {
         "type": "object",
+        "description": "Document representing price ranges for a product which happens to be a master product (per Pricebook)",
         "properties": {
           "maxPrice": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Price"
               }
-            ]
+            ],
+            "description": "Maximum price for the given pricebook (usually for a master Product would be the price for the Variant which has the highest price out of all Variants in that pricebook)"
           },
           "minPrice": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Price"
               }
-            ]
+            ],
+            "description": "Minimum price for the given pricebook (usually for a master Product would be the price for the Variant which has the least price out of all Variants in that pricebook)"
           },
           "pricebook": {
-            "type": "string"
+            "type": "string",
+            "description": "The active pricebook from which the min and the max prices are calculated. The pricebook is based on the site context of the request as defined in ECOM.",
+            "example": "usd-list-pricebook"
           }
         }
       },
       "ProductLink": {
         "type": "object",
+        "description": "Document representing a link between two products. It contains the ID of the source and target products, the type of\n product link, and the URLs to retrieve product data.",
         "properties": {
           "sourceProductId": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/ProductId"
               }
-            ]
+            ],
+            "description": "The semantic ID of the product this product link is coming from.",
+            "example": "824756924"
           },
           "sourceProductLink": {
-            "type": "string"
+            "type": "string",
+            "description": "The URL addressing the product this product link is coming from.",
+            "example": "Link"
           },
           "targetProductId": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/ProductId"
               }
-            ]
+            ],
+            "description": "The semantic ID of the product this product link is pointing to.",
+            "example": "2TR93459"
           },
           "targetProductLink": {
-            "type": "string"
+            "type": "string",
+            "description": "The URL addressing the product this product link is pointing to.",
+            "example": "Link"
           },
           "type": {
             "type": "string",
+            "description": "The type of product link.",
             "enum": [
               "cross_sell",
               "replacement",
@@ -2030,7 +2529,8 @@
               "alt_orderunit",
               "spare_part",
               "other"
-            ]
+            ],
+            "example": "up_sell"
           }
         },
         "required": [
@@ -2043,19 +2543,25 @@
       },
       "ProductPromotion": {
         "type": "object",
+        "description": "Document representing a product promotion.",
         "properties": {
           "calloutMsg": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized call-out message of the promotion.",
+            "example": "Fantastic promotion"
           },
           "promotionId": {
-            "type": "string"
+            "type": "string",
+            "description": "The unique ID of the promotion.",
+            "example": "summerSale"
           },
           "promotionalPrice": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Price"
               }
-            ]
+            ],
+            "description": "The promotional price for this product."
           }
         },
         "required": [
@@ -2066,13 +2572,18 @@
       },
       "RecommendationType": {
         "type": "object",
+        "description": "Document representing a recommendation type.",
         "properties": {
           "displayValue": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized display value of the recommendation type.",
+            "example": "UpSell"
           },
           "value": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The value of the recommendation type.",
+            "example": 2
           }
         },
         "required": [
@@ -2082,27 +2593,38 @@
       },
       "Recommendation": {
         "type": "object",
+        "description": "Document representing a product recommendation.",
         "properties": {
           "calloutMsg": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized callout message of the recommendation.",
+            "example": "Absolutely recommended"
           },
           "image": {
             "$ref": "#/components/schemas/Image"
           },
           "longDescription": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized long description of the recommendation.",
+            "example": "Really good detailed product description"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized name of the recommendation.",
+            "example": "Apple Ipod Shuffle"
           },
           "recommendationType": {
             "$ref": "#/components/schemas/RecommendationType"
           },
           "recommendedItemId": {
-            "type": "string"
+            "type": "string",
+            "description": "The recommended item ID of the recommendation.",
+            "example": "apple-ipod-shuffle"
           },
           "shortDescription": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized short description of the recommendation.",
+            "example": "Product description"
           }
         },
         "required": [
@@ -2111,71 +2633,99 @@
       },
       "ProductPriceTable": {
         "type": "object",
+        "description": "Tiered Price Level Object",
         "properties": {
           "price": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Price"
               }
-            ]
+            ],
+            "description": "Price for the product for the specified tier for the specified pricebook"
           },
           "pricebook": {
-            "type": "string"
+            "type": "string",
+            "description": "The active pricebook for which this price is defined",
+            "example": "usd-list-pricebook"
           },
           "quantity": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "Quantity tier for which the price is defined.",
+            "example": 1
           }
         }
       },
       "ProductType": {
         "type": "object",
+        "description": "Document representing a product type.",
         "properties": {
           "bundle": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a bundle.",
+            "example": true
           },
           "item": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a standard item.",
+            "example": false
           },
           "master": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a master.",
+            "example": true
           },
           "option": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the product is an option.",
+            "example": false
           },
           "set": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a set.",
+            "example": true
           },
           "variant": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a variant.",
+            "example": false
           },
           "variationGroup": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a variation group.",
+            "example": false
           }
         }
       },
       "Variant": {
         "type": "object",
+        "description": "A product which is a variation within a master product that describes different colors, sizes, or other variation attributes. *Has a SKU.*",
         "properties": {
           "orderable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the variant is orderable.",
+            "example": true
           },
           "price": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Price"
               }
-            ]
+            ],
+            "description": "The sales price of the variant."
           },
           "productId": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/ProductId"
               }
-            ]
+            ],
+            "description": "The ID (SKU) of the variant.",
+            "example": "8W4756834"
           },
           "tieredPrices": {
             "type": "array",
+            "description": "List of tiered prices if the product is a variant",
             "items": {
               "$ref": "#/components/schemas/ProductPriceTable"
             }
@@ -2184,7 +2734,8 @@
             "type": "object",
             "additionalProperties": {
               "type": "string"
-            }
+            },
+            "description": "The actual variation attribute ID - value pairs."
           }
         },
         "required": [
@@ -2193,29 +2744,36 @@
       },
       "VariationGroup": {
         "type": "object",
+        "description": "Representation of a group of variant products by an attribute. This is a non-buyable entity, provides inheritable attributes for its product variants, and is used for navigation. *Doesn't have a SKU.*",
         "properties": {
           "orderable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A flag indicating whether the variation group is orderable.",
+            "example": false
           },
           "price": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Price"
               }
-            ]
+            ],
+            "description": "The sales price of the variation group."
           },
           "productId": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/ProductId"
               }
-            ]
+            ],
+            "description": "The ID (SKU) of the variation group.",
+            "example": "49345VG"
           },
           "variationValues": {
             "type": "object",
             "additionalProperties": {
               "type": "string"
-            }
+            },
+            "description": "The actual variation attribute ID - value pairs."
           }
         },
         "required": [
@@ -2227,42 +2785,68 @@
       },
       "ShippingPromotion": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a shipping promotion.",
         "properties": {
           "calloutMsg": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized callout message of the promotion.",
+            "example": "$30 Fixed Shipping Amount Above 150"
           },
           "promotionId": {
-            "type": "string"
+            "type": "string",
+            "description": "The unique ID of the promotion.",
+            "example": "$30FixedShippingAmountAbove150"
           },
           "promotionName": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized promotion name.",
+            "example": "$30 Fixed Shipping Amount Above 150"
           }
         }
       },
       "ShippingMethod": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a shipping method.",
         "properties": {
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized description of the shipping method.",
+            "example": "Order received within 7-10 business days"
           },
           "externalShippingMethod": {
-            "type": "string"
+            "type": "string",
+            "description": "The external shipping method."
           },
           "id": {
             "type": "string",
+            "description": "The shipping method ID.",
+            "example": "001",
             "maxLength": 256
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized name of the shipping method.",
+            "example": "Ground"
           },
           "price": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The shipping cost total, including shipment level costs,\nproduct level fix, and surcharge costs. It is read only.",
+            "example": 15
           },
           "shippingPromotions": {
             "type": "array",
+            "description": "The array of active customer shipping promotions for this shipping\nmethod. This array can be empty.",
             "items": {
               "$ref": "#/components/schemas/ShippingPromotion"
             }
@@ -2274,20 +2858,26 @@
       },
       "ProductResult": {
         "type": "object",
+        "description": "Result document containing an array of products.",
         "properties": {
           "limit": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The number of returned documents.",
+            "example": 12
           },
           "data": {
             "type": "array",
+            "description": "The array of product documents.",
             "items": {
               "$ref": "#/components/schemas/Product"
             }
           },
           "total": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The total number of documents.",
+            "example": 12
           }
         },
         "required": [
@@ -2302,17 +2892,25 @@
         "properties": {
           "title": {
             "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
             "maxLength": 2048
           },
           "detail": {
-            "type": "string"
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
           },
           "instance": {
             "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
             "maxLength": 2048
           }
         },
@@ -2324,12 +2922,14 @@
       },
       "ProductImages": {
         "type": "object",
+        "description": "Document containing only the image groups for a product. Contains no price, availability, or other non-image data.",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/ProductId"
           },
           "imageGroups": {
             "type": "array",
+            "description": "Array of image groups for this product. Each group corresponds to a view type and optionally to specific variation attribute values.",
             "items": {
               "$ref": "#/components/schemas/ImageGroup"
             }
@@ -2341,53 +2941,74 @@
       },
       "ProductPriceRange": {
         "type": "object",
+        "description": "Document representing the min/max price range for a single pricebook. Only present for complex products (master, variation group, product set).",
         "properties": {
           "pricebook": {
             "type": "string",
+            "description": "The ID of the pricebook.",
+            "example": "usd-sale-pricebook",
             "maxLength": 256,
             "minLength": 1
           },
           "minPrice": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The minimum price across all variants for this pricebook.",
+            "example": 19.99
           },
           "maxPrice": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The maximum price across all variants for this pricebook.",
+            "example": 99.99
           }
         }
       },
       "PricesResult": {
         "type": "object",
+        "description": "Document representing the price details for a single product. Contains only price-related fields; no images, availability, variations, or other product data are included. Price fields are absent when no pricebook is configured for the requested site and locale context — only `productId` is guaranteed in the response.",
         "properties": {
           "productId": {
             "type": "string",
+            "description": "The ID of the product.",
+            "example": "apple-ipod-shuffle",
             "maxLength": 100,
             "minLength": 1
           },
           "price": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The effective sales price of the product. For complex products (master, set), this is the minimum\nprice of the related child products.",
+            "example": 89.99
           },
           "priceMax": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The maximum sales price. For complex products (master, set), this is the maximum price of the related child products.",
+            "example": 99.99
           },
           "pricePerUnit": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The price per unit if defined for the product.",
+            "example": 8.99
           },
           "pricePerUnitMax": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The maximum price per unit, typically for a master product's variant.",
+            "example": 9.99
           },
           "pricePerUnitUnit": {
             "type": "string",
+            "description": "The unit of measure for the per-unit price (e.g. \"kg\", \"lb\").",
+            "example": "kg",
             "maxLength": 256,
             "minLength": 1
           },
           "tieredPrices": {
             "type": "array",
+            "description": "The list of tiered prices for the product. Each entry represents a price for a given pricebook and minimum order quantity threshold. Uses the effective (lowest) winning price from the merged applicable pricebooks for each quantity tier — matching the SCAPI product endpoint's tieredPrices field.",
             "items": {
               "$ref": "#/components/schemas/ProductPriceTable"
             }
@@ -2396,7 +3017,13 @@
             "type": "object",
             "additionalProperties": {
               "type": "number",
-              "format": "double"
+              "format": "double",
+              "example": 89.99
+            },
+            "description": "A map of pricebook IDs to their corresponding prices for this product.",
+            "example": {
+              "usd-sale-pricebook": 89.99,
+              "usd-list-pricebook": 99.99
             }
           },
           "currency": {
@@ -2404,6 +3031,7 @@
           },
           "priceRanges": {
             "type": "array",
+            "description": "Per-pricebook min/max price ranges. Only present for complex products (master, variation group, product set) that have variants with differing prices.",
             "items": {
               "$ref": "#/components/schemas/ProductPriceRange"
             }
@@ -2415,20 +3043,27 @@
       },
       "schemas-ProductPromotion": {
         "type": "object",
+        "description": "Document representing an active promotion applicable to a product.",
         "properties": {
           "promotionId": {
             "type": "string",
+            "description": "The unique ID of the promotion.",
+            "example": "20off-electronics",
             "maxLength": 256,
             "minLength": 1
           },
           "calloutMsg": {
             "type": "string",
+            "description": "The localized call-out message of the promotion.",
+            "example": "Save 20%!",
             "maxLength": 4000,
             "minLength": 1
           },
           "promotionalPrice": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "The promotional price for this product. Only present for PRODUCT class promotions.",
+            "example": 71.99
           }
         },
         "required": [
@@ -2438,14 +3073,18 @@
       },
       "PromotionsResult": {
         "type": "object",
+        "description": "Document representing the active promotion details for a single product. Contains only promotion-related fields; no price, images, availability, variations, or other product data are included. Active promotions are filtered by customer group, campaign date range, and time slot.",
         "properties": {
           "productId": {
             "type": "string",
+            "description": "The ID of the product.",
+            "example": "apple-ipod-shuffle",
             "maxLength": 100,
             "minLength": 1
           },
           "productPromotions": {
             "type": "array",
+            "description": "An array of active customer promotions applicable to this product, sorted by promotion priority\nusing SORT_BY_EXCLUSIVITY ordering (exclusivity → rank → promotion class → discount type →\nbest discount → ID). This array can be empty. Coupon promotions are not returned in this array.",
             "items": {
               "$ref": "#/components/schemas/schemas-ProductPromotion"
             }
@@ -2457,6 +3096,8 @@
       },
       "CategoryId": {
         "type": "string",
+        "description": "The ID of the category.",
+        "example": "mens",
         "maxLength": 256,
         "minLength": 1
       },
@@ -2464,14 +3105,19 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
         "minimum": 0
       },
       "ResultBase": {
         "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
         "properties": {
           "limit": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
           },
           "total": {
             "$ref": "#/components/schemas/Total"
@@ -2484,50 +3130,82 @@
       },
       "Category": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Categories allow products to be organized into hierarchical structures. Categories can have relationships to other parent categories. Each category can also provide a context inherited by subcategories. For example, a category may have an attribute value assigned to it, and any product assigned to the category or a subcategory would inherit the attribute value as long as the product is assigned. Once the product is removed from the category those attribute values would no longer be in the context of the product. Linking of categories is also used for Site hierarchical navigation. For example, inside 'Clothing' you may have 'Mens', and inside 'Mens' you may have 'Pants'. Categories are not *Tags.*",
         "properties": {
           "categories": {
             "type": "array",
+            "description": "Array of subcategories. Can be empty.",
             "items": {
               "$ref": "#/components/schemas/Category"
             }
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized description of the category.",
+            "example": "Category description for Men's Category"
           },
           "id": {
             "$ref": "#/components/schemas/CategoryId"
           },
           "image": {
-            "type": "string"
+            "type": "string",
+            "description": "The URL of the category image.",
+            "example": "https://example.com/images/large/mens-category.jpg"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized name of the category.",
+            "example": "Mens"
           },
           "onlineSubCategoriesCount": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "The total number of online sub-categories. This information will be available from B2C Commerce version 24.5.",
+            "example": 20
           },
           "pageDescription": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized page description of the category.",
+            "example": "This category ahs all men's clothing"
           },
           "pageKeywords": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized page keywords of the category.",
+            "example": "Mens, shirts"
           },
           "pageTitle": {
-            "type": "string"
+            "type": "string",
+            "description": "The localized page title of the category.",
+            "example": "Men's Category"
           },
           "parentCategoryId": {
-            "type": "string"
+            "type": "string",
+            "description": "The ID of the parent category.",
+            "example": "apparel"
           },
           "parentCategoryTree": {
             "type": "array",
+            "description": "The List of the parent categories.",
             "items": {
               "$ref": "#/components/schemas/PathRecord"
             }
           },
+          "slug": {
+            "type": "string",
+            "description": "SEO path persisted for the category. This property is omitted when no category URL mapping exists for the requested locale.",
+            "example": "mens/cloting",
+            "maxLength": 256,
+            "minLength": 1
+          },
           "thumbnail": {
-            "type": "string"
+            "type": "string",
+            "description": "The URL of the category thumbnail.",
+            "example": "https://www.exampleimage.com/images/categoryImage.jpg"
           }
         },
         "required": [
@@ -2536,12 +3214,24 @@
       },
       "PathRecord": {
         "type": "object",
+        "description": "Document representing most basic info (id and name) of a category or catalog.",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "The id of the category path.",
+            "example": "mens"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The name of the category path.",
+            "example": "mens"
+          },
+          "slug": {
+            "type": "string",
+            "description": "SEO path persisted for the category. This property is omitted when no category URL mapping exists for the requested locale.",
+            "example": "mens/cloting",
+            "maxLength": 256,
+            "minLength": 1
           }
         }
       },
@@ -2551,9 +3241,11 @@
             "$ref": "#/components/schemas/ResultBase"
           }
         ],
+        "description": "Result document containing an array of categories.",
         "properties": {
           "data": {
             "type": "array",
+            "description": "The array of category documents.",
             "items": {
               "$ref": "#/components/schemas/Category"
             }
@@ -2571,6 +3263,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
             }
           }
         }
@@ -2580,21 +3277,28 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "ids": {
         "name": "ids",
         "in": "query",
+        "description": "The IDs of the requested products (comma-separated, max 24 IDs).",
         "required": true,
         "style": "form",
         "explode": false,
         "schema": {
           "type": "array",
+          "example": [
+            "apple-ipod-shuffle",
+            "apple-ipod-nano"
+          ],
           "items": {
             "allOf": [
               {
@@ -2603,16 +3307,25 @@
             ]
           },
           "maxItems": 100
-        }
+        },
+        "example": "apple-ipod-shuffle,apple-ipod-nano"
       },
       "inventoryIds": {
         "name": "inventoryIds",
         "in": "query",
+        "description": "The optional inventory list IDs, for which the availability should be shown (comma-separated, max 5 inventoryListIDs).",
         "required": false,
         "style": "form",
         "explode": false,
         "schema": {
           "type": "array",
+          "example": [
+            "Site1InventoryList",
+            "Site2InventoryList",
+            "Site3InventoryList",
+            "Site4InventoryList",
+            "Site5InventoryList"
+          ],
           "items": {
             "allOf": [
               {
@@ -2621,16 +3334,22 @@
             ]
           },
           "maxItems": 5
-        }
+        },
+        "example": "Site1InventoryList,Site2InventoryList,Site3InventoryList,Site4InventoryList,Site5InventoryList"
       },
       "expand_multiId": {
         "name": "expand",
         "in": "query",
+        "description": "All expand parameters except page_meta_tags and slug are used for the request when no expand parameter is provided.\nThe value \"none\" may be used to turn off all expand options.\nThe page_meta_tags expand value is optional and available starting from B2C Commerce version 25.2.\nThe availability expand is deprecated. Use the Shopper Availability API instead for better caching performance.\nThe primary_category expand returns the full breadcrumb path (root to leaf) for each product's primary category.\nThe slug expand populates the slug field on the product. Available starting from B2C Commerce version 26.8.",
         "required": false,
         "style": "form",
         "explode": false,
         "schema": {
           "type": "array",
+          "example": [
+            "prices",
+            "promotions"
+          ],
           "items": {
             "type": "string",
             "enum": [
@@ -2647,50 +3366,66 @@
               "recommendations",
               "shipping_methods",
               "page_meta_tags",
-              "primary_category"
-            ]
+              "primary_category",
+              "slug"
+            ],
+            "example": "promotions"
           }
-        }
+        },
+        "example": "prices,promotions"
       },
       "allImages": {
         "name": "allImages",
         "in": "query",
+        "description": "The flag that indicates whether to retrieve the whole image model for the requested product.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
-          "type": "boolean"
+          "type": "boolean",
+          "example": true
         }
       },
       "imgTypes": {
         "name": "imgTypes",
         "in": "query",
+        "description": "Filters product images by viewType with optional count limits per type. This parameter requires the images expand parameter.\nWhen used, the response includes the imageGroups property filtered by the specified image types.\nThe format is a comma-separated list of image types with optional counts: <viewType>:<count>,<viewType>:<count>.\nIf the count is omitted, all images of that type are returned. If specified, the count limits the number of images returned for that type.\nFor example, imgTypes=large:2,small:1 returns up to 2 large images and 1 small image per product in the imageGroups.\nIf imgTypes is used without expand=images, it is ignored and imageGroups aren't included in the response.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "large:3,small:1",
           "maxLength": 50
-        }
+        },
+        "example": "large:3,small:1"
       },
       "perPricebook": {
         "name": "perPricebook",
         "in": "query",
+        "description": "The flag that indicates whether to retrieve the per PriceBook prices and tiered prices (if available) for requested Products. Available end of June, 2021.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
-          "type": "boolean"
+          "type": "boolean",
+          "example": true
         }
       },
       "siteId": {
         "name": "siteId",
         "in": "query",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
         "required": true,
         "style": "form",
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/SiteId"
+        },
+        "examples": {
+          "SiteId": {
+            "value": "RefArch"
+          }
         }
       },
       "select": {
@@ -2701,31 +3436,52 @@
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/Select"
+        },
+        "examples": {
+          "select": {
+            "value": "(**)"
+          }
         }
       },
       "locale": {
         "name": "locale",
         "in": "query",
+        "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/LocaleCode"
+        },
+        "examples": {
+          "LanguageCountry": {
+            "value": "en-US"
+          },
+          "CountryCode": {
+            "value": "US"
+          }
         }
       },
       "currency": {
         "name": "currency",
         "in": "query",
+        "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/CurrencyCode"
+        },
+        "examples": {
+          "CurrencyCode": {
+            "value": "USD"
+          }
         }
       },
       "id": {
         "name": "id",
         "in": "path",
+        "description": "The ID of the requested product.",
         "required": true,
         "style": "simple",
         "explode": false,
@@ -2736,11 +3492,16 @@
       "expand_singleId": {
         "name": "expand",
         "in": "query",
+        "description": "All expand parameters except page_meta_tags and slug are used for the request when no expand parameter is provided.\nThe value \"none\" may be used to turn off all expand options.\nThe page_meta_tags expand value is optional and available starting from B2C Commerce version 25.2.\nThe availability expand is deprecated. Use the Shopper Availability API instead for better caching performance.\nThe primary_category expand returns the full breadcrumb path (root to leaf) for the product's primary category.\nThe slug expand populates the slug field on the product. Available starting from B2C Commerce version 26.8.",
         "required": false,
         "style": "form",
         "explode": false,
         "schema": {
           "type": "array",
+          "example": [
+            "prices",
+            "promotions"
+          ],
           "items": {
             "type": "string",
             "enum": [
@@ -2757,14 +3518,18 @@
               "recommendations",
               "shipping_methods",
               "page_meta_tags",
-              "primary_category"
-            ]
+              "primary_category",
+              "slug"
+            ],
+            "example": "links"
           }
-        }
+        },
+        "example": "prices,promotions"
       },
       "productId": {
         "name": "productId",
         "in": "path",
+        "description": "The ID of the product whose images to retrieve.",
         "required": true,
         "style": "simple",
         "explode": false,
@@ -2775,35 +3540,45 @@
       "parameters-imgTypes": {
         "name": "imgTypes",
         "in": "query",
+        "description": "Comma-separated list of view types to include in the response, with optional per-type image limits. Each item is\neither viewType or viewType:count. If omitted, all catalog view types are returned, up to 200 images per view\ntype. If present, only the listed view types are included. The image count defaults to 200 per view type when\nno limit is specified.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "large:3,small:1",
           "maxLength": 50
-        }
+        },
+        "example": "large:3,small:1"
       },
       "parameters-allImages": {
         "name": "allImages",
         "in": "query",
+        "description": "When true, returns all variation-specific image groups rather than only the best-matching group\nfor the product's variation attribute values. Default: false.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "example": false
         }
       },
       "variationAttribute": {
         "name": "variationAttribute",
         "in": "query",
+        "description": "Variation attribute values used to filter image groups when allImages=true.\nFormat: <attributeId>=<value>. This parameter can be repeated for multiple attributes.\nExample: color=red&variationAttribute=size=L",
         "required": false,
         "style": "form",
         "explode": false,
         "schema": {
           "type": "array",
+          "example": [
+            "color=red"
+          ],
           "items": {
             "type": "string",
+            "example": "color=red",
             "maxLength": 256,
             "minLength": 1
           }
@@ -2812,31 +3587,40 @@
       "parameters-productId": {
         "name": "productId",
         "in": "path",
+        "description": "The ID of the product whose prices to retrieve.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/ProductId"
-        }
+        },
+        "example": "apple-ipod-shuffle"
       },
       "components-parameters-productId": {
         "name": "productId",
         "in": "path",
+        "description": "The ID of the product whose promotions to retrieve.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/ProductId"
-        }
+        },
+        "example": "apple-ipod-shuffle"
       },
       "parameters-ids": {
         "name": "ids",
         "in": "query",
+        "description": "The comma separated list of category IDs or slugs (max 50). For each value, if a category exists with that value as its ID, it is returned (ID takes precedence). Otherwise, the value is treated as a slug. If a slug is provided, it must be URL-encoded (for example, `mens%2Fclothing` for the slug `mens/clothing`).",
         "required": true,
         "style": "form",
         "explode": false,
         "schema": {
           "type": "array",
+          "example": [
+            "electronics-digital-cameras",
+            "electronics-televisions"
+          ],
           "items": {
             "allOf": [
               {
@@ -2845,11 +3629,13 @@
             ]
           },
           "maxItems": 50
-        }
+        },
+        "example": "electronics-digital-cameras,electronics-televisions"
       },
       "levels": {
         "name": "levels",
         "in": "query",
+        "description": "Specifies how many levels of nested subcategories you want the server to return. The default value is 1. Valid values are 0, 1, or 2. Only online subcategories are returned.",
         "required": false,
         "style": "form",
         "explode": true,
@@ -2861,12 +3647,14 @@
             1,
             2
           ],
+          "example": 1,
           "minimum": 0
         }
       },
       "parameters-id": {
         "name": "id",
         "in": "path",
+        "description": "The ID or slug of the requested category. If a category exists with the given value as its ID, it is returned (ID takes precedence). Otherwise, the value is treated as a slug. If a slug is provided, it must be URL-encoded (for example, `mens%2Fclothing` for the slug `mens/clothing`).",
         "required": true,
         "style": "simple",
         "explode": false,
@@ -2877,31 +3665,20 @@
       "sfdcUsid": {
         "name": "sfdc_usid",
         "in": "header",
+        "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
         "required": false,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
-          "format": "uuid"
-        }
-      },
-      "sfdcDwDnt": {
-        "name": "sfdc_dw_dnt",
-        "in": "header",
-        "required": false,
-        "style": "simple",
-        "explode": false,
-        "schema": {
-          "type": "string",
-          "enum": [
-            "0",
-            "1"
-          ]
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
         }
       },
       "personalized": {
         "name": "personalized",
         "in": "query",
+        "description": "Controls whether personalization is applied to the response. Set to `none` to opt out of personalized response handling so the response is safe to cache at the CDN layer.\n\nWhen set to `none`, the server skips applying personalization to the response.\n\nSetting `personalized=none` is necessary but not sufficient for CDN caching: a response is only cached when the endpoint is also cacheable in the [server-side web-tier cache](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html), subject to its TTLs and invalidation. A call that is uncacheable in the web tier is not cached at the CDN either. See [CDN caching](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html).",
         "required": false,
         "style": "form",
         "explode": true,
@@ -2909,12 +3686,14 @@
           "type": "string",
           "enum": [
             "none"
-          ]
+          ],
+          "example": "none"
         }
       },
       "sfdcShopperContext": {
         "name": "sfdc_shopper_context",
         "in": "header",
+        "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
         "required": false,
         "style": "simple",
         "explode": false,
@@ -2923,9 +3702,667 @@
         }
       }
     },
+    "examples": {
+      "GetProductsBadRequestResponseExample": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/validation",
+          "detail": "Maximum number of products you can request in one call is 25."
+        }
+      },
+      "MalformedSelectorResponseExample": {
+        "value": {
+          "title": "Malformed Selector",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/malformed-selector",
+          "detail": "The property selector '(data.(name, imageGroups.(**))' is malformed.",
+          "selector": "(data.(name, imageGroups.(**))"
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Unauthorized request"
+        }
+      },
+      "GetProductResponseExample": {
+        "value": {
+          "brand": "Apple",
+          "currency": "USD",
+          "id": "apple-ipod-shuffle",
+          "imageGroups": [
+            {
+              "images": [
+                {
+                  "alt": "Apple iPod Shuffle, , large",
+                  "link": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dwc2cc65b0/images/large/ipod-shuffle-silver.jpg",
+                  "title": "Apple iPod Shuffle, "
+                }
+              ],
+              "viewType": "large"
+            },
+            {
+              "images": [
+                {
+                  "alt": "Apple iPod Shuffle, , medium",
+                  "link": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dw5f36aab1/images/medium/ipod-shuffle-silver.jpg",
+                  "title": "Apple iPod Shuffle, "
+                }
+              ],
+              "viewType": "medium"
+            },
+            {
+              "images": [
+                {
+                  "alt": "Apple iPod Shuffle, , small",
+                  "link": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dw2b078e02/images/small/ipod-shuffle-silver.jpg",
+                  "title": "Apple iPod Shuffle, "
+                }
+              ],
+              "viewType": "small"
+            }
+          ],
+          "inventory": {
+            "ats": 0,
+            "backorderable": false,
+            "id": "SiteGenesisList",
+            "orderable": true,
+            "preorderable": false,
+            "stockLevel": 999999
+          },
+          "longDescription": "Supports AAC, protected AAC, MP3, MP3 VBR, Audible, WAV and AIFF for immediate playback of multiple formats.",
+          "master": {
+            "masterId": "apple-ipod-shuffle",
+            "orderable": false,
+            "price": 45.99
+          },
+          "minOrderQuantity": 1,
+          "name": "Apple iPod Shuffle",
+          "pageDescription": "With the same size circular control pad as the previous model on a much more compact case with a built-in clip, the updated shuffle is ready to rock and easily tags along when you're on the go.",
+          "pageKeywords": "Apple, iPod, Shuffle, MP3, Music Player",
+          "pageMetaTags": [
+            {
+              "id": "description",
+              "value": "The updated Shuffle features the same-sized circular control pad in a more compact, clip-on case, making it perfect for on-the-go use.",
+              "type": "name"
+            },
+            {
+              "id": "robots",
+              "value": "index, follow",
+              "type": "name"
+            },
+            {
+              "id": "title",
+              "value": "Buy the Apple iPod Shuffle for USD 45.99-69.00.",
+              "type": "title"
+            },
+            {
+              "id": "og:title",
+              "value": "Apple iPod Shuffle",
+              "type": "property"
+            },
+            {
+              "id": "product",
+              "value": "{\"@context\":\"https://schema.org/\",\"@type\":\"Product\",\"name\":\"Apple iPod Shuffle\",\"sku\":\"apple-ipod-shuffle\",\"offers\":{\"@type\":\"AggregateOffer\",\"priceCurrency\":\"USD\",\"lowPrice\":\"45.99\",\"highPrice\":\"69.00\"}}",
+              "type": "jsonld"
+            }
+          ],
+          "pageTitle": "Apple iPod Shuffle",
+          "price": 45.99,
+          "priceMax": 69,
+          "primaryCategoryId": "electronics-digital-media-players",
+          "primaryCategory": {
+            "id": "electronics-digital-media-players",
+            "name": "iPod & MP3 Players",
+            "slug": "ipod-mp3-players",
+            "parentCategoryTree": [
+              {
+                "id": "electronics",
+                "name": "Electronics",
+                "slug": "electronics"
+              }
+            ]
+          },
+          "shortDescription": "With the same size circular control pad as the previous model on a much more compact case with a built-in clip, the updated shuffle is ready to rock and easily tags along when you're on the go.",
+          "stepQuantity": 1,
+          "type": {
+            "master": true
+          },
+          "variants": [
+            {
+              "orderable": true,
+              "price": 45.99,
+              "productId": "apple-ipod-shuffle-silver-1g",
+              "variationValues": {
+                "color": "Silver",
+                "memorySize": "1 GB"
+              }
+            },
+            {
+              "orderable": true,
+              "price": 49,
+              "productId": "apple-ipod-shuffle-blue-1g",
+              "variationValues": {
+                "color": "Blue",
+                "memorySize": "1 GB"
+              }
+            },
+            {
+              "orderable": true,
+              "price": 49,
+              "productId": "apple-ipod-shuffle-green-1g",
+              "variationValues": {
+                "color": "Green",
+                "memorySize": "1 GB"
+              }
+            },
+            {
+              "orderable": true,
+              "price": 49,
+              "productId": "apple-ipod-shuffle-red-1g",
+              "variationValues": {
+                "color": "Red",
+                "memorySize": "1 GB"
+              }
+            },
+            {
+              "orderable": true,
+              "price": 49,
+              "productId": "apple-ipod-shuffle-fuscia-1g",
+              "variationValues": {
+                "color": "Fuscia",
+                "memorySize": "1 GB"
+              }
+            },
+            {
+              "orderable": true,
+              "price": 60,
+              "productId": "apple-ipod-shuffle-silver-2g",
+              "variationValues": {
+                "color": "Silver",
+                "memorySize": "2 GB"
+              }
+            },
+            {
+              "orderable": true,
+              "price": 69,
+              "productId": "apple-ipod-shuffle-green-2g",
+              "variationValues": {
+                "color": "Green",
+                "memorySize": "2 GB"
+              }
+            },
+            {
+              "orderable": true,
+              "price": 60,
+              "productId": "apple-ipod-shuffle-red-2g",
+              "variationValues": {
+                "color": "Red",
+                "memorySize": "2 GB"
+              }
+            },
+            {
+              "orderable": true,
+              "price": 69,
+              "productId": "apple-ipod-shuffle-fuscia-2g",
+              "variationValues": {
+                "color": "Fuscia",
+                "memorySize": "2 GB"
+              }
+            }
+          ],
+          "variationAttributes": [
+            {
+              "id": "color",
+              "name": "Color",
+              "values": [
+                {
+                  "name": "Silver",
+                  "orderable": false,
+                  "value": "Silver"
+                },
+                {
+                  "name": "Blue",
+                  "orderable": false,
+                  "value": "Blue"
+                },
+                {
+                  "name": "Green",
+                  "orderable": false,
+                  "value": "Green"
+                },
+                {
+                  "name": "Red",
+                  "orderable": false,
+                  "value": "Red"
+                },
+                {
+                  "name": "Fuscia",
+                  "orderable": false,
+                  "value": "Fuscia"
+                }
+              ]
+            },
+            {
+              "id": "memorySize",
+              "name": "Memory Size",
+              "values": [
+                {
+                  "name": "1 GB",
+                  "orderable": true,
+                  "value": "1 GB"
+                },
+                {
+                  "name": "2 GB",
+                  "orderable": true,
+                  "value": "2 GB"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "GetProductNotFoundResponseExample": {
+        "value": {
+          "title": "Product Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/product-not-found",
+          "detail": "No product with ID 'pple-ipod-shuffle' for site 'SiteGenesis' could be found.",
+          "productId": "pple-ipod-shuffle",
+          "siteId": "SiteGenesis"
+        }
+      },
+      "GetProductImagesResponseExample": {
+        "value": {
+          "id": "apple-ipod-shuffle",
+          "imageGroups": [
+            {
+              "images": [
+                {
+                  "alt": "Apple iPod Shuffle, large",
+                  "disBaseLink": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dwc2cc65b0/images/large/ipod-shuffle-silver.jpg",
+                  "link": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dwc2cc65b0/images/large/ipod-shuffle-silver.jpg",
+                  "title": "Apple iPod Shuffle"
+                },
+                {
+                  "alt": "Apple iPod Shuffle Blue, large",
+                  "disBaseLink": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dw1a2b3c4d/images/large/ipod-shuffle-blue.jpg",
+                  "link": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dw1a2b3c4d/images/large/ipod-shuffle-blue.jpg",
+                  "title": "Apple iPod Shuffle Blue"
+                }
+              ],
+              "variationAttributes": [
+                {
+                  "id": "color",
+                  "values": [
+                    {
+                      "value": "Blue"
+                    }
+                  ]
+                }
+              ],
+              "viewType": "large"
+            },
+            {
+              "images": [
+                {
+                  "alt": "Apple iPod Shuffle, small",
+                  "link": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dw2b078e02/images/small/ipod-shuffle-silver.jpg",
+                  "title": "Apple iPod Shuffle"
+                }
+              ],
+              "viewType": "small"
+            },
+            {
+              "images": [
+                {
+                  "alt": "Apple iPod Shuffle Silver Swatch",
+                  "link": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dw3c089f13/images/swatch/ipod-shuffle-silver-swatch.jpg",
+                  "title": "Silver"
+                },
+                {
+                  "alt": "Apple iPod Shuffle Blue Swatch",
+                  "link": "https://example.com/on/demandware.static/-/Sites-electronics-catalog/default/dw4d090g24/images/swatch/ipod-shuffle-blue-swatch.jpg",
+                  "title": "Blue"
+                }
+              ],
+              "viewType": "swatch"
+            }
+          ]
+        }
+      },
+      "GetProductImagesBadRequestResponseExample": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/validation",
+          "detail": "The 'imgTypes' parameter value 'large:abc' is invalid. Counts must be positive integers."
+        }
+      },
+      "GetProductImagesNotFoundResponseExample": {
+        "value": {
+          "title": "Product Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/product-not-found",
+          "detail": "No product with ID 'unknown-product-id' for site 'SiteGenesis' could be found.",
+          "productId": "unknown-product-id",
+          "siteId": "SiteGenesis"
+        }
+      },
+      "GetProductPricesResponseExample": {
+        "value": {
+          "productId": "apple-ipod-shuffle",
+          "price": 89.99,
+          "priceMax": 99.99,
+          "pricePerUnit": 8.99,
+          "pricePerUnitMax": 9.99,
+          "pricePerUnitUnit": "kg",
+          "tieredPrices": [
+            {
+              "price": 89.99,
+              "pricebook": "usd-sale-pricebook",
+              "quantity": 1
+            },
+            {
+              "price": 79.99,
+              "pricebook": "usd-sale-pricebook",
+              "quantity": 10
+            },
+            {
+              "price": 69.99,
+              "pricebook": "usd-sale-pricebook",
+              "quantity": 50
+            }
+          ],
+          "prices": {
+            "usd-sale-pricebook": 89.99,
+            "usd-list-pricebook": 99.99
+          }
+        }
+      },
+      "GetProductPricesBadRequestResponseExample": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/validation",
+          "detail": "The locale 'xx-INVALID' is not valid."
+        }
+      },
+      "GetProductPricesNotFoundResponseExample": {
+        "value": {
+          "title": "Product Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/product-not-found",
+          "detail": "No product with ID 'unknown-product' for site 'SiteGenesis' could be found.",
+          "productId": "unknown-product",
+          "siteId": "SiteGenesis"
+        }
+      },
+      "GetProductPromotionsResponseExample": {
+        "value": {
+          "productId": "apple-ipod-shuffle",
+          "productPromotions": [
+            {
+              "promotionId": "20off-electronics",
+              "calloutMsg": "Save 20%!",
+              "promotionalPrice": 71.99
+            },
+            {
+              "promotionId": "free-shipping-50",
+              "calloutMsg": "Free Shipping"
+            }
+          ]
+        }
+      },
+      "GetProductPromotionsBadRequestResponseExample": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/validation",
+          "detail": "The locale 'xx-INVALID' is not valid."
+        }
+      },
+      "GetProductPromotionsNotFoundResponseExample": {
+        "value": {
+          "title": "Product Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/product-not-found",
+          "detail": "No product with ID 'unknown-product' for site 'SiteGenesis' could be found.",
+          "productId": "unknown-product",
+          "siteId": "SiteGenesis"
+        }
+      },
+      "GetCategoriesResponseExample": {
+        "value": {
+          "limit": 2,
+          "data": [
+            {
+              "id": "electronics-digital-cameras",
+              "image": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dw3535377d/images/slot/sub_banners/cat-banner-electronics-camera.jpg",
+              "name": "Digital Cameras",
+              "slug": "digital-cameras",
+              "onlineSubCategoriesCount": 0,
+              "pageDescription": "Shop the latest digital cameras from all the top brands, makes and models at Salesforce Commerce Cloud.",
+              "pageKeywords": "cameras, digital camerasm point and shoot, slr",
+              "pageTitle": "Digital Cameras",
+              "parentCategoryId": "electronics",
+              "parent_category_tree": [
+                {
+                  "id": "electronics",
+                  "name": "electronics",
+                  "slug": "electronics"
+                }
+              ]
+            },
+            {
+              "categories": [
+                {
+                  "id": "electronics-televisions-flat-screen",
+                  "image": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dwc3940e75/images/slot/sub_banners/cat-banner-electronics-tv.jpg",
+                  "name": "Flat Screen",
+                  "slug": "flat-screen",
+                  "pageDescription": "Shop all Flat Screen Televisions including the latest in LCD and Plasma technology from all the latest brands, makes and models at Salesforce Commerce Cloud.",
+                  "pageKeywords": "flat screen, flat screen television, LCD, plasma, HDTV",
+                  "pageTitle": "LCD & Plasma High Definition Flat Screen Televisions",
+                  "parentCategoryId": "electronics-televisions",
+                  "parent_category_tree": [
+                    {
+                      "id": "electronics",
+                      "name": "electronics",
+                      "slug": "electronics"
+                    }
+                  ]
+                },
+                {
+                  "id": "electronics-televisions-projection",
+                  "image": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dwc3940e75/images/slot/sub_banners/cat-banner-electronics-tv.jpg",
+                  "name": "Projection",
+                  "slug": "projection",
+                  "onlineSubCategoriesCount": 0,
+                  "pageDescription": "Shop all Projection Televisions from all the latest brands, makes and models at Salesforce Commerce Cloud.",
+                  "pageKeywords": "projection, projection televisions, HDTV",
+                  "pageTitle": "Projection High Definition Televisions",
+                  "parentCategoryId": "electronics-televisions",
+                  "parent_category_tree": [
+                    {
+                      "id": "electronics",
+                      "name": "electronics",
+                      "slug": "electronics"
+                    }
+                  ]
+                }
+              ],
+              "id": "electronics-televisions",
+              "image": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dwc3940e75/images/slot/sub_banners/cat-banner-electronics-tv.jpg",
+              "name": "Televisions",
+              "slug": "televisions",
+              "onlineSubCategoriesCount": 2,
+              "pageDescription": "Shop the latest Televisions including LCD, Plasma, Flat Screens, Projection including all the top brands, makes and models at Salesforce Commerce Cloud.",
+              "pageKeywords": "televisions, tvs, LCD, plasma, flat screen, high definition, HDTV, projection",
+              "pageTitle": "Televisions Including LCD, Plasma & More in High Definition",
+              "parentCategoryId": "electronics",
+              "parent_category_tree": [
+                {
+                  "id": "electronics",
+                  "name": "electronics",
+                  "slug": "electronics"
+                }
+              ]
+            }
+          ],
+          "total": 2
+        }
+      },
+      "GetCategoriesBadRequestResponseExample": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/validation",
+          "detail": "Maximum number of categories you can request in one call is 50."
+        }
+      },
+      "GetCategoryResponseExample": {
+        "value": {
+          "categories": [
+            {
+              "id": "electronics-televisions",
+              "image": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dwc3940e75/images/slot/sub_banners/cat-banner-electronics-tv.jpg",
+              "name": "Televisions",
+              "slug": "televisions",
+              "onlineSubCategoriesCount": 2,
+              "pageDescription": "Shop the latest Televisions including LCD, Plasma, Flat Screens, Projection including all the top brands, makes and models at Salesforce Commerce Cloud.",
+              "pageKeywords": "televisions, tvs, LCD, plasma, flat screen, high definition, HDTV, projection",
+              "pageTitle": "Televisions Including LCD, Plasma & More in High Definition",
+              "parentCategoryId": "electronics",
+              "parent_category_tree": [
+                {
+                  "id": "electronics",
+                  "name": "electronics",
+                  "slug": "electronics"
+                }
+              ],
+              "c_enableCompare": true,
+              "c_showInMenu": true,
+              "c_slotBannerImage": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dw1d6f6411/images/slot/landing/cat-landing-tv.jpg"
+            },
+            {
+              "id": "electronics-digital-cameras",
+              "image": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dw3535377d/images/slot/sub_banners/cat-banner-electronics-camera.jpg",
+              "name": "Digital Cameras",
+              "slug": "digital-cameras",
+              "onlineSubCategoriesCount": 0,
+              "pageDescription": "Shop the latest digital cameras from all the top brands, makes and models at Salesforce Commerce Cloud.",
+              "pageKeywords": "cameras, digital camerasm point and shoot, slr",
+              "pageTitle": "Digital Cameras",
+              "parentCategoryId": "electronics",
+              "parent_category_tree": [
+                {
+                  "id": "electronics",
+                  "name": "electronics",
+                  "slug": "electronics"
+                }
+              ],
+              "c_enableCompare": true,
+              "c_showInMenu": true,
+              "c_slotBannerImage": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dw1a543dc7/images/slot/landing/cat-landing-camera.jpg"
+            },
+            {
+              "id": "electronics-digital-media-players",
+              "image": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dw7e9353db/images/slot/sub_banners/cat-banner-electronics-mp3.jpg",
+              "name": "iPod & MP3 Players",
+              "slug": "ipod-mp3-players",
+              "onlineSubCategoriesCount": 0,
+              "pageDescription": "Shop Digital Media Players including iPods, Creative Zen, Sony & the latest from all the top brands, makes and models at Salesforce Commerce Cloud.",
+              "pageKeywords": "mp3, iPods, mp3 players",
+              "pageTitle": "iPod & MP3 Digital Media Players",
+              "parentCategoryId": "electronics",
+              "parent_category_tree": [
+                {
+                  "id": "electronics",
+                  "name": "electronics",
+                  "slug": "electronics"
+                }
+              ],
+              "c_enableCompare": true,
+              "c_showInMenu": true,
+              "c_slotBannerImage": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dw9f3d289a/images/slot/landing/cat-landing-mp3.jpg"
+            },
+            {
+              "id": "electronics-gps-units",
+              "image": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dw6ea864f2/images/slot/sub_banners/cat-banner-electronics-gps.jpg",
+              "name": "GPS Navigation",
+              "slug": "gps-navigation",
+              "onlineSubCategoriesCount": 0,
+              "pageDescription": "Shop the latest in GPS units from Garmin and Tom Tom along with other brands, makes and models at Salesforce Commerce Cloud.",
+              "pageKeywords": "gps, gps units, garmin, tom tom",
+              "pageTitle": "GPS Units",
+              "parentCategoryId": "electronics",
+              "parent_category_tree": [
+                {
+                  "id": "electronics",
+                  "name": "electronics",
+                  "slug": "electronics"
+                }
+              ],
+              "c_enableCompare": true,
+              "c_showInMenu": true,
+              "c_slotBannerImage": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dwad4e06f8/images/slot/landing/cat-landing-gps.jpg"
+            },
+            {
+              "id": "electronics-gaming",
+              "image": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/default/dw9da58d91/images/slot/sub_banners/cat-banner-electronics.jpg",
+              "name": "Gaming",
+              "slug": "gaming",
+              "onlineSubCategoriesCount": 2,
+              "pageDescription": "Shop games and game consoles from Xbox, Xbox360, Playstation 2, Playstation 3, Game Cube, Wii, Playstation Portable and Nintento DS at Salesforce Commerce Cloud.",
+              "pageKeywords": "gaming, xbox, xbox360, ps3, ps2, playstaion 3, psp, game cube, wii, nintendo, nintendo ds",
+              "pageTitle": "Gaming",
+              "parentCategoryId": "electronics",
+              "parent_category_tree": [
+                {
+                  "id": "electronics",
+                  "name": "electronics",
+                  "slug": "electronics"
+                }
+              ],
+              "c_enableCompare": true,
+              "c_showInMenu": true,
+              "c_slotBannerImage": "https://example.com/on/demandware.static/-/Sites-storefront-catalog-en/en_US/v1551233475301/images/slot/landing/cat-landing-gaming.jpg"
+            }
+          ],
+          "id": "electronics",
+          "name": "Electronics",
+          "slug": "electronics",
+          "onlineSubCategoriesCount": 5,
+          "pageDescription": "Shop Electronics including the latest in televisions, digital cameras, camcorders, mp3, ipod, mobil phones, GPS & gaming at Salesforce Commerce Cloud",
+          "pageKeywords": "televisions, digital cameras, camcorders, mp3, ipod, mobil phones, GPS, gaming",
+          "pageTitle": "Shop Electronics Including Televisions, Digital Cameras, iPods & More",
+          "parentCategoryId": "root",
+          "parent_category_tree": [
+            {
+              "id": "root",
+              "name": "root",
+              "slug": "root"
+            }
+          ],
+          "c_enableCompare": true,
+          "c_headerMenuOrientation": "Vertical",
+          "c_showInMenu": true
+        }
+      },
+      "GetCategoryBadRequestResponseExample": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/validation",
+          "detail": "Maximum number of categories you can request in one call is 50."
+        }
+      },
+      "GetCategoryNotFoundResponseExample": {
+        "value": {
+          "title": "Category Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/product-not-found",
+          "detail": "No category with ID 'electronics-televi' for site 'SiteGenesis' could be found.",
+          "productId": "electronics-televi",
+          "siteId": "SiteGenesis"
+        }
+      }
+    },
     "securitySchemes": {
       "ShopperToken": {
         "type": "oauth2",
+        "description": "ShopperToken authentication follows the authorization code grant flow, as defined by the OAuth 2.1 standard. Depending on the type of OAuth client (public or private), this authorization flow has further requirements. \nFor a detailed description of the authorization flow, see the [SLAS overview](https://developer.salesforce.com/docs/commerce/commerce-api/references?meta=shopper-login:Summary).\nA shopper token allows you to access the Shopper API endpoints of both the Open Commerce API (OCAPI) and the B2C Commerce API. These endpoints can be used to build headless storefronts and other applications.\nThe `ShopperToken` security scheme is a parent of other security schemes, such as `ShopperTokenTsob`. A Shopper API endpoint can require a specific child scheme (`ShopperTokenTsob`, for example) that cannot be accessed with a regular shopper token.\n",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
@@ -2946,6 +4383,7 @@
       },
       "ShopperClientContextToken": {
         "type": "oauth2",
+        "description": "ShopperClientContextToken is a separate security scheme used to track and validate client context information.\nIt is valid for Guest shoppers flows only using SLAS private clients. For registered shoppers, use existing ShopperToken flows.\nFor authentication details, see the [SLAS overview](https://developer.salesforce.com/docs/commerce/commerce-api/references?meta=shopper-login:Summary).\nThis token allows access to Shopper API endpoints for guest shoppers only.\n",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token?hint=client_context",

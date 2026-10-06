@@ -2,6 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Users",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/users/users-oas-v1-public.yaml)\n\n# API Overview\n\nThe Users API provides endpoints for managing Business Manager users and their access keys within Salesforce Commerce Cloud.\n\n## Overview\n\nThis API allows administrators to create, retrieve, update, and delete users. It also supports managing access keys for users, retrieving password expiration information, and changing user passwords.\n\n## Key Features\n\n- **User Management**: Create, retrieve, update, and delete Business Manager users\n- **Access Key Management**: Create, retrieve, enable/disable, and delete access keys for users\n- **Password Management**: Retrieve password expiration information and change passwords\n- **User Listing**: Retrieve all users with no filtering\n\n## Access Key Scopes\n\nAccess keys can be created for the following scopes:\n- `WEBDAV_AND_STUDIO`: Access for WebDAV and Studio operations\n- `AGENT_USER_AND_OCAPI`: Access for Agent User and OCAPI operations\n- `STOREFRONT`: Access for storefront operations\n\n## Use Cases\n\n- **Provisioning**: Create and configure Business Manager users programmatically\n- **Key Rotation**: Manage access keys for automated integrations\n- **Security Auditing**: Review user accounts and their access configurations\n- **Password Policies**: Monitor password expiration and enforce password changes\n\n## Authentication\n\nThis API requires OAuth 2.0 authentication with the appropriate scopes:\n- `sfcc.users` - Read access to user resources\n- `sfcc.users.rw` - Read and write access to user resources\n\n## Best Practices\n\n1. Use access keys instead of passwords for automated integrations\n2. Regularly rotate access keys for security\n3. Monitor password expiration dates and enforce timely password changes\n4. Use the PATCH endpoint for partial updates instead of PUT for full overwrites\n5. Only externally managed users can have access keys",
     "version": "1.0.0",
     "x-api-type": "Admin",
     "x-api-family": "Merchant"
@@ -19,17 +20,21 @@
   "paths": {
     "/organizations/{organizationId}/users": {
       "get": {
+        "summary": "Get Users",
+        "description": "Retrieves all users with no filtering.\n",
         "operationId": "getUsers",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "select",
@@ -39,11 +44,17 @@
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/Select"
+            },
+            "examples": {
+              "select": {
+                "value": "(**)"
+              }
             }
           },
           {
             "name": "limit",
             "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 25.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -58,6 +69,7 @@
           {
             "name": "offset",
             "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -76,6 +88,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserSearch"
+                },
+                "examples": {
+                  "UserSearchResponse": {
+                    "$ref": "#/components/examples/UserSearchResponse"
+                  }
                 }
               }
             }
@@ -93,26 +110,32 @@
     },
     "/organizations/{organizationId}/users/{login}": {
       "get": {
+        "summary": "Get User",
+        "description": "Retrieves a single user by their login.\n",
         "operationId": "getUser",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "login",
             "in": "path",
+            "description": "The login of the user.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "admin-user",
               "maxLength": 256,
               "minLength": 1
             }
@@ -125,6 +148,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "examples": {
+                  "UserDetails": {
+                    "$ref": "#/components/examples/UserDetails"
+                  }
                 }
               }
             }
@@ -135,6 +163,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UserNotFound": {
+                    "$ref": "#/components/examples/UserNotFound"
+                  }
                 }
               }
             }
@@ -150,36 +183,48 @@
         ]
       },
       "put": {
+        "summary": "Create or Replace User",
+        "description": "Creates or overwrites a user. If a user with the given login already exists, the existing\nuser will be overwritten. If no such login exists, a new user is created.\n",
         "operationId": "createOrReplaceUser",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "login",
             "in": "path",
+            "description": "The login of the user.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "admin-user",
               "maxLength": 256,
               "minLength": 1
             }
           }
         ],
         "requestBody": {
+          "description": "The user to create or replace",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/User"
+              },
+              "examples": {
+                "CreateUser": {
+                  "$ref": "#/components/examples/CreateUser"
+                }
               }
             }
           },
@@ -192,6 +237,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "examples": {
+                  "UserCreated": {
+                    "$ref": "#/components/examples/UserCreated"
+                  }
                 }
               }
             }
@@ -202,6 +252,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "examples": {
+                  "UserCreated": {
+                    "$ref": "#/components/examples/UserCreated"
+                  }
                 }
               }
             }
@@ -212,6 +267,20 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "BadRequest": {
+                    "$ref": "#/components/examples/BadRequest"
+                  },
+                  "IdConflict": {
+                    "$ref": "#/components/examples/IdConflict"
+                  },
+                  "LocalUserCreation": {
+                    "$ref": "#/components/examples/LocalUserCreation"
+                  },
+                  "PasswordPolicyViolation": {
+                    "$ref": "#/components/examples/PasswordPolicyViolation"
+                  }
                 }
               }
             }
@@ -226,26 +295,32 @@
         ]
       },
       "delete": {
+        "summary": "Delete User",
+        "description": "Deletes a single user.\n",
         "operationId": "deleteUser",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "login",
             "in": "path",
+            "description": "The login of the user.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "admin-user",
               "maxLength": 256,
               "minLength": 1
             }
@@ -261,6 +336,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UserNotFound": {
+                    "$ref": "#/components/examples/UserNotFound"
+                  }
                 }
               }
             }
@@ -275,36 +355,48 @@
         ]
       },
       "patch": {
+        "summary": "Update User",
+        "description": "Updates a user. The locked flag and the user password cannot be updated with this resource.\n",
         "operationId": "updateUser",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "login",
             "in": "path",
+            "description": "The login of the user.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "admin-user",
               "maxLength": 256,
               "minLength": 1
             }
           }
         ],
         "requestBody": {
+          "description": "The user fields to update",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UserUpdateRequest"
+              },
+              "examples": {
+                "UpdateUser": {
+                  "$ref": "#/components/examples/UpdateUser"
+                }
               }
             }
           },
@@ -317,6 +409,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "examples": {
+                  "UserUpdated": {
+                    "$ref": "#/components/examples/UserUpdated"
+                  }
                 }
               }
             }
@@ -327,6 +424,14 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "BadRequest": {
+                    "$ref": "#/components/examples/BadRequest"
+                  },
+                  "IdConflict": {
+                    "$ref": "#/components/examples/IdConflict"
+                  }
                 }
               }
             }
@@ -337,6 +442,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UserNotFound": {
+                    "$ref": "#/components/examples/UserNotFound"
+                  }
                 }
               }
             }
@@ -356,11 +466,15 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the organization the request is being made by",
+        "example": "f_ecom_zzxy_prd",
         "maxLength": 32,
         "minLength": 1
       },
       "Select": {
         "type": "string",
+        "description": "The property selector declaring which fields are included into the response payload. You can specify a single field name, a comma-separated list of names or work with wildcards. You can also specify array operations and filter expressions. The actual selector value must be enclosed within parentheses. For more information, please read the documentation about property selectors [here](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html).",
+        "example": "(name,id,variationAttributes.(**))",
         "minLength": 1,
         "pattern": "^[(].*[)]$"
       },
@@ -368,14 +482,19 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
         "minimum": 0
       },
       "ResultBase": {
         "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
         "properties": {
           "limit": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
           },
           "total": {
             "$ref": "#/components/schemas/Total"
@@ -390,6 +509,8 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
         "minimum": 0
       },
       "PaginatedResultBase": {
@@ -398,6 +519,7 @@
             "$ref": "#/components/schemas/ResultBase"
           }
         ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
         "properties": {
           "offset": {
             "$ref": "#/components/schemas/Offset"
@@ -411,18 +533,25 @@
       },
       "LanguageCountry": {
         "type": "string",
+        "description": "A concatenated version of the standard Language and Country codes, combined with a hyphen '`-`'.",
+        "example": "en-US",
         "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
       },
       "LanguageCode": {
         "type": "string",
+        "description": "A two letter lowercase language code conforming to the [ISO 639-1](https://www.iso.org/iso-639-language-codes.html) standard. Additionally, this may be used to submit requests with the header parameter `Accept-Language`, following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766).",
+        "example": "en",
         "pattern": "^[a-z][a-z]$"
       },
       "DefaultFallback": {
         "type": "string",
         "default": "default",
+        "description": "A specialized value indicating the system default values for locales.",
+        "example": "default",
         "pattern": "^default$"
       },
       "LocaleCode": {
+        "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
         "oneOf": [
           {
             "$ref": "#/components/schemas/LanguageCountry"
@@ -437,68 +566,95 @@
       },
       "User": {
         "type": "object",
+        "description": "Document representing a user.",
         "properties": {
           "login": {
             "type": "string",
+            "description": "The login of the user.",
+            "example": "admin-user",
             "maxLength": 256,
             "minLength": 1
           },
           "password": {
             "type": "string",
+            "description": "The password of the user.",
+            "example": "password",
             "maxLength": 256
           },
           "email": {
             "type": "string",
+            "description": "The email address of the user.",
+            "example": "admin@example.com",
             "maxLength": 256
           },
           "firstName": {
             "type": "string",
+            "description": "The first name of the user.",
+            "example": "John",
             "maxLength": 256
           },
           "lastName": {
             "type": "string",
+            "description": "The last name of the user.",
+            "example": "Doe",
             "maxLength": 256
           },
           "externalId": {
             "type": "string",
+            "description": "The external identifier for the user.",
+            "example": "ext-12345",
             "maxLength": 256
           },
           "disabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Indicates whether the user is disabled.",
+            "example": false
           },
           "locked": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Indicates whether the user is locked.",
+            "example": false
           },
           "lastLoginDate": {
             "type": "string",
-            "format": "date"
+            "format": "date",
+            "description": "The date of the user's last login.",
+            "example": "2024-10-14"
           },
           "passwordExpirationDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The date and time when the user's password expires.",
+            "example": "2025-01-14T00:00:00Z"
           },
           "passwordModificationDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The date and time when the user's password was last modified.",
+            "example": "2024-10-14T10:00:00Z"
           },
           "preferredDataLocale": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/LocaleCode"
               }
-            ]
+            ],
+            "description": "The preferred data locale for the user."
           },
           "preferredUiLocale": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/LocaleCode"
               }
-            ]
+            ],
+            "description": "The preferred UI locale for the user."
           },
           "roles": {
             "type": "array",
+            "description": "The list of role identifiers assigned to the user.",
             "items": {
               "type": "string",
+              "example": "Administrator",
               "maxLength": 256
             }
           }
@@ -514,9 +670,11 @@
             "$ref": "#/components/schemas/PaginatedResultBase"
           }
         ],
+        "description": "Document representing a collection of users.",
         "properties": {
           "data": {
             "type": "array",
+            "description": "The collection of users.",
             "items": {
               "$ref": "#/components/schemas/User"
             }
@@ -532,17 +690,25 @@
         "properties": {
           "title": {
             "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
             "maxLength": 2048
           },
           "detail": {
-            "type": "string"
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
           },
           "instance": {
             "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
             "maxLength": 2048
           }
         },
@@ -554,21 +720,30 @@
       },
       "UserUpdateRequest": {
         "type": "object",
+        "description": "Document representing a request to update a user. The locked flag and user password cannot be updated with this resource.",
         "properties": {
           "email": {
             "type": "string",
+            "description": "The email address of the user.",
+            "example": "updated@example.com",
             "maxLength": 256
           },
           "firstName": {
             "type": "string",
+            "description": "The first name of the user.",
+            "example": "Jane",
             "maxLength": 256
           },
           "lastName": {
             "type": "string",
+            "description": "The last name of the user.",
+            "example": "Smith-Updated",
             "maxLength": 256
           },
           "externalId": {
             "type": "string",
+            "description": "The external identifier for the user.",
+            "example": "ext-updated",
             "maxLength": 256
           },
           "preferredDataLocale": {
@@ -576,14 +751,16 @@
               {
                 "$ref": "#/components/schemas/LocaleCode"
               }
-            ]
+            ],
+            "description": "The preferred data locale for the user."
           },
           "preferredUiLocale": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/LocaleCode"
               }
-            ]
+            ],
+            "description": "The preferred UI locale for the user."
           }
         }
       }
@@ -592,12 +769,14 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the organization the request is being made by",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "select": {
         "name": "select",
@@ -607,24 +786,225 @@
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/Select"
+        },
+        "examples": {
+          "select": {
+            "value": "(**)"
+          }
         }
       },
       "login": {
         "name": "login",
         "in": "path",
+        "description": "The login of the user.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "admin-user",
           "maxLength": 256,
           "minLength": 1
+        }
+      }
+    },
+    "examples": {
+      "UserSearchResponse": {
+        "summary": "User collection",
+        "description": "Example of a user search response with `select=(**)`.",
+        "value": {
+          "limit": 3,
+          "offset": 0,
+          "total": 3,
+          "data": [
+            {
+              "login": "admin-user",
+              "email": "admin@example.com",
+              "firstName": "John",
+              "lastName": "Doe",
+              "externalId": "ext-12345",
+              "disabled": false,
+              "locked": false,
+              "lastLoginDate": "2024-10-14",
+              "passwordExpirationDate": "2025-01-14T00:00:00.000Z",
+              "passwordModificationDate": "2024-10-14T10:00:00.000Z",
+              "preferredDataLocale": "en-US",
+              "preferredUiLocale": "en-US",
+              "roles": [
+                "Administrator"
+              ]
+            },
+            {
+              "login": "editor-user",
+              "email": "editor@example.com",
+              "firstName": "Jane",
+              "lastName": "Smith",
+              "externalId": "ext-67890",
+              "disabled": false,
+              "locked": false,
+              "lastLoginDate": "2024-10-13",
+              "passwordExpirationDate": "2025-01-13T00:00:00.000Z",
+              "passwordModificationDate": "2024-10-13T08:00:00.000Z",
+              "preferredDataLocale": "en-US",
+              "preferredUiLocale": "en-US",
+              "roles": [
+                "ContentEditor"
+              ]
+            },
+            {
+              "login": "manager-user",
+              "email": "manager@example.com",
+              "firstName": "Bob",
+              "lastName": "Wilson",
+              "externalId": "ext-11111",
+              "disabled": true,
+              "locked": false,
+              "lastLoginDate": "2024-09-01",
+              "passwordExpirationDate": "2024-12-01T00:00:00.000Z",
+              "passwordModificationDate": "2024-09-01T07:00:00.000Z",
+              "preferredDataLocale": "default",
+              "preferredUiLocale": "default",
+              "roles": [
+                "CustomManager"
+              ]
+            }
+          ]
+        }
+      },
+      "UserDetails": {
+        "summary": "Single user details",
+        "description": "Example of a successful retrieval of a single user",
+        "value": {
+          "login": "admin-user",
+          "email": "admin@example.com",
+          "firstName": "John",
+          "lastName": "Doe",
+          "externalId": "ext-12345",
+          "disabled": false,
+          "locked": false,
+          "lastLoginDate": "2024-10-14",
+          "passwordExpirationDate": "2025-01-14T00:00:00.000Z",
+          "passwordModificationDate": "2024-10-14T10:00:00.000Z",
+          "preferredDataLocale": "en-US",
+          "preferredUiLocale": "en-US",
+          "roles": [
+            "Administrator"
+          ]
+        }
+      },
+      "UserNotFound": {
+        "summary": "User not found",
+        "description": "Example of an error when the specified user does not exist",
+        "value": {
+          "title": "User Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/user-not-found",
+          "detail": "No user with login 'nonexistent-user' could be found."
+        }
+      },
+      "CreateUser": {
+        "summary": "Create a user",
+        "description": "Example of creating a new Business Manager user",
+        "value": {
+          "login": "new-user",
+          "email": "newuser@example.com",
+          "firstName": "Jane",
+          "lastName": "Smith",
+          "externalId": "ext-67890",
+          "password": "SecurePassword123!",
+          "preferredDataLocale": "en-US",
+          "preferredUiLocale": "en-US"
+        }
+      },
+      "UserCreated": {
+        "summary": "Newly created user",
+        "description": "Example of a successfully created user",
+        "value": {
+          "login": "new-user",
+          "email": "newuser@example.com",
+          "firstName": "Jane",
+          "lastName": "Smith",
+          "externalId": "ext-67890",
+          "disabled": false,
+          "locked": false,
+          "passwordExpirationDate": "2025-06-01T00:00:00.000Z",
+          "passwordModificationDate": "2025-03-01T12:00:00.000Z",
+          "preferredDataLocale": "en-US",
+          "preferredUiLocale": "en-US",
+          "roles": []
+        }
+      },
+      "BadRequest": {
+        "summary": "Bad request",
+        "description": "Example of an error when a required field constraint is violated",
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "An error occurred while decoding the request. There's a value constraint violation of property '$.email' in document 'User'."
+        }
+      },
+      "IdConflict": {
+        "summary": "ID conflict",
+        "description": "Example of an error when the ID in the request body does not match the ID in the URL",
+        "value": {
+          "title": "Id Conflict",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/id-conflict",
+          "detail": "The ID in the request body ('different-login') doesn't match the ID in the URL ('scapi-id-conflict-test')."
+        }
+      },
+      "LocalUserCreation": {
+        "summary": "Local user creation not allowed",
+        "description": "Example of an error when creating a local user is not allowed with the current server settings",
+        "value": {
+          "title": "Local User Creation",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/local-user-creation",
+          "detail": "The creation of a local Business Manager user isn't allowed with the current server settings."
+        }
+      },
+      "PasswordPolicyViolation": {
+        "summary": "Password policy violation",
+        "description": "Example of an error when the password does not meet policy requirements",
+        "value": {
+          "title": "Password Policy Violation",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/password-policy-violation",
+          "detail": "The provided new password doesn't meet the requirements."
+        }
+      },
+      "UpdateUser": {
+        "summary": "Update a user",
+        "description": "Example of updating an existing user",
+        "value": {
+          "email": "updated@example.com",
+          "firstName": "Jane",
+          "lastName": "Smith-Updated",
+          "preferredDataLocale": "de-DE"
+        }
+      },
+      "UserUpdated": {
+        "summary": "Updated user",
+        "description": "Example of a successfully updated user",
+        "value": {
+          "login": "admin-user",
+          "email": "updated@example.com",
+          "firstName": "Jane",
+          "lastName": "Smith-Updated",
+          "externalId": "ext-12345",
+          "disabled": false,
+          "locked": false,
+          "lastLoginDate": "2024-10-14",
+          "passwordExpirationDate": "2025-01-14T00:00:00.000Z",
+          "passwordModificationDate": "2024-10-14T10:00:00.000Z",
+          "preferredDataLocale": "de-DE",
+          "preferredUiLocale": "en-US",
+          "roles": [
+            "Administrator"
+          ]
         }
       }
     },
     "securitySchemes": {
       "AmOAuth2": {
         "type": "oauth2",
+        "description": "OAuth 2.0 security scheme for Admin API access using Account Manager.\nRequires appropriate scopes for user management operations.\n",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://account.demandware.com/dw/oauth2/access_token",

@@ -19,7 +19,7 @@ interface SwaggerOptions {
   plugins: Array<() => {components: Record<string, () => null>}>;
 }
 
-function loadWebview(token: string, error = '') {
+function loadWebview(token: string, error = '', offlineWarning: string | null = null) {
   const template = readFileSync(
     fileURLToPath(new URL('../../src/api-browser/swagger-webview.html', import.meta.url)),
     'utf8',
@@ -42,6 +42,8 @@ function loadWebview(token: string, error = '') {
     script
       .replace('__INITIAL_TOKEN__', token)
       .replace('__INITIAL_TOKEN_ERROR__', () => JSON.stringify(error))
+      .replace('__OFFLINE_WARNING__', () => JSON.stringify(offlineWarning))
+      .replace('__OFFLINE_STATUS__', () => JSON.stringify('Offline: read-only'))
       .replace('__SPEC_JSON__', '{}'),
     {
       acquireVsCodeApi: () => ({postMessage: (message: {type: string}) => messages.push(message)}),
@@ -70,6 +72,7 @@ function loadWebview(token: string, error = '') {
 
   return {
     status: () => elements.get('tokenStatus')!,
+    notice: () => elements.get('offlineNotice')!,
     click: (id: string) => clicks.get(id)!(),
     receive: (data: Record<string, unknown>) => onMessage({data}),
     authorization: () => options.requestInterceptor({headers: {}}).headers.Authorization,
@@ -115,5 +118,12 @@ suite('API Browser webview authentication', () => {
     assert.strictEqual(components.authorizationPopup(), null);
     view.click('setupHelpBtn');
     assert.strictEqual(view.messages[0].type, 'showSetupHelp');
+  });
+
+  test('shows the offline warning and sends no token when a bundled contract is displayed', () => {
+    const view = loadWebview('', '', 'Live schema unavailable (no access). Showing the bundled contract.');
+    assert.match(view.notice().textContent, /Live schema unavailable/);
+    assert.strictEqual(view.status().textContent, 'Offline: read-only');
+    assert.strictEqual(view.authorization(), undefined);
   });
 });

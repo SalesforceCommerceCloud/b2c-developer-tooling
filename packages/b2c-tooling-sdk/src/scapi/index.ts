@@ -9,6 +9,27 @@ export {loadScapiSchemas, findScapiOperation, resolveScapiReference} from './cat
 export type {ApiDocument, ScapiSchemaEntry, ScapiSchemaDocument} from './catalog.js';
 export {ScapiLiveSchemaCache, createLiveScapiDocument, mergeScapiSchemas, scapiTenantKey} from './live.js';
 export {loadLocalScapiSchemas} from './local.js';
+export {
+  SCAPI_SCHEMA_EXPANSIONS,
+  SCAPI_STANDARD_SCHEMA_EXPAND,
+  normalizeScapiSchemaExpand,
+  scapiExpandIncludes,
+  isFullScapiExpand,
+  scapiSchemaExpandFor,
+  findBundledScapiSchema,
+  listBundledScapiSchemas,
+  fetchScapiSchemaWithFallback,
+  listScapiSchemasWithFallback,
+} from './schema-source.js';
+export type {
+  ScapiSchemaExpansion,
+  ScapiSchemaNeeds,
+  ScapiSchemaIdentity,
+  ScapiSchemaFilter,
+  ScapiSchemaSource,
+  ScapiSchemaFetchResult,
+  ScapiSchemaListFetchResult,
+} from './schema-source.js';
 export type {ScapiLiveSchemaCacheOptions, ScapiLiveSchemaLoadOptions, ScapiLiveSchemaLoadResult} from './live.js';
 export {ScapiShopperSessions} from './shopper.js';
 export type {ScapiShopperAuth, ScapiShopperConfig} from './shopper.js';

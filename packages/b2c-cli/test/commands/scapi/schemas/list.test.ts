@@ -23,10 +23,13 @@ describe('scapi schemas list', () => {
     expect(error).to.be.undefined;
   });
 
-  it('requires tenant-id flag', async () => {
-    const {error} = await runCommand('scapi schemas list --client-id test-client --short-code testcode');
-    expect(error).to.not.be.undefined;
-    expect(error?.message).to.include('tenant-id');
+  it('falls back to the bundled corpus without tenant configuration', async () => {
+    const {error, stdout} = await runCommand('scapi schemas list --json --client-id test-client --short-code testcode');
+    expect(error).to.be.undefined;
+    const output = JSON.parse(stdout) as {source: string; warning: string; total: number};
+    expect(output.source).to.equal('bundled');
+    expect(output.warning).to.include('tenant-id');
+    expect(output.total).to.be.greaterThan(0);
   });
 
   it('shows available columns in help', async () => {
@@ -154,16 +157,16 @@ describe('scapi schemas list', () => {
       expect(allOutput).to.include('deprecated');
     });
 
-    it('handles API errors', async () => {
+    it('falls back to the bundled corpus with a warning when the live listing fails', async () => {
       const command: any = new ScapiSchemasList([], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd'}, {});
+      stubParse(command, {'tenant-id': 'zzxy_prd', 'api-name': 'shopper-baskets'}, {});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
       sinon.stub(command, 'jsonEnabled').returns(true);
       sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
       sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
-      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+      const warnStub = sinon.stub(command, 'warn');
 
       sinon.stub(globalThis, 'fetch').resolves(
         new Response(JSON.stringify({message: 'Unauthorized'}), {
@@ -172,12 +175,33 @@ describe('scapi schemas list', () => {
         }),
       );
 
-      try {
-        await command.run();
-        expect.fail('Should have thrown');
-      } catch {
-        expect(errorStub.calledOnce).to.equal(true);
-      }
+      const result = await command.run();
+      expect(result.source).to.equal('bundled');
+      expect(result.warning).to.include('bundled');
+      expect(result.schemas.length).to.be.greaterThan(0);
+      expect(result.schemas.every((s: {apiName: string}) => s.apiName === 'shopper-baskets')).to.equal(true);
+      expect(warnStub.calledOnce).to.equal(true);
+    });
+
+    it('reports the live source without a warning', async () => {
+      const command: any = new ScapiSchemasList([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd'}, {});
+      await command.init();
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+      sinon.stub(globalThis, 'fetch').resolves(
+        new Response(JSON.stringify({total: 0, data: []}), {
+          status: 200,
+          headers: {'content-type': 'application/json'},
+        }),
+      );
+
+      const result = await command.run();
+      expect(result.source).to.equal('live');
+      expect(result.warning).to.equal(undefined);
     });
   });
 });

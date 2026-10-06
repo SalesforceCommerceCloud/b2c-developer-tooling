@@ -39,6 +39,10 @@ export function registerApiBrowser(
     showCollapseAll: true,
   });
 
+  const messageDisposable = treeProvider.onDidChangeMessage((message) => {
+    treeView.message = message;
+  });
+
   const refreshDisposable = registerSafeCommand('b2c-dx.apiBrowser.refresh', () => {
     treeProvider.refresh();
   });
@@ -73,6 +77,7 @@ export function registerApiBrowser(
 
   context.subscriptions.push(
     treeView,
+    messageDisposable,
     refreshDisposable,
     helpDisposable,
     openSwaggerDisposable,

@@ -6,8 +6,10 @@
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
+import {listScapiSchemasWithFallback, type ScapiSchemaSource} from '@salesforce/b2c-tooling-sdk/scapi';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {OFFLINE_TREE_MESSAGE, OfflineWarningGate, toSchemaEntries} from './offline.js';
 import {resolveApiBrowserTenantId} from './tenant.js';
 
 export class ApiFamilyTreeItem extends vscode.TreeItem {
@@ -83,6 +85,10 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
 
   private schemaCache: SchemaEntry[] | null = null;
   private loaded = false;
+  private readonly offlineGate = new OfflineWarningGate();
+  private readonly _onDidChangeMessage = new vscode.EventEmitter<string | undefined>();
+  /** Fires with the tree view message: set while showing bundled schemas, undefined once live. */
+  readonly onDidChangeMessage = this._onDidChangeMessage.event;
 
   constructor(
     private readonly configProvider: B2CExtensionConfig,
@@ -112,11 +118,6 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
   private async getRootChildren(): Promise<ApiFamilyTreeItem[]> {
     if (!this.loaded) return [];
 
-    const config = this.configProvider.getConfig();
-    if (!config?.hasOAuthConfig()) {
-      return [];
-    }
-
     const schemas = await this.loadSchemas();
     if (!schemas) return [];
 
@@ -136,47 +137,51 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
   private async loadSchemas(): Promise<SchemaEntry[] | null> {
     if (this.schemaCache) return this.schemaCache;
 
-    const config = this.configProvider.getConfig();
-    if (!config) return null;
-
-    const shortCode = config.values.shortCode;
-    if (!shortCode) return null;
-
-    const tenantId = resolveApiBrowserTenantId(config.values);
-    if (!tenantId) return null;
-
     try {
-      const schemas = await vscode.window.withProgress(
+      const result = await vscode.window.withProgress(
         {location: {viewId: 'b2cApiBrowser'}, title: 'Loading SCAPI schemas...'},
-        async () => {
-          const oauthOptions = await this.configProvider.getImplicitAuthOptions();
-          const oauthStrategy = config.createOAuth(oauthOptions);
-          const schemasClient = createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
-          const orgId = toOrganizationId(tenantId);
-          const {data, error, response} = await schemasClient.GET('/organizations/{organizationId}/schemas', {
-            params: {path: {organizationId: orgId}},
-          });
-          if (error) {
-            throw new Error(getApiErrorMessage(error, response));
-          }
-          return (data?.data ?? []) as SchemaListItem[];
-        },
+        // The client is built inside the callback so missing configuration falls back to the bundled corpus too.
+        () =>
+          listScapiSchemasWithFallback({}, async () => {
+            const config = this.configProvider.getConfig();
+            if (!config) throw new Error('No B2C Commerce configuration found.');
+            if (!config.hasOAuthConfig())
+              throw new Error('Account Manager OAuth credentials are not configured (client-id and client-secret).');
+            const shortCode = config.values.shortCode;
+            if (!shortCode) throw new Error('short-code is not configured.');
+            const tenantId = resolveApiBrowserTenantId(config.values);
+            if (!tenantId) throw new Error('tenant-id is not configured.');
+
+            const oauthOptions = await this.configProvider.getImplicitAuthOptions();
+            const oauthStrategy = config.createOAuth(oauthOptions);
+            const schemasClient = createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
+            const {data, error, response} = await schemasClient.GET('/organizations/{organizationId}/schemas', {
+              params: {path: {organizationId: toOrganizationId(tenantId)}},
+            });
+            if (error) throw new Error(getApiErrorMessage(error, response));
+            const items = (data?.data ?? []) as SchemaListItem[];
+            return {schemas: items, total: data?.total ?? items.length};
+          }),
       );
 
-      this.schemaCache = schemas.map((s) => ({
-        apiFamily: s.apiFamily ?? '',
-        apiName: s.apiName ?? '',
-        apiVersion: s.apiVersion ?? 'v1',
-        status: s.status,
-      }));
-
-      this.log.appendLine(`[API Browser] Loaded ${this.schemaCache.length} schemas`);
+      this.schemaCache = toSchemaEntries(result.schemas);
+      this.reportSource(result.source, result.warning);
+      this.log.appendLine(`[API Browser] Loaded ${this.schemaCache.length} schemas (${result.source})`);
       return this.schemaCache;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.log.appendLine(`[API Browser] Failed to load schemas: ${message}`);
       vscode.window.showErrorMessage(`API Browser: ${message}`);
       return null;
+    }
+  }
+
+  private reportSource(source: ScapiSchemaSource, warning?: string): void {
+    this._onDidChangeMessage.fire(source === 'bundled' ? OFFLINE_TREE_MESSAGE : undefined);
+    if (warning) this.log.appendLine(`[API Browser] ${warning}`);
+    // One notification per outage, not one per refresh.
+    if (this.offlineGate.shouldWarn(source) && warning) {
+      void vscode.window.showWarningMessage(`API Browser: ${warning}`);
     }
   }
 }

@@ -15,6 +15,7 @@ import {SafetyGuard, extractJobIdFromPath, type SafetyConfig} from '../safety/in
 import {getLogger} from '../logging/logger.js';
 import {findScapiOperation, resolveScapiReference, type ApiDocument, type ScapiSchemaDocument} from './catalog.js';
 import {createLiveScapiDocument} from './live.js';
+import {isFullScapiExpand} from './schema-source.js';
 import type {ScapiShopperAuth} from './shopper.js';
 import {
   scapiAuthError,
@@ -52,8 +53,8 @@ export interface ScapiRequestOptions {
   confirm?: (request: ScapiConfirmation, signal: AbortSignal) => Promise<void>;
   /** Called immediately before network dispatch, for tracking potentially applied writes. */
   onDispatch?: () => void;
-  /** Called with each contract fetched from the Schemas API; `customProperties` reports expand=custom_properties. */
-  onSchema?: (document: ScapiSchemaDocument, customProperties: boolean) => void;
+  /** Called with each contract fetched from the Schemas API; `full` reports tenant custom properties and operation prose (expand=all). */
+  onSchema?: (document: ScapiSchemaDocument, full: boolean) => void;
 }
 
 /** Build one execution's SCAPI request helper. Auth, policy, and responses stay in the host. */
@@ -345,7 +346,7 @@ export function createScapiRequest(
         if (previous < 0) documents.push(document);
         // Developer-supplied local contracts take precedence over the tenant's.
         else if (documents[previous].entry.origin !== 'local') documents[previous] = document;
-        options.onSchema?.(document, String(queryValues.expand ?? '').includes('custom_properties'));
+        options.onSchema?.(document, isFullScapiExpand(String(queryValues.expand ?? '')));
       }
     }
     return {status: result.response.status, ok: result.response.ok, data, ...(diagnostic ? {diagnostic} : {})};

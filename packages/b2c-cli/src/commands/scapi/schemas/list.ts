@@ -6,6 +6,7 @@
 import {Flags} from '@oclif/core';
 import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
+import {listScapiSchemasWithFallback, type ScapiSchemaSource} from '@salesforce/b2c-tooling-sdk/scapi';
 import {ScapiSchemasCommand, formatApiError} from '../../../utils/scapi/schemas.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -15,6 +16,10 @@ import {t, withDocs} from '../../../i18n/index.js';
 interface ListOutput {
   schemas: SchemaListItem[];
   total: number;
+  /** `live` from the tenant's Schemas API; `bundled` when the live listing failed and the built-in corpus was listed. */
+  source: ScapiSchemaSource;
+  /** Why the bundled corpus was listed instead of the live one. */
+  warning?: string;
 }
 
 const COLUMNS: Record<string, ColumnDef<SchemaListItem>> = {
@@ -91,40 +96,47 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
   };
 
   async run(): Promise<ListOutput> {
-    this.requireOAuthCredentials();
-
     const {'api-family': apiFamily, 'api-name': apiName, 'api-version': apiVersion, status} = this.flags;
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.scapi.schemas.list.fetching', 'Fetching SCAPI schemas...'));
     }
 
-    const client = this.getSchemasClient();
-
-    const {data, error, response} = await client.GET('/organizations/{organizationId}/schemas', {
-      params: {
-        path: {organizationId: this.getOrganizationId()},
-        query: {
-          apiFamily: apiFamily || undefined,
-          apiName: apiName || undefined,
-          apiVersion: apiVersion || undefined,
-          status: status as 'current' | 'deprecated' | undefined,
+    // Credentials and configuration are checked inside the live call so a failure falls back to the bundled corpus.
+    const listed = await listScapiSchemasWithFallback({apiFamily, apiName, apiVersion, status}, async () => {
+      this.requireOAuthCredentials();
+      const client = this.getSchemasClient();
+      const {data, error, response} = await client.GET('/organizations/{organizationId}/schemas', {
+        params: {
+          path: {organizationId: this.getOrganizationId()},
+          query: {
+            apiFamily: apiFamily || undefined,
+            apiName: apiName || undefined,
+            apiVersion: apiVersion || undefined,
+            status: status as 'current' | 'deprecated' | undefined,
+          },
         },
-      },
+      });
+
+      if (error) {
+        throw new Error(
+          t('commands.scapi.schemas.list.error', 'Failed to fetch SCAPI schemas: {{message}}', {
+            message: formatApiError(error, response),
+          }),
+        );
+      }
+
+      const items = data?.data ?? [];
+      return {schemas: items, total: data?.total ?? items.length};
     });
+    if (listed.warning) this.warn(listed.warning);
 
-    if (error) {
-      this.error(
-        t('commands.scapi.schemas.list.error', 'Failed to fetch SCAPI schemas: {{message}}', {
-          message: formatApiError(error, response),
-        }),
-      );
-    }
-
-    const schemas = data?.data ?? [];
+    const schemas = listed.schemas;
     const output: ListOutput = {
       schemas,
-      total: data?.total ?? schemas.length,
+      total: listed.total,
+      source: listed.source,
+      ...(listed.warning ? {warning: listed.warning} : {}),
     };
 
     if (this.jsonEnabled()) {

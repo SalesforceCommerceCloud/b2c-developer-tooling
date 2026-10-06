@@ -140,7 +140,8 @@ export class ScapiLiveSchemaCache {
           {
             params: {
               path: {organizationId, apiFamily: item.apiFamily!, apiName: item.apiName!, apiVersion: item.apiVersion!},
-              query: {expand: 'custom_properties'},
+              // Everything: code mode searches operation prose and tenant custom properties.
+              query: {expand: 'all'},
             },
             signal: options.signal,
           },

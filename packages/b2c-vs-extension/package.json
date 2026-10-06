@@ -462,7 +462,7 @@
       },
       {
         "view": "b2cApiBrowser",
-        "contents": "Browse and try B2C Commerce APIs using your configured connection.\n\nLoad schemas with Account Manager access. Shopper requests also use SLAS credentials.\n\n[Setup Help](command:b2c-dx.apiBrowser.help)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
+        "contents": "Browse and try B2C Commerce APIs using your configured connection.\n\nLoad schemas with Account Manager access. Shopper requests also use SLAS credentials. Without access, the bundled schemas are shown read-only.\n\n[Setup Help](command:b2c-dx.apiBrowser.help)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",

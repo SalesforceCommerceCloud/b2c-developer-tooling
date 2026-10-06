@@ -2,7 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Price Books",
-    "version": "1.0.2",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/price-books/price-books-oas-v1-public.yaml)\n\n# API Overview\n\nThe Price Books API provides full CRUD (Create, Read, Update, Delete) functionality for price books and price book entries within an organization.\n\nPrice books in Salesforce Commerce Cloud contain the pricing information for products. They can be organized in hierarchies where one price book can inherit from another (parent) price book. Each price book is associated with a specific currency and can be assigned to one or more sites.\n\nPrice book entries define the actual prices for products within a price book. Each entry carries one or more price scale tables, and each table has its own validity window and a set of quantity-based tiers (as absolute monetary amounts or percentage discounts). Entries have a composite identity of (priceBookId, productId).\n\n## Authentication & Authorization\n\nFor resource access, you must use a client ID and client secret from Account Manager to request an access token. The access token is used as a bearer token and added to the Authorization header of your API request.\n\nYou must include `sfcc.price-books` (read-only access) or `sfcc.price-books.rw` (read-write access) in the client ID used to generate the token. For a full list of required permissions, see the [Authorization Scopes Catalog.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html)\n\nFor detailed setup instructions, see the Authorization for Admin APIs guide.\n\n## Response Details\n\n### Timeouts\n\nAdmin API requests must respond within 60 seconds. If a response exceeds this threshold, an HTTP 504 status code is returned. For details, see [Timeouts and Limits.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/timeouts-limits.html)\n\n### Error Handling\n\nError responses follow the [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) problem detail format. To trace errors, include a `correlation-id` header in your request — the response returns it as `x-correlation-id`. For details, see [HTTP Status Codes and Errors.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/error-response-codes.html)\n\n## Key Constraints\n\n- **Currency Immutability**: The currency code of a price book is immutable after creation. PATCH attempts to change it will be rejected.\n- **Parent Cycles**: Parent price book relationships that would create a cycle are rejected server-side.\n- **Site Assignments**: The `siteAssignments` field on a price book is read-only. Assignments are managed via the site-assignment endpoints on this API (`PUT`/`DELETE /price-books/{priceBookId}/site-assignments/{siteId}`).\n- **Price Tables**: The `priceTables` array in price book entries is replaced wholesale on PATCH; individual tables and their tiers cannot be updated independently.\n- **Price Book Type**: A price book with `type: feed_based` has its price entries sourced from an external feed pipeline. The price book container itself remains editable via this API, but price book entry write operations against a feed-based price book are rejected.\n\n## Use Cases\n\n### Create a Price Book\nCreate a new price book with a specific currency. The price book ID is client-supplied and immutable, so creation uses `PUT` with the ID in the path (create-or-replace upsert); there is no `POST` collection endpoint:\n```json\nPUT /organizations/{organizationId}/price-books/USD-list-prices\n{\n  \"id\": \"USD-list-prices\",\n  \"displayName\": \"USD List Prices\",\n  \"currencyCode\": \"USD\",\n  \"online\": true,\n  \"validFrom\": \"2024-01-01T00:00:00.000Z\",\n  \"validTo\": \"2024-12-31T23:59:59.999Z\"\n}\n```\n\n### Add a Price to a Product\nCreate or update a price book entry with a single amount tier:\n```json\nPUT /organizations/{organizationId}/price-books/{priceBookId}/price-book-entries/{productId}\n{\n  \"productId\": \"product-001\",\n  \"priceTables\": [\n    {\n      \"tiers\": [\n        { \"type\": \"amount\", \"quantity\": 1, \"amount\": { \"currencyMnemonic\": \"USD\", \"value\": 99.99 } }\n      ]\n    }\n  ],\n  \"online\": true\n}\n```\n\n### Configure Tiered Pricing\nSet up time-scoped quantity-based pricing, mixing absolute amounts and percentage discounts:\n```json\nPUT /organizations/{organizationId}/price-books/{priceBookId}/price-book-entries/{productId}\n{\n  \"productId\": \"product-002\",\n  \"priceTables\": [\n    {\n      \"validFrom\": \"2026-11-25T00:00:00.000Z\",\n      \"validTo\": \"2026-11-28T23:59:59.999Z\",\n      \"tiers\": [\n        { \"type\": \"amount\", \"quantity\": 1,  \"amount\": { \"currencyMnemonic\": \"USD\", \"value\": 39.99 } },\n        { \"type\": \"amount\", \"quantity\": 10, \"amount\": { \"currencyMnemonic\": \"USD\", \"value\": 34.99 } }\n      ]\n    },\n    {\n      \"validFrom\": \"2026-12-01T00:00:00.000Z\",\n      \"tiers\": [\n        { \"type\": \"amount\",     \"quantity\": 1,  \"amount\": { \"currencyMnemonic\": \"USD\", \"value\": 49.99 } },\n        { \"type\": \"percentage\", \"quantity\": 10, \"percentage\": 15.0 }\n      ]\n    }\n  ],\n  \"online\": true\n}\n```\n\n### Find Active Price Books\nSearch for price books that are currently active (online) and valid:\n```json\n{\n  \"query\": {\n    \"boolQuery\": {\n      \"must\": [\n        {\n          \"termQuery\": {\n            \"fields\": [\"online\"],\n            \"operator\": \"is\",\n            \"values\": [true]\n          }\n        }\n      ]\n    }\n  }\n}\n```\n\n### Search by Currency\nFind all price books for a specific currency:\n```json\n{\n  \"query\": {\n    \"termQuery\": {\n      \"fields\": [\"currencyCode\"],\n      \"operator\": \"is\",\n      \"values\": [\"USD\"]\n    }\n  },\n  \"sorts\": [\n    {\n      \"field\": \"displayName\",\n      \"sortOrder\": \"asc\"\n    }\n  ]\n}\n```\n\n### Text Search\nSearch for price books by name or description:\n```json\n{\n  \"query\": {\n    \"textQuery\": {\n      \"fields\": [\"id\", \"displayName\", \"description\"],\n      \"searchPhrase\": \"sale\"\n    }\n  }\n}\n```\n\n## Related Resources\n\n- [Pricing and Price Books in B2C Commerce](https://help.salesforce.com/s/articleView?id=cc.b2c_pricing_and_price_books.htm)\n- [Price Books for Developers in B2C Commerce](https://help.salesforce.com/s/articleView?id=cc.b2c_price_books_for_developers.htm)\n\n## Related APIs\n\n- [Products (Admin)](https://developer.salesforce.com/docs/commerce/commerce-api/references/products?meta=Summary) — Manage products associated with price books.",
+    "version": "1.1.0",
     "x-api-type": "Admin",
     "x-api-family": "Product"
   },
@@ -11,32 +12,1089 @@
       "url": "https://{shortCode}.api.commercecloud.salesforce.com/product/price-books/v1",
       "variables": {
         "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
           "default": "shortCode"
         }
       }
     }
   ],
   "paths": {
-    "/organizations/{organizationId}/price-book-search": {
-      "post": {
-        "operationId": "searchPriceBooks",
+    "/organizations/{organizationId}/price-books": {
+      "get": {
+        "summary": "Get a list of price books.",
+        "description": "Get a paginated list of price books for the organization.\n\nReturns all price books with their basic metadata. Use the search endpoint for filtered queries.\n",
+        "operationId": "getPriceBooks",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 50 (maximum). Defaults to 25.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 50,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Price books retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBooks"
+                },
+                "examples": {
+                  "PriceBooksListResult": {
+                    "$ref": "#/components/examples/PriceBooksListResult"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_GetPriceBooks"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books",
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/price-books/{priceBookId}": {
+      "get": {
+        "summary": "Get a price book.",
+        "description": "Get a price book by ID.\n\nReturns the price book with its metadata, including computed site assignments. The `siteAssignments` field is a read-only projection; assignments are managed via the site-assignment endpoints (PUT/DELETE /price-books/{priceBookId}/site-assignments/{siteId}).\n",
+        "operationId": "getPriceBook",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Price book retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBook"
+                },
+                "examples": {
+                  "PriceBookRetrieved": {
+                    "$ref": "#/components/examples/PriceBookRetrieved"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_PriceBook"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books",
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "summary": "Create or replace a price book.",
+        "description": "Create a new price book or replace an existing one using the information provided.\n\nWhen replacing an existing price book, the entire price book is replaced with the information in the request. The currency code is immutable and must match the existing value. Attempts to change the currency code will be rejected.\n",
+        "operationId": "createOrUpdatePriceBook",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
             }
           }
         ],
         "requestBody": {
+          "description": "The price book",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceBook"
+              },
+              "examples": {
+                "CreatePriceBookRequest": {
+                  "$ref": "#/components/examples/CreatePriceBookRequest"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Price book replaced successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBook"
+                },
+                "examples": {
+                  "PriceBookReplaced": {
+                    "$ref": "#/components/examples/PriceBookReplaced"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Price book created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBook"
+                },
+                "examples": {
+                  "PriceBookCreated": {
+                    "$ref": "#/components/examples/PriceBookCreated"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_CreateOrUpdatePriceBook"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete a price book.",
+        "description": "Delete a price book by ID.\n\nThis operation permanently removes the price book and all its price book entries. Once deleted, the price book cannot be recovered.\n",
+        "operationId": "deletePriceBook",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Price book deleted successfully. No content returned."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_PriceBook"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update a price book.",
+        "description": "Update a price book with the specified information.\n\nOnly the fields provided in the request body are updated. All other fields remain unchanged. The currency code is immutable and cannot be changed via PATCH.\n",
+        "operationId": "updatePriceBook",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The price book fields to update",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceBook"
+              },
+              "examples": {
+                "UpdatePriceBookRequest": {
+                  "$ref": "#/components/examples/UpdatePriceBookRequest"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Price book updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBook"
+                },
+                "examples": {
+                  "PriceBookUpdated": {
+                    "$ref": "#/components/examples/PriceBookUpdated"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_CreateOrUpdatePriceBook"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_PriceBook"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/price-books/{priceBookId}/price-book-entries": {
+      "get": {
+        "summary": "Get price book entries.",
+        "description": "Get a paginated list of price book entries for the specified price book.\n\nReturns all entries with their pricing information. Use the search endpoint for filtered queries.\n",
+        "operationId": "getPriceBookEntries",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 50.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Price book entries retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBookEntries"
+                },
+                "examples": {
+                  "PriceBookEntriesListResult": {
+                    "$ref": "#/components/examples/PriceBookEntriesListResult"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_PriceBook"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books",
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/price-books/{priceBookId}/price-book-entries/{productId}": {
+      "get": {
+        "summary": "Get a price book entry.",
+        "description": "Get a price book entry by product ID and price book ID.\n\nReturns the pricing information for a specific product in the price book, including tiered pricing if configured.\n",
+        "operationId": "getPriceBookEntry",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "The product ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Price book entry retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBookEntry"
+                },
+                "examples": {
+                  "PriceBookEntryRetrieved": {
+                    "$ref": "#/components/examples/PriceBookEntryRetrieved"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_GetPriceBookEntry"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books",
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "summary": "Create or replace a price book entry.",
+        "description": "Create a new price book entry or replace an existing one using the information provided.\n\nWhen replacing an existing entry, the entire entry is replaced with the information in the request. The priceTables array, if provided, replaces any existing tiered pricing.\n",
+        "operationId": "createOrUpdatePriceBookEntry",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "The product ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The price book entry",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceBookEntry"
+              },
+              "examples": {
+                "CreatePriceBookEntryRequest": {
+                  "$ref": "#/components/examples/CreatePriceBookEntryRequest"
+                },
+                "CreatePriceBookEntryWithTiersRequest": {
+                  "$ref": "#/components/examples/CreatePriceBookEntryWithTiersRequest"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Price book entry replaced successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBookEntry"
+                },
+                "examples": {
+                  "PriceBookEntryReplaced": {
+                    "$ref": "#/components/examples/PriceBookEntryReplaced"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Price book entry created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBookEntry"
+                },
+                "examples": {
+                  "PriceBookEntryCreated": {
+                    "$ref": "#/components/examples/PriceBookEntryCreated"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_PriceBookEntry"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_CreateOrUpdatePriceBookEntry"
+          },
+          "422": {
+            "$ref": "#/components/responses/422UnprocessableContent_PriceBookEntry"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete a price book entry.",
+        "description": "Delete a price book entry by product ID and price book ID.\n\nThis operation permanently removes the price book entry. Once deleted, the entry is not recoverable; a subsequent PUT for the same product creates a new entry rather than restoring the deleted one.\n",
+        "operationId": "deletePriceBookEntry",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "The product ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Price book entry deleted successfully. No content returned."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_GetPriceBookEntry"
+          },
+          "422": {
+            "$ref": "#/components/responses/422UnprocessableContent_PriceBookEntry"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update a price book entry.",
+        "description": "Update a price book entry with the specified information.\n\nOnly the fields provided in the request body are updated. All other fields remain unchanged. The priceTables array, if provided, replaces the existing tiered pricing wholesale.\n",
+        "operationId": "updatePriceBookEntry",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "The product ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The price book entry fields to update",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceBookEntry"
+              },
+              "examples": {
+                "UpdatePriceBookEntryRequest": {
+                  "$ref": "#/components/examples/UpdatePriceBookEntryRequest"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Price book entry updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceBookEntry"
+                },
+                "examples": {
+                  "PriceBookEntryUpdated": {
+                    "$ref": "#/components/examples/PriceBookEntryUpdated"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_PriceBookEntry"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_GetPriceBookEntry"
+          },
+          "422": {
+            "$ref": "#/components/responses/422UnprocessableContent_PriceBookEntry"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/price-books/{priceBookId}/site-assignments": {
+      "get": {
+        "summary": "Get price book site assignments.",
+        "description": "Get the list of sites the specified price book is assigned to.\n\nA price book resolves prices only on the sites it is assigned to, so this is the set of sites on which the book is live. The list is bounded and is not paginated. The same information is also available as the read-only `siteAssignments` field on the price book itself.\n",
+        "operationId": "getPriceBookSiteAssignments",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site assignments retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAssignments"
+                },
+                "examples": {
+                  "SiteAssignmentsListResult": {
+                    "$ref": "#/components/examples/SiteAssignmentsListResult"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_PriceBook"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books",
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/price-books/{priceBookId}/site-assignments/{siteId}": {
+      "put": {
+        "summary": "Assign a price book to a site.",
+        "description": "Assign the specified price book to the specified site, making the book live on that site.\n\nThe assignment is idempotent and fully specified by the path, so no request body is required. Returns `201 Created` when the price book was not previously assigned to the site, and `200 OK` when the assignment already existed. This is a container-level operation and is therefore permitted for both `standard` and `feed_based` price books.\n",
+        "operationId": "createOrUpdatePriceBookSiteAssignment",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "path",
+            "description": "The ID of the site the price book is assigned to.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price book was already assigned to the site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAssignment"
+                },
+                "examples": {
+                  "SiteAssignmentUpdated": {
+                    "$ref": "#/components/examples/SiteAssignmentUpdated"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The price book was assigned to the site successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAssignment"
+                },
+                "examples": {
+                  "SiteAssignmentCreated": {
+                    "$ref": "#/components/examples/SiteAssignmentCreated"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_SiteAssignment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Unassign a price book from a site.",
+        "description": "Remove the assignment of the specified price book from the specified site, so the book is no longer live on that site.\n\nThis is a container-level operation and is therefore permitted for both `standard` and `feed_based` price books. No content is returned.\n",
+        "operationId": "deletePriceBookSiteAssignment",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "priceBookId",
+            "in": "path",
+            "description": "The price book ID.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookId"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "path",
+            "description": "The ID of the site the price book is assigned to.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Site assignment removed successfully. No content returned."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_SiteAssignment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.price-books.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/price-book-search": {
+      "post": {
+        "summary": "Search for price books.",
+        "description": "Searches for price books.\n\nThe query attribute specifies a complex query that can be used to narrow down the search. These are the searchable attributes:\n- id - String\n- displayName - String\n- description - String\n- currencyCode - String\n- parent - String\n- validFrom - DateTime\n- validTo - DateTime\n- online - Boolean\n- siteId - String\n\nThe output of the query can also be sorted. These are the sortable attributes:\n- id - String\n- displayName - String\n- description - String\n- currencyCode - String\n- parent - String\n- validFrom - DateTime\n- validTo - DateTime\n- online - Boolean\n",
+        "operationId": "searchPriceBooks",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          }
+        ],
+        "requestBody": {
+          "description": "The search request document",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PriceBookSearchRequest"
+              },
+              "examples": {
+                "PriceBookSearchRequestBody": {
+                  "$ref": "#/components/examples/PriceBookSearchRequestBody"
+                },
+                "PriceBookSearchRequestWithFilter": {
+                  "$ref": "#/components/examples/PriceBookSearchRequestWithFilter"
+                }
               }
             }
           },
@@ -49,19 +1107,23 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PriceBookSearchResult"
+                },
+                "examples": {
+                  "PriceBookSearchResult": {
+                    "$ref": "#/components/examples/PriceBookSearchResult"
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request. Returned when the search query is malformed or contains invalid fields.\n",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "$ref": "#/components/responses/400BadRequest_SearchPriceBooks"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
           }
         },
         "security": [
@@ -79,12 +1141,657 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "PriceBookId": {
+        "type": "string",
+        "description": "The ID of the price book.",
+        "example": "USD-list-prices",
+        "maxLength": 256,
+        "minLength": 1
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
+        "example": "USD",
+        "pattern": "^([A-Z][A-Z][A-Z]|N/A)$"
+      },
+      "SiteId": {
+        "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
         "maxLength": 32,
         "minLength": 1
+      },
+      "SiteAssignment": {
+        "type": "object",
+        "description": "Document representing a site assignment on a price book.",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteId"
+              }
+            ]
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The display name of the site.",
+            "example": "RefArch Store",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "PriceBook": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a price book.",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriceBookId"
+              }
+            ]
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The display name of the price book.",
+            "example": "USD List Prices",
+            "maxLength": 256
+          },
+          "description": {
+            "type": "string",
+            "description": "The detailed description of the price book.",
+            "example": "Standard list prices for USD currency",
+            "maxLength": 4000
+          },
+          "currencyCode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ],
+            "description": "The currency used by the price book. This can be specified only on create."
+          },
+          "type": {
+            "type": "string",
+            "description": "The price book type. 'standard' price books are fully editable via this API. For 'feed_based' price books, the price entries are sourced from an external feed pipeline: the price book container itself (its metadata, such as displayName, description, online, and validity dates) remains editable via this API, but price book entry write operations against a feed_based price book are rejected. This is a read-only, server-assigned attribute; price books created via this API are always 'standard'.",
+            "enum": [
+              "standard",
+              "feed_based"
+            ],
+            "example": "standard",
+            "readOnly": true
+          },
+          "parent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriceBookId"
+              }
+            ],
+            "description": "The ID of another price book which is the base for this price book."
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The validity start date and time of the price book.",
+            "example": "2024-01-01T00:00:00Z"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The validity end date and time of the price book.",
+            "example": "2024-12-31T23:59:59.999Z"
+          },
+          "online": {
+            "type": "boolean",
+            "description": "Specifies whether the price book is online (true) or not (false). If unspecified on create, the default value is false.",
+            "example": true
+          },
+          "siteAssignments": {
+            "type": "array",
+            "description": "The list of sites to which the price book is assigned. This is a read-only computed attribute; assignments are managed via the site-assignment endpoints on this price book (PUT/DELETE /price-books/{priceBookId}/site-assignments/{siteId}).",
+            "items": {
+              "$ref": "#/components/schemas/SiteAssignment"
+            },
+            "maxItems": 100,
+            "readOnly": true
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time the price book was created.",
+            "example": "2024-01-01T00:00:00Z",
+            "readOnly": true
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time the price book was last modified.",
+            "example": "2024-01-15T10:30:00Z",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "currencyCode",
+          "id"
+        ]
+      },
+      "PriceBooks": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Document representing a paginated list of price books.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "The collection of price books.",
+            "items": {
+              "$ref": "#/components/schemas/PriceBook"
+            },
+            "maxItems": 50
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "InvalidQueryParameterErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when a specified query parameter value is invalid."
+      },
+      "PriceBookNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the specified price book does not exist.",
+        "properties": {
+          "priceBookId": {
+            "$ref": "#/components/schemas/PriceBookId"
+          }
+        }
+      },
+      "CurrencyImmutableErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when attempting to change the currency code of an existing price book."
+      },
+      "ParentCycleDetectedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when a price book parent relationship would create a cycle."
+      },
+      "ProductId": {
+        "type": "string",
+        "description": "The id (SKU) of the product.",
+        "example": "apple-ipod-classic",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "NonNegativeMoney": {
+        "type": "object",
+        "description": "A combination of a currency and a non-negative amount of that currency.",
+        "properties": {
+          "currencyMnemonic": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "value": {
+            "type": "number",
+            "format": "double",
+            "description": "The amount of money for the given currency. Must not be negative.",
+            "example": 1234.56,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "PriceScaleAmount": {
+        "type": "object",
+        "description": "A quantity tier priced as an absolute monetary amount.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Discriminator value identifying this tier as an absolute monetary amount.",
+            "enum": [
+              "amount"
+            ],
+            "example": "amount"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The minimum quantity required for this tier.",
+            "example": 10,
+            "maximum": 1000000,
+            "minimum": 1
+          },
+          "amount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeMoney"
+              }
+            ],
+            "description": "The tier price as a Money object (amount and currency). The value must not be negative. The currency must match the enclosing price book's currency."
+          }
+        },
+        "required": [
+          "amount",
+          "quantity",
+          "type"
+        ]
+      },
+      "PriceScalePercentage": {
+        "type": "object",
+        "description": "A quantity tier priced as a percentage discount.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Discriminator value identifying this tier as a percentage discount.",
+            "enum": [
+              "percentage"
+            ],
+            "example": "percentage"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The minimum quantity required for this tier.",
+            "example": 10,
+            "maximum": 1000000,
+            "minimum": 1
+          },
+          "percentage": {
+            "type": "number",
+            "format": "double",
+            "description": "The percentage discount for this tier, expressed as a number between 0 and 100.",
+            "example": 15,
+            "maximum": 100,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "percentage",
+          "quantity",
+          "type"
+        ]
+      },
+      "PriceScaleEntry": {
+        "description": "A single quantity tier within a price scale table. A tier is either an absolute monetary amount or a percentage discount, discriminated by the 'type' property.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "amount": "#/components/schemas/PriceScaleAmount",
+            "percentage": "#/components/schemas/PriceScalePercentage"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/PriceScaleAmount"
+          },
+          {
+            "$ref": "#/components/schemas/PriceScalePercentage"
+          }
+        ]
+      },
+      "PriceScaleTable": {
+        "type": "object",
+        "description": "A price scale table associates a validity window with a set of quantity tiers. A single price book entry can have multiple tables to express overlapping pricing schedules for the same product.",
+        "properties": {
+          "validFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The start of the validity window during which this price scale table applies. If omitted, the table is valid immediately.",
+            "example": "2026-11-25T00:00:00Z"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The end of the validity window during which this price scale table applies. If omitted, the table is valid indefinitely.",
+            "example": "2026-11-28T23:59:59.999Z"
+          },
+          "tiers": {
+            "type": "array",
+            "description": "The quantity-based tiers for this table. On PUT the table is replaced wholesale; individual tiers cannot be updated independently.",
+            "items": {
+              "$ref": "#/components/schemas/PriceScaleEntry"
+            },
+            "maxItems": 20,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "tiers"
+        ]
+      },
+      "PriceBookEntry": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a price book entry. A price book entry has a composite identity of (priceBookId, productId); there is no standalone POST endpoint, use PUT for upsert.",
+        "properties": {
+          "productId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            ],
+            "description": "The product ID for this price book entry."
+          },
+          "priceTables": {
+            "type": "array",
+            "description": "The list of price scale tables for this product. Each table carries its own validity window and a set of quantity-based tiers. Multiple tables let a merchandiser define overlapping schedules (for example, Black Friday prices alongside regular prices) for the same product in the same price book.",
+            "items": {
+              "$ref": "#/components/schemas/PriceScaleTable"
+            },
+            "maxItems": 10
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time the price book entry was created.",
+            "example": "2024-01-01T00:00:00Z",
+            "readOnly": true
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time the price book entry was last modified.",
+            "example": "2024-01-15T10:30:00Z",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "PriceBookEntries": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Document representing a paginated list of price book entries.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "The collection of price book entries.",
+            "items": {
+              "$ref": "#/components/schemas/PriceBookEntry"
+            },
+            "maxItems": 200
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "PriceBookEntryNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the specified price book entry does not exist.",
+        "properties": {
+          "priceBookId": {
+            "$ref": "#/components/schemas/PriceBookId"
+          },
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          }
+        }
+      },
+      "ValidationErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the request body fails validation."
+      },
+      "InvalidTimeRangeErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when a time range is invalid because its end (validTo) precedes its start (validFrom); for example, a price scale table's validity window."
+      },
+      "TierCurrencyMismatchErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when a price scale tier specifies a currency that differs from the enclosing price book's currency.",
+        "properties": {
+          "tierCurrency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "priceBookCurrency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          }
+        }
+      },
+      "DuplicateTierQuantityErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when two or more tiers in the same price scale table declare the same quantity, which the backend keys tiers by.",
+        "properties": {
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The duplicated tier quantity.",
+            "example": 10,
+            "maximum": 1000000,
+            "minimum": 1
+          }
+        }
+      },
+      "ProductNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the specified product does not exist.",
+        "properties": {
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          }
+        }
+      },
+      "FeedBasedPriceBookNotSupportedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when attempting a price book entry write against a feed_based price book.",
+        "properties": {
+          "priceBookId": {
+            "$ref": "#/components/schemas/PriceBookId"
+          }
+        }
+      },
+      "SiteAssignments": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "description": "Document representing the list of site assignments on a price book. The list is bounded (a price book is live on a small set of sites) and is not paginated.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "The collection of sites the price book is assigned to.",
+            "items": {
+              "$ref": "#/components/schemas/SiteAssignment"
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "SiteNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the site referenced by a site-assignment operation does not exist.",
+        "properties": {
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          }
+        }
       },
       "Query": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A set of objects that define criteria used to select records. A query can contain one of the following:\n* `MatchAllQuery`\n - Matches all documents.\n* `TermQuery`\n - Matches one or more documents against one or more document fields.\n* `TextQuery`\n - Matches text against one or more fields.\n* `BoolQuery`\n - Allows construction of a logical expression of multiple queries.\n* `FilteredQuery`\n - Allows a filter to be applied to a query.\n* `NestedQuery`\n - Allows you to query on nested documents.\n - _Only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation._",
+        "example": {
+          "filteredQuery": {
+            "query": {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "disabled"
+              }
+            },
+            "filter": {
+              "termFilter": {
+                "field": "enabled",
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          }
+        },
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -111,21 +1818,58 @@
       "BoolQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A boolean query allows construction of full logical expression trees that are composed of other queries (usually term queries and text queries). A boolean query has three sets of clauses:\n  \n  - `must`, which combines as an `AND` operator.\n  - `should`, which combines as an `OR` operator.\n  - `must_not`, which combines as a `NOT` operator.\n  \nIf `must`, `mustNot`, or `should` appear in the same boolean query, they are combined logically using the `AND` operator. For example:\n\n    (must-1 AND must-1 AND ...)\n      AND (should-1 OR should-2 OR ...)\n      AND NOT (must_not-1 OR must_not-2 OR ...)\n",
+        "example": {
+          "must": [
+            {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "DEAL"
+              }
+            },
+            {
+              "textQuery": {
+                "fields": [
+                  "description"
+                ],
+                "searchPhrase": "Big bargain deal"
+              }
+            }
+          ],
+          "mustNot": [
+            {
+              "termQuery": {
+                "fields": [
+                  "enabled"
+                ],
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          ]
+        },
         "properties": {
           "must": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `AND` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "mustNot": {
             "type": "array",
+            "description": "List of queries to be evaluated as a `NOT` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "should": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `OR` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
@@ -135,6 +1879,7 @@
       "Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Contains a set of objects that define criteria used to select records. A filter can contain one of the following:\n  * `TermFilter`\n   - Matches records where a field (or fields) exactly matches some simple value (including `null`).\n  * `RangeFilter`\n   - Matches records where a field value lies within a specified range.\n  * `Range2Filter`\n   - Matches records in a specified range across fields.\n  * `QueryFilter`\n   - Matches records based on a query.\n  * `BoolFilter`\n   - Provides filtering of records using a set of filters combined using a logical operator.",
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -158,20 +1903,47 @@
       "BoolFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to combine other filters into (possibly recursive) logical expression trees. A boolean filter is composed of a logical operator (`AND`, `OR`, `NOT`) and a list of filters that the operator relates to. Multiple filters can be negated with a single `NOT` operator, even when the filters are combined with the `AND` operator.",
+        "example": {
+          "operator": "and",
+          "filters": [
+            {
+              "termFilter": {
+                "field": "id",
+                "operator": "is",
+                "values": [
+                  "myId"
+                ]
+              }
+            },
+            {
+              "termFilter": {
+                "field": "couponId",
+                "operator": "is",
+                "values": [
+                  "couponOne"
+                ]
+              }
+            }
+          ]
+        },
         "properties": {
           "filters": {
             "type": "array",
+            "description": "A list of filters that are logically combined by an operator.",
             "items": {
               "$ref": "#/components/schemas/Filter"
             }
           },
           "operator": {
             "type": "string",
+            "description": "The logical operator that is used to combine the filters.",
             "enum": [
               "and",
               "or",
               "not"
-            ]
+            ],
+            "example": "and"
           }
         },
         "required": [
@@ -180,6 +1952,7 @@
       },
       "QueryFilter": {
         "type": "object",
+        "description": "Wraps any query and allows it to be used as a filter.",
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
@@ -191,45 +1964,71 @@
       },
       "Field": {
         "type": "string",
+        "description": "Name of the field. Might be a custom field name prefixed with c_.",
+        "example": "couponId",
         "maxLength": 260
       },
       "Range2Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits where a range defined by specified attributes has a certain relationship to a specified range.\n\nThe first range (R1) is defined by a pair of attributes (`fromField` and `toField`) that specify the extent of a range, such as attributes `validFrom` and `validTo`.\n\nThe second range (R2) is defined by `fromValue` and `toValue`.\n\nThe filter mode specifies the method used to compare the two ranges:\n\n* `overlap`: R1 overlaps fully or partially with R2.\n* `containing`: R1 contains R2.\n* `contained`: R1 is contained in R2.\n\nThe range filter supports several value types, and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range 2 filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "example": {
+          "fromField": "validFrom",
+          "toField": "validTo",
+          "filterMode": "overlap",
+          "fromValue": "2007-01-01T00:00:00.000Z",
+          "toValue": "2017-01-01T00:00:00.000Z"
+        },
         "properties": {
           "filterMode": {
             "type": "string",
             "default": "overlap",
+            "description": "Compare mode: overlap, containing, or contained.",
             "enum": [
               "overlap",
               "containing",
               "contained"
-            ]
+            ],
+            "example": "overlap"
           },
           "fromField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that starts the first range.",
+            "example": "validFrom"
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "fromValue": {},
+          "fromValue": {
+            "description": "The lower bound of the second range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "example": "2007-01-01T00:00:00.000Z"
+          },
           "toField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that ends the first range.",
+            "example": "validTo"
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "toValue": {}
+          "toValue": {
+            "description": "The upper bound of the second range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "example": "2017-01-01T00:00:00.000Z"
+          }
         },
         "required": [
           "fromField",
@@ -238,49 +2037,64 @@
       },
       "RangeFilter": {
         "type": "object",
+        "description": "Allows you to restrict a search result to hits that have values for a given attribute that fall within a given value range. The range filter supports several value types and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The search field.",
+            "example": "validFrom"
           },
           "from": {
+            "description": "The lower bound of the filter range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-01T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 1
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 1
               }
             ]
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
           "to": {
+            "description": "The upper bound of the filter range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-02T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 2
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 2
               }
             ]
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the range is inclusive. To make the upper bound exclusive, set to `false`.",
+            "example": true
           }
         },
         "required": [
@@ -290,16 +2104,26 @@
       "TermFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits that match exactly one of the values configured for the filter. A term filter is useful for general restrictions that can be shared between searches. Use term filters whenever the criteria you filter on is a shared property of multiple searches (for example, like filtering by an order status). Use term filters for fields that have a discrete and small set of values only.",
+        "example": {
+          "field": "id",
+          "operator": "is",
+          "values": [
+            "myId"
+          ]
+        },
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The filter field."
           },
           "operator": {
             "type": "string",
+            "description": "The operator used to compare the field's values with the given values.",
             "enum": [
               "is",
               "one_of",
@@ -309,12 +2133,15 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The filter values.",
             "items": {
-              "type": "string"
+              "type": "string",
+              "example": "myId"
             }
           }
         },
@@ -326,6 +2153,26 @@
       "FilteredQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows to filter the result of a possibly complex query using a possibly complex filter.",
+        "example": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "couponId"
+              ],
+              "searchPhrase": "disabled"
+            }
+          },
+          "filter": {
+            "termFilter": {
+              "field": "enabled",
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          }
+        },
         "properties": {
           "filter": {
             "$ref": "#/components/schemas/Filter"
@@ -340,14 +2187,62 @@
         ]
       },
       "MatchAllQuery": {
-        "type": "object"
+        "type": "object",
+        "description": "Matches all documents (namespace and document type). This query comes in handy if you just want to filter a search result or really do not have any constraints."
       },
       "NestedQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to query nested documents that are part of a larger document. Say, for example, that you have a main product with variations in one big document, and you want to constrain a search to main products that have variations that match multiple constraints. \n\nA `NestedQuery` is only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation.\n",
+        "example": {
+          "path": "order.shippingAddresses",
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.firstName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "John"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.lastName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "Doe"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "scoreMode": "avg"
+        },
         "properties": {
           "path": {
             "type": "string",
+            "description": "The path to the nested document.",
+            "example": "order.shippingAddresses",
             "maxLength": 2048
           },
           "query": {
@@ -355,12 +2250,14 @@
           },
           "scoreMode": {
             "type": "string",
+            "description": "Indicates how scores for matching child objects affect the root parent document’s relevance score.",
             "enum": [
               "avg",
               "total",
               "max",
               "none"
-            ]
+            ],
+            "example": "avg"
           }
         },
         "required": [
@@ -370,9 +2267,11 @@
       },
       "TermQuery": {
         "type": "object",
+        "description": "A term query matches one or more values against one or more document fields. A document is considered a hit if one of the values matches exactly with at least one of the given fields. The operator `is` can only take one value, while `one_of` can take multiple values. If multiple fields are specified, they are combined using a logical `OR` operator.\n\n**Limitations:**\n\n* The `greater` and `less` operators are not supported under certain conditions. Both operators are permitted unless the API documentation states otherwise.\n* A subset of Commerce APIs handle queries with multiple fields differently. If the query has multiple fields, the query is internally handled as a logical `OR` of `DisjointMaxQueries` (with the dismax matching a value against all fields). The dismax makes sure that a document carrying a single term in multiple fields does not get higher scores than a document matching multiple terms in multiple fields.",
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the values are matched against, combined with the operator.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
@@ -380,6 +2279,7 @@
           },
           "operator": {
             "type": "string",
+            "description": "Returns the operator to use for the term query.",
             "enum": [
               "is",
               "one_of",
@@ -389,23 +2289,30 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The values that the fields are compared against, combined with the operator.",
             "items": {
+              "example": "myCouponId",
               "oneOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "example": "myCouponId"
                 },
                 {
-                  "type": "number"
+                  "type": "number",
+                  "example": 1
                 },
                 {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "example": true
                 },
                 {
-                  "type": "integer"
+                  "type": "integer",
+                  "example": 1
                 }
               ]
             }
@@ -419,16 +2326,26 @@
       "TextQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A text query is used to match some text (for example, a search phrase possibly consisting of multiple terms) against one or more fields. When multiple fields are provided, the phrase conceptually forms a logical `OR` over the fields. In this case, the terms of the phrase basically have to match within the text, that would result in concatenating all given fields.",
+        "example": {
+          "fields": [
+            "couponId"
+          ],
+          "searchPhrase": "limit"
+        },
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the search phrase matches against.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
             "minItems": 1
           },
           "searchPhrase": {
-            "type": "string"
+            "type": "string",
+            "description": "A search phrase, which can include multiple terms separated by spaces.",
+            "example": "campaign summer"
           }
         },
         "required": [
@@ -436,46 +2353,45 @@
           "searchPhrase"
         ]
       },
-      "String256": {
-        "type": "string",
-        "maxLength": 256
-      },
       "Sort": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Document representing a sort request. Each API has a different default sort configuration that can be modified in the request.",
+        "example": {
+          "field": "couponId",
+          "sortOrder": "desc"
+        },
         "properties": {
           "field": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/String256"
-              }
-            ]
+            "type": "string",
+            "description": "The name of the field to sort on.",
+            "example": "couponId",
+            "maxLength": 256
           },
           "sortOrder": {
             "type": "string",
             "default": "asc",
+            "description": "The sort order to be applied when sorting. When omitted, the default sort order (asc) is used.",
             "enum": [
               "asc",
               "desc"
-            ]
+            ],
+            "example": "asc"
           }
         },
         "required": [
           "field"
         ]
       },
-      "Offset": {
-        "type": "integer",
-        "format": "int32",
-        "default": 0,
-        "minimum": 0
-      },
       "SearchRequest": {
         "type": "object",
+        "description": "Document representing a search request for retrieving items within the Data API. The query is a potentially complex set of expressions. The fields and expands that each query supports are defined within the search resource.",
         "properties": {
           "limit": {
             "type": "integer",
             "format": "int32",
+            "description": "Maximum records to retrieve per request, not to exceed 200.",
+            "example": 10,
             "maximum": 200,
             "minimum": 1
           },
@@ -484,6 +2400,7 @@
           },
           "sorts": {
             "type": "array",
+            "description": "The list of sort clauses configured for the search request. Sort clauses are optional. See the description of the search endpoint for details on the default sorting behavior that is used when explicit sorts are not passed.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
@@ -503,47 +2420,22 @@
             "$ref": "#/components/schemas/SearchRequest"
           }
         ],
+        "description": "Document representing a search request for price books. The query is a potentially complex set of expressions.\n\nSearchable attributes:\n- id (String)\n- displayName (String)\n- description (String)\n- currencyCode (String)\n- parent (String)\n- validFrom (DateTime)\n- validTo (DateTime)\n- online (Boolean)\n- siteId (String)\n\nSortable attributes:\n- id (String)\n- displayName (String)\n- description (String)\n- currencyCode (String)\n- parent (String)\n- validFrom (DateTime)\n- validTo (DateTime)\n- online (Boolean)\n",
+        "example": {
+          "limit": 2,
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "USD"
+            }
+          },
+          "offset": 0
+        },
         "required": [
           "query"
-        ]
-      },
-      "Total": {
-        "type": "integer",
-        "format": "int32",
-        "default": 0,
-        "minimum": 0
-      },
-      "ResultBase": {
-        "type": "object",
-        "properties": {
-          "limit": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "total": {
-            "$ref": "#/components/schemas/Total"
-          }
-        },
-        "required": [
-          "limit",
-          "total"
-        ]
-      },
-      "PaginatedResultBase": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ResultBase"
-          }
-        ],
-        "properties": {
-          "offset": {
-            "$ref": "#/components/schemas/Offset"
-          }
-        },
-        "required": [
-          "limit",
-          "offset",
-          "total"
         ]
       },
       "PaginatedSearchResult": {
@@ -553,18 +2445,67 @@
             "$ref": "#/components/schemas/PaginatedResultBase"
           }
         ],
+        "description": "Document representing a generic search result. Each search resource should extend this to define what is returned in the `hits`.",
+        "example": {
+          "limit": 1,
+          "hits": [
+            {
+              "couponId": "coupon1",
+              "creationDate": "2019-10-20T12:00:00Z",
+              "description": "This coupon is used to give 10% off stuff.",
+              "enabled": false,
+              "exportedCodeCount": 0,
+              "lastModified": "2019-10-30T04:23:59Z",
+              "redemptionCount": 3,
+              "redemptionLimits": {
+                "limitPerCode": 1,
+                "limitPerCustomer": 1,
+                "limitPerTimeFrame": {
+                  "limit": 2,
+                  "redemptionTimeFrame": 24
+                }
+              },
+              "singleCode": "MyCode",
+              "systemCodesConfig": {
+                "codePrefix": "SG",
+                "numberOfCodes": 500000
+              },
+              "totalCodesCount": 50,
+              "type": "single_code"
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "stuff"
+            }
+          },
+          "sorts": [
+            {
+              "field": "couponId",
+              "sortOrder": "desc"
+            }
+          ],
+          "offset": 2,
+          "total": 8
+        },
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
           },
           "sorts": {
             "type": "array",
+            "description": "The sorting that was applied to the result.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
           },
           "hits": {
             "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
             "items": {
               "type": "object"
             }
@@ -574,99 +2515,6 @@
           "query"
         ]
       },
-      "PriceBookId": {
-        "type": "string",
-        "maxLength": 256,
-        "minLength": 1
-      },
-      "CurrencyCode": {
-        "type": "string",
-        "pattern": "^([A-Z][A-Z][A-Z]|N/A)$"
-      },
-      "SiteId": {
-        "type": "string",
-        "maxLength": 32,
-        "minLength": 1
-      },
-      "Site": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteId"
-              }
-            ]
-          },
-          "displayName": {
-            "type": "string",
-            "maxLength": 256
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "PriceBook": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PriceBookId"
-              }
-            ]
-          },
-          "displayName": {
-            "type": "string",
-            "maxLength": 256
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 4000
-          },
-          "currencyCode": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CurrencyCode"
-              }
-            ]
-          },
-          "parent": {
-            "type": "string",
-            "maxLength": 256
-          },
-          "validFrom": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "validTo": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "online": {
-            "type": "boolean"
-          },
-          "siteAssignments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Site"
-            }
-          },
-          "creationDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "lastModified": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "currencyCode",
-          "id"
-        ]
-      },
       "PriceBookSearchResult": {
         "additionalProperties": false,
         "allOf": [
@@ -674,63 +2522,1031 @@
             "$ref": "#/components/schemas/PaginatedSearchResult"
           }
         ],
+        "description": "Document representing a price book search result.",
+        "example": {
+          "limit": 2,
+          "offset": 0,
+          "total": 10,
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "displayName"
+              ],
+              "searchPhrase": "USD"
+            }
+          },
+          "hits": [
+            {
+              "id": "USD-list-prices",
+              "displayName": "USD List Prices",
+              "currencyCode": "USD",
+              "online": true
+            },
+            {
+              "id": "USD-sale-prices",
+              "displayName": "USD Sale Prices",
+              "currencyCode": "USD",
+              "online": true
+            }
+          ]
+        },
         "properties": {
           "hits": {
             "type": "array",
+            "description": "The sorted array of price book search hits. The array can be empty if there are no hits.",
             "items": {
               "$ref": "#/components/schemas/PriceBook"
-            }
+            },
+            "maxItems": 200
           }
         },
         "required": [
-          "hits",
-          "limit",
-          "offset",
-          "total"
+          "hits"
         ]
       },
-      "ErrorResponse": {
-        "type": "object",
-        "additionalProperties": true,
-        "properties": {
-          "title": {
-            "type": "string",
-            "maxLength": 256
-          },
-          "type": {
-            "type": "string",
-            "maxLength": 2048
-          },
-          "detail": {
-            "type": "string"
-          },
-          "instance": {
-            "type": "string",
-            "maxLength": 2048
+      "MalformedSearchParameterErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
           }
-        },
-        "required": [
-          "detail",
-          "title",
-          "type"
-        ]
+        ],
+        "description": "Returned when the search query is malformed or invalid."
+      },
+      "UnqueryableFieldErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when a search query uses a field that is not searchable.",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "The field name that is not searchable.",
+            "example": "invalid_field",
+            "maxLength": 256
+          }
+        }
+      },
+      "FieldNotSortableErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when a search query sorts on a field that is not sortable.",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "The field name that is not sortable.",
+            "example": "invalid_sort",
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "responses": {
+      "400BadRequest_GetPriceBooks": {
+        "description": "Bad Request. Returned when a specified parameter value is invalid.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/InvalidQueryParameterErrorResponse"
+            },
+            "examples": {
+              "InvalidQueryParameterErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidQueryParameterErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_PriceBook": {
+        "description": "Not Found. The specified price book does not exist.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/PriceBookNotFoundErrorResponse"
+            },
+            "examples": {
+              "PriceBookNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/PriceBookNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_CreateOrUpdatePriceBook": {
+        "description": "Bad Request. Returned when attempting to change an immutable field or create a parent cycle.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CurrencyImmutableErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/ParentCycleDetectedErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "CurrencyImmutableErrorResponseExample": {
+                "$ref": "#/components/examples/CurrencyImmutableErrorResponseExample"
+              },
+              "ParentCycleDetectedErrorResponseExample": {
+                "$ref": "#/components/examples/ParentCycleDetectedErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_GetPriceBookEntry": {
+        "description": "Not Found. The specified price book entry or price book does not exist.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/PriceBookEntryNotFoundErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/PriceBookNotFoundErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "PriceBookEntryNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/PriceBookEntryNotFoundErrorResponseExample"
+              },
+              "PriceBookNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/PriceBookNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_PriceBookEntry": {
+        "description": "Bad Request. Returned when the request contains invalid data. Beyond generic schema validation, the following business-logic\nvalidations return distinct error types: an invalid time range (validTo before validFrom), a tier currency that does not\nmatch the price book currency, and duplicate tier quantities within a single price table.\n",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/TierCurrencyMismatchErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/DuplicateTierQuantityErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "ValidationErrorResponseExample": {
+                "$ref": "#/components/examples/ValidationErrorResponseExample"
+              },
+              "InvalidTimeRangeErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidTimeRangeErrorResponseExample"
+              },
+              "TierCurrencyMismatchErrorResponseExample": {
+                "$ref": "#/components/examples/TierCurrencyMismatchErrorResponseExample"
+              },
+              "DuplicateTierQuantityErrorResponseExample": {
+                "$ref": "#/components/examples/DuplicateTierQuantityErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_CreateOrUpdatePriceBookEntry": {
+        "description": "Not Found. The specified price book or product does not exist.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/PriceBookNotFoundErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/ProductNotFoundErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "PriceBookNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/PriceBookNotFoundErrorResponseExample"
+              },
+              "ProductNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/ProductNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "422UnprocessableContent_PriceBookEntry": {
+        "description": "Unprocessable Entity. Price book entry write operations are not supported for a `feed_based` price book, whose entries are sourced from an external feed pipeline. The price book container itself remains editable.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/FeedBasedPriceBookNotSupportedErrorResponse"
+            },
+            "examples": {
+              "FeedBasedPriceBookNotSupportedErrorResponseExample": {
+                "$ref": "#/components/examples/FeedBasedPriceBookNotSupportedErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_SiteAssignment": {
+        "description": "Not Found. The specified price book or site does not exist.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/PriceBookNotFoundErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/SiteNotFoundErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "PriceBookNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/PriceBookNotFoundErrorResponseExample"
+              },
+              "SiteNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/SiteNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_SearchPriceBooks": {
+        "description": "Bad Request. Returned when the search query is malformed or contains invalid fields.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/MalformedSearchParameterErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/UnqueryableFieldErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/FieldNotSortableErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "MalformedSearchParameterErrorResponseExample": {
+                "$ref": "#/components/examples/MalformedSearchParameterErrorResponseExample"
+              },
+              "UnqueryableFieldErrorResponseExample": {
+                "$ref": "#/components/examples/UnqueryableFieldErrorResponseExample"
+              },
+              "FieldNotSortableErrorResponseExample": {
+                "$ref": "#/components/examples/FieldNotSortableErrorResponseExample"
+              }
+            }
+          }
+        }
       }
     },
     "parameters": {
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
+        },
+        "example": "f_ecom_zzxy_prd"
+      },
+      "priceBookId": {
+        "name": "priceBookId",
+        "in": "path",
+        "description": "The price book ID.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/PriceBookId"
+        }
+      },
+      "productId": {
+        "name": "productId",
+        "in": "path",
+        "description": "The product ID.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ProductId"
+        }
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "path",
+        "description": "The ID of the site the price book is assigned to.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        }
+      }
+    },
+    "examples": {
+      "PriceBooksListResult": {
+        "summary": "Successful price books list retrieval",
+        "description": "Example of a paginated list of price books returned by GET /price-books.",
+        "value": {
+          "limit": 25,
+          "offset": 0,
+          "total": 2,
+          "data": [
+            {
+              "id": "USD-list-prices",
+              "displayName": "USD List Prices",
+              "description": "Standard list prices for USD currency",
+              "currencyCode": "USD",
+              "online": true,
+              "creationDate": "2024-01-01T00:00:00.000Z",
+              "lastModified": "2024-01-15T10:30:00.000Z"
+            },
+            {
+              "id": "EUR-list-prices",
+              "displayName": "EUR List Prices",
+              "currencyCode": "EUR",
+              "online": true,
+              "creationDate": "2024-01-01T00:00:00.000Z",
+              "lastModified": "2024-01-01T00:00:00.000Z"
+            }
+          ]
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Unauthorized request"
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Access to requested resource forbidden"
+        }
+      },
+      "PriceBookRetrieved": {
+        "summary": "Price book retrieved successfully",
+        "description": "Example of a price book returned by GET /price-books/{priceBookId}, including site assignments.",
+        "value": {
+          "id": "USD-list-prices",
+          "displayName": "USD List Prices",
+          "description": "Standard list prices for USD currency",
+          "currencyCode": "USD",
+          "type": "standard",
+          "parent": "base-prices",
+          "online": true,
+          "validFrom": "2024-01-01T00:00:00.000Z",
+          "validTo": "2024-12-31T23:59:59.999Z",
+          "siteAssignments": [
+            {
+              "id": "RefArch",
+              "displayName": "RefArch Store"
+            },
+            {
+              "id": "RefArchGlobal",
+              "displayName": "RefArch Global"
+            }
+          ],
+          "creationDate": "2024-01-01T00:00:00.000Z",
+          "lastModified": "2024-01-15T10:30:00.000Z"
+        }
+      },
+      "CreatePriceBookRequest": {
+        "summary": "Create a new price book",
+        "description": "Example request body for creating a new price book with a currency code and validity window. Currency is immutable after creation.",
+        "value": {
+          "id": "USD-list-prices",
+          "displayName": "USD List Prices",
+          "description": "Standard list prices for USD currency",
+          "currencyCode": "USD",
+          "online": true,
+          "validFrom": "2024-01-01T00:00:00.000Z",
+          "validTo": "2024-12-31T23:59:59.999Z"
+        }
+      },
+      "PriceBookReplaced": {
+        "summary": "Price book replaced successfully",
+        "description": "Example of a price book returned after a successful replace via PUT /price-books/{priceBookId}, where the entire resource is replaced with the request body.",
+        "value": {
+          "id": "USD-list-prices",
+          "displayName": "USD List Prices",
+          "description": "Standard list prices for USD currency",
+          "currencyCode": "USD",
+          "type": "standard",
+          "online": true,
+          "validFrom": "2024-01-01T00:00:00.000Z",
+          "validTo": "2024-12-31T23:59:59.999Z",
+          "creationDate": "2024-01-01T00:00:00.000Z",
+          "lastModified": "2024-06-15T14:25:00.000Z"
+        }
+      },
+      "PriceBookCreated": {
+        "summary": "Price book created successfully",
+        "description": "Example of a price book returned after successful creation via PUT /price-books/{priceBookId}.",
+        "value": {
+          "id": "USD-list-prices",
+          "displayName": "USD List Prices",
+          "description": "Standard list prices for USD currency",
+          "currencyCode": "USD",
+          "type": "standard",
+          "online": true,
+          "validFrom": "2024-01-01T00:00:00.000Z",
+          "validTo": "2024-12-31T23:59:59.999Z",
+          "creationDate": "2024-01-01T00:00:00.000Z",
+          "lastModified": "2024-01-01T00:00:00.000Z"
+        }
+      },
+      "UpdatePriceBookRequest": {
+        "summary": "Update an existing price book",
+        "description": "Example request body for updating an existing price book. The currencyCode must match the existing value; attempts to change it are rejected.",
+        "value": {
+          "id": "USD-list-prices",
+          "currencyCode": "USD",
+          "displayName": "USD List Prices - Updated",
+          "description": "Updated standard list prices for USD currency",
+          "online": false
+        }
+      },
+      "PriceBookUpdated": {
+        "summary": "Price book updated successfully",
+        "description": "Example of a price book returned after a successful partial update via PATCH /price-books/{priceBookId}.",
+        "value": {
+          "id": "USD-list-prices",
+          "displayName": "USD List Prices - Updated",
+          "description": "Updated standard list prices for USD currency",
+          "currencyCode": "USD",
+          "online": false,
+          "creationDate": "2024-01-01T00:00:00.000Z",
+          "lastModified": "2024-06-15T14:25:00.000Z"
+        }
+      },
+      "PriceBookEntriesListResult": {
+        "summary": "Successful price book entries list retrieval",
+        "description": "Example of a paginated list of price book entries, showing both simple and tiered pricing.",
+        "value": {
+          "limit": 25,
+          "offset": 0,
+          "total": 150,
+          "data": [
+            {
+              "productId": "product-001",
+              "priceTables": [
+                {
+                  "tiers": [
+                    {
+                      "type": "amount",
+                      "quantity": 1,
+                      "amount": {
+                        "currencyMnemonic": "USD",
+                        "value": 99.99
+                      }
+                    }
+                  ]
+                }
+              ],
+              "creationDate": "2024-01-01T00:00:00.000Z",
+              "lastModified": "2024-01-01T00:00:00.000Z"
+            },
+            {
+              "productId": "product-002",
+              "priceTables": [
+                {
+                  "validFrom": "2026-11-25T00:00:00.000Z",
+                  "validTo": "2026-11-28T23:59:59.999Z",
+                  "tiers": [
+                    {
+                      "type": "amount",
+                      "quantity": 1,
+                      "amount": {
+                        "currencyMnemonic": "USD",
+                        "value": 39.99
+                      }
+                    },
+                    {
+                      "type": "amount",
+                      "quantity": 10,
+                      "amount": {
+                        "currencyMnemonic": "USD",
+                        "value": 34.99
+                      }
+                    }
+                  ]
+                }
+              ],
+              "creationDate": "2024-01-01T00:00:00.000Z",
+              "lastModified": "2024-02-15T10:00:00.000Z"
+            }
+          ]
+        }
+      },
+      "PriceBookEntryRetrieved": {
+        "summary": "Price book entry retrieved successfully",
+        "description": "Example of a price book entry returned by GET /price-books/{priceBookId}/price-book-entries/{productId}.",
+        "value": {
+          "productId": "product-001",
+          "priceTables": [
+            {
+              "tiers": [
+                {
+                  "type": "amount",
+                  "quantity": 1,
+                  "amount": {
+                    "currencyMnemonic": "USD",
+                    "value": 99.99
+                  }
+                }
+              ]
+            }
+          ],
+          "creationDate": "2024-01-01T00:00:00.000Z",
+          "lastModified": "2024-01-15T10:30:00.000Z"
+        }
+      },
+      "CreatePriceBookEntryRequest": {
+        "summary": "Create or update a price book entry",
+        "description": "Example request body for creating or replacing a price book entry via PUT upsert with a single amount tier.",
+        "value": {
+          "productId": "product-001",
+          "priceTables": [
+            {
+              "tiers": [
+                {
+                  "type": "amount",
+                  "quantity": 1,
+                  "amount": {
+                    "currencyMnemonic": "USD",
+                    "value": 99.99
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "CreatePriceBookEntryWithTiersRequest": {
+        "summary": "Create a price book entry with tiered pricing",
+        "description": "Example request body creating an entry with time-scoped price tables and both absolute and percentage tiers. On PATCH, the priceTables array is replaced wholesale.",
+        "value": {
+          "productId": "product-002",
+          "priceTables": [
+            {
+              "validFrom": "2026-11-25T00:00:00.000Z",
+              "validTo": "2026-11-28T23:59:59.999Z",
+              "tiers": [
+                {
+                  "type": "amount",
+                  "quantity": 1,
+                  "amount": {
+                    "currencyMnemonic": "USD",
+                    "value": 39.99
+                  }
+                },
+                {
+                  "type": "amount",
+                  "quantity": 10,
+                  "amount": {
+                    "currencyMnemonic": "USD",
+                    "value": 34.99
+                  }
+                }
+              ]
+            },
+            {
+              "validFrom": "2026-12-01T00:00:00.000Z",
+              "tiers": [
+                {
+                  "type": "amount",
+                  "quantity": 1,
+                  "amount": {
+                    "currencyMnemonic": "USD",
+                    "value": 49.99
+                  }
+                },
+                {
+                  "type": "percentage",
+                  "quantity": 10,
+                  "percentage": 15
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "PriceBookEntryReplaced": {
+        "summary": "Price book entry replaced successfully",
+        "description": "Example of a price book entry returned after a successful replace via PUT /price-books/{priceBookId}/price-book-entries/{productId}, where the entire entry is replaced with the request body.",
+        "value": {
+          "productId": "product-001",
+          "priceTables": [
+            {
+              "tiers": [
+                {
+                  "type": "amount",
+                  "quantity": 1,
+                  "amount": {
+                    "currencyMnemonic": "USD",
+                    "value": 89.99
+                  }
+                }
+              ]
+            }
+          ],
+          "creationDate": "2024-01-01T00:00:00.000Z",
+          "lastModified": "2024-06-15T14:35:00.000Z"
+        }
+      },
+      "PriceBookEntryCreated": {
+        "summary": "Price book entry created successfully",
+        "description": "Example of a price book entry returned after successful creation via PUT upsert.",
+        "value": {
+          "productId": "product-001",
+          "priceTables": [
+            {
+              "tiers": [
+                {
+                  "type": "amount",
+                  "quantity": 1,
+                  "amount": {
+                    "currencyMnemonic": "USD",
+                    "value": 99.99
+                  }
+                }
+              ]
+            }
+          ],
+          "creationDate": "2024-06-15T14:30:00.000Z",
+          "lastModified": "2024-06-15T14:30:00.000Z"
+        }
+      },
+      "UpdatePriceBookEntryRequest": {
+        "summary": "Update a price book entry",
+        "description": "Example partial update via PATCH; the priceTables array provided replaces the entry's existing tables wholesale.",
+        "value": {
+          "productId": "product-001",
+          "priceTables": [
+            {
+              "tiers": [
+                {
+                  "type": "amount",
+                  "quantity": 1,
+                  "amount": {
+                    "currencyMnemonic": "USD",
+                    "value": 89.99
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "PriceBookEntryUpdated": {
+        "summary": "Price book entry updated successfully",
+        "description": "Example of a price book entry returned after a successful partial update via PATCH /price-books/{priceBookId}/price-book-entries/{productId}.",
+        "value": {
+          "productId": "product-001",
+          "priceTables": [
+            {
+              "tiers": [
+                {
+                  "type": "amount",
+                  "quantity": 1,
+                  "amount": {
+                    "currencyMnemonic": "USD",
+                    "value": 89.99
+                  }
+                }
+              ]
+            }
+          ],
+          "creationDate": "2024-01-01T00:00:00.000Z",
+          "lastModified": "2024-06-15T14:35:00.000Z"
+        }
+      },
+      "SiteAssignmentsListResult": {
+        "summary": "Site assignments retrieved successfully",
+        "description": "Example of the list of sites a price book is assigned to, returned by GET /price-books/{priceBookId}/site-assignments.",
+        "value": {
+          "limit": 2,
+          "total": 2,
+          "data": [
+            {
+              "id": "RefArch",
+              "displayName": "RefArch Store"
+            },
+            {
+              "id": "RefArchGlobal",
+              "displayName": "RefArch Global"
+            }
+          ]
+        }
+      },
+      "SiteAssignmentUpdated": {
+        "summary": "Price book site assignment confirmed",
+        "description": "Example of a site assignment returned when the price book was already assigned to the site (200) via PUT /price-books/{priceBookId}/site-assignments/{siteId}.",
+        "value": {
+          "id": "RefArch",
+          "displayName": "RefArch Store"
+        }
+      },
+      "SiteAssignmentCreated": {
+        "summary": "Price book assigned to site successfully",
+        "description": "Example of a site assignment returned after binding a price book to a site that was not previously assigned (201) via PUT /price-books/{priceBookId}/site-assignments/{siteId}.",
+        "value": {
+          "id": "RefArch",
+          "displayName": "RefArch Store"
+        }
+      },
+      "PriceBookSearchRequestBody": {
+        "summary": "Basic price book search request",
+        "description": "Example of a text-query search that returns price books whose id or displayName contains \"USD\", sorted by id ascending.",
+        "value": {
+          "limit": 10,
+          "offset": 0,
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "displayName"
+              ],
+              "searchPhrase": "USD"
+            }
+          },
+          "sorts": [
+            {
+              "field": "id",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "PriceBookSearchRequestWithFilter": {
+        "summary": "Price book search with term query filter",
+        "description": "Example of a boolean-query search combining term filters for currencyCode and online, sorted by displayName ascending.",
+        "value": {
+          "limit": 25,
+          "offset": 0,
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "termQuery": {
+                    "fields": [
+                      "currencyCode"
+                    ],
+                    "operator": "is",
+                    "values": [
+                      "USD"
+                    ]
+                  }
+                },
+                {
+                  "termQuery": {
+                    "fields": [
+                      "online"
+                    ],
+                    "operator": "is",
+                    "values": [
+                      true
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "sorts": [
+            {
+              "field": "displayName",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "PriceBookSearchResult": {
+        "summary": "Successful price book search result",
+        "description": "Example of a successful price book search response with pagination, sorting, and multiple hits.",
+        "value": {
+          "limit": 3,
+          "offset": 0,
+          "total": 10,
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "displayName"
+              ],
+              "searchPhrase": "USD"
+            }
+          },
+          "sorts": [
+            {
+              "field": "id",
+              "sortOrder": "asc"
+            }
+          ],
+          "hits": [
+            {
+              "id": "USD-list-prices",
+              "displayName": "USD List Prices",
+              "description": "Standard list prices for USD currency",
+              "currencyCode": "USD",
+              "online": true,
+              "validFrom": "2024-01-01T00:00:00.000Z",
+              "validTo": "2024-12-31T23:59:59.999Z",
+              "creationDate": "2024-01-01T00:00:00.000Z",
+              "lastModified": "2024-01-15T10:30:00.000Z"
+            },
+            {
+              "id": "USD-sale-prices",
+              "displayName": "USD Sale Prices",
+              "description": "Promotional sale prices for USD currency",
+              "currencyCode": "USD",
+              "parent": "USD-list-prices",
+              "online": true,
+              "validFrom": "2024-06-01T00:00:00.000Z",
+              "validTo": "2024-08-31T23:59:59.999Z",
+              "creationDate": "2024-05-15T00:00:00.000Z",
+              "lastModified": "2024-06-01T08:00:00.000Z"
+            },
+            {
+              "id": "USD-vip-prices",
+              "displayName": "USD VIP Prices",
+              "description": "Special prices for VIP customers in USD",
+              "currencyCode": "USD",
+              "parent": "USD-list-prices",
+              "online": true,
+              "creationDate": "2024-02-01T00:00:00.000Z",
+              "lastModified": "2024-02-10T14:20:00.000Z"
+            }
+          ]
+        }
+      },
+      "InvalidQueryParameterErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-query-parameter",
+          "detail": "Invalid query parameter.",
+          "title": "Invalid Query Parameter"
+        }
+      },
+      "PriceBookNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/price-book-not-found",
+          "detail": "The price book with ID 'USD-list-prices' was not found.",
+          "title": "Price Book Not Found"
+        }
+      },
+      "CurrencyImmutableErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/currency-immutable",
+          "detail": "The currency code of a price book cannot be changed after creation.",
+          "title": "Currency Immutable"
+        }
+      },
+      "ParentCycleDetectedErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/parent-cycle-detected",
+          "detail": "The specified parent price book would create a cycle in the price book hierarchy.",
+          "title": "Parent Cycle Detected"
+        }
+      },
+      "PriceBookEntryNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/price-book-entry-not-found",
+          "detail": "The price book entry for product 'apple-ipod-classic' in price book 'USD-list-prices' was not found.",
+          "title": "Price Book Entry Not Found"
+        }
+      },
+      "ValidationErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/validation",
+          "detail": "The request body is malformed or contains invalid data.",
+          "title": "Validation"
+        }
+      },
+      "InvalidTimeRangeErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-time-range",
+          "detail": "The time range is invalid: 'validTo' must not be before 'validFrom'.",
+          "title": "Invalid Time Range"
+        }
+      },
+      "TierCurrencyMismatchErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/tier-currency-mismatch",
+          "detail": "The tier currency 'USD' does not match the price book currency 'USD'.",
+          "title": "Tier Currency Mismatch"
+        }
+      },
+      "DuplicateTierQuantityErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/duplicate-tier-quantity",
+          "detail": "Duplicate tier quantity '10' within a single price table. Each tier in a price table must have a distinct quantity.",
+          "title": "Duplicate Tier Quantity"
+        }
+      },
+      "ProductNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/product-not-found",
+          "detail": "The product with ID 'apple-ipod-classic' was not found.",
+          "title": "Product Not Found"
+        }
+      },
+      "FeedBasedPriceBookNotSupportedErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/feed-based-price-book-not-supported",
+          "detail": "Price book entry write operations are not supported for the feed-based price book 'USD-list-prices'. Its price entries are sourced from an external feed pipeline.",
+          "title": "Feed Based Price Book Not Supported"
+        }
+      },
+      "SiteNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/site-not-found",
+          "detail": "The site with ID 'RefArch' was not found.",
+          "title": "Site Not Found"
+        }
+      },
+      "MalformedSearchParameterErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/malformed-search-parameter",
+          "detail": "The search query contains invalid syntax. Please check the query structure and try again.",
+          "title": "Malformed Search Parameter"
+        }
+      },
+      "UnqueryableFieldErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unqueryable-field",
+          "detail": "The field 'invalid_field' is not a searchable attribute for price books. Valid fields are: id, displayName, description, currencyCode, parent, validFrom, validTo, online, siteId.",
+          "title": "Unqueryable Field"
+        }
+      },
+      "FieldNotSortableErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/field-not-sortable",
+          "detail": "The field 'invalid_sort' is not a sortable attribute for price books. Valid sortable fields are: id, displayName, description, currencyCode, parent, validFrom, validTo, online.",
+          "title": "Field Not Sortable"
         }
       }
     },
     "securitySchemes": {
       "AmOAuth2": {
         "type": "oauth2",
+        "description": "OAuth 2.0 security scheme for Account Manager authentication.\nRequired for all admin API endpoints.\n",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
@@ -738,6 +3554,12 @@
               "sfcc.price-books": "Read access to price books",
               "sfcc.price-books.rw": "Read and write access to price books"
             }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "refreshUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {}
           }
         }
       }

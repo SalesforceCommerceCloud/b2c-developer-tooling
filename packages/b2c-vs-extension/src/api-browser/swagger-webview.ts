@@ -8,12 +8,21 @@ import {buildTenantScope, createScapiSchemasClient, toOrganizationId} from '@sal
 import type {SlasComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {getGuestToken} from '@salesforce/b2c-tooling-sdk/slas';
+import {fetchScapiSchemaWithFallback, type ScapiSchemaSource} from '@salesforce/b2c-tooling-sdk/scapi';
 import {randomBytes} from 'node:crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import type {SchemaEntry} from './api-browser-tree-provider.js';
+import {
+  API_BROWSER_EXPAND,
+  CUSTOM_API_OFFLINE_MESSAGE,
+  OFFLINE_TOKEN_STATUS,
+  OfflineWarningGate,
+  cloneBundledSpec,
+  isLiveSource,
+} from './offline.js';
 import {resolveApiBrowserTenantId} from './tenant.js';
 
 type SlasClientEntry = SlasComponents['schemas']['Client'];
@@ -272,7 +281,9 @@ async function resolveExternalRefs(
 
 export class SwaggerWebviewManager implements vscode.Disposable {
   private readonly panels = new Map<string, vscode.WebviewPanel>();
+  /** Live specs only: a bundled (offline) spec must never mask a later live fetch. */
   private readonly specCache = new Map<string, Record<string, unknown>>();
+  private readonly offlineGate = new OfflineWarningGate();
   private readonly disposables: vscode.Disposable[] = [];
   /** Tracks panels that have been disposed so we don't `postMessage` to them. */
   private readonly disposedPanels = new WeakSet<vscode.WebviewPanel>();
@@ -313,21 +324,14 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       return;
     }
 
-    const config = this.configProvider.getConfig();
-    if (!config) {
-      vscode.window.showErrorMessage('API Browser: No B2C Commerce configuration found.');
-      return;
-    }
+    const config = this.configProvider.getConfig() ?? undefined;
+    const shortCode = config?.values.shortCode;
 
-    const shortCode = config.values.shortCode;
-    if (!shortCode) {
-      vscode.window.showErrorMessage('API Browser: Short code not found. Set short-code in dw.json.');
-      return;
-    }
-
-    // Fetch the full OpenAPI spec
-    const spec = await this.fetchSpec(schema, config, shortCode);
-    if (!spec) return;
+    // Fetch the full OpenAPI spec: live when possible, otherwise the bundled copy.
+    const fetched = await this.fetchSpec(schema, config, shortCode);
+    if (!fetched) return;
+    const {spec, source, warning} = fetched;
+    const live = isLiveSource(source);
 
     const apiType = detectApiType(spec, schema);
 
@@ -335,7 +339,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     // This completes before the panel exists, so panel-disposal can't cancel it; if a
     // future refactor moves panel creation earlier, an AbortController plumbed through
     // resolveExternalRefs and aborted from onDidDispose would make this cancellable.
-    if (config.hasOAuthConfig()) {
+    // Offline there is no auth to resolve them with, so they stay as references.
+    if (live && config?.hasOAuthConfig()) {
       const oauthOptions = await this.configProvider.getImplicitAuthOptions();
       const oauthStrategy = config.createOAuth(oauthOptions);
       const authHeader = await oauthStrategy.getAuthorizationHeader?.();
@@ -350,17 +355,19 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     }
 
     // Derive organizationId and pre-fill it in the spec
-    const tenantId = resolveApiBrowserTenantId(config.values);
+    const tenantId = config ? resolveApiBrowserTenantId(config.values) : '';
     const organizationId = tenantId ? toOrganizationId(tenantId) : '';
 
-    // Override servers to point to the correct base URL
-    const baseUrl = `https://${shortCode}.api.commercecloud.salesforce.com/${schema.apiFamily}/${schema.apiName}/${schema.apiVersion}`;
-    spec.servers = [{url: baseUrl}];
+    // Override servers to point to the correct base URL. Without a short code (offline only) keep the contract's own.
+    if (shortCode) {
+      const baseUrl = `https://${shortCode}.api.commercecloud.salesforce.com/${schema.apiFamily}/${schema.apiName}/${schema.apiVersion}`;
+      spec.servers = [{url: baseUrl}];
+    }
 
     // Pre-fill known parameters (organizationId, siteId)
     const defaults: Record<string, string> = {};
     if (organizationId) defaults.organizationId = organizationId;
-    const siteId = config.values.siteId as string | undefined;
+    const siteId = config?.values.siteId as string | undefined;
     if (siteId) defaults.siteId = siteId;
     if (Object.keys(defaults).length > 0) {
       prefillParameters(spec, defaults);
@@ -373,14 +380,16 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       requiredScopes.push(buildTenantScope(tenantId));
     }
 
-    // Acquire token before rendering so it can be embedded in the HTML
+    // Acquire token before rendering so it can be embedded in the HTML. Offline: no live auth at all.
     let initialToken = '';
     let initialTokenError = '';
-    try {
-      initialToken = (await this.getToken(apiType, requiredScopes)) ?? '';
-      if (!initialToken) initialTokenError = tokenSetupHint(apiType);
-    } catch (error) {
-      initialTokenError = error instanceof Error ? error.message : String(error);
+    if (live) {
+      try {
+        initialToken = (await this.getToken(apiType, requiredScopes)) ?? '';
+        if (!initialToken) initialTokenError = tokenSetupHint(apiType);
+      } catch (error) {
+        initialTokenError = error instanceof Error ? error.message : String(error);
+      }
     }
 
     const swaggerUiDir = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'swagger-ui');
@@ -411,11 +420,22 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       }
     });
 
-    panel.webview.html = this.getWebviewHtml(panel.webview, spec, apiType, initialToken, initialTokenError);
+    panel.webview.html = this.getWebviewHtml(
+      panel.webview,
+      spec,
+      apiType,
+      initialToken,
+      initialTokenError,
+      live ? undefined : warning,
+    );
 
     // Handle messages from webview (token refresh + API proxy)
     panel.webview.onDidReceiveMessage((msg: {type: string; [k: string]: unknown}) => {
       const handle = async (): Promise<void> => {
+        if (!live && (msg.type === 'refreshToken' || msg.type === 'proxyRequest')) {
+          // Offline panels are read-only: never acquire tokens or send requests.
+          return;
+        }
         if (msg.type === 'refreshToken') {
           await this.sendToken(panel, apiType, requiredScopes);
         } else if (msg.type === 'showSetupHelp') {
@@ -431,62 +451,72 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     });
   }
 
+  /**
+   * Fetch the contract with every section expanded (Swagger UI renders all of it). Falls back to the bundled
+   * corpus when the live fetch fails; custom APIs have no bundled copy, so for them the failure is reported.
+   */
   private async fetchSpec(
     schema: SchemaEntry,
-    config: ResolvedB2CConfig,
-    shortCode: string,
-  ): Promise<Record<string, unknown> | null> {
+    config: ResolvedB2CConfig | undefined,
+    shortCode: string | undefined,
+  ): Promise<{spec: Record<string, unknown>; source: ScapiSchemaSource; warning?: string} | null> {
     const key = `${schema.apiFamily}/${schema.apiName}/${schema.apiVersion}`;
     const cached = this.specCache.get(key);
-    if (cached) return cached;
-
-    if (!config.hasOAuthConfig()) {
-      vscode.window.showErrorMessage(
-        'API Browser: OAuth credentials required. Set clientId and clientSecret in dw.json.',
-      );
-      return null;
-    }
+    if (cached) return {spec: cached, source: 'live'};
 
     try {
-      const spec = await vscode.window.withProgress(
+      const result = await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Loading ${schema.apiName} spec...`},
-        async () => {
-          const tenantId = resolveApiBrowserTenantId(config.values);
-          if (!tenantId) throw new Error('Tenant ID not found. Set tenant-id in dw.json.');
+        () =>
+          fetchScapiSchemaWithFallback(schema, async () => {
+            if (!config?.hasOAuthConfig())
+              throw new Error('Account Manager OAuth credentials are not configured (client-id and client-secret).');
+            if (!shortCode) throw new Error('short-code is not configured.');
+            const tenantId = resolveApiBrowserTenantId(config.values);
+            if (!tenantId) throw new Error('tenant-id is not configured.');
 
-          const oauthOptions = await this.configProvider.getImplicitAuthOptions();
-          const oauthStrategy = config.createOAuth(oauthOptions);
-          const schemasClient = createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
-          const orgId = toOrganizationId(tenantId);
-          const {data, error, response} = await schemasClient.GET(
-            '/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}',
-            {
-              params: {
-                path: {
-                  organizationId: orgId,
-                  apiFamily: schema.apiFamily,
-                  apiName: schema.apiName,
-                  apiVersion: schema.apiVersion,
+            const oauthOptions = await this.configProvider.getImplicitAuthOptions();
+            const oauthStrategy = config.createOAuth(oauthOptions);
+            const schemasClient = createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
+            const {data, error, response} = await schemasClient.GET(
+              '/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}',
+              {
+                params: {
+                  path: {
+                    organizationId: toOrganizationId(tenantId),
+                    apiFamily: schema.apiFamily,
+                    apiName: schema.apiName,
+                    apiVersion: schema.apiVersion,
+                  },
+                  // Always the full contract: prose, examples and tenant custom properties.
+                  query: {expand: API_BROWSER_EXPAND},
                 },
-                query: {expand: 'custom_properties'},
               },
-            },
-          );
-          if (error) {
-            throw new Error(getApiErrorMessage(error, response));
-          }
-          return data as Record<string, unknown>;
-        },
+            );
+            if (error) throw new Error(getApiErrorMessage(error, response));
+            return data as Record<string, unknown>;
+          }),
       );
 
-      if (spec) {
-        this.specCache.set(key, spec);
+      if (isLiveSource(result.source)) {
+        this.specCache.set(key, result.schema);
+        this.offlineGate.shouldWarn('live');
+        return {spec: result.schema, source: 'live'};
       }
-      return spec ?? null;
+
+      this.log.appendLine(`[API Browser] ${result.warning}`);
+      if (this.offlineGate.shouldWarn(result.source) && result.warning) {
+        void vscode.window.showWarningMessage(`API Browser: ${result.warning}`);
+      }
+      return {spec: cloneBundledSpec(result.schema), source: result.source, warning: result.warning};
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.log.appendLine(`[API Browser] Failed to fetch spec for ${key}: ${message}`);
-      vscode.window.showErrorMessage(`API Browser: ${message}`);
+      vscode.window.showErrorMessage(
+        schema.apiFamily === 'custom'
+          ? `API Browser: ${CUSTOM_API_OFFLINE_MESSAGE} (${message})`
+          : `API Browser: ${message}`,
+      );
       return null;
     }
   }
@@ -497,6 +527,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     apiType: ApiType,
     initialToken: string,
     initialTokenError: string,
+    offlineWarning?: string,
   ): string {
     const swaggerUiDir = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'swagger-ui');
     const bundleUri = webview.asWebviewUri(vscode.Uri.joinPath(swaggerUiDir, 'swagger-ui-bundle.js'));
@@ -515,6 +546,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     html = html.replace('__API_TYPE__', apiType);
     html = html.replace('__SPEC_JSON__', JSON.stringify(spec));
     html = html.replace('__INITIAL_TOKEN__', initialToken.replace(/[\\'"]/g, '\\$&'));
+    html = html.replace('__OFFLINE_STATUS__', () => JSON.stringify(OFFLINE_TOKEN_STATUS).replace(/</g, '\\u003c'));
+    html = html.replace('__OFFLINE_WARNING__', () => JSON.stringify(offlineWarning ?? null).replace(/</g, '\\u003c'));
     html = html.replace('__INITIAL_TOKEN_ERROR__', () => JSON.stringify(initialTokenError).replace(/</g, '\\u003c'));
 
     return html;

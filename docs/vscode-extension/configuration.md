@@ -83,6 +83,8 @@ For Shopper requests, add [SLAS credentials](../guide/configuration#shopper-auth
 
 The extension handles authentication. Check the token status or use **Refresh Token** after updating credentials. After changing the instance or site, close API tabs, refresh the API list, and reopen the API so its request defaults match your selection. **Try it out** sends real requests to that instance.
 
+If the live Schemas API is unavailable (missing configuration or credentials, no access, or a network error), the API Browser shows the bundled SCAPI schemas read-only with a one-time warning. **Try it out** and token requests are disabled, and custom APIs and tenant custom properties are not shown. When live, it always loads the complete contract, including operation summaries and descriptions, examples and custom properties.
+
 <!-- TODO(screenshot): replace ./images/settings.svg with ./images/settings.png — Settings UI filtered to b2c-dx -->
 
 ## How the Extension Chooses a Project
