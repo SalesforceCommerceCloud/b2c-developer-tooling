@@ -594,8 +594,10 @@ export async function cloneRedirects(
     throw new Error(`Failed to clone redirects: ${errorMessage}`);
   }
 
-  // The clone API may return a paginated response or just confirmation
-  const responseData = data as {count?: number; results?: MrtRedirect[]};
+  // The clone API may return a paginated response, just a confirmation, or an
+  // empty body on success. openapi-fetch leaves `data` undefined for an empty
+  // body, so default to an empty object before reading its fields.
+  const responseData = (data ?? {}) as {count?: number; results?: MrtRedirect[]};
 
   logger.debug({count: responseData.count}, '[MRT] Redirects cloned');
 
