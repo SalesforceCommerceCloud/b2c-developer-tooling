@@ -95,4 +95,16 @@ describe('scapi/detail', () => {
     const outline = (await runScapiCode({code: measure, documents, detail: 'outline', maxOutputBytes: 1000})) as number;
     expect(outline).to.be.lessThan(full * 0.6);
   });
+
+  it('explains the shape of spec when a member is guessed', async () => {
+    let message = '';
+    try {
+      await runScapiCode({code: 'async () => spec.operations.filter(Boolean)', documents: [document]});
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).to.include('SCAPI_SPEC_UNKNOWN_MEMBER').and.to.include('spec.paths');
+    const keys = (await runScapiCode({code: 'async () => Object.keys(spec)', documents: [document]})) as string[];
+    expect(keys).to.deep.equal(['apis', 'paths', 'resolve']);
+  });
 });

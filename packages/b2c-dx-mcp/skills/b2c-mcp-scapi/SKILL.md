@@ -5,46 +5,42 @@ description: Required before scapi_search or scapi_execute. Discover standard an
 
 # SCAPI Code Mode
 
-Prefer dedicated tools. Otherwise discover with `scapi_search`, compose with
-`scapi_execute`. Use JavaScript async arrow functions; no TypeScript or imports.
-Warehouse reports/SQL use `cip_discover` / `cip_query`, not code mode;
-see [CIP analytics](skill://mcp/b2c-mcp-cip/SKILL.md).
-Use code mode for API discovery, request composition, and result processing.
-Use terminal/file tools for local development, builds, and filesystem work.
-Filesystem APIs, subprocesses, worker threads, and native addons are restricted.
-Read this skill once via resources or `skills_read`,
-then pass `skillRead: true`. This does not authorize mutations.
+Dedicated tool first. Else `scapi_search` (find op) then `scapi_execute` (call it). Code = JS async arrow fn. No TypeScript, no imports.
+Read this once, then pass `skillRead: true`. Reading does not authorize mutations.
+Warehouse SQL/reports: `cip_*`, not here. Files: `webdav_*`. Local build/fs: terminal.
 
-## Code objects
+## `spec` shape (search and execute)
 
-Write JavaScript against these objects, not TypeScript.
-
-`scapi_search`:
+Only these exist. No `spec.schemas`, no `spec.operations`. Do not probe.
 
 ```ts
+declare const spec: {
+  apis: Array<{id: string; apiFamily: string; apiName: string; apiVersion: string; status: string}>; // id: 'product/catalogs/v1'
+  paths: Record<string, Record<string, Operation>>; // fullPath -> lowercase method -> op
+  resolve(value: unknown, apiId: string): unknown; // expand local $ref
+};
+// fullPath = '/' + api id + path, e.g. '/product/catalogs/v1/organizations/{organizationId}/catalogs/{catalogId}'
 interface Operation {
   api: string;
   operationId: string;
   summary?: string;
+  description?: string;
+  tags?: string[];
   parameters: Array<{name: string; in: string; required?: boolean; schema?: unknown}>;
   requestBody?: {required?: boolean; content: Record<string, {schema: any}>};
   responses?: Record<string, unknown>;
   security: Array<Record<string, string[]>>;
-  auth: {types: string[]; schemes: string[]; executable: boolean}; // runtime support, not access
+  auth: {types: string[]; schemes: string[]; executable: boolean}; // executable = runtime support, not access
 }
-declare const spec: {
-  apis: Array<{id: string; apiFamily: string; apiName: string; apiVersion: string; authTypes: string[]}>;
-  paths: Record<string, Record<string, Operation>>; // full paths, lowercase HTTP methods
-};
 ```
 
-`scapi_execute` (`async (input) => ...` receives the tool's `input`):
+`scapi_execute` also has (`async (input) => ...`, `input` = tool input):
 
 ```ts
-declare const organizationId: string | undefined; // resolved tenant
-declare const siteId: string | undefined; // configured site
+declare const organizationId: string | undefined;
+declare const siteId: string | undefined;
 declare const scapi: {
-  request(options: {
+  request(o: {
     method: string;
     path: string;
     query?: Record<string, unknown>;
@@ -53,24 +49,19 @@ declare const scapi: {
 };
 ```
 
-Both tools also expose `codemode.search`/`codemode.describe`; `codemode.run` and
-`auth.*` are execute-only. See [Reusable workflows](#reusable-workflows) and [Authentication](#authentication).
+## Rules
 
-Every operation carries `summary`, `description` and `tags` (plus parameters, security and responses), so
-search the prose as well as `operationId` and path. Descriptions are long: return `op.summary` when listing
-candidates, and read `op.description` only for the operations you are about to call.
-
-`scapi_search` returns each operation as an outline by default: its own `summary`, `description` and `tags`, with
-parameters, schemas and responses but without nested descriptions or examples. Pass `detail: "full"` when you need
-property-level descriptions or example payloads for the operations you are about to call (`scapi_execute` always
-sees full operations). Results are capped at 24 KB of JSON for both tools (`SCAPI_RESULT_TOO_LARGE`). A whole resolved operation is
-typically 6-20 KB and some exceed the cap alone, so never return `op` or `spec.paths` entries unprojected: list
-`{operationId, method, path, summary}`, then return only `parameters` or `requestBody` for the operations you will call.
-
-Search examples:
+- Result cap 24 KB (`SCAPI_RESULT_TOO_LARGE`). Whole op = 6-20 KB. NEVER return `op` or `spec.paths` entries whole. List `{operationId, method, path, summary}`; then return only `parameters`/`requestBody` of ops you will call.
+- Search prose too: `summary`, `description`, `tags`, not only operationId/path.
+- `scapi_search` default `detail:"outline"` drops nested descriptions/examples. `detail:"full"` restores. Execute sees full.
+- Default corpus = bundled standard. `schemas:"live"` = tenant (`c_*`, custom APIs, newer APIs); falls back to bundled with `warnings`. Tell user if `c_*`/custom APIs matter.
+- `scapi.request` auths itself. Never fetch tokens first. Path `{organizationId}` auto-fills.
+- Check `ok`/`status`. Writes: read back. Check before retry. Await every request.
+- Limits: 20 calls, 4 parallel, 30 s. `fetch`/`WebSocket` disabled.
+- Write needing approval pauses for client elicitation. Decline = whole run ends. Never fake approval.
 
 ```js
-// Find operations by what they do, not just their name
+// list candidates by prose
 async () =>
   Object.entries(spec.paths)
     .flatMap(([path, methods]) =>
@@ -78,222 +69,29 @@ async () =>
     )
     .filter((o) => /basket/i.test(o.summary ?? '') && /coupon|promotion/i.test(o.summary ?? ''));
 
-// Find product operations
-async () =>
-  Object.entries(spec.paths)
-    .filter(([path]) => path.startsWith('/product/products/'))
-    .flatMap(([path, methods]) =>
-      Object.entries(methods).map(([method, op]) => ({method, path, operationId: op.operationId})),
-    );
-
-// Inspect only fields needed for creation
+// inspect only needed fields
 async () => {
   const op = spec.paths['/product/products/v1/organizations/{organizationId}/products/{productId}'].put;
   const body = op.requestBody.content['application/json'].schema;
-  const fields = [...new Set([...(body.required ?? []), 'name', 'owningCatalogId', 'onlineFlag'])];
-  return {
-    parameters: op.parameters,
-    required: body.required,
-    fields: Object.fromEntries(fields.map((k) => [k, body.properties[k]])),
-    auth: op.auth,
-    security: op.security,
-  };
+  return {parameters: op.parameters, required: body.required, security: op.security, auth: op.auth};
 };
 ```
 
-## Discover
-
-Discovery defaults to the bundled standard contracts offline; no credentials needed.
-Pass `schemas: "live"` to search the configured tenant's Schemas API contracts
-instead: tenant `c_*` properties, custom APIs, and APIs newer than the bundle.
-Live search needs `sfcc.scapi-schemas`, uses the same project context as
-`scapi_execute`, and caches per tenant for the server session (`refresh: true` refetches). Contracts that
-failed to load are listed in `schemaFailures`. The result's `schemaSource` says which corpus was searched. If live
-access fails (missing configuration, credentials or access), the search falls back to the bundled contracts,
-reports `schemaSource: "bundled"` and explains why in `warnings`; tell the user when tenant `c_*` fields or custom
-APIs matter, since the bundle has neither. Asking for a custom API (`custom/...`) never falls back. APIs with `origin: "local"` are
-developer-supplied beta contracts (`--scapi-schemas`). They replace the bundled and live versions in search and
-execution. Schemas and responses can be huge.
-Return only what the next decision needs:
-
-1. Find APIs/operations through `spec.apis`/`spec.paths`; return method/path/operationId.
-2. Narrow by `api`, path, or `authType`; inspect required inputs and selected fields,
-   including `allOf` when present.
-3. Inspect response fields only as needed; avoid whole operations/schema trees.
-
-Local refs expand; recursive/deep refs retain `$ref`. `op.auth.executable` means
-runtime support, not configured access; `op.security` gives scopes.
-
-### Task map
-
-Use these API IDs to narrow discovery; inspect the operation's inputs before calling.
-Snippet names below have the `builtin/` prefix. Describe only the relevant snippet.
-
-| Task                                          | API / starting point                                                                                   |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Review runs, including successes              | `operation/jobs/v1`: `searchJobExecutions`; `job-execution-review` snippet                             |
-| Inspect steps and exact log path              | `operation/jobs/v1`: `getJobExecution`; `job-execution-inspect` snippet                                |
-| Investigate failures with detail reads        | `failed-job-triage` snippet; [jobs](references/jobs.md)                                                |
-| Start a job / stop an execution               | `operation/jobs/v1`: `createJobExecution` / `deleteJobExecution`; confirm intent and active runs first |
-| Active/rollback versions, activation metadata | `dx/scripts/v1`: `getCodeVersions`; `code-version-inspect` snippet                                     |
-| Activate/create/delete a code version         | `dx/scripts/v1`: `updateCodeVersion` / `createCodeVersion` / `deleteCodeVersion`                       |
-| Site status, catalog, ordered cartridge path  | `site/sites/v1`: `getSiteById`; `site-cartridge-inspect` snippet                                       |
-| Change a site's custom cartridge path         | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries                   |
-| Basic product + optional category assignment  | `create-product` snippet; [products](references/products.md)                                           |
-| Campaign assignments and promotion details    | `campaign-promotions` snippet; [promotions](references/promotions.md)                                  |
-
-File content is WebDAV: `webdav_list` / `webdav_get` / `webdav_put`.
-Deploy local cartridge files with `cartridge_deploy`. Job schedules/definitions
-are not execution history; obtain expected schedules from Business Manager/user.
-Do not fall back to a terminal merely because there is no dedicated job/site tool.
-
-### Tenant custom properties and APIs
-
-Bundled schemas omit tenant `c_*` definitions. Known custom fields can be sent
-directly in standard Admin bodies; schema retrieval is optional. SCAPI validates
-the payload. To discover tenant fields, search with `schemas: "live"` (narrow with
-`api`), or fetch the live schema with `scapi_schemas_list`: `includeSchemas: true`,
-`apiFamily`, `apiName`, `apiVersion`.
-Custom-property expansion defaults to true; disable with `expandCustomProperties: false`.
-`expandAll: true` returns the full contract (operation prose, examples, custom properties) instead of the
-collapsed outline, which asks the Schemas API for only what it keeps. `include` selects Schemas API `expand`
-sections directly (`summaries`, `descriptions`, `examples`, `external_docs`, `tags`, `titles`,
-`custom_properties`, or `all`) when you want, say, only summaries. If live access fails, `scapi_schemas_list` returns
-the bundled contract with `source: "bundled"` and a `warning`. Large contracts: fetch through `scapi_execute` and return only relevant
-fields ([example](references/custom-properties.md)). Requires `sfcc.scapi-schemas`.
-Use the same project/instance for schema lookup and writes.
-
-Live contracts found by `schemas: "live"` search, expanded `scapi_schemas_list`
-fetches, or Schemas API reads inside `scapi_execute` are cached for that tenant.
-`scapi_execute` then routes to them, replacing bundled versions; they never change
-the offline `spec`. If schema access fails, report it; use
-already-known fields or ask for missing details. The optional CLI equivalent is
-`b2c scapi schemas get`, which also expands custom properties by default.
-
-For custom endpoint contracts, search with `schemas: "live"` or use
-`scapi_schemas_list` with `apiFamily: "custom"`; check registration with
-`scapi_custom_apis_get_status` when needed. Custom endpoints found through live
-search are callable from `scapi_execute` for the same tenant. Otherwise fetch the
-live contract through `scapi.request` in the program before making declared calls. `AmOAuth2`
-and `ShopperToken` operations use their declared `c_*` scopes. [Custom API workflow](references/custom-apis.md).
-
 ## Authentication
 
-- `scapi.request()` and snippets using it authenticate automatically. Do not acquire
-  or pass tokens first. For an explicitly requested token or external HTTP client,
-  use `auth.accountManager()` / `auth.slas()` in `scapi_execute`:
-  [token exports](references/tokens.md). These helpers are unavailable in search.
-- The operation's declared security selects the credential; there is no auth option.
-- Admin `AmOAuth2`: Account Manager credentials. Each request selects operation/tenant
-  scopes and reuses suitable cached tokens; no upfront scope union.
-- Shopper `ShopperToken`: a SLAS guest shopper (`slasClientId`, plus `slasClientSecret`
-  for private clients; Storefront Next `.env` supplies both). Requests need `siteId`
-  (configured or `query.siteId`). The guest session is per site and persists across
-  executions for the server session, so baskets carry over. SLAS scopes are fixed on
-  the client, not requested per call; 401/403 diagnostics compare the token's scopes
-  with the operation's. `sfcc.shopper-standard` satisfies only operations that list it.
-  Public clients must allow redirect URI `http://localhost:3000/callback`.
-- Missing credentials: `config_inspect` with masking. `clientId` is Admin;
-  `slasClientId` is Shopper. Configuration does not grant access.
-- Scope rejection: grant reported scopes in Account Manager; check extra configured
-  scopes. Read/write alternatives are alternatives. Later failures do not undo writes.
-- Unsupported: registered-shopper-only operations (`RegisteredShopperToken`),
-  trusted-system/agent on-behalf tokens, and SLAS itself (`shopper/auth/v1`).
-  `auth.slas({flow: 'registered', ...})` exports a registered token for external clients.
-  SLAS admin roles differ: `docs_read({query: "cli-slas"})` ([online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.md)).
-- HTTP 401/403 retain `status`/`data` plus `diagnostic`; preserve these.
-  A 403 alone does not prove missing scopes.
+- Admin `AmOAuth2`: Account Manager `clientId`/secret. Shopper `ShopperToken`: SLAS guest (`slasClientId`, needs `siteId`).
+- Op's declared security picks credential. No auth option.
+- Missing creds: `config_inspect`. 401/403: keep `status`/`data`/`diagnostic`. 403 alone != missing scope.
+- Unsupported: registered-shopper-only ops, SLAS itself (`shopper/auth/v1`).
+- Detail: [authentication](references/authentication.md).
 
-For missing values or wrong targets, read [MCP configuration](skill://mcp/b2c-mcp-config/SKILL.md)
-(`skills_read` ID `mcp/b2c-mcp-config`). For external client/role/tenant-filter setup,
-use `docs_read({query: "guide-authentication"})`; official Admin authorization:
-`commerce-api/authorization-for-admin-apis`, scope definitions: `commerce-api/auth-z-scope-catalog`.
-For other access questions, search `docs_search` with the specific error and API.
-If docs are unavailable, use the [authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md).
-These are conditional setup references, not additional prerequisite reads.
+## Read when needed (do not read all)
 
-## Compose and verify
-
-- Pass the execution `projectDirectory`; reuse resolved `organizationId`/`siteId`.
-  Encode path IDs. `{organizationId}` placeholders resolve automatically.
-- Compose dependent calls with intermediate results and local helpers.
-  Pause for unresolved intent or contracts.
-- Sequence dependent writes; batch independent reads at most four at a time.
-  Await all requests. Map rejections to `{id, error: String(error)}`;
-  raw `Promise.allSettled()` reasons lose Error details in JSON.
-- PUT can create or update: check existence and intent; read back writes.
-- Check `ok`/`status`: HTTP errors return; transport/auth/safety failures throw.
-  Preserve completed writes and failed stages. Check writes before retrying;
-  no program replay or automatic cleanup deletion.
-- Filter/page at the API, then project/aggregate in code. Include IDs, verification
-  fields, errors, totals, and continuation inputs. Do not crop away missing data.
-- Limits: 20 calls, four outstanding, 30 seconds of active execution, 24 KB returned.
-  Managed API/token calls are serialized within an execution. Narrow oversized
-  discovery; reduce live pages/projections.
-- SDK safety applies per request, including POST searches. Use only authorized
-  targeted exceptions. Confirmation uses client elicitation; see below. Code mode does not
-  transfer binaries; use WebDAV tools for instance files, an external client for
-  binary SCAPI endpoints.
-- `fetch` and `WebSocket` are disabled. Use `scapi.request()` inside programs;
-  direct HTTP belongs in an external client, outside MCP Safety Mode. Do not use
-  imports or other Node networking APIs to bypass this boundary.
-
-## Confirmation and cancellation
-
-- A request requiring approval retains the running program and returns MCP
-  `input_required`. Let the client handle elicitation and the protocol retry;
-  never manufacture approval responses or modify opaque `requestState`.
-- Retries validate the original code, input, and target arguments, then resume
-  the same execution. Repeated code is **not evaluated again**. Each request
-  needs its own approval; a whole program is not a transaction.
-- Later managed calls wait for the pending decision. Earlier writes remain
-  applied. Prompts identify the organization, operation, method/path, and execution
-  ID. JSON previews are redacted and capped at five lines/400 characters; marked
-  truncation does not limit approval, which covers the full request.
-  Results include operation outcomes; `unknown` requires
-  checking the affected records before a fresh attempt.
-- Decline/cancel terminates the entire execution, even if code catches errors.
-  Explicitly stop work with `scapi_execute({action: "cancel", executionId, skillRead: true})`;
-  omit code, input, project overrides, and protocol continuation state.
-- Approval has no server deadline; waiting does not consume the active runtime
-  budget. At most four executions may be active per server, including pending
-  approvals. Cancel unwanted work to free a slot. Server shutdown or disconnect
-  releases retained workers; state does not survive a restart. Clients may impose
-  their own timeout. Duplicate responses never replay code or send a request twice.
-- To change code/input/target, cancel unwanted retained work and start a fresh
-  execution without continuation state. Cancellation does not roll back writes.
-  Clients without form elicitation stop at confirmation-required requests.
-
-For safety levels, rule matching, configuration precedence, and confirmation
-semantics, read `docs_read({query: "guide-safety"})` when needed. If docs tools
-are unavailable, use the [Safety Mode guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.md).
-This is an optional policy reference, not another prerequisite read.
-
-## Reusable workflows
-
-Find workflows with `codemode.search(query)`; `codemode.describe(name)`
-returns source/inputSchema. Inspect before first use; `codemode.run(name, input)`
-composes inside execution with shared limits/auth/safety. `builtin/` ships with
-the MCP; `user/` persists locally. [Catalog](references/snippets.md).
-
-Reuse a snippet when its inputs and verification cover the task. Otherwise adapt
-its source or compose direct requests; do not omit requested fields to fit a
-snippet. Inputs are schema-validated before invocation. Pass variable values
-through the tool's `input` to `async (input)` when preparing reusable code.
-Discover/describe inside either code tool; run snippets only inside `scapi_execute`.
-Saving requires an explicit user request and a reviewed outcome; a completed
-execution may still contain HTTP errors or partial failures.
-
-- [Products](references/products.md): create, optionally assign a storefront category, verify both.
-- [Promotions](references/promotions.md): join assignments/details in bounded batches.
-- [Jobs](references/jobs.md): review runs, inspect steps/logs, investigate failures.
-
-For explicit save requests, see [saving](references/saving.md).
-
-No CLI code-mode equivalent. For missing settings such as promotion discounts,
-consider [XML archives](skill://b2c-cli/b2c-site-import-export/SKILL.md)
-(`docs_read({query: "cli-jobs"})`, [online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs.md)).
-[Platform reference](https://developer.salesforce.com/docs/commerce/commerce-api/references).
-Configuration/access: `docs_read({query: "mcp-configuration"})` ([online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md)).
-
-Other MCP workflows and runbooks: [skill index](skill://mcp/b2c-mcp-server/SKILL.md#skill-index).
+| Need                                                                                                                | Read                                                                           |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Pick API for a task (jobs, code versions, sites, products, promotions); live/custom schemas; `c_*` fields; `expand` | [discover](references/discover.md)                                             |
+| Compose multi-call program, verify, paging, limits                                                                  | [compose-verify](references/compose-verify.md)                                 |
+| Approval, cancel, `input_required`                                                                                  | [confirmation](references/confirmation.md)                                     |
+| Auth, scopes, token export                                                                                          | [authentication](references/authentication.md), [tokens](references/tokens.md) |
+| Snippets (`codemode.search/describe/run`, `builtin/`, `user/`)                                                      | [workflows](references/workflows.md)                                           |
+| Custom API                                                                                                          | [custom-apis](references/custom-apis.md)                                       |

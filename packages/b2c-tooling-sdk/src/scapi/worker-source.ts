@@ -57,7 +57,11 @@ process.on('message', async message => {
   }
   const outlined = message.detail === 'outline';
   const resolveDetail = (value, api) => outlined ? outline(resolve(value, api)) : resolve(value, api);
-  const spec = {apis: documents.map(d => d.entry), paths: {}, resolve: resolveDetail};
+  const specData = {apis: documents.map(d => d.entry), paths: {}, resolve: resolveDetail};
+  const spec = new Proxy(specData, {get(target, key, receiver) {
+    if (typeof key === 'symbol' || key in target || key === 'then' || key === 'toJSON') return Reflect.get(target, key, receiver);
+    throw new Error('SCAPI_SPEC_UNKNOWN_MEMBER: spec.' + key + ' does not exist. spec has only apis (array of API entries), paths ({[fullPath]: {[method]: operation}}) and resolve(value, apiId). List operations with Object.entries(spec.paths).');
+  }});
   for (const {entry, schema} of documents) {
     for (const [path, item] of Object.entries(schema.paths || {})) {
       const methods = {};
@@ -71,7 +75,7 @@ process.on('message', async message => {
           methods[method] = {...(summary === undefined ? {} : {summary}), ...(description === undefined ? {} : {description}), ...resolveDetail(rest, entry.id)};
         }
       }
-      spec.paths['/' + entry.id + (entry.apiFamily === 'custom' ? '/organizations/{organizationId}' : '') + path] = methods;
+      specData.paths['/' + entry.id + (entry.apiFamily === 'custom' ? '/organizations/{organizationId}' : '') + path] = methods;
     }
   }
   const scapi = {request: options => new Promise((resolve, reject) => {
