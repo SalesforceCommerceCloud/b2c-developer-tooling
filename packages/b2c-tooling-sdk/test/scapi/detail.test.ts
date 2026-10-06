@@ -55,11 +55,15 @@ const document: ScapiSchemaDocument = {
     },
   },
 };
+type ContentShape = {
+  schema: {properties: Record<string, {description?: string}>};
+  examples: Record<string, {value: {description: string}}>;
+};
 type OperationShape = {
   summary: string;
   description: string;
   parameters: Array<Record<string, unknown>>;
-  requestBody: {content: Record<string, {schema: {properties: Record<string, unknown>}; examples?: unknown}>};
+  requestBody: {content: Record<string, ContentShape>};
   responses: Record<string, unknown>;
 };
 const code = `async () => spec.paths['/test/things/v1/things'].post`;
