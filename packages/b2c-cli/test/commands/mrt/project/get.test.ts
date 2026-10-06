@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, ux} from '@oclif/core';
 import MrtProjectGet from '../../../../src/commands/mrt/project/get.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../helpers/stub-parse.js';
@@ -28,77 +28,30 @@ describe('mrt project get', () => {
     return new MrtProjectGet([], config);
   }
 
-  function stubCommonAuth(command: any): void {
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
+  function stubErrorToThrow(command: any): sinon.SinonStub {
+    return sinon.stub(command, 'error').throws(new Error('Expected error'));
   }
 
-  it('calls getProject with slug and returns project details', async () => {
-    const command = createCommand();
-
-    stubParse(command, {}, {slug: 'my-project'});
-    await command.init();
-
-    stubCommonAuth(command);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtOrigin: 'https://example.com'}}));
-
-    const getStub = sinon.stub().resolves({
-      name: 'My Project',
-      slug: 'my-project',
-      organization: 'my-org',
-      project_type: 'pwa',
-      ssr_region: 'us-east-1',
-      url: 'https://my-project.mobify-storefront.com',
-      created_at: '2025-01-01T00:00:00Z',
+  function stubBackendContext(
+    command: any,
+    ctx: {preference?: string; scapiConnection?: unknown; legacyAuth?: unknown} = {},
+  ): void {
+    sinon.stub(command, 'getMrtBackendContext').returns({
+      preference: ctx.preference ?? 'auto',
+      scapiConnection: ctx.scapiConnection,
+      legacyAuth: 'legacyAuth' in ctx ? ctx.legacyAuth : {},
     } as any);
+  }
 
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const result = await getStub({
-        projectSlug: 'my-project',
-        origin: 'https://example.com',
-      });
-      return result;
-    };
-
-    const result = await command.run();
-
-    expect(getStub.calledOnce).to.equal(true);
-    const [input] = getStub.firstCall.args;
-    expect(input.projectSlug).to.equal('my-project');
-    expect(result.name).to.equal('My Project');
-    expect(result.slug).to.equal('my-project');
-    expect(result.ssr_region).to.equal('us-east-1');
-  });
-
-  it('handles API error gracefully', async () => {
+  it('calls command.error when project is missing', async () => {
     const command = createCommand();
 
-    stubParse(command, {}, {slug: 'nonexistent-project'});
+    stubParse(command, {}, {});
     await command.init();
 
-    stubCommonAuth(command);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtOrigin: 'https://example.com'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined}}));
 
-    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
-    const getStub = sinon.stub().rejects(new Error('Project not found'));
-
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      try {
-        return await getStub({projectSlug: 'nonexistent-project', origin: 'https://example.com'});
-      } catch (error) {
-        if (error instanceof Error) {
-          this.error(`Failed to get project: ${error.message}`);
-        }
-        throw error;
-      }
-    };
+    const errorStub = stubErrorToThrow(command);
 
     try {
       await command.run();
@@ -108,44 +61,91 @@ describe('mrt project get', () => {
     }
   });
 
-  it('displays project details in non-JSON mode', async () => {
+  it('routes through the backend-aware get and returns raw under --json', async () => {
     const command = createCommand();
 
-    stubParse(command, {}, {slug: 'display-project'});
+    stubParse(command, {}, {slug: 'my-storefront'});
     await command.init();
 
-    stubCommonAuth(command);
-    sinon.stub(command, 'jsonEnabled').returns(false);
+    stubBackendContext(command);
+    sinon.stub(command, 'jsonEnabled').returns(true);
     sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtOrigin: 'https://example.com'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({
+      values: {mrtProject: 'my-storefront', mrtOrigin: 'https://example.com'},
+    }));
 
-    const mockProject = {
-      name: 'Display Project',
-      slug: 'display-project',
-      organization: 'test-org',
-      project_type: 'headless',
-      deletion_status: null,
-      ssr_region: 'us-west-2',
-      url: 'https://display-project.example.com',
-      created_at: '2025-01-10T10:00:00Z',
-      updated_at: '2025-01-20T12:00:00Z',
-    };
-
-    const getStub = sinon.stub().resolves(mockProject);
-
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const result = await getStub({
-        projectSlug: 'display-project',
-        origin: 'https://example.com',
-      });
-      return result;
-    };
+    const getStub = sinon.stub().resolves({
+      backend: 'legacy',
+      project: {id: 'my-storefront', name: 'My Storefront', backend: 'legacy'},
+      raw: {slug: 'my-storefront', name: 'My Storefront'},
+    } as any);
+    command.operations = {...command.operations, getProjectWithBackend: getStub};
 
     const result = await command.run();
 
-    expect(result.slug).to.equal('display-project');
-    expect(result.name).to.equal('Display Project');
-    expect(result.project_type).to.equal('headless');
+    expect(getStub.calledOnce).to.equal(true);
+    const [input] = getStub.firstCall.args;
+    expect(input.preference).to.equal('auto');
+    expect(input.projectSlug).to.equal('my-storefront');
+    expect(input.origin).to.equal('https://example.com');
+    // --json emits the raw backend-native project response verbatim.
+    expect(result.slug).to.equal('my-storefront');
+  });
+
+  it('forwards the resolved SCAPI backend context and emits the native shape under --json', async () => {
+    const command = createCommand();
+
+    stubParse(command, {'mrt-backend': 'scapi'}, {slug: 'my-storefront'});
+    await command.init();
+
+    const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+    stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-storefront', mrtBackend: 'scapi'}}));
+
+    const getStub = sinon.stub().resolves({
+      backend: 'scapi',
+      project: {id: 'my-storefront', name: 'My Storefront', backend: 'scapi'},
+      raw: {storefrontId: 'my-storefront', storefrontName: 'My Storefront', setupStatus: 'ok'},
+    } as any);
+    command.operations = {...command.operations, getProjectWithBackend: getStub};
+
+    const result = await command.run();
+
+    const [input] = getStub.firstCall.args;
+    expect(input.preference).to.equal('scapi');
+    expect(input.scapiConnection).to.equal(scapiConnection);
+    expect(result.storefrontId).to.equal('my-storefront');
+  });
+
+  it('prints the detail view in non-JSON mode', async () => {
+    const command = createCommand();
+
+    stubParse(command, {}, {slug: 'my-storefront'});
+    await command.init();
+
+    stubBackendContext(command);
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(ux, 'stdout').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-storefront'}}));
+
+    const getStub = sinon.stub().resolves({
+      backend: 'scapi',
+      project: {id: 'my-storefront', name: 'My Storefront', backend: 'scapi', sites: ['RefArch']},
+      raw: {storefrontId: 'my-storefront'},
+    } as any);
+    command.operations = {...command.operations, getProjectWithBackend: getStub};
+
+    // Does not throw while formatting the detail view.
+    await command.run();
+
+    expect(getStub.calledOnce).to.equal(true);
+  });
+
+  it('supports the SCAPI MRT backend', () => {
+    const command = createCommand();
+    expect(command.supportsScapiMrt()).to.equal(true);
   });
 });

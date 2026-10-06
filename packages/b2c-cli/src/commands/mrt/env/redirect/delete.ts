@@ -48,7 +48,7 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
     deleteRedirectWithBackend,
   };
 
-  async run(): Promise<{identifier: string; deleted: boolean}> {
+  async run(): Promise<{identifier: string; fromPath: string; deleted: boolean}> {
     // Prevent deletion in safe mode
     this.assertDestructiveOperationAllowed('delete redirect');
 
@@ -77,7 +77,9 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
       );
       if (!confirmed) {
         this.log(t('commands.mrt.redirect.delete.cancelled', 'Deletion cancelled.'));
-        return {identifier, deleted: false};
+        // `fromPath` mirrors `identifier` for backward compatibility with scripts
+        // that read the legacy `--json` key (the source path on legacy).
+        return {identifier, fromPath: identifier, deleted: false};
       }
     }
 
@@ -101,7 +103,7 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
       this.log(t('commands.mrt.redirect.delete.success', 'Redirect {{identifier}} deleted.', {identifier}));
     }
 
-    return {identifier, deleted: true};
+    return {identifier, fromPath: identifier, deleted: true};
   }
 
   protected override supportsScapiMrt(): boolean {

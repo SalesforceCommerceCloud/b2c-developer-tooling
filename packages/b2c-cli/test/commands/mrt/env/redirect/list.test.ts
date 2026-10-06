@@ -148,6 +148,39 @@ describe('mrt env redirect list', () => {
     expect(result.data[0].redirectId).to.equal('uuid-1');
   });
 
+  // The SCAPI gateway does not accept a `search` query param, so the filter is
+  // dropped there; the warning fires via the `onResolve` callback once the
+  // backend resolves to `scapi`, so the user is not silently handed an
+  // unfiltered list.
+  it('warns when --search is combined with the SCAPI backend', async () => {
+    const command = createCommand();
+
+    stubParse(command, {project: 'my-project', environment: 'staging', search: '/old', 'mrt-backend': 'scapi'}, {});
+    await command.init();
+
+    const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+    stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
+    const warnStub = sinon.stub(command, 'warn').returns(void 0);
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
+
+    // Invoke the command's onResolve with the resolved SCAPI backend to exercise
+    // the warning path (the wrapper is stubbed, so it would not fire otherwise).
+    const listStub = sinon.stub().callsFake(async (options: any) => {
+      options.onResolve('scapi');
+      return {backend: 'scapi', count: 0, redirects: [], raw: {limit: 25, offset: 0, total: 0, data: []}};
+    });
+    command.operations = {...command.operations, listRedirectsWithBackend: listStub};
+
+    await command.run();
+
+    expect(warnStub.calledOnce).to.equal(true);
+    expect(warnStub.firstCall.args[0]).to.include('--search is not supported on the SCAPI backend');
+  });
+
   it('renders the table in non-JSON mode (renderTable is stubbed)', async () => {
     const command = createCommand();
 

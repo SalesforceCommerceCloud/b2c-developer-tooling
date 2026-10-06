@@ -594,8 +594,10 @@ export async function cloneRedirects(
     throw new Error(`Failed to clone redirects: ${errorMessage}`);
   }
 
-  // The clone API may return a paginated response or just confirmation
-  const responseData = data as {count?: number; results?: MrtRedirect[]};
+  // The clone API may return a paginated response, just a confirmation, or an
+  // empty body on success. openapi-fetch leaves `data` undefined for an empty
+  // body, so default to an empty object before reading its fields.
+  const responseData = (data ?? {}) as {count?: number; results?: MrtRedirect[]};
 
   logger.debug({count: responseData.count}, '[MRT] Redirects cloned');
 
@@ -998,7 +1000,11 @@ export interface ListRedirectsBackendOptions extends RedirectBackendOptions {
   limit?: number;
   /** Pagination offset (forwarded to both backends). */
   offset?: number;
-  /** Legacy-only search term (ignored by the SCAPI backend). */
+  /**
+   * Case-insensitive substring filter on the redirect source path. Honored by
+   * the legacy backend only; the SCAPI gateway does not yet accept a `search`
+   * query parameter, so it is ignored there (the caller is warned).
+   */
   search?: string;
 }
 
@@ -1030,6 +1036,9 @@ export async function listRedirectsWithBackend(options: ListRedirectsBackendOpti
       onResolve,
     },
     {
+      // `search` is intentionally not forwarded here: the SCAPI gateway does not
+      // yet define a `search` query parameter and rejects the request if sent.
+      // The command warns when `--search` is combined with the SCAPI backend.
       scapi: () =>
         getRedirectsScapi(scapiConnection!, {
           storefrontId: projectSlug,

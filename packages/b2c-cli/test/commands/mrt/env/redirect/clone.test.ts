@@ -111,7 +111,7 @@ describe('mrt env redirect clone', () => {
     expect(result).to.deep.equal(raw);
   });
 
-  it('forwards the resolved SCAPI backend context and returns the null raw (empty 201)', async () => {
+  it('forwards the resolved SCAPI backend context and synthesizes a stable --json object', async () => {
     const command = createCommand();
 
     stubParse(command, {from: 'staging', to: 'production', force: true, 'mrt-backend': 'scapi'}, {});
@@ -131,7 +131,10 @@ describe('mrt env redirect clone', () => {
     const [input] = cloneStub.firstCall.args;
     expect(input.preference).to.equal('scapi');
     expect(input.scapiConnection).to.equal(scapiConnection);
-    expect(result).to.equal(null);
+    // SCAPI returns an empty 201 (no body); the command synthesizes a stable
+    // object rather than emitting a bare `null`. `count` is null since SCAPI
+    // reports no cloned count.
+    expect(result).to.deep.equal({from: 'staging', to: 'production', count: null});
   });
 
   it('supports the SCAPI MRT backend', () => {

@@ -67,7 +67,7 @@ describe('mrt env access-control delete', () => {
   it('deletes the header via the backend wrapper', async () => {
     const command = createCommand();
 
-    stubParse(command, {}, {id: HEADER_ID});
+    stubParse(command, {force: true}, {id: HEADER_ID});
     await command.init();
 
     sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
@@ -96,7 +96,7 @@ describe('mrt env access-control delete', () => {
   it('forwards the resolved SCAPI backend context to the wrapper', async () => {
     const command = createCommand();
 
-    stubParse(command, {'mrt-backend': 'scapi'}, {id: HEADER_ID});
+    stubParse(command, {force: true, 'mrt-backend': 'scapi'}, {id: HEADER_ID});
     await command.init();
 
     sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
@@ -167,5 +167,13 @@ describe('mrt env access-control delete', () => {
   it('supports the SCAPI MRT backend', () => {
     const command = createCommand();
     expect(command.supportsScapiMrt()).to.equal(true);
+  });
+
+  // `--force` lets the confirmation prompt (added to match the other MRT delete
+  // commands) be skipped non-interactively; the prompt is bypassed via
+  // `force: true` in the backend-call tests above.
+  it('registers a boolean --force flag to skip the confirmation prompt', () => {
+    expect(MrtAccessControlDelete.flags).to.have.property('force');
+    expect(MrtAccessControlDelete.flags.force.type).to.equal('boolean');
   });
 });
