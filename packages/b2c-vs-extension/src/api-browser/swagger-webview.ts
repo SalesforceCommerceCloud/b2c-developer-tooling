@@ -23,6 +23,7 @@ import {
   cloneBundledSpec,
   isLiveSource,
 } from './offline.js';
+import {prefillParameters} from './prefill.js';
 import {resolveApiBrowserTenantId} from './tenant.js';
 
 type SlasClientEntry = SlasComponents['schemas']['Client'];
@@ -33,48 +34,6 @@ function tokenSetupHint(apiType: ApiType): string {
   return apiType === 'Shopper'
     ? 'Check slas-client-id and site-id; private clients also need slas-client-secret. See Setup Help.'
     : 'Check Account Manager credentials and API scopes. See Setup Help.';
-}
-
-/**
- * Pre-fill default values for known parameters (e.g. organizationId, siteId)
- * throughout the spec so users don't have to fill them in manually for "Try it out".
- *
- * Replaces the entire `param.schema` with `{ type: 'string', default: value }` to
- * avoid the OAS 3.0 issue where adding `default` alongside a `$ref` sibling is ignored.
- */
-function prefillParameters(spec: Record<string, unknown>, defaults: Record<string, string>): void {
-  const applyDefaults = (params: unknown) => {
-    if (!Array.isArray(params)) return;
-    for (const param of params) {
-      const name = param?.name;
-      if (typeof name === 'string' && name in defaults) {
-        param.schema = {type: 'string', default: defaults[name]};
-      }
-    }
-  };
-
-  // Components-level parameters
-  const components = spec.components as Record<string, unknown> | undefined;
-  if (components?.parameters && typeof components.parameters === 'object') {
-    for (const param of Object.values(components.parameters as Record<string, Record<string, unknown>>)) {
-      const name = param.name;
-      if (typeof name === 'string' && name in defaults) {
-        param.schema = {type: 'string', default: defaults[name]};
-      }
-    }
-  }
-
-  // Path-level and operation-level parameters
-  const paths = spec.paths as Record<string, Record<string, unknown>> | undefined;
-  if (!paths) return;
-  const methods = ['get', 'put', 'post', 'delete', 'patch', 'options', 'head'];
-  for (const pathItem of Object.values(paths)) {
-    applyDefaults(pathItem.parameters);
-    for (const method of methods) {
-      const op = pathItem[method] as Record<string, unknown> | undefined;
-      if (op?.parameters) applyDefaults(op.parameters);
-    }
-  }
 }
 
 /**

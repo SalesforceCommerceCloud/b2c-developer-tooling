@@ -6,6 +6,7 @@
 
 import * as assert from 'assert';
 import type {SchemaEntry} from '../api-browser/api-browser-tree-provider.js';
+import {prefillParameters} from '../api-browser/prefill.js';
 import {detectApiType, injectCustomApiOrgPathPrefix} from '../api-browser/swagger-webview.js';
 import {
   API_BROWSER_EXPAND,
@@ -139,6 +140,36 @@ suite('injectCustomApiOrgPathPrefix', () => {
     const spec: Record<string, unknown> = {};
     injectCustomApiOrgPathPrefix(spec);
     assert.strictEqual(spec.paths, undefined);
+  });
+});
+
+suite('prefillParameters', () => {
+  test('replaces contract examples so Swagger UI fills the configured values', () => {
+    const organizationId: Record<string, unknown> = {
+      name: 'organizationId',
+      in: 'path',
+      schema: {$ref: '#/components/schemas/OrganizationId'},
+      example: 'f_ecom_zzxy_prd',
+    };
+    const siteId: Record<string, unknown> = {
+      name: 'siteId',
+      in: 'query',
+      schema: {type: 'string'},
+      examples: {SiteId: {value: 'RefArch'}},
+    };
+    const inline: Record<string, unknown> = {name: 'organizationId', in: 'path', example: 'f_ecom_zzxy_prd'};
+    const other: Record<string, unknown> = {name: 'productId', in: 'path', example: 'apple-ipod'};
+    const spec = {
+      components: {parameters: {organizationId, siteId}},
+      paths: {'/products/{productId}': {get: {parameters: [inline, other]}}},
+    };
+    prefillParameters(spec, {organizationId: 'f_ecom_zzpq_019', siteId: 'MarketStreet'});
+    assert.deepStrictEqual(organizationId.schema, {type: 'string', default: 'f_ecom_zzpq_019'});
+    assert.strictEqual(organizationId.example, 'f_ecom_zzpq_019');
+    assert.strictEqual(siteId.example, 'MarketStreet');
+    assert.ok(!('examples' in siteId));
+    assert.strictEqual(inline.example, 'f_ecom_zzpq_019');
+    assert.strictEqual(other.example, 'apple-ipod');
   });
 });
 
