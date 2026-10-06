@@ -2,6 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Inventory Availability",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/inventory-availability/availability-oas-v1-public.yaml)\n\n# API Overview\n\nInventory Availability APIs enable you to get inventory availability and perform inventory updates within Omnichannel Inventory.\n\nInventory Availability API can be segregated into the following functional categories:\n\n| Category                      | Endpoint Description                                                                                                                                             |\n| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n| Inventory Availability        | API endpoints for getting inventory SKU availability for groups and locations. You can query for multiple SKUs either by a single group or by multiple locations |\n| Inventory Updates and Deletes | API endpoints for updating and deleting inventory availability for specific SKUs.                                                                                |\n| Deltas                        | API endpoint for reading the stream of changes that have occurred to SKUs in groups or locations.                                                                |\n\n**Note**: Omnichannel Inventory uses the Tenant Group ID in place of the Organization ID. For more information, see [Configuration Values](https://developer.salesforce.com/docs/commerce/commerce-api/guide/commerce-api-configuration-values).\n\n## Rate Limits\n\nFor load shedding and rate limiting information, see [Load Shedding and Rate Limiting.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/throttle-rates.html)\n\n## Authentication and Authorization\n\nClients calling Omnichannel Inventory can be authenticated in one of two ways.\n\n- Authenticate using Account Manager with your B2C Commerce credentials.\n- Authenticate using your Salesforce org credentials.\n\nIf you are using both B2C Commerce and Salesforce Order Management, you can use either authentication approach. However, we recommend choosing only one to avoid mixing approaches across your integrations.\nThe different authentication approaches do not impact the purpose or performance of the APIs.\nEach authentication approach uses a unique set of scopes.\n\n| Scopes for Account Manager Authentication | Scopes for Salesforce org Authentication |\n| ----------------------------------------- | ---------------------------------------- |\n| sfcc.inventory.impex-graphs               | sfcc_inventory_impex_graphs              |\n| ---                                       | ---                                      |\n| sfcc.inventory.impex-inventory.rw         | sfcc_inventory_impex_inventory_rw        |\n| sfcc.inventory.impex-inventory            | sfcc_inventory_impex_inventory           |\n| sfcc.inventory.availability               | sfcc_inventory_availability              |\n| sfcc.inventory.availability.rw            | sfcc_inventory_availability_rw           |\n| sfcc.inventory.reservations               | sfcc_inventory_reservations              |\n| sfcc.inventory.reservations.rw            | sfcc_inventory_reservations_rw           |\n\nCalls through the API gateway to Omnichannel Inventory must have a valid OAUTH bearer token. The tenant identifier used by Omnichannel Inventory is supplied in the header of the token.\nAll request and response body entities are composed in JSON.\n\n## Use Cases\n\n### Inventory Availability\n\nUse these API endpoints to get inventory SKU availability for groups and locations. You can query multiple SKUs either by a single group or by multiple locations.\n\n#### Group Availability\n\nUse this endpoint to retrieve inventory availability for a group identifier and multiple SKUs with the criteria specified as parameters of the URL. A successful response contains the item availability data for the requested group and SKUs\n\n#### Location Availability\n\nUse this endpoint to retrieve inventory availability for multiple location identifiers and SKUs with the criteria specified in the body of the request. A successful response contains the item availability data for the requested locations and SKUs\n\n### Inventory Updates and Deletes\n\nUse these API endpoints to update and delete inventory availability for specific SKUs.\n\n#### Updates\n\nUse these endpoints to update inventory availability data for a single location or in a batch of locations.\n\n#### Single Location\n\nUse this endpoint to update inventory availability for a specific location identifier and SKU. The data to update is supplied in the body of the request.\n\n#### Batch of Locations\n\nUse this endpoint to update multiple locations and SKUS. The stream of item availability records is supplied in the body of the request.\n\n#### Deletes\n\nThe client calls these endpoints to delete inventory availability data. Although the current values are reset, history is maintained.\n\n#### Location\n\nUse this endpoint to delete a SKU at a location with the criteria specified as URL parameters.\n\n#### Group\n\nUse this endpoint to delete a SKU at a group with the criteria specified as URL parameters.\n\n### Deltas\n\nUse this endpoint to request inventory availability changes by providing a place identifier (for example, group or location) and a token as parameters of the URL. The response contains a stream of inventory availability data with the changes that have occurred since the token was created. Each successful response contains a _new_ token for the next delta call. There are multiple ways that you can generate a delta token. The first is through running an export process. See the Inventory Impex API for details on how to retrieve a delta token from the Inventory Export. A Delta token can also be created using the Create New Delta Token api call. See the Inventory Availability API documentation for details on that call.\n\nIt is strongly advised that when implementing the get deltas functionality, the calls for retrieving the delta information are collapsed into two streams. In the first stream, a delta token is created and then processed for all stand alone locations. In the second stream, a delta token is created and then processed for all location groups. These delta tokens are created using the Create New Delta Token API call mentioned above. You, as the caller, can then filter the results to process them and provide optimal performance when using the get deltas functionality. \n\nWhen using the two-streams method outlined above, there may be times that the location graph is changed and a new delta token is required. In these cases, use the Upadte Delta Token API call outlined in the Inventory Availability API documentation. Using this update delta token call, you can add or remove locations or groups from an existing delta token, eliminating the previous requirement to perform an export to retrieve a new delta token.\n\n### Futures\n\nBe advised that this API references Future inventory collections as `futures` and `futureStock`. These are the same thing. Also the Inventory Impex API references Future inventory collections as `futures`.\n\n### attributeSet\n\nThe attributeSet is a list of attributes that can be applied to an item to change it's behavior. An example of this is the `groupEligibilityExclusion` attribute, which allows you to apply an array of Groups that are excluded from aggregating the sku for a particular location.\n\n## Common Response Codes\n\nThe following error codes apply to all API endpoints. See the API documentation for a complete list of the error codes and response bodies that can be expected on each endpoint.\n\n- 401 - The OATH bearer token is not valid for the tenant or is no longer valid. The response body has the details.\n- 403 - The tenant is not provisioned in the system.\n- 5XX - There was a server error. The response body has the details.\n- Unknown - If an Unknown error type is returned, it indicates that an unknown internal error occurred.\n\n## External Reference Identifier\n\nCurrently, there are a number of places where a consumer can submit an `ExternalRefId` with their request. This allows the consumer to submit user generated data along with their request as a link to other external systems data. For example, if you're pulling data from an order that has an order ID, you can submit that order ID with your reservation request as the `externalRefId`. Then, if there is a problem with the reservation, there is a way to connect it with the order in the external system that generated the error or problem. This is NOT to be confused with `externalRefId` used in Salesforce Core, or any other services. The usage is exclusive to OCI and is not used anywhere else.\n\n## Correlation-ID\n\nTo facilitate operations tracking in Omnichannel Inventory, populate a header with the name Correlation-ID which will be passed through the CDN and sent with the request to OCI. This helps trace requests as they move through the service. To be accepted, Correlation-ID must be a valid UUIDv2 or it'll be ignored.\n\nWhen a web-request is passed through the CDN, the CDN's x-correlation-id header value (which comes from their ray-id) also comes into play. In this case, the correlation-id provided is prepended to the CDN's x-correlation-id and both values are passed through, separated by a comma.\n\nSome services use a header X-Correlation-ID. If this header is used with Omnichannel Inventory, it's overwritten by the CDN with a new value and the initial purpose of the header is defeated. Use the Correlation-ID instead for a consistent result.",
     "version": "1.1.31",
     "x-api-type": "Admin",
     "x-api-family": "Inventory"
@@ -19,17 +20,20 @@
   "paths": {
     "/organizations/{organizationId}/availability-records/delta-token": {
       "post": {
+        "summary": "Create a new Delta Token.",
         "operationId": "createNewDeltaToken",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -37,6 +41,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateNewDeltaTokenBody"
+              },
+              "examples": {
+                "CreateDeltaTokenGroups": {
+                  "$ref": "#/components/examples/CreateDeltaTokenGroups"
+                },
+                "CreateDeltaTokenLocations": {
+                  "$ref": "#/components/examples/CreateDeltaTokenLocations"
+                }
               }
             }
           },
@@ -47,6 +59,7 @@
             "description": "New Delta Token was created successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -54,6 +67,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -61,6 +75,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -72,6 +87,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateNewDeltaTokenResponse"
+                },
+                "examples": {
+                  "createNewDeltaToken200": {
+                    "$ref": "#/components/examples/createNewDeltaToken200"
+                  }
                 }
               }
             }
@@ -80,6 +100,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -87,6 +108,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -94,6 +116,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -105,6 +128,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "createNewDeltaToken400": {
+                    "$ref": "#/components/examples/DeltaTokenInvalidPlaces"
+                  }
                 }
               }
             }
@@ -123,18 +151,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -157,17 +198,20 @@
     },
     "/organizations/{organizationId}/availability-records/delta-token/actions/update": {
       "post": {
+        "summary": "Update a Delta Token stream.",
         "operationId": "updateDeltaToken",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -175,6 +219,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateDeltaTokenBody"
+              },
+              "examples": {
+                "UpdateDeltaTokenGroups": {
+                  "$ref": "#/components/examples/UpdateDeltaTokenGroups"
+                }
               }
             }
           },
@@ -185,6 +234,7 @@
             "description": "Delta Token stream updated successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -192,6 +242,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -199,6 +250,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -210,6 +262,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UpdateDeltaTokenResponse"
+                },
+                "examples": {
+                  "updateDeltaTokenSuccess": {
+                    "$ref": "#/components/examples/updateDeltaTokenSuccess"
+                  }
                 }
               }
             }
@@ -218,6 +275,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -225,6 +283,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -232,6 +291,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -243,6 +303,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "updateDeltaToken400": {
+                    "$ref": "#/components/examples/DeltaToken400"
+                  }
                 }
               }
             }
@@ -253,6 +318,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "updateDeltaToken403": {
+                    "$ref": "#/components/examples/TenantNotProvisioned403"
+                  }
                 }
               }
             }
@@ -261,6 +331,7 @@
             "description": "Delta Token link expired.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -268,6 +339,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -275,6 +347,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -286,6 +359,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "updateDeltaToken410": {
+                    "$ref": "#/components/examples/DeltaToken410"
+                  }
                 }
               }
             }
@@ -304,18 +382,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -338,17 +429,20 @@
     },
     "/organizations/{organizationId}/availability-records/actions/batch-update": {
       "post": {
+        "summary": "Update a batch of inventory items with one call.",
         "operationId": "batchInventoryUpdate",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -356,6 +450,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BatchInventoryUpdateRequest"
+              },
+              "examples": {
+                "BatchUpdateOneRecord": {
+                  "$ref": "#/components/examples/BatchUpdateOneRecord"
+                }
               }
             }
           },
@@ -366,6 +465,7 @@
             "description": "Batch inventory updated successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -373,6 +473,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -380,6 +481,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -391,6 +493,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BatchInventoryUpdateErrors"
+                },
+                "examples": {
+                  "batchInventoryUpdate200": {
+                    "$ref": "#/components/examples/BatchInventoryUpdate200"
+                  }
                 }
               }
             }
@@ -399,6 +506,7 @@
             "description": "Batch inventory updated successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -406,6 +514,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -413,6 +522,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -425,6 +535,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -432,6 +543,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -439,6 +551,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -450,6 +563,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "batchInventoryUpdate400": {
+                    "$ref": "#/components/examples/InvalidCharacterSku"
+                  }
                 }
               }
             }
@@ -460,6 +578,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "batchInventoryUpdate403": {
+                    "$ref": "#/components/examples/TenantNotProvisioned403"
+                  }
                 }
               }
             }
@@ -478,18 +601,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -510,17 +646,20 @@
         ]
       },
       "patch": {
+        "summary": "Partially update a batch of inventory items with one call. Only fields that are included in the request will be updated.",
         "operationId": "batchInventoryPatch",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -528,6 +667,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BatchInventoryUpdateRequest"
+              },
+              "examples": {
+                "BatchInventoryPatchRequest": {
+                  "$ref": "#/components/examples/BatchInventoryPatchRequest"
+                }
               }
             }
           },
@@ -538,6 +682,7 @@
             "description": "Batch inventory partially updated with potentially some errors reported.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -545,6 +690,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -552,6 +698,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -563,6 +710,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BatchInventoryUpdateErrors"
+                },
+                "examples": {
+                  "batchInventoryPatch200": {
+                    "$ref": "#/components/examples/BatchInventoryPatch200"
+                  }
                 }
               }
             }
@@ -571,6 +723,7 @@
             "description": "All batch inventory items updated successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -578,6 +731,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -585,6 +739,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -597,6 +752,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -604,6 +760,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -611,6 +768,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -622,6 +780,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "batchInventoryPatch400": {
+                    "$ref": "#/components/examples/BatchInventoryPatch400"
+                  }
                 }
               }
             }
@@ -632,6 +795,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "batchInventoryPatch403": {
+                    "$ref": "#/components/examples/TenantNotProvisioned403"
+                  }
                 }
               }
             }
@@ -650,18 +818,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -684,17 +865,20 @@
     },
     "/organizations/{organizationId}/availability-records/actions/get-deltas": {
       "post": {
+        "summary": "Retrieve changes that have occurred since a given Delta Token. An initial Delta Token is obtained from an export call; subsequent Delta Tokens are returned from this call.",
         "operationId": "getAvailabilityDeltas",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -702,6 +886,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/GetAvailabilityDeltasPostBody"
+              },
+              "examples": {
+                "getAvailabilityDeltaRequest": {
+                  "$ref": "#/components/examples/getAvailabilityDeltaRequest"
+                }
               }
             }
           },
@@ -712,6 +901,7 @@
             "description": "Changes are returned in the body with a new Delta Token to use for the next call.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -719,6 +909,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -726,6 +917,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -737,6 +929,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetAvailabilityDeltasResponse200"
+                },
+                "examples": {
+                  "getAvailabilityDeltas200": {
+                    "$ref": "#/components/examples/getAvailabilityDeltas200"
+                  }
                 }
               }
             }
@@ -745,6 +942,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -752,6 +950,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -759,6 +958,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -770,6 +970,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "getAvailabilityDeltas400": {
+                    "$ref": "#/components/examples/GetAvailabilityDeltas400"
+                  }
                 }
               }
             }
@@ -780,6 +985,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "getAvailabilityDeltas403": {
+                    "$ref": "#/components/examples/TenantNotProvisioned403"
+                  }
                 }
               }
             }
@@ -788,6 +998,7 @@
             "description": "Delta Token link expired.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -795,6 +1006,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -802,6 +1014,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -813,6 +1026,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "getAvailabilityDeltas410": {
+                    "$ref": "#/components/examples/GetAvailabilityDeltas410"
+                  }
                 }
               }
             }
@@ -831,18 +1049,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -865,17 +1096,20 @@
     },
     "/organizations/{organizationId}/availability-records/actions/get-availability": {
       "post": {
+        "summary": "Get SKU availability by location, by group, or by both.",
         "operationId": "skuAvailabilityByLocationAndOrGroup",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -883,6 +1117,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/InventoryAvailabilityRequestBody"
+              },
+              "examples": {
+                "GetATSAllLocations": {
+                  "$ref": "#/components/examples/GetATSAllLocations"
+                },
+                "GetATSAllUnassignedLocations": {
+                  "$ref": "#/components/examples/GetATSAllUnassignedLocations"
+                },
+                "GetATSLocationsAndGroups": {
+                  "$ref": "#/components/examples/GetATSLocationsAndGroups"
+                }
               }
             }
           },
@@ -893,6 +1138,7 @@
             "description": "Availability information successfully returned.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -900,6 +1146,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -907,6 +1154,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -918,6 +1166,17 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Response200"
+                },
+                "examples": {
+                  "GetAllLocationsAndGroupsResponse": {
+                    "$ref": "#/components/examples/GetAllLocationsAndGroupsResponse"
+                  },
+                  "GetAllLocationsResponse": {
+                    "$ref": "#/components/examples/GetAllLocationsResponse"
+                  },
+                  "GetAllUnassignedLocationsResponse": {
+                    "$ref": "#/components/examples/GetAllUnassignedLocationsResponse"
+                  }
                 }
               }
             }
@@ -926,6 +1185,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -933,6 +1193,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -940,6 +1201,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -951,6 +1213,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "skuAvailabilityByLocationAndOrGroup400": {
+                    "$ref": "#/components/examples/SkuAvailabilityByLocationAndOrGroup400"
+                  }
                 }
               }
             }
@@ -961,6 +1228,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "skuAvailabilityByLocationAndOrGroup403": {
+                    "$ref": "#/components/examples/TenantNotProvisioned403"
+                  }
                 }
               }
             }
@@ -979,18 +1251,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -1013,17 +1298,20 @@
     },
     "/organizations/{organizationId}/product-segmentation/actions/batch-update": {
       "post": {
+        "summary": "Submit batches of Product Eligibility Segmentations. The body permits requests to append or delete segmentations. For more information on Product Eligibility, see Product Eligibility Segmentation Import in the OCI Impex API.",
         "operationId": "batchProductSegmentationRequest",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -1038,6 +1326,14 @@
                     "$ref": "#/components/schemas/ProductSegmentationDeleteRequestBody"
                   }
                 ]
+              },
+              "examples": {
+                "ProductSegmentationAppendRequest": {
+                  "$ref": "#/components/examples/ProductSegmentationAppendRequest"
+                },
+                "ProductSegmentationDeleteRequest": {
+                  "$ref": "#/components/examples/ProductSegmentationDeleteRequest"
+                }
               }
             }
           },
@@ -1048,6 +1344,7 @@
             "description": "Some product segmentations could not be fully processed.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1055,6 +1352,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1062,6 +1360,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1073,6 +1372,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Errors"
+                },
+                "examples": {
+                  "DeleteError": {
+                    "$ref": "#/components/examples/DeleteError"
+                  },
+                  "AppendError": {
+                    "$ref": "#/components/examples/AppendError"
+                  }
                 }
               }
             }
@@ -1081,6 +1388,7 @@
             "description": "Successfully processed all product segmentations.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1088,6 +1396,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1095,6 +1404,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1107,6 +1417,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1114,6 +1425,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1121,6 +1433,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1132,6 +1445,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "ErrorInvalidRequestParameterMode": {
+                    "$ref": "#/components/examples/ErrorInvalidRequestParameterMode"
+                  }
                 }
               }
             }
@@ -1150,18 +1468,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -1184,11 +1515,13 @@
     },
     "/organizations/{organizationId}/locations/{locationId}/availability-records/skus/{sku}/{requestId}": {
       "put": {
+        "summary": "Update or create data and quantity information for an item. The PUT call for updating replaces all fields of data. For fields that are not included, the data that currently exists is deleted and everything defaults to 0 (zero).",
         "operationId": "replaceSkuLocation",
         "parameters": [
           {
             "name": "locationId",
             "in": "path",
+            "description": "The location for the SKU being updated.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -1199,6 +1532,7 @@
           {
             "name": "sku",
             "in": "path",
+            "description": "The SKU associated with the inventory record you want to update.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -1209,23 +1543,27 @@
           {
             "name": "requestId",
             "in": "path",
+            "description": "The unique request ID associated with the attempt to update an item in inventory.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "3678-23456-3456-4567-9999-1232",
               "maxLength": 128
             }
           },
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -1233,6 +1571,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/InventoryUpdateRequestBodyPut"
+              },
+              "examples": {
+                "InventoryUpdatePutRequest": {
+                  "$ref": "#/components/examples/InventoryUpdatePutRequest"
+                }
               }
             }
           },
@@ -1243,6 +1586,7 @@
             "description": "Data updated successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1250,6 +1594,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1257,6 +1602,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1269,6 +1615,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1276,6 +1623,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1283,6 +1631,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1294,6 +1643,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "ErrorEntityNotFound": {
+                    "$ref": "#/components/examples/ErrorEntityNotFound"
+                  }
                 }
               }
             }
@@ -1304,6 +1658,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "tenantNotProvisioned403": {
+                    "$ref": "#/components/examples/TenantNotProvisioned403"
+                  }
                 }
               }
             }
@@ -1312,6 +1671,7 @@
             "description": "Entity not found.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1319,6 +1679,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1326,6 +1687,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1337,6 +1699,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "EntityNotFound": {
+                    "$ref": "#/components/examples/EntityNotFound"
+                  }
                 }
               }
             }
@@ -1355,18 +1722,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -1387,11 +1767,13 @@
         ]
       },
       "delete": {
+        "summary": "Delete a location SKU. When you call this endpoint, all SKU values are reset and marked for deletion from the system. History is not preservered by this action, and the aggregate for this location SKU is also removed from the group view.",
         "operationId": "deleteLocationSku",
         "parameters": [
           {
             "name": "locationId",
             "in": "path",
+            "description": "The location for the SKU being updated.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -1402,6 +1784,7 @@
           {
             "name": "sku",
             "in": "path",
+            "description": "The SKU associated with the inventory record you want to update.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -1412,23 +1795,27 @@
           {
             "name": "requestId",
             "in": "path",
+            "description": "The unique request ID associated with the attempt to update an item in inventory.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "3678-23456-3456-4567-9999-1232",
               "maxLength": 128
             }
           },
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "responses": {
@@ -1436,6 +1823,7 @@
             "description": "Location SKU successfully deleted from the system.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1443,6 +1831,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1450,6 +1839,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1462,6 +1852,7 @@
             "description": "Location SKU not found.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1469,6 +1860,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1476,6 +1868,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1487,6 +1880,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "SKUNotFound": {
+                    "$ref": "#/components/examples/SKUNotFound"
+                  }
                 }
               }
             }
@@ -1495,6 +1893,7 @@
             "description": "There is an inventory export in progress, deletion is not allowed.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1502,6 +1901,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1509,6 +1909,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1520,6 +1921,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "ExportInProgress": {
+                    "$ref": "#/components/examples/ExportInProgress"
+                  }
                 }
               }
             }
@@ -1538,18 +1944,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -1570,11 +1989,13 @@
         ]
       },
       "patch": {
+        "summary": "Update or patch the data or quantity information for an item. On a PATCH call, most fields are optional, and only fields that are included are updated with the provided values.",
         "operationId": "updateSkuLocation",
         "parameters": [
           {
             "name": "locationId",
             "in": "path",
+            "description": "The location for the SKU being updated.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -1585,6 +2006,7 @@
           {
             "name": "sku",
             "in": "path",
+            "description": "The SKU associated with the inventory record you want to update.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -1595,23 +2017,27 @@
           {
             "name": "requestId",
             "in": "path",
+            "description": "The unique request ID associated with the attempt to update an item in inventory.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "3678-23456-3456-4567-9999-1232",
               "maxLength": 128
             }
           },
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -1619,6 +2045,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/InventoryUpdateRequestBodyPatch"
+              },
+              "examples": {
+                "InventoryUpdatePatchRequest": {
+                  "$ref": "#/components/examples/InventoryUpdatePatchRequest"
+                }
               }
             }
           },
@@ -1629,6 +2060,7 @@
             "description": "Data updated successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1636,6 +2068,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1643,6 +2076,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1655,6 +2089,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1662,6 +2097,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1669,6 +2105,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1680,6 +2117,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "ErrorEntityNotFound": {
+                    "$ref": "#/components/examples/ErrorEntityNotFound"
+                  }
                 }
               }
             }
@@ -1690,6 +2132,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "tenantNotProvisioned403": {
+                    "$ref": "#/components/examples/TenantNotProvisioned403"
+                  }
                 }
               }
             }
@@ -1698,6 +2145,7 @@
             "description": "Entity not found.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1705,6 +2153,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1712,6 +2161,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -1723,6 +2173,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "EntityNotFound": {
+                    "$ref": "#/components/examples/EntityNotFound"
+                  }
                 }
               }
             }
@@ -1741,18 +2196,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -1778,27 +2246,36 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the organization the request is being made by",
+        "example": "f_ecom_zzxy_prd",
         "maxLength": 32,
         "minLength": 1
       },
       "PlaceType": {
         "type": "string",
+        "description": "The type of place associated to the id",
+        "example": "{type: location | group}",
         "maxLength": 256
       },
       "GroupId": {
         "type": "string",
+        "description": "An identifier for a collection of locations.",
+        "example": "UnitedStates",
         "maxLength": 128,
         "minLength": 1,
         "pattern": "^[a-zA-Z0-9-_]*$"
       },
       "LocationId": {
         "type": "string",
+        "description": "The id of the location of the inventory.",
+        "example": "warehouse5",
         "maxLength": 128,
         "minLength": 2,
         "pattern": "^[a-zA-Z0-9-_]*$"
       },
       "Places": {
         "type": "array",
+        "description": "The list of places",
         "items": {
           "allOf": [
             {
@@ -1807,12 +2284,23 @@
             {
               "$ref": "#/components/schemas/LocationId"
             }
-          ]
+          ],
+          "example": {
+            "locationExample": [
+              "warehouseOne",
+              "warehouseTwo"
+            ],
+            "groupExample": [
+              "UnitedStates",
+              "Canada"
+            ]
+          }
         },
         "maxItems": 100
       },
       "CreateNewDeltaTokenBody": {
         "type": "object",
+        "description": "Whether this is a location or a group",
         "properties": {
           "placeType": {
             "$ref": "#/components/schemas/PlaceType"
@@ -1828,10 +2316,13 @@
       },
       "DeltaToken": {
         "type": "string",
+        "description": "The delta token obtained from a full export or a previous request to this API",
+        "example": "e3NoYXJkSWQtMDAwMDAwMDE1NzczOTkxNTc2MDItYmE5MGYxNGE6MDAwMDAwMDAwMDAwMDAwMDAwNDQ0fQ==",
         "maxLength": 256
       },
       "CreateNewDeltaTokenResponse": {
         "type": "object",
+        "description": "The new Delta Token",
         "properties": {
           "deltaToken": {
             "$ref": "#/components/schemas/DeltaToken"
@@ -1846,18 +2337,23 @@
         "properties": {
           "errorCode": {
             "type": "string",
+            "example": "InvalidRequestParameter",
             "maxLength": 256
           },
           "message": {
             "type": "string",
+            "example": "An invalid request parameter was provided.",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "example": "about:blank",
             "maxLength": 256
           },
           "parameterName": {
             "type": "string",
+            "description": "When invalid json is passed to the service, this field will indicate which piece of the supplied json was invalid.",
+            "example": "location",
             "maxLength": 256
           }
         },
@@ -1884,6 +2380,7 @@
       },
       "UpdateDeltaTokenResponse": {
         "type": "object",
+        "description": "The updated Delta Token",
         "properties": {
           "deltaToken": {
             "$ref": "#/components/schemas/DeltaToken"
@@ -1898,19 +2395,26 @@
       },
       "ExternalRefId": {
         "type": "string",
+        "description": "A convenience identifier for the consumer, used for auditing events. This field is NOT used by the service itself, but is intended for the consumer to be able to identify records submitted from their systems that are external to OCI.",
+        "example": "7282822-9823-aaa",
         "maxLength": 250
       },
       "Date": {
         "type": "string",
-        "format": "date-time"
+        "format": "date-time",
+        "description": "The date the future quantity is expected to arrive at the location.",
+        "example": "2019-07-24T21:13:00Z"
       },
       "Quantity": {
         "type": "number",
+        "description": "The amount that is expected to arrive at a future date",
+        "example": 10.25,
         "minimum": 0.001,
         "multipleOf": 0.001
       },
       "Future": {
         "type": "object",
+        "description": "The 'future' object contains data that tells us what is expected to arrive for this item in the future, as well as when those amounts of inventory should arrive.",
         "properties": {
           "expectedDate": {
             "$ref": "#/components/schemas/Date"
@@ -1926,11 +2430,13 @@
       },
       "GroupEligibilityExclusion": {
         "type": "string",
+        "description": "The group eligibility exclusion that can be applied in an Attribute Set as part of an item update.",
         "maxLength": 128,
         "minLength": 2
       },
       "AttributeSet": {
         "type": "object",
+        "description": "A set of attributes that can be applied as attributes in a request.",
         "properties": {
           "groupEligibilityExclusion": {
             "type": "array",
@@ -1946,26 +2452,35 @@
       "QOH": {
         "type": "number",
         "format": "double",
+        "description": "Quantity on hand.",
+        "example": 1200.35,
         "minimum": 0,
         "multipleOf": 0.001
       },
       "SafetyStock": {
         "type": "number",
         "format": "double",
+        "description": "Inventory quantity that a merchant wants to intentionally hold back from availability counts. \nPrecision of the safety stock is four decimal places: 0.001.",
+        "example": 12.45,
         "minimum": 0
       },
       "SkuId": {
         "type": "string",
+        "description": "The inventory identifier",
+        "example": "sku123",
         "maxLength": 250,
         "minLength": 2,
         "pattern": "^[^\\\\<>;%/\\s]*$"
       },
       "IdempotenceId": {
         "type": "string",
+        "description": "A unique identifier, used in combination with the SKU, so that future requests with the same combination have the same result.",
+        "example": "82251928-8863-488e-840b-2aebd10b57ba",
         "maxLength": 250
       },
       "BatchInventoryUpdateRequestRecord": {
         "type": "object",
+        "description": "Record definition used in a batch inventory update request",
         "properties": {
           "externalRefId": {
             "$ref": "#/components/schemas/ExternalRefId"
@@ -2009,6 +2524,7 @@
         "properties": {
           "records": {
             "type": "array",
+            "description": "List of records to process in a batch update. The maximum number of entries in the array is 100.",
             "items": {
               "$ref": "#/components/schemas/BatchInventoryUpdateRequestRecord"
             },
@@ -2021,6 +2537,7 @@
       },
       "BatchInventoryUpdateErrorDetail": {
         "type": "object",
+        "description": "Detail information for errors generated during a batch inventory update.",
         "properties": {
           "externalRefId": {
             "$ref": "#/components/schemas/ExternalRefId"
@@ -2043,16 +2560,19 @@
       },
       "BatchInventoryUpdateSingleError": {
         "type": "object",
+        "description": "Error record information generated during a batch inventory update.",
         "properties": {
           "details": {
             "$ref": "#/components/schemas/BatchInventoryUpdateErrorDetail"
           },
           "message": {
             "type": "string",
+            "example": "Inventory record update failed",
             "maxLength": 255
           },
           "errorCode": {
             "type": "string",
+            "example": "InventoryReset",
             "maxLength": 255
           }
         },
@@ -2064,6 +2584,7 @@
       },
       "BatchInventoryUpdateErrors": {
         "type": "object",
+        "description": "Errors produced during a batch inventory update",
         "properties": {
           "errors": {
             "type": "array",
@@ -2088,32 +2609,43 @@
         ]
       },
       "ShouldQueryAgain": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Indicates to the consumer if they should immediately call again to retrieve deltas that are potentially waiting in the stream.",
+        "example": true
       },
       "PlaceId": {
         "type": "string",
+        "description": "The id of a group or location where inventory is located.",
+        "example": "{\"location\":\"warehouse5\",\"group\":\"UnitedStates\"}",
         "maxLength": 128
       },
       "ATF": {
         "type": "number",
         "format": "double",
+        "description": "The amount available to fulfill at the location",
+        "example": 1137.65,
         "minimum": 0,
         "multipleOf": 0.001
       },
       "ATO": {
         "type": "number",
         "format": "double",
+        "description": "The amount available to order at the location",
+        "example": 1147.9,
         "minimum": 0,
         "multipleOf": 0.001
       },
       "QuantityReserved": {
         "type": "number",
         "format": "double",
+        "description": "Actual quantity reserved. This value can be less than the quantity requested.",
+        "example": 50.25,
         "minimum": 0,
         "multipleOf": 0.001
       },
       "DeltaRecordType": {
         "type": "object",
+        "description": "An availability delta record that is returned from the availability delta calls. All fields that are Required will be reported, however if there is not a value for any particular field, it will be 0, empty or null.",
         "properties": {
           "sku": {
             "$ref": "#/components/schemas/SkuId"
@@ -2123,7 +2655,8 @@
             "enum": [
               "Change",
               "Delete"
-            ]
+            ],
+            "example": "Change"
           },
           "id": {
             "$ref": "#/components/schemas/PlaceId"
@@ -2133,10 +2666,13 @@
               {
                 "$ref": "#/components/schemas/Date"
               }
-            ]
+            ],
+            "description": "The effective date for the info is provided, but the field is NOT required. The date represents when the onHand value was accurate at the location."
           },
           "sequenceNumber": {
-            "type": "number"
+            "type": "number",
+            "description": "A sequence number to allow the caller to determine if records have been returned out of order.",
+            "example": 123
           },
           "onHand": {
             "$ref": "#/components/schemas/QOH"
@@ -2197,35 +2733,41 @@
       },
       "InventoryAvailabilityRequestBody": {
         "type": "object",
+        "description": "The body that is sent requesting the item availability by location and/or group",
         "properties": {
           "sku": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/SkuId"
               }
-            ]
+            ],
+            "description": "Used for retrieving the data for a single item for all locations that have not been assigned to any specific group(s). If a group Id is specified in the request, then the locations to be returned will be the ones assigned to the specified group."
           },
           "group": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/GroupId"
               }
-            ]
+            ],
+            "description": "The group ID that should be used in conjunction with the single sku provided in the request.  This will retrieve the information for all locations in this group."
           },
           "skus": {
             "type": "array",
+            "description": "It specifies the skus for which the availability requires to be checked. The array of SKUs is limited by the total combinations of SKU per location plus SKU per group to check, the total cannot be more than 100.",
             "items": {
               "$ref": "#/components/schemas/SkuId"
             }
           },
           "locations": {
             "type": "array",
+            "description": "Query the system for availability at this location. This field does not union with the groups field. The array of locations is limited by the total combinations of SKU per location plus SKU per group to check, the total cannot be more than 100.",
             "items": {
               "$ref": "#/components/schemas/LocationId"
             }
           },
           "groups": {
             "type": "array",
+            "description": "Query the system for availability for this group. This field does not union with the locations field. Array is limited to 0-100 items. This field does not union with the groups field. The array of groups is limited by the total combinations of SKU per location plus SKU per group to check, the total cannot be more than 100.",
             "items": {
               "$ref": "#/components/schemas/GroupId"
             }
@@ -2235,22 +2777,29 @@
       "Reserved": {
         "type": "number",
         "format": "double",
+        "description": "The amount reserved at the location",
+        "example": 12.5,
         "minimum": 0,
         "multipleOf": 0.001
       },
       "Exists": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Indicates whether a record exists for a SKU. This could be helpful since, the Get Availability API returns records with all zero values when the sku does not exist.",
+        "example": true
       },
       "ItemLocationInfo": {
         "type": "object",
+        "description": "Location information used for availability by location responses",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/LocationId"
           },
           "records": {
             "type": "array",
+            "description": "Records returned for the sku/location combination",
             "items": {
               "type": "object",
+              "description": "A record contained within the lookup results containing details about the item.  Those details include the sku, available to fulfill amount, available to order amount, quantity on hand amount, and the safety stock count value.",
               "properties": {
                 "sku": {
                   "$ref": "#/components/schemas/SkuId"
@@ -2307,10 +2856,13 @@
           {
             "$ref": "#/components/schemas/Date"
           }
-        ]
+        ],
+        "description": "The date the future quantity is expected to arrive within the group",
+        "example": "2019-07-24T21:13:00Z"
       },
       "FutureGroup": {
         "type": "object",
+        "description": "The 'future' object contains data that tells us what is expected to arrive for this item in the future, as well as when those amounts of inventory should arrive.",
         "properties": {
           "expectedDate": {
             "$ref": "#/components/schemas/DateGroup"
@@ -2326,14 +2878,17 @@
       },
       "ItemGroupInfo": {
         "type": "object",
+        "description": "The group info, associated with an item and used in the availability responses.",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/GroupId"
           },
           "records": {
             "type": "array",
+            "description": "Records returned for a sku/group combination",
             "items": {
               "type": "object",
+              "description": "A record contained within the lookup results containing details about the item.  Those details include the sku, available to fulfill amount, available to order amount, quantity on hand amount, and the safety stock count value.",
               "properties": {
                 "sku": {
                   "$ref": "#/components/schemas/SkuId"
@@ -2343,28 +2898,32 @@
                     {
                       "$ref": "#/components/schemas/ATF"
                     }
-                  ]
+                  ],
+                  "description": "The amount available to fulfill at for the group"
                 },
                 "ato": {
                   "allOf": [
                     {
                       "$ref": "#/components/schemas/ATO"
                     }
-                  ]
+                  ],
+                  "description": "The amount available to order at within the group"
                 },
                 "onHand": {
                   "allOf": [
                     {
                       "$ref": "#/components/schemas/QOH"
                     }
-                  ]
+                  ],
+                  "description": "Quantity on hand within the group."
                 },
                 "reserved": {
                   "allOf": [
                     {
                       "$ref": "#/components/schemas/Reserved"
                     }
-                  ]
+                  ],
+                  "description": "The amount reserved within the group"
                 },
                 "safetyStockCount": {
                   "$ref": "#/components/schemas/SafetyStock"
@@ -2374,14 +2933,16 @@
                     {
                       "$ref": "#/components/schemas/Reserved"
                     }
-                  ]
+                  ],
+                  "description": "The total group reservations for the group NOT including shared"
                 },
                 "sharedGroupReserved": {
                   "allOf": [
                     {
                       "$ref": "#/components/schemas/Reserved"
                     }
-                  ]
+                  ],
+                  "description": "The amount of the soft_reserved count that comes from other groups"
                 },
                 "effectiveDate": {
                   "$ref": "#/components/schemas/Date"
@@ -2414,6 +2975,7 @@
       },
       "Response200": {
         "type": "object",
+        "description": "Successful request for item information",
         "properties": {
           "locations": {
             "type": "array",
@@ -2447,10 +3009,15 @@
                   "type": "string",
                   "enum": [
                     "APPEND"
-                  ]
+                  ],
+                  "example": "APPEND"
                 },
                 "skus": {
                   "type": "array",
+                  "example": [
+                    "AppendNewSku1",
+                    "AppendNewSku2"
+                  ],
                   "items": {
                     "$ref": "#/components/schemas/SkuId"
                   }
@@ -2483,10 +3050,15 @@
                   "type": "string",
                   "enum": [
                     "DELETE"
-                  ]
+                  ],
+                  "example": "DELETE"
                 },
                 "skus": {
                   "type": "array",
+                  "example": [
+                    "DeleteSku1",
+                    "DeleteSku2"
+                  ],
                   "items": {
                     "$ref": "#/components/schemas/SkuId"
                   }
@@ -2511,6 +3083,7 @@
           "properties": {
             "error": {
               "type": "string",
+              "example": "Failed to delete product segmentation for group id WarehouseOne and sku 13",
               "maxLength": 256
             }
           },
@@ -2521,6 +3094,7 @@
       },
       "InventoryUpdateRequestBodyPut": {
         "type": "object",
+        "description": "The body of the put request for updating sku/location inventory.\nAll fields are required. If a field is missing or contains a null value then a 400 error will be thrown.",
         "properties": {
           "externalRefId": {
             "$ref": "#/components/schemas/ExternalRefId"
@@ -2547,6 +3121,7 @@
       },
       "InventoryUpdateRequestBodyPatch": {
         "type": "object",
+        "description": "The body of the patch request for updating sku/location inventory.\nAll fields are OPTIONAL. If a field is missing or contains a null value then the system doesn't update that field when patching.",
         "properties": {
           "externalRefId": {
             "$ref": "#/components/schemas/ExternalRefId"
@@ -2576,16 +3151,19 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the organization the request is being made by",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "locationId": {
         "name": "locationId",
         "in": "path",
+        "description": "The location for the SKU being updated.",
         "required": true,
         "style": "simple",
         "explode": false,
@@ -2596,6 +3174,7 @@
       "sku": {
         "name": "sku",
         "in": "path",
+        "description": "The SKU associated with the inventory record you want to update.",
         "required": true,
         "style": "simple",
         "explode": false,
@@ -2606,18 +3185,612 @@
       "requestId": {
         "name": "requestId",
         "in": "path",
+        "description": "The unique request ID associated with the attempt to update an item in inventory.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "3678-23456-3456-4567-9999-1232",
           "maxLength": 128
+        }
+      }
+    },
+    "examples": {
+      "CreateDeltaTokenGroups": {
+        "value": {
+          "placeType": "GROUP",
+          "places": [
+            "UnitedStates"
+          ]
+        }
+      },
+      "CreateDeltaTokenLocations": {
+        "value": {
+          "placeType": "LOCATION",
+          "places": [
+            "warehouse5"
+          ]
+        }
+      },
+      "createNewDeltaToken200": {
+        "value": {
+          "deltaToken": "e3NoYXJkSWQtMDAwMDAwMDE1NzczOTkxNTc2MDItYmE5MGYxNGE6MDAwMDAwMDAwMDAwMDAwMDAwNDQ0fQ=="
+        }
+      },
+      "DeltaTokenInvalidPlaces": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "InvalidRequestParameter",
+          "message": "places must be of type location or group",
+          "parameterName": "places"
+        }
+      },
+      "UpdateDeltaTokenGroups": {
+        "value": {
+          "deltaToken": "e3NoYXJkSWQtMDAwMDAwMDE1NzczOTkxNTc2MDItYmE5MGYxNGE6MDAwMDAwMDAwMDAwMDAwMDAwNDQ0fQ==",
+          "places": [
+            "UnitedStates",
+            "Canada"
+          ]
+        }
+      },
+      "updateDeltaTokenSuccess": {
+        "value": {
+          "deltaToken": "e3NoYXJkSWQtMDAwMDAwMDE1NzczOTkxNTc2MDItYmE5MGYxNGE6MDAwMDAwMDAwMDAwMDAwMDAwNDQ0fQ==",
+          "places": [
+            "UnitedStates",
+            "Canada"
+          ]
+        }
+      },
+      "DeltaToken400": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "InvalidRequestParameter",
+          "message": "The delta token provided is invalid."
+        }
+      },
+      "TenantNotProvisioned403": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "TenantNotProvisioned",
+          "message": "The client is not correctly configured to access the system."
+        }
+      },
+      "DeltaToken410": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "ExpiredDeltaLink",
+          "message": "The delta token provided has expired."
+        }
+      },
+      "BatchUpdateOneRecord": {
+        "value": {
+          "records": [
+            {
+              "location": "warehouse5",
+              "sku": "sku123",
+              "id": "82251928-8863-488e-840b-2aebd10b57ba",
+              "onHand": 1200.35,
+              "safetyStockCount": 12.45,
+              "effectiveDate": "2025-05-19T21:13:00Z",
+              "futureStock": [
+                {
+                  "expectedDate": "2025-05-31T21:13:00Z",
+                  "quantity": 10.25
+                }
+              ],
+              "attributeSet": {
+                "groupEligibilityExclusion": [
+                  "GroupA"
+                ]
+              },
+              "externalRefId": "7282822-9823-aaa"
+            }
+          ]
+        }
+      },
+      "BatchInventoryUpdate200": {
+        "value": {
+          "errors": [
+            {
+              "details": {
+                "locationId": "warehouse5",
+                "sku": "sku123",
+                "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                "externalRefId": "7282822-9823-aaa"
+              },
+              "message": "Inventory record update failed",
+              "errorCode": "InvalidRequest"
+            }
+          ]
+        }
+      },
+      "InvalidCharacterSku": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "InvalidRequestParameter",
+          "message": "Invalid characters in sku: bad$sku",
+          "parameterName": "sku"
+        }
+      },
+      "BatchInventoryPatchRequest": {
+        "value": {
+          "records": [
+            {
+              "id": "82251928-8863-488e-840b-2aebd10b57ba",
+              "externalRefId": "7282822-9823-aaa",
+              "location": "warehouse5",
+              "sku": "sku123",
+              "onHand": 1200.35,
+              "safetyStockCount": 12.45,
+              "effectiveDate": "2025-05-19T21:13:00Z",
+              "futureStock": [
+                {
+                  "expectedDate": "2025-05-31T21:13:00Z",
+                  "quantity": 10.25
+                }
+              ],
+              "attributeSet": {
+                "groupEligibilityExclusion": [
+                  "arizona",
+                  "utah"
+                ]
+              }
+            },
+            {
+              "id": "82251928-8863-488e-840b-2aebd10b6666",
+              "externalRefId": "7282822-9823-bbb",
+              "location": "warehouse6",
+              "sku": "sku456",
+              "onHand": 500.75,
+              "safetyStockCount": 25,
+              "effectiveDate": "2025-05-19T21:13:00Z",
+              "futureStock": [
+                {
+                  "expectedDate": "2025-06-15T21:13:00Z",
+                  "quantity": 50
+                }
+              ],
+              "attributeSet": {
+                "groupEligibilityExclusion": [
+                  "california"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "BatchInventoryPatch200": {
+        "value": {
+          "errors": [
+            {
+              "details": {
+                "locationId": "warehouse5",
+                "sku": "sku123",
+                "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                "externalRefId": "7282822-9823-aaa"
+              },
+              "message": "Inventory record update failed",
+              "errorCode": "InventoryReset"
+            },
+            {
+              "details": {
+                "locationId": "warehouse6",
+                "sku": "sku456",
+                "id": "82251928-8863-488e-840b-2aebd10b6666",
+                "externalRefId": "7282822-9823-bbb"
+              },
+              "message": "Location not found",
+              "errorCode": "EntityNotFound"
+            }
+          ]
+        }
+      },
+      "BatchInventoryPatch400": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "InvalidRequestParameter",
+          "message": "An invalid request parameter was provided.",
+          "parameterName": "location"
+        }
+      },
+      "getAvailabilityDeltaRequest": {
+        "value": {
+          "deltaToken": "e3NoYXJkSWQtMDAwMDAwMDE1NzczOTkxNTc2MDItYmE5MGYxNGE6MDAwMDAwMDAwMDAwMDAwMDAwNDQ0fQ=="
+        }
+      },
+      "getAvailabilityDeltas200": {
+        "value": {
+          "nextDeltaToken": "e3NoYXJkSWQtMDAwMDAwMDE1NzczOTkxNTc2MDItYmE5MGYxNGE6MDAwMDAwMDAwMDAwMDAwMDAwNDQ0fQ==",
+          "shouldQueryAgain": true,
+          "records": [
+            {
+              "sku": "sku123",
+              "deltaType": "Change",
+              "id": "UnitedStates",
+              "effectiveDate": "2019-07-24T21:13:00Z",
+              "sequenceNumber": 123,
+              "onHand": 1200.35,
+              "atf": 1137.65,
+              "ato": 1147.9,
+              "reserved": 50.25,
+              "safetyStockCount": 12.45,
+              "futures": [
+                {
+                  "expectedDate": "2019-07-24T21:13:00Z",
+                  "quantity": 10.25
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "GetAvailabilityDeltas400": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "ExpiredDeltaLink",
+          "message": "'id' The Delta Link is expired",
+          "parameterName": "Delta Link"
+        }
+      },
+      "GetAvailabilityDeltas410": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "ExpiredDeltaLink",
+          "message": "The delta token provided has expired."
+        }
+      },
+      "GetATSAllLocations": {
+        "value": {
+          "sku": "sku123",
+          "group": "Canada"
+        }
+      },
+      "GetATSAllUnassignedLocations": {
+        "value": {
+          "sku": "sku123"
+        }
+      },
+      "GetATSLocationsAndGroups": {
+        "value": {
+          "skus": [
+            "sku123"
+          ],
+          "locations": [
+            "warehouse5"
+          ],
+          "groups": [
+            "UnitedStates"
+          ]
+        }
+      },
+      "GetAllLocationsAndGroupsResponse": {
+        "value": {
+          "locations": [
+            {
+              "id": "warehouse5",
+              "records": [
+                {
+                  "sku": "sku123",
+                  "atf": 1137.65,
+                  "ato": 1147.9,
+                  "onHand": 0,
+                  "reserved": 12.5,
+                  "safetyStockCount": 0,
+                  "effectiveDate": "2019-07-24T21:13:00Z",
+                  "futures": [
+                    {
+                      "expectedDate": "2019-08-24T21:13:00Z",
+                      "quantity": 10.25
+                    }
+                  ],
+                  "attributeSet": {
+                    "groupEligibilityExclusion": [
+                      "arizona",
+                      "utah"
+                    ]
+                  },
+                  "exists": true
+                }
+              ]
+            }
+          ],
+          "groups": [
+            {
+              "id": "UnitedStates",
+              "records": [
+                {
+                  "sku": "sku123",
+                  "atf": 1137.65,
+                  "ato": 1147.9,
+                  "onHand": 0,
+                  "reserved": 12.5,
+                  "safetyStockCount": 0,
+                  "effectiveDate": "2019-07-24T21:13:00Z",
+                  "groupReserved": 10,
+                  "sharedGroupReserved": 2.5,
+                  "futures": [
+                    {
+                      "expectedDate": "2019-08-24T21:13:00Z",
+                      "quantity": 10.25
+                    }
+                  ],
+                  "exists": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "GetAllLocationsResponse": {
+        "value": {
+          "locations": [
+            {
+              "id": "surprise",
+              "records": [
+                {
+                  "sku": "sku123",
+                  "atf": 17,
+                  "ato": 27.25,
+                  "reserved": 0,
+                  "safetyStockCount": 10,
+                  "effectiveDate": "2020-04-08T14:05:22.790896-07:00",
+                  "futures": [
+                    {
+                      "quantity": 10.25,
+                      "expectedDate": "2019-08-24T21:13:00Z"
+                    }
+                  ],
+                  "attributeSet": {
+                    "groupEligibilityExclusion": [
+                      "arizona",
+                      "utah"
+                    ]
+                  },
+                  "onHand": 27,
+                  "exists": true
+                }
+              ]
+            },
+            {
+              "id": "wickenburg",
+              "records": [
+                {
+                  "sku": "sku123",
+                  "atf": 30,
+                  "ato": 40.25,
+                  "reserved": 0,
+                  "safetyStockCount": 20,
+                  "effectiveDate": "2020-04-08T14:05:22.790896-07:00",
+                  "futures": [
+                    {
+                      "quantity": 10.25,
+                      "expectedDate": "2019-08-24T21:13:00Z"
+                    }
+                  ],
+                  "attributeSet": {
+                    "groupEligibilityExclusion": [
+                      "arizona",
+                      "utah"
+                    ]
+                  },
+                  "onHand": 50,
+                  "exists": true
+                }
+              ]
+            }
+          ],
+          "groups": [
+            {
+              "id": "arizona",
+              "records": [
+                {
+                  "sku": "sku123",
+                  "atf": 47,
+                  "ato": 67.5,
+                  "reserved": 0,
+                  "safetyStockCount": 30,
+                  "groupReserved": 0,
+                  "sharedGroupReserved": 0,
+                  "effectiveDate": "2020-04-08T14:05:22.790896-07:00",
+                  "futures": [
+                    {
+                      "quantity": 20.5,
+                      "expectedDate": "2019-08-24T21:13:00Z"
+                    }
+                  ],
+                  "onHand": 77,
+                  "exists": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "GetAllUnassignedLocationsResponse": {
+        "value": {
+          "locations": [
+            {
+              "id": "surprise",
+              "records": [
+                {
+                  "sku": "sku123",
+                  "atf": 17,
+                  "ato": 27.25,
+                  "reserved": 0,
+                  "safetyStockCount": 10,
+                  "effectiveDate": "2020-04-08T14:05:22.790896-07:00",
+                  "futures": [
+                    {
+                      "quantity": 10.25,
+                      "expectedDate": "2019-08-24T21:13:00Z"
+                    }
+                  ],
+                  "attributeSet": {
+                    "groupEligibilityExclusion": [
+                      "GroupA",
+                      "GroupB"
+                    ]
+                  },
+                  "onHand": 27,
+                  "exists": true
+                }
+              ]
+            },
+            {
+              "id": "wickenburg",
+              "records": [
+                {
+                  "sku": "sku123",
+                  "atf": 30,
+                  "ato": 40.25,
+                  "reserved": 0,
+                  "safetyStockCount": 20,
+                  "effectiveDate": "2020-04-08T14:05:22.790896-07:00",
+                  "futures": [
+                    {
+                      "quantity": 10.25,
+                      "expectedDate": "2019-08-24T21:13:00Z"
+                    }
+                  ],
+                  "attributeSet": {
+                    "groupEligibilityExclusion": [
+                      "arizona",
+                      "utah"
+                    ]
+                  },
+                  "onHand": 50,
+                  "exists": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "SkuAvailabilityByLocationAndOrGroup400": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "LocationDoesNotExist",
+          "message": "A location provided in the request does not exist."
+        }
+      },
+      "ProductSegmentationAppendRequest": {
+        "value": {
+          "groups": [
+            {
+              "groupId": "GroupA",
+              "mode": "APPEND",
+              "skus": [
+                "sku123",
+                "sku456"
+              ]
+            }
+          ]
+        }
+      },
+      "ProductSegmentationDeleteRequest": {
+        "value": {
+          "groups": [
+            {
+              "groupId": "GroupA",
+              "mode": "DELETE",
+              "skus": [
+                "sku123",
+                "sku456"
+              ]
+            }
+          ]
+        }
+      },
+      "DeleteError": {
+        "value": [
+          {
+            "error": "Failed to delete product segmentation for group id WarehouseOne and sku DeleteSku1"
+          },
+          {
+            "error": "Failed to delete product segmentation for group id WarehouseOne and sku DeleteSku1"
+          }
+        ]
+      },
+      "AppendError": {
+        "value": [
+          {
+            "error": "Failed to create product segmentation for group id WarehouseOne and sku AppendNewSku1"
+          },
+          {
+            "error": "to create product segmentation for group id WarehouseOne and sku AppendNewSku2"
+          }
+        ]
+      },
+      "ErrorInvalidRequestParameterMode": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "InvalidRequestParameter",
+          "message": "An invalid request parameter was provided",
+          "parameterName": "mode"
+        }
+      },
+      "InventoryUpdatePutRequest": {
+        "value": {
+          "externalRefId": "7282822-9823-aaa",
+          "onHand": 25,
+          "safetyStockCount": 20,
+          "effectiveDate": "2019-07-24T21:13:00Z",
+          "futureStock": [
+            {
+              "expectedDate": "2019-07-24T21:13:00Z",
+              "quantity": 10.25
+            }
+          ],
+          "attributeSet": {
+            "groupEligibilityExclusion": [
+              "GroupA"
+            ]
+          }
+        }
+      },
+      "ErrorEntityNotFound": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "EntityNotFound",
+          "message": "'EntityId' The provided entity is not found",
+          "parameterName": "EntityId"
+        }
+      },
+      "EntityNotFound": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "EntityNotFound",
+          "message": "An invalid entity was provided."
+        }
+      },
+      "SKUNotFound": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "EntityNotFound",
+          "message": "The Location SKU provided was not found in the system."
+        }
+      },
+      "ExportInProgress": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "ExportInProcess",
+          "message": "Export 1234-3456-45678-1234 is in progress."
+        }
+      },
+      "InventoryUpdatePatchRequest": {
+        "value": {
+          "externalRefId": "7282822-9823-aaa",
+          "onHand": 25
         }
       }
     },
     "securitySchemes": {
       "AmOAuth2": {
         "type": "oauth2",
+        "description": "AccountManager OAuth 2.0 bearer token Authentication.",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",

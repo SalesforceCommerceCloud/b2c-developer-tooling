@@ -184,7 +184,7 @@ export interface components {
         apiNamePath: string;
         /** @description The API version (e.g., v1) */
         apiVersionPath: string;
-        /** @description Comma-separated list of sections to expand (e.g., "custom_properties") */
+        /** @description Sections to add to the contract, as one comma-separated value (a repeated parameter is rejected). One or more of: all, custom_properties, descriptions, examples, external_docs, summaries, tags, titles. `all` includes every other value. Without it the contract omits operation summaries and descriptions. */
         expand: string;
     };
     requestBodies: never;
@@ -258,7 +258,7 @@ export interface operations {
     getSchema: {
         parameters: {
             query?: {
-                /** @description Comma-separated list of sections to expand (e.g., "custom_properties") */
+                /** @description Sections to add to the contract, as one comma-separated value (a repeated parameter is rejected). One or more of: all, custom_properties, descriptions, examples, external_docs, summaries, tags, titles. `all` includes every other value. Without it the contract omits operation summaries and descriptions. */
                 expand?: components["parameters"]["expand"];
             };
             header?: never;

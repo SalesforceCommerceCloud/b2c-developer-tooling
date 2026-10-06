@@ -42,14 +42,34 @@ process.on('message', async message => {
     }
     return Object.fromEntries(Object.entries(value).map(([key, v]) => [key, resolve(v, api, seen, depth + 1)]));
   }
-  const spec = {apis: documents.map(d => d.entry), paths: {}, resolve};
+  // Keys of these objects are names chosen by the API, not schema keywords, so a property called description survives.
+  const NAME_MAPS = new Set(['properties', 'patternProperties', 'headers', 'content', 'responses', 'schemas', 'scopes', 'links', 'callbacks', 'securitySchemes']);
+  const VALUE_KEYS = new Set(['default', 'enum', 'const']);
+  function outline(value, nameMap = false) {
+    if (!value || typeof value !== 'object') return value;
+    if (Array.isArray(value)) return value.map(v => outline(v));
+    const out = {};
+    for (const [key, v] of Object.entries(value)) {
+      if (!nameMap && (key === 'description' || key === 'example' || key === 'examples')) continue;
+      out[key] = !nameMap && VALUE_KEYS.has(key) ? v : outline(v, !nameMap && NAME_MAPS.has(key));
+    }
+    return out;
+  }
+  const outlined = message.detail === 'outline';
+  const resolveDetail = (value, api) => outlined ? outline(resolve(value, api)) : resolve(value, api);
+  const spec = {apis: documents.map(d => d.entry), paths: {}, resolve: resolveDetail};
   for (const {entry, schema} of documents) {
     for (const [path, item] of Object.entries(schema.paths || {})) {
       const methods = {};
       for (const method of ['get','head','post','put','patch','delete','options']) {
-        if (item[method]) methods[method] = resolve({...item[method], api: entry.id,
-          parameters: [...(item.parameters || []), ...(item[method].parameters || [])],
-          security: item[method].security ?? schema.security ?? []}, entry.id);
+        if (item[method]) {
+          const operation = {...item[method], api: entry.id,
+            parameters: [...(item.parameters || []), ...(item[method].parameters || [])],
+            security: item[method].security ?? schema.security ?? []};
+          // Keep the operation's own prose; only what it references is trimmed.
+          const {summary, description, ...rest} = operation;
+          methods[method] = {...(summary === undefined ? {} : {summary}), ...(description === undefined ? {} : {description}), ...resolveDetail(rest, entry.id)};
+        }
       }
       spec.paths['/' + entry.id + (entry.apiFamily === 'custom' ? '/organizations/{organizationId}' : '') + path] = methods;
     }
@@ -89,7 +109,7 @@ process.on('message', async message => {
     const value = await evaluate(message.code, message.input);
     if (pending.size || runningSnippets) throw new Error('Await every scapi.request, auth, and codemode call before returning. Requests may already have taken effect.');
     const json = JSON.stringify(value === undefined ? null : value);
-    if (Buffer.byteLength(json) > message.maxOutputBytes) throw new Error('SCAPI_RESULT_TOO_LARGE: return fewer fields or a smaller page.');
+    if (Buffer.byteLength(json) > message.maxOutputBytes) throw new Error('SCAPI_RESULT_TOO_LARGE: return fewer fields or a smaller page. Whole operations include every parameter and schema description; return operationId, method, path and summary to list candidates, and only the parts you need (parameters, requestBody) for one.');
     send({type:'result', value: JSON.parse(json)});
   } catch (error) {
     const message = error.code === 'ERR_ACCESS_DENIED'

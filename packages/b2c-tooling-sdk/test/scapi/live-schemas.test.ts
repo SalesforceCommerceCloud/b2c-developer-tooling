@@ -150,9 +150,18 @@ describe('SCAPI live schemas', () => {
       safety: {level: 'NONE'},
       documents: loadScapiSchemas(),
       middlewareRegistry: new MiddlewareRegistry(),
-      onSchema: (document, customProperties) => reported.push([document, customProperties]),
+      onSchema: (document, full) => reported.push([document, full]),
     });
     await rejects(() => call({method: 'GET', path: `/product/products/v1${path}`}, signal()), /NOT_FOUND/);
+    await call(
+      {
+        method: 'GET',
+        path: '/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/products/v1',
+        query: {expand: 'all'},
+      },
+      signal(),
+    );
+    // Only a fetch with custom properties and prose is reported as full; a partial one must not displace it.
     await call(
       {
         method: 'GET',
@@ -161,8 +170,9 @@ describe('SCAPI live schemas', () => {
       },
       signal(),
     );
-    expect(reported.map(([document, expanded]) => [document.entry.id, expanded])).to.deep.equal([
+    expect(reported.map(([document, full]) => [document.entry.id, full])).to.deep.equal([
       ['product/products/v1', true],
+      ['product/products/v1', false],
     ]);
     expect(await call({method: 'GET', path: `/product/products/v1${path}`}, signal())).to.deep.include({ok: true});
   });

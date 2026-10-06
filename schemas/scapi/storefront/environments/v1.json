@@ -1,0 +1,4293 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Environments",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/storefront/environments-oas-v1-public.yaml)\n\n# API Overview\n\nThe Environments API provides B2C Commerce (SCAPI)-native access to Managed Runtime (MRT) environment data for Storefront Next and PWA Kit storefronts. It replaces the Business Manager UI and partial data API setup flow. The B2C CLI and other tooling can use it for end-to-end automation.\n\n- **Environment tasks** — create, retrieve, list, update (display name and server-side rendering configuration), delete environments belonging to a storefront, and clone or promote them.\n- **Cache invalidations** — trigger a CDN cache invalidation on an environment by path prefix.\n- **Environment variables** — read and merge-update the customer-defined key/value configuration on an environment.\n- **Access control headers** — create, read, and delete header-based access control rules on an environment.\n- **Redirects** — create, list, read, update, delete, and clone URL redirect rules on an environment.\n\nEnvironment creation and deletion are asynchronous: the API returns immediately with the resource in a non-terminal status, and callers poll the resource by ID to track progress.\n\n## Authentication & Authorization\n\nRequests are authenticated with Account Manager OAuth 2.0 bearer tokens (`AmOAuth2`). Access is governed by the Environments API scopes: `sfcc.storefront.environments` grants read-only access, and `sfcc.storefront.environments.rw` grants read and write access. Read operations (`GET`) accept either scope. Write operations (`POST`, `PATCH`, `PUT`, `DELETE`) require the `.rw` variant.\n\n## Idempotency\n\n- `POST .../environments`: This operation isn't idempotent, in effect or response. `environmentId` is server-generated, so there is no client-supplied key to reject a retry against. Each call creates a new, distinct environment.\n- `PATCH .../environments/{environmentId}`: This operation is idempotent. It is a partial update — only the supplied fields are changed. Repeating an identical request produces the same resulting state.\n- `DELETE .../environments/{environmentId}`: This operation is idempotent in effect, but not in response code. The first call queues deletion (202). Once deletion completes, retrying returns 404. Deleting an environment that is still `building` or `deleting` returns 409 (`EnvironmentBusyErrorResponse`) rather than queuing a duplicate deletion.\n- `PUT .../environments/{environmentId}/primary`: This operation is idempotent. Setting an already-primary environment as primary again has no effect and returns 200.\n\n## Use Cases\n\n- Provision a storefront's environments.\n- Clone an existing environment to stand up a new one with matching configuration.\n- Poll environment status during asynchronous provisioning or teardown.\n- Promote an environment to be the storefront's primary environment.\n- Decommission environments belonging to a storefront.\n- Purge stale content from a storefront's CDN after a release.\n- Manage environment variables, access control headers, and redirects as part of storefront development and administration.",
+    "version": "1.0.5",
+    "x-api-type": "Admin",
+    "x-api-family": "Storefront"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/storefront/environments/v1",
+      "variables": {
+        "shortCode": {
+          "default": "123456gf"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments": {
+      "get": {
+        "summary": "Get environments for a storefront.",
+        "description": "Retrieves the list of environments belonging to the specified storefront, ordered by creationDate in ascending order.",
+        "operationId": "getEnvironmentsForStorefront",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 25.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of environments successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvironmentResult"
+                },
+                "examples": {
+                  "EnvironmentListSuccess": {
+                    "$ref": "#/components/examples/EnvironmentListSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Storefront"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments",
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create an environment for a storefront.",
+        "description": "Queues creation of a new environment for the specified storefront. Returns immediately with the environment resource in the building status. Poll the environment by ID to track provisioning progress.",
+        "operationId": "createEnvironmentForStorefront",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnvironmentCreateRequest"
+              },
+              "examples": {
+                "CreateEnvironment": {
+                  "$ref": "#/components/examples/CreateEnvironment"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Environment creation successfully queued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Environment"
+                },
+                "examples": {
+                  "EnvironmentCreatedSuccess": {
+                    "$ref": "#/components/examples/EnvironmentCreatedSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_CreateEnvironment"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Storefront"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/clone": {
+      "post": {
+        "summary": "Clone an environment for a storefront.",
+        "description": "Queues creation of a new environment for the specified storefront by cloning an existing environment. Returns immediately with the environment resource in the building status. Poll the environment by ID to track provisioning progress. The clone always starts as a non-primary environment.",
+        "operationId": "cloneEnvironmentForStorefront",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnvironmentCloneRequest"
+              },
+              "examples": {
+                "CloneEnvironment": {
+                  "$ref": "#/components/examples/CloneEnvironment"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Environment clone successfully queued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Environment"
+                },
+                "examples": {
+                  "EnvironmentCloneAcceptedSuccess": {
+                    "$ref": "#/components/examples/EnvironmentCloneAcceptedSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_CloneEnvironment"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_CloneEnvironment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}": {
+      "get": {
+        "summary": "Get an environment by ID.",
+        "description": "Retrieves the details of a specific environment, including its current status.",
+        "operationId": "getEnvironmentById",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Environment successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Environment"
+                },
+                "examples": {
+                  "EnvironmentSuccess": {
+                    "$ref": "#/components/examples/EnvironmentSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments",
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete an environment.",
+        "description": "Queues deletion of the environment. Returns immediately with the environment resource in the deleting status. Poll the environment by ID to track deletion progress.",
+        "operationId": "deleteEnvironment",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Environment deletion successfully queued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Environment"
+                },
+                "examples": {
+                  "EnvironmentDeleteAcceptedSuccess": {
+                    "$ref": "#/components/examples/EnvironmentDeleteAcceptedSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          },
+          "409": {
+            "$ref": "#/components/responses/409Conflict_DeleteEnvironment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update an environment.",
+        "description": "Partially updates the specified environment. Only the supplied fields are changed; at least one field must be provided.",
+        "operationId": "updateEnvironment",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnvironmentUpdateRequest"
+              },
+              "examples": {
+                "UpdateEnvironment": {
+                  "$ref": "#/components/examples/UpdateEnvironment"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Environment successfully updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Environment"
+                },
+                "examples": {
+                  "EnvironmentUpdatedSuccess": {
+                    "$ref": "#/components/examples/EnvironmentUpdatedSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_UpdateEnvironment"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403Forbidden_UpdateEnvironment"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/primary": {
+      "put": {
+        "summary": "Set an environment as the storefront's primary environment.",
+        "description": "Marks the specified environment as the storefront's primary environment. The environment must have a status of ready or build_failed. Idempotent — setting an already-primary environment as primary again has no effect.",
+        "operationId": "setPrimaryEnvironment",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Environment successfully set as primary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Environment"
+                },
+                "examples": {
+                  "EnvironmentSetPrimarySuccess": {
+                    "$ref": "#/components/examples/EnvironmentSetPrimarySuccess"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          },
+          "409": {
+            "$ref": "#/components/responses/409Conflict_SetPrimaryEnvironment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/cache-invalidations": {
+      "post": {
+        "summary": "Trigger a cache invalidation.",
+        "description": "Triggers a CDN cache invalidation on the environment for the supplied path prefix. Invalidation is always a wildcard operation — every cached path beginning with the prefix is cleared. The request is fire-and-forget: it returns `202 Accepted` with an empty body and no invalidation id to poll, and the invalidation itself is performed asynchronously. The environment must have an SSR bundle deployed.",
+        "operationId": "createCacheInvalidation",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CacheInvalidationRequest"
+              },
+              "examples": {
+                "CacheInvalidation": {
+                  "$ref": "#/components/examples/CacheInvalidation"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Cache invalidation accepted. The invalidation is processed asynchronously; no body is returned."
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_CacheInvalidation"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          },
+          "429": {
+            "$ref": "#/components/responses/429TooManyRequests_CacheInvalidation"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/environment-variables": {
+      "get": {
+        "summary": "Get environment variables.",
+        "description": "Retrieves the complete set of environment variables for the environment, as a map keyed by variable name. Values are masked. This is a singleton resource — one set per environment — and is not a paginated collection.",
+        "operationId": "getEnvironmentVariables",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Environment variables successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvironmentVariables"
+                },
+                "examples": {
+                  "EnvironmentVariablesSuccess": {
+                    "$ref": "#/components/examples/EnvironmentVariablesSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments",
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update environment variables.",
+        "description": "Merge-updates the environment variables. Keys present in the payload are created or replaced; a key whose value is `null` is deleted; keys omitted from the payload are preserved. Returns `204 No Content` on success.",
+        "operationId": "updateEnvironmentVariables",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnvironmentVariablesUpdateRequest"
+              },
+              "examples": {
+                "EnvironmentVariablesUpdate": {
+                  "$ref": "#/components/examples/EnvironmentVariablesUpdate"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Environment variables successfully updated."
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_EnvironmentVariables"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/access-control-headers": {
+      "get": {
+        "summary": "Get access control headers.",
+        "description": "Retrieves a paginated list of access control headers on the environment. Values are masked.",
+        "operationId": "getAccessControlHeaders",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "orderBy",
+            "in": "query",
+            "description": "Attributes to order the returned access control headers by, in priority order, applied left to right. Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `id`, `publishing_status`.",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "example": [
+                "creation_date:desc"
+              ],
+              "items": {
+                "type": "string",
+                "example": "creation_date:desc",
+                "pattern": "^(creation_date|id|publishing_status)(:(asc|desc))?$"
+              },
+              "maxItems": 3
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 25.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of access control headers successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessControlHeaderResult"
+                },
+                "examples": {
+                  "AccessControlHeaderListSuccess": {
+                    "$ref": "#/components/examples/AccessControlHeaderListSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments",
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create an access control header.",
+        "description": "Creates a header-based access control rule on the environment. The created value is masked in the response.",
+        "operationId": "createAccessControlHeader",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessControlHeaderCreateRequest"
+              },
+              "examples": {
+                "CreateAccessControlHeader": {
+                  "$ref": "#/components/examples/CreateAccessControlHeader"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Access control header successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessControlHeader"
+                },
+                "examples": {
+                  "AccessControlHeaderCreatedSuccess": {
+                    "$ref": "#/components/examples/AccessControlHeaderCreatedSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_AccessControlHeader"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/access-control-headers/{accessControlHeaderId}": {
+      "get": {
+        "summary": "Get an access control header by ID.",
+        "description": "Retrieves a single access control header by its identifier. The value is masked.",
+        "operationId": "getAccessControlHeader",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "accessControlHeaderId",
+            "in": "path",
+            "description": "The access control header identifier, in UUID format.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "ff832a9e-0e55-11ef-8f23-0242ac110002"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access control header successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessControlHeader"
+                },
+                "examples": {
+                  "AccessControlHeaderSuccess": {
+                    "$ref": "#/components/examples/AccessControlHeaderSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_AccessControlHeader"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments",
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete an access control header.",
+        "description": "Deletes an access control header by its identifier.",
+        "operationId": "deleteAccessControlHeader",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "accessControlHeaderId",
+            "in": "path",
+            "description": "The access control header identifier, in UUID format.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "ff832a9e-0e55-11ef-8f23-0242ac110002"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Access control header successfully deleted."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_AccessControlHeader"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/redirects": {
+      "get": {
+        "summary": "Get redirects.",
+        "description": "Retrieves a paginated, orderable list of redirects on the environment.",
+        "operationId": "getRedirects",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "orderBy",
+            "in": "query",
+            "description": "Attributes to order the returned redirects by, in priority order, applied left to right. Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `last_modified`, `source`, `destination`, `last_modified_by`, `http_status_code`, `publishing_status`.",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "example": [
+                "creation_date:desc"
+              ],
+              "items": {
+                "type": "string",
+                "example": "creation_date:desc",
+                "pattern": "^(creation_date|last_modified|source|destination|last_modified_by|http_status_code|publishing_status)(:(asc|desc))?$"
+              },
+              "maxItems": 7
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 25.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of redirects successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedirectResult"
+                },
+                "examples": {
+                  "RedirectListSuccess": {
+                    "$ref": "#/components/examples/RedirectListSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments",
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create a redirect.",
+        "description": "Creates a redirect on the environment. Returns the created redirect and a `Location` header.",
+        "operationId": "createRedirect",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedirectCreateRequest"
+              },
+              "examples": {
+                "CreateRedirect": {
+                  "$ref": "#/components/examples/CreateRedirect"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Redirect successfully created. Returns the created redirect and a `Location` header.",
+            "headers": {
+              "Location": {
+                "description": "The URL of the created redirect.",
+                "required": false,
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string",
+                  "format": "uri",
+                  "example": "https://123456gf.api.commercecloud.salesforce.com/storefront/environments/v1/organizations/f_ecom_blnd_stg/storefronts/my-storefront/environments/production/redirects/3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Redirect"
+                },
+                "examples": {
+                  "RedirectCreatedSuccess": {
+                    "$ref": "#/components/examples/RedirectCreatedSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_Redirect"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/redirects/{redirectId}": {
+      "get": {
+        "summary": "Get a redirect by ID.",
+        "description": "Retrieves a single redirect by its identifier.",
+        "operationId": "getRedirect",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "redirectId",
+            "in": "path",
+            "description": "The redirect identifier, in UUID format.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Redirect successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Redirect"
+                },
+                "examples": {
+                  "RedirectSuccess": {
+                    "$ref": "#/components/examples/RedirectSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Redirect"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments",
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete a redirect.",
+        "description": "Deletes a redirect by its identifier.",
+        "operationId": "deleteRedirect",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "redirectId",
+            "in": "path",
+            "description": "The redirect identifier, in UUID format.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Redirect successfully deleted."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Redirect"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update a redirect.",
+        "description": "Partially updates a redirect by its identifier. Only the supplied fields are changed.",
+        "operationId": "updateRedirect",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "redirectId",
+            "in": "path",
+            "description": "The redirect identifier, in UUID format.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedirectUpdateRequest"
+              },
+              "examples": {
+                "UpdateRedirect": {
+                  "$ref": "#/components/examples/UpdateRedirect"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Redirect successfully updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Redirect"
+                },
+                "examples": {
+                  "RedirectUpdatedSuccess": {
+                    "$ref": "#/components/examples/RedirectUpdatedSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_Redirect"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Redirect"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/redirects/actions/clone": {
+      "post": {
+        "summary": "Clone redirects from a source environment.",
+        "description": "Copies all redirects from a source environment into the environment in the request path. The source environment must differ from the destination environment.",
+        "operationId": "cloneRedirects",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "storefrontId",
+            "in": "path",
+            "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-storefront-a1b2c3",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "production-a1b2c3d4",
+              "maxLength": 19,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedirectCloneRequest"
+              },
+              "examples": {
+                "CloneRedirects": {
+                  "$ref": "#/components/examples/CloneRedirects"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Redirects successfully cloned into the destination environment."
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_RedirectClone"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_Environment"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.storefront.environments.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "EnvironmentStatus": {
+        "type": "string",
+        "description": "The current provisioning or lifecycle status of the environment.",
+        "enum": [
+          "building",
+          "ready",
+          "build_failed",
+          "deleting",
+          "deleted",
+          "delete_failed"
+        ],
+        "example": "ready"
+      },
+      "SsrRegion": {
+        "type": "string",
+        "description": "The AWS region for the server-side rendering function of the environment. Each value corresponds to the AWS region of the same name with underscores substituted for hyphens (for example, `us_east_2` is the AWS region `us-east-2`).",
+        "enum": [
+          "us_east_1",
+          "us_east_2",
+          "us_west_1",
+          "us_west_2",
+          "ap_south_1",
+          "ap_south_2",
+          "ap_northeast_2",
+          "ap_southeast_1",
+          "ap_southeast_2",
+          "ap_southeast_3",
+          "ap_northeast_1",
+          "ap_northeast_3",
+          "ca_central_1",
+          "eu_central_1",
+          "eu_central_2",
+          "eu_west_1",
+          "eu_west_2",
+          "eu_west_3",
+          "eu_north_1",
+          "eu_south_1",
+          "sa_east_1"
+        ],
+        "example": "us_east_2"
+      },
+      "SsrProxyConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A single proxy configuration entry for the environment, defined by its `path`, `host`, and `protocol`.",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The request path prefix routed to the proxy origin.",
+            "example": "/api",
+            "maxLength": 2048
+          },
+          "host": {
+            "type": "string",
+            "description": "The proxy origin host.",
+            "example": "api.example.com",
+            "maxLength": 255
+          },
+          "protocol": {
+            "type": "string",
+            "description": "The protocol used to reach the proxy origin. Only `https` is supported.",
+            "enum": [
+              "https"
+            ],
+            "example": "https"
+          }
+        }
+      },
+      "Environment": {
+        "type": "object",
+        "description": "An environment within Managed Runtime (MRT) where to deploy storefronts to separate phases of your development lifecycle, such as development, staging, or production.",
+        "properties": {
+          "environmentId": {
+            "type": "string",
+            "description": "The generated environment identifier. Unique within the storefront, with an auto-generated hash suffix.",
+            "example": "production-a1b2c3d4",
+            "maxLength": 19,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The display name of the environment.",
+            "example": "Production",
+            "maxLength": 256
+          },
+          "status": {
+            "$ref": "#/components/schemas/EnvironmentStatus"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "description": "Indicates whether the environment is the storefront's primary environment. Only one environment per storefront can be primary.",
+            "example": true
+          },
+          "subdomain": {
+            "type": "string",
+            "description": "The subdomain assigned to this environment. The subdomain is available after the environment finishes building and is null before then.",
+            "example": "production",
+            "maxLength": 256
+          },
+          "mrtOrigin": {
+            "type": "string",
+            "description": "The Managed Runtime origin URL that backs this environment. The origin is available after the environment finishes building and is null before then.",
+            "example": "https://production-my-storefront.exp-delivery.com",
+            "maxLength": 512
+          },
+          "defaultEcdnHostname": {
+            "type": "string",
+            "description": "The eCDN hostname for the environment's default domain zone, used by the preview link. The eCDN hostname is available after the environment finishes building and is null before then.",
+            "example": "marketstreetb82739d375a9270f.zzzz-001.my.cc.salesforce.com",
+            "maxLength": 256
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the environment was created.",
+            "example": "2026-04-08T21:47:28.188965Z"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the environment was last modified.",
+            "example": "2026-04-08T21:47:31.307595Z"
+          },
+          "ssrRegion": {
+            "$ref": "#/components/schemas/SsrRegion"
+          },
+          "ssrArchitecture": {
+            "type": "string",
+            "description": "The architecture for the environment's server-side rendering function. Null when no architecture default is configured.",
+            "enum": [
+              "x86",
+              "arm64"
+            ],
+            "example": "arm64"
+          },
+          "ssrExternalHostname": {
+            "type": "string",
+            "description": "The full custom hostname used by the environment (e.g. www.customer.com). Null when not configured.",
+            "example": "www.customer.com",
+            "maxLength": 128
+          },
+          "ssrExternalDomain": {
+            "type": "string",
+            "description": "The external domain for the ssrExternalHostname (e.g. customer.com). When omitted it is derived from ssrExternalHostname. Null when not configured.",
+            "example": "customer.com",
+            "maxLength": 128
+          },
+          "ssrWhitelistedIps": {
+            "type": "string",
+            "description": "A space-separated list of IPv4 or IPv6 CIDR blocks permitted to access the environment. Null or empty allows all IPs.",
+            "example": "192.0.2.0/24 198.51.100.0/24",
+            "maxLength": 8192
+          },
+          "ssrProxyConfigs": {
+            "type": "array",
+            "description": "The proxy configurations for the environment. Null when none are configured.",
+            "items": {
+              "$ref": "#/components/schemas/SsrProxyConfig"
+            },
+            "maxItems": 8
+          },
+          "isProduction": {
+            "type": "boolean",
+            "description": "Whether the environment is provisioned with production-tier capacity.",
+            "example": false
+          },
+          "allowCookies": {
+            "type": "boolean",
+            "description": "Whether cookies are forwarded to and respected from the environment's origin.",
+            "example": true
+          },
+          "preserveProxyUserAgent": {
+            "type": "boolean",
+            "description": "Whether the end-user's User-Agent header is preserved on requests forwarded through the environment's configured proxies.",
+            "example": false
+          },
+          "enableSourceMaps": {
+            "type": "boolean",
+            "description": "Whether source maps are enabled for the environment's server-side rendering bundle.",
+            "example": false
+          },
+          "logLevel": {
+            "type": "string",
+            "description": "The minimum log level emitted by the environment's server-side rendering function. Null when inherited from the default.",
+            "enum": [
+              "trace",
+              "debug",
+              "info",
+              "warn",
+              "error",
+              "fatal"
+            ],
+            "example": "warn"
+          },
+          "distributedTracing": {
+            "type": "boolean",
+            "description": "Whether distributed tracing is enabled for the environment.",
+            "example": false
+          },
+          "distributedTracingSamplingRate": {
+            "type": "number",
+            "format": "double",
+            "description": "The fraction of requests sampled for distributed tracing.",
+            "example": 0.1,
+            "maximum": 1,
+            "minimum": 0
+          },
+          "certificateId": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The identifier of the certificate associated with the environment's custom domain. Null when using the default Managed Runtime domain.",
+            "example": 42,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "displayName",
+          "environmentId",
+          "isPrimary",
+          "status"
+        ]
+      },
+      "EnvironmentResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Result containing a paginated list of environments.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "The list of environments belonging to the storefront. This value can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/Environment"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "StorefrontNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the storefront that the environment belongs to does not exist for this organization.",
+        "properties": {
+          "storefrontId": {
+            "type": "string",
+            "description": "The identifier of the storefront that couldn't be found.",
+            "example": "my-storefront-a1b2c3",
+            "maxLength": 20,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          }
+        }
+      },
+      "EnvironmentCreateRequest": {
+        "type": "object",
+        "description": "Request body to create an environment for a storefront.",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "description": "The display name for the new environment.",
+            "example": "Production",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "displayName"
+        ]
+      },
+      "InvalidEnvironmentCreateRequestErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the environment creation request body is malformed or missing a valid displayName."
+      },
+      "EnvironmentCloneRequest": {
+        "type": "object",
+        "description": "Request body to create an environment by cloning an existing one.",
+        "properties": {
+          "sourceEnvironmentId": {
+            "type": "string",
+            "description": "The identifier of the environment to clone.",
+            "example": "production-a1b2c3d4",
+            "maxLength": 19,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The display name for the new environment.",
+            "example": "Production (EU)",
+            "maxLength": 256
+          },
+          "cloneEnvironmentVariables": {
+            "type": "boolean",
+            "default": false,
+            "description": "Indicates whether to copy the source environment's environment variables to the new environment.",
+            "example": true
+          },
+          "cloneRedirects": {
+            "type": "boolean",
+            "default": false,
+            "description": "Indicates whether to copy the source environment's redirects to the new environment.",
+            "example": true
+          },
+          "cloneB2cTargetInfo": {
+            "type": "boolean",
+            "default": true,
+            "description": "Indicates whether to copy the source environment's B2C Commerce target information to the new environment.",
+            "example": true
+          }
+        },
+        "required": [
+          "displayName",
+          "sourceEnvironmentId"
+        ]
+      },
+      "InvalidEnvironmentCloneRequestErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the environment clone request body is malformed or missing a valid sourceEnvironmentId or displayName."
+      },
+      "SourceEnvironmentNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the sourceEnvironmentId in a clone request does not exist for the specified storefront.",
+        "properties": {
+          "storefrontId": {
+            "type": "string",
+            "description": "The identifier of the storefront the clone was requested under.",
+            "example": "my-storefront-a1b2c3",
+            "maxLength": 20,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          },
+          "sourceEnvironmentId": {
+            "type": "string",
+            "description": "The identifier of the source environment that couldn't be found.",
+            "example": "production-a1b2c3d4",
+            "maxLength": 19,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          }
+        }
+      },
+      "EnvironmentNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the requested environment (or the source environment referenced in a clone request) does not exist for the specified storefront.",
+        "properties": {
+          "storefrontId": {
+            "type": "string",
+            "description": "The identifier of the storefront the environment was requested under.",
+            "example": "my-storefront-a1b2c3",
+            "maxLength": 20,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          },
+          "environmentId": {
+            "type": "string",
+            "description": "The identifier of the environment that couldn't be found.",
+            "example": "production-a1b2c3d4",
+            "maxLength": 19,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          }
+        }
+      },
+      "EnvironmentBusyErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when an environment deletion is requested while the environment is already building or deleting.",
+        "properties": {
+          "environmentId": {
+            "type": "string",
+            "description": "The identifier of the environment.",
+            "example": "production-a1b2c3d4",
+            "maxLength": 19,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          },
+          "status": {
+            "type": "string",
+            "description": "The environment's current status.",
+            "enum": [
+              "building",
+              "deleting"
+            ],
+            "example": "building"
+          }
+        }
+      },
+      "EnvironmentUpdateRequest": {
+        "type": "object",
+        "description": "Request body to update an environment. Every field is optional and only the supplied fields are changed; at least one field must be provided.",
+        "minProperties": 1,
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "description": "The new display name for the environment.",
+            "example": "Production",
+            "maxLength": 256
+          },
+          "ssrRegion": {
+            "$ref": "#/components/schemas/SsrRegion"
+          },
+          "ssrArchitecture": {
+            "type": "string",
+            "description": "The architecture for the environment's server-side rendering function. Set to null to inherit the storefront default.",
+            "enum": [
+              "x86",
+              "arm64"
+            ],
+            "example": "arm64"
+          },
+          "ssrExternalHostname": {
+            "type": "string",
+            "description": "The full custom hostname used by the environment (e.g. www.customer.com). Set to null to clear it.",
+            "example": "www.customer.com",
+            "maxLength": 128
+          },
+          "ssrExternalDomain": {
+            "type": "string",
+            "description": "The external domain for the ssrExternalHostname (e.g. customer.com). When omitted it is derived from ssrExternalHostname. Set to null to clear it.",
+            "example": "customer.com",
+            "maxLength": 128
+          },
+          "ssrWhitelistedIps": {
+            "type": "string",
+            "description": "A space-separated list of IPv4 or IPv6 CIDR blocks permitted to access the environment. Set to null or empty to allow all IPs.",
+            "example": "192.0.2.0/24 198.51.100.0/24",
+            "maxLength": 8192
+          },
+          "ssrProxyConfigs": {
+            "type": "array",
+            "description": "The proxy configurations for the environment. Set to null to clear them.",
+            "items": {
+              "$ref": "#/components/schemas/SsrProxyConfig"
+            },
+            "maxItems": 8
+          },
+          "isProduction": {
+            "type": "boolean",
+            "description": "Whether the environment is provisioned with production-tier capacity.",
+            "example": false
+          },
+          "allowCookies": {
+            "type": "boolean",
+            "description": "Whether cookies are forwarded to and respected from the environment's origin.",
+            "example": true
+          },
+          "preserveProxyUserAgent": {
+            "type": "boolean",
+            "description": "Whether the end-user's User-Agent header is preserved on requests forwarded through the environment's configured proxies.",
+            "example": false
+          },
+          "enableSourceMaps": {
+            "type": "boolean",
+            "description": "Whether source maps are enabled for the environment's server-side rendering bundle.",
+            "example": false
+          },
+          "logLevel": {
+            "type": "string",
+            "description": "The minimum log level emitted by the environment's server-side rendering function. Set to null to inherit the default.",
+            "enum": [
+              "trace",
+              "debug",
+              "info",
+              "warn",
+              "error",
+              "fatal"
+            ],
+            "example": "warn"
+          },
+          "distributedTracing": {
+            "type": "boolean",
+            "description": "Whether distributed tracing is enabled for the environment.",
+            "example": false
+          },
+          "distributedTracingSamplingRate": {
+            "type": "number",
+            "format": "double",
+            "description": "The fraction of requests sampled for distributed tracing.",
+            "example": 0.1,
+            "maximum": 1,
+            "minimum": 0
+          },
+          "certificateId": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The identifier of the certificate to associate with the environment's custom domain. Set to null to remove the certificate association. Not permitted when using the default Managed Runtime domain.",
+            "example": 42,
+            "minimum": 0
+          }
+        }
+      },
+      "InvalidEnvironmentUpdateRequestErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the environment update request body is malformed, empty, or contains an unsupported value (for example an invalid ssrRegion, ssrArchitecture, or logLevel)."
+      },
+      "EnvironmentSsrRegionDisabledErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the requested ssrRegion is in the temporarily disabled set.",
+        "properties": {
+          "ssrRegion": {
+            "type": "string",
+            "description": "The identifier of the SSR region that is temporarily disabled.",
+            "example": "eu_south_1",
+            "maxLength": 32
+          }
+        }
+      },
+      "EnvironmentSsrArchitectureNotEnabledErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the x86 ssrArchitecture is requested but the organization is not permitted to configure the SSR architecture."
+      },
+      "EnvironmentSsrArchitectureX86EndOfLifeErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the x86 ssrArchitecture is requested after its end-of-life date and the organization has no active grace period."
+      },
+      "EnvironmentCertificateInvalidErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the supplied certificateId does not exist for the organization, is not in a validated state, does not match the environment's hostname domain, or is supplied while the environment uses the default Managed Runtime domain.",
+        "properties": {
+          "certificateId": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The identifier of the certificate that was rejected.",
+            "example": 42,
+            "minimum": 0
+          }
+        }
+      },
+      "EnvironmentSsrFieldBusinessManagerErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when an SSR networking field (ssrExternalHostname, ssrExternalDomain, or ssrWhitelistedIps) is changed on an environment that is served through eCDN, where such changes must be made in Business Manager.",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "The name of the SSR field that cannot be changed through this API.",
+            "example": "ssrExternalHostname",
+            "maxLength": 64
+          }
+        }
+      },
+      "EnvironmentInvalidProxyConfigErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when ssrProxyConfigs fail validation — for example more than the maximum of 8 proxies, duplicate proxy paths, an invalid proxy host, or an unsupported protocol (only https is supported).",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "A human-readable description of the proxy configuration validation failure.",
+            "example": "The max number of proxies allowed is 8, but 9 given.",
+            "maxLength": 4000
+          }
+        }
+      },
+      "EnvironmentUpdateForbiddenErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the requested update is not permitted — for example changing allowCookies on a Storefront Next environment (where cookies are always enabled), or changing an SSR networking field on a protected environment."
+      },
+      "PrimaryEnvironmentInvalidStatusErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when an environment is set as primary while its status is not ready or build_failed.",
+        "properties": {
+          "environmentId": {
+            "type": "string",
+            "description": "The identifier of the environment.",
+            "example": "production-a1b2c3d4",
+            "maxLength": 19,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          },
+          "status": {
+            "type": "string",
+            "description": "The environment's current status.",
+            "enum": [
+              "building",
+              "deleting",
+              "deleted",
+              "delete_failed"
+            ],
+            "example": "building"
+          }
+        }
+      },
+      "CacheInvalidationRequest": {
+        "type": "object",
+        "description": "Request body to trigger a CDN cache invalidation on the environment.",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "The path prefix to invalidate. Must start with `/`. Cache invalidation is always a wildcard operation: the CDN clears every cached path that begins with this value (a trailing `*` is always implied), so `/products` and `/products*` invalidate the same paths. If the value contains a `*`, only the portion before the first `*` is used as the prefix and the remainder is ignored. The invalidation is performed asynchronously.",
+            "example": "/products/*",
+            "minLength": 1,
+            "pattern": "^/.*$"
+          }
+        },
+        "required": [
+          "pattern"
+        ]
+      },
+      "CacheInvalidationPatternInvalidErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the cache invalidation `pattern` is missing or does not start with `/`."
+      },
+      "CacheInvalidationNoBundleErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when no SSR bundle is deployed to the environment, so there is nothing to invalidate."
+      },
+      "PublishingStatus": {
+        "type": "string",
+        "description": "The publishing status of the resource on the environment.",
+        "enum": [
+          "pending",
+          "completed",
+          "failed"
+        ],
+        "example": "pending"
+      },
+      "EnvironmentVariableEntry": {
+        "type": "object",
+        "description": "A single environment variable's masked value and audit metadata.",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "The masked variable value. Actual values are never returned in clear text.",
+            "example": "****e5f6",
+            "maxLength": 32768
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The email address of the user who created the variable. Null if no user is associated.",
+            "example": "jane.doe@example.com",
+            "maxLength": 255
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the variable was created.",
+            "example": "2026-08-24T09:23:28.872916Z"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the variable was last modified.",
+            "example": "2026-08-24T10:15:02.111Z"
+          },
+          "lastModifiedBy": {
+            "type": "string",
+            "description": "The email address of the user who last modified the variable. Null if no user is associated.",
+            "example": "john.doe@example.com",
+            "maxLength": 255
+          },
+          "publishingStatus": {
+            "$ref": "#/components/schemas/PublishingStatus"
+          }
+        }
+      },
+      "EnvironmentVariables": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/EnvironmentVariableEntry"
+        },
+        "description": "The complete set of environment variables for the environment, as a map keyed by variable name. Values are masked. This is a singleton resource (one set per environment) and is not a paginated collection.",
+        "example": {
+          "PAYMENT_GATEWAY_API_KEY": {
+            "value": "****e5f6",
+            "createdBy": "jane.doe@example.com",
+            "creationDate": "2026-08-24T09:23:28.872916Z",
+            "lastModified": "2026-08-24T09:23:28.872916Z",
+            "lastModifiedBy": "jane.doe@example.com",
+            "publishingStatus": "completed"
+          }
+        }
+      },
+      "EnvironmentVariableUpdateEntry": {
+        "type": "object",
+        "description": "The desired value for a single environment variable in a merge update. Set `value` to `null` to delete the variable.",
+        "properties": {
+          "value": {
+            "description": "The new variable value. Accepts a string or a number (numbers are stored as strings). Set to `null` to delete the variable. The combined size of all variable values must not exceed 32 KB.",
+            "oneOf": [
+              {
+                "type": "string",
+                "example": "sk_live_a1b2c3d4e5f6",
+                "maxLength": 32768
+              },
+              {
+                "type": "number",
+                "example": 50
+              }
+            ]
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "EnvironmentVariablesUpdateRequest": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/EnvironmentVariableUpdateEntry"
+        },
+        "description": "A merge (upsert) update of environment variables, keyed by variable name. Keys present in the payload are created or replaced; a key whose value is `null` is deleted; keys omitted from the payload are preserved.",
+        "example": {
+          "MAX_CART_ITEMS": {
+            "value": 50
+          },
+          "PAYMENT_GATEWAY_API_KEY": {
+            "value": "sk_live_a1b2c3d4e5f6"
+          },
+          "LEGACY_CHECKOUT_URL": {}
+        }
+      },
+      "EnvironmentVariableNameInvalidErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when an environment variable name is invalid or restricted — for example an `MRT_`-prefixed name, which is reserved.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The environment variable name that was rejected.",
+            "example": "MRT_INTERNAL_FLAG",
+            "maxLength": 256
+          }
+        }
+      },
+      "EnvironmentVariableSizeExceededErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the combined size of all environment variable values exceeds 32 KB."
+      },
+      "AccessControlHeader": {
+        "type": "object",
+        "description": "A header-based access control rule on the environment.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier of the access control header, in UUID format.",
+            "example": "ff832a9e-0e55-11ef-8f23-0242ac110002"
+          },
+          "value": {
+            "type": "string",
+            "description": "The masked header value. Actual values are never returned in clear text.",
+            "example": "****************by0z",
+            "maxLength": 127
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The email address of the user who created the header. Null if no user is associated.",
+            "example": "jane.doe@example.com",
+            "maxLength": 255
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the header was created.",
+            "example": "2026-08-24T09:23:28.872916Z"
+          },
+          "publishingStatus": {
+            "$ref": "#/components/schemas/PublishingStatus"
+          }
+        }
+      },
+      "AccessControlHeaderResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Paginated result containing a list of access control headers.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "List of access control headers.",
+            "items": {
+              "$ref": "#/components/schemas/AccessControlHeader"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "AccessControlHeaderCreateRequest": {
+        "type": "object",
+        "description": "Request body to create an access control header.",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "The header value.",
+            "example": "jfoWikeaby0z",
+            "maxLength": 127,
+            "minLength": 9
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "AccessControlHeaderLimitReachedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the per-environment access control header limit has been reached."
+      },
+      "AccessControlHeaderValueInvalidErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the supplied access control header value is invalid."
+      },
+      "AccessControlHeaderNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the requested access control header does not exist on the environment.",
+        "properties": {
+          "accessControlHeaderId": {
+            "type": "string",
+            "description": "The identifier of the access control header that couldn't be found.",
+            "example": "ff832a9e-0e55-11ef-8f23-0242ac110002",
+            "maxLength": 36,
+            "minLength": 36,
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
+        }
+      },
+      "RedirectHttpStatusCode": {
+        "type": "integer",
+        "format": "int32",
+        "default": 301,
+        "description": "The HTTP status code returned for the redirect.",
+        "enum": [
+          301,
+          302
+        ],
+        "example": 301
+      },
+      "Redirect": {
+        "type": "object",
+        "description": "A URL redirect rule on the environment.",
+        "properties": {
+          "redirectId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The unique identifier of the redirect, in UUID format.",
+            "example": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"
+          },
+          "source": {
+            "type": "string",
+            "description": "The source path that triggers the redirect.",
+            "example": "/spring",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "destination": {
+            "type": "string",
+            "description": "The destination path or URL the request is redirected to.",
+            "example": "/summer-newbranding",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "httpStatusCode": {
+            "$ref": "#/components/schemas/RedirectHttpStatusCode"
+          },
+          "forwardQuerystring": {
+            "type": "boolean",
+            "description": "Whether the incoming query string is forwarded to the destination.",
+            "example": false
+          },
+          "forwardWildcard": {
+            "type": "boolean",
+            "description": "Whether a trailing wildcard match on the source is forwarded to the destination.",
+            "example": false
+          },
+          "publishingStatus": {
+            "$ref": "#/components/schemas/PublishingStatus"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The email address of the user who created the redirect. Null if no user is associated.",
+            "example": "john.doe@example.com",
+            "maxLength": 255
+          },
+          "lastModifiedBy": {
+            "type": "string",
+            "description": "The email address of the user who last modified the redirect. Null if no user is associated.",
+            "example": "john.doe@example.com",
+            "maxLength": 255
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the redirect was created.",
+            "example": "2026-08-24T00:00:00Z"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the redirect was last modified.",
+            "example": "2026-08-24T00:00:00Z"
+          }
+        }
+      },
+      "RedirectResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Paginated result containing a list of redirects.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "List of redirects.",
+            "items": {
+              "$ref": "#/components/schemas/Redirect"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "RedirectCreateRequest": {
+        "type": "object",
+        "description": "Request body to create a single redirect.",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "The source path that triggers the redirect.",
+            "example": "/spring",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "destination": {
+            "type": "string",
+            "description": "The destination path or URL the request is redirected to.",
+            "example": "/summer-newbranding",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "httpStatusCode": {
+            "$ref": "#/components/schemas/RedirectHttpStatusCode"
+          },
+          "forwardQuerystring": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the incoming query string is forwarded to the destination.",
+            "example": false
+          },
+          "forwardWildcard": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether a trailing wildcard match on the source is forwarded to the destination.",
+            "example": false
+          }
+        },
+        "required": [
+          "destination",
+          "source"
+        ]
+      },
+      "RedirectDuplicatePathErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the payload contains a `source` path that already has a redirect on the environment.",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "The duplicate source path.",
+            "example": "/spring",
+            "maxLength": 2000
+          }
+        }
+      },
+      "RedirectLoopErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the redirect would create a loop (the destination resolves back to the source)."
+      },
+      "RedirectValidationErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when a redirect field fails validation — for example a malformed `source` or `destination`.",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "A human-readable description of the validation failure.",
+            "example": "destination must be a valid path or URL",
+            "maxLength": 4000
+          }
+        }
+      },
+      "RedirectNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the requested redirect does not exist on the environment.",
+        "properties": {
+          "redirectId": {
+            "type": "string",
+            "description": "The identifier of the redirect that couldn't be found.",
+            "example": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+            "maxLength": 36,
+            "minLength": 36,
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
+        }
+      },
+      "RedirectUpdateRequest": {
+        "type": "object",
+        "description": "Request body to partially update a redirect. Only the supplied fields are changed.",
+        "minProperties": 1,
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "The source path that triggers the redirect.",
+            "example": "/spring",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "destination": {
+            "type": "string",
+            "description": "The destination path or URL the request is redirected to.",
+            "example": "/summer-2027",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "httpStatusCode": {
+            "$ref": "#/components/schemas/RedirectHttpStatusCode"
+          },
+          "forwardQuerystring": {
+            "type": "boolean",
+            "description": "Whether the incoming query string is forwarded to the destination.",
+            "example": false
+          },
+          "forwardWildcard": {
+            "type": "boolean",
+            "description": "Whether a trailing wildcard match on the source is forwarded to the destination.",
+            "example": false
+          }
+        }
+      },
+      "RedirectCloneRequest": {
+        "type": "object",
+        "description": "Request body to clone all redirects from a source environment into this environment.",
+        "properties": {
+          "sourceEnvironmentId": {
+            "type": "string",
+            "description": "The identifier of the environment to copy redirects from. Must differ from the environment in the request path.",
+            "example": "staging",
+            "maxLength": 19,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          }
+        },
+        "required": [
+          "sourceEnvironmentId"
+        ]
+      },
+      "RedirectCloneSameEnvironmentErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when a redirect clone request names a source environment that is the same as the destination environment in the request path."
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_Storefront": {
+        "description": "We couldn't find the requested storefront.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/StorefrontNotFoundErrorResponse"
+            },
+            "examples": {
+              "StorefrontNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/StorefrontNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_CreateEnvironment": {
+        "description": "Bad Request. The environment creation request body is invalid.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/InvalidEnvironmentCreateRequestErrorResponse"
+            },
+            "examples": {
+              "InvalidEnvironmentCreateRequestErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidEnvironmentCreateRequestErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_CloneEnvironment": {
+        "description": "Bad Request. The environment clone request body is invalid.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/InvalidEnvironmentCloneRequestErrorResponse"
+            },
+            "examples": {
+              "InvalidEnvironmentCloneRequestErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidEnvironmentCloneRequestErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_CloneEnvironment": {
+        "description": "We couldn't find the storefront or the source environment specified in the clone request.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/StorefrontNotFoundErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/SourceEnvironmentNotFoundErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "StorefrontNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/StorefrontNotFoundErrorResponseExample"
+              },
+              "SourceEnvironmentNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/SourceEnvironmentNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_Environment": {
+        "description": "We couldn't find the requested environment.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/EnvironmentNotFoundErrorResponse"
+            },
+            "examples": {
+              "EnvironmentNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "409Conflict_DeleteEnvironment": {
+        "description": "We couldn't delete the environment because it is currently building or already being deleted.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/EnvironmentBusyErrorResponse"
+            },
+            "examples": {
+              "EnvironmentBusyErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentBusyErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_UpdateEnvironment": {
+        "description": "Bad Request. The environment update request body is invalid — for example a disabled ssrRegion, an ssrArchitecture that isn't enabled or is past end-of-life, an invalid certificateId, an SSR networking field that must be changed in Business Manager, or invalid ssrProxyConfigs (too many proxies, duplicate paths, or an invalid host).",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidEnvironmentUpdateRequestErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/EnvironmentSsrRegionDisabledErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/EnvironmentSsrArchitectureNotEnabledErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/EnvironmentSsrArchitectureX86EndOfLifeErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/EnvironmentCertificateInvalidErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/EnvironmentSsrFieldBusinessManagerErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/EnvironmentInvalidProxyConfigErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "InvalidEnvironmentUpdateRequestErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidEnvironmentUpdateRequestErrorResponseExample"
+              },
+              "EnvironmentSsrRegionDisabledErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentSsrRegionDisabledErrorResponseExample"
+              },
+              "EnvironmentSsrArchitectureNotEnabledErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentSsrArchitectureNotEnabledErrorResponseExample"
+              },
+              "EnvironmentSsrArchitectureX86EndOfLifeErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentSsrArchitectureX86EndOfLifeErrorResponseExample"
+              },
+              "EnvironmentCertificateInvalidErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentCertificateInvalidErrorResponseExample"
+              },
+              "EnvironmentSsrFieldBusinessManagerErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentSsrFieldBusinessManagerErrorResponseExample"
+              },
+              "EnvironmentInvalidProxyConfigErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentInvalidProxyConfigErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "403Forbidden_UpdateEnvironment": {
+        "description": "Forbidden. The requested environment update is not permitted.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/EnvironmentUpdateForbiddenErrorResponse"
+            },
+            "examples": {
+              "EnvironmentUpdateForbiddenErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentUpdateForbiddenErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "409Conflict_SetPrimaryEnvironment": {
+        "description": "We couldn't make the environment primary because of its current status.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/PrimaryEnvironmentInvalidStatusErrorResponse"
+            },
+            "examples": {
+              "PrimaryEnvironmentInvalidStatusErrorResponseExample": {
+                "$ref": "#/components/examples/PrimaryEnvironmentInvalidStatusErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_CacheInvalidation": {
+        "description": "Bad Request. The `pattern` is missing or does not start with `/`, or no SSR bundle is deployed to the environment.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CacheInvalidationPatternInvalidErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/CacheInvalidationNoBundleErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "CacheInvalidationPatternInvalidErrorResponseExample": {
+                "$ref": "#/components/examples/CacheInvalidationPatternInvalidErrorResponseExample"
+              },
+              "CacheInvalidationNoBundleErrorResponseExample": {
+                "$ref": "#/components/examples/CacheInvalidationNoBundleErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "429TooManyRequests_CacheInvalidation": {
+        "description": "Too Many Requests. The cache invalidation was throttled by the backend rate limits (`CacheInvalidationsPerHour` / `CacheInvalidationsPer5Minutes`). Retry later.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "CacheInvalidationThrottled": {
+                "summary": "Cache invalidation throttled",
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                  "title": "Too Many Requests",
+                  "detail": "The cache invalidation rate limit has been exceeded for this environment. Retry later."
+                }
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_EnvironmentVariables": {
+        "description": "Bad Request. A variable name is invalid or restricted, or the combined size of all variable values exceeds 32 KB.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/EnvironmentVariableNameInvalidErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/EnvironmentVariableSizeExceededErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "EnvironmentVariableNameInvalidErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentVariableNameInvalidErrorResponseExample"
+              },
+              "EnvironmentVariableSizeExceededErrorResponseExample": {
+                "$ref": "#/components/examples/EnvironmentVariableSizeExceededErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_AccessControlHeader": {
+        "description": "Bad Request. The per-environment header limit has been reached, or the value is invalid.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/AccessControlHeaderLimitReachedErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/AccessControlHeaderValueInvalidErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "AccessControlHeaderLimitReachedErrorResponseExample": {
+                "$ref": "#/components/examples/AccessControlHeaderLimitReachedErrorResponseExample"
+              },
+              "AccessControlHeaderValueInvalidErrorResponseExample": {
+                "$ref": "#/components/examples/AccessControlHeaderValueInvalidErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_AccessControlHeader": {
+        "description": "The requested access control header was not found on the environment.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccessControlHeaderNotFoundErrorResponse"
+            },
+            "examples": {
+              "AccessControlHeaderNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/AccessControlHeaderNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_Redirect": {
+        "description": "Bad Request. A duplicate `source`, a redirect loop, or a field validation failure.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/RedirectDuplicatePathErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/RedirectLoopErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/RedirectValidationErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "RedirectDuplicatePathErrorResponseExample": {
+                "$ref": "#/components/examples/RedirectDuplicatePathErrorResponseExample"
+              },
+              "RedirectLoopErrorResponseExample": {
+                "$ref": "#/components/examples/RedirectLoopErrorResponseExample"
+              },
+              "RedirectValidationErrorResponseExample": {
+                "$ref": "#/components/examples/RedirectValidationErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_Redirect": {
+        "description": "The requested redirect was not found on the environment.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/RedirectNotFoundErrorResponse"
+            },
+            "examples": {
+              "RedirectNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/RedirectNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_RedirectClone": {
+        "description": "Bad Request. The source environment must differ from the destination environment.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/RedirectCloneSameEnvironmentErrorResponse"
+            },
+            "examples": {
+              "RedirectCloneSameEnvironmentErrorResponseExample": {
+                "$ref": "#/components/examples/RedirectCloneSameEnvironmentErrorResponseExample"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        },
+        "example": "f_ecom_zzxy_prd"
+      },
+      "storefrontId": {
+        "name": "storefrontId",
+        "in": "path",
+        "description": "The storefront identifier that B2C Commerce generates based on the provided storefront name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "my-storefront-a1b2c3",
+          "maxLength": 20,
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+        }
+      },
+      "environmentId": {
+        "name": "environmentId",
+        "in": "path",
+        "description": "The environment identifier that B2C Commerce generates based on the provided display name. It consists of lowercase letters, numbers, and hyphens only, with no leading or trailing hyphens.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "production-a1b2c3d4",
+          "maxLength": 19,
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+        }
+      },
+      "accessControlHeaderOrderBy": {
+        "name": "orderBy",
+        "in": "query",
+        "description": "Attributes to order the returned access control headers by, in priority order, applied left to right. Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `id`, `publishing_status`.",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "example": [
+            "creation_date:desc"
+          ],
+          "items": {
+            "type": "string",
+            "example": "creation_date:desc",
+            "pattern": "^(creation_date|id|publishing_status)(:(asc|desc))?$"
+          },
+          "maxItems": 3
+        }
+      },
+      "accessControlHeaderId": {
+        "name": "accessControlHeaderId",
+        "in": "path",
+        "description": "The access control header identifier, in UUID format.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid",
+          "example": "ff832a9e-0e55-11ef-8f23-0242ac110002"
+        }
+      },
+      "redirectOrderBy": {
+        "name": "orderBy",
+        "in": "query",
+        "description": "Attributes to order the returned redirects by, in priority order, applied left to right. Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `last_modified`, `source`, `destination`, `last_modified_by`, `http_status_code`, `publishing_status`.",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "example": [
+            "creation_date:desc"
+          ],
+          "items": {
+            "type": "string",
+            "example": "creation_date:desc",
+            "pattern": "^(creation_date|last_modified|source|destination|last_modified_by|http_status_code|publishing_status)(:(asc|desc))?$"
+          },
+          "maxItems": 7
+        }
+      },
+      "redirectId": {
+        "name": "redirectId",
+        "in": "path",
+        "description": "The redirect identifier, in UUID format.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid",
+          "example": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"
+        }
+      }
+    },
+    "examples": {
+      "EnvironmentListSuccess": {
+        "summary": "Successful environment list result",
+        "description": "Example of a successful response returning the list of environments for a storefront.",
+        "value": {
+          "limit": 25,
+          "offset": 0,
+          "total": 1,
+          "data": [
+            {
+              "environmentId": "production-a1b2c3d4",
+              "displayName": "Production",
+              "status": "ready",
+              "isPrimary": true,
+              "subdomain": "production",
+              "mrtOrigin": "https://production-my-storefront.exp-delivery.com",
+              "defaultEcdnHostname": "marketstreetb82739d375a9270f.zzzz-001.my.cc.salesforce.com",
+              "creationDate": "2026-04-08T21:47:28.188965Z",
+              "lastModified": "2026-04-08T21:47:31.307595Z"
+            }
+          ]
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Unauthorized request"
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Access to requested resource forbidden"
+        }
+      },
+      "CreateEnvironment": {
+        "summary": "Create an environment",
+        "description": "Create a new environment for a storefront.",
+        "value": {
+          "displayName": "Production"
+        }
+      },
+      "EnvironmentCreatedSuccess": {
+        "summary": "Successful environment creation",
+        "description": "Example of a successful response when a new environment is queued for creation (202 Accepted).",
+        "value": {
+          "environmentId": "production-a1b2c3d4",
+          "displayName": "Production",
+          "status": "building",
+          "isPrimary": true,
+          "creationDate": "2026-04-08T21:47:28.188965Z",
+          "lastModified": "2026-04-08T21:47:28.188965Z"
+        }
+      },
+      "CloneEnvironment": {
+        "summary": "Clone an environment",
+        "description": "Create a new environment by cloning an existing one.",
+        "value": {
+          "sourceEnvironmentId": "production-a1b2c3d4",
+          "displayName": "Production (EU)",
+          "cloneEnvironmentVariables": true,
+          "cloneRedirects": true
+        }
+      },
+      "EnvironmentCloneAcceptedSuccess": {
+        "summary": "Successful environment clone",
+        "description": "Example of a successful response when a new environment is queued for creation via clone (202 Accepted).",
+        "value": {
+          "environmentId": "prod-eu-f9e8d7c6",
+          "displayName": "Production (EU)",
+          "status": "building",
+          "isPrimary": false,
+          "creationDate": "2026-04-09T09:45:00.000000Z",
+          "lastModified": "2026-04-09T09:45:00.000000Z"
+        }
+      },
+      "EnvironmentSuccess": {
+        "summary": "Successful environment retrieval",
+        "description": "Example of a successful response returning a single environment.",
+        "value": {
+          "environmentId": "production-a1b2c3d4",
+          "displayName": "Production",
+          "status": "ready",
+          "isPrimary": true,
+          "subdomain": "production",
+          "mrtOrigin": "https://production-my-storefront.exp-delivery.com",
+          "defaultEcdnHostname": "marketstreetb82739d375a9270f.zzzz-001.my.cc.salesforce.com",
+          "creationDate": "2026-04-08T21:47:28.188965Z",
+          "lastModified": "2026-04-08T21:47:31.307595Z"
+        }
+      },
+      "EnvironmentDeleteAcceptedSuccess": {
+        "summary": "Successful environment deletion request",
+        "description": "Example of a successful response when an environment is queued for deletion (202 Accepted).",
+        "value": {
+          "environmentId": "production-a1b2c3d4",
+          "displayName": "Production",
+          "status": "deleting",
+          "isPrimary": true,
+          "subdomain": "production",
+          "mrtOrigin": "https://production-my-storefront.exp-delivery.com",
+          "defaultEcdnHostname": "marketstreetb82739d375a9270f.zzzz-001.my.cc.salesforce.com",
+          "creationDate": "2026-04-08T21:47:28.188965Z",
+          "lastModified": "2026-04-09T09:30:00.000000Z"
+        }
+      },
+      "UpdateEnvironment": {
+        "summary": "Update an environment",
+        "description": "Update an environment's display name and server-side rendering configuration.",
+        "value": {
+          "displayName": "Production (EU)",
+          "ssrRegion": "eu_west_1",
+          "ssrArchitecture": "arm64",
+          "allowCookies": true,
+          "preserveProxyUserAgent": false,
+          "logLevel": "warn"
+        }
+      },
+      "EnvironmentUpdatedSuccess": {
+        "summary": "Successful environment update",
+        "description": "Example of a successful response after updating an environment.",
+        "value": {
+          "environmentId": "production-a1b2c3d4",
+          "displayName": "Production (EU)",
+          "status": "ready",
+          "isPrimary": true,
+          "subdomain": "production",
+          "mrtOrigin": "https://production-my-storefront.exp-delivery.com",
+          "defaultEcdnHostname": "marketstreetb82739d375a9270f.zzzz-001.my.cc.salesforce.com",
+          "creationDate": "2026-04-08T21:47:28.188965Z",
+          "lastModified": "2026-04-09T09:00:00.000000Z",
+          "ssrRegion": "eu_west_1",
+          "ssrArchitecture": "arm64",
+          "ssrExternalHostname": "www.customer.com",
+          "ssrExternalDomain": "customer.com",
+          "isProduction": true,
+          "allowCookies": true,
+          "preserveProxyUserAgent": false,
+          "enableSourceMaps": false,
+          "logLevel": "warn",
+          "distributedTracing": false,
+          "distributedTracingSamplingRate": 0.1,
+          "certificateId": 42
+        }
+      },
+      "EnvironmentSetPrimarySuccess": {
+        "summary": "Successful primary environment update",
+        "description": "Example of a successful response after setting an environment as the storefront's primary environment.",
+        "value": {
+          "environmentId": "staging-e5f6a7b8",
+          "displayName": "Staging",
+          "status": "ready",
+          "isPrimary": true,
+          "subdomain": "staging",
+          "mrtOrigin": "https://staging-my-storefront.exp-delivery.com",
+          "defaultEcdnHostname": "marketstreet4c9b1e7f2a6d3081.zzzz-002.my.cc.salesforce.com",
+          "creationDate": "2026-04-09T08:00:00.000000Z",
+          "lastModified": "2026-08-20T09:15:00.000000Z"
+        }
+      },
+      "CacheInvalidation": {
+        "summary": "Trigger a cache invalidation",
+        "description": "Invalidate every cached path beginning with `/products/` on the CDN.",
+        "value": {
+          "pattern": "/products/*"
+        }
+      },
+      "EnvironmentVariablesSuccess": {
+        "summary": "Successful environment variables retrieval",
+        "description": "Example of a successful response returning the full set of environment variables, keyed by name, with masked values.",
+        "value": {
+          "PAYMENT_GATEWAY_API_KEY": {
+            "value": "****e5f6",
+            "createdBy": "jane.doe@example.com",
+            "creationDate": "2026-08-24T09:23:28.872916Z",
+            "lastModified": "2026-08-24T10:15:02.111000Z",
+            "lastModifiedBy": "john.doe@example.com",
+            "publishingStatus": "completed"
+          },
+          "LOG_LEVEL": {
+            "value": "****info",
+            "createdBy": "jane.doe@example.com",
+            "creationDate": "2026-08-20T08:00:00.000000Z",
+            "lastModified": "2026-08-20T08:00:00.000000Z",
+            "lastModifiedBy": "jane.doe@example.com",
+            "publishingStatus": "pending"
+          }
+        }
+      },
+      "EnvironmentVariablesUpdate": {
+        "summary": "Merge-update environment variables",
+        "description": "Upsert two variables and delete a third. Keys present in the payload are created or replaced; a key whose value is `null` is deleted; omitted keys are preserved.",
+        "value": {
+          "MAX_CART_ITEMS": {
+            "value": 50
+          },
+          "PAYMENT_GATEWAY_API_KEY": {
+            "value": "sk_live_a1b2c3d4e5f6"
+          },
+          "LEGACY_CHECKOUT_URL": {}
+        }
+      },
+      "AccessControlHeaderListSuccess": {
+        "summary": "Successful access control header list result",
+        "description": "Example of a successful response returning a paginated list of access control headers.",
+        "value": {
+          "limit": 25,
+          "offset": 0,
+          "total": 2,
+          "data": [
+            {
+              "id": "ff832a9e-0e55-11ef-8f23-0242ac110002",
+              "value": "****************by0z",
+              "createdBy": "jane.doe@example.com",
+              "creationDate": "2026-08-24T09:23:28.872916Z",
+              "publishingStatus": "completed"
+            },
+            {
+              "id": "a1b2c3d4-0e55-11ef-8f23-0242ac110099",
+              "value": "****************k9zq",
+              "createdBy": "john.doe@example.com",
+              "creationDate": "2026-08-22T11:05:10.000000Z",
+              "publishingStatus": "pending"
+            }
+          ]
+        }
+      },
+      "CreateAccessControlHeader": {
+        "summary": "Create an access control header",
+        "description": "Create a header-based access control rule on the environment.",
+        "value": {
+          "value": "jfoWikeaby0z"
+        }
+      },
+      "AccessControlHeaderCreatedSuccess": {
+        "summary": "Successful access control header creation",
+        "description": "Example of a successful response after creating an access control header.",
+        "value": {
+          "id": "ff832a9e-0e55-11ef-8f23-0242ac110002",
+          "value": "****************by0z",
+          "createdBy": "jane.doe@example.com",
+          "creationDate": "2026-08-24T09:23:28.872916Z",
+          "publishingStatus": "pending"
+        }
+      },
+      "AccessControlHeaderSuccess": {
+        "summary": "Successful access control header retrieval",
+        "description": "Example of a successful response returning a single access control header.",
+        "value": {
+          "id": "ff832a9e-0e55-11ef-8f23-0242ac110002",
+          "value": "****************by0z",
+          "createdBy": "jane.doe@example.com",
+          "creationDate": "2026-08-24T09:23:28.872916Z",
+          "publishingStatus": "completed"
+        }
+      },
+      "RedirectListSuccess": {
+        "summary": "Successful redirect list result",
+        "description": "Example of a successful response returning a paginated list of redirects.",
+        "value": {
+          "limit": 25,
+          "offset": 0,
+          "total": 2,
+          "data": [
+            {
+              "redirectId": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+              "source": "/spring",
+              "destination": "/summer-newbranding",
+              "httpStatusCode": 301,
+              "forwardQuerystring": false,
+              "forwardWildcard": false,
+              "publishingStatus": "completed",
+              "createdBy": "john.doe@example.com",
+              "lastModifiedBy": "john.doe@example.com",
+              "creationDate": "2026-08-24T00:00:00.000Z",
+              "lastModified": "2026-08-24T00:00:00.000Z"
+            },
+            {
+              "redirectId": "7c1e2f3a-8b9c-4d5e-6f7a-1b2c3d4e5f6a",
+              "source": "/old-page",
+              "destination": "/new-page",
+              "httpStatusCode": 302,
+              "forwardQuerystring": true,
+              "forwardWildcard": false,
+              "publishingStatus": "pending",
+              "createdBy": "jane.doe@example.com",
+              "lastModifiedBy": "jane.doe@example.com",
+              "creationDate": "2026-08-23T12:30:00.000Z",
+              "lastModified": "2026-08-23T12:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "CreateRedirect": {
+        "summary": "Create a single redirect",
+        "description": "Create one redirect rule on the environment.",
+        "value": {
+          "source": "/spring",
+          "destination": "/summer-newbranding",
+          "httpStatusCode": 301,
+          "forwardQuerystring": false,
+          "forwardWildcard": false
+        }
+      },
+      "RedirectCreatedSuccess": {
+        "summary": "Successful redirect creation",
+        "description": "Example of a successful response after creating a single redirect.",
+        "value": {
+          "redirectId": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+          "source": "/spring",
+          "destination": "/summer-newbranding",
+          "httpStatusCode": 301,
+          "forwardQuerystring": false,
+          "forwardWildcard": false,
+          "publishingStatus": "pending",
+          "createdBy": "john.doe@example.com",
+          "lastModifiedBy": "john.doe@example.com",
+          "creationDate": "2026-08-24T00:00:00.000Z",
+          "lastModified": "2026-08-24T00:00:00.000Z"
+        }
+      },
+      "RedirectSuccess": {
+        "summary": "Successful redirect retrieval",
+        "description": "Example of a successful response returning a single redirect.",
+        "value": {
+          "redirectId": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+          "source": "/spring",
+          "destination": "/summer-newbranding",
+          "httpStatusCode": 301,
+          "forwardQuerystring": false,
+          "forwardWildcard": false,
+          "publishingStatus": "completed",
+          "createdBy": "john.doe@example.com",
+          "lastModifiedBy": "john.doe@example.com",
+          "creationDate": "2026-08-24T00:00:00.000Z",
+          "lastModified": "2026-08-24T00:00:00.000Z"
+        }
+      },
+      "UpdateRedirect": {
+        "summary": "Update a redirect",
+        "description": "Partially update a redirect; only the supplied fields are changed.",
+        "value": {
+          "destination": "/summer-2027"
+        }
+      },
+      "RedirectUpdatedSuccess": {
+        "summary": "Successful redirect update",
+        "description": "Example of a successful response after partially updating a redirect.",
+        "value": {
+          "redirectId": "3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+          "source": "/spring",
+          "destination": "/summer-2027",
+          "httpStatusCode": 301,
+          "forwardQuerystring": false,
+          "forwardWildcard": false,
+          "publishingStatus": "pending",
+          "createdBy": "john.doe@example.com",
+          "lastModifiedBy": "jane.doe@example.com",
+          "creationDate": "2026-08-24T00:00:00.000Z",
+          "lastModified": "2026-08-25T08:12:44.000Z"
+        }
+      },
+      "CloneRedirects": {
+        "summary": "Clone redirects from a source environment",
+        "description": "Copy all redirects from a source environment into this environment.",
+        "value": {
+          "sourceEnvironmentId": "staging"
+        }
+      },
+      "StorefrontNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/storefront-not-found",
+          "detail": "We couldn't find storefront my-storefront-a1b2c3.",
+          "title": "Storefront Not Found"
+        }
+      },
+      "InvalidEnvironmentCreateRequestErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-environment-create-request",
+          "detail": "The environment creation request body is invalid. A valid displayName is required.",
+          "title": "Invalid Environment Create Request"
+        }
+      },
+      "InvalidEnvironmentCloneRequestErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-environment-clone-request",
+          "detail": "The environment clone request body is invalid. A valid sourceEnvironmentId and displayName are required.",
+          "title": "Invalid Environment Clone Request"
+        }
+      },
+      "SourceEnvironmentNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/source-environment-not-found",
+          "detail": "We couldn't find source environment production-a1b2c3d4 for storefront my-storefront-a1b2c3.",
+          "title": "Source Environment Not Found"
+        }
+      },
+      "EnvironmentNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-not-found",
+          "detail": "We couldn't find environment production-a1b2c3d4 for storefront my-storefront-a1b2c3.",
+          "title": "Environment Not Found"
+        }
+      },
+      "EnvironmentBusyErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-busy",
+          "detail": "Environment 'production-a1b2c3d4' can't be deleted while it is 'building'.",
+          "title": "Environment Busy"
+        }
+      },
+      "InvalidEnvironmentUpdateRequestErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-environment-update-request",
+          "detail": "The environment update request body is invalid.",
+          "title": "Invalid Environment Update Request"
+        }
+      },
+      "EnvironmentSsrRegionDisabledErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-ssr-region-disabled",
+          "detail": "SSR region 'eu_south_1' is temporarily disabled. Choose a different region.",
+          "title": "Environment Ssr Region Disabled"
+        }
+      },
+      "EnvironmentSsrArchitectureNotEnabledErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-ssr-architecture-not-enabled",
+          "detail": "The Server-Side Rendering architecture configuration isn't enabled for this organization.",
+          "title": "Environment Ssr Architecture Not Enabled"
+        }
+      },
+      "EnvironmentSsrArchitectureX86EndOfLifeErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-ssr-architecture-x86-end-of-life",
+          "detail": "x86 is past end-of-life and can no longer be selected. Use arm64.",
+          "title": "Environment Ssr Architecture X86 End Of Life"
+        }
+      },
+      "EnvironmentCertificateInvalidErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-certificate-invalid",
+          "detail": "The supplied certificateId is invalid for this environment.",
+          "title": "Environment Certificate Invalid"
+        }
+      },
+      "EnvironmentSsrFieldBusinessManagerErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-ssr-field-business-manager",
+          "detail": "Updates to ssrExternalHostname when the environment uses eCDN must be done in Business Manager.",
+          "title": "Environment Ssr Field Business Manager"
+        }
+      },
+      "EnvironmentInvalidProxyConfigErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-invalid-proxy-config",
+          "detail": "The ssrProxyConfigs are invalid: The max number of proxies allowed is 8, but 9 given.",
+          "title": "Environment Invalid Proxy Config"
+        }
+      },
+      "EnvironmentUpdateForbiddenErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-update-forbidden",
+          "detail": "The requested environment update is not permitted.",
+          "title": "Environment Update Forbidden"
+        }
+      },
+      "PrimaryEnvironmentInvalidStatusErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/primary-environment-invalid-status",
+          "detail": "Environment 'production-a1b2c3d4' can't be made primary while it is 'building'.",
+          "title": "Primary Environment Invalid Status"
+        }
+      },
+      "CacheInvalidationPatternInvalidErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/cache-invalidation-pattern-invalid",
+          "detail": "The invalidation pattern is missing or does not start with '/'.",
+          "title": "Cache Invalidation Pattern Invalid"
+        }
+      },
+      "CacheInvalidationNoBundleErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/cache-invalidation-no-bundle",
+          "detail": "No SSR bundle is deployed to this environment, so there is nothing to invalidate.",
+          "title": "Cache Invalidation No Bundle"
+        }
+      },
+      "EnvironmentVariableNameInvalidErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-variable-name-invalid",
+          "detail": "The environment variable name MRT_INTERNAL_FLAG is invalid or restricted.",
+          "title": "Environment Variable Name Invalid"
+        }
+      },
+      "EnvironmentVariableSizeExceededErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/environment-variable-size-exceeded",
+          "detail": "The combined size of all environment variable values exceeds the 32 KB limit.",
+          "title": "Environment Variable Size Exceeded"
+        }
+      },
+      "AccessControlHeaderLimitReachedErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/access-control-header-limit-reached",
+          "detail": "The maximum number of access control headers for this environment has been reached.",
+          "title": "Access Control Header Limit Reached"
+        }
+      },
+      "AccessControlHeaderValueInvalidErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/access-control-header-value-invalid",
+          "detail": "The supplied access control header value is invalid.",
+          "title": "Access Control Header Value Invalid"
+        }
+      },
+      "AccessControlHeaderNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/access-control-header-not-found",
+          "detail": "We couldn't find access control header ff832a9e-0e55-11ef-8f23-0242ac110002.",
+          "title": "Access Control Header Not Found"
+        }
+      },
+      "RedirectDuplicatePathErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/redirect-duplicate-path",
+          "detail": "A redirect already exists for the source path /spring.",
+          "title": "Redirect Duplicate Path"
+        }
+      },
+      "RedirectLoopErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/redirect-loop",
+          "detail": "The redirect would create a redirect loop.",
+          "title": "Redirect Loop"
+        }
+      },
+      "RedirectValidationErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/redirect-validation",
+          "detail": "The redirect request failed validation: destination must be a valid path or URL",
+          "title": "Redirect Validation"
+        }
+      },
+      "RedirectNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/redirect-not-found",
+          "detail": "We couldn't find redirect 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d.",
+          "title": "Redirect Not Found"
+        }
+      },
+      "RedirectCloneSameEnvironmentErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/redirect-clone-same-environment",
+          "detail": "The source environment must differ from the destination environment.",
+          "title": "Redirect Clone Same Environment"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "description": "AccountManager OAuth 2.0 bearer token Authentication.",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.storefront.environments": "Read-only access to the Environments API.",
+              "sfcc.storefront.environments.rw": "Read and write access to the Environments API."
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -2,7 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Shopper Experience",
-    "version": "1.7.0",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/shopper-experience/shopper-experience-oas-v1-public.yaml)\n\n# API Overview\nUse the Shopper Experience API to look up page information for pages created in Page Designer, search and retrieve content assets, and access content folders.\n\n## Authentication & Authorization\n\nThe Shopper Experience API requires a shopper access token from the Shopper Login and API Access Service (SLAS).\n\nFor details on how to request a shopper access token from SLAS, see the guest user flows for [public clients](https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-public-client.html#guest-user) and [private clients](https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-private-client.html#guest-user) in the SLAS guides.\n\nYou must include `sfcc.shopper-experience` in the client ID used to generate the SLAS token. For a full list of required permissions, see the [Authorization Scopes Catalog.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html)\n\n**Important**: Currently, the Shopper Experience Pages endpoints can’t be used when the [storefront password protection](https://help.salesforce.com/s/articleView?id=cc.b2c_storefront_password_protection.htm&type=5) feature is enabled.\n\n## Response Details\n\n### Personalization\n\nResponses from this API are not personalized via the Shopper Context API. Page Designer uses its own visibility rules (scheduling, customer groups) to control component visibility.\n\n### Caching\n\nCaching is provided for the Shopper Experience API. For details, see [Server-Side Web-Tier Caching](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html) and [Page Designer Caching](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-for-page-designer.html#page-designer-caching).\n\n### Timeouts\n\nShopper API requests must respond within 10 seconds, including any hook execution. If a response exceeds this threshold, an HTTP 504 status code is returned. For details, see [Timeouts and Limits.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/timeouts-limits.html)\n\n### Error Handling\n\nError responses follow the [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) problem detail format. To trace errors, include a `correlation-id` header in your request — the response returns it as `x-correlation-id`. For details, see [HTTP Status Codes and Errors.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/error-response-codes.html)\n\n## Use Cases\n\n### Get a Page Designer Page\n\nRetrieve a Page Designer page by ID.\n\n```sh\ncurl \"https://{shortCode}.api.commercecloud.salesforce.com/experience/shopper-experience/v1/organizations/{organizationId}/pages/{pageId}?siteId=RefArch\" \\\n  -H \"Authorization: Bearer {access_token}\"\n```\n\n\n### Access Content Folders\nThe API provides access to content folders, which are used to organize and manage content assets. Content folders support:\n\n- Hierarchical organization with nested subfolders\n- Localized metadata including names, descriptions, and SEO attributes\n- Custom attributes for extended functionality\n- Configurable depth levels for subfolder retrieval (0, 1, or 2 levels)\n\nOnly content folders that are marked as online are returned in the API responses.\n\n### Search Content Assets\nSearch for content assets using keywords and refinement filters. The search functionality supports:\n\n- Keyword-based search across content assets\n- Refinement attributes to filter results, for example, by folder or content type\n- Sorting by configurable attributes\n- Pagination for large result sets (up to 200 items per page)\n\nOnly content assets that are online and assigned to a folder are included in search results.\n\n### Batch Retrieval\nRetrieve multiple content assets or content folders in a single API request for improved performance (up to 50 content assets or folders at once).\n\n## Page Responses\n\nResponses for pages include the following:\n\n- The entire component hierarchy of the page at design time.\n- All merchant data provided at design time.\n- Server-side scripting data provided at run time.\n- Tracking for each rendered component or fragment using a globally unique content link UUID.\n- Support for reusable component fragments that can be shared across multiple pages.\n\nBoth the page and components contain the values of all native and custom attributes that have been populated during page authoring.\n\nOnly visible pages are returned. Because the visibility of components is driven by rules (scheduling or customer groups, for example), these rules are subject to evaluation when assembling the component hierarchy in the response. Only components that are visible for the current customer context appear in the response. The same rules apply to the page itself, which is only processed and returned if it is visible.\n\n## Content Asset Responses\n\nContent asset responses include:\n\n- Rich content including text, HTML, and images\n- SEO metadata (title, description, keywords)\n- Template information for rendering\n- Folder organization structure\n- Custom attributes and properties\n\nOnly content assets that are marked as online are returned. Content assets provide flexible content management capabilities for storefronts.\n\n## Related APIs\n\n- [Experiences (Admin)](https://developer.salesforce.com/docs/commerce/commerce-api/references/experiences?meta=Summary) — Manage Page Designer pages and content assets.",
+    "version": "1.7.2",
     "x-api-type": "Shopper",
     "x-api-family": "Experience"
   },
@@ -11,6 +12,7 @@
       "url": "https://{shortCode}.api.commercecloud.salesforce.com/experience/shopper-experience/v1",
       "variables": {
         "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
           "default": "shortCode"
         }
       }
@@ -19,121 +21,139 @@
   "paths": {
     "/organizations/{organizationId}/pages": {
       "get": {
+        "summary": "Get Page Designer pages.",
+        "description": "Get Page Designer pages. The results apply the visibility rules for each page's components, such as personalization or scheduled visibility.\n\nYou must provide the `aspectTypeId` along with either a `categoryId` or a `productId`. Since you can only create one page-to-product or page-to-category assignment per aspect type, the result contains at most one element.\n\n**Important**: \n- Currently, you can't use the Shopper Experience Pages endpoints when the [storefront password protection](https://help.salesforce.com/s/articleView?id=cc.b2c_storefront_password_protection.htm&type=5) feature is enabled.\n- Because this resource uses the GET method, you must not pass sensitive data, for example: payment card information, and must not perform transactional processes within the server-side scripts that are run for the page and components.\n- Be aware that pagecache during fingerprint calculation will only be leveraged for pages and their components that don't use visibility rules. Furthermore the pagecaching of the actual response assembly solely depends on the response instrumentation with the serverside page type and component type script implementations. For more details also see the [Page Designer Caching Guide](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-for-page-designer.html#page-caching).",
         "operationId": "getPages",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "categoryId",
             "in": "query",
+            "description": "Category identifier that is used for searching the page assignment. Must be provided if no `productId` is provided.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "home-clearance",
               "maxLength": 256
             }
           },
           {
             "name": "productId",
             "in": "query",
+            "description": "Product identifier that is used for searching the page assignment. Must be provided if no `categoryId` is provided.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "iphone11",
               "maxLength": 100
             }
           },
           {
             "name": "aspectTypeId",
             "in": "query",
+            "description": "Aspect type identifier that is used for searching the page assignment in conjunction with either the `productId` or `categoryId`.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "pdp",
               "maxLength": 256
             }
           },
           {
             "name": "aspectAttributes",
             "in": "query",
+            "description": "A JSON representation of aspect attributes. Each aspect attribute is a key/value pair. Aspect attributes serve as a runtime parameter contract between caller (for example, this API or the DWScript API) and callee (the page). This parameter must not contain more than 256 characters after URL decoding.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "{\n  \"product\" : \"iphone11\",\n  \"breadcrumbCategory\" : \"home-clearance\"\n}",
               "maxLength": 256
             }
           },
           {
             "name": "parameters",
             "in": "query",
+            "description": "A free-form definition of parameters that influences the page rendering according to its implementation. This parameter must not contain more than 256 characters after URL decoding.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "refine=color,size;currency=USD;showNavigation=false",
               "maxLength": 256
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -141,12 +161,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -162,6 +184,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PageResult"
+                },
+                "examples": {
+                  "PageResult": {
+                    "$ref": "#/components/examples/PageResult"
+                  }
                 }
               }
             }
@@ -172,6 +199,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "BusinessObjectIDInvalid": {
+                    "$ref": "#/components/examples/BusinessObjectIDInvalid"
+                  }
                 }
               }
             }
@@ -182,6 +214,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "AspectTypeNotFound": {
+                    "$ref": "#/components/examples/AspectTypeNotFound"
+                  }
                 }
               }
             }
@@ -207,99 +244,113 @@
     },
     "/organizations/{organizationId}/pages/{pageId}": {
       "get": {
+        "summary": "Get a Page Designer page based on a single page ID.",
+        "description": "Get a Page Designer page for a specific page ID. The results apply the visibility rules for the page's components, such as personalization or scheduled visibility.\n\n**Important**: \n- Currently, you can't use the Shopper Experience Pages endpoints when the [storefront password protection](https://help.salesforce.com/s/articleView?id=cc.b2c_storefront_password_protection.htm&type=5) feature is enabled.\n- Because this resource uses the GET method, you must not pass sensitive data, for example: payment card information, and must not perform transactional processes within the server-side scripts that are run for the page and components.\n- Be aware that pagecache during fingerprint calculation will only be leveraged for pages and their components that don't use visibility rules. Furthermore the pagecaching of the actual response assembly solely depends on the response instrumentation with the serverside page type and component type script implementations. For more details also see the [Page Designer Caching Guide](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-for-page-designer.html#page-caching).",
         "operationId": "getPage",
         "parameters": [
           {
             "name": "pageId",
             "in": "path",
+            "description": "Identifier for the requested page.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "homepage",
               "maxLength": 256
             }
           },
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "aspectAttributes",
             "in": "query",
+            "description": "A JSON representation of aspect attributes. Each aspect attribute is a key/value pair. Aspect attributes serve as a runtime parameter contract between caller (for example, this API or the DWScript API) and callee (the page). This parameter must not contain more than 256 characters after URL decoding.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "{\n  \"product\" : \"iphone11\",\n  \"breadcrumbCategory\" : \"home-clearance\"\n}",
               "maxLength": 256
             }
           },
           {
             "name": "parameters",
             "in": "query",
+            "description": "A free-form definition of parameters that influences the page rendering according to its implementation. This parameter must not contain more than 256 characters after URL decoding.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "refine=color,size;currency=USD;showNavigation=false",
               "maxLength": 256
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -307,12 +358,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -328,6 +381,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
+                },
+                "examples": {
+                  "Page": {
+                    "$ref": "#/components/examples/Page"
+                  }
                 }
               }
             }
@@ -338,6 +396,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "AspectAttributeInvalid": {
+                    "$ref": "#/components/examples/AspectAttributeInvalid"
+                  }
                 }
               }
             }
@@ -358,6 +421,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "PageNotFound": {
+                    "$ref": "#/components/examples/PageNotFound"
+                  }
                 }
               }
             }
@@ -383,88 +451,100 @@
     },
     "/organizations/{organizationId}/components/{componentId}": {
       "get": {
+        "summary": "Get a component by ID.",
+        "description": "Get a Page Designer component by its unique identifier. The results apply the visibility rules for the component, such as personalization or scheduled visibility.\n\n**Important**: \n- Because this resource uses the GET method, you must not pass sensitive data, for example: payment card information, and must not perform transactional processes within the server-side scripts that are run for the component.",
         "operationId": "getComponent",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "componentId",
             "in": "path",
+            "description": "Identifier for the requested component.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "be1f331b92d8ad7e38e440e35d",
               "maxLength": 256
             }
           },
           {
             "name": "parameters",
             "in": "query",
+            "description": "A free-form definition of parameters that influences the page rendering according to its implementation. This parameter must not contain more than 256 characters after URL decoding.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "refine=color,size;currency=USD;showNavigation=false",
               "maxLength": 256
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -472,12 +552,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -493,6 +575,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Component"
+                },
+                "examples": {
+                  "Component": {
+                    "$ref": "#/components/examples/Component"
+                  }
                 }
               }
             }
@@ -503,6 +590,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ComponentBadRequest": {
+                    "$ref": "#/components/examples/ComponentBadRequest"
+                  }
                 }
               }
             }
@@ -523,6 +615,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ComponentNotFound": {
+                    "$ref": "#/components/examples/ComponentNotFound"
+                  }
                 }
               }
             }
@@ -533,6 +630,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ComponentInternalError": {
+                    "$ref": "#/components/examples/ComponentInternalError"
+                  }
                 }
               }
             }
@@ -556,21 +658,26 @@
     },
     "/organizations/{organizationId}/contents/{id}": {
       "get": {
+        "summary": "Get a content asset by ID.",
+        "description": "Get a content asset by its unique identifier. Only content assets that are marked as online are returned.\n\nContent assets contain rich content that can be displayed on storefronts, including text, HTML, images, and custom attributes.\n\n**Important**: \n- Because this resource uses the GET method, you must not pass sensitive data and must not perform transactional processes.",
         "operationId": "getContent",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "id",
             "in": "path",
+            "description": "Identifier for the requested content asset.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -581,51 +688,55 @@
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -633,12 +744,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -654,6 +767,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Content"
+                },
+                "examples": {
+                  "Content": {
+                    "$ref": "#/components/examples/Content"
+                  }
                 }
               }
             }
@@ -664,6 +782,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ContentNotFound": {
+                    "$ref": "#/components/examples/ContentNotFound"
+                  }
                 }
               }
             }
@@ -685,81 +808,96 @@
     },
     "/organizations/{organizationId}/contents": {
       "get": {
+        "summary": "Get multiple content assets.",
+        "description": "Get multiple content assets by their identifiers. Only content assets that are marked as online are returned.\n\nThis endpoint allows you to retrieve multiple content assets in a single request, which is more efficient than making multiple individual requests.\n\n**Important**: \n- Because this resource uses the GET method, you must not pass sensitive data and must not perform transactional processes.",
         "operationId": "getMultipleContent",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "ids",
             "in": "query",
+            "description": "Comma-separated list of content asset identifiers to retrieve.",
             "required": true,
             "style": "form",
             "explode": false,
             "schema": {
               "type": "array",
+              "example": [
+                "homepage-banner",
+                "footer-content",
+                "sidebar-promo"
+              ],
               "items": {
                 "$ref": "#/components/schemas/ContentId"
               },
               "maxItems": 50,
               "minItems": 1
-            }
+            },
+            "example": "homepage-banner,footer-content,sidebar-promo"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -767,12 +905,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -788,6 +928,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContentResult"
+                },
+                "examples": {
+                  "ContentResult": {
+                    "$ref": "#/components/examples/ContentResult"
+                  }
                 }
               }
             }
@@ -798,6 +943,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "GetContentsBadRequest": {
+                    "$ref": "#/components/examples/GetContentsBadRequest"
+                  }
                 }
               }
             }
@@ -819,26 +969,32 @@
     },
     "/organizations/{organizationId}/content-search": {
       "get": {
+        "summary": "Search for content assets.",
+        "description": "Provides keyword and refinement search functionality for content assets. The search result contains only content\nthat is online and assigned to a folder.\n\n**Refinement Parameters:**\nThe following system refinement attribute IDs are supported:\n- `fdid`: Allows refinement per single content folder ID. Multiple folder IDs are not supported.\n\n**Important**: \n- Because this resource uses the GET method, you must not pass sensitive data and must not perform transactional processes.",
         "operationId": "searchContent",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "q",
             "in": "query",
+            "description": "The query phrase to search for content assets. For example, to search for content with \"banner\", type q=banner.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "banner",
               "maxLength": 50,
               "minLength": 1
             }
@@ -846,48 +1002,68 @@
           {
             "name": "refine",
             "in": "query",
+            "description": "Parameter that represents a refinement attribute/value(s) pair. Refinement attribute ID and value(s) are separated by '='. Multiple values are supported by a subset of refinement attributes and can be provided by separating them using a pipe (URL encoded = \"|\"). Value ranges can be specified like this: refine=foo=(100..500). \nMultiple refine parameters can be provided by adding an underscore in combination with an integer counter right behind the parameter name and a counter range 1..9. I.e. refine_1=c_refinementType=type1|type2|type3.\n\nThe following system refinement attribute IDs are supported:\n- `fdid`: Allows refinement per single content folder ID. Multiple folder IDs are not supported.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "fdid=homepage-folder",
               "maxLength": 256
             }
           },
           {
             "name": "sort",
             "in": "query",
+            "description": "Parameter that represents a sorting attribute/value(s) pair. Sorting attribute ID and value are separated by '='. The value describes the sort direction. Possible values are 'asc' and 'desc', for ascending or descending sort direction. I.e. sort=c_myAttribute=desc.\n\nPrecondition: You have to select your sorting attributes in Business Manager > YourSite > Search Indexes > Content Index > Sorting Attributes.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "name=asc",
               "maxLength": 256
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "limit",
             "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 50.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -902,6 +1078,7 @@
           {
             "name": "offset",
             "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -915,31 +1092,20 @@
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -947,12 +1113,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -968,6 +1136,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContentSearchResult"
+                },
+                "examples": {
+                  "ContentSearchResult": {
+                    "$ref": "#/components/examples/ContentSearchResult"
+                  }
                 }
               }
             }
@@ -978,6 +1151,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ContentSearchBadRequest": {
+                    "$ref": "#/components/examples/ContentSearchBadRequest"
+                  }
                 }
               }
             }
@@ -999,21 +1177,26 @@
     },
     "/organizations/{organizationId}/folders/{id}": {
       "get": {
+        "summary": "Get content folder",
+        "description": "To access a content folder, you construct a URL using the template shown below. \nThis template requires you to specify a content folder id and a subfolder level. \nIn response, the server returns a corresponding content folder document. \nOnly content folders which are marked as online are returned.",
         "operationId": "getContentFolder",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "id",
             "in": "path",
+            "description": "Identifier for the requested content folder.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -1024,12 +1207,14 @@
           {
             "name": "levels",
             "in": "query",
+            "description": "Specifies how many levels of nested subfolders you want the server to return. The default value is 1. Valid values are 0, 1, or 2.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "integer",
               "default": 1,
+              "example": 1,
               "maximum": 2,
               "minimum": 0
             }
@@ -1037,51 +1222,55 @@
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -1089,12 +1278,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -1110,6 +1301,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContentFolder"
+                },
+                "examples": {
+                  "ContentFolder": {
+                    "$ref": "#/components/examples/ContentFolder"
+                  }
                 }
               }
             }
@@ -1120,6 +1316,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InvalidLevelsParameter": {
+                    "$ref": "#/components/examples/InvalidLevelsParameter"
+                  }
                 }
               }
             }
@@ -1136,6 +1337,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ContentFolderNotFound": {
+                    "$ref": "#/components/examples/ContentFolderNotFound"
+                  }
                 }
               }
             }
@@ -1157,26 +1363,36 @@
     },
     "/organizations/{organizationId}/folders": {
       "get": {
+        "summary": "Get multiple content folders",
+        "description": "To access one or more content folders, you construct a URL using the template shown below. \nThis template requires you to specify one or more content folder ids as a query parameter and a subfolder level. \nIn response, the server returns a result set of corresponding content folder documents. \nOnly content folders which are marked as online are returned.",
         "operationId": "getContentFolders",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "ids",
             "in": "query",
+            "description": "Comma-separated list of content folder identifiers.",
             "required": true,
             "style": "form",
             "explode": false,
             "schema": {
               "type": "array",
+              "example": [
+                "homepage-folder",
+                "category-folder",
+                "product-folder"
+              ],
               "items": {
                 "allOf": [
                   {
@@ -1186,17 +1402,20 @@
               },
               "maxItems": 50,
               "minItems": 1
-            }
+            },
+            "example": "homepage-folder,category-folder,product-folder"
           },
           {
             "name": "levels",
             "in": "query",
+            "description": "Specifies how many levels of nested subfolders you want the server to return. The default value is 1. Valid values are 0, 1, or 2.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "integer",
               "default": 1,
+              "example": 1,
               "maximum": 2,
               "minimum": 0
             }
@@ -1204,51 +1423,55 @@
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "personalized",
             "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -1256,12 +1479,14 @@
               "type": "string",
               "enum": [
                 "none"
-              ]
+              ],
+              "example": "none"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -1277,6 +1502,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContentFolderResult"
+                },
+                "examples": {
+                  "ContentFolderResult": {
+                    "$ref": "#/components/examples/ContentFolderResult"
+                  }
                 }
               }
             }
@@ -1287,6 +1517,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InvalidLevelsParameter": {
+                    "$ref": "#/components/examples/InvalidLevelsParameter"
+                  }
                 }
               }
             }
@@ -1314,66 +1549,74 @@
     },
     "/organizations/{organizationId}/qualifiers/resolve": {
       "post": {
+        "summary": "Resolve qualifiers for customer groups, campaign promotions, and data binding contexts.",
+        "description": "Resolves a list of customer groups, campaigns, promotions, and data bindings for the given user.\n\nThe endpoint takes each value and determines whether the user is active for the item:\n- Customer groups are verified against the user's qualification via the EffectiveContext.\n- Campaign qualifiers are checked to determine if the user is applicable for each campaign and promotion.\n- Data bindings are resolved by fetching the requested records from their respective data providers.\n\nReturns a boolean result for each provided qualifier and resolved data binding objects grouped by provider type and record identifier. If a qualifier cannot be validated, `false` is returned for that item. If a data binding cannot be resolved, it is omitted from the response.\n",
         "operationId": "resolveQualifiers",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
             }
           },
           {
             "name": "sfdc_usid",
             "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
             "required": false,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "sfdc_dw_dnt",
-            "in": "header",
-            "required": false,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
             }
           },
           {
             "name": "sfdc_shopper_context",
             "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
             "required": false,
             "style": "simple",
             "explode": false,
@@ -1387,6 +1630,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/QualifierResolveRequest"
+              },
+              "examples": {
+                "QualifierResolveRequest": {
+                  "$ref": "#/components/examples/QualifierResolveRequest"
+                }
               }
             }
           },
@@ -1399,6 +1647,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/QualifierResolveResponse"
+                },
+                "examples": {
+                  "QualifierResolveResponse": {
+                    "$ref": "#/components/examples/QualifierResolveResponse"
+                  }
                 }
               }
             }
@@ -1409,6 +1662,23 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "QualifierResolveBadRequest": {
+                    "$ref": "#/components/examples/QualifierResolveBadRequest"
+                  },
+                  "QualifierResolveTooManyItems": {
+                    "$ref": "#/components/examples/QualifierResolveTooManyItems"
+                  },
+                  "QualifierResolveInvalidIdentifier": {
+                    "$ref": "#/components/examples/QualifierResolveInvalidIdentifier"
+                  },
+                  "QualifierResolveInvalidDataBindingType": {
+                    "$ref": "#/components/examples/QualifierResolveInvalidDataBindingType"
+                  },
+                  "QualifierResolveInvalidDataBindingId": {
+                    "$ref": "#/components/examples/QualifierResolveInvalidDataBindingId"
+                  }
                 }
               }
             }
@@ -1433,27 +1703,38 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
         "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
       },
       "SiteId": {
         "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
         "maxLength": 32,
         "minLength": 1
       },
       "LanguageCountry": {
         "type": "string",
+        "description": "A concatenated version of the standard Language and Country codes, combined with a hyphen '`-`'.",
+        "example": "en-US",
         "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
       },
       "LanguageCode": {
         "type": "string",
+        "description": "A two letter lowercase language code conforming to the [ISO 639-1](https://www.iso.org/iso-639-language-codes.html) standard. Additionally, this may be used to submit requests with the header parameter `Accept-Language`, following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766).",
+        "example": "en",
         "pattern": "^[a-z][a-z]$"
       },
       "DefaultFallback": {
         "type": "string",
         "default": "default",
+        "description": "A specialized value indicating the system default values for locales.",
+        "example": "default",
         "pattern": "^default$"
       },
       "LocaleCode": {
+        "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
         "oneOf": [
           {
             "$ref": "#/components/schemas/LanguageCountry"
@@ -1471,13 +1752,31 @@
         "properties": {
           "id": {
             "type": "string",
-            "maxLength": 256
+            "description": "Region identifier.",
+            "example": "header",
+            "maxLength": 256,
+            "title": "ID"
           },
           "components": {
             "type": "array",
+            "description": "The components in the region.",
+            "example": [
+              {
+                "id": "iofwj38fhw3f",
+                "typeId": "commerce_assets.banner",
+                "data": {
+                  "title": "Products On Sale",
+                  "bannerImage": "sale/topsellerPromo.jpg"
+                },
+                "custom": {
+                  "thumbnail_full": "http://static.myshop.com/sale/topsellerPromo.jpg"
+                }
+              }
+            ],
             "items": {
               "$ref": "#/components/schemas/Component"
-            }
+            },
+            "title": "Components"
           }
         },
         "required": [
@@ -1489,49 +1788,114 @@
         "properties": {
           "id": {
             "type": "string",
-            "maxLength": 256
+            "description": "Component identifier.",
+            "example": "rfdvj4ojtltljw3",
+            "maxLength": 256,
+            "title": "ID"
           },
           "typeId": {
             "type": "string",
-            "maxLength": 256
+            "description": "Component type identifier.",
+            "example": "commerce_assets.carousel",
+            "maxLength": 256,
+            "title": "Component Type ID"
           },
           "name": {
             "type": "string",
-            "maxLength": 256
+            "description": "Display name of the component.",
+            "example": "Topseller Carousel",
+            "maxLength": 256,
+            "title": "Component Name"
           },
           "fragment": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Indicates whether the component is a fragment. True if the component is a fragment, otherwise false.",
+            "example": false,
+            "title": "Fragment"
           },
           "embedded": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Indicates whether the component is embedded in another component. True if the component is embedded, otherwise false.",
+            "example": false,
+            "title": "Embedded"
           },
           "contentLinkUuid": {
             "type": "string",
-            "maxLength": 256
+            "description": "Represents a globally unique identifier for every instance of a content component (or fragment) rendered on a page.",
+            "example": "0e1f329d4ac66ff2c3bbf70301",
+            "maxLength": 256,
+            "title": "Content Link UUID"
           },
           "data": {
             "type": "object",
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "The configuration data assigned to the component.",
+            "example": {
+              "title": "Topseller",
+              "category": "topseller"
+            },
+            "title": "Component Data"
           },
           "localized": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the component has been localized with content in the current locale. If false, the components content will fallback to the default locale.",
+            "example": true,
+            "title": "Localized"
           },
           "visible": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the component is visible based on the current visiblity rules and context.",
+            "example": true,
+            "title": "Visibility"
           },
           "custom": {
             "type": "object",
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Any custom data added by the custom code for this component.",
+            "example": {
+              "detailUrl": "www.myshop.com/topseller"
+            },
+            "title": "Custom Component Data"
           },
           "designMetadata": {
             "type": "object",
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Design metadata of the component. This includes information about the component type definition needed by the page designer for design-time functionality.",
+            "example": {
+              "id": "commerce_assets.carousel",
+              "name": "Carousel Component",
+              "archType": "headless"
+            },
+            "title": "Design Metadata"
           },
           "regions": {
             "type": "array",
+            "description": "The regions (and their assigned components) for the component.",
+            "example": [
+              {
+                "id": "tiles",
+                "components": [
+                  {
+                    "id": "w3reö9wsjf3",
+                    "typeId": "commerce_assets.productTile",
+                    "data": {
+                      "product": "iphone6"
+                    }
+                  },
+                  {
+                    "id": "cgn8d4ngdl4n",
+                    "typeId": "commerce_assets.productTile",
+                    "data": {
+                      "product": "iphone7"
+                    }
+                  }
+                ]
+              }
+            ],
             "items": {
               "$ref": "#/components/schemas/Region"
-            }
+            },
+            "title": "Regions"
           }
         },
         "required": [
@@ -1544,59 +1908,167 @@
         "properties": {
           "id": {
             "type": "string",
-            "maxLength": 256
+            "description": "Page identifier.",
+            "example": "homepage",
+            "maxLength": 256,
+            "title": "ID"
           },
           "typeId": {
             "type": "string",
-            "maxLength": 256
+            "description": "Page type identifier.",
+            "example": "storePage",
+            "maxLength": 256,
+            "title": "Page Type ID"
           },
           "aspectTypeId": {
             "type": "string",
-            "maxLength": 256
+            "description": "The aspect type assigned to the page.",
+            "example": "pdpAspect",
+            "maxLength": 256,
+            "title": "Aspect Type ID"
           },
           "name": {
             "type": "string",
-            "maxLength": 4000
+            "description": "Display name of the page.",
+            "example": "Homepage",
+            "maxLength": 4000,
+            "title": "Page Name"
           },
           "description": {
             "type": "string",
-            "maxLength": 4000
+            "description": "Description of the page.",
+            "example": "Home page of the storefront.",
+            "maxLength": 4000,
+            "title": "Page Description"
           },
           "pageTitle": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The SEO title of the page.",
+            "example": "Homepage - My Shop",
+            "maxLength": 4000,
+            "title": "SEO Title"
           },
           "pageDescription": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The SEO description of the page.",
+            "example": "Get started shopping",
+            "maxLength": 4000,
+            "title": "SEO Description"
           },
           "pageKeywords": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The SEO keywords of the page.",
+            "example": "fashion, my shop",
+            "maxLength": 4000,
+            "title": "SEO Keywords"
           },
           "data": {
             "type": "object",
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "The configuration data assigned to the page.",
+            "example": {
+              "thumbnail": "myshop.jpg"
+            },
+            "title": "Page Data"
           },
           "custom": {
             "type": "object",
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Any custom data added by the custom code for the page type.",
+            "example": {
+              "thumbnail_full": "http://static.myshop.com/myshop.jpg"
+            },
+            "title": "Custom Page Data"
           },
           "visible": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the page is visible based on the current visiblity rules and context.",
+            "example": true,
+            "title": "Visibility"
           },
           "localized": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the page has been localized with content in the current locale. If false, the page content will fallback to the default locale.",
+            "example": true,
+            "title": "Localized"
           },
           "designMetadata": {
             "type": "object",
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Design metadata of the page. This includes information about the page type definition needed by the page designer for design-time functionality.",
+            "example": {
+              "id": "storePage",
+              "name": "Store Page",
+              "archType": "headless"
+            },
+            "title": "Design Metadata"
           },
           "regions": {
             "type": "array",
+            "description": "The regions (and their assigned components) for the page.",
+            "example": [
+              {
+                "id": "header",
+                "components": [
+                  {
+                    "id": "iofwj38fhw3f",
+                    "typeId": "commerce_assets.banner",
+                    "data": {
+                      "title": "Products On Sale",
+                      "bannerImage": "sale/topsellerPromo.jpg"
+                    },
+                    "custom": {
+                      "thumbnail_full": "http://static.myshop.com/sale/topsellerPromo.jpg"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "main",
+                "components": [
+                  {
+                    "id": "rfdvj4ojtltljw3",
+                    "typeId": "commerce_assets.carousel",
+                    "data": {
+                      "title": "Topseller",
+                      "category": "topseller"
+                    },
+                    "custom": {
+                      "detailUrl": "www.myshop.com/topseller"
+                    },
+                    "regions": [
+                      {
+                        "id": "tiles",
+                        "components": [
+                          {
+                            "id": "w3reö9wsjf3",
+                            "typeId": "commerce_assets.productTile",
+                            "data": {
+                              "product": "iphone6"
+                            }
+                          },
+                          {
+                            "id": "cgn8d4ngdl4n",
+                            "typeId": "commerce_assets.productTile",
+                            "data": {
+                              "product": "iphone7"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "footer",
+                "components": []
+              }
+            ],
             "items": {
               "$ref": "#/components/schemas/Region"
-            }
+            },
+            "title": "Regions"
           }
         },
         "required": [
@@ -1609,9 +2081,11 @@
         "properties": {
           "data": {
             "type": "array",
+            "description": "List of pages.",
             "items": {
               "$ref": "#/components/schemas/Page"
-            }
+            },
+            "title": "Data"
           }
         },
         "required": [
@@ -1624,17 +2098,25 @@
         "properties": {
           "title": {
             "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
             "maxLength": 2048
           },
           "detail": {
-            "type": "string"
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
           },
           "instance": {
             "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
             "maxLength": 2048
           }
         },
@@ -1646,39 +2128,61 @@
       },
       "ContentId": {
         "type": "string",
+        "description": "The id of the content asset.",
+        "example": "homepage-banner",
         "maxLength": 256,
         "minLength": 1
       },
       "Content": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
         "properties": {
           "id": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/ContentId"
               }
-            ]
+            ],
+            "title": "ID"
           },
           "name": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content asset name.",
+            "example": "Homepage Banner",
+            "maxLength": 4000,
+            "title": "Name"
           },
           "description": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content asset description.",
+            "example": "Main banner displayed on the homepage",
+            "maxLength": 4000,
+            "title": "Description"
           },
           "pageDescription": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content asset page description for SEO.",
+            "example": "Discover our latest products and offers",
+            "maxLength": 4000,
+            "title": "Page Description"
           },
           "pageKeywords": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content asset page keywords for SEO.",
+            "example": "products, offers, sale, fashion",
+            "maxLength": 4000,
+            "title": "Page Keywords"
           },
           "pageTitle": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content asset page title for SEO",
+            "example": "Shop Now - Best Deals",
+            "maxLength": 4000,
+            "title": "Page Title"
           }
         },
         "required": [
@@ -1689,14 +2193,19 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
         "minimum": 0
       },
       "ResultBase": {
         "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
         "properties": {
           "limit": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
           },
           "total": {
             "$ref": "#/components/schemas/Total"
@@ -1716,9 +2225,11 @@
         "properties": {
           "data": {
             "type": "array",
+            "description": "List of content assets.",
             "items": {
               "$ref": "#/components/schemas/Content"
-            }
+            },
+            "title": "Data"
           }
         },
         "required": [
@@ -1729,6 +2240,8 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
         "minimum": 0
       },
       "PaginatedResultBase": {
@@ -1737,6 +2250,7 @@
             "$ref": "#/components/schemas/ResultBase"
           }
         ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
         "properties": {
           "offset": {
             "$ref": "#/components/schemas/Offset"
@@ -1753,15 +2267,24 @@
         "properties": {
           "label": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized label of the refinement value.",
+            "example": "Banner",
+            "maxLength": 4000,
+            "title": "Label"
           },
           "value": {
             "type": "string",
-            "maxLength": 256
+            "description": "The refinement value.",
+            "example": "banner",
+            "maxLength": 256,
+            "title": "Value"
           },
           "hitCount": {
             "type": "integer",
-            "minimum": 0
+            "description": "The number of search hits when this refinement value is applied.",
+            "example": 5,
+            "minimum": 0,
+            "title": "Hit Count"
           }
         },
         "required": [
@@ -1773,17 +2296,25 @@
         "properties": {
           "attributeId": {
             "type": "string",
-            "maxLength": 256
+            "description": "The ID of the refinement attribute.",
+            "example": "c_contentType",
+            "maxLength": 256,
+            "title": "Attribute ID"
           },
           "label": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized label of the refinement attribute.",
+            "example": "Content Type",
+            "maxLength": 4000,
+            "title": "Label"
           },
           "values": {
             "type": "array",
+            "description": "The array of refinement values.",
             "items": {
               "$ref": "#/components/schemas/ContentSearchRefinementValue"
-            }
+            },
+            "title": "Values"
           }
         },
         "required": [
@@ -1799,26 +2330,40 @@
         "properties": {
           "query": {
             "type": "string",
-            "maxLength": 256
+            "description": "The query String that was searched for.",
+            "example": "banner",
+            "maxLength": 256,
+            "title": "Query"
           },
           "hits": {
             "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
             "items": {
               "$ref": "#/components/schemas/Content"
-            }
+            },
+            "title": "Content Hits"
           },
           "selectedRefinements": {
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "example": "homepage-folder",
               "maxLength": 256
-            }
+            },
+            "description": "Map of selected refinement attribute id/value(s) pairs. The sorting order is the same like in request URL.",
+            "example": {
+              "fdid": "homepage-folder",
+              "c_contentType": "banner"
+            },
+            "title": "Selected Refinements"
           },
           "refinements": {
             "type": "array",
+            "description": "The sorted array of search refinements. Can be empty.",
             "items": {
               "$ref": "#/components/schemas/ContentSearchRefinement"
-            }
+            },
+            "title": "Refinements"
           }
         },
         "required": [
@@ -1827,45 +2372,73 @@
       },
       "FolderId": {
         "type": "string",
+        "example": "homepage-folder",
         "maxLength": 256
       },
       "ContentFolder": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
         "properties": {
           "id": {
             "type": "string",
-            "maxLength": 256
+            "description": "The id of the content folder.",
+            "example": "homepage-folder",
+            "maxLength": 256,
+            "title": "ID"
           },
           "parentFolderId": {
             "type": "string",
-            "maxLength": 256
+            "description": "The id of the parent content folder.",
+            "example": "root-folder",
+            "maxLength": 256,
+            "title": "Parent Folder ID"
           },
           "name": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content folder name.",
+            "example": "Homepage Folder",
+            "maxLength": 4000,
+            "title": "Name"
           },
           "description": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content folder description.",
+            "example": "Folder containing homepage content assets",
+            "maxLength": 4000,
+            "title": "Description"
           },
           "pageDescription": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content folder page description.",
+            "example": "SEO description for homepage folder",
+            "maxLength": 4000,
+            "title": "Page Description"
           },
           "pageKeywords": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content folder page keywords.",
+            "example": "homepage, main, landing",
+            "maxLength": 4000,
+            "title": "Page Keywords"
           },
           "pageTitle": {
             "type": "string",
-            "maxLength": 4000
+            "description": "The localized content folder page title.",
+            "example": "Homepage Folder - My Store",
+            "maxLength": 4000,
+            "title": "Page Title"
           },
           "folders": {
             "type": "array",
+            "description": "The array of content subfolders. This array can be empty.",
             "items": {
               "$ref": "#/components/schemas/ContentFolder"
-            }
+            },
+            "title": "Folders"
           }
         },
         "required": [
@@ -1881,9 +2454,11 @@
         "properties": {
           "data": {
             "type": "array",
+            "description": "List of content folders.",
             "items": {
               "$ref": "#/components/schemas/ContentFolder"
-            }
+            },
+            "title": "Data"
           }
         },
         "required": [
@@ -1892,16 +2467,23 @@
       },
       "CampaignQualifier": {
         "type": "object",
+        "description": "A campaign qualifier, optionally scoped to a specific promotion within the campaign. When promotionId is omitted, the qualifier matches if the campaign itself is active and its scenario rule applies.",
         "properties": {
           "campaignId": {
             "type": "string",
+            "description": "The campaign identifier.",
+            "example": "my-campaign",
             "maxLength": 256,
-            "minLength": 1
+            "minLength": 1,
+            "title": "Campaign ID"
           },
           "promotionId": {
             "type": "string",
+            "description": "Optional promotion identifier. When provided, qualification requires both the campaign and the specific promotion-campaign assignment to apply.",
+            "example": "my-promotion",
             "maxLength": 256,
-            "minLength": 1
+            "minLength": 1,
+            "title": "Promotion ID"
           }
         },
         "required": [
@@ -1910,16 +2492,23 @@
       },
       "DataBindingRequirement": {
         "type": "object",
+        "description": "A data binding requirement specifying a provider type and record identifier to resolve.",
         "properties": {
           "type": {
             "type": "string",
+            "description": "The data provider type identifier.",
+            "example": "content_asset",
             "maxLength": 256,
-            "minLength": 1
+            "minLength": 1,
+            "title": "Type"
           },
           "id": {
             "type": "string",
+            "description": "The record identifier to resolve from the data provider.",
+            "example": "homepage-banner",
             "maxLength": 256,
-            "minLength": 1
+            "minLength": 1,
+            "title": "ID"
           }
         },
         "required": [
@@ -1929,55 +2518,87 @@
       },
       "QualifierResolveRequest": {
         "type": "object",
+        "description": "Request body for resolving customer group qualifications, campaign promotion eligibility, and data bindings. All fields are optional. An empty body is valid and returns an empty response.",
         "properties": {
           "customerGroups": {
             "type": "array",
+            "description": "List of customer group identifiers to resolve qualification for.",
+            "example": [
+              "VIP"
+            ],
             "items": {
               "type": "string",
+              "example": "VIP",
               "maxLength": 256,
               "minLength": 1
             },
-            "maxItems": 50
+            "maxItems": 50,
+            "title": "Customer Groups"
           },
           "campaignQualifiers": {
             "type": "array",
+            "description": "List of campaign qualifiers to resolve. Each qualifier must include a campaignId and may optionally include a promotionId.",
             "items": {
               "$ref": "#/components/schemas/CampaignQualifier"
             },
-            "maxItems": 50
+            "maxItems": 50,
+            "title": "Campaign Qualifiers"
           },
           "dataBindings": {
             "type": "array",
+            "description": "List of data binding requirements to resolve, each specifying a provider type and record identifier.",
             "items": {
               "$ref": "#/components/schemas/DataBindingRequirement"
             },
-            "maxItems": 50
+            "maxItems": 50,
+            "title": "Data Bindings"
           }
         }
       },
       "QualifierResolveResponse": {
         "type": "object",
+        "description": "Response containing the resolved qualification results for customer groups, campaign qualifiers, and data bindings.",
         "properties": {
           "customerGroups": {
             "type": "object",
             "additionalProperties": {
-              "type": "boolean"
-            }
+              "type": "boolean",
+              "example": true
+            },
+            "description": "Map of customer group identifiers to their qualification status. True if the user is qualified, false otherwise.",
+            "example": {
+              "VIP": true
+            },
+            "title": "Customer Groups"
           },
           "campaignQualifiers": {
             "type": "object",
             "additionalProperties": {
               "type": "object",
               "additionalProperties": {
-                "type": "boolean"
+                "type": "boolean",
+                "example": false
               }
-            }
+            },
+            "description": "Map of campaign ID to promotion qualification results. Each value is a map of promotion ID to qualification result. Only contains entries for request qualifiers that included a promotionId.",
+            "example": {
+              "my-campaign": {
+                "my-promotion": false
+              }
+            },
+            "title": "Campaign Qualifiers"
           },
           "campaigns": {
             "type": "object",
             "additionalProperties": {
-              "type": "boolean"
-            }
+              "type": "boolean",
+              "example": false
+            },
+            "description": "Map of campaign ID to qualification result for request qualifiers that did not include a promotionId. A value of true means the campaign is active and its scenario rule applies to the shopper context.",
+            "example": {
+              "winter-promo": false
+            },
+            "title": "Campaigns"
           },
           "dataBindings": {
             "type": "object",
@@ -1987,7 +2608,19 @@
                 "type": "object",
                 "additionalProperties": true
               }
-            }
+            },
+            "description": "Resolved data binding objects grouped by provider type, then by record identifier. Used by the expression resolver to evaluate attribute expressions.",
+            "example": {
+              "content_asset": {
+                "homepage-banner": {
+                  "title": "Winter Sale",
+                  "body": "<div>Shop our winter collection</div>",
+                  "showCountdown": true,
+                  "endDate": "2026-03-31T23:59:59Z"
+                }
+              }
+            },
+            "title": "Data Bindings"
           }
         }
       }
@@ -1999,6 +2632,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
             }
           }
         }
@@ -2009,6 +2647,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
             }
           }
         }
@@ -2018,113 +2661,145 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "categoryId": {
         "name": "categoryId",
         "in": "query",
+        "description": "Category identifier that is used for searching the page assignment. Must be provided if no `productId` is provided.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "home-clearance",
           "maxLength": 256
         }
       },
       "productId": {
         "name": "productId",
         "in": "query",
+        "description": "Product identifier that is used for searching the page assignment. Must be provided if no `categoryId` is provided.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "iphone11",
           "maxLength": 100
         }
       },
       "aspectTypeId": {
         "name": "aspectTypeId",
         "in": "query",
+        "description": "Aspect type identifier that is used for searching the page assignment in conjunction with either the `productId` or `categoryId`.",
         "required": true,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "pdp",
           "maxLength": 256
         }
       },
       "aspectAttributes": {
         "name": "aspectAttributes",
         "in": "query",
+        "description": "A JSON representation of aspect attributes. Each aspect attribute is a key/value pair. Aspect attributes serve as a runtime parameter contract between caller (for example, this API or the DWScript API) and callee (the page). This parameter must not contain more than 256 characters after URL decoding.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "{\n  \"product\" : \"iphone11\",\n  \"breadcrumbCategory\" : \"home-clearance\"\n}",
           "maxLength": 256
         }
       },
       "parameters": {
         "name": "parameters",
         "in": "query",
+        "description": "A free-form definition of parameters that influences the page rendering according to its implementation. This parameter must not contain more than 256 characters after URL decoding.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "refine=color,size;currency=USD;showNavigation=false",
           "maxLength": 256
         }
       },
       "siteId": {
         "name": "siteId",
         "in": "query",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
         "required": true,
         "style": "form",
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/SiteId"
+        },
+        "examples": {
+          "SiteId": {
+            "value": "RefArch"
+          }
         }
       },
       "locale": {
         "name": "locale",
         "in": "query",
+        "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/LocaleCode"
+        },
+        "examples": {
+          "LanguageCountry": {
+            "value": "en-US"
+          },
+          "CountryCode": {
+            "value": "US"
+          }
         }
       },
       "pageId": {
         "name": "pageId",
         "in": "path",
+        "description": "Identifier for the requested page.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "homepage",
           "maxLength": 256
         }
       },
       "componentId": {
         "name": "componentId",
         "in": "path",
+        "description": "Identifier for the requested component.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "be1f331b92d8ad7e38e440e35d",
           "maxLength": 256
         }
       },
       "contentId": {
         "name": "id",
         "in": "path",
+        "description": "Identifier for the requested content asset.",
         "required": true,
         "style": "simple",
         "explode": false,
@@ -2135,26 +2810,35 @@
       "contentIds": {
         "name": "ids",
         "in": "query",
+        "description": "Comma-separated list of content asset identifiers to retrieve.",
         "required": true,
         "style": "form",
         "explode": false,
         "schema": {
           "type": "array",
+          "example": [
+            "homepage-banner",
+            "footer-content",
+            "sidebar-promo"
+          ],
           "items": {
             "$ref": "#/components/schemas/ContentId"
           },
           "maxItems": 50,
           "minItems": 1
-        }
+        },
+        "example": "homepage-banner,footer-content,sidebar-promo"
       },
       "contentSearchQuery": {
         "name": "q",
         "in": "query",
+        "description": "The query phrase to search for content assets. For example, to search for content with \"banner\", type q=banner.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "banner",
           "maxLength": 50,
           "minLength": 1
         }
@@ -2162,28 +2846,33 @@
       "contentSearchRefine": {
         "name": "refine",
         "in": "query",
+        "description": "Parameter that represents a refinement attribute/value(s) pair. Refinement attribute ID and value(s) are separated by '='. Multiple values are supported by a subset of refinement attributes and can be provided by separating them using a pipe (URL encoded = \"|\"). Value ranges can be specified like this: refine=foo=(100..500). \nMultiple refine parameters can be provided by adding an underscore in combination with an integer counter right behind the parameter name and a counter range 1..9. I.e. refine_1=c_refinementType=type1|type2|type3.\n\nThe following system refinement attribute IDs are supported:\n- `fdid`: Allows refinement per single content folder ID. Multiple folder IDs are not supported.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "fdid=homepage-folder",
           "maxLength": 256
         }
       },
       "contentSearchSort": {
         "name": "sort",
         "in": "query",
+        "description": "Parameter that represents a sorting attribute/value(s) pair. Sorting attribute ID and value are separated by '='. The value describes the sort direction. Possible values are 'asc' and 'desc', for ascending or descending sort direction. I.e. sort=c_myAttribute=desc.\n\nPrecondition: You have to select your sorting attributes in Business Manager > YourSite > Search Indexes > Content Index > Sorting Attributes.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "name=asc",
           "maxLength": 256
         }
       },
       "folderId": {
         "name": "id",
         "in": "path",
+        "description": "Identifier for the requested content folder.",
         "required": true,
         "style": "simple",
         "explode": false,
@@ -2194,12 +2883,14 @@
       "levels": {
         "name": "levels",
         "in": "query",
+        "description": "Specifies how many levels of nested subfolders you want the server to return. The default value is 1. Valid values are 0, 1, or 2.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "integer",
           "default": 1,
+          "example": 1,
           "maximum": 2,
           "minimum": 0
         }
@@ -2207,11 +2898,17 @@
       "folderIds": {
         "name": "ids",
         "in": "query",
+        "description": "Comma-separated list of content folder identifiers.",
         "required": true,
         "style": "form",
         "explode": false,
         "schema": {
           "type": "array",
+          "example": [
+            "homepage-folder",
+            "category-folder",
+            "product-folder"
+          ],
           "items": {
             "allOf": [
               {
@@ -2221,36 +2918,26 @@
           },
           "maxItems": 50,
           "minItems": 1
-        }
+        },
+        "example": "homepage-folder,category-folder,product-folder"
       },
       "sfdcUsid": {
         "name": "sfdc_usid",
         "in": "header",
+        "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
         "required": false,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
-          "format": "uuid"
-        }
-      },
-      "sfdcDwDnt": {
-        "name": "sfdc_dw_dnt",
-        "in": "header",
-        "required": false,
-        "style": "simple",
-        "explode": false,
-        "schema": {
-          "type": "string",
-          "enum": [
-            "0",
-            "1"
-          ]
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
         }
       },
       "personalized": {
         "name": "personalized",
         "in": "query",
+        "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
         "required": false,
         "style": "form",
         "explode": true,
@@ -2258,12 +2945,14 @@
           "type": "string",
           "enum": [
             "none"
-          ]
+          ],
+          "example": "none"
         }
       },
       "sfdcShopperContext": {
         "name": "sfdc_shopper_context",
         "in": "header",
+        "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
         "required": false,
         "style": "simple",
         "explode": false,
@@ -2272,9 +2961,663 @@
         }
       }
     },
+    "examples": {
+      "PageResult": {
+        "value": {
+          "data": [
+            {
+              "id": "homePpage",
+              "typeId": "storePage",
+              "aspectTypeId": "pdpAspect",
+              "name": "Homepage",
+              "description": "Home page of the storefront.",
+              "pageTitle": "Homepage - My Shop",
+              "pageDescription": "Get started shopping",
+              "pageKeywords": "fashion, my shop",
+              "data": {
+                "thumbnail": "myshop.jpg"
+              },
+              "custom": {
+                "thumbnail_full": "http://static.myshop.com/myshop.jpg"
+              },
+              "visible": true,
+              "localized": true,
+              "designMetadata": {
+                "id": "storePage",
+                "name": "Store Page",
+                "archType": "headless"
+              },
+              "regions": [
+                {
+                  "id": "header",
+                  "components": [
+                    {
+                      "id": "2192f5b9aac0f2af2385f6f6b7",
+                      "typeId": "commerce_assets.banner",
+                      "name": "Sale Banner",
+                      "fragment": false,
+                      "embedded": false,
+                      "contentLinkUuid": "a7b2c4d8e1f9032a5b6c7d8e9f0",
+                      "data": {
+                        "title": "Products On Sale",
+                        "bannerImage": "sale/topsellerPromo.jpg"
+                      },
+                      "localized": true,
+                      "visible": true,
+                      "custom": {
+                        "thumbnail_full": "http://static.myshop.com/sale/topsellerPromo.jpg"
+                      },
+                      "designMetadata": {
+                        "id": "commerce_assets.banner",
+                        "name": "Banner Component",
+                        "archType": "headless"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "main",
+                  "components": [
+                    {
+                      "id": "5c5ebbcd2aee1a67af519c83b5",
+                      "typeId": "commerce_assets.carousel",
+                      "name": "Topseller Carousel",
+                      "fragment": false,
+                      "embedded": false,
+                      "contentLinkUuid": "3f8e2a1b5c9d7e4f0a2b3c6d8e1",
+                      "data": {
+                        "title": "Topseller",
+                        "category": "topseller"
+                      },
+                      "localized": true,
+                      "visible": true,
+                      "custom": {
+                        "detailUrl": "www.myshop.com/topseller"
+                      },
+                      "designMetadata": {
+                        "id": "commerce_assets.carousel",
+                        "name": "Carousel Component",
+                        "archType": "headless"
+                      },
+                      "regions": [
+                        {
+                          "id": "tiles",
+                          "components": [
+                            {
+                              "id": "d98a30dfe93715e3e6fc22a329",
+                              "typeId": "commerce_assets.productTile",
+                              "fragment": true,
+                              "embedded": false,
+                              "contentLinkUuid": "c4d6e8f0a2b4c6d8e0f2a4b6c8d",
+                              "data": {
+                                "product": "iphone6"
+                              },
+                              "localized": false,
+                              "visible": true
+                            },
+                            {
+                              "id": "43aa39896afb9292308181ce14",
+                              "typeId": "commerce_assets.productTile",
+                              "fragment": false,
+                              "embedded": false,
+                              "contentLinkUuid": "9e1a3c5d7f0b2e4a6c8d0f2b4e6",
+                              "data": {
+                                "product": "iphone7"
+                              },
+                              "localized": true,
+                              "visible": false
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "detailpage",
+              "typeId": "storePage",
+              "name": "storepage",
+              "description": "A Store page",
+              "pageTitle": "A Store",
+              "pageDescription": "Buy in store",
+              "pageKeywords": "fashion, my shop, store",
+              "data": {
+                "thumbnail": "mystore.jpg"
+              },
+              "visible": true,
+              "localized": false,
+              "designMetadata": {
+                "id": "storePage",
+                "name": "Store Page",
+                "archType": "headless"
+              }
+            }
+          ]
+        }
+      },
+      "BusinessObjectIDInvalid": {
+        "value": {
+          "title": "Business Object ID Invalid",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/business-object-id-invalid",
+          "detail": "At least one provided business object identifier was invalid. This means either none was provided at all or exclusiveness of multiple identifiers wasn't honored or the referenced business object didn't exist."
+        }
+      },
+      "AspectTypeNotFound": {
+        "value": {
+          "title": "Aspect Type Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/aspect-type-not-found",
+          "detail": "No aspect type with ID 'pdp' was found in site 'RefArch'."
+        }
+      },
+      "Page": {
+        "value": {
+          "id": "homepage",
+          "typeId": "storePage",
+          "aspectTypeId": "pdpAspect",
+          "name": "Homepage",
+          "description": "Home page of the storefront.",
+          "pageTitle": "Homepage - My Shop",
+          "pageDescription": "Get started shopping",
+          "pageKeywords": "fashion, my shop",
+          "data": {
+            "thumbnail": "myshop.jpg"
+          },
+          "custom": {
+            "thumbnail_full": "http://static.myshop.com/myshop.jpg"
+          },
+          "visible": true,
+          "localized": true,
+          "designMetadata": {
+            "id": "storePage",
+            "name": "Store Page",
+            "archType": "headless"
+          },
+          "regions": [
+            {
+              "id": "header",
+              "components": [
+                {
+                  "id": "375b9107b067902827083772f9",
+                  "typeId": "commerce_assets.banner",
+                  "name": "Sale Banner",
+                  "fragment": false,
+                  "embedded": false,
+                  "contentLinkUuid": "2b4d6f8a0c2e4a6b8d0f2a4c6e8",
+                  "data": {
+                    "title": "Products On Sale",
+                    "bannerImage": "sale/topsellerPromo.jpg"
+                  },
+                  "localized": true,
+                  "visible": true,
+                  "custom": {
+                    "thumbnail_full": "http://static.myshop.com/sale/topsellerPromo.jpg"
+                  },
+                  "designMetadata": {
+                    "id": "commerce_assets.banner",
+                    "name": "Banner Component",
+                    "archType": "headless"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "main",
+              "components": [
+                {
+                  "id": "be1f331b92d8ad7e38e440e35d",
+                  "typeId": "commerce_assets.carousel",
+                  "fragment": false,
+                  "embedded": false,
+                  "contentLinkUuid": "f0a2c4e6b8d0f2a4c6e8b0d2f4",
+                  "data": {
+                    "title": "Topseller",
+                    "category": "topseller"
+                  },
+                  "localized": true,
+                  "visible": true,
+                  "custom": {
+                    "detailUrl": "www.myshop.com/topseller"
+                  },
+                  "regions": [
+                    {
+                      "id": "tiles",
+                      "components": [
+                        {
+                          "id": "45af07459684e6db78990c5d05",
+                          "typeId": "commerce_assets.productTile",
+                          "fragment": false,
+                          "embedded": false,
+                          "contentLinkUuid": "5d7f1a3b5c7e9f0a2c4d6e8f0a2",
+                          "data": {
+                            "product": "iphone6"
+                          },
+                          "localized": false,
+                          "visible": true
+                        },
+                        {
+                          "id": "df6e33766d90e7e205d109aa2f",
+                          "typeId": "commerce_assets.productTile",
+                          "fragment": false,
+                          "embedded": false,
+                          "contentLinkUuid": "e8b0d2f4a6c8e0b2d4f6a8c0e2b",
+                          "data": {
+                            "product": "iphone7"
+                          },
+                          "localized": true,
+                          "visible": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "AspectAttributeInvalid": {
+        "value": {
+          "title": "Aspect Attribute Invalid",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/aspect-attribute-invalid",
+          "detail": "Aspect attribute value \"5555\" does not fulfill its respective definition {\"id\" : \"foobar\", \"type\" : \"string\",\"required\" : \"false\"}"
+        }
+      },
+      "PageNotFound": {
+        "value": {
+          "title": "Page Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/page-not-found",
+          "detail": "No visible page with ID 'homepage' was found in site 'RefArch'."
+        }
+      },
+      "Component": {
+        "value": {
+          "id": "be1f331b92d8ad7e38e440e35d",
+          "typeId": "commerce_assets.carousel",
+          "name": "Topseller Carousel",
+          "fragment": false,
+          "embedded": false,
+          "contentLinkUuid": "f0a2c4e6b8d0f2a4c6e8b0d2f4",
+          "data": {
+            "title": "Topseller",
+            "category": "topseller"
+          },
+          "localized": true,
+          "visible": true,
+          "custom": {
+            "detailUrl": "www.myshop.com/topseller"
+          },
+          "designMetadata": {
+            "id": "commerce_assets.carousel",
+            "name": "Carousel Component",
+            "archType": "headless"
+          },
+          "regions": [
+            {
+              "id": "tiles",
+              "components": [
+                {
+                  "id": "45af07459684e6db78990c5d05",
+                  "typeId": "commerce_assets.productTile",
+                  "name": "iPhone 6 Tile",
+                  "fragment": false,
+                  "embedded": false,
+                  "contentLinkUuid": "5d7f1a3b5c7e9f0a2c4d6e8f0a2",
+                  "data": {
+                    "product": "iphone6"
+                  },
+                  "localized": false,
+                  "visible": true
+                },
+                {
+                  "id": "df6e33766d90e7e205d109aa2f",
+                  "typeId": "commerce_assets.productTile",
+                  "name": "iPhone 7 Tile",
+                  "fragment": false,
+                  "embedded": false,
+                  "contentLinkUuid": "e8b0d2f4a6c8e0b2d4f6a8c0e2b",
+                  "data": {
+                    "product": "iphone7"
+                  },
+                  "localized": true,
+                  "visible": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ComponentBadRequest": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "The provided 'componentId' is invalid or missing required query parameter 'siteId'."
+        }
+      },
+      "ComponentNotFound": {
+        "value": {
+          "title": "Component Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/component-not-found",
+          "detail": "No visible component with ID 'rfdvj4ojtltljw3' was found in site 'RefArch'."
+        }
+      },
+      "ComponentInternalError": {
+        "value": {
+          "title": "Internal Server Error",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/internal-server-error",
+          "detail": "An unexpected error occurred while processing the request."
+        }
+      },
+      "Content": {
+        "value": {
+          "id": "homepage-banner",
+          "name": "Homepage Banner",
+          "description": "Main promotional banner for the homepage",
+          "pageTitle": "Homepage Banner - My Shop",
+          "pageDescription": "Discover amazing products at great prices",
+          "pageKeywords": "banner, promotion, homepage"
+        }
+      },
+      "ContentNotFound": {
+        "value": {
+          "title": "Content Asset Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/content-not-found",
+          "detail": "No visible content asset with ID 'homepage-banner' was found in site 'RefArch'."
+        }
+      },
+      "ContentResult": {
+        "value": {
+          "data": [
+            {
+              "id": "homepage-banner",
+              "name": "Homepage Banner",
+              "description": "Main promotional banner for the homepage",
+              "pageTitle": "Homepage Banner - My Shop",
+              "pageDescription": "Discover amazing products at great prices",
+              "pageKeywords": "banner, promotion, homepage"
+            },
+            {
+              "id": "footer-content",
+              "name": "Footer Content",
+              "description": "Footer information and links",
+              "pageTitle": "Footer - My Shop",
+              "pageDescription": "Footer content with links and copyright information",
+              "pageKeywords": "footer, links, copyright"
+            }
+          ],
+          "total": 2,
+          "limit": 2
+        }
+      },
+      "GetContentsBadRequest": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "'ids' violates the value constraint. The expected value is between '(0..50)'.",
+          "parameter": "ids",
+          "expected": "(0..50)"
+        }
+      },
+      "ContentSearchResult": {
+        "value": {
+          "query": "banner",
+          "hits": [
+            {
+              "id": "homepage-banner",
+              "name": "Homepage Banner",
+              "description": "Main promotional banner for the homepage",
+              "pageTitle": "Homepage Banner - My Shop",
+              "pageDescription": "Discover amazing products at great prices",
+              "pageKeywords": "banner, promotion, homepage"
+            },
+            {
+              "id": "sidebar-banner",
+              "name": "Sidebar Banner",
+              "description": "Promotional banner for the sidebar",
+              "pageTitle": "Sidebar Banner - My Shop",
+              "pageDescription": "Check out our special offers",
+              "pageKeywords": "banner, sidebar, promotion"
+            }
+          ],
+          "selectedRefinements": {
+            "fdid": "homepage-folder",
+            "c_contentType": "banner"
+          },
+          "refinements": [
+            {
+              "attributeId": "c_contentType",
+              "label": "Content Type",
+              "values": [
+                {
+                  "value": "banner",
+                  "label": "Banner",
+                  "hitCount": 15
+                },
+                {
+                  "value": "text",
+                  "label": "Text Content",
+                  "hitCount": 8
+                }
+              ]
+            },
+            {
+              "attributeId": "fdid",
+              "label": "Content Folder",
+              "values": [
+                {
+                  "value": "homepage-folder",
+                  "label": "Homepage",
+                  "hitCount": 5
+                },
+                {
+                  "value": "promotions-folder",
+                  "label": "Promotions",
+                  "hitCount": 10
+                }
+              ]
+            }
+          ],
+          "total": 2,
+          "limit": 25,
+          "offset": 0
+        }
+      },
+      "ContentSearchBadRequest": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "Invalid refinement parameter format. Expected format: 'attribute=value'.",
+          "parameter": "refine"
+        }
+      },
+      "ContentFolder": {
+        "value": {
+          "id": "homepage-folder",
+          "parentFolderId": "root-folder",
+          "name": "Homepage Folder",
+          "description": "Folder containing homepage content assets",
+          "pageTitle": "Homepage Folder - My Store",
+          "pageDescription": "SEO description for homepage folder",
+          "pageKeywords": "homepage, main, landing",
+          "folders": [
+            {
+              "id": "hero-section",
+              "parentFolderId": "homepage-folder",
+              "name": "Hero Section",
+              "description": "Hero section content folder",
+              "folders": []
+            },
+            {
+              "id": "featured-products",
+              "parentFolderId": "homepage-folder",
+              "name": "Featured Products",
+              "description": "Featured products content folder",
+              "folders": []
+            }
+          ],
+          "c_customAttribute": "customValue"
+        }
+      },
+      "InvalidLevelsParameter": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "'levels' violates the value constraint. The expected value is between '(0..2)'."
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Unauthorized request"
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Access to requested resource forbidden"
+        }
+      },
+      "ContentFolderNotFound": {
+        "value": {
+          "title": "Folder Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/folder-not-found",
+          "detail": "No online content folder with ID 'non-existent-folder' for site 'RefArch' could be found."
+        }
+      },
+      "ContentFolderResult": {
+        "value": {
+          "limit": 2,
+          "total": 10,
+          "data": [
+            {
+              "id": "homepage-folder",
+              "parentFolderId": "root-folder",
+              "name": "Homepage Folder",
+              "description": "Folder containing homepage content assets",
+              "pageTitle": "Homepage Folder - My Store",
+              "pageDescription": "SEO description for homepage folder",
+              "pageKeywords": "homepage, main, landing",
+              "folders": [
+                {
+                  "id": "hero-section",
+                  "parentFolderId": "homepage-folder",
+                  "name": "Hero Section",
+                  "description": "Hero section content folder",
+                  "folders": []
+                },
+                {
+                  "id": "featured-products",
+                  "parentFolderId": "homepage-folder",
+                  "name": "Featured Products",
+                  "description": "Featured products content folder",
+                  "folders": []
+                }
+              ],
+              "c_customAttribute": "customValue"
+            },
+            {
+              "id": "category-folder",
+              "parentFolderId": "root-folder",
+              "name": "Category Folder",
+              "description": "Folder containing category content assets",
+              "pageTitle": "Category Folder - My Store",
+              "pageDescription": "SEO description for category folder",
+              "pageKeywords": "category, products, listing",
+              "folders": []
+            }
+          ]
+        }
+      },
+      "QualifierResolveRequest": {
+        "value": {
+          "customerGroups": [
+            "VIP"
+          ],
+          "campaignQualifiers": [
+            {
+              "campaignId": "my-campaign",
+              "promotionId": "my-promotion"
+            },
+            {
+              "campaignId": "winter-promo"
+            }
+          ],
+          "dataBindings": [
+            {
+              "type": "content_asset",
+              "id": "homepage-banner"
+            }
+          ]
+        }
+      },
+      "QualifierResolveResponse": {
+        "value": {
+          "customerGroups": {
+            "VIP": true
+          },
+          "campaignQualifiers": {
+            "my-campaign": {
+              "my-promotion": false
+            }
+          },
+          "campaigns": {
+            "winter-promo": false
+          },
+          "dataBindings": {
+            "content_asset": {
+              "homepage-banner": {
+                "title": "Winter Sale",
+                "body": "<div>Shop our winter collection</div>",
+                "showCountdown": true,
+                "endDate": "2026-03-31T23:59:59Z"
+              }
+            }
+          }
+        }
+      },
+      "QualifierResolveBadRequest": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "Invalid request body. The 'campaignQualifiers' array contains entries missing the required field 'campaignId'."
+        }
+      },
+      "QualifierResolveTooManyItems": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "'campaignQualifiers' violates the value constraint. The expected value is between '(0..50)'."
+        }
+      },
+      "QualifierResolveInvalidIdentifier": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "Invalid request body. The 'customerGroups' array contains empty or invalid identifiers."
+        }
+      },
+      "QualifierResolveInvalidDataBindingType": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "Invalid request body. The 'dataBindings' array contains entries missing the required 'type' field."
+        }
+      },
+      "QualifierResolveInvalidDataBindingId": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "Invalid request body. The 'dataBindings' array contains entries missing the required 'id' field."
+        }
+      }
+    },
     "securitySchemes": {
       "ShopperToken": {
         "type": "oauth2",
+        "description": "ShopperToken authentication follows the authorization code grant flow, as defined by the OAuth 2.1 standard. Depending on the type of OAuth client (public or private), this authorization flow has further requirements.\nFor a detailed description of the authorization flow, see the [SLAS overview](https://developer.salesforce.com/docs/commerce/commerce-api/references?meta=shopper-login:Summary).\nA shopper token allows you to access the Shopper API endpoints of both the Open Commerce API (OCAPI) and the B2C Commerce API. These endpoints can be used to build headless storefronts and other applications.\nThe `ShopperToken` security scheme is a parent of other security schemes, such as `ShopperTokenTsob`. A Shopper API endpoint can require a specific child scheme (`ShopperTokenTsob`, for example) that cannot be accessed with a regular shopper token.\n",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
@@ -2301,6 +3644,7 @@
       },
       "ShopperClientContextToken": {
         "type": "oauth2",
+        "description": "ShopperClientContextToken is a separate security scheme used to track and validate client context information.\nIt is valid for Guest shoppers flows only using SLAS private clients. For registered shoppers, use existing ShopperToken flows.\nFor authentication details, see the [SLAS overview](https://developer.salesforce.com/docs/commerce/commerce-api/references?meta=shopper-login:Summary).\nThis token allows access to Shopper API endpoints for guest shoppers only.\n",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token?hint=client_context",

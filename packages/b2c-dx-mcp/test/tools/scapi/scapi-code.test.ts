@@ -90,6 +90,36 @@ describe('SCAPI code tools', function () {
     expect(load.called).to.equal(false);
   });
 
+  it('falls back to bundled contracts with a warning when live schemas are unavailable', async () => {
+    const services = Services.fromResolvedConfig(createMockResolvedConfig({}));
+    const [search] = createScapiCodeTools(() => services);
+    const result = readJson(
+      await search.handler({
+        skillRead: true,
+        schemas: 'live',
+        api: 'product/products/v1',
+        code: 'async () => spec.apis.map(a => a.id)',
+      }),
+    );
+    expect(result.result).to.deep.equal(['product/products/v1']);
+    expect(result.schemaSource).to.equal('bundled');
+    expect(result.warnings).to.have.length(1);
+    expect(String((result.warnings as string[])[0])).to.include('Live schemas unavailable');
+  });
+
+  it('does not fall back to bundled contracts for custom APIs', async () => {
+    const services = Services.fromResolvedConfig(createMockResolvedConfig({}));
+    const [search] = createScapiCodeTools(() => services);
+    const result = await search.handler({
+      skillRead: true,
+      schemas: 'live',
+      api: 'custom/widgets/v1',
+      code: 'async () => 1',
+    });
+    expect(result.isError).to.equal(true);
+    expect(readJson(result)).not.to.have.property('schemaSource');
+  });
+
   it('saves the executed source on request and discovers it after server recreation', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'b2c-mcp-snippets-'));
     try {
@@ -134,16 +164,37 @@ describe('SCAPI code tools', function () {
     const response = await search.handler({
       skillRead: true,
       api: 'operation/jobs/v1',
+      detail: 'full',
       code: `async () => Object.entries(spec.paths).flatMap(([path, methods]) =>
-        Object.entries(methods).filter(([method]) => method === 'get' || path.endsWith('/job-execution-search'))
+        Object.entries(methods).filter(([method]) => method === 'post' && path.endsWith('/executions'))
           .map(([method, op]) => ({path, method, ...op})))`,
     });
     expect(response.isError).not.to.equal(true);
     const data = readJson(response);
-    expect(data.result).to.be.an('array').with.length(2);
+    expect(data.result).to.be.an('array').with.length(1);
     const text = (response.content[0] as {text: string}).text;
     expect(Buffer.byteLength(text)).to.be.lessThan(24_000);
-    expect(Buffer.byteLength(JSON.stringify(data, null, 2))).to.be.greaterThan(48_000);
+    expect(Buffer.byteLength(JSON.stringify(data, null, 2))).to.be.greaterThan(24_000);
+  });
+
+  it('returns outlines by default and restores nested prose with detail full', async () => {
+    const [search] = createScapiCodeTools(stub());
+    const code = `async () => {
+      const op = spec.paths['/checkout/shopper-baskets/v2/organizations/{organizationId}/baskets'].post;
+      return {summary: op.summary, bytes: JSON.stringify(op).length, nested: JSON.stringify(op).includes('"example"')};
+    }`;
+    const run = async (detail?: 'full' | 'outline') =>
+      readJson(await search.handler({skillRead: true, api: 'checkout/shopper-baskets/v2', code, detail})).result as {
+        summary: string;
+        bytes: number;
+        nested: boolean;
+      };
+    const outline = await run();
+    const full = await run('full');
+    expect(outline.summary).to.be.a('string').that.is.not.empty;
+    expect(outline.summary).to.equal(full.summary);
+    expect(outline.bytes).to.be.lessThan(full.bytes);
+    expect(await run('outline')).to.deep.equal(outline);
   });
 
   it('uses fresh per-call configuration and preserves resolution on success and failure', async () => {
@@ -240,8 +291,9 @@ describe('SCAPI code tools', function () {
       expect(found.result).to.deep.equal({apis: [['product/widgets/v1', 'live']], color: 'string'});
       expect(found.schemaFailures).to.deep.equal([{api: 'product/broken/v1', error: 'HTTP 500'}]);
       expect(found).to.have.property('resolution');
+      expect(found.schemaSource).to.equal('live');
       expect(get.getCalls().find((call) => call.args[1].params.query)?.args[1].params.query).to.deep.equal({
-        expand: 'custom_properties',
+        expand: 'all',
       });
 
       const executed = await execute.handler({skillRead: true, code});

@@ -2,6 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Custom Objects",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/custom-objects/custom-objects-oas-v1-public.yaml)\n\n# API Overview\n\nThe Custom Objects API lets you manage custom objects in Commerce Cloud.\n\n## Overview\n\nCustom objects are instances of custom object types that can hold any business-specific data. Each custom object belongs to an object type and is identified by a unique key attribute.\n\nCustom objects can be scoped globally (organization-level) or to a specific site.\n\n## Key Features\n\n- **CRUD Operations**: Create, read, update, and delete custom objects by object type and key\n- **Search**: Search custom objects using flexible query expressions with pagination and sorting\n- **Site-Specific Scope**: Operate on global or site-specific custom objects via separate endpoints\n\n## Searchable Attributes\n\nThe following attributes can be used in search queries:\n\n- `keyValueString` - The string key value of the custom object (String)\n- `keyValueInteger` - The integer key value of the custom object (Integer)\n- `creationDate` - The creation date of the custom object (Date)\n- `lastModified` - The last modification date of the custom object (Date)\n- `siteId` - The site identifier (String)\n- Any custom attribute\n\n## Sortable Attributes\n\nOnly searchable attributes can be used in sorting.\n\n## Authentication\n\nThis API requires OAuth 2.0 authentication with the appropriate scopes:\n- `sfcc.custom-objects` - Read access to custom object resources\n- `sfcc.custom-objects.rw` - Read and write access to custom object resources",
     "version": "1.1.0",
     "x-api-type": "Admin",
     "x-api-family": "Custom-Object"
@@ -19,26 +20,32 @@
   "paths": {
     "/organizations/{organizationId}/custom-objects/{objectType}/{key}": {
       "get": {
+        "summary": "Read a global custom object by its object type ID and key.",
+        "description": "Reads a global custom object with a given object type ID and a value for the\nkey attribute of the object which represents its unique identifier.\n",
         "operationId": "getCustomObject",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "objectType",
             "in": "path",
+            "description": "The ID of the custom object type.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "MyCustomType",
               "maxLength": 256,
               "minLength": 1
             }
@@ -46,11 +53,13 @@
           {
             "name": "key",
             "in": "path",
+            "description": "The key attribute value that identifies the custom object.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "my-key-value",
               "maxLength": 256,
               "minLength": 1
             }
@@ -63,6 +72,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomObject"
+                },
+                "examples": {
+                  "CustomObjectResultExample": {
+                    "$ref": "#/components/examples/CustomObjectResultExample"
+                  }
                 }
               }
             }
@@ -73,6 +87,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedKeyParameter": {
+                    "$ref": "#/components/examples/MalformedKeyParameter"
+                  }
                 }
               }
             }
@@ -89,6 +108,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomObjectNotFound": {
+                    "$ref": "#/components/examples/CustomObjectNotFound"
+                  },
+                  "ObjectTypeNotFound": {
+                    "$ref": "#/components/examples/ObjectTypeNotFound"
+                  }
                 }
               }
             }
@@ -104,26 +131,32 @@
         ]
       },
       "put": {
+        "summary": "Create or replace a global custom object.",
+        "description": "Creates a global custom object from request body. Note that an existing\nglobal custom object with the same key will be overwritten by this action.\n",
         "operationId": "createCustomObject",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "objectType",
             "in": "path",
+            "description": "The ID of the custom object type.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "MyCustomType",
               "maxLength": 256,
               "minLength": 1
             }
@@ -131,11 +164,13 @@
           {
             "name": "key",
             "in": "path",
+            "description": "The key attribute value that identifies the custom object.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "my-key-value",
               "maxLength": 256,
               "minLength": 1
             }
@@ -146,6 +181,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CustomObject"
+              },
+              "examples": {
+                "CreateCustomObjectExample": {
+                  "$ref": "#/components/examples/CreateCustomObjectExample"
+                }
               }
             }
           },
@@ -158,6 +198,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomObject"
+                },
+                "examples": {
+                  "CustomObjectResultExample": {
+                    "$ref": "#/components/examples/CustomObjectResultExample"
+                  }
                 }
               }
             }
@@ -168,6 +213,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomObject"
+                },
+                "examples": {
+                  "CustomObjectResultExample": {
+                    "$ref": "#/components/examples/CustomObjectResultExample"
+                  }
                 }
               }
             }
@@ -178,6 +228,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedKeyParameter": {
+                    "$ref": "#/components/examples/MalformedKeyParameter"
+                  }
                 }
               }
             }
@@ -194,6 +249,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ObjectTypeNotFound": {
+                    "$ref": "#/components/examples/ObjectTypeNotFound"
+                  }
                 }
               }
             }
@@ -208,26 +268,32 @@
         ]
       },
       "delete": {
+        "summary": "Delete a global custom object.",
+        "description": "Deletes a global custom object. If the custom object does not exist,\nthis will do nothing.\n",
         "operationId": "deleteCustomObject",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "objectType",
             "in": "path",
+            "description": "The ID of the custom object type.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "MyCustomType",
               "maxLength": 256,
               "minLength": 1
             }
@@ -235,11 +301,13 @@
           {
             "name": "key",
             "in": "path",
+            "description": "The key attribute value that identifies the custom object.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "my-key-value",
               "maxLength": 256,
               "minLength": 1
             }
@@ -255,6 +323,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedKeyParameter": {
+                    "$ref": "#/components/examples/MalformedKeyParameter"
+                  }
                 }
               }
             }
@@ -271,6 +344,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ObjectTypeNotFound": {
+                    "$ref": "#/components/examples/ObjectTypeNotFound"
+                  }
                 }
               }
             }
@@ -285,26 +363,32 @@
         ]
       },
       "patch": {
+        "summary": "Update a global custom object.",
+        "description": "Updates a global custom object with information from request body. Note\nthat only mentioned attributes will be updated and the key attribute is\nignored. All other attributes will be left unattended.\n",
         "operationId": "updateCustomObject",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "objectType",
             "in": "path",
+            "description": "The ID of the custom object type.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "MyCustomType",
               "maxLength": 256,
               "minLength": 1
             }
@@ -312,11 +396,13 @@
           {
             "name": "key",
             "in": "path",
+            "description": "The key attribute value that identifies the custom object.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "my-key-value",
               "maxLength": 256,
               "minLength": 1
             }
@@ -327,6 +413,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CustomObject"
+              },
+              "examples": {
+                "UpdateCustomObjectExample": {
+                  "$ref": "#/components/examples/UpdateCustomObjectExample"
+                }
               }
             }
           },
@@ -339,6 +430,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomObject"
+                },
+                "examples": {
+                  "CustomObjectResultExample": {
+                    "$ref": "#/components/examples/CustomObjectResultExample"
+                  }
                 }
               }
             }
@@ -349,6 +445,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedKeyParameter": {
+                    "$ref": "#/components/examples/MalformedKeyParameter"
+                  }
                 }
               }
             }
@@ -365,6 +466,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomObjectNotFound": {
+                    "$ref": "#/components/examples/CustomObjectNotFound"
+                  },
+                  "ObjectTypeNotFound": {
+                    "$ref": "#/components/examples/ObjectTypeNotFound"
+                  }
                 }
               }
             }
@@ -381,26 +490,32 @@
     },
     "/organizations/{organizationId}/custom-objects-search/{objectType}": {
       "post": {
+        "summary": "Search custom objects by object type.",
+        "description": "Searches for custom objects of a specific object type.\n\nThe query attribute specifies a complex query that can be used to narrow down the search.\nThe following attributes are searchable:\n- `keyValueString` (String)\n- `keyValueInteger` (Integer)\n- `creationDate` (Date)\n- `lastModified` (Date)\n- `siteId` (String)\n- Any custom attribute\n\nOnly searchable attributes can be used in sorting.\n",
         "operationId": "searchCustomObjects",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "objectType",
             "in": "path",
+            "description": "The ID of the custom object type.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "MyCustomType",
               "maxLength": 256,
               "minLength": 1
             }
@@ -408,6 +523,7 @@
           {
             "name": "limit",
             "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 50.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -422,6 +538,7 @@
           {
             "name": "offset",
             "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -438,6 +555,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SearchRequest"
+              },
+              "examples": {
+                "SearchCustomObjectsExample": {
+                  "$ref": "#/components/examples/SearchCustomObjectsExample"
+                },
+                "SearchCustomObjectsBySiteIdExample": {
+                  "$ref": "#/components/examples/SearchCustomObjectsBySiteIdExample"
+                }
               }
             }
           },
@@ -450,6 +575,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomObjectSearchResult"
+                },
+                "examples": {
+                  "CustomObjectSearchResultExample": {
+                    "$ref": "#/components/examples/CustomObjectSearchResultExample"
+                  }
                 }
               }
             }
@@ -460,6 +590,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "TypeMismatch": {
+                    "$ref": "#/components/examples/TypeMismatch"
+                  }
                 }
               }
             }
@@ -476,6 +611,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ObjectTypeNotFound": {
+                    "$ref": "#/components/examples/ObjectTypeNotFound"
+                  }
                 }
               }
             }
@@ -493,36 +633,44 @@
     },
     "/organizations/{organizationId}/sites/{siteId}/custom-objects/{objectType}/{key}": {
       "get": {
+        "summary": "Read a site-specific custom object by its object type ID and key.",
+        "description": "Reads a site-specific custom object with a given object type ID and a value for the\nkey attribute of the object which represents its unique identifier.\n",
         "operationId": "getSiteCustomObject",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "path",
+            "description": "The ID of the site that the custom object belongs to.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
-            }
+            },
+            "example": "SiteGenesis"
           },
           {
             "name": "objectType",
             "in": "path",
+            "description": "The ID of the custom object type.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "MyCustomType",
               "maxLength": 256,
               "minLength": 1
             }
@@ -530,11 +678,13 @@
           {
             "name": "key",
             "in": "path",
+            "description": "The key attribute value that identifies the custom object.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "my-key-value",
               "maxLength": 256,
               "minLength": 1
             }
@@ -547,6 +697,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomObject"
+                },
+                "examples": {
+                  "CustomObjectResultExample": {
+                    "$ref": "#/components/examples/CustomObjectResultExample"
+                  }
                 }
               }
             }
@@ -557,6 +712,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedKeyParameter": {
+                    "$ref": "#/components/examples/MalformedKeyParameter"
+                  }
                 }
               }
             }
@@ -573,6 +733,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomObjectNotFound": {
+                    "$ref": "#/components/examples/CustomObjectNotFound"
+                  },
+                  "ObjectTypeNotFound": {
+                    "$ref": "#/components/examples/ObjectTypeNotFound"
+                  }
                 }
               }
             }
@@ -588,36 +756,44 @@
         ]
       },
       "put": {
+        "summary": "Create or replace a site-specific custom object.",
+        "description": "Creates a site-specific custom object from request body. Note that an existing\nsite-specific custom object with the same key will be overwritten by this action.\n",
         "operationId": "createSiteCustomObject",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "path",
+            "description": "The ID of the site that the custom object belongs to.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
-            }
+            },
+            "example": "SiteGenesis"
           },
           {
             "name": "objectType",
             "in": "path",
+            "description": "The ID of the custom object type.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "MyCustomType",
               "maxLength": 256,
               "minLength": 1
             }
@@ -625,11 +801,13 @@
           {
             "name": "key",
             "in": "path",
+            "description": "The key attribute value that identifies the custom object.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "my-key-value",
               "maxLength": 256,
               "minLength": 1
             }
@@ -640,6 +818,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CustomObject"
+              },
+              "examples": {
+                "CreateCustomObjectExample": {
+                  "$ref": "#/components/examples/CreateCustomObjectExample"
+                }
               }
             }
           },
@@ -652,6 +835,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomObject"
+                },
+                "examples": {
+                  "CustomObjectResultExample": {
+                    "$ref": "#/components/examples/CustomObjectResultExample"
+                  }
                 }
               }
             }
@@ -662,6 +850,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomObject"
+                },
+                "examples": {
+                  "CustomObjectResultExample": {
+                    "$ref": "#/components/examples/CustomObjectResultExample"
+                  }
                 }
               }
             }
@@ -672,6 +865,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedKeyParameter": {
+                    "$ref": "#/components/examples/MalformedKeyParameter"
+                  }
                 }
               }
             }
@@ -688,6 +886,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ObjectTypeNotFound": {
+                    "$ref": "#/components/examples/ObjectTypeNotFound"
+                  }
                 }
               }
             }
@@ -702,36 +905,44 @@
         ]
       },
       "delete": {
+        "summary": "Delete a site-specific custom object.",
+        "description": "Deletes a site-specific custom object. If the custom object does not exist,\nthis will do nothing.\n",
         "operationId": "deleteSiteCustomObject",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "path",
+            "description": "The ID of the site that the custom object belongs to.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
-            }
+            },
+            "example": "SiteGenesis"
           },
           {
             "name": "objectType",
             "in": "path",
+            "description": "The ID of the custom object type.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "MyCustomType",
               "maxLength": 256,
               "minLength": 1
             }
@@ -739,11 +950,13 @@
           {
             "name": "key",
             "in": "path",
+            "description": "The key attribute value that identifies the custom object.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "my-key-value",
               "maxLength": 256,
               "minLength": 1
             }
@@ -759,6 +972,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedKeyParameter": {
+                    "$ref": "#/components/examples/MalformedKeyParameter"
+                  }
                 }
               }
             }
@@ -775,6 +993,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ObjectTypeNotFound": {
+                    "$ref": "#/components/examples/ObjectTypeNotFound"
+                  }
                 }
               }
             }
@@ -789,36 +1012,44 @@
         ]
       },
       "patch": {
+        "summary": "Update a site-specific custom object.",
+        "description": "Updates a site-specific custom object with information from request body. Note\nthat only mentioned attributes will be updated and the key attribute is\nignored. All other attributes will be left unattended.\n",
         "operationId": "updateSiteCustomObject",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "path",
+            "description": "The ID of the site that the custom object belongs to.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
-            }
+            },
+            "example": "SiteGenesis"
           },
           {
             "name": "objectType",
             "in": "path",
+            "description": "The ID of the custom object type.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "MyCustomType",
               "maxLength": 256,
               "minLength": 1
             }
@@ -826,11 +1057,13 @@
           {
             "name": "key",
             "in": "path",
+            "description": "The key attribute value that identifies the custom object.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "my-key-value",
               "maxLength": 256,
               "minLength": 1
             }
@@ -841,6 +1074,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CustomObject"
+              },
+              "examples": {
+                "UpdateCustomObjectExample": {
+                  "$ref": "#/components/examples/UpdateCustomObjectExample"
+                }
               }
             }
           },
@@ -853,6 +1091,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomObject"
+                },
+                "examples": {
+                  "CustomObjectResultExample": {
+                    "$ref": "#/components/examples/CustomObjectResultExample"
+                  }
                 }
               }
             }
@@ -863,6 +1106,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedKeyParameter": {
+                    "$ref": "#/components/examples/MalformedKeyParameter"
+                  }
                 }
               }
             }
@@ -879,6 +1127,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomObjectNotFound": {
+                    "$ref": "#/components/examples/CustomObjectNotFound"
+                  },
+                  "ObjectTypeNotFound": {
+                    "$ref": "#/components/examples/ObjectTypeNotFound"
+                  }
                 }
               }
             }
@@ -898,37 +1154,56 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
         "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
       },
       "CustomObject": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a custom object that contains all defined custom attributes for its object type.",
         "properties": {
           "keyProperty": {
             "type": "string",
+            "description": "The name of the key property for the custom object. This is ignored in input documents.",
+            "example": "myKey",
             "maxLength": 256,
             "minLength": 1
           },
           "keyValueInteger": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The id of the custom object when the type of the key is Integer. This is ignored in input documents.",
+            "example": 42
           },
           "keyValueString": {
             "type": "string",
+            "description": "The id of the custom object when the type of the key is String. This is ignored in input documents.",
+            "example": "my-key-value",
             "maxLength": 256,
             "minLength": 1
           },
           "objectType": {
             "type": "string",
+            "description": "The id of the object type. This is ignored in input documents.",
+            "example": "MyCustomType",
             "maxLength": 256
           },
           "creationDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Returns the value of attribute 'creationDate'.",
+            "example": "2019-10-20T12:00:00Z"
           },
           "lastModified": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Returns the value of attribute 'lastModified'.",
+            "example": "2019-10-20T13:00:00Z"
           }
         }
       },
@@ -938,17 +1213,25 @@
         "properties": {
           "title": {
             "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
             "maxLength": 2048
           },
           "detail": {
-            "type": "string"
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
           },
           "instance": {
             "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
             "maxLength": 2048
           }
         },
@@ -961,6 +1244,28 @@
       "Query": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A set of objects that define criteria used to select records. A query can contain one of the following:\n* `MatchAllQuery`\n - Matches all documents.\n* `TermQuery`\n - Matches one or more documents against one or more document fields.\n* `TextQuery`\n - Matches text against one or more fields.\n* `BoolQuery`\n - Allows construction of a logical expression of multiple queries.\n* `FilteredQuery`\n - Allows a filter to be applied to a query.\n* `NestedQuery`\n - Allows you to query on nested documents.\n - _Only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation._",
+        "example": {
+          "filteredQuery": {
+            "query": {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "disabled"
+              }
+            },
+            "filter": {
+              "termFilter": {
+                "field": "enabled",
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          }
+        },
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -987,21 +1292,60 @@
       "BoolQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A boolean query allows construction of full logical expression trees that are composed of other queries (usually term queries and text queries). A boolean query has three sets of clauses:\n  \n  - `must`, which combines as an `AND` operator.\n  - `should`, which combines as an `OR` operator.\n  - `must_not`, which combines as a `NOT` operator.\n  \nIf `must`, `mustNot`, or `should` appear in the same boolean query, they are combined logically using the `AND` operator. For example:\n\n    (must-1 AND must-1 AND ...)\n      AND (should-1 OR should-2 OR ...)\n      AND NOT (must_not-1 OR must_not-2 OR ...)\n",
+        "example": {
+          "value": {
+            "must": [
+              {
+                "textQuery": {
+                  "fields": [
+                    "couponId"
+                  ],
+                  "searchPhrase": "DEAL"
+                }
+              },
+              {
+                "textQuery": {
+                  "fields": [
+                    "description"
+                  ],
+                  "searchPhrase": "Big bargain deal"
+                }
+              }
+            ],
+            "mustNot": [
+              {
+                "termQuery": {
+                  "fields": [
+                    "enabled"
+                  ],
+                  "operator": "is",
+                  "values": [
+                    false
+                  ]
+                }
+              }
+            ]
+          }
+        },
         "properties": {
           "must": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `AND` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "mustNot": {
             "type": "array",
+            "description": "List of queries to be evaluated as a `NOT` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "should": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `OR` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
@@ -1011,6 +1355,7 @@
       "Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Contains a set of objects that define criteria used to select records. A filter can contain one of the following:\n  * `TermFilter`\n   - Matches records where a field (or fields) exactly matches some simple value (including `null`).\n  * `RangeFilter`\n   - Matches records where a field value lies within a specified range.\n  * `Range2Filter`\n   - Matches records in a specified range across fields.\n  * `QueryFilter`\n   - Matches records based on a query.\n  * `BoolFilter`\n   - Provides filtering of records using a set of filters combined using a logical operator.",
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -1034,20 +1379,49 @@
       "BoolFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to combine other filters into (possibly recursive) logical expression trees. A boolean filter is composed of a logical operator (`AND`, `OR`, `NOT`) and a list of filters that the operator relates to. Multiple filters can be negated with a single `NOT` operator, even when the filters are combined with the `AND` operator.",
+        "example": {
+          "value": {
+            "operator": "and",
+            "filters": [
+              {
+                "termFilter": {
+                  "field": "id",
+                  "operator": "is",
+                  "values": [
+                    "myId"
+                  ]
+                }
+              },
+              {
+                "termFilter": {
+                  "field": "couponId",
+                  "operator": "is",
+                  "values": [
+                    "couponOne"
+                  ]
+                }
+              }
+            ]
+          }
+        },
         "properties": {
           "filters": {
             "type": "array",
+            "description": "A list of filters that are logically combined by an operator.",
             "items": {
               "$ref": "#/components/schemas/Filter"
             }
           },
           "operator": {
             "type": "string",
+            "description": "The logical operator that is used to combine the filters.",
             "enum": [
               "and",
               "or",
               "not"
-            ]
+            ],
+            "example": "and"
           }
         },
         "required": [
@@ -1056,6 +1430,7 @@
       },
       "QueryFilter": {
         "type": "object",
+        "description": "Wraps any query and allows it to be used as a filter.",
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
@@ -1067,45 +1442,71 @@
       },
       "Field": {
         "type": "string",
+        "description": "Name of the field. Might be a custom field name prefixed with c_.",
+        "example": "couponId",
         "maxLength": 260
       },
       "Range2Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits where a range defined by specified attributes has a certain relationship to a specified range.\n\nThe first range (R1) is defined by a pair of attributes (`fromField` and `toField`) that specify the extent of a range, such as attributes `validFrom` and `validTo`.\n\nThe second range (R2) is defined by `fromValue` and `toValue`.\n\nThe filter mode specifies the method used to compare the two ranges:\n\n* `overlap`: R1 overlaps fully or partially with R2.\n* `containing`: R1 contains R2.\n* `contained`: R1 is contained in R2.\n\nThe range filter supports several value types, and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range 2 filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "example": {
+          "fromField": "validFrom",
+          "toField": "validTo",
+          "filterMode": "overlap",
+          "fromValue": "2007-01-01T00:00:00.000Z",
+          "toValue": "2017-01-01T00:00:00.000Z"
+        },
         "properties": {
           "filterMode": {
             "type": "string",
             "default": "overlap",
+            "description": "Compare mode: overlap, containing, or contained.",
             "enum": [
               "overlap",
               "containing",
               "contained"
-            ]
+            ],
+            "example": "overlap"
           },
           "fromField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that starts the first range.",
+            "example": "validFrom"
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "fromValue": {},
+          "fromValue": {
+            "description": "The lower bound of the second range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "example": "2007-01-01T00:00:00.000Z"
+          },
           "toField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that ends the first range.",
+            "example": "validTo"
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "toValue": {}
+          "toValue": {
+            "description": "The upper bound of the second range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "example": "2017-01-01T00:00:00.000Z"
+          }
         },
         "required": [
           "fromField",
@@ -1114,49 +1515,64 @@
       },
       "RangeFilter": {
         "type": "object",
+        "description": "Allows you to restrict a search result to hits that have values for a given attribute that fall within a given value range. The range filter supports several value types and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The search field.",
+            "example": "validFrom"
           },
           "from": {
+            "description": "The lower bound of the filter range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-01T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 1
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 1
               }
             ]
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
           "to": {
+            "description": "The upper bound of the filter range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-02T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 2
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 2
               }
             ]
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the range is inclusive. To make the upper bound exclusive, set to `false`.",
+            "example": true
           }
         },
         "required": [
@@ -1166,16 +1582,26 @@
       "TermFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits that match exactly one of the values configured for the filter. A term filter is useful for general restrictions that can be shared between searches. Use term filters whenever the criteria you filter on is a shared property of multiple searches (for example, like filtering by an order status). Use term filters for fields that have a discrete and small set of values only.",
+        "example": {
+          "field": "id",
+          "operator": "is",
+          "values": [
+            "myId"
+          ]
+        },
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The filter field."
           },
           "operator": {
             "type": "string",
+            "description": "The operator used to compare the field's values with the given values.",
             "enum": [
               "is",
               "one_of",
@@ -1185,12 +1611,15 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The filter values.",
             "items": {
-              "type": "string"
+              "type": "string",
+              "example": "myId"
             }
           }
         },
@@ -1202,6 +1631,26 @@
       "FilteredQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows to filter the result of a possibly complex query using a possibly complex filter.",
+        "example": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "couponId"
+              ],
+              "searchPhrase": "disabled"
+            }
+          },
+          "filter": {
+            "termFilter": {
+              "field": "enabled",
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          }
+        },
         "properties": {
           "filter": {
             "$ref": "#/components/schemas/Filter"
@@ -1216,14 +1665,62 @@
         ]
       },
       "MatchAllQuery": {
-        "type": "object"
+        "type": "object",
+        "description": "Matches all documents (namespace and document type). This query comes in handy if you just want to filter a search result or really do not have any constraints."
       },
       "NestedQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to query nested documents that are part of a larger document. Say, for example, that you have a main product with variations in one big document, and you want to constrain a search to main products that have variations that match multiple constraints. \n\nA `NestedQuery` is only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation.\n",
+        "example": {
+          "path": "order.shippingAddresses",
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.firstName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "John"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.lastName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "Doe"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "scoreMode": "avg"
+        },
         "properties": {
           "path": {
             "type": "string",
+            "description": "The path to the nested document.",
+            "example": "order.shippingAddresses",
             "maxLength": 2048
           },
           "query": {
@@ -1231,12 +1728,14 @@
           },
           "scoreMode": {
             "type": "string",
+            "description": "Indicates how scores for matching child objects affect the root parent document’s relevance score.",
             "enum": [
               "avg",
               "total",
               "max",
               "none"
-            ]
+            ],
+            "example": "avg"
           }
         },
         "required": [
@@ -1246,9 +1745,11 @@
       },
       "TermQuery": {
         "type": "object",
+        "description": "A term query matches one or more values against one or more document fields. A document is considered a hit if one of the values matches exactly with at least one of the given fields. The operator `is` can only take one value, while `one_of` can take multiple values. If multiple fields are specified, they are combined using a logical `OR` operator.\n\n**Limitations:**\n\n* The `greater` and `less` operators are not supported under certain conditions. Both operators are permitted unless the API documentation states otherwise.\n* A subset of Commerce APIs handle queries with multiple fields differently. If the query has multiple fields, the query is internally handled as a logical `OR` of `DisjointMaxQueries` (with the dismax matching a value against all fields). The dismax makes sure that a document carrying a single term in multiple fields does not get higher scores than a document matching multiple terms in multiple fields.",
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the values are matched against, combined with the operator.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
@@ -1256,6 +1757,7 @@
           },
           "operator": {
             "type": "string",
+            "description": "Returns the operator to use for the term query.",
             "enum": [
               "is",
               "one_of",
@@ -1265,23 +1767,30 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The values that the fields are compared against, combined with the operator.",
             "items": {
+              "example": "myCouponId",
               "oneOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "example": "myCouponId"
                 },
                 {
-                  "type": "number"
+                  "type": "number",
+                  "example": 1
                 },
                 {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "example": true
                 },
                 {
-                  "type": "integer"
+                  "type": "integer",
+                  "example": 1
                 }
               ]
             }
@@ -1295,16 +1804,26 @@
       "TextQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A text query is used to match some text (for example, a search phrase possibly consisting of multiple terms) against one or more fields. When multiple fields are provided, the phrase conceptually forms a logical `OR` over the fields. In this case, the terms of the phrase basically have to match within the text, that would result in concatenating all given fields.",
+        "example": {
+          "fields": [
+            "couponId"
+          ],
+          "searchPhrase": "limit"
+        },
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the search phrase matches against.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
             "minItems": 1
           },
           "searchPhrase": {
-            "type": "string"
+            "type": "string",
+            "description": "A search phrase, which can include multiple terms separated by spaces.",
+            "example": "campaign summer"
           }
         },
         "required": [
@@ -1315,18 +1834,27 @@
       "Sort": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Document representing a sort request. Each API has a different default sort configuration that can be modified in the request.",
+        "example": {
+          "field": "couponId",
+          "sortOrder": "desc"
+        },
         "properties": {
           "field": {
             "type": "string",
+            "description": "The name of the field to sort on.",
+            "example": "couponId",
             "maxLength": 256
           },
           "sortOrder": {
             "type": "string",
             "default": "asc",
+            "description": "The sort order to be applied when sorting. When omitted, the default sort order (asc) is used.",
             "enum": [
               "asc",
               "desc"
-            ]
+            ],
+            "example": "asc"
           }
         },
         "required": [
@@ -1337,14 +1865,19 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
         "minimum": 0
       },
       "SearchRequest": {
         "type": "object",
+        "description": "Document representing a search request for retrieving items within the Data API. The query is a potentially complex set of expressions. The fields and expands that each query supports are defined within the search resource.",
         "properties": {
           "limit": {
             "type": "integer",
             "format": "int32",
+            "description": "Maximum records to retrieve per request, not to exceed 200.",
+            "example": 10,
             "maximum": 200,
             "minimum": 1
           },
@@ -1353,6 +1886,7 @@
           },
           "sorts": {
             "type": "array",
+            "description": "The list of sort clauses configured for the search request. Sort clauses are optional. See the description of the search endpoint for details on the default sorting behavior that is used when explicit sorts are not passed.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
@@ -1369,14 +1903,19 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
         "minimum": 0
       },
       "ResultBase": {
         "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
         "properties": {
           "limit": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
           },
           "total": {
             "$ref": "#/components/schemas/Total"
@@ -1393,6 +1932,7 @@
             "$ref": "#/components/schemas/ResultBase"
           }
         ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
         "properties": {
           "offset": {
             "$ref": "#/components/schemas/Offset"
@@ -1411,18 +1951,67 @@
             "$ref": "#/components/schemas/PaginatedResultBase"
           }
         ],
+        "description": "Document representing a generic search result. Each search resource should extend this to define what is returned in the `hits`.",
+        "example": {
+          "limit": 1,
+          "hits": [
+            {
+              "couponId": "coupon1",
+              "creationDate": "2019-10-20T12:00:00Z",
+              "description": "This coupon is used to give 10% off stuff.",
+              "enabled": false,
+              "exportedCodeCount": 0,
+              "lastModified": "2019-10-30T04:23:59Z",
+              "redemptionCount": 3,
+              "redemptionLimits": {
+                "limitPerCode": 1,
+                "limitPerCustomer": 1,
+                "limitPerTimeFrame": {
+                  "limit": 2,
+                  "redemptionTimeFrame": 24
+                }
+              },
+              "singleCode": "MyCode",
+              "systemCodesConfig": {
+                "codePrefix": "SG",
+                "numberOfCodes": 500000
+              },
+              "totalCodesCount": 50,
+              "type": "single_code"
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "stuff"
+            }
+          },
+          "sorts": [
+            {
+              "field": "couponId",
+              "sortOrder": "desc"
+            }
+          ],
+          "offset": 2,
+          "total": 8
+        },
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
           },
           "sorts": {
             "type": "array",
+            "description": "The sorting that was applied to the result.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
           },
           "hits": {
             "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
             "items": {
               "type": "object"
             }
@@ -1438,9 +2027,11 @@
             "$ref": "#/components/schemas/PaginatedSearchResult"
           }
         ],
+        "description": "Search result containing a paginated list of custom objects.",
         "properties": {
           "hits": {
             "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
             "items": {
               "$ref": "#/components/schemas/CustomObject"
             }
@@ -1452,6 +2043,8 @@
       },
       "SiteId": {
         "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
         "maxLength": 32,
         "minLength": 1
       }
@@ -1463,6 +2056,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
             }
           }
         }
@@ -1473,6 +2071,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
             }
           }
         }
@@ -1482,21 +2085,25 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "objectType": {
         "name": "objectType",
         "in": "path",
+        "description": "The ID of the custom object type.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "MyCustomType",
           "maxLength": 256,
           "minLength": 1
         }
@@ -1504,11 +2111,13 @@
       "key": {
         "name": "key",
         "in": "path",
+        "description": "The key attribute value that identifies the custom object.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "my-key-value",
           "maxLength": 256,
           "minLength": 1
         }
@@ -1516,17 +2125,144 @@
       "siteId": {
         "name": "siteId",
         "in": "path",
+        "description": "The ID of the site that the custom object belongs to.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/SiteId"
+        },
+        "example": "SiteGenesis"
+      }
+    },
+    "examples": {
+      "CustomObjectResultExample": {
+        "value": {
+          "keyProperty": "global_key",
+          "keyValueString": "my-key-value",
+          "objectType": "MyCustomType",
+          "c_textField": "some text value",
+          "c_numberField": 42,
+          "c_booleanField": true
+        }
+      },
+      "MalformedKeyParameter": {
+        "value": {
+          "title": "Malformed Key Parameter",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/malformed-key-parameter",
+          "detail": "The format of path parameter 'abc' for data type 'integer' is invalid."
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Your access token is invalid or expired and can’t be used to identify a user."
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Your access token is valid, but you don’t have the required permissions to access the resource."
+        }
+      },
+      "CustomObjectNotFound": {
+        "value": {
+          "title": "Custom Object Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/custom-object-not-found",
+          "detail": "No custom object with key 'nonexistent' for object type 'MyCustomType' could be found."
+        }
+      },
+      "ObjectTypeNotFound": {
+        "value": {
+          "title": "Object Type Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/object-type-not-found",
+          "detail": "No object type with ID 'NonExistentType' could be found."
+        }
+      },
+      "CreateCustomObjectExample": {
+        "value": {
+          "c_textField": "some text value",
+          "c_numberField": 42,
+          "c_booleanField": true
+        }
+      },
+      "UpdateCustomObjectExample": {
+        "value": {
+          "c_textField": "updated text value"
+        }
+      },
+      "SearchCustomObjectsExample": {
+        "value": {
+          "query": {
+            "matchAllQuery": {}
+          },
+          "limit": 25,
+          "offset": 0,
+          "sorts": [
+            {
+              "field": "key_value_string",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "SearchCustomObjectsBySiteIdExample": {
+        "summary": "Search custom objects belonging to a specific site",
+        "description": "Restricts the search to custom objects of a specific site by filtering on the searchable `siteId` attribute. Custom object search is not scoped by site at the URL level, so filtering by `siteId` is the supported way to limit results to a single site.",
+        "value": {
+          "query": {
+            "termQuery": {
+              "fields": [
+                "siteId"
+              ],
+              "operator": "is",
+              "values": [
+                "SiteGenesis"
+              ]
+            }
+          },
+          "limit": 25,
+          "offset": 0
+        }
+      },
+      "CustomObjectSearchResultExample": {
+        "value": {
+          "limit": 2,
+          "hits": [
+            {
+              "keyProperty": "global_key",
+              "keyValueString": "key1",
+              "objectType": "MyCustomType",
+              "c_textField": "value1"
+            },
+            {
+              "keyProperty": "global_key",
+              "keyValueString": "key2",
+              "objectType": "MyCustomType",
+              "c_textField": "value2"
+            }
+          ],
+          "query": {
+            "matchAllQuery": {}
+          },
+          "offset": 0,
+          "total": 2
+        }
+      },
+      "TypeMismatch": {
+        "value": {
+          "title": "Type Mismatch",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/type-mismatch",
+          "detail": "There is a type mismatch for field 'key_value_integer'."
         }
       }
     },
     "securitySchemes": {
       "AmOAuth2": {
         "type": "oauth2",
+        "description": "Authentication via Account Manager OAuth 2.0.\n",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",

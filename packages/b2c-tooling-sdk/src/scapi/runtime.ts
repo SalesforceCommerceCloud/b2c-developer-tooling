@@ -31,6 +31,11 @@ export interface ScapiCodeOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
   maxOutputBytes?: number;
+  /**
+   * How much prose `spec` operations carry. `outline` keeps each operation's own summary, description and tags but
+   * drops nested descriptions and examples, keeping discovery results within the output cap. Defaults to `full`.
+   */
+  detail?: 'outline' | 'full';
   /** The host owns cancellation and cleanup while paused; approval may wait indefinitely. Never exposed to the child. */
   onControl?: (control: ScapiRuntimeControl) => void;
 }

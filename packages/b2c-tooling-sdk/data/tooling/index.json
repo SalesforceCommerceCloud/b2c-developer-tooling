@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-05T13:43:19.686Z",
+  "generatedAt": "2026-10-06T12:47:57.192Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -215,7 +215,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.md",
-      "headings": "Global SCAPI Schemas Flags • Tenant Flags • Authentication Flags • Common Flags • Output Flags • Authentication • Required Scopes • Configuration • b2c scapi schemas list • Usage • Flags • Available Columns • Examples • Output • b2c scapi schemas get • Usage • Arguments • Flags • Schema Collapsing • Examples • Output Formats • Notes",
+      "headings": "Global SCAPI Schemas Flags • Tenant Flags • Authentication Flags • Common Flags • Output Flags • Authentication • Required Scopes • Configuration • b2c scapi schemas list • Usage • Flags • Available Columns • Examples • Output • b2c scapi schemas get • Usage • Arguments • Flags • Server-side expansion • Offline fallback • Schema Collapsing • Examples • Output Formats • Notes",
       "preview": "Commands for listing and retrieving Salesforce Commerce API (SCAPI) OpenAPI schemas, with selective path, schema, and example expansion for LLM context."
     },
     {

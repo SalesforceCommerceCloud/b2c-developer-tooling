@@ -2,7 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Campaigns",
-    "version": "1.1.0",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/campaigns/campaigns-oas-v1-public.yaml)\n\n# API Overview\n\nCampaigns enable experiences based on an optional schedule and qualifying criteria.\n\nWhen an experience is assigned to a campaign, the schedule and qualifiers can only refine the containing campaign. A campaign is defined in the context of a site and is not shared among sites. A campaign can be enabled or disabled. A disabled campaign is inactive and not available to consumers. Enabled promotions contained within a disabled campaign are also inactive.\n\n## Qualifiers\n\nQualifiers are requirements that must be met to enable a campaign's experience.\n\n-   Schedule: A start and end time and date. This can be open ended at one or both ends.\n-   Coupon: A coupon\n-   Customer Group: Membership in a customer group.\n-   Source Code: A code attached to the site URL that identifies where the customer was redirected from.\n\nFor more details, see [Qualifiers](https://help.salesforce.com/s/articleView?id=cc.b2c_qualifiers.htm&type=5) on the B2C Commerce documentation.\n\n## Experiences\n\nPromotion: A monetary discount or bonus item. Promotions can have additional criteria such as quantity or number of products gating the discount.\n\n## Authentication & Authorization\n\nThe client requesting the campaign information must have access to the Campaign resource. For resource access, you must use a client ID and client secret from Account Manager to request an access token. The access token is used as a bearer token and added to the Authorization header of your API request. The client must first authenticate against Account Manager to log in.\n\nYou must include the relevant scope(s) in the client ID used to generate the token. For details, see [Authorization Scopes Catalog.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html)\n\nFor detailed setup instructions, see [Authorization for Admin APIs](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-admin-apis.html).\n\n## Use Cases\n\n### Flash Sales\n\nUse single date promotions when you want to run a campaign for a short period of time.\n\nFor example, a '20% Off Black Friday' campaign enables a 20% off promotion for registered customers on Black Friday.\n\n### No Date or Time Restrictions\n\nYou can also configure promotions with no time or date restrictions. This is useful when running coupon-coded promotions, or qualifier-based promotions that require certain criteria to be met.\n\nFor example, a 'Free Shipping' campaign enables a free shipping promotion when the coupon code \"freeship\" is added to the cart.\n\n### Redirections\n\nUse redirection promotions to trigger a promotion when a customer arrives at the storefront from a specific location. You may want to use this when partnering with other resources or running external advertisements.\n\nFor example, all users directed from Facebook receive a free hat with purchase.\n\nFor more information, see [Use Source Codes as Qualifiers](https://help.salesforce.com/s/articleView?id=cc.b2c_using_source_codesas_qualifiers.htm&type=5) in the B2C Commerce documentation.\n\n## Related APIs\n\n- [Promotions (Admin)](https://developer.salesforce.com/docs/commerce/commerce-api/references/promotions?meta=Summary) — Manage promotions assigned to campaigns.\n- [Assignments](https://developer.salesforce.com/docs/commerce/commerce-api/references/assignments?meta=Summary) — Assign promotions and discounts to campaigns.\n- [Coupons](https://developer.salesforce.com/docs/commerce/commerce-api/references/coupons?meta=Summary) — Manage coupons used as campaign qualifiers.",
+    "version": "1.1.1",
     "x-api-type": "Admin",
     "x-api-family": "Pricing"
   },
@@ -11,6 +12,7 @@
       "url": "https://{shortCode}.api.commercecloud.salesforce.com/pricing/campaigns/v1",
       "variables": {
         "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
           "default": "shortCode"
         }
       }
@@ -19,26 +21,36 @@
   "paths": {
     "/organizations/{organizationId}/campaigns": {
       "post": {
+        "summary": "Search for campaigns using a search request object that allows filtering on various attributes.",
+        "description": "## Supported Query Attributes\n\nThe query attribute specifies a complex query that you can use to narrow down the search. A subset of these attributes can optionally be used to sort the returned results.\n\n| Attribute | Type | Sortable |\n|-----------|--------|----------|\n| campaignId | String | yes |\n| description | String | yes |\n| enabled | Boolean | yes |\n| couponId | String | no |\n| customerGroup | String | no |\n| sourceCode | String | no |\n| startDate | Date | no |\n| endDate | Date | no |\n| lastModified | Date | no |\n\nThese fields can only be used in queries as conjunctions (using `AND`). If the field is used in a disjunction (`OR`), an exception is thrown.",
         "operationId": "campaignsSearch",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -58,6 +70,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CampaignSearchResult"
+                },
+                "examples": {
+                  "CampaignSearchResult": {
+                    "$ref": "#/components/examples/PostCampaignSearch"
+                  }
                 }
               }
             }
@@ -68,6 +85,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InvalidOperation": {
+                    "$ref": "#/components/examples/InvalidOperation"
+                  }
                 }
               }
             }
@@ -85,11 +107,13 @@
     },
     "/organizations/{organizationId}/campaigns/{campaignId}": {
       "get": {
+        "summary": "Get campaign information.",
         "operationId": "getCampaign",
         "parameters": [
           {
             "name": "campaignId",
             "in": "path",
+            "description": "The ID of the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -105,21 +129,29 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -130,6 +162,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Campaign"
+                },
+                "examples": {
+                  "GetCampaign": {
+                    "$ref": "#/components/examples/GetCampaign"
+                  }
                 }
               }
             }
@@ -140,6 +177,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "getCampaign404": {
+                    "$ref": "#/components/examples/CampaignNotFound404"
+                  }
                 }
               }
             }
@@ -155,11 +197,13 @@
         ]
       },
       "put": {
+        "summary": "Create a campaign using the information provided.",
         "operationId": "createCampaign",
         "parameters": [
           {
             "name": "campaignId",
             "in": "path",
+            "description": "The ID of the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -175,21 +219,29 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -198,6 +250,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Campaign"
+              },
+              "examples": {
+                "PutCampaign": {
+                  "$ref": "#/components/examples/PutCampaign"
+                }
               }
             }
           }
@@ -209,6 +266,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Campaign"
+                },
+                "examples": {
+                  "GetCampaign": {
+                    "$ref": "#/components/examples/PutCampaign"
+                  }
                 }
               }
             }
@@ -219,6 +281,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdConflict400": {
+                    "$ref": "#/components/examples/IdConflict400"
+                  }
                 }
               }
             }
@@ -233,11 +300,13 @@
         ]
       },
       "delete": {
+        "summary": "Deletes a campaign with a specified ID.",
         "operationId": "deleteCampaign",
         "parameters": [
           {
             "name": "campaignId",
             "in": "path",
+            "description": "The ID of the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -253,21 +322,29 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -285,11 +362,13 @@
         ]
       },
       "patch": {
+        "summary": "Update a campaign with the specified information.",
         "operationId": "updateCampaign",
         "parameters": [
           {
             "name": "campaignId",
             "in": "path",
+            "description": "The ID of the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -305,21 +384,29 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -328,6 +415,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Campaign"
+              },
+              "examples": {
+                "PatchCampaign": {
+                  "$ref": "#/components/examples/PatchCampaign"
+                }
               }
             }
           }
@@ -339,6 +431,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Campaign"
+                },
+                "examples": {
+                  "PutCampaign": {
+                    "$ref": "#/components/examples/PutCampaign"
+                  }
                 }
               }
             }
@@ -349,6 +446,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "updateCampaign400": {
+                    "$ref": "#/components/examples/CampaignDuplicate400"
+                  }
                 }
               }
             }
@@ -359,6 +461,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "getCampaign404": {
+                    "$ref": "#/components/examples/CampaignNotFound404"
+                  }
                 }
               }
             }
@@ -375,11 +482,13 @@
     },
     "/organizations/{organizationId}/campaigns/{campaignId}/promotions": {
       "get": {
+        "summary": "List promotions assigned to a campaign.",
         "operationId": "getCampaignPromotionAssignments",
         "parameters": [
           {
             "name": "campaignId",
             "in": "path",
+            "description": "The ID of the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -395,21 +504,29 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -420,6 +537,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PromotionCampaignAssignmentResult"
+                },
+                "examples": {
+                  "GetCampaignPromotionAssignments": {
+                    "$ref": "#/components/examples/GetCampaignPromotionAssignments"
+                  }
                 }
               }
             }
@@ -446,11 +568,13 @@
     },
     "/organizations/{organizationId}/campaigns/{campaignId}/promotions/{promotionId}": {
       "get": {
+        "summary": "Get a promotion campaign assignment.",
         "operationId": "getCampaignPromotionAssignment",
         "parameters": [
           {
             "name": "campaignId",
             "in": "path",
+            "description": "The ID of the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -466,11 +590,13 @@
           {
             "name": "promotionId",
             "in": "path",
+            "description": "The ID of the promotion assigned to the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "10offsku",
               "maxLength": 256,
               "minLength": 1
             }
@@ -478,21 +604,29 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -503,6 +637,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PromotionCampaignAssignment"
+                },
+                "examples": {
+                  "GetCampaignPromotionAssignment": {
+                    "$ref": "#/components/examples/GetCampaignPromotionAssignment"
+                  }
                 }
               }
             }
@@ -527,11 +666,13 @@
         ]
       },
       "put": {
+        "summary": "Create or replace a promotion campaign assignment.",
         "operationId": "assignPromotionToCampaign",
         "parameters": [
           {
             "name": "campaignId",
             "in": "path",
+            "description": "The ID of the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -547,11 +688,13 @@
           {
             "name": "promotionId",
             "in": "path",
+            "description": "The ID of the promotion assigned to the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "10offsku",
               "maxLength": 256,
               "minLength": 1
             }
@@ -559,21 +702,29 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -582,6 +733,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PromotionCampaignAssignmentRequest"
+              },
+              "examples": {
+                "AssignPromotionToCampaign": {
+                  "$ref": "#/components/examples/AssignPromotionToCampaign"
+                }
               }
             }
           },
@@ -594,6 +750,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PromotionCampaignAssignment"
+                },
+                "examples": {
+                  "AssignPromotionToCampaign": {
+                    "$ref": "#/components/examples/GetCampaignPromotionAssignment"
+                  }
                 }
               }
             }
@@ -604,6 +765,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PromotionCampaignAssignment"
+                },
+                "examples": {
+                  "AssignPromotionToCampaign": {
+                    "$ref": "#/components/examples/GetCampaignPromotionAssignment"
+                  }
                 }
               }
             }
@@ -630,11 +796,13 @@
         ]
       },
       "delete": {
+        "summary": "Unassign a promotion from a campaign.",
         "operationId": "unassignPromotionFromCampaign",
         "parameters": [
           {
             "name": "campaignId",
             "in": "path",
+            "description": "The ID of the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -650,11 +818,13 @@
           {
             "name": "promotionId",
             "in": "path",
+            "description": "The ID of the promotion assigned to the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "10offsku",
               "maxLength": 256,
               "minLength": 1
             }
@@ -662,21 +832,29 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -703,11 +881,13 @@
         ]
       },
       "patch": {
+        "summary": "Update a promotion campaign assignment.",
         "operationId": "updateCampaignPromotionAssignment",
         "parameters": [
           {
             "name": "campaignId",
             "in": "path",
+            "description": "The ID of the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -723,11 +903,13 @@
           {
             "name": "promotionId",
             "in": "path",
+            "description": "The ID of the promotion assigned to the campaign.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "10offsku",
               "maxLength": 256,
               "minLength": 1
             }
@@ -735,21 +917,29 @@
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -758,6 +948,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PromotionCampaignAssignmentUpdate"
+              },
+              "examples": {
+                "UpdateCampaignPromotionAssignment": {
+                  "$ref": "#/components/examples/UpdateCampaignPromotionAssignment"
+                }
               }
             }
           },
@@ -770,6 +965,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PromotionCampaignAssignment"
+                },
+                "examples": {
+                  "UpdateCampaignPromotionAssignment": {
+                    "$ref": "#/components/examples/GetCampaignPromotionAssignment"
+                  }
                 }
               }
             }
@@ -801,16 +1001,42 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
         "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
       },
       "SiteId": {
         "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
         "maxLength": 32,
         "minLength": 1
       },
       "Query": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A set of objects that define criteria used to select records. A query can contain one of the following:\n* `MatchAllQuery`\n - Matches all documents.\n* `TermQuery`\n - Matches one or more documents against one or more document fields.\n* `TextQuery`\n - Matches text against one or more fields.\n* `BoolQuery`\n - Allows construction of a logical expression of multiple queries.\n* `FilteredQuery`\n - Allows a filter to be applied to a query.\n* `NestedQuery`\n - Allows you to query on nested documents.\n - _Only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation._",
+        "example": {
+          "filteredQuery": {
+            "query": {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "disabled"
+              }
+            },
+            "filter": {
+              "termFilter": {
+                "field": "enabled",
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          }
+        },
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -837,21 +1063,58 @@
       "BoolQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A boolean query allows construction of full logical expression trees that are composed of other queries (usually term queries and text queries). A boolean query has three sets of clauses:\n  \n  - `must`, which combines as an `AND` operator.\n  - `should`, which combines as an `OR` operator.\n  - `must_not`, which combines as a `NOT` operator.\n  \nIf `must`, `mustNot`, or `should` appear in the same boolean query, they are combined logically using the `AND` operator. For example:\n\n    (must-1 AND must-1 AND ...)\n      AND (should-1 OR should-2 OR ...)\n      AND NOT (must_not-1 OR must_not-2 OR ...)\n",
+        "example": {
+          "must": [
+            {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "DEAL"
+              }
+            },
+            {
+              "textQuery": {
+                "fields": [
+                  "description"
+                ],
+                "searchPhrase": "Big bargain deal"
+              }
+            }
+          ],
+          "mustNot": [
+            {
+              "termQuery": {
+                "fields": [
+                  "enabled"
+                ],
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          ]
+        },
         "properties": {
           "must": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `AND` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "mustNot": {
             "type": "array",
+            "description": "List of queries to be evaluated as a `NOT` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "should": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `OR` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
@@ -861,6 +1124,7 @@
       "Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Contains a set of objects that define criteria used to select records. A filter can contain one of the following:\n  * `TermFilter`\n   - Matches records where a field (or fields) exactly matches some simple value (including `null`).\n  * `RangeFilter`\n   - Matches records where a field value lies within a specified range.\n  * `Range2Filter`\n   - Matches records in a specified range across fields.\n  * `QueryFilter`\n   - Matches records based on a query.\n  * `BoolFilter`\n   - Provides filtering of records using a set of filters combined using a logical operator.",
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -884,20 +1148,47 @@
       "BoolFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to combine other filters into (possibly recursive) logical expression trees. A boolean filter is composed of a logical operator (`AND`, `OR`, `NOT`) and a list of filters that the operator relates to. Multiple filters can be negated with a single `NOT` operator, even when the filters are combined with the `AND` operator.",
+        "example": {
+          "operator": "and",
+          "filters": [
+            {
+              "termFilter": {
+                "field": "id",
+                "operator": "is",
+                "values": [
+                  "myId"
+                ]
+              }
+            },
+            {
+              "termFilter": {
+                "field": "couponId",
+                "operator": "is",
+                "values": [
+                  "couponOne"
+                ]
+              }
+            }
+          ]
+        },
         "properties": {
           "filters": {
             "type": "array",
+            "description": "A list of filters that are logically combined by an operator.",
             "items": {
               "$ref": "#/components/schemas/Filter"
             }
           },
           "operator": {
             "type": "string",
+            "description": "The logical operator that is used to combine the filters.",
             "enum": [
               "and",
               "or",
               "not"
-            ]
+            ],
+            "example": "and"
           }
         },
         "required": [
@@ -906,6 +1197,7 @@
       },
       "QueryFilter": {
         "type": "object",
+        "description": "Wraps any query and allows it to be used as a filter.",
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
@@ -917,45 +1209,71 @@
       },
       "Field": {
         "type": "string",
+        "description": "Name of the field. Might be a custom field name prefixed with c_.",
+        "example": "couponId",
         "maxLength": 260
       },
       "Range2Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits where a range defined by specified attributes has a certain relationship to a specified range.\n\nThe first range (R1) is defined by a pair of attributes (`fromField` and `toField`) that specify the extent of a range, such as attributes `validFrom` and `validTo`.\n\nThe second range (R2) is defined by `fromValue` and `toValue`.\n\nThe filter mode specifies the method used to compare the two ranges:\n\n* `overlap`: R1 overlaps fully or partially with R2.\n* `containing`: R1 contains R2.\n* `contained`: R1 is contained in R2.\n\nThe range filter supports several value types, and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range 2 filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "example": {
+          "fromField": "validFrom",
+          "toField": "validTo",
+          "filterMode": "overlap",
+          "fromValue": "2007-01-01T00:00:00.000Z",
+          "toValue": "2017-01-01T00:00:00.000Z"
+        },
         "properties": {
           "filterMode": {
             "type": "string",
             "default": "overlap",
+            "description": "Compare mode: overlap, containing, or contained.",
             "enum": [
               "overlap",
               "containing",
               "contained"
-            ]
+            ],
+            "example": "overlap"
           },
           "fromField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that starts the first range.",
+            "example": "validFrom"
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "fromValue": {},
+          "fromValue": {
+            "description": "The lower bound of the second range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "example": "2007-01-01T00:00:00.000Z"
+          },
           "toField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that ends the first range.",
+            "example": "validTo"
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "toValue": {}
+          "toValue": {
+            "description": "The upper bound of the second range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "example": "2017-01-01T00:00:00.000Z"
+          }
         },
         "required": [
           "fromField",
@@ -964,49 +1282,64 @@
       },
       "RangeFilter": {
         "type": "object",
+        "description": "Allows you to restrict a search result to hits that have values for a given attribute that fall within a given value range. The range filter supports several value types and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The search field.",
+            "example": "validFrom"
           },
           "from": {
+            "description": "The lower bound of the filter range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-01T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 1
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 1
               }
             ]
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
           "to": {
+            "description": "The upper bound of the filter range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-02T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 2
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 2
               }
             ]
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the range is inclusive. To make the upper bound exclusive, set to `false`.",
+            "example": true
           }
         },
         "required": [
@@ -1016,16 +1349,26 @@
       "TermFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits that match exactly one of the values configured for the filter. A term filter is useful for general restrictions that can be shared between searches. Use term filters whenever the criteria you filter on is a shared property of multiple searches (for example, like filtering by an order status). Use term filters for fields that have a discrete and small set of values only.",
+        "example": {
+          "field": "id",
+          "operator": "is",
+          "values": [
+            "myId"
+          ]
+        },
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The filter field."
           },
           "operator": {
             "type": "string",
+            "description": "The operator used to compare the field's values with the given values.",
             "enum": [
               "is",
               "one_of",
@@ -1035,12 +1378,15 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The filter values.",
             "items": {
-              "type": "string"
+              "type": "string",
+              "example": "myId"
             }
           }
         },
@@ -1052,6 +1398,26 @@
       "FilteredQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows to filter the result of a possibly complex query using a possibly complex filter.",
+        "example": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "couponId"
+              ],
+              "searchPhrase": "disabled"
+            }
+          },
+          "filter": {
+            "termFilter": {
+              "field": "enabled",
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          }
+        },
         "properties": {
           "filter": {
             "$ref": "#/components/schemas/Filter"
@@ -1066,14 +1432,62 @@
         ]
       },
       "MatchAllQuery": {
-        "type": "object"
+        "type": "object",
+        "description": "Matches all documents (namespace and document type). This query comes in handy if you just want to filter a search result or really do not have any constraints."
       },
       "NestedQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to query nested documents that are part of a larger document. Say, for example, that you have a main product with variations in one big document, and you want to constrain a search to main products that have variations that match multiple constraints. \n\nA `NestedQuery` is only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation.\n",
+        "example": {
+          "path": "order.shippingAddresses",
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.firstName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "John"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.lastName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "Doe"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "scoreMode": "avg"
+        },
         "properties": {
           "path": {
             "type": "string",
+            "description": "The path to the nested document.",
+            "example": "order.shippingAddresses",
             "maxLength": 2048
           },
           "query": {
@@ -1081,12 +1495,14 @@
           },
           "scoreMode": {
             "type": "string",
+            "description": "Indicates how scores for matching child objects affect the root parent document’s relevance score.",
             "enum": [
               "avg",
               "total",
               "max",
               "none"
-            ]
+            ],
+            "example": "avg"
           }
         },
         "required": [
@@ -1096,9 +1512,11 @@
       },
       "TermQuery": {
         "type": "object",
+        "description": "A term query matches one or more values against one or more document fields. A document is considered a hit if one of the values matches exactly with at least one of the given fields. The operator `is` can only take one value, while `one_of` can take multiple values. If multiple fields are specified, they are combined using a logical `OR` operator.\n\n**Limitations:**\n\n* The `greater` and `less` operators are not supported under certain conditions. Both operators are permitted unless the API documentation states otherwise.\n* A subset of Commerce APIs handle queries with multiple fields differently. If the query has multiple fields, the query is internally handled as a logical `OR` of `DisjointMaxQueries` (with the dismax matching a value against all fields). The dismax makes sure that a document carrying a single term in multiple fields does not get higher scores than a document matching multiple terms in multiple fields.",
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the values are matched against, combined with the operator.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
@@ -1106,6 +1524,7 @@
           },
           "operator": {
             "type": "string",
+            "description": "Returns the operator to use for the term query.",
             "enum": [
               "is",
               "one_of",
@@ -1115,23 +1534,30 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The values that the fields are compared against, combined with the operator.",
             "items": {
+              "example": "myCouponId",
               "oneOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "example": "myCouponId"
                 },
                 {
-                  "type": "number"
+                  "type": "number",
+                  "example": 1
                 },
                 {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "example": true
                 },
                 {
-                  "type": "integer"
+                  "type": "integer",
+                  "example": 1
                 }
               ]
             }
@@ -1145,16 +1571,26 @@
       "TextQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A text query is used to match some text (for example, a search phrase possibly consisting of multiple terms) against one or more fields. When multiple fields are provided, the phrase conceptually forms a logical `OR` over the fields. In this case, the terms of the phrase basically have to match within the text, that would result in concatenating all given fields.",
+        "example": {
+          "fields": [
+            "couponId"
+          ],
+          "searchPhrase": "limit"
+        },
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the search phrase matches against.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
             "minItems": 1
           },
           "searchPhrase": {
-            "type": "string"
+            "type": "string",
+            "description": "A search phrase, which can include multiple terms separated by spaces.",
+            "example": "campaign summer"
           }
         },
         "required": [
@@ -1165,18 +1601,27 @@
       "Sort": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Document representing a sort request. Each API has a different default sort configuration that can be modified in the request.",
+        "example": {
+          "field": "couponId",
+          "sortOrder": "desc"
+        },
         "properties": {
           "field": {
             "type": "string",
+            "description": "The name of the field to sort on.",
+            "example": "couponId",
             "maxLength": 256
           },
           "sortOrder": {
             "type": "string",
             "default": "asc",
+            "description": "The sort order to be applied when sorting. When omitted, the default sort order (asc) is used.",
             "enum": [
               "asc",
               "desc"
-            ]
+            ],
+            "example": "asc"
           }
         },
         "required": [
@@ -1187,14 +1632,19 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
         "minimum": 0
       },
       "SearchRequest": {
         "type": "object",
+        "description": "Document representing a search request for retrieving items within the Data API. The query is a potentially complex set of expressions. The fields and expands that each query supports are defined within the search resource.",
         "properties": {
           "limit": {
             "type": "integer",
             "format": "int32",
+            "description": "Maximum records to retrieve per request, not to exceed 200.",
+            "example": 10,
             "maximum": 200,
             "minimum": 1
           },
@@ -1203,6 +1653,7 @@
           },
           "sorts": {
             "type": "array",
+            "description": "The list of sort clauses configured for the search request. Sort clauses are optional. See the description of the search endpoint for details on the default sorting behavior that is used when explicit sorts are not passed.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
@@ -1219,14 +1670,19 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
         "minimum": 0
       },
       "ResultBase": {
         "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
         "properties": {
           "limit": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
           },
           "total": {
             "$ref": "#/components/schemas/Total"
@@ -1243,6 +1699,7 @@
             "$ref": "#/components/schemas/ResultBase"
           }
         ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
         "properties": {
           "offset": {
             "$ref": "#/components/schemas/Offset"
@@ -1261,18 +1718,67 @@
             "$ref": "#/components/schemas/PaginatedResultBase"
           }
         ],
+        "description": "Document representing a generic search result. Each search resource should extend this to define what is returned in the `hits`.",
+        "example": {
+          "limit": 1,
+          "hits": [
+            {
+              "couponId": "coupon1",
+              "creationDate": "2019-10-20T12:00:00Z",
+              "description": "This coupon is used to give 10% off stuff.",
+              "enabled": false,
+              "exportedCodeCount": 0,
+              "lastModified": "2019-10-30T04:23:59Z",
+              "redemptionCount": 3,
+              "redemptionLimits": {
+                "limitPerCode": 1,
+                "limitPerCustomer": 1,
+                "limitPerTimeFrame": {
+                  "limit": 2,
+                  "redemptionTimeFrame": 24
+                }
+              },
+              "singleCode": "MyCode",
+              "systemCodesConfig": {
+                "codePrefix": "SG",
+                "numberOfCodes": 500000
+              },
+              "totalCodesCount": 50,
+              "type": "single_code"
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "stuff"
+            }
+          },
+          "sorts": [
+            {
+              "field": "couponId",
+              "sortOrder": "desc"
+            }
+          ],
+          "offset": 2,
+          "total": 8
+        },
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
           },
           "sorts": {
             "type": "array",
+            "description": "The sorting that was applied to the result.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
           },
           "hits": {
             "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
             "items": {
               "type": "object"
             }
@@ -1284,71 +1790,111 @@
       },
       "CampaignId": {
         "type": "string",
+        "description": "The ID of the campaign.",
+        "example": "NewYearCampaign",
         "maxLength": 256,
         "minLength": 1
       },
       "CouponId": {
         "type": "string",
+        "description": "The ID of the coupon.",
+        "example": "20%offOrder",
         "maxLength": 256,
         "minLength": 1
       },
       "CustomerGroupId": {
         "type": "string",
+        "description": "The ID of the customer group.",
+        "example": "Registered",
         "maxLength": 256,
         "minLength": 1
       },
       "SourceCodeGroupId": {
         "type": "string",
+        "description": "The ID of source code group.",
+        "example": "TV-Email",
         "maxLength": 28,
         "minLength": 1
       },
       "Campaign": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a campaign.",
         "properties": {
           "campaignId": {
             "$ref": "#/components/schemas/CampaignId"
           },
           "coupons": {
             "type": "array",
+            "description": "The array of assigned coupon IDs, not sorted.",
+            "example": [
+              "20%offOrder",
+              "10%offWelcomeNewUser"
+            ],
             "items": {
               "$ref": "#/components/schemas/CouponId"
             }
           },
           "creationDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Returns the value of attribute 'creationDate'.",
+            "example": "2019-10-03T19:36:56Z"
           },
           "customerGroups": {
             "type": "array",
+            "description": "The array of assigned customer groups, not sorted.",
+            "example": [
+              "BigShoppers",
+              "NorthAmericanShoppers"
+            ],
             "items": {
               "$ref": "#/components/schemas/CustomerGroupId"
             }
           },
           "description": {
             "type": "string",
+            "description": "The description of the campaign.",
+            "example": "Campaign for the New Year",
             "maxLength": 4000
           },
           "enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "The enabled flag for campaign.",
+            "example": true
           },
           "endDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The date the scenario ends.",
+            "example": "2019-10-03T19:36:56Z"
           },
           "lastModified": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Returns the value of attribute 'lastModified'.",
+            "example": "2019-10-03T19:36:56Z"
           },
           "sourceCodeGroups": {
             "type": "array",
+            "description": "The array of assigned source code groups, not sorted.",
+            "example": [
+              "affiliate-email",
+              "gaming-email"
+            ],
             "items": {
               "$ref": "#/components/schemas/SourceCodeGroupId"
             }
           },
           "startDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The date the scenario begins.",
+            "example": "2019-10-03T19:36:56Z"
           }
         }
       },
@@ -1358,9 +1904,11 @@
             "$ref": "#/components/schemas/PaginatedSearchResult"
           }
         ],
+        "description": "Document representing a campaign search result.",
         "properties": {
           "hits": {
             "type": "array",
+            "description": "The sorted array of campaign search hits. Can be empty.",
             "items": {
               "$ref": "#/components/schemas/Campaign"
             }
@@ -1376,17 +1924,25 @@
         "properties": {
           "title": {
             "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
             "maxLength": 2048
           },
           "detail": {
-            "type": "string"
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
           },
           "instance": {
             "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
             "maxLength": 2048
           }
         },
@@ -1397,41 +1953,52 @@
         ]
       },
       "CouponsBased": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Whether the coupons qualifier participates in the assignment's qualification rule. When true, the\nassigned coupons gate the promotion (combined with campaign-level coupons). When omitted, defaults to\ntrue if a non-empty coupons array is supplied, otherwise false.",
+        "example": false
       },
       "CustomerGroupsBased": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Whether the customer-groups qualifier participates in the assignment's qualification rule. When true,\nthe assigned customer groups gate the promotion (combined with campaign-level customer groups). When\nomitted, defaults to true if a non-empty customerGroups array is supplied, otherwise false.",
+        "example": false
       },
       "RequiredQualifier": {
         "type": "string",
         "default": "any",
+        "description": "Controls how the active qualifier types (coupons, customer groups, source-code groups) combine.\n'all' requires every active qualifier type to be satisfied (AND); 'any' requires at least one (OR).\nDefaults to 'any' when omitted.",
         "enum": [
           "all",
           "any"
-        ]
+        ],
+        "example": "any"
       },
       "TimeOfDay": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Document representing a time schedule within a single day.",
         "properties": {
           "timeFrom": {
-            "type": "string"
+            "type": "string",
+            "description": "The time to start from. Time format: HH:mm or HH:mm:ss. Seconds are ignored and set to 0.",
+            "example": "09:00:00",
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$"
           },
           "timeTo": {
-            "type": "string"
+            "type": "string",
+            "description": "The time to end on. Time format: HH:mm or HH:mm:ss. Seconds are ignored and set to 0.",
+            "example": "17:00:00",
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$"
           }
-        },
-        "required": [
-          "timeFrom",
-          "timeTo"
-        ]
+        }
       },
       "Recurrence": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Document representing a schedule recurrence.",
         "properties": {
           "dayOfWeek": {
             "type": "array",
+            "description": "The days of week for recurrence.",
             "items": {
               "type": "string",
               "enum": [
@@ -1442,7 +2009,8 @@
                 "friday",
                 "saturday",
                 "sunday"
-              ]
+              ],
+              "example": "monday"
             }
           },
           "timeOfDay": {
@@ -1450,60 +2018,70 @@
               {
                 "$ref": "#/components/schemas/TimeOfDay"
               }
-            ]
+            ],
+            "description": "The time of the day for recurrence."
           }
-        },
-        "required": [
-          "dayOfWeek",
-          "timeOfDay"
-        ]
+        }
       },
       "Schedule": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Document representing a time schedule. Defines an optional validity window (startDate/endDate) and an optional recurrence. Omitting a bound leaves that side of the window open (unbounded).",
         "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date to start validity. ISO8601 date time format: yyyy-MM-dd'T'HH:mm:ssZ.",
+            "example": "2026-01-01T00:00:00Z"
+          },
           "endDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The date to end of validity. ISO8601 date time format: yyyy-MM-dd'T'HH:mm:ssZ.",
+            "example": "2026-01-31T23:59:59Z"
           },
           "recurrence": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Recurrence"
               }
-            ]
-          },
-          "startDate": {
-            "type": "string",
-            "format": "date-time"
+            ],
+            "description": "The recurrence of the schedule by day of week and time of day. Not all schedules support a recurrence."
           }
-        },
-        "required": [
-          "endDate",
-          "startDate"
-        ]
+        }
       },
       "SourceCodeBased": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Whether the source-code-groups qualifier participates in the assignment's qualification rule. When true,\nthe assigned source-code groups gate the promotion (combined with campaign-level source-code groups).\nWhen omitted, defaults to true if a non-empty sourceCodeGroups array is supplied, otherwise false.",
+        "example": false
       },
       "PromotionCampaignAssignment": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a promotion campaign assignment.",
         "properties": {
           "campaign": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Campaign"
               }
-            ]
+            ],
+            "description": "The campaign."
           },
           "campaignId": {
             "type": "string",
+            "description": "The ID of the campaign.",
+            "example": "NewYearCampaign",
             "maxLength": 256,
             "minLength": 1
           },
           "coupons": {
             "type": "array",
+            "description": "The sorted array of assigned coupon IDs.",
             "items": {
               "$ref": "#/components/schemas/CouponId"
             }
@@ -1513,6 +2091,7 @@
           },
           "customerGroups": {
             "type": "array",
+            "description": "The sorted array of assigned customer groups.",
             "items": {
               "$ref": "#/components/schemas/CustomerGroupId"
             }
@@ -1522,16 +2101,22 @@
           },
           "enabled": {
             "type": "boolean",
+            "description": "Read-only. True if the assigned promotion is enabled. Derived from the promotion's enabled state; cannot be set on the assignment. Use the Promotions API to change it.",
+            "example": true,
             "readOnly": true
           },
           "promotionId": {
             "type": "string",
+            "description": "The ID of the promotion. Use the Promotions API to fetch the full promotion.",
+            "example": "10offsku",
             "maxLength": 256,
             "minLength": 1
           },
           "rank": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The rank of promotion campaign assignment.",
+            "example": 1
           },
           "requiredQualifier": {
             "$ref": "#/components/schemas/RequiredQualifier"
@@ -1541,13 +2126,15 @@
               {
                 "$ref": "#/components/schemas/Schedule"
               }
-            ]
+            ],
+            "description": "The schedule of the assignment resource."
           },
           "sourceCodeBased": {
             "$ref": "#/components/schemas/SourceCodeBased"
           },
           "sourceCodeGroups": {
             "type": "array",
+            "description": "The sorted array of assigned source code groups.",
             "items": {
               "$ref": "#/components/schemas/SourceCodeGroupId"
             }
@@ -1575,9 +2162,11 @@
             "$ref": "#/components/schemas/ResultBase"
           }
         ],
+        "description": "Result document representing a list of promotion campaign assignments assigned to a campaign.",
         "properties": {
           "data": {
             "type": "array",
+            "description": "The array of promotion campaign assignments, ordered by rank ascending. Can be empty.",
             "items": {
               "$ref": "#/components/schemas/PromotionCampaignAssignment"
             }
@@ -1593,6 +2182,7 @@
             "$ref": "#/components/schemas/ErrorResponse"
           }
         ],
+        "description": "Returned when no campaign with the given ID exists for the requested site.",
         "properties": {
           "campaignId": {
             "$ref": "#/components/schemas/CampaignId"
@@ -1608,12 +2198,15 @@
             "$ref": "#/components/schemas/ErrorResponse"
           }
         ],
+        "description": "Returned when the promotion is not assigned to the campaign for the requested site.",
         "properties": {
           "campaignId": {
             "$ref": "#/components/schemas/CampaignId"
           },
           "promotionId": {
             "type": "string",
+            "description": "The ID of the promotion.",
+            "example": "10offsku",
             "maxLength": 256,
             "minLength": 1
           },
@@ -1624,15 +2217,23 @@
       },
       "PromotionCampaignAssignmentRequest": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Request body for creating or replacing a promotion campaign assignment (PUT). Omits the read-only nested\ncampaign and promotion courtesy copies, which are response-only.",
         "properties": {
           "campaignId": {
             "type": "string",
+            "description": "The ID of the campaign. If supplied, must equal the campaignId path parameter.",
+            "example": "NewYearCampaign",
             "maxLength": 256,
             "minLength": 1
           },
           "coupons": {
             "type": "array",
+            "description": "The sorted array of assigned coupon IDs.",
             "items": {
               "$ref": "#/components/schemas/CouponId"
             }
@@ -1642,6 +2243,7 @@
           },
           "customerGroups": {
             "type": "array",
+            "description": "The sorted array of assigned customer groups.",
             "items": {
               "$ref": "#/components/schemas/CustomerGroupId"
             }
@@ -1651,12 +2253,19 @@
           },
           "promotionId": {
             "type": "string",
+            "description": "The ID of the promotion. If supplied, must equal the promotionId path parameter.",
+            "example": "10offsku",
             "maxLength": 256,
             "minLength": 1
           },
           "rank": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The rank of the promotion campaign assignment. Must be null or a multiple of 10\nfrom 0 to 100 (0, 10, 20, ..., 100).",
+            "example": 10,
+            "maximum": 100,
+            "minimum": 0,
+            "multipleOf": 10
           },
           "requiredQualifier": {
             "$ref": "#/components/schemas/RequiredQualifier"
@@ -1666,13 +2275,15 @@
               {
                 "$ref": "#/components/schemas/Schedule"
               }
-            ]
+            ],
+            "description": "The schedule of the assignment resource."
           },
           "sourceCodeBased": {
             "$ref": "#/components/schemas/SourceCodeBased"
           },
           "sourceCodeGroups": {
             "type": "array",
+            "description": "The sorted array of assigned source code groups.",
             "items": {
               "$ref": "#/components/schemas/SourceCodeGroupId"
             }
@@ -1687,14 +2298,16 @@
           {
             "$ref": "#/components/schemas/ErrorResponse"
           }
-        ]
+        ],
+        "description": "Returned when the composite key in the request body does not match the campaignId or promotionId path parameters."
       },
       "AssignmentBusinessRuleViolationErrorResponse": {
         "allOf": [
           {
             "$ref": "#/components/schemas/ErrorResponse"
           }
-        ]
+        ],
+        "description": "Returned when a backend business rule rejects the assignment (for example, an invalid schedule or qualifier combination)."
       },
       "PromotionNotFoundErrorResponse": {
         "allOf": [
@@ -1702,9 +2315,12 @@
             "$ref": "#/components/schemas/ErrorResponse"
           }
         ],
+        "description": "Returned when the promotion referenced by the request does not exist for the requested site.",
         "properties": {
           "promotionId": {
             "type": "string",
+            "description": "The ID of the promotion.",
+            "example": "10offsku",
             "maxLength": 256,
             "minLength": 1
           },
@@ -1715,15 +2331,23 @@
       },
       "PromotionCampaignAssignmentUpdate": {
         "type": "object",
-        "additionalProperties": {},
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Request body for partially updating a promotion campaign assignment (PATCH). Same properties as the create\nrequest, but all properties are optional. Omits the read-only nested campaign and promotion courtesy copies.",
         "properties": {
           "campaignId": {
             "type": "string",
+            "description": "The ID of the campaign. If supplied, must equal the campaignId path parameter.",
+            "example": "NewYearCampaign",
             "maxLength": 256,
             "minLength": 1
           },
           "coupons": {
             "type": "array",
+            "description": "The sorted array of assigned coupon IDs.",
             "items": {
               "$ref": "#/components/schemas/CouponId"
             }
@@ -1733,6 +2357,7 @@
           },
           "customerGroups": {
             "type": "array",
+            "description": "The sorted array of assigned customer groups.",
             "items": {
               "$ref": "#/components/schemas/CustomerGroupId"
             }
@@ -1742,12 +2367,19 @@
           },
           "promotionId": {
             "type": "string",
+            "description": "The ID of the promotion. If supplied, must equal the promotionId path parameter.",
+            "example": "10offsku",
             "maxLength": 256,
             "minLength": 1
           },
           "rank": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The rank of the promotion campaign assignment. Must be null or a multiple of 10\nfrom 0 to 100 (0, 10, 20, ..., 100).",
+            "example": 10,
+            "maximum": 100,
+            "minimum": 0,
+            "multipleOf": 10
           },
           "requiredQualifier": {
             "$ref": "#/components/schemas/RequiredQualifier"
@@ -1757,13 +2389,15 @@
               {
                 "$ref": "#/components/schemas/Schedule"
               }
-            ]
+            ],
+            "description": "The schedule of the assignment resource. Send schedule null to clear the assignment-level schedule."
           },
           "sourceCodeBased": {
             "$ref": "#/components/schemas/SourceCodeBased"
           },
           "sourceCodeGroups": {
             "type": "array",
+            "description": "The sorted array of assigned source code groups.",
             "items": {
               "$ref": "#/components/schemas/SourceCodeGroupId"
             }
@@ -1778,6 +2412,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
             }
           }
         }
@@ -1788,6 +2427,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
             }
           }
         }
@@ -1798,6 +2442,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/CampaignNotFoundErrorResponse"
+            },
+            "examples": {
+              "CampaignNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/CampaignNotFoundErrorResponseExample"
+              }
             }
           }
         }
@@ -1815,6 +2464,14 @@
                   "$ref": "#/components/schemas/PromotionCampaignAssignmentNotFoundErrorResponse"
                 }
               ]
+            },
+            "examples": {
+              "CampaignNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/CampaignNotFoundErrorResponseExample"
+              },
+              "PromotionCampaignAssignmentNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/PromotionCampaignAssignmentNotFoundErrorResponseExample"
+              }
             }
           }
         }
@@ -1832,6 +2489,14 @@
                   "$ref": "#/components/schemas/AssignmentBusinessRuleViolationErrorResponse"
                 }
               ]
+            },
+            "examples": {
+              "AssignmentIdMismatchErrorResponseExample": {
+                "$ref": "#/components/examples/AssignmentIdMismatchErrorResponseExample"
+              },
+              "AssignmentBusinessRuleViolationErrorResponseExample": {
+                "$ref": "#/components/examples/AssignmentBusinessRuleViolationErrorResponseExample"
+              }
             }
           }
         }
@@ -1849,6 +2514,14 @@
                   "$ref": "#/components/schemas/PromotionNotFoundErrorResponse"
                 }
               ]
+            },
+            "examples": {
+              "CampaignNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/CampaignNotFoundErrorResponseExample"
+              },
+              "PromotionNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/PromotionNotFoundErrorResponseExample"
+              }
             }
           }
         }
@@ -1858,26 +2531,35 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "siteId": {
         "name": "siteId",
         "in": "query",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
         "required": true,
         "style": "form",
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/SiteId"
+        },
+        "examples": {
+          "SiteId": {
+            "value": "RefArch"
+          }
         }
       },
       "campaignId": {
         "name": "campaignId",
         "in": "path",
+        "description": "The ID of the campaign.",
         "required": true,
         "style": "simple",
         "explode": false,
@@ -1893,19 +2575,357 @@
       "promotionId": {
         "name": "promotionId",
         "in": "path",
+        "description": "The ID of the promotion assigned to the campaign.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "10offsku",
           "maxLength": 256,
           "minLength": 1
+        }
+      }
+    },
+    "examples": {
+      "PostCampaignSearch": {
+        "value": {
+          "limit": 2,
+          "hits": [
+            {
+              "campaignId": "mens-clothing-dress-shirts",
+              "creationDate": "2019-11-06T21:12:35.000Z",
+              "customerGroups": [
+                "Everyone"
+              ],
+              "description": "This a campaign for the Mens Dress Shirts Category offering a specific banner as well as a 20% off dress shirts promotion, and a custom sort rule of product name ascending",
+              "enabled": false,
+              "lastModified": "2019-11-06T21:12:35.000Z"
+            },
+            {
+              "campaignId": "mens-clothing-suits",
+              "creationDate": "2019-11-06T21:12:35.000Z",
+              "customerGroups": [
+                "Everyone"
+              ],
+              "description": "This is a campaign that displays a landing banner, with a 25% discount on all suits and default sorting rule of top selling suits.",
+              "enabled": false,
+              "lastModified": "2019-11-06T21:12:35.000Z"
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "campaign"
+            }
+          },
+          "offset": 1,
+          "total": 4
+        }
+      },
+      "InvalidOperation": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-operation",
+          "detail": "Failed to execute search query: wrong syntax.",
+          "title": "Incorrect Syntax"
+        }
+      },
+      "GetCampaign": {
+        "value": {
+          "campaignId": "NewYearCampaign",
+          "coupons": [
+            "20%offOrdersAbove100",
+            "10%offties"
+          ],
+          "creationDate": "2019-10-03T19:36:56.000Z",
+          "customerGroups": [
+            "Registered"
+          ],
+          "description": "Campaign for the New Year",
+          "enabled": true,
+          "endDate": "2020-07-31T23:09:08.000Z",
+          "lastModified": "2019-10-10T14:27:00.867Z",
+          "sourceCodeGroups": [
+            "affiliate-email",
+            "gaming-email"
+          ],
+          "startDate": "2019-04-01T11:30:15.000Z"
+        }
+      },
+      "CampaignNotFound404": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/campaign-not-found",
+          "detail": "No campaign with ID 'SpecialCampaign' in site 'SiteGenesis' could be found.",
+          "title": "Not Found Error"
+        }
+      },
+      "PutCampaign": {
+        "value": {
+          "campaignId": "NewWinterCampaign",
+          "coupons": [
+            "WinterSpecial"
+          ],
+          "creationDate": "2019-10-03T19:36:56.000Z",
+          "customerGroups": [
+            "Registered"
+          ],
+          "description": "Campaign for winter specials",
+          "enabled": true,
+          "endDate": "2020-07-31T23:09:08.000Z",
+          "lastModified": "2019-10-10T14:52:47.356Z",
+          "startDate": "2019-04-01T11:30:15.000Z"
+        }
+      },
+      "IdConflict400": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/id-conflict",
+          "detail": "The ID in the request body ('CampaignXYZ') doesn't match the ID in the URL ('NewWinterCampaign')",
+          "title": "Duplicate Error"
+        }
+      },
+      "PatchCampaign": {
+        "value": {
+          "description": "Thanksgiving campaign enabling special promotions",
+          "enabled": true,
+          "coupons": [
+            "thanksgiving",
+            "special"
+          ]
+        }
+      },
+      "CampaignDuplicate400": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/campaign-duplicate",
+          "detail": "The campaign couldn't be created because of duplicate ID 'CampaignXYZ'.",
+          "title": "Duplicate Error"
+        }
+      },
+      "GetCampaignPromotionAssignments": {
+        "value": {
+          "limit": 2,
+          "data": [
+            {
+              "campaign": {
+                "campaignId": "NewYearCampaign",
+                "description": "Campaign for the New Year",
+                "enabled": true
+              },
+              "campaignId": "NewYearCampaign",
+              "coupons": [
+                "10offsku"
+              ],
+              "couponsBased": true,
+              "customerGroups": [
+                "Registered"
+              ],
+              "customerGroupsBased": true,
+              "enabled": true,
+              "promotionId": "10offsku",
+              "rank": 1,
+              "requiredQualifier": "all",
+              "schedule": {
+                "startDate": "2026-01-01T00:00:00.000Z",
+                "endDate": "2026-01-31T23:59:59.000Z",
+                "recurrence": {
+                  "dayOfWeek": [
+                    "monday",
+                    "tuesday"
+                  ],
+                  "timeOfDay": {
+                    "timeFrom": "09:00:00",
+                    "timeTo": "17:00:00"
+                  }
+                }
+              },
+              "sourceCodeBased": true,
+              "sourceCodeGroups": [
+                "affiliate-email"
+              ]
+            },
+            {
+              "campaign": {
+                "campaignId": "NewYearCampaign",
+                "description": "Campaign for the New Year",
+                "enabled": true
+              },
+              "campaignId": "NewYearCampaign",
+              "coupons": [],
+              "couponsBased": false,
+              "customerGroups": [],
+              "customerGroupsBased": false,
+              "enabled": true,
+              "promotionId": "freeshipping50",
+              "rank": 2,
+              "requiredQualifier": "any",
+              "schedule": {
+                "startDate": "2026-01-01T00:00:00.000Z",
+                "endDate": "2026-01-31T23:59:59.000Z",
+                "recurrence": {
+                  "dayOfWeek": [
+                    "saturday",
+                    "sunday"
+                  ],
+                  "timeOfDay": {
+                    "timeFrom": "00:00:00",
+                    "timeTo": "23:59:59"
+                  }
+                }
+              },
+              "sourceCodeBased": false,
+              "sourceCodeGroups": []
+            }
+          ],
+          "total": 2
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Unauthorized request"
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Access to requested resource forbidden"
+        }
+      },
+      "GetCampaignPromotionAssignment": {
+        "value": {
+          "campaign": {
+            "campaignId": "NewYearCampaign",
+            "description": "Campaign for the New Year",
+            "enabled": true,
+            "startDate": "2026-01-01T00:00:00.000Z",
+            "endDate": "2026-01-31T23:59:59.000Z"
+          },
+          "campaignId": "NewYearCampaign",
+          "coupons": [
+            "10offsku"
+          ],
+          "couponsBased": true,
+          "customerGroups": [
+            "Registered"
+          ],
+          "customerGroupsBased": true,
+          "enabled": true,
+          "promotionId": "10offsku",
+          "rank": 1,
+          "requiredQualifier": "any",
+          "schedule": {
+            "startDate": "2026-01-01T00:00:00.000Z",
+            "endDate": "2026-01-31T23:59:59.000Z",
+            "recurrence": {
+              "dayOfWeek": [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday"
+              ],
+              "timeOfDay": {
+                "timeFrom": "09:00:00",
+                "timeTo": "17:00:00"
+              }
+            }
+          },
+          "sourceCodeBased": true,
+          "sourceCodeGroups": [
+            "affiliate-email"
+          ]
+        }
+      },
+      "AssignPromotionToCampaign": {
+        "value": {
+          "campaignId": "NewYearCampaign",
+          "promotionId": "10offsku",
+          "rank": 10,
+          "coupons": [
+            "10offsku"
+          ],
+          "couponsBased": true,
+          "customerGroups": [
+            "Registered"
+          ],
+          "customerGroupsBased": true,
+          "sourceCodeGroups": [
+            "affiliate-email"
+          ],
+          "sourceCodeBased": true,
+          "requiredQualifier": "all",
+          "schedule": {
+            "startDate": "2026-01-01T00:00:00.000Z",
+            "endDate": "2026-01-31T23:59:59.000Z",
+            "recurrence": {
+              "dayOfWeek": [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday"
+              ],
+              "timeOfDay": {
+                "timeFrom": "09:00:00",
+                "timeTo": "17:00:00"
+              }
+            }
+          }
+        }
+      },
+      "UpdateCampaignPromotionAssignment": {
+        "value": {
+          "rank": 20,
+          "coupons": [
+            "10offsku",
+            "15offsku"
+          ]
+        }
+      },
+      "CampaignNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/campaign-not-found",
+          "detail": "No campaign with ID 'NewYearCampaign' was found for site 'RefArch'.",
+          "title": "Campaign Not Found"
+        }
+      },
+      "PromotionCampaignAssignmentNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/promotion-campaign-assignment-not-found",
+          "detail": "No assignment of promotion '10offsku' to campaign 'NewYearCampaign' was found for site 'RefArch'.",
+          "title": "Promotion Campaign Assignment Not Found"
+        }
+      },
+      "AssignmentIdMismatchErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/assignment-id-mismatch",
+          "detail": "The campaignId or promotionId in the request body does not match the IDs in the request path.",
+          "title": "Assignment Id Mismatch"
+        }
+      },
+      "AssignmentBusinessRuleViolationErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/assignment-business-rule-violation",
+          "detail": "The promotion campaign assignment could not be saved because a business rule was violated.",
+          "title": "Assignment Business Rule Violation"
+        }
+      },
+      "PromotionNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/promotion-not-found",
+          "detail": "No promotion with ID '10offsku' was found for site 'RefArch'.",
+          "title": "Promotion Not Found"
         }
       }
     },
     "securitySchemes": {
       "AmOAuth2": {
         "type": "oauth2",
+        "description": "AccountManager OAuth 2.0 bearer token Authentication.",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
@@ -1917,10 +2937,8 @@
           "authorizationCode": {
             "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
             "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
-            "scopes": {
-              "sfcc.promotions": "promotions READONLY",
-              "sfcc.promotions.rw": "promotions read/write"
-            }
+            "refreshUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {}
           }
         }
       }

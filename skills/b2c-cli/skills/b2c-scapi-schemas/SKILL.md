@@ -29,7 +29,11 @@ unsupported. Use docs tools for semantics
 and limits rather than duplicating contract discovery.
 
 For CLI work, use `b2c scapi schemas list` and
-`b2c scapi schemas get <family> <name> <version>`; both use live access.
+`b2c scapi schemas get <family> <name> <version>`; both use live access and fall back to the
+bundled standard contracts (with a warning and `source: "bundled"` in `--json`) when it fails.
+The Schemas API returns operation summaries/descriptions and examples only when asked:
+`--expand-paths`/`--expand-schemas` fetch the prose, `--expand-all` fetches everything, and
+`--include summaries,descriptions,...` chooses sections directly.
 CLI get expands custom properties by default; `--no-expand-custom-properties`
 requests the standard contract. MCP also defaults to expansion; disable it with
 `expandCustomProperties: false`. Known custom fields can be sent through standard

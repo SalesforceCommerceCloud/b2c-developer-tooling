@@ -336,6 +336,9 @@ components:
       name: expand
       in: query
       required: false
-      description: Comma-separated list of sections to expand (e.g., "custom_properties")
+      description: >-
+        Sections to add to the contract, as one comma-separated value (a repeated parameter is rejected).
+        One or more of: all, custom_properties, descriptions, examples, external_docs, summaries, tags, titles.
+        `all` includes every other value. Without it the contract omits operation summaries and descriptions.
       schema:
         type: string

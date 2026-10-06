@@ -11,6 +11,13 @@ import {
   getExampleNames,
   type OpenApiSchemaInput,
 } from '@salesforce/b2c-tooling-sdk/schemas';
+import {
+  fetchScapiSchemaWithFallback,
+  normalizeScapiSchemaExpand,
+  scapiSchemaExpandFor,
+  SCAPI_SCHEMA_EXPANSIONS,
+  type ScapiSchemaSource,
+} from '@salesforce/b2c-tooling-sdk/scapi';
 import {ScapiSchemasCommand, formatApiError} from '../../../utils/scapi/schemas.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -22,6 +29,12 @@ interface GetOutput {
   apiName: string;
   apiVersion: string;
   schema: Record<string, unknown>;
+  /** `live` from the tenant's Schemas API; `bundled` when the live fetch failed and the built-in contract was used. */
+  source: ScapiSchemaSource;
+  /** Server-side `expand` requested from the Schemas API (live source only). */
+  expand?: string;
+  /** Why the bundled contract was used instead of the live one. */
+  warning?: string;
 }
 
 /**
@@ -95,6 +108,13 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
       default: true,
       allowNo: true,
     }),
+    include: Flags.string({
+      description: t(
+        'flags.include.description',
+        'Sections the Schemas API adds to the contract, comma-separated: {{values}}. Overrides the automatic selection; "all" includes every other value',
+        {values: SCAPI_SCHEMA_EXPANSIONS.join(', ')},
+      ),
+    }),
     'expand-all': Flags.boolean({
       description: t(
         'flags.expandAll.description',
@@ -128,8 +148,6 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
   };
 
   async run(): Promise<GetOutput | null | string[]> {
-    this.requireOAuthCredentials();
-
     const {apiFamily, apiName, apiVersion} = this.args;
     const {
       'expand-paths': expandPathsRaw,
@@ -137,6 +155,7 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
       'expand-examples': expandExamplesRaw,
       'expand-custom-properties': expandCustomProperties,
       'expand-all': expandAll,
+      include,
       'list-paths': listPaths,
       'list-schemas': listSchemas,
       'list-examples': listExamples,
@@ -148,9 +167,26 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
     const expandSchemas = expandSchemasRaw ? expandSchemasRaw.split(',').map((s) => s.trim()) : [];
     const expandExamples = expandExamplesRaw ? expandExamplesRaw.split(',').map((e) => e.trim()) : [];
 
+    // Ask the server only for what the output needs: a collapsed outline needs no prose or examples.
+    let serverExpand: string | undefined;
+    try {
+      serverExpand = include
+        ? normalizeScapiSchemaExpand(include)
+        : scapiSchemaExpandFor({
+            full: expandAll,
+            customProperties: expandCustomProperties,
+            prose: expandPaths.length > 0 || expandSchemas.length > 0,
+            examples: expandExamples.length > 0 || listExamples,
+          });
+    } catch (error) {
+      this.error((error as Error).message);
+    }
+
     if (!this.jsonEnabled()) {
       // Build expansion info for the log message
-      const expansionInfo = this.getExpansionInfo(expandAll, expandPaths, expandSchemas, expandExamples);
+      const expansionInfo =
+        this.getExpansionInfo(expandAll, expandPaths, expandSchemas, expandExamples) +
+        (serverExpand ? ` [expand=${serverExpand}]` : '');
 
       this.log(
         t(
@@ -166,30 +202,33 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
       );
     }
 
-    const client = this.getSchemasClient();
-
-    const {data, error, response} = await client.GET(
-      '/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}',
-      {
-        params: {
-          path: {
-            organizationId: this.getOrganizationId(),
-            apiFamily,
-            apiName,
-            apiVersion,
+    // Credentials and configuration are checked inside the live fetch so a failure falls back to the bundled contract.
+    const fetched = await fetchScapiSchemaWithFallback({apiFamily, apiName, apiVersion}, async () => {
+      this.requireOAuthCredentials();
+      const client = this.getSchemasClient();
+      const {data, error, response} = await client.GET(
+        '/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}',
+        {
+          params: {
+            path: {organizationId: this.getOrganizationId(), apiFamily, apiName, apiVersion},
+            // One comma-separated value: the API rejects a repeated expand parameter.
+            query: serverExpand ? {expand: serverExpand} : undefined,
           },
-          query: expandCustomProperties ? {expand: 'custom_properties'} : undefined,
         },
-      },
-    );
-
-    if (error) {
-      this.error(
-        t('commands.scapi.schemas.get.error', 'Failed to fetch schema: {{message}}', {
-          message: formatApiError(error, response),
-        }),
       );
-    }
+      if (error) {
+        throw new Error(
+          t('commands.scapi.schemas.get.error', 'Failed to fetch schema: {{message}}', {
+            message: formatApiError(error, response),
+          }),
+        );
+      }
+
+      return data as Record<string, unknown>;
+    });
+    const {source, warning} = fetched;
+    const data = fetched.schema;
+    if (warning) this.warn(warning);
 
     // Handle list-* flags - just output the available items
     if (listPaths || listSchemas || listExamples) {
@@ -224,7 +263,15 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
       }) as Record<string, unknown>;
     }
 
-    const output: GetOutput = {apiFamily, apiName, apiVersion, schema};
+    const output: GetOutput = {
+      apiFamily,
+      apiName,
+      apiVersion,
+      schema,
+      source,
+      ...(source === 'live' && serverExpand ? {expand: serverExpand} : {}),
+      ...(warning ? {warning} : {}),
+    };
 
     // For --json flag, oclif handles serialization (wrapped output)
     if (this.jsonEnabled()) {

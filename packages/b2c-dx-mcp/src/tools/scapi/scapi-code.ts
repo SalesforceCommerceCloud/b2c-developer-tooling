@@ -43,7 +43,7 @@ const skillRead = z
 function requireScapiSkill(read: boolean | undefined): void {
   if (read !== true) throw new Error(SCAPI_SKILL_REQUIRED);
 }
-const searchDescription = `Requires reading skill://mcp/b2c-mcp-scapi/SKILL.md first. Search SCAPI Admin/Shopper OpenAPI contracts by running JavaScript over \`spec\`, to find the operationId, path, inputs and scopes for a Commerce API task when no dedicated tool fits. Use cip_* for analytics and webdav_* for files. Searches the bundled contracts by default (offline, no credentials); schemas:"live" fetches the current contracts from the configured instance instead, including tenant c_* fields, custom APIs and APIs newer than the bundle.`;
+const searchDescription = `Requires reading skill://mcp/b2c-mcp-scapi/SKILL.md first. Search SCAPI Admin/Shopper OpenAPI contracts by running JavaScript over \`spec\`, to find the operationId, path, inputs and scopes for a Commerce API task when no dedicated tool fits. Use cip_* for analytics and webdav_* for files. Searches the bundled contracts by default (offline, no credentials); schemas:"live" fetches the current contracts from the configured instance instead, including tenant c_* fields, custom APIs and APIs newer than the bundle (falls back to the bundled contracts with a warning when live access fails). Operations carry summary, description and tags: match on those, not only operationId. Results are capped at 24 KB: operations are an outline by default (no nested descriptions or examples; detail:"full" restores them), and you should still return fields such as operationId, method, path and summary, not whole operations.`;
 
 const executeDescription = `Requires reading skill://mcp/b2c-mcp-scapi/SKILL.md first. Run any SCAPI Admin or Shopper API operation (reads, writes, searches and actions) through scapi.request() in JavaScript. Covers most developer, merchant and administrator tasks: catalogs, products, pricing, promotions, orders, customers, inventory, sites, jobs, code versions, observability, and storefront flows such as baskets. Use it whenever no more specific tool fits. Find operations with scapi_search first. Auth is automatic; Shopper calls run as a per-site guest whose basket persists. Operations are governed by Safety Mode and may ask the user for confirmation.`;
 
@@ -53,6 +53,8 @@ function codeResult(
     executionId?: string;
     error?: string;
     schemaFailures?: Array<{api: string; error: string}>;
+    schemaSource?: 'bundled' | 'live';
+    warnings?: string[];
     skillReferences?: SkillReference[];
   },
   resolution?: ToolResolution,
@@ -100,6 +102,10 @@ export function createScapiCodeTools(
       .optional()
       .describe('bundled (default, offline) or live tenant contracts from the Schemas API.'),
     refresh: z.boolean().optional().describe('With schemas:"live", refetch instead of using cached contracts.'),
+    detail: z
+      .enum(['outline', 'full'])
+      .optional()
+      .describe('outline (default) drops nested descriptions and examples to fit 24 KB; full keeps all prose.'),
     authType: z
       .enum(['admin', 'shopper'])
       .optional()
@@ -148,39 +154,70 @@ export function createScapiCodeTools(
             throw new Error('SCAPI_SEARCH_ARGUMENT_INVALID: refresh requires schemas:"live".');
           let documents: ReturnType<typeof loadScapiSchemas>;
           let failures: Array<{api: string; error: string}> = [];
-          if (input.schemas === 'live') {
-            const services = await loadServices(input);
-            resolution = services.getResolution();
-            // Throws with configuration guidance when shortCode, tenantId, or OAuth credentials are missing.
-            const client = services.getScapiSchemasClient();
-            const organizationId = services.getOrganizationId();
-            const tenant = scapiTenantKey(services.getShortCode()!, organizationId);
-            ({documents, failures} = await schemaCache.load(tenant, client, organizationId, {
-              api: input.api,
-              refresh: input.refresh,
-              signal: context?.signal,
-            }));
-            documents = mergeScapiSchemas([], documents, local(input.api));
-            if (documents.length === 0 && failures.length === 0)
-              throw new Error('Unknown schema ID for this tenant. Omit api to discover available APIs.');
-          } else {
-            documents = mergeScapiSchemas(loadScapiSchemas(), [], local()).filter(
+          let schemaSource: 'bundled' | 'live' = input.schemas === 'live' ? 'live' : 'bundled';
+          const warnings: string[] = [];
+          const searchBundled = () => {
+            const bundled = mergeScapiSchemas(loadScapiSchemas(), [], local()).filter(
               (document) => !input.api || document.entry.id === input.api,
             );
-            if (documents.length === 0)
+            if (bundled.length === 0)
               throw new Error(
                 'Unknown schema ID. Omit api to discover available APIs, or use schemas:"live" for tenant and custom APIs.',
               );
+            return bundled;
+          };
+          if (input.schemas === 'live') {
+            const services = await loadServices(input);
+            resolution = services.getResolution();
+            try {
+              // Throws with configuration guidance when shortCode, tenantId, or OAuth credentials are missing.
+              const client = services.getScapiSchemasClient();
+              const organizationId = services.getOrganizationId();
+              const tenant = scapiTenantKey(services.getShortCode()!, organizationId);
+              ({documents, failures} = await schemaCache.load(tenant, client, organizationId, {
+                api: input.api,
+                refresh: input.refresh,
+                signal: context?.signal,
+              }));
+              documents = mergeScapiSchemas([], documents, local(input.api));
+              if (documents.length === 0 && failures.length === 0)
+                throw new Error('Unknown schema ID for this tenant. Omit api to discover available APIs.');
+            } catch (error) {
+              // Custom APIs exist only on the tenant; an unknown ID is a caller error, not an access problem.
+              const message = error instanceof Error ? error.message : String(error);
+              if (
+                context?.signal?.aborted ||
+                input.api?.startsWith('custom/') ||
+                message.startsWith('Unknown schema ID')
+              )
+                throw error;
+              documents = searchBundled();
+              schemaSource = 'bundled';
+              warnings.push(
+                `Live schemas unavailable (${message.replaceAll(/\s+/g, ' ').trim().slice(0, 300)}). Searching the bundled standard contracts instead: no tenant c_* properties or custom APIs, and they may be older than your tenant.`,
+              );
+            }
+          } else {
+            documents = searchBundled();
           }
           const result = await runScapiCode({
             code: input.code,
             documents,
             authType: input.authType,
+            detail: input.detail ?? 'outline',
             signal: context?.signal,
             timeoutMs: 10_000,
             snippets: loadScapiSnippets(snippetDirectory),
           });
-          return codeResult({result, ...(failures.length > 0 ? {schemaFailures: failures} : {})}, resolution);
+          return codeResult(
+            {
+              result,
+              ...(input.schemas === 'live' ? {schemaSource} : {}),
+              ...(warnings.length > 0 ? {warnings} : {}),
+              ...(failures.length > 0 ? {schemaFailures: failures} : {}),
+            },
+            resolution,
+          );
         } catch (error) {
           return failure(error, resolution);
         }
@@ -250,10 +287,9 @@ export function createScapiCodeTools(
                 // Live contracts discovered for this tenant replace bundled ones, and local ones replace both;
                 // the user owns their accuracy.
                 documents: mergeScapiSchemas(loadScapiSchemas(), tenant ? schemaCache.get(tenant) : [], localSchemas),
-                onSchema(document, customProperties) {
-                  // Keep expanded tenant contracts from being replaced by unexpanded fetches.
-                  if (tenant && (customProperties || document.entry.apiFamily === 'custom'))
-                    schemaCache.put(tenant, document);
+                onSchema(document, full) {
+                  // Keep full tenant contracts (custom properties and prose) from being replaced by lighter fetches.
+                  if (tenant && (full || document.entry.apiFamily === 'custom')) schemaCache.put(tenant, document);
                 },
                 confirm: (request) => execution.confirm(request),
                 onDispatch: () => execution.markDispatched(),

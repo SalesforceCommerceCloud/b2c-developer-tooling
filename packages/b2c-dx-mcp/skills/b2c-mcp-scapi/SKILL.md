@@ -56,9 +56,28 @@ declare const scapi: {
 Both tools also expose `codemode.search`/`codemode.describe`; `codemode.run` and
 `auth.*` are execute-only. See [Reusable workflows](#reusable-workflows) and [Authentication](#authentication).
 
+Every operation carries `summary`, `description` and `tags` (plus parameters, security and responses), so
+search the prose as well as `operationId` and path. Descriptions are long: return `op.summary` when listing
+candidates, and read `op.description` only for the operations you are about to call.
+
+`scapi_search` returns each operation as an outline by default: its own `summary`, `description` and `tags`, with
+parameters, schemas and responses but without nested descriptions or examples. Pass `detail: "full"` when you need
+property-level descriptions or example payloads for the operations you are about to call (`scapi_execute` always
+sees full operations). Results are capped at 24 KB of JSON for both tools (`SCAPI_RESULT_TOO_LARGE`). A whole resolved operation is
+typically 6-20 KB and some exceed the cap alone, so never return `op` or `spec.paths` entries unprojected: list
+`{operationId, method, path, summary}`, then return only `parameters` or `requestBody` for the operations you will call.
+
 Search examples:
 
 ```js
+// Find operations by what they do, not just their name
+async () =>
+  Object.entries(spec.paths)
+    .flatMap(([path, methods]) =>
+      Object.entries(methods).map(([method, op]) => ({method, path, operationId: op.operationId, summary: op.summary})),
+    )
+    .filter((o) => /basket/i.test(o.summary ?? '') && /coupon|promotion/i.test(o.summary ?? ''));
+
 // Find product operations
 async () =>
   Object.entries(spec.paths)
@@ -89,7 +108,10 @@ Pass `schemas: "live"` to search the configured tenant's Schemas API contracts
 instead: tenant `c_*` properties, custom APIs, and APIs newer than the bundle.
 Live search needs `sfcc.scapi-schemas`, uses the same project context as
 `scapi_execute`, and caches per tenant for the server session (`refresh: true` refetches). Contracts that
-failed to load are listed in `schemaFailures`. APIs with `origin: "local"` are
+failed to load are listed in `schemaFailures`. The result's `schemaSource` says which corpus was searched. If live
+access fails (missing configuration, credentials or access), the search falls back to the bundled contracts,
+reports `schemaSource: "bundled"` and explains why in `warnings`; tell the user when tenant `c_*` fields or custom
+APIs matter, since the bundle has neither. Asking for a custom API (`custom/...`) never falls back. APIs with `origin: "local"` are
 developer-supplied beta contracts (`--scapi-schemas`). They replace the bundled and live versions in search and
 execution. Schemas and responses can be huge.
 Return only what the next decision needs:
@@ -133,8 +155,11 @@ the payload. To discover tenant fields, search with `schemas: "live"` (narrow wi
 `api`), or fetch the live schema with `scapi_schemas_list`: `includeSchemas: true`,
 `apiFamily`, `apiName`, `apiVersion`.
 Custom-property expansion defaults to true; disable with `expandCustomProperties: false`.
-`expandAll: true` retains full definitions; it is separate from custom-property
-expansion. Large contracts: fetch through `scapi_execute` and return only relevant
+`expandAll: true` returns the full contract (operation prose, examples, custom properties) instead of the
+collapsed outline, which asks the Schemas API for only what it keeps. `include` selects Schemas API `expand`
+sections directly (`summaries`, `descriptions`, `examples`, `external_docs`, `tags`, `titles`,
+`custom_properties`, or `all`) when you want, say, only summaries. If live access fails, `scapi_schemas_list` returns
+the bundled contract with `source: "bundled"` and a `warning`. Large contracts: fetch through `scapi_execute` and return only relevant
 fields ([example](references/custom-properties.md)). Requires `sfcc.scapi-schemas`.
 Use the same project/instance for schema lookup and writes.
 

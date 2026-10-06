@@ -2,6 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Sites",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/sites/sites-oas-v1-public.yaml)\n\n# API Overview\n\nThe Sites API provides endpoints for retrieving and searching sites within Salesforce Commerce Cloud using the following capabilities:\n\n- Site Retrieval: List all sites in an organization or retrieve a specific site by ID.\n- Advanced Discovery: Use the `displayName`, `description`, or `id` attributes to find specific sites for reporting or administrative operations.\n- Status Monitoring: Filter sites by their `inDeletion` status to track maintenance workflows or identify sites marked for removal.\n- Results Management: Navigate large datasets efficiently using pagination (limit/offset), field selection, and multi-field sorting.\n\nSites represent individual storefronts or channels within a Commerce Cloud organization.\n\n## Authentication\n\nFor resource access, you must use a client ID and client secret from Account Manager to request an access token. The access token is used as a bearer token and added to the Authorization header of your API request.\n\nYou must include `sfcc.sites` (read-only access) or `sfcc.sites.rw` (read-write access) and other relevant scopes in the client ID used to generate the token. For a full list of permissions, see the [Authorization Scopes Catalog.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html)\n\nFor detailed setup instructions, see the [Authorization for Admin APIs guide.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-admin-apis.html)\n\n## Endpoints\n\n| Method | Endpoint | Description |\n|--------|----------|-------------|\n| GET | `/organizations/{organizationId}/sites` | Returns a paginated list of sites |\n| GET | `/organizations/{organizationId}/sites/{siteId}` | Returns a single site by ID |\n| POST | `/organizations/{organizationId}/site-search` | Searches for sites using complex queries |\n\n## Attribute Reference\n\nThe following attributes can be used in search queries and sorting:\n\n- `id`: The unique identifier of the site (String)\n- `displayName`: The user-friendly display name of the site (String)\n- `description`: The description of the site (String)\n- `inDeletion`: Boolean flag indicating if the site is marked for deletion (Boolean)\n\n## Use Cases\n\n- Site Management: Find and filter sites for administrative operations.\n- Site Lookup: Retrieve a specific site by ID to inspect its configuration.\n- Reporting: Generate reports on site configurations and status.\n- Monitoring: Track sites that are marked for deletion or maintenance.\n- Lifecycle Tracking: Monitor the deletion queue by filtering for sites where `inDeletion` is true.\n\n## Best Practices\n\n- Use the `select` parameter to limit response fields and reduce payload size.\n- Use specific search queries to minimize result set size.\n- Apply sorting to organize results meaningfully.\n- Use pagination for large result sets.\n- Filter out deleted sites when appropriate using the `inDeletion` attribute.\n- Cache site information when possible to reduce API calls.",
     "version": "1.3.0",
     "x-api-type": "Admin",
     "x-api-family": "Site"
@@ -11,6 +12,7 @@
       "url": "https://{shortCode}.api.commercecloud.salesforce.com/site/sites/v1",
       "variables": {
         "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
           "default": "shortCode"
         }
       }
@@ -19,24 +21,43 @@
   "paths": {
     "/organizations/{organizationId}/site-search": {
       "post": {
+        "summary": "Search Sites",
+        "description": "Searches for sites.\n\nThe query attribute specifies a complex query that can be used to narrow down the search. This is the list of\nsearchable attributes:\n\n- id - String\n- displayName - String\n- description - String\n- inDeletion - Boolean\n\nThe output of the query can also be sorted. These are the list of sortable attributes:\n\n- id - String\n- displayName - String\n- description - String\n- inDeletion - Boolean\n",
         "operationId": "searchSites",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
+          "description": "The search request document",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SiteSearchRequest"
+              },
+              "examples": {
+                "SiteSearchById": {
+                  "$ref": "#/components/examples/SiteSearchById"
+                },
+                "SiteSearchByDisplayName": {
+                  "$ref": "#/components/examples/SiteSearchByDisplayName"
+                },
+                "SiteSearchActiveOnly": {
+                  "$ref": "#/components/examples/SiteSearchActiveOnly"
+                },
+                "SiteSearchComplex": {
+                  "$ref": "#/components/examples/SiteSearchComplex"
+                }
               }
             }
           },
@@ -49,6 +70,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteSearchResult"
+                },
+                "examples": {
+                  "SiteSearchResultSuccess": {
+                    "$ref": "#/components/examples/SiteSearchResultSuccess"
+                  },
+                  "SiteSearchResultSingle": {
+                    "$ref": "#/components/examples/SiteSearchResultSingle"
+                  }
                 }
               }
             }
@@ -59,6 +88,17 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedSearchParameter": {
+                    "$ref": "#/components/examples/MalformedSearchParameter"
+                  },
+                  "InvalidFieldName": {
+                    "$ref": "#/components/examples/InvalidFieldName"
+                  },
+                  "InvalidSortField": {
+                    "$ref": "#/components/examples/InvalidSortField"
+                  }
                 }
               }
             }
@@ -82,17 +122,21 @@
     },
     "/organizations/{organizationId}/sites": {
       "get": {
+        "summary": "Get Sites",
+        "description": "Returns a paginated list of sites for the organization. Results are sorted by site ID in ascending order by default.\n\nUse the `select` parameter to control which fields are included in the response. Use the `limit` and `offset`\nparameters to paginate through results.\n",
         "operationId": "getSites",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "select",
@@ -102,11 +146,17 @@
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/Select"
+            },
+            "examples": {
+              "select": {
+                "value": "(**)"
+              }
             }
           },
           {
             "name": "limit",
             "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 50 (maximum). Defaults to 25.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -121,6 +171,7 @@
           {
             "name": "offset",
             "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -139,6 +190,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Sites"
+                },
+                "examples": {
+                  "GetSitesSuccess": {
+                    "$ref": "#/components/examples/GetSitesSuccess"
+                  },
+                  "GetSitesWithSelect": {
+                    "$ref": "#/components/examples/GetSitesWithSelect"
+                  }
                 }
               }
             }
@@ -162,27 +221,33 @@
     },
     "/organizations/{organizationId}/sites/{siteId}": {
       "get": {
+        "summary": "Get Site",
+        "description": "Returns the site identified by the given site ID.\n",
         "operationId": "getSiteById",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "path",
+            "description": "The identifier of the site.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
-            }
+            },
+            "example": "RefArch"
           }
         ],
         "responses": {
@@ -192,6 +257,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Site"
+                },
+                "examples": {
+                  "GetSiteByIdSuccess": {
+                    "$ref": "#/components/examples/GetSiteByIdSuccess"
+                  },
+                  "GetSiteByIdMaintenance": {
+                    "$ref": "#/components/examples/GetSiteByIdMaintenance"
+                  }
                 }
               }
             }
@@ -208,6 +281,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "SiteNotFound": {
+                    "$ref": "#/components/examples/SiteNotFound"
+                  }
                 }
               }
             }
@@ -225,27 +303,33 @@
     },
     "/organizations/{organizationId}/sites/{siteId}/custom-cartridges": {
       "get": {
+        "summary": "Get Site Custom Cartridges",
+        "description": "Returns the site's custom cartridge path - the colon-delimited list of custom (non-system)\ncartridges assigned to the site. This is the mutable segment of the site's cartridge path.\n\nFor the effective cartridge path, including system cartridges, see the `cartridges` field on\nthe [Site](#tag/Sites/operation/getSiteById) resource.\n",
         "operationId": "getSiteCustomCartridges",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "path",
+            "description": "The identifier of the site.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
-            }
+            },
+            "example": "RefArch"
           }
         ],
         "responses": {
@@ -255,6 +339,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteCustomCartridges"
+                },
+                "examples": {
+                  "GetSiteCustomCartridgesSuccess": {
+                    "$ref": "#/components/examples/GetSiteCustomCartridgesSuccess"
+                  }
                 }
               }
             }
@@ -271,6 +360,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "SiteNotFound": {
+                    "$ref": "#/components/examples/SiteNotFound"
+                  }
                 }
               }
             }
@@ -286,34 +380,46 @@
         ]
       },
       "put": {
+        "summary": "Replace Site Custom Cartridges",
+        "description": "Atomically replaces the site's custom cartridge path with the provided colon-delimited list.\nEach cartridge name must start with a letter and contain only letters, numbers, or\nunderscores. Cartridge names that don't match this format are rejected with 400 Bad Request. This\nendpoint does not verify that a cartridge is present the active code version.\nSystem cartridges are not part of this resource and are unaffected by this operation.\n",
         "operationId": "replaceSiteCustomCartridges",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "path",
+            "description": "The identifier of the site.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
-            }
+            },
+            "example": "RefArch"
           }
         ],
         "requestBody": {
+          "description": "The custom cartridge path replacement request",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SiteCustomCartridges"
+              },
+              "examples": {
+                "ReplaceSiteCustomCartridgesRequest": {
+                  "$ref": "#/components/examples/ReplaceSiteCustomCartridgesRequest"
+                }
               }
             }
           },
@@ -326,6 +432,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteCustomCartridges"
+                },
+                "examples": {
+                  "ReplaceSiteCustomCartridgesSuccess": {
+                    "$ref": "#/components/examples/ReplaceSiteCustomCartridgesSuccess"
+                  }
                 }
               }
             }
@@ -336,6 +447,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InvalidCartridgeName": {
+                    "$ref": "#/components/examples/InvalidCartridgePath"
+                  }
                 }
               }
             }
@@ -352,6 +468,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "SiteNotFound": {
+                    "$ref": "#/components/examples/SiteNotFound"
+                  }
                 }
               }
             }
@@ -371,11 +492,35 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
         "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
       },
       "Query": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A set of objects that define criteria used to select records. A query can contain one of the following:\n* `MatchAllQuery`\n - Matches all documents.\n* `TermQuery`\n - Matches one or more documents against one or more document fields.\n* `TextQuery`\n - Matches text against one or more fields.\n* `BoolQuery`\n - Allows construction of a logical expression of multiple queries.\n* `FilteredQuery`\n - Allows a filter to be applied to a query.\n* `NestedQuery`\n - Allows you to query on nested documents.\n - _Only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation._",
+        "example": {
+          "filteredQuery": {
+            "query": {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "disabled"
+              }
+            },
+            "filter": {
+              "termFilter": {
+                "field": "enabled",
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          }
+        },
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -402,21 +547,58 @@
       "BoolQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A boolean query allows construction of full logical expression trees that are composed of other queries (usually term queries and text queries). A boolean query has three sets of clauses:\n  \n  - `must`, which combines as an `AND` operator.\n  - `should`, which combines as an `OR` operator.\n  - `must_not`, which combines as a `NOT` operator.\n  \nIf `must`, `mustNot`, or `should` appear in the same boolean query, they are combined logically using the `AND` operator. For example:\n\n    (must-1 AND must-1 AND ...)\n      AND (should-1 OR should-2 OR ...)\n      AND NOT (must_not-1 OR must_not-2 OR ...)\n",
+        "example": {
+          "must": [
+            {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "DEAL"
+              }
+            },
+            {
+              "textQuery": {
+                "fields": [
+                  "description"
+                ],
+                "searchPhrase": "Big bargain deal"
+              }
+            }
+          ],
+          "mustNot": [
+            {
+              "termQuery": {
+                "fields": [
+                  "enabled"
+                ],
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          ]
+        },
         "properties": {
           "must": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `AND` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "mustNot": {
             "type": "array",
+            "description": "List of queries to be evaluated as a `NOT` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "should": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `OR` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
@@ -426,6 +608,7 @@
       "Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Contains a set of objects that define criteria used to select records. A filter can contain one of the following:\n  * `TermFilter`\n   - Matches records where a field (or fields) exactly matches some simple value (including `null`).\n  * `RangeFilter`\n   - Matches records where a field value lies within a specified range.\n  * `Range2Filter`\n   - Matches records in a specified range across fields.\n  * `QueryFilter`\n   - Matches records based on a query.\n  * `BoolFilter`\n   - Provides filtering of records using a set of filters combined using a logical operator.",
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -449,20 +632,47 @@
       "BoolFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to combine other filters into (possibly recursive) logical expression trees. A boolean filter is composed of a logical operator (`AND`, `OR`, `NOT`) and a list of filters that the operator relates to. Multiple filters can be negated with a single `NOT` operator, even when the filters are combined with the `AND` operator.",
+        "example": {
+          "operator": "and",
+          "filters": [
+            {
+              "termFilter": {
+                "field": "id",
+                "operator": "is",
+                "values": [
+                  "myId"
+                ]
+              }
+            },
+            {
+              "termFilter": {
+                "field": "couponId",
+                "operator": "is",
+                "values": [
+                  "couponOne"
+                ]
+              }
+            }
+          ]
+        },
         "properties": {
           "filters": {
             "type": "array",
+            "description": "A list of filters that are logically combined by an operator.",
             "items": {
               "$ref": "#/components/schemas/Filter"
             }
           },
           "operator": {
             "type": "string",
+            "description": "The logical operator that is used to combine the filters.",
             "enum": [
               "and",
               "or",
               "not"
-            ]
+            ],
+            "example": "and"
           }
         },
         "required": [
@@ -471,6 +681,7 @@
       },
       "QueryFilter": {
         "type": "object",
+        "description": "Wraps any query and allows it to be used as a filter.",
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
@@ -482,45 +693,71 @@
       },
       "Field": {
         "type": "string",
+        "description": "Name of the field. Might be a custom field name prefixed with c_.",
+        "example": "couponId",
         "maxLength": 260
       },
       "Range2Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits where a range defined by specified attributes has a certain relationship to a specified range.\n\nThe first range (R1) is defined by a pair of attributes (`fromField` and `toField`) that specify the extent of a range, such as attributes `validFrom` and `validTo`.\n\nThe second range (R2) is defined by `fromValue` and `toValue`.\n\nThe filter mode specifies the method used to compare the two ranges:\n\n* `overlap`: R1 overlaps fully or partially with R2.\n* `containing`: R1 contains R2.\n* `contained`: R1 is contained in R2.\n\nThe range filter supports several value types, and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range 2 filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "example": {
+          "fromField": "validFrom",
+          "toField": "validTo",
+          "filterMode": "overlap",
+          "fromValue": "2007-01-01T00:00:00.000Z",
+          "toValue": "2017-01-01T00:00:00.000Z"
+        },
         "properties": {
           "filterMode": {
             "type": "string",
             "default": "overlap",
+            "description": "Compare mode: overlap, containing, or contained.",
             "enum": [
               "overlap",
               "containing",
               "contained"
-            ]
+            ],
+            "example": "overlap"
           },
           "fromField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that starts the first range.",
+            "example": "validFrom"
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "fromValue": {},
+          "fromValue": {
+            "description": "The lower bound of the second range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "example": "2007-01-01T00:00:00.000Z"
+          },
           "toField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that ends the first range.",
+            "example": "validTo"
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "toValue": {}
+          "toValue": {
+            "description": "The upper bound of the second range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "example": "2017-01-01T00:00:00.000Z"
+          }
         },
         "required": [
           "fromField",
@@ -529,49 +766,64 @@
       },
       "RangeFilter": {
         "type": "object",
+        "description": "Allows you to restrict a search result to hits that have values for a given attribute that fall within a given value range. The range filter supports several value types and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The search field.",
+            "example": "validFrom"
           },
           "from": {
+            "description": "The lower bound of the filter range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-01T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 1
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 1
               }
             ]
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
           "to": {
+            "description": "The upper bound of the filter range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-02T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 2
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 2
               }
             ]
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the range is inclusive. To make the upper bound exclusive, set to `false`.",
+            "example": true
           }
         },
         "required": [
@@ -581,16 +833,26 @@
       "TermFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits that match exactly one of the values configured for the filter. A term filter is useful for general restrictions that can be shared between searches. Use term filters whenever the criteria you filter on is a shared property of multiple searches (for example, like filtering by an order status). Use term filters for fields that have a discrete and small set of values only.",
+        "example": {
+          "field": "id",
+          "operator": "is",
+          "values": [
+            "myId"
+          ]
+        },
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The filter field."
           },
           "operator": {
             "type": "string",
+            "description": "The operator used to compare the field's values with the given values.",
             "enum": [
               "is",
               "one_of",
@@ -600,12 +862,15 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The filter values.",
             "items": {
-              "type": "string"
+              "type": "string",
+              "example": "myId"
             }
           }
         },
@@ -617,6 +882,26 @@
       "FilteredQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows to filter the result of a possibly complex query using a possibly complex filter.",
+        "example": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "couponId"
+              ],
+              "searchPhrase": "disabled"
+            }
+          },
+          "filter": {
+            "termFilter": {
+              "field": "enabled",
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          }
+        },
         "properties": {
           "filter": {
             "$ref": "#/components/schemas/Filter"
@@ -631,14 +916,62 @@
         ]
       },
       "MatchAllQuery": {
-        "type": "object"
+        "type": "object",
+        "description": "Matches all documents (namespace and document type). This query comes in handy if you just want to filter a search result or really do not have any constraints."
       },
       "NestedQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to query nested documents that are part of a larger document. Say, for example, that you have a main product with variations in one big document, and you want to constrain a search to main products that have variations that match multiple constraints. \n\nA `NestedQuery` is only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation.\n",
+        "example": {
+          "path": "order.shippingAddresses",
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.firstName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "John"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.lastName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "Doe"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "scoreMode": "avg"
+        },
         "properties": {
           "path": {
             "type": "string",
+            "description": "The path to the nested document.",
+            "example": "order.shippingAddresses",
             "maxLength": 2048
           },
           "query": {
@@ -646,12 +979,14 @@
           },
           "scoreMode": {
             "type": "string",
+            "description": "Indicates how scores for matching child objects affect the root parent document’s relevance score.",
             "enum": [
               "avg",
               "total",
               "max",
               "none"
-            ]
+            ],
+            "example": "avg"
           }
         },
         "required": [
@@ -661,9 +996,11 @@
       },
       "TermQuery": {
         "type": "object",
+        "description": "A term query matches one or more values against one or more document fields. A document is considered a hit if one of the values matches exactly with at least one of the given fields. The operator `is` can only take one value, while `one_of` can take multiple values. If multiple fields are specified, they are combined using a logical `OR` operator.\n\n**Limitations:**\n\n* The `greater` and `less` operators are not supported under certain conditions. Both operators are permitted unless the API documentation states otherwise.\n* A subset of Commerce APIs handle queries with multiple fields differently. If the query has multiple fields, the query is internally handled as a logical `OR` of `DisjointMaxQueries` (with the dismax matching a value against all fields). The dismax makes sure that a document carrying a single term in multiple fields does not get higher scores than a document matching multiple terms in multiple fields.",
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the values are matched against, combined with the operator.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
@@ -671,6 +1008,7 @@
           },
           "operator": {
             "type": "string",
+            "description": "Returns the operator to use for the term query.",
             "enum": [
               "is",
               "one_of",
@@ -680,23 +1018,30 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The values that the fields are compared against, combined with the operator.",
             "items": {
+              "example": "myCouponId",
               "oneOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "example": "myCouponId"
                 },
                 {
-                  "type": "number"
+                  "type": "number",
+                  "example": 1
                 },
                 {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "example": true
                 },
                 {
-                  "type": "integer"
+                  "type": "integer",
+                  "example": 1
                 }
               ]
             }
@@ -710,16 +1055,26 @@
       "TextQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A text query is used to match some text (for example, a search phrase possibly consisting of multiple terms) against one or more fields. When multiple fields are provided, the phrase conceptually forms a logical `OR` over the fields. In this case, the terms of the phrase basically have to match within the text, that would result in concatenating all given fields.",
+        "example": {
+          "fields": [
+            "couponId"
+          ],
+          "searchPhrase": "limit"
+        },
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the search phrase matches against.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
             "minItems": 1
           },
           "searchPhrase": {
-            "type": "string"
+            "type": "string",
+            "description": "A search phrase, which can include multiple terms separated by spaces.",
+            "example": "campaign summer"
           }
         },
         "required": [
@@ -730,18 +1085,27 @@
       "Sort": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Document representing a sort request. Each API has a different default sort configuration that can be modified in the request.",
+        "example": {
+          "field": "couponId",
+          "sortOrder": "desc"
+        },
         "properties": {
           "field": {
             "type": "string",
+            "description": "The name of the field to sort on.",
+            "example": "couponId",
             "maxLength": 256
           },
           "sortOrder": {
             "type": "string",
             "default": "asc",
+            "description": "The sort order to be applied when sorting. When omitted, the default sort order (asc) is used.",
             "enum": [
               "asc",
               "desc"
-            ]
+            ],
+            "example": "asc"
           }
         },
         "required": [
@@ -752,14 +1116,19 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
         "minimum": 0
       },
       "SearchRequest": {
         "type": "object",
+        "description": "Document representing a search request for retrieving items within the Data API. The query is a potentially complex set of expressions. The fields and expands that each query supports are defined within the search resource.",
         "properties": {
           "limit": {
             "type": "integer",
             "format": "int32",
+            "description": "Maximum records to retrieve per request, not to exceed 200.",
+            "example": 10,
             "maximum": 200,
             "minimum": 1
           },
@@ -768,6 +1137,7 @@
           },
           "sorts": {
             "type": "array",
+            "description": "The list of sort clauses configured for the search request. Sort clauses are optional. See the description of the search endpoint for details on the default sorting behavior that is used when explicit sorts are not passed.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
@@ -785,20 +1155,26 @@
           {
             "$ref": "#/components/schemas/SearchRequest"
           }
-        ]
+        ],
+        "description": "Document representing a search request for retrieving sites. The query is a potentially complex set of expressions.\n\nSearchable attributes:\n- id - String\n- displayName - String\n- description - String\n- inDeletion - Boolean\n\nSortable attributes:\n- id - String\n- displayName - String\n- description - String\n- inDeletion - Boolean\n"
       },
       "Total": {
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
         "minimum": 0
       },
       "ResultBase": {
         "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
         "properties": {
           "limit": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
           },
           "total": {
             "$ref": "#/components/schemas/Total"
@@ -815,6 +1191,7 @@
             "$ref": "#/components/schemas/ResultBase"
           }
         ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
         "properties": {
           "offset": {
             "$ref": "#/components/schemas/Offset"
@@ -833,18 +1210,67 @@
             "$ref": "#/components/schemas/PaginatedResultBase"
           }
         ],
+        "description": "Document representing a generic search result. Each search resource should extend this to define what is returned in the `hits`.",
+        "example": {
+          "limit": 1,
+          "hits": [
+            {
+              "couponId": "coupon1",
+              "creationDate": "2019-10-20T12:00:00Z",
+              "description": "This coupon is used to give 10% off stuff.",
+              "enabled": false,
+              "exportedCodeCount": 0,
+              "lastModified": "2019-10-30T04:23:59Z",
+              "redemptionCount": 3,
+              "redemptionLimits": {
+                "limitPerCode": 1,
+                "limitPerCustomer": 1,
+                "limitPerTimeFrame": {
+                  "limit": 2,
+                  "redemptionTimeFrame": 24
+                }
+              },
+              "singleCode": "MyCode",
+              "systemCodesConfig": {
+                "codePrefix": "SG",
+                "numberOfCodes": 500000
+              },
+              "totalCodesCount": 50,
+              "type": "single_code"
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "stuff"
+            }
+          },
+          "sorts": [
+            {
+              "field": "couponId",
+              "sortOrder": "desc"
+            }
+          ],
+          "offset": 2,
+          "total": 8
+        },
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
           },
           "sorts": {
             "type": "array",
+            "description": "The sorting that was applied to the result.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
           },
           "hits": {
             "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
             "items": {
               "type": "object"
             }
@@ -856,19 +1282,26 @@
       },
       "SiteId": {
         "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
         "maxLength": 32,
         "minLength": 1
       },
       "CustomerListLink": {
         "type": "object",
+        "description": "Document representing a link to a customer list.",
         "properties": {
           "customerListId": {
             "type": "string",
+            "description": "The customer list identifier",
+            "example": "customer-list-1",
             "maxLength": 256,
             "minLength": 1
           },
           "title": {
             "type": "string",
+            "description": "The title of the customer list link",
+            "example": "Default Customer List",
             "maxLength": 256
           }
         }
@@ -881,13 +1314,24 @@
               {
                 "$ref": "#/components/schemas/SiteId"
               }
-            ]
+            ],
+            "description": "The ID of the site.",
+            "title": "ID"
           },
           "displayName": {
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Site Display Name",
               "maxLength": 4000
+            },
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "Site Display Name",
+              "en-US": "Site Display Name",
+              "de-DE": "Site-Anzeigename",
+              "ja-JP": "サイト表示名"
             },
             "x-format": "localized"
           },
@@ -895,7 +1339,16 @@
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Site Description",
               "maxLength": 4000
+            },
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "Site Description",
+              "en-US": "Site Description",
+              "de-DE": "Site-Beschreibung",
+              "ja-JP": "サイトの説明"
             },
             "x-format": "localized"
           },
@@ -904,41 +1357,56 @@
               {
                 "$ref": "#/components/schemas/CustomerListLink"
               }
-            ]
+            ],
+            "description": "The link to the customer list"
           },
           "inDeletion": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Specifies whether the site status is in deletion (true) or not (false)",
+            "example": false
           },
           "storefrontStatus": {
             "type": "string",
+            "description": "Status of the storefront",
             "enum": [
               "online",
               "maintenance",
               "to_be_deleted",
               "protected"
-            ]
+            ],
+            "example": "online"
           },
           "siteCatalogId": {
             "type": "string",
+            "description": "The catalog bound to the given site.",
+            "example": "storefront-catalog-m-en",
             "maxLength": 256,
             "minLength": 1
           },
           "cartridges": {
             "type": "string",
+            "description": "The effective cartridge path for the site, delimited by ':'. Includes both system cartridges and the site's custom cartridges (see `customCartridges`).",
+            "example": "app_storefront_base:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
             "maxLength": 4000,
             "readOnly": true
           },
           "customCartridges": {
             "type": "string",
+            "description": "The custom cartridge path assigned to the site, delimited by ':'. Does not include system cartridges. This is the subset of `cartridges` that can be configured for the site.",
+            "example": "app_storefront_base",
             "maxLength": 4000
           },
           "creationDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The timestamp when the site was created.",
+            "example": "2024-01-15T10:00:00Z"
           },
           "lastModified": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The timestamp when the site was last modified.",
+            "example": "2024-10-14T15:30:00Z"
           }
         },
         "required": [
@@ -951,9 +1419,11 @@
             "$ref": "#/components/schemas/PaginatedSearchResult"
           }
         ],
+        "description": "Document representing a site search result. This includes the query, sorts, hits (array of Site objects), and pagination information.",
         "properties": {
           "hits": {
             "type": "array",
+            "description": "The sorted array of search hits (Site objects). Can be empty.",
             "items": {
               "$ref": "#/components/schemas/Site"
             }
@@ -970,17 +1440,25 @@
         "properties": {
           "title": {
             "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
             "maxLength": 2048
           },
           "detail": {
-            "type": "string"
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
           },
           "instance": {
             "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
             "maxLength": 2048
           }
         },
@@ -992,6 +1470,8 @@
       },
       "Select": {
         "type": "string",
+        "description": "The property selector declaring which fields are included into the response payload. You can specify a single field name, a comma-separated list of names or work with wildcards. You can also specify array operations and filter expressions. The actual selector value must be enclosed within parentheses. For more information, please read the documentation about property selectors [here](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html).",
+        "example": "(name,id,variationAttributes.(**))",
         "minLength": 1,
         "pattern": "^[(].*[)]$"
       },
@@ -1001,9 +1481,11 @@
             "$ref": "#/components/schemas/PaginatedResultBase"
           }
         ],
+        "description": "Document representing a paginated list of sites.",
         "properties": {
           "data": {
             "type": "array",
+            "description": "The array of sites.",
             "items": {
               "$ref": "#/components/schemas/Site"
             }
@@ -1015,9 +1497,12 @@
       },
       "SiteCustomCartridges": {
         "type": "object",
+        "description": "Document representing the custom cartridge path of a site - the colon-delimited list of\ncustom (non-system) cartridges assigned to the site. This is the mutable segment of the\nsite's cartridge path and aligns with the site import and export representation\n(`custom-cartridges`).\nEach cartridge name must start with a letter and contain only letters, numbers, or\nunderscores.\n",
         "properties": {
           "customCartridges": {
             "type": "string",
+            "description": "The custom cartridges assigned to the site, delimited by ':'.",
+            "example": "plugin_custom_cartridge:plugin_wishlists",
             "maxLength": 4000
           }
         },
@@ -1033,6 +1518,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
             }
           }
         }
@@ -1043,6 +1533,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
             }
           }
         }
@@ -1052,12 +1547,14 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "select": {
         "name": "select",
@@ -1067,12 +1564,463 @@
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/Select"
+        },
+        "examples": {
+          "select": {
+            "value": "(**)"
+          }
+        }
+      }
+    },
+    "examples": {
+      "SiteSearchById": {
+        "summary": "Search sites by ID",
+        "description": "Example of searching for sites by their ID using a term query",
+        "value": {
+          "query": {
+            "termQuery": {
+              "fields": [
+                "id"
+              ],
+              "operator": "is",
+              "values": [
+                "RefArch"
+              ]
+            }
+          },
+          "limit": 10,
+          "offset": 0
+        }
+      },
+      "SiteSearchByDisplayName": {
+        "summary": "Search sites by display name",
+        "description": "Example of searching for sites by their display name using a text query",
+        "value": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "displayName"
+              ],
+              "searchPhrase": "Reference Architecture"
+            }
+          },
+          "limit": 25,
+          "offset": 0,
+          "sorts": [
+            {
+              "field": "displayName",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "SiteSearchActiveOnly": {
+        "summary": "Search only non-deleted sites",
+        "description": "Example of searching for sites that are not marked for deletion",
+        "value": {
+          "query": {
+            "termQuery": {
+              "fields": [
+                "inDeletion"
+              ],
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          },
+          "limit": 100,
+          "offset": 0,
+          "sorts": [
+            {
+              "field": "id",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "SiteSearchComplex": {
+        "summary": "Complex site search with multiple criteria",
+        "description": "Example of a complex search combining multiple conditions",
+        "value": {
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "termQuery": {
+                    "fields": [
+                      "inDeletion"
+                    ],
+                    "operator": "is",
+                    "values": [
+                      false
+                    ]
+                  }
+                },
+                {
+                  "textQuery": {
+                    "fields": [
+                      "displayName",
+                      "description"
+                    ],
+                    "searchPhrase": "production"
+                  }
+                }
+              ]
+            }
+          },
+          "limit": 20,
+          "offset": 0,
+          "sorts": [
+            {
+              "field": "displayName",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "SiteSearchResultSuccess": {
+        "summary": "Successful site search result",
+        "description": "Example of a successful site search returning multiple sites",
+        "value": {
+          "limit": 2,
+          "offset": 0,
+          "total": 2,
+          "hits": [
+            {
+              "id": "RefArch",
+              "customerListLink": {
+                "customerListId": "RefArch",
+                "title": "Default Customer List"
+              },
+              "displayName": {
+                "default": "displayName",
+                "en": "An English displayName",
+                "de": "A German displayName"
+              },
+              "description": {
+                "default": "description",
+                "en": "An English description",
+                "de": "A German description"
+              },
+              "inDeletion": false,
+              "storefrontStatus": "online",
+              "siteCatalogId": "storefront-catalog-m-en",
+              "cartridges": "plugin_custom_cartridge:plugin_wishlists:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
+              "customCartridges": "plugin_custom_cartridge:plugin_wishlists",
+              "creationDate": "2024-01-15T10:00:00.000Z",
+              "lastModified": "2024-10-14T15:30:00.000Z"
+            },
+            {
+              "id": "RefArchGlobal",
+              "customerListLink": {
+                "customerListId": "RefArchGlobal",
+                "title": "Default Customer List"
+              },
+              "displayName": {
+                "default": "displayName",
+                "en": "An English displayName",
+                "de": "A German displayName"
+              },
+              "description": {
+                "default": "description",
+                "en": "An English description",
+                "de": "A German description"
+              },
+              "inDeletion": false,
+              "storefrontStatus": "online",
+              "siteCatalogId": "storefront-catalog-m-de",
+              "cartridges": "plugin_custom_cartridge:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
+              "customCartridges": "plugin_custom_cartridge",
+              "creationDate": "2024-02-10T08:00:00.000Z",
+              "lastModified": "2024-11-01T12:00:00.000Z"
+            }
+          ],
+          "query": {
+            "termQuery": {
+              "fields": [
+                "inDeletion"
+              ],
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          },
+          "sorts": [
+            {
+              "field": "id",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "SiteSearchResultSingle": {
+        "summary": "Single site search result",
+        "description": "Example of a site search returning a single site",
+        "value": {
+          "limit": 1,
+          "offset": 0,
+          "total": 1,
+          "hits": [
+            {
+              "id": "RefArch",
+              "customerListLink": {
+                "customerListId": "RefArch",
+                "title": "Default Customer List"
+              },
+              "displayName": {
+                "default": "displayName",
+                "en": "An English displayName",
+                "de": "A German displayName"
+              },
+              "description": {
+                "default": "description",
+                "en": "An English description",
+                "de": "A German description"
+              },
+              "inDeletion": false,
+              "storefrontStatus": "online",
+              "siteCatalogId": "storefront-catalog-m-en",
+              "cartridges": "plugin_custom_cartridge:plugin_wishlists:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
+              "customCartridges": "plugin_custom_cartridge:plugin_wishlists",
+              "creationDate": "2024-01-15T10:00:00.000Z",
+              "lastModified": "2024-10-14T15:30:00.000Z"
+            }
+          ],
+          "query": {
+            "termQuery": {
+              "fields": [
+                "id"
+              ],
+              "operator": "is",
+              "values": [
+                "RefArch"
+              ]
+            }
+          },
+          "sorts": [
+            {
+              "field": "id",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "MalformedSearchParameter": {
+        "summary": "Malformed search query",
+        "description": "Example of an error when the search query is malformed or invalid",
+        "value": {
+          "title": "Malformed Search Parameter",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/malformed-search-parameter",
+          "detail": "The search query contains invalid syntax. Please check the query structure and try again."
+        }
+      },
+      "InvalidFieldName": {
+        "summary": "Unqueryable Field",
+        "description": "Example of an error when an invalid field name is used in the search query",
+        "value": {
+          "title": "Unqueryable Field",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unqueryable-field",
+          "detail": "The field 'invalid_field' is not a searchable attribute for sites. Valid fields are: id, displayName, description, inDeletion."
+        }
+      },
+      "InvalidSortField": {
+        "summary": "Field Not Sortable",
+        "description": "Example of an error when an invalid field is used for sorting",
+        "value": {
+          "title": "Field Not Sortable",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/field-not-sortable",
+          "detail": "The field 'invalid_sort' is not a sortable attribute for sites. Valid sortable fields are: id, displayName, description, inDeletion."
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Unauthorized request"
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Access to requested resource forbidden"
+        }
+      },
+      "GetSitesSuccess": {
+        "summary": "Successful retrieval of sites",
+        "description": "Example of a successful response returning a paginated list of sites with `select=(**)` applied.",
+        "value": {
+          "limit": 3,
+          "offset": 0,
+          "total": 3,
+          "data": [
+            {
+              "id": "RefArch",
+              "displayName": {
+                "default": "Reference Architecture Site"
+              },
+              "description": {
+                "default": "Main storefront for reference architecture"
+              },
+              "inDeletion": false,
+              "storefrontStatus": "online",
+              "siteCatalogId": "storefront-catalog-m-en",
+              "cartridges": "plugin_custom_cartridge:plugin_wishlists:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
+              "customCartridges": "plugin_custom_cartridge:plugin_wishlists",
+              "customerListLink": {
+                "customerListId": "customer-list-1",
+                "title": "Default Customer List"
+              },
+              "creationDate": "2024-01-15T10:00:00.000Z",
+              "lastModified": "2024-10-14T15:30:00.000Z"
+            },
+            {
+              "id": "SiteGenesis",
+              "displayName": {
+                "default": "SiteGenesis Demo Site"
+              },
+              "description": {
+                "default": "Demo site for testing purposes"
+              },
+              "inDeletion": false,
+              "storefrontStatus": "online",
+              "siteCatalogId": "storefront-catalog-sg",
+              "cartridges": "plugin_custom_cartridge:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
+              "customCartridges": "plugin_custom_cartridge",
+              "customerListLink": {
+                "customerListId": "customer-list-sg",
+                "title": "SiteGenesis Customer List"
+              },
+              "creationDate": "2023-06-10T08:00:00.000Z",
+              "lastModified": "2024-09-20T12:45:00.000Z"
+            },
+            {
+              "id": "MobileSite",
+              "displayName": {
+                "default": "Mobile First Site"
+              },
+              "description": {
+                "default": "Optimized for mobile shopping experience"
+              },
+              "inDeletion": false,
+              "storefrontStatus": "maintenance",
+              "siteCatalogId": "mobile-catalog",
+              "cartridges": "plugin_wishlists:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
+              "customCartridges": "plugin_wishlists",
+              "creationDate": "2024-03-01T14:20:00.000Z",
+              "lastModified": "2024-10-10T09:15:00.000Z"
+            }
+          ]
+        }
+      },
+      "GetSitesWithSelect": {
+        "summary": "Sites with select filter applied",
+        "description": "Example of a response when the select parameter limits returned fields",
+        "value": {
+          "limit": 2,
+          "offset": 0,
+          "total": 2,
+          "data": [
+            {
+              "id": "RefArch"
+            },
+            {
+              "id": "SiteGenesis"
+            }
+          ]
+        }
+      },
+      "GetSiteByIdSuccess": {
+        "summary": "Successful retrieval of a single site",
+        "description": "Example of a successful response returning a single site by its ID",
+        "value": {
+          "id": "RefArch",
+          "displayName": {
+            "default": "Reference Architecture Site"
+          },
+          "description": {
+            "default": "Main storefront for reference architecture"
+          },
+          "inDeletion": false,
+          "storefrontStatus": "online",
+          "siteCatalogId": "storefront-catalog-m-en",
+          "cartridges": "plugin_custom_cartridge:plugin_wishlists:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
+          "customCartridges": "plugin_custom_cartridge:plugin_wishlists",
+          "customerListLink": {
+            "customerListId": "customer-list-1",
+            "title": "Default Customer List"
+          },
+          "creationDate": "2024-01-15T10:00:00.000Z",
+          "lastModified": "2024-10-14T15:30:00.000Z"
+        }
+      },
+      "GetSiteByIdMaintenance": {
+        "summary": "Site in maintenance mode",
+        "description": "Example of a site with maintenance storefront status",
+        "value": {
+          "id": "MobileSite",
+          "displayName": {
+            "default": "Mobile First Site"
+          },
+          "description": {
+            "default": "Optimized for mobile shopping experience"
+          },
+          "inDeletion": false,
+          "storefrontStatus": "maintenance",
+          "siteCatalogId": "mobile-catalog",
+          "cartridges": "plugin_wishlists:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
+          "customCartridges": "plugin_wishlists",
+          "creationDate": "2024-03-01T14:20:00.000Z",
+          "lastModified": "2024-10-10T09:15:00.000Z"
+        }
+      },
+      "SiteNotFound": {
+        "summary": "Site Not Found",
+        "description": "Example of an error when the requested site ID does not exist",
+        "value": {
+          "title": "Site Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/site-not-found",
+          "detail": "No site with ID 'unknown' could be found."
+        }
+      },
+      "GetSiteCustomCartridgesSuccess": {
+        "summary": "Successful retrieval of a site's custom cartridge path",
+        "description": "Example of a successful response returning the site's custom cartridge path",
+        "value": {
+          "customCartridges": "plugin_custom_cartridge:plugin_wishlists"
+        }
+      },
+      "ReplaceSiteCustomCartridgesRequest": {
+        "summary": "Replace the custom cartridge path",
+        "description": "Example of replacing a site's custom cartridge path with a new colon-delimited list",
+        "value": {
+          "customCartridges": "plugin_custom_cartridge:plugin_wishlists:plugin_loyalty"
+        }
+      },
+      "ReplaceSiteCustomCartridgesSuccess": {
+        "summary": "Successfully replaced a site's custom cartridge path",
+        "description": "Example of a successful response after replacing the site's custom cartridge path",
+        "value": {
+          "customCartridges": "plugin_custom_cartridge:plugin_wishlists:plugin_loyalty"
+        }
+      },
+      "InvalidCartridgePath": {
+        "summary": "Invalid Cartridge Path",
+        "description": "Example of an error when a specified cartridge name does not match the required format",
+        "value": {
+          "title": "Invalid Cartridge Path",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-cartridge-path",
+          "detail": "Invalid cartridge path '123_invalid': The cartridge name may only contain letters, numbers, or '_', must start with a letter, and be separated by ':'.",
+          "cartridge": "123_invalid"
         }
       }
     },
     "securitySchemes": {
       "AmOAuth2": {
         "type": "oauth2",
+        "description": "OAuth 2.0 security scheme for Admin API access using Account Manager.\nRequires appropriate scopes for site management operations.\n",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://account.demandware.com/dw/oauth2/access_token",

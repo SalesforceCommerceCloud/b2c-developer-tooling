@@ -1,6 +1,6 @@
 # API Browser Setup
 
-Browse the APIs available to your B2C Commerce instance, including custom properties, and send requests with **Try it out**. Open this guide from the API Browser's **Setup Help** button or from any API documentation tab.
+Browse the APIs available to your B2C Commerce instance, including custom properties and full operation documentation, and send requests with **Try it out**. Without access, browse the bundled schemas read-only. Open this guide from the API Browser's **Setup Help** button or from any API documentation tab.
 
 ## Configure a connection
 
@@ -27,6 +27,16 @@ Replace the example values with your instance and client settings. `tenant-id` a
 Schema discovery requires an **Account Manager** API client with the **Salesforce Commerce API** role, the tenant in its tenant filter, and the `sfcc.scapi-schemas` scope. This is needed to load schemas for both Admin and Shopper families; SLAS credentials alone do not load the API list.
 
 Select **Load APIs** or **Refresh** in the API Browser, then choose an API. For client registration and access setup, see [Authentication](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#scapi-authentication).
+
+## Offline mode
+
+If the live Schemas API cannot be reached (no configuration, no Account Manager credentials, no access, or a network error), the API Browser shows the **bundled** SCAPI schemas that ship with the extension, with a one-time warning that explains why. Offline mode is read-only documentation:
+
+- **Try it out is disabled** and no tokens are requested; the token bar reads "Offline: bundled schema – Try it out disabled".
+- **Custom APIs and tenant custom properties are not shown**, and the bundled contracts may be older than your instance.
+- Fix the connection (see above), select **Refresh**, and reopen the API to get the live schema.
+
+When the live API is available, the API Browser always loads the complete contract: operation summaries and descriptions, examples, and your tenant's custom properties.
 
 ## Send Admin requests
 
