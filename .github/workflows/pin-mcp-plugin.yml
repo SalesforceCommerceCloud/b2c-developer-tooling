@@ -1,0 +1,117 @@
+name: Pin MCP Plugin
+
+# Points the b2c-dx-mcp plugin (Claude Code marketplace, Codex and Agent Plugins
+# manifests) at a newly published @salesforce/b2c-dx-mcp version.
+#
+# Plugin manifests on main are live as soon as they land, so the pin moves only
+# after npm serves the version. Pinning earlier leaves `npx` failing with
+# ETARGET for new installs, and npm caches that miss locally for the registry's
+# max-age, so the failure outlasts the registry catching up.
+#
+# Dispatched by publish.yml after a stable MCP publish to the `latest` dist-tag.
+# Run manually to retry: gh workflow run pin-mcp-plugin.yml -f version=X.Y.Z
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Published @salesforce/b2c-dx-mcp version to pin (X.Y.Z)'
+        required: true
+        type: string
+
+concurrency:
+  group: pin-mcp-plugin
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  pin:
+    name: Pin plugin to published MCP version
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Validate version
+        env:
+          # Bind untrusted workflow_dispatch input to an env var; do not interpolate it into the shell.
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version must be X.Y.Z, got '$VERSION'"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          token: ${{ secrets.CHANGESETS_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 22
+
+      - name: Check version matches main
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          MAIN_VERSION=$(node -p "require('./packages/b2c-dx-mcp/package.json').version")
+          if [[ "$VERSION" != "$MAIN_VERSION" ]]; then
+            echo "::error::main has @salesforce/b2c-dx-mcp $MAIN_VERSION, not $VERSION; refusing to pin a version main did not release"
+            exit 1
+          fi
+
+      - name: Wait for npm to serve the version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # Resolve the way npx does (abbreviated packument, bypassing the local cache).
+          for attempt in $(seq 1 60); do
+            if [[ "$(npm view "@salesforce/b2c-dx-mcp@$VERSION" version --prefer-online 2>/dev/null)" == "$VERSION" ]]; then
+              echo "npm serves @salesforce/b2c-dx-mcp@$VERSION (attempt $attempt)"
+              # Clients that fetched the packument just before the registry updated keep that copy for
+              # its max-age (300s); wait it out so their first try after the pin moves succeeds.
+              sleep 300
+              exit 0
+            fi
+            echo "Waiting for npm to serve @salesforce/b2c-dx-mcp@$VERSION (attempt $attempt)"
+            sleep 30
+          done
+          echo "::error::npm did not serve @salesforce/b2c-dx-mcp@$VERSION within 30 minutes; the plugin still pins the previous version. Re-run this workflow once it does."
+          exit 1
+
+      - name: Pin plugin
+        env:
+          VERSION: ${{ inputs.version }}
+        run: node scripts/pin-mcp-plugin.mjs "$VERSION"
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ inputs.version }}
+          # A PAT, not GITHUB_TOKEN, so a fallback PR triggers the required checks.
+          GH_TOKEN: ${{ secrets.CHANGESETS_TOKEN }}
+        run: |
+          if git diff --quiet; then
+            echo "Plugin already pins @salesforce/b2c-dx-mcp@$VERSION"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: pin b2c-dx-mcp plugin to $VERSION"
+          for attempt in 1 2; do
+            git push origin HEAD:main && exit 0
+            git pull --rebase origin main
+          done
+          # The token cannot bypass main's ruleset: land the pin through a PR instead.
+          BRANCH="chore/pin-mcp-plugin-$VERSION"
+          git push --force origin "HEAD:refs/heads/$BRANCH"
+          PR_URL=$(gh pr list --head "$BRANCH" --state open --json url -q '.[0].url')
+          if [[ -z "$PR_URL" ]]; then
+            PR_URL=$(gh pr create --base main --head "$BRANCH" \
+              --title "chore: pin b2c-dx-mcp plugin to $VERSION" \
+              --body "Automated by pin-mcp-plugin.yml: npm now serves @salesforce/b2c-dx-mcp@$VERSION, so the plugin can launch it.")
+          fi
+          gh pr merge "$PR_URL" --auto --squash || echo "::warning::auto-merge unavailable; merge $PR_URL manually"
+          echo "::notice::Plugin pin opened as $PR_URL"
