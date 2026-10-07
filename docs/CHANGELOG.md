@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.6
+
+### Patch Changes
+
+- [#742](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/742) [`f7e5611`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f7e5611646830aaae56ee1d2c6a4493086ccd72f) - Published the SCAPI code mode presentation as an unlisted page on the docs site. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.5
 
 ### Patch Changes

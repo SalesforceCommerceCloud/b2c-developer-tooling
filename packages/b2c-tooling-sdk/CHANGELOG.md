@@ -1,5 +1,32 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.5.0
+
+### Minor Changes
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Local SCAPI contracts for MCP code mode can now be set in project configuration (dw.json `scapi-schemas` or `SFCC_SCAPI_SCHEMAS` in the project `.env`), so MCP plugin users can add beta APIs without changing the server's launch arguments. Relative paths resolve from the project directory; the `--scapi-schemas` flag still takes precedence. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - SCAPI code mode and `scapi_schemas_list` now see operation summaries, descriptions and examples (the bundled corpus grows to 61 APIs), so agents can search by what an operation does, not just its ID; `scapi_schemas_list` also falls back to the bundled contracts with a warning when the live Schemas API is unavailable. `scapi_search` returns a compact outline by default (nested descriptions and examples dropped to fit the 24 KB result cap); pass `detail: "full"` for all prose. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#745](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/745) [`c534797`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c5347970fc247f412b84c34c41d4df4965e2c710) - SCAPI schema overrides (`scapi-schemas`, `SFCC_SCAPI_SCHEMAS`, `--scapi-schemas`) now accept http(s) URLs, so you can share a beta contract with a config-only change. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - `b2c setup instance` commands now include instances from plugin config sources, not only dw.json. `create` stores new instances in the highest-priority source that can hold them (or the one you pick with `--source`), and stores credential pairs in a plugin credential store, such as a keychain, when one is installed. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Add `b2c setup set`, `get`, and `unset` to change one configuration value, for example `b2c setup set scapi-schemas=./scapi-schemas`. The value is written to the `dw.json` entry or project `.env` file that already supplies it, or else to the selected instance. Values are type-checked, and the command refuses to write to read-only sources. `get` masks secrets unless you pass `--unmask`. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Fix `docs-categories` in `dw.json` (and `SFCC_DOCS_CATEGORIES`) being ignored, so `b2c docs search` and `b2c docs read` now apply the configured default topics. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Fixed the search-index job examples (`{"site_scope":["Site"]}`, not an object), documented system-job request bodies for CLI and MCP code mode, and stopped `--api-backend auto` from retrying SCAPI 400 (invalid request) errors over OCAPI, which hid the real error. When a fallback does happen and OCAPI also fails, both errors are reported. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Plugins with the same priority now load in a consistent order (by plugin name), so the same plugin's settings win on every run and in every tool. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#746](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/746) [`163138e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/163138eb8ff1c045a64f3be246c1d1c2f37815f6) - `scapi_search` now accepts an API family or family/name for `api` (for example `cdn` or `cdn/zones`), and an unknown id suggests close matches. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e)]:
+  - @salesforce/b2c-api-schemas@0.3.0
+
 ## 2.4.0
 
 ### Minor Changes
