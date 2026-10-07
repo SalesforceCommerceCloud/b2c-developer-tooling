@@ -15,8 +15,10 @@ import {
   createLiveScapiDocument,
   createScapiRequest,
   loadScapiSchemas,
+  matchesScapiApi,
   mergeScapiSchemas,
   scapiTenantKey,
+  suggestScapiApis,
   type ApiDocument,
   type ScapiSchemaDocument,
 } from '@salesforce/b2c-tooling-sdk/scapi';
@@ -82,6 +84,19 @@ describe('SCAPI live schemas', () => {
     expect(calls).to.deep.equal([]);
     await cache.load(tenant, schemas, 'f_ecom_test_001', {api: 'product/widgets/v1', refresh: true});
     expect(calls).to.deep.equal(['list', 'product/widgets/v1']);
+    const family = await cache.load(tenant, schemas, 'f_ecom_test_001', {api: 'product'});
+    expect(family.documents.map((document) => document.entry.id)).to.deep.equal(['product/widgets/v1']);
+  });
+
+  it('selects APIs by whole leading segments and suggests close ids', () => {
+    for (const api of [undefined, 'cdn', 'CDN/zones', 'cdn/zones/v1', 'cdn/zones/'])
+      expect(matchesScapiApi('cdn/zones/v1', api)).to.equal(true);
+    for (const api of ['cd', 'cdn/zone', 'cdn/zones/v2', 'zones'])
+      expect(matchesScapiApi('cdn/zones/v1', api)).to.equal(false);
+    const ids = ['cdn/zones/v1', 'checkout/shopper-baskets/v2', 'product/products/v1'];
+    expect(suggestScapiApis(ids, 'ecdn')).to.deep.equal(['cdn/zones/v1']);
+    expect(suggestScapiApis(ids, 'basket')).to.deep.equal(['checkout/shopper-baskets/v2']);
+    expect(suggestScapiApis(ids, 'widgets')).to.deep.equal([]);
   });
 
   it('refetches stale contracts on discovery but never evicts them', async () => {
