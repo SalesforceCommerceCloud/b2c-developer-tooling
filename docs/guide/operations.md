@@ -76,6 +76,23 @@ state the gap. Failed-order counts are not the same as checkout conversion.
 [Metrics](./metrics) and [analytics reports](./analytics-reports-cip-ccac) can add
 context where enabled.
 
+## Review bot and edge traffic
+
+Find out which automated traffic reaches your storefront through the eCDN, who
+is likely behind it, and whether your firewall, WAF, and rate-limiting rules
+cover it. Your assistant proposes narrowly scoped rule changes and makes them
+only with your approval.
+
+<ExamplePrompt>
+
+> Check the eCDN traffic on my production storefront for bot activity over the last week. Tell me which sources matter, whether our current rules cover them, and what you would change. Don't change any rules.
+
+</ExamplePrompt>
+
+How much traffic detail is available depends on your tenant's eCDN and
+[Metrics](./metrics) access; without it, the review covers your edge rules and
+origin logs and states the gap.
+
 ## Put trends in context
 
 Use [CIP analytics](./analytics-reports-cip-ccac) through your assistant to compare

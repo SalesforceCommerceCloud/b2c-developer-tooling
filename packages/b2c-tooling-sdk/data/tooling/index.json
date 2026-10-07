@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-07T00:57:06.220Z",
+  "generatedAt": "2026-10-07T04:56:18.082Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -413,7 +413,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations.md",
-      "headings": "Get started • Understand settings and procedures • Review job health • Investigate checkout and failed orders • Put trends in context • Escalate with useful evidence • Verify recovery",
+      "headings": "Get started • Understand settings and procedures • Review job health • Investigate checkout and failed orders • Review bot and edge traffic • Put trends in context • Escalate with useful evidence • Verify recovery",
       "preview": "Review job health, investigate checkout and failed orders, and prepare actionable handoffs with your AI assistant."
     },
     {
