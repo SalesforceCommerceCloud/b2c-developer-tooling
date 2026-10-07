@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.4.1
+
+### Patch Changes
+
+- [`dc9a691`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/dc9a6914439ec5009249bb0a03efef7d81d21c57) - The B2C DX MCP plugin now starts a newly released server even when npm's `min-release-age` is set, instead of failing to connect for the first days after a release. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 3.4.0
 
 ### Minor Changes
