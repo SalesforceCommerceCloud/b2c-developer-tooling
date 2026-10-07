@@ -542,6 +542,28 @@ describe('SCAPI code tools', function () {
     }
   });
 
+  it('fetches URL entries from project config once per server', async () => {
+    const url = 'https://schemas.example.com/cdn-zones-v1.json';
+    const fetchStub = stub(globalThis, 'fetch').callsFake(async () =>
+      Response.json({
+        openapi: '3.0.3',
+        info: {version: '1.0.0-beta'},
+        servers: [{url: 'https://{shortCode}.api.commercecloud.salesforce.com/cdn/zones/v1'}],
+        paths: {'/from-url': {get: {operationId: 'getZoneInsights', responses: {'200': {description: 'OK'}}}}},
+      }),
+    );
+    try {
+      const config = createMockResolvedConfig({scapiSchemas: [url]});
+      const [search] = createScapiCodeTools(() => new Services({resolvedConfig: config}));
+      const input = {skillRead: true, api: 'cdn/zones/v1', code: `async () => Object.keys(spec.paths)`};
+      expect(readJson(await search.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-url']);
+      expect(readJson(await search.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-url']);
+      expect(fetchStub.calledOnceWith(url)).to.equal(true);
+    } finally {
+      restore();
+    }
+  });
+
   it('reads local contracts from project config relative to the project directory', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'b2c-local-scapi-config-'));
     const contract = (path: string) => ({

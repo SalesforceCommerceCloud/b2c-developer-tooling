@@ -171,7 +171,7 @@ export interface NormalizedConfig {
 
   // SCAPI
   /**
-   * Local SCAPI OpenAPI 3 JSON contracts (files or directories) for MCP code mode.
+   * Local SCAPI OpenAPI 3 JSON contracts (files, directories or http(s) URLs) for MCP code mode.
    * Each replaces the bundled or live contract for the same API, or adds one.
    * Relative paths resolve from the project directory.
    *

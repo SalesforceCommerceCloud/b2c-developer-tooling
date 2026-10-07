@@ -8,7 +8,8 @@
 export {loadScapiSchemas, findScapiOperation, resolveScapiReference} from './catalog.js';
 export type {ApiDocument, ScapiSchemaEntry, ScapiSchemaDocument} from './catalog.js';
 export {ScapiLiveSchemaCache, createLiveScapiDocument, mergeScapiSchemas, scapiTenantKey} from './live.js';
-export {loadLocalScapiSchemas} from './local.js';
+export {isRemoteScapiSchema, loadLocalScapiSchemas, loadScapiSchemaOverrides} from './local.js';
+export type {ScapiSchemaOverrideOptions} from './local.js';
 export {
   SCAPI_SCHEMA_EXPANSIONS,
   SCAPI_STANDARD_SCHEMA_EXPAND,

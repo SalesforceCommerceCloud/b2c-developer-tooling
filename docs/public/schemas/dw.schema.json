@@ -394,14 +394,14 @@
           "items": {
             "type": "string"
           },
-          "description": "Local SCAPI OpenAPI JSON files or directories for MCP code mode, relative to the project directory. Env: `SFCC_SCAPI_SCHEMAS`."
+          "description": "Local SCAPI OpenAPI JSON files or directories (relative to the project directory), or http(s) URLs, for MCP code mode. Env: `SFCC_SCAPI_SCHEMAS`."
         },
         "scapiSchemas": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "Alternate spelling of `scapi-schemas`. Local SCAPI OpenAPI JSON files or directories for MCP code mode, relative to the project directory. Env: `SFCC_SCAPI_SCHEMAS`."
+          "description": "Alternate spelling of `scapi-schemas`. Local SCAPI OpenAPI JSON files or directories (relative to the project directory), or http(s) URLs, for MCP code mode. Env: `SFCC_SCAPI_SCHEMAS`."
         },
         "realm": {
           "type": "string",

@@ -111,7 +111,7 @@ export interface DwJsonConfig {
   cipHost?: string;
   /** Documentation categories to expose (allowlist); dw.json key `docs-categories` */
   docsCategories?: string[];
-  /** Local SCAPI OpenAPI contracts (files or directories) for MCP code mode; dw.json key `scapi-schemas` */
+  /** Local SCAPI OpenAPI contracts (files, directories or http(s) URLs) for MCP code mode; dw.json key `scapi-schemas` */
   scapiSchemas?: string[];
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
   certificate?: string;
