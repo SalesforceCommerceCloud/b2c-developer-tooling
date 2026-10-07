@@ -303,5 +303,7 @@ function createStorefrontNextSource(envFile?: string): StorefrontNextEnvSource {
   const env = {...fileValues, ...process.env};
   const used = Object.keys(STOREFRONT_NEXT_ENV_VAR_MAP).filter((key) => env[key]);
   const fromFile = envFile !== undefined && used.length > 0 && used.every((key) => fileValues[key] === env[key]);
-  return new StorefrontNextEnvSource(env, {location: fromFile ? envFile : 'environment variables'});
+  return fromFile
+    ? new StorefrontNextEnvSource(env, {location: envFile, envFile})
+    : new StorefrontNextEnvSource(env, {location: 'environment variables'});
 }

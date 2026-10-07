@@ -128,6 +128,12 @@ describe('config/EnvSource', () => {
       expect(result!.config.tenantId).to.equal('abcd_prd');
     });
 
+    it('maps SFCC_SCAPI_SCHEMAS to a scapiSchemas path list', () => {
+      const source = new EnvSource({SFCC_SCAPI_SCHEMAS: 'schemas/a.json, schemas/beta'});
+      const result = source.load({});
+      expect(result!.config.scapiSchemas).to.deep.equal(['schemas/a.json', 'schemas/beta']);
+    });
+
     it('maps SFCC_SITE_ID to siteId', () => {
       const source = new EnvSource({SFCC_SITE_ID: 'RefArch'});
       const result = source.load({});

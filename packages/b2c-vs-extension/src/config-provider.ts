@@ -55,6 +55,8 @@ function isInInstanceCatalog(
   selection: WorkspaceInstanceSelection,
   options: Pick<ResolveConfigOptions, 'configPath' | 'defaultConfigPath' | 'workingDirectory'>,
 ): boolean {
+  // Plugin source selections have no file; resolution reports a missing instance.
+  if (selection.source || !selection.location) return Boolean(selection.source);
   const target = path.resolve(selection.location);
   const {configPath, defaultConfigPath, workingDirectory} = options;
   if (configPath !== undefined) return configPath !== '' && path.resolve(configPath) === target;
@@ -311,7 +313,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
 
   /** Select an exact instance for this VS Code workspace without changing shared active state. */
   async selectInstanceForWorkspace(selection: WorkspaceInstanceSelection): Promise<void> {
-    const normalized = {...selection, location: path.resolve(selection.location)};
+    const normalized = selection.location ? {...selection, location: path.resolve(selection.location)} : selection;
     await this.workspaceState?.update(WORKSPACE_INSTANCE_KEY, normalized);
     await this.workspaceState?.update(WORKSPACE_INSTANCE_NONE_KEY, undefined);
     this.workspaceInstanceSelection = normalized;
@@ -639,7 +641,8 @@ export class B2CExtensionConfig implements vscode.Disposable {
     const config = await resolveConfig(overrides, {
       workingDirectory,
       instance: workspaceSelection?.name,
-      configPath: instanceDisabled ? '' : (workspaceSelection?.location ?? configPath),
+      // A plugin source selection owns the instance, so a same-name dw.json entry can't take it over.
+      configPath: instanceDisabled || workspaceSelection?.source ? '' : (workspaceSelection?.location ?? configPath),
       credentialsFile: environment.MRT_CREDENTIALS_FILE || undefined,
       // An explicit workspace selection identifies an exact file and name. Do
       // not fall through to a same-name entry in the global fallback.
@@ -653,7 +656,11 @@ export class B2CExtensionConfig implements vscode.Disposable {
         new StorefrontNextEnvSource(environment, {location: storefrontNextFromAmbient ? undefined : envFile.path}),
       ],
     });
-    if (workspaceSelection && config.values.instanceName !== workspaceSelection.name) {
+    // A plugin source may not report instanceName; contributing values is enough to show it was used.
+    const usedSelectedSource =
+      workspaceSelection?.source !== undefined &&
+      config.sources.some((source) => source.name === workspaceSelection.source && source.fields.length > 0);
+    if (workspaceSelection && !usedSelectedSource && config.values.instanceName !== workspaceSelection.name) {
       const mismatch = config.warnings.find(
         (warning) => warning.code === 'HOSTNAME_MISMATCH' && warning.details?.source === 'DwJsonSource',
       );

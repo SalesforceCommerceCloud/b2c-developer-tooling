@@ -514,8 +514,8 @@ describe('operations/mrt/deployment', () => {
       server.use(
         http.post(SCAPI_DEPLOYMENTS, () =>
           HttpResponse.json(
-            {title: 'Bad Request', type: 'about:blank', detail: 'bad'},
-            {status: 400, headers: {'Content-Type': 'application/problem+json'}},
+            {title: 'Not Found', type: 'about:blank', detail: 'bad'},
+            {status: 404, headers: {'Content-Type': 'application/problem+json'}},
           ),
         ),
         http.post(LEGACY_DEPLOY, () => HttpResponse.json({}, {status: 202})),

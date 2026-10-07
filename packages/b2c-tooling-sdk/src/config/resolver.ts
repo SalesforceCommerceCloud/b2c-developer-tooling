@@ -35,6 +35,7 @@ import type {
 } from './types.js';
 import {ResolvedConfigImpl} from './resolved-config.js';
 import {globalConfigSourceRegistry} from './config-source-registry.js';
+import {getConfigOrigins, recordConfigOrigins, type ConfigOrigin} from './config-origins.js';
 
 /**
  * Credential groups that must come from the same source.
@@ -43,7 +44,7 @@ import {globalConfigSourceRegistry} from './config-source-registry.js';
  * higher-priority source, all fields in that group from lower-priority
  * sources are skipped. This prevents mixing credentials that don't belong together.
  */
-const CREDENTIAL_GROUPS: (keyof NormalizedConfig)[][] = [
+export const CREDENTIAL_GROUPS: (keyof NormalizedConfig)[][] = [
   ['clientId', 'clientSecret'],
   ['username', 'password'],
   ['slasClientId', 'slasClientSecret'],
@@ -170,6 +171,7 @@ export class ConfigResolver {
     options: ResolveConfigOptions = {},
   ): Promise<ConfigResolutionResult> {
     const sourceInfos: ConfigSourceInfo[] = [];
+    const origins: ConfigOrigin[] = [];
     const sourceWarnings: ConfigWarning[] = [];
     const baseConfig: NormalizedConfig = {};
     const hostnameProtection = options.hostnameProtection !== false;
@@ -197,8 +199,9 @@ export class ConfigResolver {
     // Earlier sources have higher priority - later sources only fill in missing values
     for (const source of this.sources) {
       let result: ConfigLoadResult | undefined;
+      const loadOptions = {...enrichedOptions};
       try {
-        result = await source.load(enrichedOptions);
+        result = await source.load(loadOptions);
       } catch (error) {
         // Source threw an error (e.g., malformed config file) - create warning and continue
         const message = error instanceof Error ? error.message : String(error);
@@ -297,14 +300,16 @@ export class ConfigResolver {
             if (fieldKey === 'hostname') hostnameSourceName = source.name;
           }
 
-          sourceInfos.push({
+          const info: ConfigSourceInfo = {
             name: source.name,
             scope,
             location,
             fields,
             fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
             instanceCatalog,
-          });
+          };
+          sourceInfos.push(info);
+          origins.push({source, info, options: loadOptions});
 
           const logger = getLogger();
           logger.trace(
@@ -352,6 +357,13 @@ export class ConfigResolver {
       config.tenantId = normalizeTenantId(config.tenantId);
     }
 
+    // Derived values record the source of the field they came from, so writes
+    // (`setup set`) and diagnostics can follow them back to it.
+    const derivedFrom = (field: keyof NormalizedConfig): ConfigSourceInfo['derivedFrom'] => {
+      const supplier = sourceInfos.find((info) => info.fields.includes(field) && !info.fieldsIgnored?.includes(field));
+      return supplier ? {field, source: supplier.name, location: supplier.location} : {field};
+    };
+
     // Sandbox tenant IDs determine the hostname, so a configuration with only a
     // tenant (for example a Storefront Next organization ID) still reaches the
     // instance. Other tenants are ambiguous and never derive a hostname.
@@ -363,6 +375,7 @@ export class ConfigResolver {
           name: 'SandboxTenantId',
           location: `derived from tenant ID ${config.tenantId}`,
           fields: ['hostname'],
+          derivedFrom: derivedFrom('tenantId'),
         });
       }
     }
@@ -378,6 +391,7 @@ export class ConfigResolver {
           name: 'SandboxHostname',
           location: `derived from hostname ${config.hostname}`,
           fields: ['tenantId'],
+          derivedFrom: derivedFrom('hostname'),
         });
       } else if (config.tenantId.toLowerCase() !== sandboxTenantId) {
         sourceWarnings.push({
@@ -391,7 +405,9 @@ export class ConfigResolver {
     // Combine source warnings with merge warnings
     const warnings = [...sourceWarnings, ...mergeWarnings];
 
-    return {config, warnings, sources: sourceInfos};
+    const resolution = {config, warnings, sources: sourceInfos};
+    recordConfigOrigins(resolution, origins);
+    return resolution;
   }
 
   /**
@@ -488,6 +504,38 @@ export function createConfigResolver(): ConfigResolver {
 }
 
 /**
+ * Build the sources {@link resolveConfig} reads, in priority order.
+ *
+ * Includes the defaults (dw.json, ~/.mobify, package.json) unless
+ * `replaceDefaultSources` is set, `sourcesBefore`/`sourcesAfter`, and every
+ * source in {@link globalConfigSourceRegistry} (for example, sources that
+ * plugins register through the `b2c:config-sources` hook). Use it to work with
+ * the same sources outside resolution, as `b2c setup instance` does through
+ * `InstanceManager`.
+ *
+ * @param options - Source options
+ * @returns Sources sorted by priority (lower number first)
+ */
+export function createConfigSources(
+  options: Pick<ResolveConfigOptions, 'replaceDefaultSources' | 'sourcesAfter' | 'sourcesBefore'> = {},
+): ConfigSource[] {
+  // Globally registered sources (from plugins via B2CPluginManager or direct SDK registration).
+  // Always included regardless of replaceDefaultSources — global sources are explicitly registered
+  // by plugins and should always participate, matching the middleware registry behavior.
+  const globalSources = globalConfigSourceRegistry.getSources();
+  const defaultSources: ConfigSource[] = options.replaceDefaultSources
+    ? []
+    : [new DwJsonSource(), new MobifySource(), new PackageJsonSource()];
+  const sources = [
+    ...(options.sourcesBefore ?? []),
+    ...defaultSources,
+    ...(options.sourcesAfter ?? []),
+    ...globalSources,
+  ];
+  return sources.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+}
+
+/**
  * Resolves configuration from multiple sources and returns a rich config object.
  *
  * This is the preferred high-level API for configuration resolution. It returns
@@ -530,32 +578,9 @@ export async function resolveConfig(
   overrides: Partial<NormalizedConfig> = {},
   options: ResolveConfigOptions = {},
 ): Promise<ResolvedB2CConfig> {
-  // Globally registered sources (from plugins via B2CPluginManager or direct SDK registration).
-  // Always included regardless of replaceDefaultSources — global sources are explicitly registered
-  // by plugins and should always participate, matching the middleware registry behavior.
-  const globalSources = globalConfigSourceRegistry.getSources();
-
-  // Build sources list with priority ordering:
-  // 1. sourcesBefore (high priority - override defaults)
-  // 2. default sources (dw.json, ~/.mobify, package.json)
-  // 3. sourcesAfter (low priority - fill gaps)
-  // 4. global registry sources (sorted by their own priority)
-  let sources: ConfigSource[];
-
-  if (options.replaceDefaultSources) {
-    // Replace mode: only use provided sources (no default dw.json/~/.mobify/package.json)
-    sources = [...(options.sourcesBefore ?? []), ...(options.sourcesAfter ?? []), ...globalSources];
-  } else {
-    // Normal mode: before + defaults + after + global
-    const defaultSources: ConfigSource[] = [new DwJsonSource(), new MobifySource(), new PackageJsonSource()];
-
-    // Combine all sources
-    sources = [...(options.sourcesBefore ?? []), ...defaultSources, ...(options.sourcesAfter ?? []), ...globalSources];
-  }
-
-  // ConfigResolver constructor will sort by priority
-  const resolver = new ConfigResolver(sources);
-  const {config, warnings, sources: sourceInfos} = await resolver.resolve(overrides, options);
-
-  return new ResolvedConfigImpl(config, warnings, sourceInfos);
+  const resolver = new ConfigResolver(createConfigSources(options));
+  const resolution = await resolver.resolve(overrides, options);
+  const resolved = new ResolvedConfigImpl(resolution.config, resolution.warnings, resolution.sources);
+  recordConfigOrigins(resolved, getConfigOrigins(resolution));
+  return resolved;
 }

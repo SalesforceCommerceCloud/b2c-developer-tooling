@@ -21,17 +21,46 @@ b2c job run my-custom-job --wait --show-log
 
 ### Run System Jobs with Custom Request Bodies
 
-Some system jobs (like search indexing) use non-standard request schemas. Use `--body` to provide a raw JSON request body:
+System jobs (`sfcc-*`) do **not** take the generic `parameters` array, so `-P` fails
+for them (`unknown property 'parameters'`). Send the job's own document with `--body`
+(`--body` and `-P` are mutually exclusive). The body is the same JSON on SCAPI and
+OCAPI; field names are snake_case and `site_scope` is a plain array of site IDs.
 
 ```bash
-# run search index job for specific sites
-b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":{"named_sites":["RefArch","SiteGenesis"]}}'
+# rebuild the product search index for one site
+b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch"]}'
 
-# run search index job for a single site
-b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":{"named_sites":["RefArch"]}}'
+# several sites
+b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch","SiteGenesis"]}'
 ```
 
-Note: `--body` and `-P` are mutually exclusive.
+| System job ID                                      | Body                                    |
+| -------------------------------------------------- | --------------------------------------- |
+| `sfcc-search-index-product-full-update`            | `{"site_scope":["SiteId"]}`             |
+| `sfcc-search-index-product-incremental-update`     | `{"site_scope":["SiteId"]}`             |
+| `sfcc-search-index-content-full-update`            | `{"site_scope":["SiteId"]}`             |
+| `sfcc-search-index-content-incremental-update`     | `{"site_scope":["SiteId"]}`             |
+| `sfcc-search-index-active-data-full-update`        | `{"site_scope":["SiteId"]}`             |
+| `sfcc-search-index-active-data-incremental-update` | `{"site_scope":["SiteId"]}`             |
+| `sfcc-site-archive-import` / `-export`             | use `b2c job import` / `b2c job export` |
+
+Common mistakes (all wrong): `{"site_scope":{"named_sites":[...]}}` (object, rejected as
+"expected START*ARRAY"), `siteScope`/camelCase, and `-P SiteScope=...`. The
+`SiteScope={"named_sites":[...]}` value is a \_parameter* of custom/standard-step jobs
+run with `-P`, not a system-job body. Source: OCAPI `SearchIndexUpdateConfiguration`
+(`b2c docs read ocapi/searchindexupdateconfiguration`).
+
+A `JobAlreadyRunningException` (400) means another index job of that kind is active for
+a different site scope; wait for it rather than retrying.
+
+A SCAPI 400 (for example a decode error naming the bad property) is a request error and is
+reported as-is; `auto` does not retry it over OCAPI. Fallback happens only for
+auth/capability rejections (invalid scope, 401/403/404/405/406/415); if OCAPI then also
+fails, the error shows both, with "The SCAPI attempt was rejected first: ...". An OCAPI
+"isn't allowed for the current client" means the client has no OCAPI job permission.
+
+From MCP code mode, the same job is a SCAPI `createJobExecution` call; see
+`skill://mcp/b2c-mcp-scapi/references/jobs.md` (section "Start a job").
 
 ### Standard (System) Job Steps
 

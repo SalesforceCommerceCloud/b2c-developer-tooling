@@ -77,7 +77,7 @@ describe('SCAPI code tools', function () {
     expect(load.called).to.equal(false);
   });
 
-  it('searches offline without resolving a project or credentials', async () => {
+  it('searches offline when project configuration cannot load', async () => {
     const load = stub().throws(new Error('Configuration must not load'));
     const [search] = createScapiCodeTools(load);
     const result = await search.handler({
@@ -87,7 +87,6 @@ describe('SCAPI code tools', function () {
     });
     expect(result.isError).not.to.equal(true);
     expect(readJson(result)).to.deep.equal({result: 'createProduct'});
-    expect(load.called).to.equal(false);
   });
 
   it('falls back to bundled contracts with a warning when live schemas are unavailable', async () => {
@@ -342,7 +341,6 @@ describe('SCAPI code tools', function () {
     });
     expect(noMatch.isError).to.equal(true);
     expect(readJson(noMatch)).to.have.property('error').that.includes('Omit authType');
-    expect(load.called).to.equal(false);
   });
 
   it('runs Shopper APIs with a guest session shared across executions', async () => {
@@ -540,6 +538,40 @@ describe('SCAPI code tools', function () {
       ]);
     } finally {
       restore();
+      rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
+  it('reads local contracts from project config relative to the project directory', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'b2c-local-scapi-config-'));
+    const contract = (path: string) => ({
+      openapi: '3.0.3',
+      info: {version: '1.0.0-beta'},
+      servers: [{url: 'https://{shortCode}.api.commercecloud.salesforce.com/cdn/zones/v1'}],
+      paths: {[path]: {get: {operationId: 'getZoneInsights', responses: {'200': {description: 'OK'}}}}},
+    });
+    mkdirSync(join(directory, 'schemas'));
+    writeFileSync(join(directory, 'schemas', 'zones.json'), JSON.stringify(contract('/from-config')));
+    const flagFile = join(directory, 'flag.json');
+    writeFileSync(flagFile, JSON.stringify(contract('/from-flag')));
+    const config = createMockResolvedConfig({projectDirectory: directory, scapiSchemas: ['schemas']});
+    const load = () => new Services({resolvedConfig: config});
+    const code = `async () => Object.keys(spec.paths)`;
+    const input = {skillRead: true, api: 'cdn/zones/v1', code};
+    try {
+      const [search] = createScapiCodeTools(load);
+      expect(readJson(await search.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-config']);
+      // The startup --scapi-schemas flag overrides project configuration.
+      const [flagged] = createScapiCodeTools(
+        load,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        loadLocalScapiSchemas([flagFile]),
+      );
+      expect(readJson(await flagged.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-flag']);
+    } finally {
       rmSync(directory, {recursive: true, force: true});
     }
   });

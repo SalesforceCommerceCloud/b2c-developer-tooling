@@ -8,12 +8,7 @@ import cliui from 'cliui';
 import {join, resolve} from 'node:path';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import type {NormalizedConfig, ConfigSourceInfo, ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
-import {
-  EnvSource,
-  isSensitiveConfigField,
-  maskConfigValue,
-  redactConfigValues,
-} from '@salesforce/b2c-tooling-sdk/config';
+import {isSensitiveConfigField, maskConfigValue, redactConfigValues} from '@salesforce/b2c-tooling-sdk/config';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
 import {
@@ -22,6 +17,7 @@ import {
   resolveEffectiveSafetyConfig,
 } from '@salesforce/b2c-tooling-sdk/safety';
 import {t, withDocs} from '../../i18n/index.js';
+import {createEnvironmentSources} from '../../utils/setup/config-field-command.js';
 
 /**
  * JSON output structure for the inspect command.
@@ -140,17 +136,11 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     const accountManagerHost = this.flags['account-manager-host'] as string | undefined;
     const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
 
-    // Include EnvSource so that SFCC_* environment variables are visible in inspect output.
+    // Include the environment as sources so that SFCC_* variables are visible in inspect output.
     // Other commands handle env vars via oclif flag mappings, but inspect needs to show them
-    // as a config source since it doesn't have those flags. Variables applied from the
-    // .env file are reported separately so their provenance is visible.
-    const fileKeys = new Set(this.envFile?.keys ?? []);
-    const shellEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !fileKeys.has(key)));
-    const fileEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key]) => fileKeys.has(key)));
-    const envSources = [new EnvSource(shellEnvironment)];
-    if (this.envFile) {
-      envSources.push(new EnvSource(fileEnvironment, {name: 'DotenvFile', location: this.envFile.path}));
-    }
+    // as a config source since it doesn't have those flags. Variables from the .env file are
+    // reported separately so their provenance is visible.
+    const envSources = createEnvironmentSources(this.envFile);
 
     return loadConfig(
       {
@@ -418,6 +408,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ['libraries', config.libraries],
         ['assetQuery', config.assetQuery],
         ['docsCategories', config.docsCategories],
+        ['scapiSchemas', config.scapiSchemas],
       ],
       fieldSources,
       unmask,

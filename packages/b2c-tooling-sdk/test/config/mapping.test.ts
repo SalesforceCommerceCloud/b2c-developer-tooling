@@ -14,6 +14,7 @@ import {
   resolveLibraryEntries,
   CONFIG_KEY_ALIASES,
 } from '../../src/config/mapping.js';
+import {listConfigKeys} from '../../src/config/config-write.js';
 
 describe('config/mapping', () => {
   describe('kebabToCamelCase', () => {
@@ -273,6 +274,12 @@ describe('config/mapping', () => {
     it('lets an override mrtBackend win over the base value in merge', () => {
       const {config} = mergeConfigsWithProtection({mrtBackend: 'scapi'}, {mrtBackend: 'legacy'});
       expect(config.mrtBackend).to.equal('scapi');
+    });
+
+    it('keeps every dw.json field from the base config through merge', () => {
+      const base = Object.fromEntries(listConfigKeys().map(({field}) => [field, `base-${field}`]));
+      const {config} = mergeConfigsWithProtection({}, base);
+      for (const {field} of listConfigKeys()) expect(config[field], field).to.equal(`base-${field}`);
     });
 
     it('falls back to the base mrtBackend when no override is given', () => {

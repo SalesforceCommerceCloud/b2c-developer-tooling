@@ -230,7 +230,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       description:
         'Local SCAPI OpenAPI contracts for scapi_search and scapi_execute (comma-separated JSON files or directories). ' +
         'Each replaces the bundled or live contract with the same family/name/version from servers[0].url, or adds an API. ' +
-        'Developer option for beta and pre-release APIs.',
+        'Developer option for beta and pre-release APIs. Overrides the project config scapi-schemas (dw.json or project .env).',
       env: 'SFCC_SCAPI_SCHEMAS',
     }),
   };

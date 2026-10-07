@@ -28,7 +28,7 @@ failed to load are listed in `schemaFailures`. The result's `schemaSource` says 
 access fails (missing configuration, credentials or access), the search falls back to the bundled contracts,
 reports `schemaSource: "bundled"` and explains why in `warnings`; tell the user when tenant `c_*` fields or custom
 APIs matter, since the bundle has neither. Asking for a custom API (`custom/...`) never falls back. APIs with `origin: "local"` are
-developer-supplied beta contracts (`--scapi-schemas`). They replace the bundled and live versions in search and
+developer-supplied beta contracts (dw.json `scapi-schemas`, `SFCC_SCAPI_SCHEMAS` or `--scapi-schemas`). They replace the bundled and live versions in search and
 execution. Schemas and responses can be huge.
 Return only what the next decision needs:
 
@@ -45,18 +45,18 @@ runtime support, not configured access; `op.security` gives scopes.
 Use these API IDs to narrow discovery; inspect the operation's inputs before calling.
 Snippet names below have the `builtin/` prefix. Describe only the relevant snippet.
 
-| Task                                          | API / starting point                                                                                   |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Review runs, including successes              | `operation/jobs/v1`: `searchJobExecutions`; `job-execution-review` snippet                             |
-| Inspect steps and exact log path              | `operation/jobs/v1`: `getJobExecution`; `job-execution-inspect` snippet                                |
-| Investigate failures with detail reads        | `failed-job-triage` snippet; [jobs](jobs.md)                                                           |
-| Start a job / stop an execution               | `operation/jobs/v1`: `createJobExecution` / `deleteJobExecution`; confirm intent and active runs first |
-| Active/rollback versions, activation metadata | `dx/scripts/v1`: `getCodeVersions`; `code-version-inspect` snippet                                     |
-| Activate/create/delete a code version         | `dx/scripts/v1`: `updateCodeVersion` / `createCodeVersion` / `deleteCodeVersion`                       |
-| Site status, catalog, ordered cartridge path  | `site/sites/v1`: `getSiteById`; `site-cartridge-inspect` snippet                                       |
-| Change a site's custom cartridge path         | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries                   |
-| Basic product + optional category assignment  | `create-product` snippet; [products](products.md)                                                      |
-| Campaign assignments and promotion details    | `campaign-promotions` snippet; [promotions](promotions.md)                                             |
+| Task                                          | API / starting point                                                                                                                                        |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Review runs, including successes              | `operation/jobs/v1`: `searchJobExecutions`; `job-execution-review` snippet                                                                                  |
+| Inspect steps and exact log path              | `operation/jobs/v1`: `getJobExecution`; `job-execution-inspect` snippet                                                                                     |
+| Investigate failures with detail reads        | `failed-job-triage` snippet; [jobs](jobs.md)                                                                                                                |
+| Start a job / stop an execution               | `operation/jobs/v1`: `createJobExecution` / `deleteJobExecution`; confirm intent and active runs first; bodies for system jobs: [jobs](jobs.md#start-a-job) |
+| Active/rollback versions, activation metadata | `dx/scripts/v1`: `getCodeVersions`; `code-version-inspect` snippet                                                                                          |
+| Activate/create/delete a code version         | `dx/scripts/v1`: `updateCodeVersion` / `createCodeVersion` / `deleteCodeVersion`                                                                            |
+| Site status, catalog, ordered cartridge path  | `site/sites/v1`: `getSiteById`; `site-cartridge-inspect` snippet                                                                                            |
+| Change a site's custom cartridge path         | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries                                                                        |
+| Basic product + optional category assignment  | `create-product` snippet; [products](products.md)                                                                                                           |
+| Campaign assignments and promotion details    | `campaign-promotions` snippet; [promotions](promotions.md)                                                                                                  |
 
 File content is WebDAV: `webdav_list` / `webdav_get` / `webdav_put`.
 Deploy local cartridge files with `cartridge_deploy`. Job schedules/definitions

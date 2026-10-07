@@ -3,7 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {DwJsonSource, type InstanceInfo} from '@salesforce/b2c-tooling-sdk/config';
+import {
+  DwJsonSource,
+  createConfigSources,
+  createInstanceManager,
+  type InstanceInfo,
+} from '@salesforce/b2c-tooling-sdk/config';
 import {setAuthSessionBackend} from '@salesforce/b2c-tooling-sdk/auth';
 import {detectWorkspaceType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
@@ -41,6 +46,8 @@ import {
   buildInstancePickerEntries,
   describeInstanceStatus,
   findInstanceNameRange,
+  hasConfigurationFile,
+  isPluginSourceInstance,
   isWorkspaceInstanceSelected,
   toEnvFileSelection,
   triggerInstancePickerButton,
@@ -613,7 +620,12 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   });
 
   // --- Active instance status bar ---
+  // The default entry is read from dw.json; listing and activation go through
+  // the InstanceManager so plugin config sources (registered by
+  // initializePlugins above) take part.
   const dwJsonSource = new DwJsonSource();
+  const canSetActive = (instance: InstanceInfo): boolean =>
+    Boolean(createConfigSources().find((source) => source.name === instance.source)?.setActiveInstance);
   const getWorkingDirectory = () => configProvider.getWorkingDirectory();
   const getInstanceCatalogOptions = () => configProvider.getInstanceCatalogOptions();
 
@@ -796,9 +808,11 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
           label:
             entry.scope === 'envFile'
               ? 'Env File'
-              : entry.scope === 'global'
-                ? 'Global Configuration'
-                : 'Project Configuration',
+              : entry.scope === 'source'
+                ? (entry.source ?? 'Plugin Source')
+                : entry.scope === 'global'
+                  ? 'Global Configuration'
+                  : 'Project Configuration',
           kind: vscode.QuickPickItemKind.Separator,
         };
       }
@@ -812,8 +826,8 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
             ? 'Selected for this workspace'
             : undefined,
         buttons: [
-          ...(entry.default || !instance.name ? [] : [setDefaultButton]),
-          ...(instance.location ? [openConfigurationButton] : []),
+          ...(entry.default || !instance.name || !canSetActive(instance) ? [] : [setDefaultButton]),
+          ...(hasConfigurationFile(instance) ? [openConfigurationButton] : []),
         ],
         instance,
       };
@@ -828,13 +842,13 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     );
     if (choice !== 'Set as Default') return false;
 
-    await dwJsonSource.setActiveInstance(instance.name, getInstanceCatalogOptions());
+    await createInstanceManager().setActiveInstance(instance.name, getInstanceCatalogOptions(), instance.source);
     configProvider.reset();
     return true;
   };
 
   const openInstanceConfiguration = async (instance: InstanceInfo): Promise<void> => {
-    if (!instance.location) return;
+    if (!instance.location || !hasConfigurationFile(instance)) return;
     const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(instance.location));
     const editor = await vscode.window.showTextDocument(doc, {preview: true});
     const entryRange = findInstanceNameRange(doc.getText(), instance.name);
@@ -864,7 +878,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     let instances: InstanceInfo[] = [];
     let defaultInstance: InstanceInfo | undefined;
     try {
-      instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
+      instances = await createInstanceManager().listAllInstances(getInstanceCatalogOptions());
       defaultInstance = await getDefaultInstance();
     } catch (err) {
       log.appendLine(`[Config] Could not list instances: ${err instanceof Error ? err.message : String(err)}`);
@@ -956,7 +970,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   const selectEnvFileDisposable = registerSafeCommand('b2c-dx.envFile.select', showEnvFilePicker);
 
   const setDefaultInstanceDisposable = registerSafeCommand('b2c-dx.instance.setDefault', async () => {
-    const instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
+    const instances = (await createInstanceManager().listAllInstances(getInstanceCatalogOptions())).filter(
+      canSetActive,
+    );
     if (instances.length === 0) {
       vscode.window.showWarningMessage('No B2C Commerce instances configured.');
       return;
@@ -964,8 +980,10 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     const defaultSelection = await getDefaultInstanceSelection();
     const picked = await vscode.window.showQuickPick(
       instances.map((instance) => ({
-        label: `${isWorkspaceInstanceSelected(instance, defaultSelection) ? '$(star-full) ' : ''}${instance.name}`,
-        description: instance.hostname ?? '',
+        label: `${(isPluginSourceInstance(instance) ? instance.active : isWorkspaceInstanceSelected(instance, defaultSelection)) ? '$(star-full) ' : ''}${instance.name}`,
+        description: [instance.hostname, isPluginSourceInstance(instance) ? instance.source : undefined]
+          .filter(Boolean)
+          .join('  '),
         instance,
       })),
       {title: 'Set Default Instance', placeHolder: 'Select the default instance'},

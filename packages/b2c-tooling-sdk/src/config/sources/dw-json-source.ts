@@ -10,8 +10,22 @@
  */
 import {existsSync} from 'node:fs';
 import path from 'node:path';
-import {loadDwJson, loadFullDwJson, addInstance, removeInstance, saveDwJson, setActiveInstance} from '../dw-json.js';
-import {getPopulatedFields, mapDwJsonToNormalizedConfig, mapNormalizedConfigToDwJson} from '../mapping.js';
+import {
+  loadDwJson,
+  loadFullDwJson,
+  addInstance,
+  removeInstance,
+  saveDwJson,
+  setActiveInstance,
+  updateInstanceConfig,
+} from '../dw-json.js';
+import {listConfigKeys} from '../config-write.js';
+import {
+  getPopulatedFields,
+  kebabToCamelCase,
+  mapDwJsonToNormalizedConfig,
+  mapNormalizedConfigToDwJson,
+} from '../mapping.js';
 import type {
   ConfigSource,
   ConfigLoadResult,
@@ -19,6 +33,8 @@ import type {
   InstanceInfo,
   CreateInstanceOptions,
   ConfigCatalogFile,
+  ConfigUpdateResult,
+  NormalizedConfig,
 } from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
@@ -177,21 +193,7 @@ export class DwJsonSource implements ConfigSource {
     }
 
     const configPaths = selectConfigPaths(options);
-    let result: Awaited<ReturnType<typeof loadDwJson>>;
-    if (options.instance) {
-      for (const configPath of configPaths) {
-        result = await loadDwJson({instance: options.instance, path: configPath});
-        if (result) break;
-      }
-    } else {
-      for (const configPath of configPaths) {
-        result = await loadActiveConfig(configPath);
-        if (!result) {
-          result = await loadDefaultConfig(configPath);
-        }
-        if (result) break;
-      }
-    }
+    const result = await this.selectEntry(configPaths, options);
 
     const instanceCatalog = createInstanceCatalog(configPaths, result?.path, options);
     if (!result) {
@@ -209,6 +211,39 @@ export class DwJsonSource implements ConfigSource {
     logger.trace({location: result.path, scope, fields}, '[DwJsonSource] Loaded config');
 
     return {config, location: result.path, scope, instanceCatalog};
+  }
+
+  /**
+   * Update fields of the entry {@link load} selects for the same options.
+   *
+   * @throws Error if no entry is selected or a field has no dw.json key
+   */
+  async updateConfig(patch: Partial<NormalizedConfig>, options: ResolveConfigOptions): Promise<ConfigUpdateResult> {
+    const selected = await this.selectEntry(selectConfigPaths(options), options);
+    if (!selected) throw new Error('No dw.json entry is selected to update.');
+
+    const dwPatch: Record<string, unknown> = {};
+    for (const [field, value] of Object.entries(patch)) {
+      const key = listConfigKeys().find((entry) => entry.field === field);
+      if (!key) throw new Error(`${field} can't be stored in dw.json.`);
+      dwPatch[kebabToCamelCase(key.key)] = value;
+    }
+    const result = await updateInstanceConfig(dwPatch, {path: selected.path, instance: selected.config.name});
+    return {location: result.path, instance: result.name};
+  }
+
+  /** Select the named, active, or root entry across the catalog files, in order. */
+  private async selectEntry(
+    configPaths: string[],
+    options: ResolveConfigOptions,
+  ): Promise<Awaited<ReturnType<typeof loadDwJson>>> {
+    for (const configPath of configPaths) {
+      const result = options.instance
+        ? await loadDwJson({instance: options.instance, path: configPath})
+        : ((await loadActiveConfig(configPath)) ?? (await loadDefaultConfig(configPath)));
+      if (result) return result;
+    }
+    return undefined;
   }
 
   /**

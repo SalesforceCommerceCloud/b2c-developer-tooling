@@ -78,9 +78,21 @@ Built-in workflows update with the package and are separate from your saved file
 ## Local SCAPI contracts {#local-scapi-schemas}
 
 This is a developer option for beta and pre-release APIs that are not yet in the
-bundled or live contracts. Use `--scapi-schemas` or `SFCC_SCAPI_SCHEMAS` to give
-[SCAPI code mode](./toolsets#scapi-code-mode) your own OpenAPI 3 JSON files, or
-folders containing them, separated by commas:
+bundled or live contracts. Give [SCAPI code mode](./toolsets#scapi-code-mode) your own
+OpenAPI 3 JSON files, or folders containing them, in your project configuration. This
+works with plugin installs, where you don't control the server's arguments or working directory:
+
+```json
+{
+  "scapi-schemas": ["./schemas/cdn-zones-v1.json"]
+}
+```
+
+Put this in the project's `dw.json`, or set `SFCC_SCAPI_SCHEMAS` (comma-separated) in the
+project's `.env`. Relative paths resolve from the project directory, and the server reads
+the setting on each tool call, so changes apply without a restart.
+
+You can also pass `--scapi-schemas` when starting the server. It replaces any project setting:
 
 ```bash
 npx -y @salesforce/b2c-dx-mcp@latest --scapi-schemas ./schemas/cdn-zones-v1.json
@@ -88,9 +100,10 @@ npx -y @salesforce/b2c-dx-mcp@latest --scapi-schemas ./schemas/cdn-zones-v1.json
 
 The API is identified by the `/<family>/<name>/<version>` path of the contract's
 `servers[0].url`. A local contract replaces the bundled or live contract for the same API, or
-adds a new one. Search results show it with `origin: "local"`. Relative paths
-resolve from `--project-directory` when it is set, or from the server's working
-directory otherwise. The server does not start if a contract is invalid.
+adds a new one. Search results show it with `origin: "local"`. Flag paths resolve
+from `--project-directory` when it is set, or from the server's working directory
+otherwise. An invalid contract stops the server when passed by flag, or fails the
+SCAPI tool call when set in project configuration.
 Safety Mode and request targeting work as they do for other contracts.
 
 ## Logging

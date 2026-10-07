@@ -5,6 +5,7 @@
  */
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
+import {byPluginName} from './hooks.js';
 import {ERROR_CODE} from './base-command.js';
 import {loadConfig, extractInstanceFlags} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
@@ -136,7 +137,7 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
 
     const hookResult = await this.config.runHook('b2c:operation-lifecycle', hookOptions);
 
-    for (const success of hookResult.successes) {
+    for (const success of byPluginName(hookResult.successes)) {
       const result = success.result as B2COperationLifecycleHookResult | undefined;
       if (!result?.providers?.length) continue;
       this.lifecycleRunner.addProviders(result.providers);

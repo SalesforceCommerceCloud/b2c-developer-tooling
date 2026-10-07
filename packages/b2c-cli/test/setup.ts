@@ -37,6 +37,11 @@ const testDataDir = mkdtempSync(join(tmpdir(), 'b2c-cli-test-'));
 process.env.B2C_TEST_DATA_DIR = testDataDir;
 initializeFileAuthSessionStore(testDataDir);
 
+// Baseline settings directory for the whole run, so a command that resolves the
+// global default dw.json never reads or writes the developer's real one.
+// isolateConfig() layers a fresh per-test directory on top of this.
+process.env.B2C_CONFIG_DIR = join(testDataDir, 'config');
+
 export const mochaHooks = {
   beforeEach() {
     globalMiddlewareRegistry.clear();

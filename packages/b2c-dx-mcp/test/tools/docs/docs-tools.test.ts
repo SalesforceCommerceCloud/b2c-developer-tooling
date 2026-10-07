@@ -211,21 +211,23 @@ describe('tools/docs', () => {
       expect(json.results.some((r) => r.id.includes('ProductMgr'))).to.be.true;
     });
 
-    it('returns lean results without keywords/url by default, verbose adds them', async () => {
+    it('returns lean results with url but without keywords/sourceUrl by default, verbose adds them', async () => {
       const tool = createDocsSearchTool(loadServices);
-      const lean = getResultJson<{results: Array<Record<string, unknown>>}>(
+      const lean = getResultJson<{citation: string; results: Array<Record<string, unknown>>}>(
         await tool.handler({query: 'passwordless login', limit: 3}),
       );
       expect(lean.results.length).to.be.greaterThan(0);
-      expect(lean.results.every((r) => !('keywords' in r) && !('url' in r))).to.be.true;
-      // Every result carries the triage fields.
+      expect(lean.results.every((r) => !('keywords' in r) && !('sourceUrl' in r))).to.be.true;
+      // Every result carries the triage fields, and a url to cite instead of the id.
       expect(lean.results.every((r) => 'id' in r && 'title' in r && 'score' in r)).to.be.true;
+      expect(lean.results.some((r) => typeof r.url === 'string')).to.be.true;
+      expect(lean.citation).to.match(/Never show doc ids/);
 
       const verbose = getResultJson<{results: Array<Record<string, unknown>>}>(
         await tool.handler({query: 'passwordless login', limit: 3, verbose: true}),
       );
-      // At least one verbose result exposes keywords or url (metadata present in the corpus).
-      expect(verbose.results.some((r) => 'keywords' in r || 'url' in r)).to.be.true;
+      // At least one verbose result exposes keywords or sourceUrl (metadata present in the corpus).
+      expect(verbose.results.some((r) => 'keywords' in r || 'sourceUrl' in r)).to.be.true;
     });
 
     it('defaults to a small result set when limit is omitted', async () => {
@@ -303,8 +305,9 @@ describe('tools/docs', () => {
       const tool = createDocsReadTool(loadServices);
       const result = await tool.handler({query: 'dw.catalog.ProductMgr'});
       expect(result.isError).to.be.undefined;
-      const json = getResultJson<{entry: {id: string}; content: string; totalLength: number}>(result);
+      const json = getResultJson<{citation: string; entry: {id: string}; content: string; totalLength: number}>(result);
       expect(json.entry.id).to.match(/ProductMgr/);
+      expect(json.citation).to.match(/Never show doc ids/);
       expect(json.content).to.be.a('string').and.have.length.greaterThan(0);
       expect(json.totalLength).to.be.a('number');
     });

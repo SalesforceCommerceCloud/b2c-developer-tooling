@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {globalConfigSourceRegistry, type ConfigSource} from '@salesforce/b2c-tooling-sdk/config';
 import {B2CExtensionConfig} from '../config-provider.js';
 import type {WorkspaceInstanceSelection} from '../instance-selection.js';
 
@@ -545,6 +546,31 @@ suite('B2CExtensionConfig workspace discovery', () => {
         assert.strictEqual(config.values.hostname, undefined);
       } finally {
         provider.dispose();
+      }
+    });
+
+    test('a plugin source selection resolves from that source, not a same-name dw.json entry', async () => {
+      const plugin: ConfigSource = {
+        name: 'yaml-config',
+        priority: 10,
+        load: (options) =>
+          options.instance === 'stg' ? {config: {hostname: 'yaml-stg.invalid'}, location: 'b2c.yaml'} : undefined,
+        listInstances: () => [{name: 'stg', source: 'yaml-config'}],
+      };
+      globalConfigSourceRegistry.register(plugin);
+      const workspaceState = createMemoryMemento({
+        'b2c-dx.workspaceInstance': {name: 'stg', source: 'yaml-config'},
+      });
+      const provider = new B2CExtensionConfig(log, workspaceState, ambientEnvironment);
+
+      try {
+        const config = await provider.resolveForDirectory(dir);
+        // The plugin reports no instanceName and sits below dw.json, which also has "stg".
+        assert.strictEqual(config.values.hostname, 'yaml-stg.invalid');
+        assert.notStrictEqual(config.values.shortCode, 'stgcode', 'the dw.json "stg" entry must not contribute');
+      } finally {
+        provider.dispose();
+        globalConfigSourceRegistry.unregister('yaml-config');
       }
     });
 

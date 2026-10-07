@@ -178,6 +178,11 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
     ...stringArray,
     description: 'Documentation category allowlist for supported searches. Env: `SFCC_DOCS_CATEGORIES`.',
   },
+  'scapi-schemas': {
+    ...stringArray,
+    description:
+      'Local SCAPI OpenAPI JSON files or directories for MCP code mode, relative to the project directory. Env: `SFCC_SCAPI_SCHEMAS`.',
+  },
 
   // Sandboxes and analytics
   realm: {type: 'string', description: 'Default realm for sandbox operations.'},

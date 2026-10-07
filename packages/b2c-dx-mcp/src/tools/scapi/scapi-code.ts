@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import path from 'node:path';
 import {z} from 'zod';
 import {
   loadScapiSchemas,
@@ -16,6 +17,7 @@ import {
   createScapiAuth,
   loadScapiSnippets,
   saveScapiSnippet,
+  loadLocalScapiSchemas,
   type ScapiSchemaDocument,
 } from '@salesforce/b2c-tooling-sdk/scapi';
 import {toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
@@ -26,6 +28,7 @@ import type {ServicesLoader} from '../adapter.js';
 import {createProjectContextInputSchema, type ProjectContextInput, type ToolResolution} from '../project-context.js';
 import {jsonResult, attachResolution} from '../adapter.js';
 import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.js';
+import type {Services} from '../../services.js';
 import {ScapiExecutionRegistry} from './execution-registry.js';
 
 const code = z
@@ -86,10 +89,18 @@ export function createScapiCodeTools(
   registry = new ScapiExecutionRegistry(),
   schemaCache = new ScapiLiveSchemaCache(),
   shopperSessions = new ScapiShopperSessions(),
-  localSchemas: readonly ScapiSchemaDocument[] = [],
+  localSchemas?: readonly ScapiSchemaDocument[],
 ): McpTool[] {
-  // Developer-supplied contracts (--scapi-schemas) replace bundled and live ones with the same id.
-  const local = (api?: string) => localSchemas.filter((document) => !api || document.entry.id === api);
+  // Developer-supplied contracts replace bundled and live ones with the same id. The startup
+  // --scapi-schemas flag wins; otherwise each call reads the project's `scapiSchemas` config
+  // (dw.json `scapi-schemas` or SFCC_SCAPI_SCHEMAS, including the project .env).
+  const projectSchemas = (services?: Services): readonly ScapiSchemaDocument[] => {
+    if (localSchemas) return localSchemas;
+    const paths = services?.getResolvedConfig().values.scapiSchemas;
+    if (!services || !paths?.length) return [];
+    const base = services.getResolution().projectDirectory?.path ?? process.cwd();
+    return loadLocalScapiSchemas(paths.map((entry) => path.resolve(base, entry)));
+  };
   // Retain only source for the last 50 completed executions, until this server ends.
   const executions = new Map<string, string>();
   const searchInput = {
@@ -156,6 +167,22 @@ export function createScapiCodeTools(
           let failures: Array<{api: string; error: string}> = [];
           let schemaSource: 'bundled' | 'live' = input.schemas === 'live' ? 'live' : 'bundled';
           const warnings: string[] = [];
+          let services: Services | undefined;
+          if (input.schemas === 'live') {
+            services = await loadServices(input);
+            resolution = services.getResolution();
+          } else if (!localSchemas) {
+            // Bundled search works without configuration; config is read only for local contracts,
+            // and configuration errors surface on tools that need it.
+            try {
+              services = await loadServices(input);
+              resolution = services.getResolution();
+            } catch {
+              services = undefined;
+            }
+          }
+          const localDocuments = projectSchemas(services);
+          const local = (api?: string) => localDocuments.filter((document) => !api || document.entry.id === api);
           const searchBundled = () => {
             const bundled = mergeScapiSchemas(loadScapiSchemas(), [], local()).filter(
               (document) => !input.api || document.entry.id === input.api,
@@ -166,9 +193,7 @@ export function createScapiCodeTools(
               );
             return bundled;
           };
-          if (input.schemas === 'live') {
-            const services = await loadServices(input);
-            resolution = services.getResolution();
+          if (services && input.schemas === 'live') {
             try {
               // Throws with configuration guidance when shortCode, tenantId, or OAuth credentials are missing.
               const client = services.getScapiSchemasClient();
@@ -259,6 +284,7 @@ export function createScapiCodeTools(
           const services = await loadServices(input);
           resolution = services.getResolution();
           const config = services.getResolvedConfig();
+          const localDocuments = projectSchemas(services);
           const {shortCode, tenantId, siteId} = config.values;
           const tenant = shortCode && tenantId ? scapiTenantKey(shortCode, toOrganizationId(tenantId)) : undefined;
           const safetyEnvironment = Object.fromEntries(
@@ -286,7 +312,7 @@ export function createScapiCodeTools(
                 }),
                 // Live contracts discovered for this tenant replace bundled ones, and local ones replace both;
                 // the user owns their accuracy.
-                documents: mergeScapiSchemas(loadScapiSchemas(), tenant ? schemaCache.get(tenant) : [], localSchemas),
+                documents: mergeScapiSchemas(loadScapiSchemas(), tenant ? schemaCache.get(tenant) : [], localDocuments),
                 onSchema(document, full) {
                   // Keep full tenant contracts (custom properties and prose) from being replaced by lighter fetches.
                   if (tenant && (full || document.entry.apiFamily === 'custom')) schemaCache.put(tenant, document);

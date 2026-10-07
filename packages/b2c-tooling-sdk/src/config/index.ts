@@ -96,7 +96,7 @@
  */
 
 // High-level API (preferred)
-export {resolveConfig, ConfigResolver, createConfigResolver} from './resolver.js';
+export {resolveConfig, createConfigSources, ConfigResolver, createConfigResolver} from './resolver.js';
 
 // Types
 export type {
@@ -116,7 +116,22 @@ export type {
   CreateB2CInstanceOptions,
   InstanceInfo,
   CreateInstanceOptions,
+  ConfigUpdateResult,
 } from './types.js';
+
+// Field-level reads and writes (`b2c setup get/set/unset`)
+export {
+  ConfigWriteError,
+  listConfigKeys,
+  locateConfigField,
+  parseConfigValue,
+  removeConfigField,
+  resolveConfigKey,
+  writeConfigField,
+} from './config-write.js';
+export type {ConfigFieldLocation, ConfigKey} from './config-write.js';
+export {getConfigOrigins} from './config-origins.js';
+export type {ConfigOrigin} from './config-origins.js';
 
 // Instance creation utility (public API for CLI commands)
 export {createInstanceFromConfig, normalizeConfigKeys, resolveLibraryEntries} from './mapping.js';
@@ -149,6 +164,7 @@ export type {
 
 // Instance management
 export {InstanceManager, createInstanceManager} from './instance-manager.js';
+export type {InstanceCreateResult} from './instance-manager.js';
 
 // Redaction helpers for displaying resolved config (CLI inspect, MCP config_inspect)
 export {SENSITIVE_CONFIG_FIELDS, isSensitiveConfigField, maskConfigValue, redactConfigValues} from './redaction.js';
@@ -182,5 +198,10 @@ export type {EnvFileSelectionOptions, LoadedEnvFile} from './project-environment
 
 // Config sources (for direct use)
 export {DwJsonSource} from './sources/dw-json-source.js';
-export {EnvSource, StorefrontNextEnvSource, STOREFRONT_NEXT_ENV_VAR_MAP} from './sources/env-source.js';
+export {
+  DotenvFileSource,
+  EnvSource,
+  StorefrontNextEnvSource,
+  STOREFRONT_NEXT_ENV_VAR_MAP,
+} from './sources/env-source.js';
 export type {EnvSourceOptions} from './sources/env-source.js';

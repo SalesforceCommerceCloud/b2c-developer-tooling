@@ -11,7 +11,7 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {DwJsonSource, type InstanceInfo} from '@salesforce/b2c-tooling-sdk/config';
+import {createInstanceManager, type InstanceInfo} from '@salesforce/b2c-tooling-sdk/config';
 import {withDocs} from '../../../i18n/index.js';
 
 /**
@@ -64,9 +64,8 @@ export default class SetupInstanceList extends BaseCommand<typeof SetupInstanceL
   };
 
   async run(): Promise<InstanceListResponse> {
-    // Get instances from all sources that support listing
-    const source = new DwJsonSource();
-    const instances = await source.listInstances(this.getBaseConfigOptions());
+    // Instances from every source that supports listing: dw.json and plugin sources
+    const instances = await createInstanceManager().listAllInstances(this.getBaseConfigOptions());
 
     const result: InstanceListResponse = {
       instances,

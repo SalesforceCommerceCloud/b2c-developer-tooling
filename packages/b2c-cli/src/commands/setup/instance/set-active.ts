@@ -6,7 +6,7 @@
 import {Args, ux} from '@oclif/core';
 import {search} from '@inquirer/prompts';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {createInstanceManager, resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {withDocs} from '../../../i18n/index.js';
 
 /**
@@ -41,9 +41,9 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
   };
 
   async run(): Promise<InstanceSetActiveResponse> {
-    const source = new DwJsonSource();
+    const manager = createInstanceManager();
     const configOptions = this.getBaseConfigOptions();
-    const instances = await source.listInstances(configOptions);
+    const instances = await manager.listAllInstances(configOptions);
 
     let name = this.args.name;
 
@@ -79,10 +79,11 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
     // Check if already active
     if (instance.active) {
       // Re-apply the selection so any active marker in the other catalog file is cleared.
-      await source.setActiveInstance(name, configOptions);
+      await manager.setActiveInstance(name, configOptions, instance.source);
       if (!this.jsonEnabled()) {
         ux.stdout(`Instance "${name}" is already the active instance.`);
       }
+      await this.warnIfNotDefault(name, instance.source);
       return {
         name,
         active: true,
@@ -90,7 +91,7 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
     }
 
     // Set as active
-    await source.setActiveInstance(name, configOptions);
+    await manager.setActiveInstance(name, configOptions, instance.source);
 
     const result: InstanceSetActiveResponse = {
       name,
@@ -100,7 +101,23 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
     if (!this.jsonEnabled()) {
       ux.stdout(`Instance "${name}" is now the active instance.`);
     }
+    await this.warnIfNotDefault(name, instance.source);
 
     return result;
+  }
+
+  /**
+   * Each source keeps its own active instance, so a higher-priority source's
+   * active instance can still be the default after this one is activated.
+   */
+  private async warnIfNotDefault(name: string, source: string | undefined): Promise<void> {
+    const {instance: _instance, ...options} = this.getBaseConfigOptions();
+    const resolved = await resolveConfig({}, options);
+    const winner = resolved.values.instanceName;
+    if (!winner || winner === name) return;
+    const winnerSource = resolved.sources.find((s) => s.fields.includes('instanceName'))?.name;
+    this.warn(
+      `"${name}" is active in ${source ?? 'its source'}, but "${winner}"${winnerSource ? ` from ${winnerSource}` : ''} is still the default because that source takes precedence. Deactivate or remove "${winner}" there, or pass --instance ${name}.`,
+    );
   }
 }

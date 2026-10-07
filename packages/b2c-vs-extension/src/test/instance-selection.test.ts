@@ -78,6 +78,47 @@ suite('instance selection', () => {
     assert.strictEqual(createWorkspaceInstanceSelection(instance('development')), undefined);
   });
 
+  test('persists a source-and-name identity for plugin source instances', () => {
+    const plugin: InstanceInfo = {name: 'staging', source: 'yaml-config', location: 'b2c.yaml'};
+    const selected = createWorkspaceInstanceSelection(plugin);
+
+    assert.deepStrictEqual(selected, {name: 'staging', source: 'yaml-config'});
+    assert.strictEqual(isWorkspaceInstanceSelected(plugin, selected), true);
+    assert.strictEqual(isWorkspaceInstanceSelected({...plugin, source: 'vault'}, selected), false);
+    assert.strictEqual(isWorkspaceInstanceSelected(instance('staging', '/project/dw.json'), selected), false);
+    // A saved dw.json selection never matches a same-name plugin instance.
+    assert.strictEqual(isWorkspaceInstanceSelected(plugin, {name: 'staging', location: 'b2c.yaml'}), false);
+  });
+
+  test('groups plugin source instances by source after dw.json', () => {
+    const entries = buildInstancePickerEntries(
+      [
+        {name: 'yaml-a', source: 'yaml-config', active: true},
+        instance('local', '/project/dw.json'),
+        {name: 'vault-a', source: 'vault'},
+        {name: 'yaml-b', source: 'yaml-config'},
+      ],
+      {name: 'yaml-b', source: 'yaml-config'},
+      {name: 'local', location: '/project/dw.json'},
+      undefined,
+    );
+
+    assert.deepStrictEqual(
+      entries
+        .filter((entry) => entry.kind === 'separator' || entry.kind === 'instance')
+        .map((entry) => [entry.kind, entry.scope, entry.source, entry.instance?.name, entry.selected, entry.default]),
+      [
+        ['separator', 'project', undefined, undefined, undefined, undefined],
+        ['instance', 'project', undefined, 'local', false, true],
+        ['separator', 'source', 'yaml-config', undefined, undefined, undefined],
+        ['instance', 'source', 'yaml-config', 'yaml-a', false, true],
+        ['instance', 'source', 'yaml-config', 'yaml-b', true, false],
+        ['separator', 'source', 'vault', undefined, undefined, undefined],
+        ['instance', 'source', 'vault', 'vault-a', false, false],
+      ],
+    );
+  });
+
   test('identifies global and project configuration entries', () => {
     const defaultPath = '/config/global.json';
 
@@ -339,6 +380,20 @@ suite('instance status', () => {
     assert.ok(result.tooltip.includes('Storefront Next fallback (.env.staging): siteId'), result.tooltip.join('\n'));
   });
 
+  test('labels an instance supplied by a plugin config source', () => {
+    const result = status(
+      [{name: 'yaml-config', location: '/project/b2c.yaml', fields: ['hostname', 'instanceName']}],
+      {hostname: 'yaml.example.com', instanceName: 'staging'},
+      {workspaceSelected: true},
+    );
+
+    assert.strictEqual(result.label, 'staging');
+    assert.ok(
+      result.tooltip.includes('Instance: yaml-config (selected for this workspace)'),
+      result.tooltip.join('\n'),
+    );
+  });
+
   test('names the default .env only when it supplies used settings', () => {
     const defaultEnv = path.resolve('/project/.env');
     const inPlay = status(
@@ -436,7 +491,12 @@ suite('instance status', () => {
     const result = status(
       [
         {name: 'StorefrontNextEnvSource', location: defaultEnv, fields: ['tenantId', 'shortCode']},
-        {name: 'SandboxTenantId', location: 'derived from tenant ID bjgk_005', fields: ['hostname']},
+        {
+          name: 'SandboxTenantId',
+          location: 'derived from tenant ID bjgk_005',
+          fields: ['hostname'],
+          derivedFrom: {field: 'tenantId', source: 'StorefrontNextEnvSource', location: defaultEnv},
+        },
       ],
       {hostname: 'bjgk-005.dx.commercecloud.salesforce.com', tenantId: 'bjgk_005', shortCode: 'abc'},
       {envFile: defaultEnv},
