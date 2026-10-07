@@ -7,7 +7,10 @@
       "args": [
         "-y",
         "@salesforce/b2c-dx-mcp@3.4.0"
-      ]
+      ],
+      "env": {
+        "npm_config_min_release_age": "0"
+      }
     }
   }
 }
