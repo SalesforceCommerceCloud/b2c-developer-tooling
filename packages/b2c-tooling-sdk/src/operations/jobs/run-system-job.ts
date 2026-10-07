@@ -45,7 +45,7 @@
  */
 import type {B2CInstance, ScapiClientConfig} from '../../instance/index.js';
 import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
-import {isFallbackTrigger, scapiUnavailableMessage} from '../../clients/scapi-backend-utils.js';
+import {isFallbackTrigger, runOcapiFallback, scapiUnavailableMessage} from '../../clients/scapi-backend-utils.js';
 import {createScapiJobsClient} from '../../clients/scapi-jobs.js';
 import {getLogger} from '../../logging/logger.js';
 import {mapCanonicalToOcapiExecution} from './ocapi-mapping.js';
@@ -150,7 +150,7 @@ export async function runSystemJob(instance: B2CInstance, spec: SystemJobSpec): 
       {jobId: spec.jobId, reason: error instanceof Error ? error.message : String(error)},
       `SCAPI ${spec.jobId} start rejected, falling back to OCAPI`,
     );
-    return runOcapiSystemJob(instance, spec);
+    return runOcapiFallback(error, () => runOcapiSystemJob(instance, spec));
   }
   return finishScapiJob(client, scapiConfig.tenantId, spec, started);
 }

@@ -20,7 +20,7 @@
  * @module clients/scapi-fallback-backend
  */
 import {getLogger} from '../logging/logger.js';
-import {isFallbackTrigger, type BackendBase} from './scapi-backend-utils.js';
+import {isFallbackTrigger, runOcapiFallback, type BackendBase} from './scapi-backend-utils.js';
 
 /**
  * Internal state shared by all method invocations on a Proxy. Holds the
@@ -66,7 +66,7 @@ async function withFallback<T extends BackendBase, R>(
     if (isFallbackTrigger(error)) {
       getLogger().info(`SCAPI ${state.domainName} unavailable for this operation, falling back to OCAPI`);
       state.resolved = state.ocapi;
-      return fn(state.ocapi);
+      return runOcapiFallback(error, () => fn(state.ocapi));
     }
     throw error;
   }

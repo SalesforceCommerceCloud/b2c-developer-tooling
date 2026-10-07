@@ -13,6 +13,9 @@
  * - Skips plugin hook collection so real plugins don't pollute the test environment
  * - Clears all global registries before each test to prevent state leakage
  */
+import {mkdtempSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {globalMiddlewareRegistry} from '../src/clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../src/auth/middleware.js';
 import {globalConfigSourceRegistry} from '../src/config/config-source-registry.js';
@@ -43,6 +46,14 @@ process.env.B2C_SKIP_PLUGIN_HOOKS = '1';
 // coding agent (Claude Code, Cursor, ...), in CI, or in a developer terminal.
 // Agent-specific behavior is tested with explicit environments.
 process.env.SFCC_AGENT = '0';
+
+// Isolate the auth-session store (and other data-dir state) to a unique per-process
+// temp dir. BaseCommand.init() re-points the store at config.dataDir unless
+// B2C_TEST_DATA_DIR is set, which made command tests read/write the developer's
+// real data dir and race each other across parallel mocha workers (--parallel).
+const testDataDir = mkdtempSync(join(tmpdir(), 'b2c-sdk-test-'));
+process.env.B2C_TEST_DATA_DIR = testDataDir;
+process.on('exit', () => rmSync(testDataDir, {recursive: true, force: true}));
 
 export const mochaHooks = {
   beforeEach() {

@@ -38,7 +38,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     '<%= config.bin %> <%= command.id %> my-custom-job --wait',
     String.raw`<%= config.bin %> <%= command.id %> my-custom-job -P "SiteScope={\"all_storefront_sites\":true}" -P OtherParam=value`,
     '<%= config.bin %> <%= command.id %> my-custom-job --wait --timeout 600',
-    String.raw`<%= config.bin %> <%= command.id %> sfcc-search-index-product-full-update --body '{"site_scope":{"named_sites":["RefArch"]}}'`,
+    String.raw`<%= config.bin %> <%= command.id %> sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch"]}'`,
   ];
 
   static flags = {
