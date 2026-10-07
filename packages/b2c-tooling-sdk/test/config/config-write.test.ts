@@ -15,9 +15,11 @@ import {
   listConfigKeys,
   locateConfigField,
   parseConfigValue,
+  readEnvFile,
   removeConfigField,
   resolveConfig,
   resolveConfigKey,
+  StorefrontNextEnvSource,
   writeConfigField,
   type ConfigLoadResult,
   type ConfigSource,
@@ -344,6 +346,75 @@ describe('config/config-write', () => {
         writeConfigField(await resolve({before: [store]}), 'shortCode', 'xyz'),
         'CONFIG_SOURCE_READ_ONLY',
       );
+    });
+  });
+
+  describe('derived values', () => {
+    /** A Storefront Next .env with no toolkit variables: the hostname comes from the organization ID. */
+    async function resolveStorefrontNext() {
+      const envPath = writeDotenv(
+        'PUBLIC__app__commerce__api__organizationId=f_ecom_zzpq_019\nPUBLIC__app__commerce__api__shortCode=abc123\n',
+      );
+      const source = () => new StorefrontNextEnvSource(readEnvFile(envPath), {location: envPath, envFile: envPath});
+      return {envPath, resolveAgain: () => resolve({after: [source()]})};
+    }
+
+    it('records the source a derived hostname came from', async () => {
+      const {envPath, resolveAgain} = await resolveStorefrontNext();
+      const config = await resolveAgain();
+      expect(config.values.hostname).to.equal('zzpq-019.dx.commercecloud.salesforce.com');
+      expect(config.sources.find((info) => info.name === 'SandboxTenantId')?.derivedFrom).to.deep.equal({
+        field: 'tenantId',
+        source: 'StorefrontNextEnvSource',
+        location: envPath,
+      });
+    });
+
+    it('writes new fields and the hostname to the .env the tenant ID came from', async () => {
+      const {envPath, resolveAgain} = await resolveStorefrontNext();
+      const result = await writeConfigField(await resolveAgain(), 'codeVersion', 'v1');
+      expect(result.location).to.equal(envPath);
+      await writeConfigField(await resolveAgain(), 'hostname', 'zzpq-019.dx.commercecloud.salesforce.com');
+      const content = fs.readFileSync(envPath, 'utf8');
+      expect(content).to.include('SFCC_CODE_VERSION=v1\n');
+      expect(content).to.include('SFCC_SERVER=zzpq-019.dx.commercecloud.salesforce.com\n');
+      expect(content).to.include('PUBLIC__app__commerce__api__organizationId=f_ecom_zzpq_019\n');
+    });
+
+    it('refuses to unset a derived value', async () => {
+      const {resolveAgain} = await resolveStorefrontNext();
+      const error = await expectWriteError(removeConfigField(await resolveAgain(), 'hostname'), 'CONFIG_NOT_SET');
+      expect(error.message).to.include('derived from tenantId in StorefrontNextEnvSource');
+    });
+
+    it('leaves Storefront Next settings to the storefront app', async () => {
+      const {envPath, resolveAgain} = await resolveStorefrontNext();
+      try {
+        await writeConfigField(await resolveAgain(), 'shortCode', 'other');
+        expect.fail('expected an error');
+      } catch (error) {
+        expect((error as Error).message).to.include('PUBLIC__app__commerce__api__shortCode');
+      }
+      expect(fs.readFileSync(envPath, 'utf8')).to.not.include('SFCC_SHORTCODE');
+    });
+
+    it('writes to the dw.json entry whose tenant ID gives the hostname', async () => {
+      writeDwJson({configs: [{name: 'dev', active: true, 'tenant-id': 'zzpq_019'}]});
+      await writeConfigField(await resolve(), 'codeVersion', 'v1');
+      await writeConfigField(await resolve(), 'hostname', 'zzpq-019.dx.commercecloud.salesforce.com');
+      expect(readDwJson().configs[0]).to.include({
+        'code-version': 'v1',
+        hostname: 'zzpq-019.dx.commercecloud.salesforce.com',
+      });
+    });
+
+    it('refuses a hostname derived from a read-only source', async () => {
+      const config = await resolve({before: [new EnvSource({SFCC_TENANT_ID: 'zzpq_019'})]});
+      const error = await expectWriteError(
+        writeConfigField(config, 'hostname', 'x.example.com'),
+        'CONFIG_SOURCE_READ_ONLY',
+      );
+      expect(error.message).to.include('EnvSource');
     });
   });
 

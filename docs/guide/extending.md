@@ -372,6 +372,8 @@ The CLI picks the source to write to from the resolved configuration, in this or
 
 So a high-priority source that defines the instance receives every new field. The dw.json source still loads underneath it, and fields that dw.json already supplies are still written there.
 
+A sandbox hostname derived from a tenant ID counts as supplied by the source of the tenant ID, so a source that supplies only `tenantId` receives `hostname` writes.
+
 ### Error Handling
 
 If your `ConfigSource` encounters an error (e.g., malformed config file, network failure), you can:

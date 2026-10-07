@@ -272,6 +272,12 @@ export interface ConfigSourceInfo {
   fieldsIgnored?: (keyof NormalizedConfig)[];
   /** dw.json files available to this source for named/default instance selection. */
   instanceCatalog?: ConfigCatalogFile[];
+  /**
+   * For a value worked out from another field (such as a sandbox hostname from
+   * its tenant ID): the field it came from and the source that supplied that
+   * field (absent when it came from a flag).
+   */
+  derivedFrom?: {field: keyof NormalizedConfig; source?: string; location?: string};
 }
 
 /**

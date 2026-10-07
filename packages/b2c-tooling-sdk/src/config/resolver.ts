@@ -357,6 +357,13 @@ export class ConfigResolver {
       config.tenantId = normalizeTenantId(config.tenantId);
     }
 
+    // Derived values record the source of the field they came from, so writes
+    // (`setup set`) and diagnostics can follow them back to it.
+    const derivedFrom = (field: keyof NormalizedConfig): ConfigSourceInfo['derivedFrom'] => {
+      const supplier = sourceInfos.find((info) => info.fields.includes(field) && !info.fieldsIgnored?.includes(field));
+      return supplier ? {field, source: supplier.name, location: supplier.location} : {field};
+    };
+
     // Sandbox tenant IDs determine the hostname, so a configuration with only a
     // tenant (for example a Storefront Next organization ID) still reaches the
     // instance. Other tenants are ambiguous and never derive a hostname.
@@ -368,6 +375,7 @@ export class ConfigResolver {
           name: 'SandboxTenantId',
           location: `derived from tenant ID ${config.tenantId}`,
           fields: ['hostname'],
+          derivedFrom: derivedFrom('tenantId'),
         });
       }
     }
@@ -383,6 +391,7 @@ export class ConfigResolver {
           name: 'SandboxHostname',
           location: `derived from hostname ${config.hostname}`,
           fields: ['tenantId'],
+          derivedFrom: derivedFrom('hostname'),
         });
       } else if (config.tenantId.toLowerCase() !== sandboxTenantId) {
         sourceWarnings.push({

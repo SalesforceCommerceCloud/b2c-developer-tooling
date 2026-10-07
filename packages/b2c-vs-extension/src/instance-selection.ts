@@ -339,7 +339,10 @@ export function describeSource(source: ConfigSourceInfo): string {
 /** Where the hostname came from; a derived hostname names the source of the tenant ID it came from. */
 function describeHostSource(hostSource: ConfigSourceInfo, sources: ConfigSourceInfo[]): string {
   if (hostSource.name !== 'SandboxTenantId') return describeSource(hostSource);
-  const tenantSource = sources.find((source) => usedFields(source).includes('tenantId'));
+  const base = hostSource.derivedFrom;
+  const tenantSource = base?.source
+    ? sources.find((source) => source.name === base.source && source.location === base.location)
+    : undefined;
   return `derived from tenant ID${tenantSource ? ` in ${describeSource(tenantSource)}` : ''}`;
 }
 

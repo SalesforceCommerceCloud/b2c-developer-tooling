@@ -491,7 +491,12 @@ suite('instance status', () => {
     const result = status(
       [
         {name: 'StorefrontNextEnvSource', location: defaultEnv, fields: ['tenantId', 'shortCode']},
-        {name: 'SandboxTenantId', location: 'derived from tenant ID bjgk_005', fields: ['hostname']},
+        {
+          name: 'SandboxTenantId',
+          location: 'derived from tenant ID bjgk_005',
+          fields: ['hostname'],
+          derivedFrom: {field: 'tenantId', source: 'StorefrontNextEnvSource', location: defaultEnv},
+        },
       ],
       {hostname: 'bjgk-005.dx.commercecloud.salesforce.com', tenantId: 'bjgk_005', shortCode: 'abc'},
       {envFile: defaultEnv},

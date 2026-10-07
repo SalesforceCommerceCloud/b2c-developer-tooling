@@ -229,18 +229,28 @@ function canWrite(origin: ConfigOrigin, field: keyof NormalizedConfig): boolean 
  * The target is, in order: the source supplying the field; the source
  * supplying the other half of its credential pair; or, for a field nothing
  * sets, the source that supplied the instance itself (its `instanceName`, else
- * its `hostname`). Every rule uses only {@link ConfigSourceInfo} and the
- * optional write methods, so plugin sources take part the same way dw.json does.
+ * its `hostname`). A derived value (a sandbox hostname worked out from its
+ * tenant ID) counts as supplied by the source of the field it came from. Every
+ * rule uses only {@link ConfigSourceInfo} and the optional write methods, so
+ * plugin sources take part the same way dw.json does.
  */
 export function locateConfigField(config: ResolvedB2CConfig, field: keyof NormalizedConfig): ConfigFieldLocation {
   const origins = getConfigOrigins(config) ?? [];
-  const supplies = (origin: ConfigOrigin, name: keyof NormalizedConfig) =>
-    origin.info.fields.includes(name) && !origin.info.fieldsIgnored?.includes(name);
+  const supplies = (info: ConfigSourceInfo, name: keyof NormalizedConfig) =>
+    info.fields.includes(name) && !info.fieldsIgnored?.includes(name);
+  /** The origin supplying `name`, following a derived value back to the origin of its base field. */
+  const originOf = (name: keyof NormalizedConfig): ConfigOrigin | undefined => {
+    const direct = origins.find((origin) => supplies(origin.info, name));
+    if (direct) return direct;
+    const base = config.sources.find((info) => info.derivedFrom && supplies(info, name))?.derivedFrom?.field;
+    return base ? origins.find((origin) => supplies(origin.info, base)) : undefined;
+  };
+  const supplier = config.sources.find((info) => supplies(info, field));
   // A credential pair (client ID + secret) must come from one source, so the
   // other half of a supplied pair decides where this field goes.
   const partners = CREDENTIAL_GROUPS.find((group) => group.includes(field)) ?? [field];
-  const own = origins.find((origin) => supplies(origin, field));
-  const supplying = own ?? origins.find((origin) => partners.some((partner) => supplies(origin, partner)));
+  const own = originOf(field);
+  const supplying = own ?? partners.map(originOf).find(Boolean);
   if (supplying) {
     if (!canWrite(supplying, field)) {
       return {
@@ -253,24 +263,24 @@ export function locateConfigField(config: ResolvedB2CConfig, field: keyof Normal
         ),
       };
     }
-    return {supplier: own?.info, target: supplying};
+    return {supplier, target: supplying};
   }
 
-  const supplier = config.sources.find((info) => info.fields.includes(field) && !info.fieldsIgnored?.includes(field));
   if (supplier || config.values[field] !== undefined) {
+    const base = supplier?.derivedFrom;
     return {
       supplier,
       error: new ConfigWriteError(
         'CONFIG_SOURCE_READ_ONLY',
-        `${field} comes from ${supplier ? describeSource(supplier) : 'a command-line flag or derived value'}, which can't be written.`,
+        base
+          ? `${field} is derived from ${base.field}${base.source ? '' : ' given as a flag'}, so it can't be written here.`
+          : `${field} comes from ${supplier ? describeSource(supplier) : 'a command-line flag'}, which can't be written.`,
       ),
     };
   }
 
   // Nothing supplies the field: write it where the instance itself is defined.
-  const instanceOrigin =
-    origins.find((origin) => supplies(origin, 'instanceName')) ??
-    origins.find((origin) => supplies(origin, 'hostname'));
+  const instanceOrigin = originOf('instanceName') ?? originOf('hostname');
   if (instanceOrigin && canWrite(instanceOrigin, field)) return {target: instanceOrigin};
   return {
     error: new ConfigWriteError(
@@ -323,6 +333,13 @@ export async function writeConfigField(
   const location = locateConfigField(config, field);
   if (value === undefined && !location.supplier) {
     throw new ConfigWriteError('CONFIG_NOT_SET', `${field} isn't set.`);
+  }
+  const base = value === undefined ? location.supplier?.derivedFrom : undefined;
+  if (base) {
+    throw new ConfigWriteError(
+      'CONFIG_NOT_SET',
+      `${field} isn't set; it's derived from ${base.field}${base.source ? ` in ${base.source}` : ''}. Unset ${base.field} instead.`,
+    );
   }
   if (!location.target) throw location.error!;
   const result = await persist(config, location.target, field, value);

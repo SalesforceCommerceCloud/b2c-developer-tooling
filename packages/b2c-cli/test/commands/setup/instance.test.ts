@@ -5,6 +5,7 @@
  */
 import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
+import sinon from 'sinon';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import path from 'node:path';
@@ -15,7 +16,9 @@ import {
   type CreateInstanceOptions,
   type InstanceInfo,
   type NormalizedConfig,
+  type ResolveConfigOptions,
 } from '@salesforce/b2c-tooling-sdk/config';
+import SetupInstanceSetActive from '../../../src/commands/setup/instance/set-active.js';
 import {createIsolatedEnvHooks} from '../../helpers/test-setup.js';
 
 /** A plugin-style source that stores instances in memory, registered like a `b2c:config-sources` hook would. */
@@ -39,7 +42,7 @@ class MemoryInstanceSource implements ConfigSource {
     }));
   }
 
-  load(): ConfigLoadResult | undefined {
+  load(_options: ResolveConfigOptions): ConfigLoadResult | undefined {
     return undefined;
   }
 
@@ -117,6 +120,24 @@ describe('setup instance with plugin config sources', () => {
 
     expect((await run('remove', 'yaml', '--force')).error).to.be.undefined;
     expect(plugin.instances.size).to.equal(0);
+  });
+
+  it('warns when a higher-priority source keeps its own active instance as the default', async () => {
+    const plugin = new MemoryInstanceSource(-1);
+    plugin.createInstance({name: 'yaml', config: {hostname: 'yaml.example.com'}, setActive: true});
+    // Like a real instance source, load the active instance when none is requested.
+    plugin.load = (options) => {
+      const name = options.instance ?? [...plugin.instances].find(([, entry]) => entry.active)?.[0];
+      const entry = name ? plugin.instances.get(name) : undefined;
+      return entry ? {config: {...entry.config, instanceName: name}} : undefined;
+    };
+    globalConfigSourceRegistry.register(plugin);
+
+    const warn = sinon.stub(SetupInstanceSetActive.prototype, 'warn');
+    const result = await runFailing('set-active', 'dw');
+    warn.restore();
+    expect(result.error).to.be.undefined;
+    expect(warn.firstCall?.args[0]).to.include('"yaml" from yaml-config is still the default');
   });
 
   it('creates instances in the highest-priority source, or the one named by --source', async () => {

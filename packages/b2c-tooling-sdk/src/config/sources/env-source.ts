@@ -324,18 +324,40 @@ export class DotenvFileSource extends EnvSource {
 export class StorefrontNextEnvSource implements ConfigSource {
   readonly name: string;
   readonly priority = 1;
+  /**
+   * Present when every value came from one .env file: writes there use toolkit
+   * (`SFCC_*`) variables. Settings the Storefront Next variables hold are
+   * refused, since those belong to the storefront app.
+   */
+  readonly updateConfig?: (patch: Partial<NormalizedConfig>, options: ResolveConfigOptions) => ConfigUpdateResult;
 
   private readonly env: Record<string, string | undefined>;
   private readonly location: string;
 
   /**
    * @param env - Environment object to read from. Defaults to `process.env`.
-   * @param options - Diagnostic name and location
+   * @param options - Diagnostic name and location; `envFile` makes the source writable
    */
-  constructor(env?: Record<string, string | undefined>, options: EnvSourceOptions = {}) {
+  constructor(env?: Record<string, string | undefined>, options: EnvSourceOptions & {envFile?: string} = {}) {
     this.env = env ?? process.env;
     this.name = options.name ?? 'StorefrontNextEnvSource';
     this.location = options.location ?? 'environment variables';
+    const {envFile} = options;
+    if (envFile) {
+      this.updateConfig = (patch, updateOptions) => {
+        for (const field of Object.keys(patch)) {
+          const variable = Object.keys(STOREFRONT_NEXT_ENV_VAR_MAP).find(
+            (name) => STOREFRONT_NEXT_ENV_VAR_MAP[name] === field,
+          );
+          if (variable) {
+            throw new Error(
+              `${field} is a Storefront Next setting (${variable} in ${envFile}) that the storefront app also reads. Change it there.`,
+            );
+          }
+        }
+        return new DotenvFileSource(envFile).updateConfig(patch, updateOptions);
+      };
+    }
   }
 
   load(_options: ResolveConfigOptions): ConfigLoadResult | undefined {

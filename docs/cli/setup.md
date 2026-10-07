@@ -545,6 +545,8 @@ b2c code list              # Uses staging
 b2c code list -i production # Uses production
 ```
 
+With a [plugin config source](../guide/extending#instance-management-methods), each source keeps its own active instance, and the highest-priority source's active instance is the default. If another source's active instance still wins after `set-active`, the command warns and names it.
+
 ## b2c setup openshell
 
 ::: warning Beta
