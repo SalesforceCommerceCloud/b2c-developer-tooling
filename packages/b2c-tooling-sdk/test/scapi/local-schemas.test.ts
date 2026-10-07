@@ -126,23 +126,24 @@ describe('scapi/local', () => {
   it('rejects failed fetches and invalid remote contracts without caching them', async () => {
     const url = 'https://schemas.example.com/zones.json';
     const cache = new Map();
+    const rejection = (promise: Promise<unknown>) =>
+      promise.then(
+        () => expect.fail('expected a rejection'),
+        (error: Error) => error.message,
+      );
     server.use(http.get(url, () => new HttpResponse(null, {status: 404, statusText: 'Not Found'}), {once: true}));
-    let error: Error | undefined;
-    await loadScapiSchemaOverrides([url], {cache}).catch((caught: Error) => (error = caught));
-    expect(error?.message).to.equal(`SCAPI_LOCAL_SCHEMA_INVALID: ${url}: HTTP 404 Not Found`);
+    expect(await rejection(loadScapiSchemaOverrides([url], {cache}))).to.equal(
+      `SCAPI_LOCAL_SCHEMA_INVALID: ${url}: HTTP 404 Not Found`,
+    );
     expect(cache.size).to.equal(0);
 
     server.use(http.get(url, () => HttpResponse.json({swagger: '2.0'})));
-    error = undefined;
-    await loadScapiSchemaOverrides([url], {cache}).catch((caught: Error) => (error = caught));
-    expect(error?.message).to.contain('expected an OpenAPI 3 contract');
+    expect(await rejection(loadScapiSchemaOverrides([url], {cache}))).to.contain('expected an OpenAPI 3 contract');
 
     server.use(http.get(url, () => HttpResponse.json(contract('cdn/zones/v1', '/remote'))));
-    error = undefined;
-    await loadScapiSchemaOverrides([url, write('zones.json', contract('cdn/zones/v1', '/file'))]).catch(
-      (caught: Error) => (error = caught),
-    );
-    expect(error?.message).to.contain('cdn/zones/v1 is defined by both');
+    expect(
+      await rejection(loadScapiSchemaOverrides([url, write('zones.json', contract('cdn/zones/v1', '/file'))])),
+    ).to.contain('cdn/zones/v1 is defined by both');
   });
 
   it('takes precedence over bundled and live contracts, including schemas fetched during execution', async () => {
