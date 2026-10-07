@@ -191,6 +191,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     assetQuery: json.assetQuery,
     cipHost: json.cipHost,
     docsCategories: json.docsCategories,
+    scapiSchemas: json.scapiSchemas,
     instanceName: json.name,
     authMethods,
     accountManagerHost: json.accountManagerHost,
@@ -339,6 +340,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.docsCategories !== undefined) {
     result.docsCategories = config.docsCategories;
+  }
+  if (config.scapiSchemas !== undefined) {
+    result.scapiSchemas = config.scapiSchemas;
   }
   if (config.mrtProject !== undefined) {
     result.mrtProject = config.mrtProject;
@@ -582,6 +586,8 @@ export function mergeConfigsWithProtection(
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,
       assetQuery: overrides.assetQuery ?? base.assetQuery,
+      docsCategories: overrides.docsCategories ?? base.docsCategories,
+      scapiSchemas: overrides.scapiSchemas ?? base.scapiSchemas,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       realm: overrides.realm ?? base.realm,

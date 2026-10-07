@@ -83,7 +83,7 @@
     "preinspect": "pnpm run build",
     "inspect": "mcp-inspector node bin/run.js --toolsets all",
     "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all",
-    "pretest": "tsc --noEmit -p test",
+    "pretest": "pnpm run generate:guidance && tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci:win": "c8 --check-coverage=false mocha --forbid-only --reporter json --reporter-option output=test-results.json --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",

@@ -6,17 +6,31 @@
 import type {ConfigSourceInfo, ConfigWarning, InstanceInfo, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
 import * as path from 'path';
 
+/**
+ * Instance saved for a VS Code workspace.
+ *
+ * A dw.json instance is identified by its file and name. An instance from a
+ * plugin config source is identified by the source and name, and has no file.
+ */
 export interface WorkspaceInstanceSelection {
   name: string;
-  location: string;
+  /** dw.json file holding the instance */
+  location?: string;
+  /** Plugin config source holding the instance (absent for dw.json) */
+  source?: string;
 }
 
-export type InstanceConfigurationScope = 'project' | 'global';
+/** dw.json instances are grouped by file scope; plugin source instances by source. */
+export type InstanceConfigurationScope = 'project' | 'global' | 'source';
+
+const DW_JSON_SOURCE = 'DwJsonSource';
 
 export interface InstancePickerEntry {
   kind: 'envFile' | 'follow' | 'inspect' | 'none' | 'separator' | 'instance';
   /** Section of an `instance` entry or a `separator`; env file rows use `envFile`. */
   scope?: InstanceConfigurationScope | 'envFile';
+  /** Plugin config source name, for `source` separators and entries */
+  source?: string;
   instance?: InstanceInfo;
   envFile?: EnvFilePickerEntry;
   selected?: boolean;
@@ -93,8 +107,22 @@ export interface TextOffsetRange {
   end: number;
 }
 
-/** Create the stable file-and-name identity persisted for a VS Code workspace. */
+/** Whether an instance comes from a plugin config source rather than dw.json. */
+export function isPluginSourceInstance(instance: InstanceInfo): boolean {
+  return Boolean(instance.source) && instance.source !== DW_JSON_SOURCE;
+}
+
+/** Whether an instance's location is a file that can be opened in an editor. */
+export function hasConfigurationFile(instance: InstanceInfo): boolean {
+  return Boolean(instance.location && path.isAbsolute(instance.location));
+}
+
+/**
+ * Create the stable identity persisted for a VS Code workspace: file and name
+ * for dw.json, source and name for a plugin config source.
+ */
 export function createWorkspaceInstanceSelection(instance: InstanceInfo): WorkspaceInstanceSelection | undefined {
+  if (isPluginSourceInstance(instance)) return {name: instance.name, source: instance.source};
   if (!instance.location) return undefined;
   return {name: instance.name, location: path.resolve(instance.location)};
 }
@@ -103,10 +131,12 @@ export function isWorkspaceInstanceSelected(
   instance: InstanceInfo,
   selection: WorkspaceInstanceSelection | undefined,
 ): boolean {
+  if (!selection || instance.name !== selection.name) return false;
+  if (selection.source) return instance.source === selection.source;
   return Boolean(
-    selection &&
+    !isPluginSourceInstance(instance) &&
     instance.location &&
-    instance.name === selection.name &&
+    selection.location &&
     path.resolve(instance.location) === path.resolve(selection.location),
   );
 }
@@ -115,6 +145,7 @@ export function getInstanceConfigurationScope(
   instance: InstanceInfo,
   defaultConfigPath: string | undefined,
 ): InstanceConfigurationScope {
+  if (isPluginSourceInstance(instance)) return 'source';
   return instance.location && defaultConfigPath && path.resolve(instance.location) === path.resolve(defaultConfigPath)
     ? 'global'
     : 'project';
@@ -144,24 +175,36 @@ export function buildInstancePickerEntries(
     {
       kind: 'none',
       selected: Boolean(options.instanceDisabled),
-      description: 'Use no dw.json instance (env file and shell variables only)',
+      description: 'Use no instance (env file and shell variables only)',
     },
   ];
 
-  for (const scope of ['project', 'global'] as const) {
+  // dw.json instances by file scope, then each plugin source in listing (priority) order.
+  const groups: Array<{scope: InstanceConfigurationScope; source?: string}> = [{scope: 'project'}, {scope: 'global'}];
+  for (const instance of instances) {
+    if (isPluginSourceInstance(instance) && !groups.some((group) => group.source === instance.source)) {
+      groups.push({scope: 'source', source: instance.source});
+    }
+  }
+  for (const {scope, source} of groups) {
     const scopedInstances = instances.filter(
-      (instance) => getInstanceConfigurationScope(instance, defaultConfigPath) === scope,
+      (instance) =>
+        getInstanceConfigurationScope(instance, defaultConfigPath) === scope &&
+        (scope !== 'source' || instance.source === source),
     );
     if (scopedInstances.length === 0) continue;
 
-    entries.push({kind: 'separator', scope});
+    entries.push({kind: 'separator', scope, source});
     for (const instance of scopedInstances) {
       entries.push({
         kind: 'instance',
         scope,
+        source,
         instance,
         selected: isWorkspaceInstanceSelected(instance, currentSelection),
-        default: isWorkspaceInstanceSelected(instance, defaultSelection),
+        // A plugin source's own active instance is its default; dw.json's is the resolved default entry.
+        default:
+          scope === 'source' ? Boolean(instance.active) : isWorkspaceInstanceSelected(instance, defaultSelection),
       });
     }
   }
@@ -306,6 +349,8 @@ export function usedFields(source: ConfigSourceInfo): (keyof NormalizedConfig)[]
 }
 
 const ENV_SOURCE_NAMES = new Set(['DotenvFile', 'EnvSource']);
+/** Built-in sources that are never plugin instance sources. */
+const PLUGIN_EXCLUDED_SOURCE_NAMES = new Set([...ENV_SOURCE_NAMES, 'DwJsonSource', 'StorefrontNextEnvSource']);
 
 /**
  * Describe the connection actually in use from resolved configuration sources.
@@ -323,13 +368,17 @@ export function describeInstanceStatus(
   const dwJson = sources.find((source) => source.name === 'DwJsonSource');
   const dwJsonUsed = dwJson && usedFields(dwJson).length > 0 ? dwJson : undefined;
   const hostSource = sources.find((source) => usedFields(source).includes('hostname'));
+  // A plugin config source (YAML file, vault, ...) that supplies the instance itself.
+  const pluginInstanceSource = sources.find(
+    (source) => usedFields(source).includes('instanceName') && !PLUGIN_EXCLUDED_SOURCE_NAMES.has(source.name),
+  );
   const host = values.hostname ?? '';
   const truncatedHost = host.length > 40 ? host.slice(0, 37) + '...' : host;
   const envFileName = options.envFile ? path.basename(options.envFile) : undefined;
   const envFileExplicit = typeof options.envFileSelection === 'string';
 
   let label: string;
-  if (dwJsonUsed && values.instanceName) {
+  if ((dwJsonUsed || pluginInstanceSource) && values.instanceName) {
     label = values.instanceName;
   } else if (dwJsonUsed) {
     label = `${dwJsonUsed.scope === 'global' ? 'global' : 'project'} dw.json (unnamed)`;
@@ -347,6 +396,9 @@ export function describeInstanceStatus(
   } else if (dwJson?.location) {
     const selection = options.workspaceSelected ? 'selected for this workspace' : 'following the default';
     tooltip.push(`Instance: ${dwJson.location} (${selection})`);
+  } else if (pluginInstanceSource) {
+    const selection = options.workspaceSelected ? 'selected for this workspace' : 'following the default';
+    tooltip.push(`Instance: ${describeSource(pluginInstanceSource)} (${selection})`);
   }
   if (options.envFileSelection === null) {
     tooltip.push('Env file: None');

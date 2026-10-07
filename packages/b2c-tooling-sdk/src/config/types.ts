@@ -169,6 +169,17 @@ export interface NormalizedConfig {
    */
   docsCategories?: string[];
 
+  // SCAPI
+  /**
+   * Local SCAPI OpenAPI 3 JSON contracts (files or directories) for MCP code mode.
+   * Each replaces the bundled or live contract for the same API, or adds one.
+   * Relative paths resolve from the project directory.
+   *
+   * Sourced from `scapi-schemas` (dw.json) or `SFCC_SCAPI_SCHEMAS` (env, comma-separated).
+   * The MCP `--scapi-schemas` flag, when provided, overrides this config value.
+   */
+  scapiSchemas?: string[];
+
   // Metadata
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
@@ -450,6 +461,37 @@ export interface ConfigSource {
     field: keyof NormalizedConfig,
     options?: ResolveConfigOptions,
   ): MaybePromise<void>;
+
+  // === Field Writes (for `b2c setup set`) ===
+
+  /**
+   * Persist field values to the exact entry {@link load} returns for the same
+   * options (for example the selected dw.json instance). An `undefined` value
+   * removes the field. Implement only for sources the user owns and can edit;
+   * throw when the target is ambiguous or a value can't be represented.
+   *
+   * `b2c setup set` calls this on the source that supplies the field, or for a
+   * field nothing sets, on the source that supplied the instance (its
+   * `instanceName`, else `hostname`). Sources without this method are treated
+   * as read-only, except credential stores, which receive
+   * {@link storeCredential} / {@link removeCredential} for their
+   * {@link credentialFields}.
+   *
+   * @param patch - Fields to set, or `undefined` to remove
+   * @param options - The options this source was loaded with
+   * @returns Where the values were written
+   */
+  updateConfig?(patch: Partial<NormalizedConfig>, options: ResolveConfigOptions): MaybePromise<ConfigUpdateResult>;
+}
+
+/**
+ * Where a {@link ConfigSource.updateConfig} call wrote its values.
+ */
+export interface ConfigUpdateResult {
+  /** File or other location that was updated */
+  location: string;
+  /** Instance entry that was updated, when the source has named entries */
+  instance?: string;
 }
 
 /**

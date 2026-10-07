@@ -9,10 +9,10 @@ For routine inspection, call `config_inspect` or `b2c setup inspect` directly;
 no skill read is required. Keep secrets redacted; manually reading `dw.json` is usually unnecessary. Read the relevant section
 here when configuring sources or diagnosing unexpected/missing values.
 
-| Task                                 | CLI                     | MCP                                 | Preference / difference                                                                      | Fallback                                                  |
-| ------------------------------------ | ----------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Inspect resolved configuration       | `b2c setup inspect`     | `config_inspect`                    | Either; same resolver, redacted by default. MCP accepts per-call project/instance overrides. | Inspect source files only for edits or unresolved issues. |
-| Change configuration or authenticate | `b2c setup`, `b2c auth` | No configuration-writing equivalent | CLI; inspect command help for the requested operation.                                       | Edit the intended configuration source.                   |
+| Task                                 | CLI                                      | MCP                                 | Preference / difference                                                                      | Fallback                                                  |
+| ------------------------------------ | ---------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Inspect resolved configuration       | `b2c setup inspect`                      | `config_inspect`                    | Either; same resolver, redacted by default. MCP accepts per-call project/instance overrides. | Inspect source files only for edits or unresolved issues. |
+| Change configuration or authenticate | `b2c setup set`, `b2c setup`, `b2c auth` | No configuration-writing equivalent | CLI; inspect command help for the requested operation.                                       | Edit the intended configuration source.                   |
 
 If `b2c` is unavailable, use `npx @salesforce/b2c-cli`.
 
@@ -200,6 +200,25 @@ b2c setup inspect --json | jq '.config'
 # Check which sources are loaded
 b2c setup inspect --json | jq '.sources'
 ```
+
+## Changing One Value
+
+Use `b2c setup set`, `get`, and `unset` to change a single value. They pick the
+file for you: the `dw.json` entry or project `.env` that already supplies the
+value, otherwise the selected instance's `dw.json` entry. They refuse, without
+writing, when the value comes from the shell environment, `~/.mobify`, or
+another read-only source, or when no instance is selected.
+
+```bash
+b2c setup set scapi-schemas=./scapi-schemas
+b2c setup set code-version version2 -i staging
+b2c setup set safety '{"level":"NO_DELETE"}'   # non-string keys take JSON
+b2c setup get code-version                      # value on stdout, source on stderr
+b2c setup get client-secret                     # masked; --unmask only when asked
+b2c setup unset code-version
+```
+
+Keys use `dw.json` names. Values are checked against the `dw.json` schema.
 
 ## IDE Integration
 

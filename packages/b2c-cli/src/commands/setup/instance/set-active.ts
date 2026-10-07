@@ -6,7 +6,7 @@
 import {Args, ux} from '@oclif/core';
 import {search} from '@inquirer/prompts';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {createInstanceManager} from '@salesforce/b2c-tooling-sdk/config';
 import {withDocs} from '../../../i18n/index.js';
 
 /**
@@ -41,9 +41,9 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
   };
 
   async run(): Promise<InstanceSetActiveResponse> {
-    const source = new DwJsonSource();
+    const manager = createInstanceManager();
     const configOptions = this.getBaseConfigOptions();
-    const instances = await source.listInstances(configOptions);
+    const instances = await manager.listAllInstances(configOptions);
 
     let name = this.args.name;
 
@@ -79,7 +79,7 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
     // Check if already active
     if (instance.active) {
       // Re-apply the selection so any active marker in the other catalog file is cleared.
-      await source.setActiveInstance(name, configOptions);
+      await manager.setActiveInstance(name, configOptions, instance.source);
       if (!this.jsonEnabled()) {
         ux.stdout(`Instance "${name}" is already the active instance.`);
       }
@@ -90,7 +90,7 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
     }
 
     // Set as active
-    await source.setActiveInstance(name, configOptions);
+    await manager.setActiveInstance(name, configOptions, instance.source);
 
     const result: InstanceSetActiveResponse = {
       name,

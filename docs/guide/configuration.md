@@ -316,7 +316,7 @@ The schema accepts every supported spelling (kebab-case, camelCase, and legacy a
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `client-id`<br>`SFCC_CLIENT_ID`                       | Account Manager API client ID.                                                                                                   |
 | `client-secret`<br>`SFCC_CLIENT_SECRET`               | Account Manager client secret.                                                                                                   |
-| `client-auth-method`<br>`SFCC_CLIENT_AUTH_METHOD`     | How the client ID and secret are sent to Account Manager; see [client authentication method](#client-authentication-method). |
+| `client-auth-method`<br>`SFCC_CLIENT_AUTH_METHOD`     | How the client ID and secret are sent to Account Manager; see [client authentication method](#client-authentication-method).     |
 | `oauth-scopes`<br>`SFCC_OAUTH_SCOPES`                 | Requested OAuth scopes: a JSON string array or comma-separated environment value. Scope grants must be configured on the client. |
 | `jwt-cert-path`<br>`SFCC_JWT_CERT`                    | PEM certificate path for JWT authentication. CLI flag: `--jwt-cert`.                                                             |
 | `jwt-key-path`<br>`SFCC_JWT_KEY`                      | PEM private key path. CLI flag: `--jwt-key`.                                                                                     |
@@ -329,10 +329,10 @@ The schema accepts every supported spelling (kebab-case, camelCase, and legacy a
 
 `client-auth-method` (`SFCC_CLIENT_AUTH_METHOD`, CLI flag `--client-auth-method`) controls how client credentials are sent in the token request:
 
-| Value             | Sends                                                                                             |
-| ----------------- | ------------------------------------------------------------------------------------------------- |
-| `basic` (default) | A standard HTTP Basic `Authorization` header with the encoded client ID and secret.               |
-| `basic-unencoded` | A Basic header with the raw client ID and secret.                                                 |
+| Value             | Sends                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| `basic` (default) | A standard HTTP Basic `Authorization` header with the encoded client ID and secret.                        |
+| `basic-unencoded` | A Basic header with the raw client ID and secret.                                                          |
 | `body`            | `client_id` and `client_secret` in the form-encoded request body. Use when a proxy or gateway requires it. |
 
 The default works for most setups. Inside an [OpenShell sandbox](./agent-sandboxing#openshell), where the secret is a placeholder, the CLI and MCP server use `basic-unencoded` automatically unless you set a value.
@@ -370,6 +370,7 @@ Shopper authentication also uses `short-code`, `tenant-id`, and `site-id` from [
 | `asset-query`<br>`SFCC_ASSET_QUERY`               | JSON dot-paths for finding static asset URLs in content; default `["image.path"]`.                                                                               |
 | `import-set-exclude`<br>`SFCC_IMPORT_SET_EXCLUDE` | Project-relative directories to exclude recursively from import-set discovery.                                                                                   |
 | `docs-categories`<br>`SFCC_DOCS_CATEGORIES`       | Documentation category allowlist for supported searches.                                                                                                         |
+| `scapi-schemas`<br>`SFCC_SCAPI_SCHEMAS`           | Project-relative local SCAPI OpenAPI JSON files or folders for [MCP code mode](/mcp/configuration#local-scapi-schemas).                                          |
 
 Use JSON arrays for list fields unless another format is noted. Environment list values are comma-separated; `SFCC_LIBRARIES` accepts IDs, not the JSON object form.
 

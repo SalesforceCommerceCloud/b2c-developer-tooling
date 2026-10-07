@@ -47,6 +47,7 @@ const DW_JSON_CONFIG_KEYS = {
   assetQuery: true,
   cipHost: true,
   docsCategories: true,
+  scapiSchemas: true,
   certificate: true,
   certificatePassphrase: true,
   selfSigned: true,

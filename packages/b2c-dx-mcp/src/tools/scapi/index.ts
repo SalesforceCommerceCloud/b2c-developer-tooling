@@ -27,13 +27,13 @@ import type {ScapiExecutionRegistry} from './execution-registry.js';
  *
  * @param loadServices - Function that loads configuration and returns Services instance
  * @param executions - Server-scoped registry for retained code-mode executions
- * @param localSchemas - Developer-supplied contracts that override bundled and live ones in code mode
+ * @param localSchemas - Startup --scapi-schemas contracts; when omitted, each call reads the project's `scapiSchemas` config
  * @returns Array of MCP tools
  */
 export function createScapiTools(
   loadServices: () => Promise<Services> | Services,
   executions?: ScapiExecutionRegistry,
-  localSchemas: readonly ScapiSchemaDocument[] = [],
+  localSchemas?: readonly ScapiSchemaDocument[],
 ): McpTool[] {
   // Live contracts discovered by search or schema fetches are reused by execution for the same tenant.
   const schemaCache = new ScapiLiveSchemaCache();

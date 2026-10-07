@@ -389,6 +389,20 @@
           },
           "description": "Alternate spelling of `docs-categories`. Documentation category allowlist for supported searches. Env: `SFCC_DOCS_CATEGORIES`."
         },
+        "scapi-schemas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Local SCAPI OpenAPI JSON files or directories for MCP code mode, relative to the project directory. Env: `SFCC_SCAPI_SCHEMAS`."
+        },
+        "scapiSchemas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Alternate spelling of `scapi-schemas`. Local SCAPI OpenAPI JSON files or directories for MCP code mode, relative to the project directory. Env: `SFCC_SCAPI_SCHEMAS`."
+        },
         "realm": {
           "type": "string",
           "description": "Default realm for sandbox operations."

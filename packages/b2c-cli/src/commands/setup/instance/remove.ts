@@ -6,7 +6,7 @@
 import {Args, Flags, ux} from '@oclif/core';
 import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {createInstanceManager} from '@salesforce/b2c-tooling-sdk/config';
 import {withDocs} from '../../../i18n/index.js';
 
 /**
@@ -49,12 +49,12 @@ export default class SetupInstanceRemove extends BaseCommand<typeof SetupInstanc
   };
 
   async run(): Promise<InstanceRemoveResponse> {
-    const source = new DwJsonSource();
+    const manager = createInstanceManager();
     const name = this.args.name;
     const configOptions = this.getBaseConfigOptions();
 
     // Check if instance exists
-    const instances = await source.listInstances(configOptions);
+    const instances = await manager.listAllInstances(configOptions);
     const instance = instances.find((i) => i.name === name);
 
     if (!instance) {
@@ -68,7 +68,7 @@ export default class SetupInstanceRemove extends BaseCommand<typeof SetupInstanc
 
     // Confirm removal
     if (!this.flags.force) {
-      const proceed = await confirm(`Remove instance "${name}"? This cannot be undone.`);
+      const proceed = await confirm(`Remove instance "${name}" from ${instance.source}? This cannot be undone.`);
 
       if (!proceed) {
         ux.stdout('Instance removal cancelled.');
@@ -80,7 +80,7 @@ export default class SetupInstanceRemove extends BaseCommand<typeof SetupInstanc
     }
 
     // Remove the instance
-    await source.removeInstance(name, configOptions);
+    await manager.removeInstance(name, configOptions, instance.source);
 
     const result: InstanceRemoveResponse = {
       name,

@@ -11,10 +11,18 @@
  *
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
+import {readFileSync, writeFileSync} from 'node:fs';
+import {parseEnv} from 'node:util';
 import type {AuthMethod} from '../../auth/types.js';
 import {CLIENT_AUTH_METHODS} from '../../auth/client-credentials.js';
 import {getPopulatedFields} from '../mapping.js';
-import type {ConfigSource, ConfigLoadResult, NormalizedConfig, ResolveConfigOptions} from '../types.js';
+import type {
+  ConfigSource,
+  ConfigLoadResult,
+  ConfigUpdateResult,
+  NormalizedConfig,
+  ResolveConfigOptions,
+} from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
@@ -62,6 +70,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_LIBRARIES: 'libraries',
   SFCC_ASSET_QUERY: 'assetQuery',
   SFCC_DOCS_CATEGORIES: 'docsCategories',
+  SFCC_SCAPI_SCHEMAS: 'scapiSchemas',
   SFCC_AUTH_METHODS: 'authMethods',
   SFCC_ACCOUNT_MANAGER_HOST: 'accountManagerHost',
   SFCC_CLIENT_AUTH_METHOD: 'clientAuthMethod',
@@ -94,6 +103,7 @@ const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
   'importSetExclude',
   'catalogs',
   'docsCategories',
+  'scapiSchemas',
   'libraries',
   'assetQuery',
 ]);
@@ -210,6 +220,92 @@ export class EnvSource implements ConfigSource {
     logger.trace({fields}, `[${this.name}] Loaded config from environment variables`);
 
     return {config, location: this.location};
+  }
+}
+
+const ENV_LINE = /^(\s*(?:export\s+)?)([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/;
+
+/** Format a config value in the comma-separated form {@link EnvSource} reads. */
+function formatEnvValue(field: string, value: unknown): string {
+  let text: string;
+  if (typeof value === 'string') {
+    text = value;
+  } else if (typeof value === 'boolean' || typeof value === 'number') {
+    text = String(value);
+  } else if (Array.isArray(value) && value.every((item) => typeof item === 'string' && !item.includes(','))) {
+    text = value.join(',');
+  } else {
+    throw new Error(`${field} can't be represented as an environment variable; set it in dw.json instead.`);
+  }
+  if (/^[^\s#'"`\\]*$/.test(text)) return text;
+  if (!text.includes("'") && !text.includes('\n')) return `'${text}'`;
+  throw new Error(`${field} contains characters that can't be written safely to a .env file.`);
+}
+
+/** Line indices of assignments to `names`, refusing multi-line values that can't be edited safely. */
+function findAssignments(lines: string[], names: string[]): Array<{index: number; name: string; prefix: string}> {
+  const found: Array<{index: number; name: string; prefix: string}> = [];
+  for (const [index, line] of lines.entries()) {
+    const match = ENV_LINE.exec(line);
+    if (!match || !names.includes(match[2])) continue;
+    const value = match[3].trim();
+    const quote = value[0];
+    if ((quote === '"' || quote === "'" || quote === '`') && value.indexOf(quote, 1) === -1) {
+      throw new Error(`${match[2]} spans multiple lines in the .env file; edit it by hand.`);
+    }
+    found.push({index, name: match[2], prefix: match[1]});
+  }
+  return found;
+}
+
+/**
+ * The project `.env` file, as a writable configuration source.
+ *
+ * Reads like {@link EnvSource}. Writes edit the file in place: the
+ * highest-precedence variable already present for a field is replaced,
+ * otherwise the field's canonical (highest-precedence) variable is appended. Removing a field
+ * deletes every variable that maps to it.
+ *
+ * @internal
+ */
+export class DotenvFileSource extends EnvSource {
+  /**
+   * @param filePath - The .env file
+   * @param env - Values applied from the file (defaults to the file's contents)
+   */
+  constructor(
+    private readonly filePath: string,
+    env?: Record<string, string | undefined>,
+  ) {
+    super(env ?? parseEnv(readFileSync(filePath, 'utf8')), {name: 'DotenvFile', location: filePath});
+  }
+
+  updateConfig(patch: Partial<NormalizedConfig>, _options: ResolveConfigOptions): ConfigUpdateResult {
+    let lines = readFileSync(this.filePath, 'utf8').split('\n');
+    for (const [field, value] of Object.entries(patch)) {
+      // ENV_VAR_MAP lists aliases from lowest to highest precedence.
+      const names = Object.entries(ENV_VAR_MAP)
+        .filter(([, mapped]) => mapped === field)
+        .map(([name]) => name);
+      if (names.length === 0) throw new Error(`${field} has no environment variable form; set it in dw.json instead.`);
+      const assignments = findAssignments(lines, names);
+      if (value === undefined) {
+        const removed = new Set(assignments.map((assignment) => assignment.index));
+        lines = lines.filter((_line, index) => !removed.has(index));
+        continue;
+      }
+      const text = formatEnvValue(field, value);
+      const current = assignments.sort((a, b) => names.indexOf(b.name) - names.indexOf(a.name))[0];
+      if (current) {
+        lines[current.index] = `${current.prefix}${current.name}=${text}`;
+      } else {
+        const name = names.at(-1)!;
+        if (lines.at(-1) === '') lines.splice(-1, 0, `${name}=${text}`);
+        else lines.push(`${name}=${text}`, '');
+      }
+    }
+    writeFileSync(this.filePath, lines.join('\n'), 'utf8');
+    return {location: this.filePath};
   }
 }
 

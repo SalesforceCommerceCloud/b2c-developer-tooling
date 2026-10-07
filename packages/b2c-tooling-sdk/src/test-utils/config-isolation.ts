@@ -3,9 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {mkdtempSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
 import {resetLogger} from '../logging/index.js';
 
-const ADDITIONAL_ENV_VARS = ['COMMERCE_API_SLAS_SECRET', 'LANGUAGE', 'NO_COLOR'];
+const ADDITIONAL_ENV_VARS = ['B2C_CONFIG_DIR', 'COMMERCE_API_SLAS_SECRET', 'LANGUAGE', 'NO_COLOR'];
 
 function isIsolatedEnvVar(key: string): boolean {
   return (
@@ -14,6 +17,7 @@ function isIsolatedEnvVar(key: string): boolean {
 }
 
 interface IsolationState {
+  configDirectory: string;
   savedEnvVars: Record<string, string | undefined>;
 }
 
@@ -36,11 +40,14 @@ export function isolateConfig(): void {
   process.env.SFCC_DOTENV_FILE = '';
   process.env.MRT_CREDENTIALS_FILE = '/dev/null';
   process.env.SFCC_LOG_LEVEL = 'silent';
+  // An empty settings directory, so the user's global default dw.json is never read or written
+  const configDirectory = mkdtempSync(path.join(tmpdir(), 'b2c-test-config-'));
+  process.env.B2C_CONFIG_DIR = configDirectory;
 
   // Reset global logger so it picks up the new SFCC_LOG_LEVEL
   resetLogger();
 
-  state = {savedEnvVars};
+  state = {configDirectory, savedEnvVars};
 }
 
 export function restoreConfig(): void {
@@ -57,6 +64,7 @@ export function restoreConfig(): void {
   for (const [key, value] of Object.entries(state.savedEnvVars)) {
     if (value !== undefined) process.env[key] = value;
   }
+  rmSync(state.configDirectory, {recursive: true, force: true});
 
   state = null;
 }
