@@ -17,7 +17,8 @@ import {
   createScapiAuth,
   loadScapiSnippets,
   saveScapiSnippet,
-  loadLocalScapiSchemas,
+  isRemoteScapiSchema,
+  loadScapiSchemaOverrides,
   type ScapiSchemaDocument,
 } from '@salesforce/b2c-tooling-sdk/scapi';
 import {toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
@@ -93,13 +94,18 @@ export function createScapiCodeTools(
 ): McpTool[] {
   // Developer-supplied contracts replace bundled and live ones with the same id. The startup
   // --scapi-schemas flag wins; otherwise each call reads the project's `scapiSchemas` config
-  // (dw.json `scapi-schemas` or SFCC_SCAPI_SCHEMAS, including the project .env).
-  const projectSchemas = (services?: Services): readonly ScapiSchemaDocument[] => {
+  // (dw.json `scapi-schemas` or SFCC_SCAPI_SCHEMAS, including the project .env). Entries may be
+  // files, directories or http(s) URLs; fetched contracts are kept until this server ends.
+  const remoteSchemas = new Map<string, Promise<ScapiSchemaDocument>>();
+  const projectSchemas = async (services?: Services, signal?: AbortSignal): Promise<readonly ScapiSchemaDocument[]> => {
     if (localSchemas) return localSchemas;
-    const paths = services?.getResolvedConfig().values.scapiSchemas;
-    if (!services || !paths?.length) return [];
+    const entries = services?.getResolvedConfig().values.scapiSchemas;
+    if (!services || !entries?.length) return [];
     const base = services.getResolution().projectDirectory?.path ?? process.cwd();
-    return loadLocalScapiSchemas(paths.map((entry) => path.resolve(base, entry)));
+    return loadScapiSchemaOverrides(
+      entries.map((entry) => (isRemoteScapiSchema(entry) ? entry : path.resolve(base, entry))),
+      {cache: remoteSchemas, signal},
+    );
   };
   // Retain only source for the last 50 completed executions, until this server ends.
   const executions = new Map<string, string>();
@@ -181,7 +187,7 @@ export function createScapiCodeTools(
               services = undefined;
             }
           }
-          const localDocuments = projectSchemas(services);
+          const localDocuments = await projectSchemas(services, context?.signal);
           const local = (api?: string) => localDocuments.filter((document) => !api || document.entry.id === api);
           const searchBundled = () => {
             const bundled = mergeScapiSchemas(loadScapiSchemas(), [], local()).filter(
@@ -284,7 +290,7 @@ export function createScapiCodeTools(
           const services = await loadServices(input);
           resolution = services.getResolution();
           const config = services.getResolvedConfig();
-          const localDocuments = projectSchemas(services);
+          const localDocuments = await projectSchemas(services, context?.signal);
           const {shortCode, tenantId, siteId} = config.values;
           const tenant = shortCode && tenantId ? scapiTenantKey(shortCode, toOrganizationId(tenantId)) : undefined;
           const safetyEnvironment = Object.fromEntries(

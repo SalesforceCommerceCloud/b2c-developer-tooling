@@ -146,7 +146,11 @@ import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {serveStdio} from '@modelcontextprotocol/server/stdio';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
-import {loadLocalScapiSchemas, type ScapiSchemaDocument} from '@salesforce/b2c-tooling-sdk/scapi';
+import {
+  isRemoteScapiSchema,
+  loadScapiSchemaOverrides,
+  type ScapiSchemaDocument,
+} from '@salesforce/b2c-tooling-sdk/scapi';
 import {B2CDxMcpServer} from '../server.js';
 import {Services, type ServicesResolutionInputs} from '../services.js';
 import {ServerContext} from '../server-context.js';
@@ -228,7 +232,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     }),
     'scapi-schemas': Flags.string({
       description:
-        'Local SCAPI OpenAPI contracts for scapi_search and scapi_execute (comma-separated JSON files or directories). ' +
+        'Local SCAPI OpenAPI contracts for scapi_search and scapi_execute (comma-separated JSON files, directories or http(s) URLs). ' +
         'Each replaces the bundled or live contract with the same family/name/version from servers[0].url, or adds an API. ' +
         'Developer option for beta and pre-release APIs. Overrides the project config scapi-schemas (dw.json or project .env).',
       env: 'SFCC_SCAPI_SCHEMAS',
@@ -418,7 +422,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       // (--docs-topics / SFCC_DOCS_TOPICS), else config `docsCategories`
       // (dw.json `docs-categories`, SFCC_DOCS_CATEGORIES, package.json).
       docsTopics: this.flags['docs-topics'] ?? this.resolvedConfig?.values.docsCategories?.join(','),
-      scapiSchemas: this.loadLocalScapiSchemas(),
+      scapiSchemas: await this.loadLocalScapiSchemas(),
     };
 
     // Add toolsets to telemetry attributes
@@ -502,7 +506,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
   }
 
   /** Load --scapi-schemas once at startup; relative paths resolve from the project directory. */
-  private loadLocalScapiSchemas(): readonly ScapiSchemaDocument[] | undefined {
+  private async loadLocalScapiSchemas(): Promise<readonly ScapiSchemaDocument[] | undefined> {
     const value = this.flags['scapi-schemas'];
     if (!value) return undefined;
     const base = this.flags['project-directory'] ?? process.cwd();
@@ -510,10 +514,10 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       .split(',')
       .map((entry) => entry.trim())
       .filter(Boolean)
-      .map((entry) => path.resolve(base, entry));
+      .map((entry) => (isRemoteScapiSchema(entry) ? entry : path.resolve(base, entry)));
     let documents: ScapiSchemaDocument[];
     try {
-      documents = loadLocalScapiSchemas(paths);
+      documents = await loadScapiSchemaOverrides(paths);
     } catch (error) {
       this.error(error instanceof Error ? error.message : String(error));
     }

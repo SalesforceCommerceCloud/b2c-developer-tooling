@@ -181,7 +181,7 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
   'scapi-schemas': {
     ...stringArray,
     description:
-      'Local SCAPI OpenAPI JSON files or directories for MCP code mode, relative to the project directory. Env: `SFCC_SCAPI_SCHEMAS`.',
+      'Local SCAPI OpenAPI JSON files or directories (relative to the project directory), or http(s) URLs, for MCP code mode. Env: `SFCC_SCAPI_SCHEMAS`.',
   },
 
   // Sandboxes and analytics

@@ -79,8 +79,9 @@ Built-in workflows update with the package and are separate from your saved file
 
 This is a developer option for beta and pre-release APIs that are not yet in the
 bundled or live contracts. Give [SCAPI code mode](./toolsets#scapi-code-mode) your own
-OpenAPI 3 JSON files, or folders containing them, in your project configuration. This
-works with plugin installs, where you don't control the server's arguments or working directory:
+OpenAPI 3 JSON files, folders containing them, or http(s) URLs of them, in your project
+configuration. This works with plugin installs, where you don't control the server's arguments or
+working directory:
 
 ```json
 {
@@ -90,7 +91,8 @@ works with plugin installs, where you don't control the server's arguments or wo
 
 Put this in the project's `dw.json`, or set `SFCC_SCAPI_SCHEMAS` (comma-separated) in the
 project's `.env`. Relative paths resolve from the project directory, and the server reads
-the setting on each tool call, so changes apply without a restart.
+the setting on each tool call, so changes apply without a restart. A URL lets you share a
+contract with a config-only change; the server fetches it once and keeps it until it restarts.
 
 You can also pass `--scapi-schemas` when starting the server. It replaces any project setting:
 

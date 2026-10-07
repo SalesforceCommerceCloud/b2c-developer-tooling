@@ -370,7 +370,7 @@ Shopper authentication also uses `short-code`, `tenant-id`, and `site-id` from [
 | `asset-query`<br>`SFCC_ASSET_QUERY`               | JSON dot-paths for finding static asset URLs in content; default `["image.path"]`.                                                                               |
 | `import-set-exclude`<br>`SFCC_IMPORT_SET_EXCLUDE` | Project-relative directories to exclude recursively from import-set discovery.                                                                                   |
 | `docs-categories`<br>`SFCC_DOCS_CATEGORIES`       | Documentation category allowlist for supported searches.                                                                                                         |
-| `scapi-schemas`<br>`SFCC_SCAPI_SCHEMAS`           | Project-relative local SCAPI OpenAPI JSON files or folders for [MCP code mode](/mcp/configuration#local-scapi-schemas).                                          |
+| `scapi-schemas`<br>`SFCC_SCAPI_SCHEMAS`           | Project-relative local SCAPI OpenAPI JSON files or folders, or http(s) URLs, for [MCP code mode](/mcp/configuration#local-scapi-schemas).                                          |
 
 Use JSON arrays for list fields unless another format is noted. Environment list values are comma-separated; `SFCC_LIBRARIES` accepts IDs, not the JSON object form.
 
