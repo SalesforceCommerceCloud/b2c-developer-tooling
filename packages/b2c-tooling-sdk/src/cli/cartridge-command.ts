@@ -6,6 +6,7 @@
 import path from 'node:path';
 import {Args, Command, Flags} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
+import {byPluginName} from './hooks.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from '../operations/code/cartridges.js';
 import {
   CartridgeProviderRunner,
@@ -78,7 +79,7 @@ export abstract class CartridgeCommand<T extends typeof Command> extends Instanc
 
     const hookResult = await this.config.runHook('b2c:cartridge-providers', hookOptions);
 
-    for (const success of hookResult.successes) {
+    for (const success of byPluginName(hookResult.successes)) {
       const result = success.result as CartridgeProvidersHookResult | undefined;
       if (result?.providers?.length) {
         this.cartridgeProviderRunner.addProviders(result.providers);

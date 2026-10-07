@@ -16,6 +16,7 @@ import type {
   AuthMiddlewareHookOptions,
   AuthMiddlewareHookResult,
 } from './hooks.js';
+import {byPluginName} from './hooks.js';
 import {setLanguage, t} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 import {createExtraParamsMiddleware, createSafetyMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
@@ -621,7 +622,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const hookResult = await this.config.runHook('b2c:config-sources', hookOptions);
 
     // Collect sources from all plugins and register with global registry
-    for (const success of hookResult.successes) {
+    for (const success of byPluginName(hookResult.successes)) {
       const result = success.result as ConfigSourcesHookResult | undefined;
       if (!result?.sources?.length) continue;
 
@@ -669,7 +670,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const hookResult = await this.config.runHook('b2c:http-middleware', hookOptions);
 
     // Register middleware from all plugins that responded
-    for (const success of hookResult.successes) {
+    for (const success of byPluginName(hookResult.successes)) {
       const result = success.result as HttpMiddlewareHookResult | undefined;
       if (!result?.providers?.length) continue;
 
@@ -704,7 +705,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const hookResult = await this.config.runHook('b2c:auth-middleware', hookOptions);
 
     // Register middleware from all plugins that responded
-    for (const success of hookResult.successes) {
+    for (const success of byPluginName(hookResult.successes)) {
       const result = success.result as AuthMiddlewareHookResult | undefined;
       if (!result?.providers?.length) continue;
 

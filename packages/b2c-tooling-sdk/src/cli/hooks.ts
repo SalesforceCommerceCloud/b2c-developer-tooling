@@ -138,6 +138,18 @@ export interface ConfigSourcesHookResult {
  */
 export type ConfigSourcesHook = Hook<'b2c:config-sources'>;
 
+/**
+ * Hook results ordered by plugin name.
+ *
+ * oclif runs a hook in every plugin at once and reports results in the order
+ * the plugins finish, so registering in that order would let timing decide
+ * between two sources of the same priority. Sorting by name makes the order the
+ * same on every run.
+ */
+export function byPluginName<T extends {plugin: {name: string}}>(successes: readonly T[]): T[] {
+  return [...successes].sort((a, b) => (a.plugin.name < b.plugin.name ? -1 : a.plugin.name > b.plugin.name ? 1 : 0));
+}
+
 // ============================================================================
 // HTTP Middleware Hook
 // ============================================================================
