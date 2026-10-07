@@ -7,7 +7,14 @@
 /** Bundled, live, and local SCAPI contracts and local JavaScript execution with SDK-authenticated requests. @module scapi */
 export {loadScapiSchemas, findScapiOperation, resolveScapiReference} from './catalog.js';
 export type {ApiDocument, ScapiSchemaEntry, ScapiSchemaDocument} from './catalog.js';
-export {ScapiLiveSchemaCache, createLiveScapiDocument, mergeScapiSchemas, scapiTenantKey} from './live.js';
+export {
+  ScapiLiveSchemaCache,
+  createLiveScapiDocument,
+  matchesScapiApi,
+  mergeScapiSchemas,
+  scapiTenantKey,
+  suggestScapiApis,
+} from './live.js';
 export {isRemoteScapiSchema, loadLocalScapiSchemas, loadScapiSchemaOverrides} from './local.js';
 export type {ScapiSchemaOverrideOptions} from './local.js';
 export {

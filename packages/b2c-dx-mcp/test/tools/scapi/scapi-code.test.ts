@@ -106,6 +106,27 @@ describe('SCAPI code tools', function () {
     expect(String((result.warnings as string[])[0])).to.include('Live schemas unavailable');
   });
 
+  it('filters by API family or family/name and names close ids for a near miss', async () => {
+    const [search] = createScapiCodeTools(stub().throws(new Error('no config')));
+    const ids = (api: string) => search.handler({skillRead: true, api, code: 'async () => spec.apis.map(a => a.id)'});
+    expect(readJson(await ids('cdn')).result).to.deep.equal(['cdn/zones/v1']);
+    expect(readJson(await ids('cdn/zones')).result).to.deep.equal(['cdn/zones/v1']);
+    const miss = await ids('ecdn');
+    expect(miss.isError).to.equal(true);
+    expect(readJson(miss).error).to.include('Close matches: cdn/zones/v1.');
+    const invalid = await ids('ecdn traffic');
+    expect(invalid.isError).to.equal(true);
+    expect(JSON.stringify(readJson(invalid))).to.include('api must be family, family/name or family/name/version');
+  });
+
+  it('does not fall back to bundled contracts for a custom API family', async () => {
+    const services = Services.fromResolvedConfig(createMockResolvedConfig({}));
+    const [search] = createScapiCodeTools(() => services);
+    const result = await search.handler({skillRead: true, schemas: 'live', api: 'custom', code: 'async () => 1'});
+    expect(result.isError).to.equal(true);
+    expect(readJson(result)).not.to.have.property('schemaSource');
+  });
+
   it('does not fall back to bundled contracts for custom APIs', async () => {
     const services = Services.fromResolvedConfig(createMockResolvedConfig({}));
     const [search] = createScapiCodeTools(() => services);

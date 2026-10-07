@@ -8,7 +8,9 @@ import path from 'node:path';
 import {z} from 'zod';
 import {
   loadScapiSchemas,
+  matchesScapiApi,
   mergeScapiSchemas,
+  suggestScapiApis,
   scapiTenantKey,
   ScapiLiveSchemaCache,
   ScapiShopperSessions,
@@ -113,7 +115,13 @@ export function createScapiCodeTools(
     ...createProjectContextInputSchema('configuration'),
     code,
     skillRead,
-    api: z.string().optional().describe('Limit schemas to family/name/version. Omit for all APIs.'),
+    api: z
+      .string()
+      .regex(/^[a-z0-9-]+(?:\/[a-z0-9-]+){0,2}\/?$/i, 'api must be family, family/name or family/name/version.')
+      .optional()
+      .describe(
+        'Limit schemas to an API family, family/name or family/name/version (cdn, cdn/zones, cdn/zones/v1). Omit for all APIs.',
+      ),
     schemas: z
       .enum(['bundled', 'live'])
       .optional()
@@ -188,14 +196,22 @@ export function createScapiCodeTools(
             }
           }
           const localDocuments = await projectSchemas(services, context?.signal);
-          const local = (api?: string) => localDocuments.filter((document) => !api || document.entry.id === api);
-          const searchBundled = () => {
-            const bundled = mergeScapiSchemas(loadScapiSchemas(), [], local()).filter(
-              (document) => !input.api || document.entry.id === input.api,
+          const local = (api?: string) => localDocuments.filter((document) => matchesScapiApi(document.entry.id, api));
+          // Name close ids so a near-miss filter (ecdn, zones) can be corrected in one step.
+          const unknownApi = (message: string, known: readonly ScapiSchemaDocument[]) => {
+            const close = suggestScapiApis(
+              known.map((document) => document.entry.id),
+              input.api!,
             );
+            return new Error(`${message}${close.length > 0 ? ` Close matches: ${close.join(', ')}.` : ''}`);
+          };
+          const searchBundled = () => {
+            const all = mergeScapiSchemas(loadScapiSchemas(), [], local());
+            const bundled = all.filter((document) => matchesScapiApi(document.entry.id, input.api));
             if (bundled.length === 0)
-              throw new Error(
+              throw unknownApi(
                 'Unknown schema ID. Omit api to discover available APIs, or use schemas:"live" for tenant and custom APIs.',
+                all,
               );
             return bundled;
           };
@@ -212,13 +228,16 @@ export function createScapiCodeTools(
               }));
               documents = mergeScapiSchemas([], documents, local(input.api));
               if (documents.length === 0 && failures.length === 0)
-                throw new Error('Unknown schema ID for this tenant. Omit api to discover available APIs.');
+                throw unknownApi(
+                  'Unknown schema ID for this tenant. Omit api to discover available APIs.',
+                  mergeScapiSchemas(loadScapiSchemas(), schemaCache.get(tenant), local()),
+                );
             } catch (error) {
               // Custom APIs exist only on the tenant; an unknown ID is a caller error, not an access problem.
               const message = error instanceof Error ? error.message : String(error);
               if (
                 context?.signal?.aborted ||
-                input.api?.startsWith('custom/') ||
+                input.api?.split('/')[0].toLowerCase() === 'custom' ||
                 message.startsWith('Unknown schema ID')
               )
                 throw error;

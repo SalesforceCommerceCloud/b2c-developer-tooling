@@ -33,7 +33,7 @@ execution. Schemas and responses can be huge.
 Return only what the next decision needs:
 
 1. Find APIs/operations through `spec.apis`/`spec.paths`; return method/path/operationId.
-2. Narrow by `api`, path, or `authType`; inspect required inputs and selected fields,
+2. Narrow by `api` (a family, family/name or full id: `cdn`, `cdn/zones`, `cdn/zones/v1`), path, or `authType`; inspect required inputs and selected fields,
    including `allOf` when present.
 3. Inspect response fields only as needed; avoid whole operations/schema trees.
 
