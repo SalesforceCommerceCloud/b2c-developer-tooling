@@ -8,6 +8,7 @@ description: Required before scapi_search or scapi_execute. Discover standard an
 Dedicated tool first. Else `scapi_search` (find op) then `scapi_execute` (call it). Code = JS async arrow fn. No TypeScript, no imports.
 Read this once, then pass `skillRead: true`. Reading does not authorize mutations.
 Warehouse SQL/reports: `cip_*`, not here. Files: `webdav_*`. Local build/fs: terminal.
+Operations or incidents (jobs, checkout, orders, eCDN traffic/bots): read the matching `b2c-ops` runbook from the [skill index](skill://mcp/b2c-mcp-server/SKILL.md#skill-index) first.
 
 ## `spec` shape (search and execute)
 

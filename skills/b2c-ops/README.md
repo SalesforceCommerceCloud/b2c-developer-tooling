@@ -10,6 +10,7 @@ the B2C MCP. No demo workspace or application source is required.
 | `b2c-job-health`           | Review scheduled work and investigate failed or incomplete updates.                       |
 | `b2c-checkout-triage`      | Investigate broader checkout/payment symptoms and select relevant evidence.               |
 | `b2c-order-failure-triage` | Enumerate FAILED orders, quantify impact, and correlate failed inputs with logs and jobs. |
+| `b2c-edge-traffic-triage`  | Classify bot and abusive eCDN traffic, check edge protections, and propose rule changes.  |
 
 See the [Operations guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations)
 for setup and example requests. Direct plugin installation adds guidance; it

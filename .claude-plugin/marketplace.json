@@ -33,7 +33,7 @@
     },
     {
       "name": "b2c-ops",
-      "description": "B2C Commerce operator and administrator runbooks for job health, checkout failures, and incident triage.",
+      "description": "B2C Commerce operator and administrator runbooks for job health, checkout failures, edge traffic and bots, and incident triage.",
       "author": {
         "name": "Salesforce"
       },

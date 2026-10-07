@@ -19,6 +19,7 @@ Read only the skill that matches the task; each links its own references.
 | Production incident or unknown operational signal | `skill://b2c-ops/b2c-production-triage/SKILL.md` |
 | Failed or late jobs | `skill://b2c-ops/b2c-job-health/SKILL.md` |
 | Checkout or order failures | `skill://b2c-ops/b2c-checkout-triage/SKILL.md`, `skill://b2c-ops/b2c-order-failure-triage/SKILL.md` |
+| Bots, scrapers or abusive traffic at the eCDN (WAF, firewall, rate limits) | `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md` |
 | Anything else | `skill://index` |
 
 Every skill and reference file is readable as an MCP resource

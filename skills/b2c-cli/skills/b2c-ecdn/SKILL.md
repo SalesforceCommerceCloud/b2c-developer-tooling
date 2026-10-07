@@ -7,6 +7,8 @@ description: Manage eCDN zones, security settings, and edge configuration for B2
 
 Use the `b2c` CLI plugin to manage eCDN (embedded Content Delivery Network) zones, certificates, security settings, and more.
 
+To investigate bot or abusive traffic before changing rules (which sources matter, who runs them, which rules cover them), use the `b2c-ops:b2c-edge-traffic-triage` runbook (MCP: `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md`).
+
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli ecdn zones list`).
 
 ## Configuration

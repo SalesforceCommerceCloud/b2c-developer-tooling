@@ -26,7 +26,13 @@ const bundleRoot = join(packageRoot, 'content/guidance');
 describe('guidance distribution and result contracts', () => {
   it('discovers operational runbooks without adding featured resources', () => {
     const catalog = new GuidanceCatalog(bundleRoot);
-    const runbooks = ['b2c-production-triage', 'b2c-job-health', 'b2c-checkout-triage', 'b2c-order-failure-triage'];
+    const runbooks = [
+      'b2c-production-triage',
+      'b2c-job-health',
+      'b2c-checkout-triage',
+      'b2c-order-failure-triage',
+      'b2c-edge-traffic-triage',
+    ];
     const tool = createGuidanceTool();
     expect(catalog.resources().some((resource) => resource.uri.startsWith('skill://b2c-ops/'))).to.equal(false);
     return Promise.all(
@@ -38,6 +44,19 @@ describe('guidance distribution and result contracts', () => {
         expect(catalog.readResource('skill://index')).to.include(uri);
         expect(() => new GuidanceCatalog(bundleRoot, {collections: ['mcp']}).readResource(uri)).to.throw();
       }),
+    );
+  });
+
+  it('ranks the edge traffic runbook first for natural bot-traffic queries across collections', async () => {
+    const tool = createGuidanceTool();
+    await Promise.all(
+      ['check the ecdn traffic for bot activity', 'block bot traffic', 'scrapers hitting the storefront'].map(
+        async (query) => {
+          const response = await tool.handler({query});
+          const result = (response.structuredContent as {result: {entries: {id: string}[]}}).result;
+          expect(result.entries[0]?.id, query).to.equal('b2c-ops/b2c-edge-traffic-triage');
+        },
+      ),
     );
   });
 
