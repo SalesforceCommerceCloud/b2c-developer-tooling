@@ -80,15 +80,14 @@ export default class MrtCacheInvalidate extends MrtCommand<typeof MrtCacheInvali
       onResolve: (backend) => this.logger.debug({backend}, '[MRT] Invalidating cache via backend'),
     });
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.mrt.cache.invalidate.success', 'Cache invalidation requested.'));
-      this.log(
-        t(
-          'commands.mrt.cache.invalidate.note',
-          'Note: Cache invalidations are asynchronous and usually complete within two minutes.',
-        ),
-      );
-    }
+    // this.log() is swallowed under --json by MrtCommand.log(), so no jsonEnabled() guard is needed here.
+    this.log(t('commands.mrt.cache.invalidate.success', 'Cache invalidation requested.'));
+    this.log(
+      t(
+        'commands.mrt.cache.invalidate.note',
+        'Note: Cache invalidations are asynchronous and usually complete within two minutes.',
+      ),
+    );
 
     // Under --json, emit the backend's native response verbatim (the legacy MRT
     // Cloud API invalidation payload, or null for the SCAPI empty 202).

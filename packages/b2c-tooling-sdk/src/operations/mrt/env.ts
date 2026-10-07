@@ -1057,7 +1057,7 @@ export async function createEnvironmentScapi(
 }
 
 /** The optional clone flags a SCAPI environment clone accepts. */
-export interface ScapiCloneEnvironmentFlags {
+export interface CloneEnvironmentFlagsScapi {
   cloneEnvironmentVariables?: boolean;
   cloneRedirects?: boolean;
   cloneB2cTargetInfo?: boolean;
@@ -1072,7 +1072,7 @@ export interface ScapiCloneEnvironmentFlags {
  */
 export async function cloneEnvironmentScapi(
   conn: ScapiMrtConnection,
-  params: {storefrontId: string; sourceEnvironmentId: string; displayName: string} & ScapiCloneEnvironmentFlags,
+  params: {storefrontId: string; sourceEnvironmentId: string; displayName: string} & CloneEnvironmentFlagsScapi,
 ): Promise<{environment: MrtEnvironmentView; raw: unknown}> {
   const logger = getLogger();
   const {

@@ -186,7 +186,7 @@ export type {
   MrtEnvironmentResult,
   MrtEnvironmentWriteResult,
   MrtCacheInvalidationResult,
-  ScapiCloneEnvironmentFlags,
+  CloneEnvironmentFlagsScapi,
   EnvBackendOptions,
   ListEnvironmentsBackendOptions,
   CreateEnvironmentBackendOptions,
