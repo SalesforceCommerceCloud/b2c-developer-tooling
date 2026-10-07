@@ -1,5 +1,17 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.12.0
+
+### Minor Changes
+
+- [#747](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/747) [`f3b9974`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f3b997487f2094a1c9f1c7a846147e303c2db422) - New `b2c-edge-traffic-triage` operations runbook for reviewing bot and abusive eCDN traffic against your firewall, WAF and rate-limiting rules, and SCAPI code mode now points agents to the operations runbooks. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Fixed the search-index job examples (`{"site_scope":["Site"]}`, not an object), documented system-job request bodies for CLI and MCP code mode, and stopped `--api-backend auto` from retrying SCAPI 400 (invalid request) errors over OCAPI, which hid the real error. When a fallback does happen and OCAPI also fails, both errors are reported. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - The `b2c-scapi-schemas` skill explains how to fetch operation descriptions and examples and how the bundled fallback behaves. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.11.0
 
 ### Minor Changes

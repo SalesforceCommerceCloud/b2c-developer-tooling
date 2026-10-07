@@ -1,5 +1,22 @@
 # Change Log
 
+## 1.5.0
+
+### Minor Changes
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - The API Browser now shows full operation summaries, descriptions, examples and documentation images for every API. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - The API Browser now loads bundled offline schemas when the live fetch fails (no configuration, no access, or the Schemas API is unreachable). It shows a warning and a banner, and Try it out is disabled because there are no live credentials. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - The instance picker now lists instances from installed plugin config sources, each in its own section. You can select them for a workspace and set them as the default, just like dw.json instances. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - The API Browser's Try it out form again pre-fills your configured organization ID instead of the API contract's example value. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e), [`c534797`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c5347970fc247f412b84c34c41d4df4965e2c710), [`163138e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/163138eb8ff1c045a64f3be246c1d1c2f37815f6), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da)]:
+  - @salesforce/b2c-tooling-sdk@2.5.0
+
 ## 1.4.0
 
 ### Minor Changes
