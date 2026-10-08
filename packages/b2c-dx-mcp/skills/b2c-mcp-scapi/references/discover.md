@@ -1,7 +1,8 @@
 # SCAPI discovery, result limits and tenant schemas
 
 Every operation carries `summary`, `description` and `tags` (plus parameters, security and responses), so
-search the prose as well as `operationId` and path. Descriptions are long: return `op.summary` when listing
+search the prose as well as `operationId` and path. `await spec.search(query, {limit})` does this for you: it ranks
+operations across all of those fields, tolerates typos, and is the quickest way to find an unfamiliar API. Descriptions are long: return `op.summary` when listing
 candidates, and read `op.description` only for the operations you are about to call.
 
 `scapi_search` returns each operation as an outline by default: its own `summary`, `description` and `tags`, with
@@ -11,11 +12,15 @@ sees full operations). Results are capped at 24 KB of JSON for both tools (`SCAP
 typically 6-20 KB and some exceed the cap alone, so never return `op` or `spec.paths` entries unprojected: list
 `{operationId, method, path, summary}`, then return only `parameters` or `requestBody` for the operations you will call.
 
-The `spec` object has exactly three members; there is no `spec.schemas` and no need to probe it:
+The `spec` object has exactly four members; there is no `spec.schemas` and no need to probe it:
 
 - `spec.apis`: array of `{id, apiFamily, apiName, apiVersion, status, origin?}` (`id` is e.g. `product/catalogs/v1`).
 - `spec.paths`: `{[fullPath]: {[method]: operation}}`, where `fullPath` starts with the API id (`/product/catalogs/v1/organizations/{organizationId}/catalogs/{catalogId}`) and methods are lowercase. Operations carry `operationId`, `api`, `summary`, `description`, `tags`, `parameters`, `requestBody`, `responses`, `security` and `auth`.
 - `spec.resolve(value, apiId)`: expands local `$ref`s in a fragment.
+- `spec.search(query, {limit})`: resolves to ranked `{api, method, path, operationId, summary, score, otherVersions?}`
+  matches (default 10, at most 50). `spec.paths[match.path][match.method]` is the operation. Versions of one API
+  collapse into the newest, with older ones in `otherVersions`. It searches the same contracts as `spec.paths`, so
+  `api`, `authType` and `schemas: "live"` apply.
 
 ## Discover
 
@@ -32,7 +37,7 @@ developer-supplied beta contracts (dw.json `scapi-schemas`, `SFCC_SCAPI_SCHEMAS`
 execution. Schemas and responses can be huge.
 Return only what the next decision needs:
 
-1. Find APIs/operations through `spec.apis`/`spec.paths`; return method/path/operationId.
+1. Find operations with `spec.search`, or enumerate `spec.apis`/`spec.paths`; return method/path/operationId.
 2. Narrow by `api` (a family, family/name or full id: `cdn`, `cdn/zones`, `cdn/zones/v1`), path, or `authType`; inspect required inputs and selected fields,
    including `allOf` when present.
 3. Inspect response fields only as needed; avoid whole operations/schema trees.

@@ -57,10 +57,16 @@ process.on('message', async message => {
   }
   const outlined = message.detail === 'outline';
   const resolveDetail = (value, api) => outlined ? outline(resolve(value, api)) : resolve(value, api);
-  const specData = {apis: documents.map(d => d.entry), paths: {}, resolve: resolveDetail};
+  const call = (fields) => new Promise((resolve, reject) => {
+    const id = ++sequence;
+    pending.set(id, {resolve, reject});
+    send({...fields, id});
+  });
+  const search = (query, options = {}) => call({type:'search', query: String(query ?? ''), options: {limit: options?.limit}});
+  const specData = {apis: documents.map(d => d.entry), paths: {}, resolve: resolveDetail, search};
   const spec = new Proxy(specData, {get(target, key, receiver) {
     if (typeof key === 'symbol' || key in target || key === 'then' || key === 'toJSON') return Reflect.get(target, key, receiver);
-    throw new Error('SCAPI_SPEC_UNKNOWN_MEMBER: spec.' + key + ' does not exist. spec has only apis (array of API entries), paths ({[fullPath]: {[method]: operation}}) and resolve(value, apiId). List operations with Object.entries(spec.paths).');
+    throw new Error('SCAPI_SPEC_UNKNOWN_MEMBER: spec.' + key + ' does not exist. spec has only apis (array of API entries), paths ({[fullPath]: {[method]: operation}}), resolve(value, apiId) and search(query, {limit}). Rank operations with await spec.search("gift certificate balance") or list them with Object.entries(spec.paths).');
   }});
   for (const {entry, schema} of documents) {
     for (const [path, item] of Object.entries(schema.paths || {})) {

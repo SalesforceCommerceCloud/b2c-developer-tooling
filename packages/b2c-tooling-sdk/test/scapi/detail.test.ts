@@ -107,8 +107,8 @@ describe('scapi/detail', () => {
     } catch (error) {
       message = (error as Error).message;
     }
-    expect(message).to.include('SCAPI_SPEC_UNKNOWN_MEMBER').and.to.include('spec.paths');
+    expect(message).to.include('SCAPI_SPEC_UNKNOWN_MEMBER').and.to.include('spec.paths').and.to.include('spec.search');
     const keys = (await runScapiCode({code: 'async () => Object.keys(spec)', documents: [document]})) as string[];
-    expect(keys).to.deep.equal(['apis', 'paths', 'resolve']);
+    expect(keys).to.deep.equal(['apis', 'paths', 'resolve', 'search']);
   });
 });

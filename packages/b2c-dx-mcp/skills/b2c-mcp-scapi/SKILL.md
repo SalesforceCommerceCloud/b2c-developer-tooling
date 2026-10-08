@@ -19,7 +19,11 @@ declare const spec: {
   apis: Array<{id: string; apiFamily: string; apiName: string; apiVersion: string; status: string}>; // id: 'product/catalogs/v1'
   paths: Record<string, Record<string, Operation>>; // fullPath -> lowercase method -> op
   resolve(value: unknown, apiId: string): unknown; // expand local $ref
+  // ranked fuzzy search over summary/description/tags/operationId/path; newest API version only
+  search(query: string, o?: {limit?: number}): Promise<Array<Match>>; // limit default 10, max 50
 };
+// spec.paths[m.path][m.method] is the full op; otherVersions = older versions with the same op
+type Match = {api: string; method: string; path: string; operationId?: string; summary?: string; score: number; otherVersions?: string[]};
 // fullPath = '/' + api id + path, e.g. '/product/catalogs/v1/organizations/{organizationId}/catalogs/{catalogId}'
 interface Operation {
   api: string;
@@ -53,7 +57,7 @@ declare const scapi: {
 ## Rules
 
 - Result cap 24 KB (`SCAPI_RESULT_TOO_LARGE`). Whole op = 6-20 KB. NEVER return `op` or `spec.paths` entries whole. List `{operationId, method, path, summary}`; then return only `parameters`/`requestBody` of ops you will call.
-- Search prose too: `summary`, `description`, `tags`, not only operationId/path.
+- Start with `await spec.search('task words')`; it matches prose (`summary`, `description`, `tags`) and tolerates typos. Regex over `spec.paths` to narrow or enumerate.
 - `scapi_search` default `detail:"outline"` drops nested descriptions/examples. `detail:"full"` restores. Execute sees full.
 - Default corpus = bundled standard. `schemas:"live"` = tenant (`c_*`, custom APIs, newer APIs); falls back to bundled with `warnings`. Tell user if `c_*`/custom APIs matter.
 - `scapi.request` auths itself. Never fetch tokens first. Path `{organizationId}` auto-fills.
@@ -62,7 +66,10 @@ declare const scapi: {
 - Write needing approval pauses for client elicitation. Decline = whole run ends. Never fake approval.
 
 ```js
-// list candidates by prose
+// rank candidates by prose (await it)
+async () => spec.search('apply coupon to basket', {limit: 8});
+
+// enumerate with a filter
 async () =>
   Object.entries(spec.paths)
     .flatMap(([path, methods]) =>

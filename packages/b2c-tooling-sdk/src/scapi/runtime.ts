@@ -9,6 +9,7 @@ import {getLogger} from '../logging/logger.js';
 import type {ScapiSchemaDocument} from './catalog.js';
 import {SCAPI_WORKER_SOURCE} from './worker-source.js';
 import {describeScapiSchemas, type ScapiAuthType} from './authentication.js';
+import {createScapiOperationSearch, type ScapiOperationSearchOptions} from './search.js';
 import {createScapiSnippetResolver, loadBuiltinScapiSnippets, type ScapiSnippet} from './snippets.js';
 
 /** Host-only controls for an execution retained while awaiting user input. */
@@ -48,6 +49,8 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
   if (options.signal?.aborted) throw new Error('SCAPI_EXECUTION_CANCELLED');
   const documents = describeScapiSchemas(options.documents ?? [], options.authType);
   const resolveSnippet = createScapiSnippetResolver(options.snippets ?? loadBuiltinScapiSnippets());
+  // Built on first spec.search so runs that only filter spec.paths pay nothing.
+  let searchOperations: ReturnType<typeof createScapiOperationSearch> | undefined;
   if (options.authType && !documents.length)
     throw new Error(
       `No ${options.authType} operations match this search. Omit authType to inspect all authentication requirements.`,
@@ -70,6 +73,7 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
     let calls = 0;
     let active = 0;
     let snippetCalls = 0;
+    let searchCalls = 0;
     let outcome: {value?: unknown; error?: Error} | undefined;
     const finish = (value?: unknown, error?: Error) => {
       if (settled) return;
@@ -128,6 +132,7 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
         operation?: string;
         name?: string;
         input?: unknown;
+        query?: unknown;
       };
       if (message.type === 'result') return finish(message.value);
       if (message.type === 'error') return finish(undefined, new Error(message.error));
@@ -140,6 +145,16 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
             throw new Error('SCAPI_SNIPPET_LIMIT: at most 100 snippet operations per execution.');
           if (message.operation === 'run' && !options.request) throw new Error('Use scapi_execute to run snippets.');
           reply(resolveSnippet(message.operation ?? '', message.name ?? '', message.input));
+        } catch (error) {
+          reply(undefined, error instanceof Error ? error.message : String(error));
+        }
+        return;
+      }
+      if (message.type === 'search') {
+        try {
+          if (++searchCalls > 50) throw new Error('SCAPI_SEARCH_LIMIT: at most 50 spec.search calls per execution.');
+          searchOperations ??= createScapiOperationSearch(documents);
+          reply(searchOperations(String(message.query ?? ''), message.options as ScapiOperationSearchOptions));
         } catch (error) {
           reply(undefined, error instanceof Error ? error.message : String(error));
         }

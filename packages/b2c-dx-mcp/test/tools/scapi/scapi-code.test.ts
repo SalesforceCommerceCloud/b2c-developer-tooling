@@ -197,6 +197,21 @@ describe('SCAPI code tools', function () {
     expect(Buffer.byteLength(JSON.stringify(data, null, 2))).to.be.greaterThan(24_000);
   });
 
+  it('ranks operations with spec.search within the api filter', async () => {
+    const [search] = createScapiCodeTools(stub());
+    const response = await search.handler({
+      skillRead: true,
+      api: 'cdn',
+      code: `async () => spec.search('block bots with firewall rules', {limit: 5})`,
+    });
+    expect(response.isError).not.to.equal(true);
+    const matches = readJson(response).result as Array<{api: string; path: string}>;
+    expect(matches).to.have.length(5);
+    expect(matches.every((match) => match.api.startsWith('cdn/') && match.path.startsWith(`/${match.api}/`))).to.equal(
+      true,
+    );
+  });
+
   it('returns outlines by default and restores nested prose with detail full', async () => {
     const [search] = createScapiCodeTools(stub());
     const code = `async () => {
