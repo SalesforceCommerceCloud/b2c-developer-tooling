@@ -1,5 +1,16 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.5.0
+
+### Minor Changes
+
+- [#750](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/750) [`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e) - SCAPI code mode adds `spec.search()`, a ranked, typo-tolerant search over operation summaries, descriptions, tags, ids and paths, so assistants can find less familiar APIs by describing the task instead of guessing a regex. `scapi_execute` programs now get the same `spec` as `scapi_search` (it was previously empty there), so discovery and calls can share one run. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e), [`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e)]:
+  - @salesforce/b2c-tooling-sdk@2.6.0
+
 ## 3.4.1
 
 ### Patch Changes
