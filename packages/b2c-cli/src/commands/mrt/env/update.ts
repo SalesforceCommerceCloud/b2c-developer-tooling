@@ -92,6 +92,11 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
       description: 'Forward HTTP cookies to origin (legacy backend only)',
       allowNo: true,
     }),
+    'preserve-proxy-user-agent': Flags.boolean({
+      description:
+        'Forward the original client User-Agent header to proxy origins instead of overwriting it with "Amazon CloudFront" (legacy backend only)',
+      allowNo: true,
+    }),
     'enable-source-maps': Flags.boolean({
       description: 'Enable source map support in the environment (legacy backend only)',
       allowNo: true,
@@ -134,6 +139,7 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
       'external-hostname': externalHostname,
       'external-domain': externalDomain,
       'allow-cookies': allowCookies,
+      'preserve-proxy-user-agent': preserveProxyUserAgent,
       'enable-source-maps': enableSourceMaps,
       'log-level': logLevel,
       'whitelisted-ips': whitelistedIps,
@@ -169,6 +175,7 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
       externalHostname: externalHostname === '' ? null : externalHostname,
       externalDomain: externalDomain === '' ? null : externalDomain,
       allowCookies,
+      preserveProxyUserAgent,
       enableSourceMaps,
       logLevel: logLevel as LogLevel | undefined,
       whitelistedIps: whitelistedIps === '' ? null : whitelistedIps,

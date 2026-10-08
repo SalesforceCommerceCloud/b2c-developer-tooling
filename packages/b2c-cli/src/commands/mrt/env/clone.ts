@@ -5,7 +5,11 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {cloneEnvironmentWithBackend, waitForEnv} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {
+  cloneEnvironmentWithBackend,
+  waitForEnv,
+  waitForEnvironmentScapi,
+} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 import {printEnvView} from './get.js';
 
@@ -60,7 +64,7 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
     }),
     wait: Flags.boolean({
       char: 'w',
-      description: 'Wait for the new environment to be ready before returning (legacy backend only)',
+      description: 'Wait for the new environment to be ready before returning',
       default: false,
     }),
     'poll-interval': Flags.integer({
@@ -78,6 +82,7 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
   protected operations = {
     cloneEnvironmentWithBackend,
     waitForEnv,
+    waitForEnvironmentScapi,
   };
 
   async run(): Promise<unknown> {
@@ -152,8 +157,9 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
     let env = result.environment;
     let raw = result.raw;
 
-    // --wait polls the legacy MRT Cloud API until the new environment is ready.
-    // The SCAPI backend has no equivalent polling helper yet.
+    // --wait polls the resolved backend until the new environment is ready: the
+    // legacy MRT Cloud API by slug, or the SCAPI MRT Environments API by ID
+    // (`building` -> `ready`/`build_failed`).
     if (wait) {
       if (result.backend === 'legacy') {
         this.log(t('commands.mrt.env.clone.waiting', 'Waiting for environment "{{slug}}" to be ready...', {slug}));
@@ -186,9 +192,25 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
           backend: 'legacy',
         };
       } else {
-        this.warn(
-          '--wait is not supported on the SCAPI MRT backend yet; returning the created environment immediately.',
+        this.log(
+          t('commands.mrt.env.clone.waiting', 'Waiting for environment "{{slug}}" to be ready...', {slug: env.id}),
         );
+        const ready = await this.operations.waitForEnvironmentScapi(scapiConnection!, {
+          storefrontId: project,
+          environmentId: env.id,
+          pollIntervalSeconds: pollInterval,
+          timeoutSeconds: timeout,
+          onPoll: (info) => {
+            this.log(
+              t('commands.mrt.env.clone.state', '[{{elapsed}}s] State: {{state}}', {
+                elapsed: String(info.elapsedSeconds),
+                state: info.status,
+              }),
+            );
+          },
+        });
+        raw = ready.raw;
+        env = ready.environment;
       }
     }
 

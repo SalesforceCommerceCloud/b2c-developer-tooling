@@ -764,6 +764,12 @@ export interface UpdateEnvOptions {
   allowCookies?: boolean | null;
 
   /**
+   * Forward the original client User-Agent header to proxy origins instead of
+   * overwriting it with "Amazon CloudFront".
+   */
+  preserveProxyUserAgent?: boolean | null;
+
+  /**
    * Enable source map support in the environment.
    */
   enableSourceMaps?: boolean | null;
@@ -851,6 +857,10 @@ export async function updateEnv(options: UpdateEnvOptions, auth: AuthStrategy): 
 
   if (options.allowCookies !== undefined) {
     body.allow_cookies = options.allowCookies;
+  }
+
+  if (options.preserveProxyUserAgent !== undefined) {
+    body.preserve_proxy_user_agent = options.preserveProxyUserAgent;
   }
 
   if (options.enableSourceMaps !== undefined) {
@@ -1141,6 +1151,93 @@ export async function getEnvironmentByIdScapi(
   }
 
   return {environment: normalizeEnvironmentScapi(data), raw: data};
+}
+
+/**
+ * SCAPI environment statuses that are terminal for a build/clone (no longer
+ * changing). A freshly created or cloned environment starts in `building`.
+ */
+const SCAPI_ENV_TERMINAL_STATUSES = new Set(['ready', 'build_failed']);
+
+/** Progress info reported on each poll of {@link waitForEnvironmentScapi}. */
+export interface EnvironmentScapiPollInfo {
+  /** Seconds elapsed since waiting started. */
+  elapsedSeconds: number;
+  /** Current environment status. */
+  status: string;
+}
+
+/** Options for {@link waitForEnvironmentScapi}. */
+export interface WaitForEnvironmentScapiOptions {
+  storefrontId: string;
+  environmentId: string;
+  /**
+   * Polling interval in seconds.
+   * @default 10
+   */
+  pollIntervalSeconds?: number;
+  /**
+   * Maximum time to wait in seconds (0 for no timeout).
+   * @default 600
+   */
+  timeoutSeconds?: number;
+  /** Optional callback invoked on each poll with current status. */
+  onPoll?: (info: EnvironmentScapiPollInfo) => void;
+  /** Custom sleep function for testing. */
+  sleep?: (ms: number) => Promise<void>;
+  /** Custom clock for testing. Defaults to Date.now. */
+  now?: () => number;
+}
+
+/**
+ * Polls a SCAPI environment by ID until it reaches a terminal build status
+ * (`ready` or `build_failed`) or the timeout elapses. Backs `mrt env clone
+ * --wait` on the SCAPI backend, mirroring {@link waitForDeploymentScapi}: a
+ * by-ID poll shares the environments read scope, so it costs no extra scope.
+ *
+ * @throws {Error} if the timeout is reached or the environment build fails.
+ */
+export async function waitForEnvironmentScapi(
+  conn: ScapiMrtConnection,
+  options: WaitForEnvironmentScapiOptions,
+): Promise<{environment: MrtEnvironmentView; raw: unknown}> {
+  const logger = getLogger();
+  const {storefrontId, environmentId, pollIntervalSeconds = 10, timeoutSeconds = 600, onPoll} = options;
+
+  const sleepFn = options.sleep ?? defaultSleep;
+  const nowFn = options.now ?? Date.now;
+  const startTime = nowFn();
+  const pollIntervalMs = pollIntervalSeconds * 1000;
+  const timeoutMs = timeoutSeconds * 1000;
+
+  logger.debug({environmentId, pollIntervalSeconds, timeoutSeconds}, '[MRT-SCAPI] Waiting for environment');
+
+  // Poll immediately (before any sleep) so an already-ready environment returns
+  // without waiting a full interval, and so a timeout shorter than the poll
+  // interval still gets at least one status check.
+  while (true) {
+    const elapsedSeconds = Math.round((nowFn() - startTime) / 1000);
+
+    if (timeoutSeconds > 0 && nowFn() - startTime > timeoutMs) {
+      throw new Error(`Timeout waiting for environment "${environmentId}" after ${timeoutSeconds}s`);
+    }
+
+    const result = await getEnvironmentByIdScapi(conn, {storefrontId, environmentId});
+    const status = result.environment.status ?? 'unknown';
+
+    logger.trace({environmentId, elapsedSeconds, status}, '[MRT-SCAPI] Environment poll');
+    onPoll?.({elapsedSeconds, status});
+
+    if (SCAPI_ENV_TERMINAL_STATUSES.has(status)) {
+      if (status === 'build_failed') {
+        throw new Error(`Environment ${environmentId} build failed`);
+      }
+      logger.debug({environmentId, status}, '[MRT-SCAPI] Environment reached terminal status');
+      return result;
+    }
+
+    await sleepFn(pollIntervalMs);
+  }
 }
 
 /**
@@ -1652,6 +1749,8 @@ export interface UpdateEnvironmentBackendOptions extends EnvBackendOptions {
   externalDomain?: string | null;
   /** Forward cookies to origin (legacy only). */
   allowCookies?: boolean | null;
+  /** Forward the original client User-Agent header to proxy origins (legacy only). */
+  preserveProxyUserAgent?: boolean | null;
   /** Enable source maps (legacy only). */
   enableSourceMaps?: boolean | null;
   /** Minimum log level (legacy only). */
@@ -1683,6 +1782,7 @@ export async function updateEnvironmentWithBackend(
     externalHostname,
     externalDomain,
     allowCookies,
+    preserveProxyUserAgent,
     enableSourceMaps,
     logLevel,
     whitelistedIps,
@@ -1725,6 +1825,7 @@ export async function updateEnvironmentWithBackend(
             externalHostname,
             externalDomain,
             allowCookies,
+            preserveProxyUserAgent,
             enableSourceMaps,
             logLevel,
             whitelistedIps,

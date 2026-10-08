@@ -100,7 +100,7 @@ describe('mrt env invalidate', () => {
     }
   });
 
-  it('routes through the backend-aware invalidation on the legacy backend and returns raw under --json', async () => {
+  it('routes through the backend-aware invalidation on the legacy backend and returns the raw payload under --json', async () => {
     const command = createCommand();
 
     stubParse(command, {project: 'my-project', environment: 'production', pattern: '/*'}, {});
@@ -126,10 +126,11 @@ describe('mrt env invalidate', () => {
     expect(input.projectSlug).to.equal('my-project');
     expect(input.environment).to.equal('production');
     expect(input.pattern).to.equal('/*');
-    expect(result.result).to.include('Cache invalidation request accepted');
+    // Legacy response is returned verbatim, preserving the existing contract.
+    expect(result).to.deep.equal({result: 'Cache invalidation request accepted.', slug: 'production'});
   });
 
-  it('invalidates via the SCAPI backend and returns a null raw (empty 202)', async () => {
+  it('invalidates via the SCAPI backend and returns a structured ack with null raw (empty 202)', async () => {
     const command = createCommand();
 
     stubParse(command, {project: 'my-project', environment: 'production', pattern: '/*', 'mrt-backend': 'scapi'}, {});
@@ -151,7 +152,15 @@ describe('mrt env invalidate', () => {
     const [input] = invalidateStub.firstCall.args;
     expect(input.preference).to.equal('scapi');
     expect(input.scapiConnection).to.equal(scapiConnection);
-    expect(result).to.equal(null);
+    // The SCAPI 202 has no body, but --json must still emit a usable payload.
+    expect(result).to.deep.include({
+      project: 'my-project',
+      environment: 'production',
+      pattern: '/*',
+      backend: 'scapi',
+      requested: true,
+      raw: null,
+    });
   });
 
   it('supports the SCAPI MRT backend', () => {

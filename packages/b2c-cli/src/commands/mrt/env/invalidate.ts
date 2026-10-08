@@ -89,9 +89,23 @@ export default class MrtCacheInvalidate extends MrtCommand<typeof MrtCacheInvali
       ),
     );
 
-    // Under --json, emit the backend's native response verbatim (the legacy MRT
-    // Cloud API invalidation payload, or null for the SCAPI empty 202).
-    return result.raw;
+    // The legacy backend returns a native payload; emit it verbatim under --json
+    // to preserve the existing contract.
+    if (result.backend === 'legacy') {
+      return result.raw;
+    }
+
+    // Invalidation is fire-and-forget: the SCAPI backend returns an empty 202
+    // (raw === null), so returning `result.raw` directly would leave --json with
+    // no output. Emit a stable acknowledgement instead for the SCAPI backend.
+    return {
+      project,
+      environment,
+      pattern,
+      backend: result.backend,
+      requested: true,
+      raw: result.raw,
+    };
   }
 
   protected override supportsScapiMrt(): boolean {

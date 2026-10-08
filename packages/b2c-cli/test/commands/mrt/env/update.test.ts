@@ -82,7 +82,11 @@ describe('mrt env update', () => {
   it('routes through the backend-aware update on the legacy backend and returns raw under --json', async () => {
     const command = createCommand();
 
-    stubParse(command, {project: 'my-project', name: 'Updated Staging', production: true}, {});
+    stubParse(
+      command,
+      {project: 'my-project', name: 'Updated Staging', production: true, 'preserve-proxy-user-agent': true},
+      {},
+    );
     await command.init();
 
     stubBackendContext(command);
@@ -107,6 +111,7 @@ describe('mrt env update', () => {
     expect(input.environment).to.equal('staging');
     expect(input.name).to.equal('Updated Staging');
     expect(input.isProduction).to.equal(true);
+    expect(input.preserveProxyUserAgent).to.equal(true);
     expect(result.name).to.equal('Updated Staging');
   });
 

@@ -1017,6 +1017,8 @@ export interface components {
             is_production?: boolean;
             /** @description Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped. */
             allow_cookies?: boolean | null;
+            /** @description Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with "Amazon CloudFront". */
+            preserve_proxy_user_agent?: boolean | null;
             /** @description Set true to enable source map support. This will set the NODE_OPTIONS environment variable to "--enable-source-maps" in your MRT environment. */
             enable_source_maps?: boolean | null;
             /**
@@ -1146,6 +1148,8 @@ export interface components {
             is_production?: boolean;
             /** @description Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped. */
             allow_cookies?: boolean | null;
+            /** @description Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with "Amazon CloudFront". */
+            preserve_proxy_user_agent?: boolean | null;
             /** @description Set true to enable source map support. This will set the NODE_OPTIONS environment variable to "--enable-source-maps" in your MRT environment. */
             enable_source_maps?: boolean | null;
             /**
@@ -1927,6 +1931,8 @@ export interface components {
             is_production?: boolean;
             /** @description Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped. */
             allow_cookies?: boolean | null;
+            /** @description Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with "Amazon CloudFront". */
+            preserve_proxy_user_agent?: boolean | null;
             /** @description Set true to enable source map support. This will set the NODE_OPTIONS environment variable to "--enable-source-maps" in your MRT environment. */
             enable_source_maps?: boolean | null;
             /**

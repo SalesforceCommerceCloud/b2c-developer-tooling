@@ -217,6 +217,54 @@ describe('mrt env clone', () => {
     expect(result.state).to.equal('ACTIVE');
   });
 
+  it('waits for the env when --wait is set on the SCAPI backend', async () => {
+    const command = createCommand();
+    stubParse(
+      command,
+      {
+        name: 'QA',
+        wait: true,
+        'poll-interval': 1,
+        timeout: 30,
+        'clone-redirects': false,
+        'clone-env-vars': false,
+        'clone-b2c-info': false,
+        'mrt-backend': 'scapi',
+      },
+      {},
+    );
+    await command.init();
+    const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+    stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'p', mrtEnvironment: 'staging'}}));
+
+    const cloneStub = sinon.stub().resolves({
+      backend: 'scapi',
+      environment: {id: 'qa-123', name: 'QA', status: 'building', backend: 'scapi'},
+      raw: {environmentId: 'qa-123', displayName: 'QA', status: 'building'},
+    } as any);
+    const waitScapiStub = sinon.stub().resolves({
+      environment: {id: 'qa-123', name: 'QA', status: 'ready', backend: 'scapi'},
+      raw: {environmentId: 'qa-123', displayName: 'QA', status: 'ready'},
+    } as any);
+    command.operations = {
+      cloneEnvironmentWithBackend: cloneStub,
+      waitForEnv: sinon.stub(),
+      waitForEnvironmentScapi: waitScapiStub,
+    };
+
+    const result = await command.run();
+
+    expect(waitScapiStub.calledOnce).to.equal(true);
+    const [conn, waitInput] = waitScapiStub.firstCall.args;
+    expect(conn).to.equal(scapiConnection);
+    expect(waitInput.storefrontId).to.equal('p');
+    expect(waitInput.environmentId).to.equal('qa-123');
+    expect(result.status).to.equal('ready');
+  });
+
   it('supports the SCAPI MRT backend', () => {
     const command = createCommand();
     expect(command.supportsScapiMrt()).to.equal(true);

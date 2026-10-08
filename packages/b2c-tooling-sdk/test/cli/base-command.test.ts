@@ -6,7 +6,13 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import {BaseCommand, ERROR_CODE, augmentDuplicateFlagError, classifyError} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  BaseCommand,
+  ERROR_CODE,
+  augmentDuplicateFlagError,
+  classifyError,
+  serializeErrorCause,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -520,6 +526,23 @@ describe('cli/base-command', () => {
       it('returns "runtime" for non-error values', () => {
         expect(classifyError(undefined)).to.equal('runtime');
         expect(classifyError('a string')).to.equal('runtime');
+      });
+    });
+
+    describe('serializeErrorCause()', () => {
+      it('preserves an object cause so --json nests it instead of "[object Object]"', () => {
+        const cause = {title: 'Conflict', detail: "Environment can't be deleted while it is 'building'."};
+        expect(serializeErrorCause(cause)).to.deep.equal(cause);
+      });
+
+      it('renders an Error cause as {name, message}', () => {
+        const cause = new TypeError('boom');
+        expect(serializeErrorCause(cause)).to.deep.equal({name: 'TypeError', message: 'boom'});
+      });
+
+      it('stringifies primitive causes', () => {
+        expect(serializeErrorCause('plain string')).to.equal('plain string');
+        expect(serializeErrorCause(42)).to.equal('42');
       });
     });
 

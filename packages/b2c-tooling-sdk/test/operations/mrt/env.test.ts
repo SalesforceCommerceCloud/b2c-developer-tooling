@@ -20,6 +20,7 @@ import {
   createEnvironmentScapi,
   cloneEnvironmentScapi,
   getEnvironmentByIdScapi,
+  waitForEnvironmentScapi,
   updateEnvironmentScapi,
   deleteEnvironmentScapi,
   setPrimaryEnvironmentScapi,
@@ -704,6 +705,73 @@ describe('operations/mrt/env', () => {
     });
   });
 
+  describe('waitForEnvironmentScapi', () => {
+    it('polls by ID until the environment reaches ready', async () => {
+      const statuses = ['building', 'building', 'ready'];
+      let call = 0;
+      server.use(
+        http.get(SCAPI_ENVIRONMENT, () => {
+          const status = statuses[Math.min(call, statuses.length - 1)];
+          call += 1;
+          return HttpResponse.json(scapiEnvironment({status}));
+        }),
+      );
+
+      const polls: string[] = [];
+      const result = await waitForEnvironmentScapi(scapiConn(), {
+        storefrontId: STOREFRONT_ID,
+        environmentId: ENVIRONMENT_ID,
+        pollIntervalSeconds: 1,
+        timeoutSeconds: 60,
+        sleep: async () => {},
+        onPoll: (info) => polls.push(info.status),
+      });
+
+      expect(call).to.equal(3);
+      expect(polls).to.deep.equal(['building', 'building', 'ready']);
+      expect(result.environment).to.deep.include({id: ENVIRONMENT_ID, status: 'ready', backend: 'scapi'});
+    });
+
+    it('throws when the environment build fails', async () => {
+      server.use(http.get(SCAPI_ENVIRONMENT, () => HttpResponse.json(scapiEnvironment({status: 'build_failed'}))));
+
+      try {
+        await waitForEnvironmentScapi(scapiConn(), {
+          storefrontId: STOREFRONT_ID,
+          environmentId: ENVIRONMENT_ID,
+          sleep: async () => {},
+        });
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('build failed');
+      }
+    });
+
+    it('throws on timeout while still building', async () => {
+      server.use(http.get(SCAPI_ENVIRONMENT, () => HttpResponse.json(scapiEnvironment({status: 'building'}))));
+
+      // Advance the injected clock past the 5s timeout on the first poll.
+      let clock = 0;
+      try {
+        await waitForEnvironmentScapi(scapiConn(), {
+          storefrontId: STOREFRONT_ID,
+          environmentId: ENVIRONMENT_ID,
+          pollIntervalSeconds: 1,
+          timeoutSeconds: 5,
+          sleep: async () => {},
+          now: () => {
+            const current = clock;
+            clock += 6000;
+            return current;
+          },
+        });
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('Timeout waiting for environment');
+      }
+    });
+  });
+
   describe('updateEnvironmentScapi', () => {
     it('patches only the supplied fields', async () => {
       let receivedBody: Record<string, unknown> | undefined;
@@ -1165,10 +1233,16 @@ describe('operations/mrt/env', () => {
         projectSlug: STOREFRONT_ID,
         environment: ENVIRONMENT_ID,
         isProduction: true,
+        allowCookies: true,
+        preserveProxyUserAgent: true,
       });
 
       expect(result.backend).to.equal('legacy');
-      expect(receivedBody).to.include({is_production: true});
+      expect(receivedBody).to.include({
+        is_production: true,
+        allow_cookies: true,
+        preserve_proxy_user_agent: true,
+      });
     });
   });
 
