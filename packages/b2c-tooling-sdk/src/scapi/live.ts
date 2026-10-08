@@ -18,7 +18,7 @@ export interface ScapiLiveSchemaCacheOptions {
 }
 
 export interface ScapiLiveSchemaLoadOptions {
-  /** Limit to one API id (family/name/version). */
+  /** Limit to an API family, family/name, or family/name/version (see {@link matchesScapiApi}). */
   api?: string;
   /** Ignore cached listing and contracts. */
   refresh?: boolean;
@@ -29,6 +29,35 @@ export interface ScapiLiveSchemaLoadResult {
   documents: ScapiSchemaDocument[];
   /** APIs listed by the tenant whose contract could not be fetched. */
   failures: Array<{api: string; error: string}>;
+}
+
+/**
+ * Whether an API id (`family/name/version`) is selected by a filter of whole leading
+ * segments: `cdn`, `cdn/zones` and `cdn/zones/v1` all select `cdn/zones/v1`. An omitted
+ * filter selects every API.
+ */
+export function matchesScapiApi(id: string, api?: string): boolean {
+  if (!api) return true;
+  const filter = api.replace(/\/+$/, '').toLowerCase();
+  const value = id.toLowerCase();
+  return value === filter || value.startsWith(`${filter}/`);
+}
+
+/**
+ * API ids that resemble a filter matching nothing: any id whose family, name or version shares
+ * a word (split on `/` and `-`) with the filter, either containing the other. At most `limit`.
+ */
+export function suggestScapiApis(ids: Iterable<string>, api: string, limit = 5): string[] {
+  const words = (value: string) =>
+    value
+      .toLowerCase()
+      .split(/[/-]/)
+      .filter((word) => word.length >= 3);
+  const wanted = words(api);
+  return [...new Set(ids)]
+    .filter((id) => words(id).some((word) => wanted.some((term) => word.includes(term) || term.includes(word))))
+    .sort((a, b) => a.localeCompare(b, 'en'))
+    .slice(0, limit);
 }
 
 /** Identify a tenant's live contracts; schemas differ by custom attributes and custom APIs. */
@@ -71,10 +100,14 @@ export function createLiveScapiDocument(
   };
 }
 
-/** Bundled contracts with live contracts replacing any with the same id. */
-export function mergeScapiSchemas(bundled: ScapiSchemaDocument[], live: ScapiSchemaDocument[]): ScapiSchemaDocument[] {
+/** Bundled contracts, replaced by live contracts, replaced by local contracts with the same id. */
+export function mergeScapiSchemas(
+  bundled: readonly ScapiSchemaDocument[],
+  live: readonly ScapiSchemaDocument[],
+  local: readonly ScapiSchemaDocument[] = [],
+): ScapiSchemaDocument[] {
   const byId = new Map(bundled.map((document) => [document.entry.id, document]));
-  for (const document of live) byId.set(document.entry.id, document);
+  for (const document of [...live, ...local]) byId.set(document.entry.id, document);
   return [...byId.values()];
 }
 
@@ -112,7 +145,7 @@ export class ScapiLiveSchemaCache {
   ): Promise<ScapiLiveSchemaLoadResult> {
     const listing = await this.list(tenant, client, organizationId, options);
     const selected = listing.filter(
-      (item) => !options.api || `${item.apiFamily}/${item.apiName}/${item.apiVersion}` === options.api,
+      (item) => !options.api || matchesScapiApi(`${item.apiFamily}/${item.apiName}/${item.apiVersion}`, options.api),
     );
     const cached = this.documents.get(tenant) ?? new Map<string, Cached<ScapiSchemaDocument>>();
     this.documents.set(tenant, cached);
@@ -136,7 +169,8 @@ export class ScapiLiveSchemaCache {
           {
             params: {
               path: {organizationId, apiFamily: item.apiFamily!, apiName: item.apiName!, apiVersion: item.apiVersion!},
-              query: {expand: 'custom_properties'},
+              // Everything: code mode searches operation prose and tenant custom properties.
+              query: {expand: 'all'},
             },
             signal: options.signal,
           },

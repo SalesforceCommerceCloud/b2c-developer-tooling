@@ -1,65 +1,65 @@
-# Route Conventions Reference
+# Route conventions
 
-## Flat Routes File Naming
+## File name to URL
 
-Storefront Next uses React Router 7's flat-routes convention where dots (`.`) in file names create URL path segments.
+| File | URL (before the site/locale prefix) |
+|---|---|
+| `_app._index.tsx` | `/` |
+| `_app.cart.tsx` | `/cart` |
+| `_app.account.orders.$orderNo.tsx` | `/account/orders/:orderNo` |
+| `_app.p.$.tsx` | product splat (shape set by `url.seoRoutes`; use `createProductUrl`) |
+| `_app.c.$.tsx` | category splat (shape set by `url.seoRoutes`; use `createCategoryUrl`) |
+| `_checkout.checkout.tsx` | `/checkout` |
+| `_empty.login.tsx` | `/login` |
+| `action.cart-item-add.tsx` | `/action/cart-item-add` |
+| `resource.recommendations.ts` | `/resource/recommendations` |
+| `resource.api.client.$resource.ts` | `/resource/api/client/:resource` |
 
-### Syntax Reference
+- A segment starting with `_` and no matching file content of its own is a pathless layout (`_app`, `_checkout`, `_empty`). The layout file (`_app.tsx`) renders `<Outlet />`.
+- A nested layout is a route file plus children, for example `_app.account.tsx` with `_app.account.overview.tsx` beneath it.
+- `.ts` is enough for routes without JSX (actions, resource routes, `_empty.logout.ts`).
+- Files named `*.test.ts(x)` beside routes are ignored by route discovery.
 
-| Syntax | Purpose | Example File | URL |
-|--------|---------|-------------|-----|
-| `.` | Path separator | `_app.product.tsx` | `/product` |
-| `$param` | Dynamic segment | `_app.product.$id.tsx` | `/product/:id` |
-| `_prefix` | Pathless layout | `_app.tsx` | (no URL segment) |
-| `_index` | Index route | `_app._index.tsx` | `/` (parent path) |
+## Route module exports
 
-### Common Route Patterns
+| Export | Purpose |
+|---|---|
+| `loader` | server data for the route (see `storefront-next:sfnext-data-fetching`) |
+| `action` | server mutation |
+| default component | receives `loaderData` via `Route.ComponentProps` |
+| `shouldRevalidate` | revalidation policy; most routes re-export from `@/lib/revalidation/routes/*` (see `storefront-next:sfnext-revalidation`) |
+| `middleware` | route-level server middleware (root chain lives in `src/root.tsx`) |
+| `ErrorBoundary` | route-scoped error UI (for example wishlist load failures) |
+| `links` / `meta` | mostly used in `src/root.tsx`; prefer `<SeoMeta>` in components |
+| Page Designer classes | `@PageType` and `@RegionDefinition` on an exported class, see `storefront-next:sfnext-page-designer` |
 
+`clientLoader` and `clientAction` are not permitted.
+
+## Typed route props
+
+```tsx
+import type { Route } from './+types/_app.cart';
+
+export async function loader({ request, context, params }: Route.LoaderArgs) { /* ... */ }
+export default function Cart({ loaderData }: Route.ComponentProps) { /* ... */ }
 ```
-src/routes/
-├── _app.tsx                           # Layout: wraps all /app routes
-├── _app._index.tsx                    # /
-├── _app.product.$productId.tsx        # /product/:productId
-├── _app.category.$categoryId.tsx      # /category/:categoryId
-├── _app.cart.tsx                      # /cart
-├── _app.checkout.tsx                  # /checkout
-├── _app.account.tsx                   # Layout: wraps /account routes
-├── _app.account._index.tsx            # /account
-├── _app.account.orders.tsx            # /account/orders
-├── _app.account.orders.$orderId.tsx   # /account/orders/:orderId
-├── _app.search.tsx                    # /search
-├── _auth.tsx                          # Layout: auth pages
-├── _auth.login.tsx                    # /login
-├── _auth.register.tsx                 # /register
-└── resource.api.client.$resource.tsx  # Resource route (no UI)
-```
 
-### Layout Nesting
+The `+types` modules are generated. Run `pnpm typecheck` or `pnpm dev` to create them.
 
-```
-URL: /account/orders/12345
+## Layout notes
 
-Route hierarchy:
-  _app.tsx                    (layout — renders Header, Footer, <Outlet />)
-    _app.account.tsx          (layout — renders account sidebar, <Outlet />)
-      _app.account.orders.$orderId.tsx  (page — renders order details)
-```
+- `_app.tsx` loads navigation categories once and exports `shouldRevalidate() { return false }`, so the header data is not re-fetched on later navigations. Change this only if you add navigation that must update.
+- `_empty.tsx` is a minimal `<main>` with a skip link, used by login, signup, callbacks, maintenance and the component preview.
+- `_checkout.tsx` provides the checkout layout.
+- `_app.account.tsx` is the account layout and redirects unauthenticated shoppers to login.
 
-## Route Module Exports
+## Head tags
 
-| Export | Type | When It Runs | Purpose |
-|--------|------|-------------|---------|
-| `loader` | Function | Server (SSR + SPA navigation) | Load data |
-| `action` | Function | Server (form submissions) | Handle mutations |
-| `default` | Component | Client + Server | Render UI |
-| `meta` | Function | Server | Set page title, description, OG tags |
-| `handle` | Object | Client + Server | Attach route metadata |
-| `ErrorBoundary` | Component | Client + Server | Error UI for this route |
-| `headers` | Function | Server | Set HTTP response headers |
+`SeoMeta` props: `title`, `rawTitle`, `description`, `noIndex`, `siteName`, `twitter`, `openGraph`. Use `noIndex` on account and transactional pages. `JsonLd` takes `data`, optional `id` and `nonce`. Both can be rendered anywhere in the tree, including inside a Suspense boundary.
 
-## Important Notes
+## Checklist when renaming or deleting a route
 
-- All loaders run on the server, both during SSR and client-side navigation
-- Route files must be `.tsx` (TypeScript with JSX) — JavaScript files are forbidden
-- The `_app` prefix is a pathless layout; it does not add `/app` to the URL
-- Resource routes (no default export) return data only, no rendered HTML
+1. Update `src/route-paths.ts`.
+2. Search for the old path in links, redirects, `resourceRoutes` users and tests.
+3. Re-run `pnpm typecheck` to regenerate `+types`.
+4. If the route is referenced by `shouldRevalidate` policies in `src/lib/revalidation/routes/`, update those.

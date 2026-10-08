@@ -1,5 +1,37 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.12.0
+
+### Minor Changes
+
+- [#747](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/747) [`f3b9974`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f3b997487f2094a1c9f1c7a846147e303c2db422) - New `b2c-edge-traffic-triage` operations runbook for reviewing bot and abusive eCDN traffic against your firewall, WAF and rate-limiting rules, and SCAPI code mode now points agents to the operations runbooks. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Fixed the search-index job examples (`{"site_scope":["Site"]}`, not an object), documented system-job request bodies for CLI and MCP code mode, and stopped `--api-backend auto` from retrying SCAPI 400 (invalid request) errors over OCAPI, which hid the real error. When a fallback does happen and OCAPI also fails, both errors are reported. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - The `b2c-scapi-schemas` skill explains how to fetch operation descriptions and examples and how the bundled fallback behaves. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.11.0
+
+### Minor Changes
+
+- [#738](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/738) [`1c73738`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1c73738ce3c395738307653755692ffc357463c4) - The `storefront-next` and `figma-to-sfnext-pagedesigner` skills are updated for the October 2026 Storefront Next template. Code examples, commands, and project paths are corrected, and new skills cover security, SEO, analytics and consent, accessibility, quality gates, revalidation, and commerce features (24 skills). Skills were renamed or merged: `sfnext-create-vertical` → `sfnext-theming`, `sfnext-create-component` → `sfnext-components`, and `sfnext-scapi-management` + `sfnext-custom-apis` → `sfnext-scapi`. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - Updated the `b2c-config` skill for env file selection and Storefront Next fallback precedence. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#739](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/739) [`86d42bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/86d42bc53c58020ca301df3e38d3cfa7ab0d4b04) - The `b2c-content` skill now points to `b2c-cli:b2c-config` for authentication setup instead of a skill that doesn't exist. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - Documentation search now includes the B2C Commerce Solutions guides (bot management, caching strategies, flash-sale traffic, and industry solutions) in a new `commerce-solutions` category. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#715](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/715) [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97) - Add `b2c docs skill` to list, search, and read the agent skills bundled with the CLI, no plugin install required. Pass a skill, topic, or command (e.g. `b2c docs skill code deploy`); topic and command help now point to the covering skill. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#734](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/734) [`bea5bdc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bea5bdc81ae9353848b38258de4e5a32a76da9ae) - The default `--mrt-backend` is now `legacy` (the MRT Cloud API) instead of `auto`. MRT commands no longer auto-detect and prefer the SCAPI backend unless you opt in. To restore the previous behavior — prefer SCAPI when short code, tenant ID, and client-credentials/JWT Bearer auth are configured, otherwise fall back to legacy — pass `--mrt-backend auto` (or set `MRT_BACKEND=auto` / `mrtBackend` in `dw.json`). Use `--mrt-backend scapi` to require SCAPI with no fallback. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - Skills now refer to each other by name instead of relative paths, so links work wherever a skill is installed. Documentation links point to Markdown pages and include the `b2c docs read` ID for offline reading. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.10.3
 
 ### Patch Changes

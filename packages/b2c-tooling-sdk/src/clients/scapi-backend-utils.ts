@@ -129,8 +129,11 @@ export function assertOcapiCompatibilityAllowed(
  * These are safe for the temporary `auto` compatibility mode to retry over
  * OCAPI. Ambiguous responses (`429`, `5xx`) and network failures are excluded
  * because a mutating request might already have reached the platform.
+ * `400` is excluded too: the request was authenticated and understood well
+ * enough to be validated, so the body/params are wrong and OCAPI would only
+ * hide that error (or fail differently). Fix the request instead.
  */
-export const SAFE_SCAPI_FALLBACK_STATUSES = new Set([400, 401, 403, 404, 405, 406, 415]);
+export const SAFE_SCAPI_FALLBACK_STATUSES = new Set([401, 403, 404, 405, 406, 415]);
 
 /**
  * A structured SCAPI response failure. Backends must retain the response
@@ -173,6 +176,30 @@ export function isFallbackTrigger(error: unknown): boolean {
     error instanceof ScapiCapabilityUnsupportedError ||
     (error instanceof ScapiRequestError && SAFE_SCAPI_FALLBACK_STATUSES.has(error.status))
   );
+}
+
+/**
+ * Runs the OCAPI half of a SCAPI → OCAPI fallback and keeps the SCAPI failure
+ * visible if OCAPI also fails.
+ *
+ * Without this, a SCAPI rejection that reveals a real request problem (for
+ * example a 400 body-shape error) is replaced by an unrelated OCAPI error
+ * (typically "access isn't allowed for the current client"), which sends
+ * callers chasing the wrong cause. The OCAPI error is rethrown (type
+ * preserved) with the SCAPI rejection appended to its message and attached as
+ * `scapiError`.
+ */
+export async function runOcapiFallback<T>(scapiError: unknown, ocapi: () => Promise<T>): Promise<T> {
+  try {
+    return await ocapi();
+  } catch (ocapiError) {
+    const scapiMessage = scapiError instanceof Error ? scapiError.message : String(scapiError);
+    if (ocapiError instanceof Error) {
+      ocapiError.message = `${ocapiError.message}\nThe SCAPI attempt was rejected first: ${scapiMessage}\nThe SCAPI error is usually the actionable one; retry with the SCAPI backend only (--api-backend scapi, or api-backend "scapi" in config / SFCC_API_BACKEND=scapi) to see only it.`;
+      (ocapiError as Error & {scapiError?: unknown}).scapiError = scapiError;
+    }
+    throw ocapiError;
+  }
 }
 
 /**

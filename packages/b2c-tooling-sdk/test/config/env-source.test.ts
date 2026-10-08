@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {EnvSource, ConfigResolver, DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {EnvSource, ConfigResolver, DwJsonSource, StorefrontNextEnvSource} from '@salesforce/b2c-tooling-sdk/config';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -20,23 +20,6 @@ describe('config/EnvSource', () => {
       {alias: 'SFCC_OAUTH_CLIENT_SECRET', canonical: 'SFCC_CLIENT_SECRET', field: 'clientSecret'},
       {alias: 'SFCC_LOGIN_URL', canonical: 'SFCC_ACCOUNT_MANAGER_HOST', field: 'accountManagerHost'},
       {alias: 'SFCC_SHORT_CODE', canonical: 'SFCC_SHORTCODE', field: 'shortCode'},
-      {
-        alias: 'PUBLIC__app__commerce__api__clientId',
-        canonical: 'SFCC_SLAS_CLIENT_ID',
-        field: 'slasClientId',
-      },
-      {
-        alias: 'PUBLIC__app__commerce__api__organizationId',
-        canonical: 'SFCC_TENANT_ID',
-        field: 'tenantId',
-      },
-      {
-        alias: 'PUBLIC__app__commerce__api__shortCode',
-        canonical: 'SFCC_SHORTCODE',
-        field: 'shortCode',
-      },
-      {alias: 'COMMERCE_API_SLAS_SECRET', canonical: 'SFCC_SLAS_CLIENT_SECRET', field: 'slasClientSecret'},
-      {alias: 'PUBLIC__app__defaultSiteId', canonical: 'SFCC_SITE_ID', field: 'siteId'},
       {alias: 'SFCC_MRT_API_KEY', canonical: 'MRT_API_KEY', field: 'mrtApiKey'},
       {alias: 'SFCC_MRT_PROJECT', canonical: 'MRT_PROJECT', field: 'mrtProject'},
       {alias: 'SFCC_MRT_ENVIRONMENT', canonical: 'MRT_ENVIRONMENT', field: 'mrtEnvironment'},
@@ -143,6 +126,12 @@ describe('config/EnvSource', () => {
       const source = new EnvSource({SFCC_TENANT_ID: 'abcd_prd'});
       const result = source.load({});
       expect(result!.config.tenantId).to.equal('abcd_prd');
+    });
+
+    it('maps SFCC_SCAPI_SCHEMAS to a scapiSchemas path list', () => {
+      const source = new EnvSource({SFCC_SCAPI_SCHEMAS: 'schemas/a.json, schemas/beta'});
+      const result = source.load({});
+      expect(result!.config.scapiSchemas).to.deep.equal(['schemas/a.json', 'schemas/beta']);
     });
 
     it('maps SFCC_SITE_ID to siteId', () => {
@@ -347,7 +336,50 @@ describe('config/EnvSource', () => {
     });
   });
 
+  describe('StorefrontNextEnvSource', () => {
+    const variables = {
+      PUBLIC__app__commerce__api__clientId: 'slasClientId',
+      PUBLIC__app__commerce__api__organizationId: 'tenantId',
+      PUBLIC__app__commerce__api__shortCode: 'shortCode',
+      COMMERCE_API_SLAS_SECRET: 'slasClientSecret',
+      PUBLIC__app__defaultSiteId: 'siteId',
+    };
+
+    for (const [variable, field] of Object.entries(variables)) {
+      it(`maps ${variable} to ${field}`, () => {
+        const result = new StorefrontNextEnvSource({[variable]: 'sfn-value'}).load({});
+        expect(result?.config).to.have.property(field, 'sfn-value');
+      });
+
+      it(`is not read by EnvSource (${variable})`, () => {
+        expect(new EnvSource({[variable]: 'sfn-value'}).load({})).to.be.undefined;
+      });
+    }
+
+    it('ignores toolkit variables', () => {
+      expect(new StorefrontNextEnvSource({SFCC_SERVER: 'test.demandware.net'}).load({})).to.be.undefined;
+    });
+
+    it('sits just below dw.json (priority 1)', () => {
+      expect(new StorefrontNextEnvSource({}).priority).to.equal(1);
+    });
+
+    it('reports the configured location', () => {
+      const result = new StorefrontNextEnvSource(
+        {PUBLIC__app__defaultSiteId: 'RefArch'},
+        {location: '/project/.env'},
+      ).load({});
+      expect(result?.location).to.equal('/project/.env');
+    });
+  });
+
   describe('metadata', () => {
+    it('accepts a custom name and location', () => {
+      const source = new EnvSource({SFCC_SERVER: 'test.demandware.net'}, {name: 'DotenvFile', location: '/p/.env'});
+      expect(source.name).to.equal('DotenvFile');
+      expect(source.load({})!.location).to.equal('/p/.env');
+    });
+
     it('has name EnvSource', () => {
       const source = new EnvSource({});
       expect(source.name).to.equal('EnvSource');
@@ -402,13 +434,85 @@ describe('config/EnvSource', () => {
         JSON.stringify({hostname: 'dw.demandware.net', 'code-version': 'v2'}),
       );
 
-      // EnvSource provides only hostname
-      const envSource = new EnvSource({SFCC_SERVER: 'env.demandware.net'});
+      // EnvSource provides only a client ID
+      const envSource = new EnvSource({SFCC_CLIENT_ID: 'env-client'});
       const resolver = new ConfigResolver([envSource, new DwJsonSource()]);
       const {config} = await resolver.resolve();
 
-      expect(config.hostname).to.equal('env.demandware.net');
+      expect(config.hostname).to.equal('dw.demandware.net');
+      expect(config.clientId).to.equal('env-client');
       expect(config.codeVersion).to.equal('v2');
+    });
+
+    it('skips dw.json entirely when EnvSource sets a different hostname', async () => {
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({hostname: 'dw.demandware.net', 'code-version': 'v2', username: 'dw-user'}),
+      );
+
+      const envSource = new EnvSource({SFCC_SERVER: 'env.demandware.net'});
+      const resolver = new ConfigResolver([envSource, new DwJsonSource()]);
+      const {config, warnings, sources} = await resolver.resolve();
+
+      expect(config.hostname).to.equal('env.demandware.net');
+      expect(config.codeVersion).to.be.undefined;
+      expect(config.username).to.be.undefined;
+      expect(warnings.map((w) => w.code)).to.include('HOSTNAME_MISMATCH');
+      expect(sources.find((source) => source.name === 'DwJsonSource')?.fields).to.deep.equal([]);
+    });
+
+    it('keeps the selected dw.json instance above Storefront Next variables', async () => {
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({
+          configs: [
+            {name: 'dev', active: true, hostname: 'dev.example.com', 'tenant-id': 'aaaa_001'},
+            {
+              name: 'stg',
+              hostname: 'stg.example.com',
+              'short-code': 'stgshort',
+              'tenant-id': 'bbbb_002',
+              'slas-client-id': 'stg-slas',
+              'slas-client-secret': 'stg-secret',
+            },
+          ],
+        }),
+      );
+
+      const storefrontNext = new StorefrontNextEnvSource({
+        PUBLIC__app__commerce__api__clientId: 'sfn-slas',
+        PUBLIC__app__commerce__api__organizationId: 'f_ecom_zzzz_001',
+        PUBLIC__app__commerce__api__shortCode: 'sfnshort',
+        COMMERCE_API_SLAS_SECRET: 'sfn-secret',
+        PUBLIC__app__defaultSiteId: 'RefArch',
+      });
+      const resolver = new ConfigResolver([storefrontNext, new DwJsonSource()]);
+      const {config, warnings} = await resolver.resolve({}, {instance: 'stg'});
+
+      expect(config.hostname).to.equal('stg.example.com');
+      expect(config.shortCode).to.equal('stgshort');
+      expect(config.tenantId).to.equal('bbbb_002');
+      expect(config.slasClientId).to.equal('stg-slas');
+      expect(config.slasClientSecret).to.equal('stg-secret');
+      expect(config.siteId).to.equal('RefArch');
+      expect(warnings).to.be.empty;
+    });
+
+    it('lets Storefront Next variables fill an instance without SLAS settings', async () => {
+      fs.writeFileSync(path.join(tempDir, 'dw.json'), JSON.stringify({hostname: 'dw.example.com', username: 'u'}));
+
+      const storefrontNext = new StorefrontNextEnvSource({
+        PUBLIC__app__commerce__api__clientId: 'sfn-slas',
+        COMMERCE_API_SLAS_SECRET: 'sfn-secret',
+        PUBLIC__app__commerce__api__organizationId: 'f_ecom_zzzz_001',
+      });
+      const resolver = new ConfigResolver([storefrontNext, new DwJsonSource()]);
+      const {config} = await resolver.resolve();
+
+      expect(config.hostname).to.equal('dw.example.com');
+      expect(config.slasClientId).to.equal('sfn-slas');
+      expect(config.slasClientSecret).to.equal('sfn-secret');
+      expect(config.tenantId).to.equal('zzzz_001');
     });
   });
 

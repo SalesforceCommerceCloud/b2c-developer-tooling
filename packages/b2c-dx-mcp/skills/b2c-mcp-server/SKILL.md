@@ -19,6 +19,7 @@ Read only the skill that matches the task; each links its own references.
 | Production incident or unknown operational signal | `skill://b2c-ops/b2c-production-triage/SKILL.md` |
 | Failed or late jobs | `skill://b2c-ops/b2c-job-health/SKILL.md` |
 | Checkout or order failures | `skill://b2c-ops/b2c-checkout-triage/SKILL.md`, `skill://b2c-ops/b2c-order-failure-triage/SKILL.md` |
+| Bots, scrapers or abusive traffic at the eCDN (WAF, firewall, rate limits) | `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md` |
 | Anything else | `skill://index` |
 
 Every skill and reference file is readable as an MCP resource
@@ -99,7 +100,9 @@ Use a skill's listed name or URI; do not derive names from the server name.
 Relative links resolve against the linking skill's directory.
 Skills cite documentation IDs as `b2c docs read <id>` or `docs_read({query: "<id>"})`;
 read them with `docs_read({query: "<id>"})` (no terminal needed). Online links
-point to the same pages as Markdown.
+point to the same pages as Markdown. Doc IDs are lookup keys: when citing
+sources to the user, link the doc's `url` from `docs_read`, unless they ask for
+IDs or Markdown links (`sourceUrl`).
 Result `skillReferences` point to optional detail for observed conditions:
 read the URI, or pass its URI and `section` to `skills_read`. Skills are
 directory-agnostic.

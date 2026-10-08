@@ -20,12 +20,12 @@ an incident. Do not invent impact from a red status alone.
 
 ## Access and tools
 
-| Evidence                     | Preferred MCP path                                               | CLI fallback                                                 |
-| ---------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
-| Execution history and steps  | `builtin/job-execution-review` / `builtin/job-execution-inspect` in code mode                                     | `b2c job search`; check `--help` for filters                 |
-| Known execution log          | `webdav_get` with the returned `logFilePath` | `b2c job log JOB_ID EXECUTION_ID`                            |
-| Expected product/data change | Discover the relevant Admin operation and select affected fields | Relevant CLI/data workflow if supported                      |
-| Code-version clues           | `builtin/code-version-inspect` in code mode                  | `b2c code list`; modification time is not activation history |
+| Evidence                     | Preferred MCP path                                                            | CLI fallback                                                 |
+| ---------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Execution history and steps  | `builtin/job-execution-review` / `builtin/job-execution-inspect` in code mode | `b2c job search`; check `--help` for filters                 |
+| Known execution log          | `webdav_get` with the returned `logFilePath`                                  | `b2c job log JOB_ID EXECUTION_ID`                            |
+| Expected product/data change | Discover the relevant Admin operation and select affected fields              | Relevant CLI/data workflow if supported                      |
+| Code-version clues           | `builtin/code-version-inspect` in code mode                                   | `b2c code list`; modification time is not activation history |
 
 Read `skill://mcp/b2c-mcp-scapi/SKILL.md` before code mode. Use its search/discovery
 contract; project/instance context belongs on tool calls. Authentication is
@@ -60,6 +60,11 @@ Before an authorized rerun, check for an active execution, partial writes,
 idempotency, duplicate exports/messages, and rollback limits. Inspect uncertain
 outcomes before retrying; never replay a whole code-mode program after writes.
 Verify business data as well as terminal job status after intervention.
+
+To start a rerun (for example a search-index rebuild) from MCP, use code mode
+`createJobExecution`; system jobs need their own body, not `parameters`:
+`skill://mcp/b2c-mcp-scapi/references/jobs.md#start-a-job`. CLI:
+`b2c job run ID --wait --body '{"site_scope":["Site"]}'` (see `b2c-cli:b2c-job`).
 
 ## Escalation and handoff
 

@@ -2,6 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Store Redirect Mappings",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/store-redirect-mappings/store-redirect-mappings-oas-v1-public.yaml)\n\n# API Overview\n\nThe Store Redirect Mappings API provides access to store redirect mapping data within the Store API family. Use this API to manage redirect mappings that configure redirects from one store ID to another. This is typically used for SEO purposes when URL patterns require traffic to be redirected to different stores.\n\n## Features\n\n- Get Store Redirect Mappings: Retrieve a paginated list of all store redirect mappings in an organization.\n- Get Specific Mapping: Retrieve a specific store redirect mapping by source store ID.\n- Bulk Operations: Create or update multiple store redirect mappings in a single request (only returns counts for performance).\n- Batch Deletion: Delete multiple store redirect mappings in a single request (only returns counts for performance).\n- Pagination: Built-in pagination support with configurable limits and offsets\n- Sorting: Sort results by `sourceStoreId` or `targetStoreId` in ascending or descending order\n\n## Authentication & Authorization\n\nFor resource access, you must use a client ID and client secret from Account Manager to request an access token. The access token is used as a bearer token and added to the Authorization header of your API request.\n\nThe API client must also have the following OAuth scopes:\n\n- `sfcc.store-redirect-mappings` - Read access to store redirect mapping resources\n- `sfcc.store-redirect-mappings.rw` - Read and write access to store redirect mapping resources\n\nYou must include the relevant scope(s) in the client ID used to generate the token. For details, see the [Authorization Scopes Catalog[(https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html).\n\nFor detailed setup instructions, see the [Authorization for Admin APIs guide[(https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-admin-apis.html).\n\n## Mapping Fields\n\nEach store redirect mapping contains the following fields:\n\n- `sourceStoreId` - The source store ID that should redirect (String, 1-256 characters)\n- `targetStoreId` - The target store ID to redirect to (String, 1-256 characters)\n\n## Use Cases\n\n- Store Consolidation: When merging stores, redirect old store IDs to new store IDs.\n- SEO Management: Maintain search engine rankings when store IDs change.\n- URL Migration: Handle redirects during store reorganization or rebranding.",
     "version": "1.2.0",
     "x-api-type": "Admin",
     "x-api-family": "Store"
@@ -19,31 +20,45 @@
   "paths": {
     "/organizations/{organizationId}/store-redirect-mappings": {
       "get": {
+        "tags": [
+          "Store Redirect Mappings"
+        ],
+        "summary": "Get all store redirect mappings.",
+        "description": "Retrieve all store redirect mappings for the specified organization and site. \nUse the offset and limit parameters for pagination, or omit them to return all mappings. \nYou can also sort results using the sortBy and sortOrder parameters.\n",
         "operationId": "getAllStoreRedirectMappings",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "sortBy",
             "in": "query",
+            "description": "Field for sorting",
             "required": false,
             "style": "form",
             "explode": true,
@@ -53,12 +68,14 @@
               "enum": [
                 "sourceStoreId",
                 "targetStoreId"
-              ]
+              ],
+              "example": "sourceStoreId"
             }
           },
           {
             "name": "sortOrder",
             "in": "query",
+            "description": "Sort direction",
             "required": false,
             "style": "form",
             "explode": true,
@@ -68,12 +85,14 @@
               "enum": [
                 "asc",
                 "desc"
-              ]
+              ],
+              "example": "asc"
             }
           },
           {
             "name": "limit",
             "in": "query",
+            "description": "Maximum records to retrieve per request, not to exceed 200. Defaults to 25.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -87,6 +106,7 @@
           {
             "name": "offset",
             "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -105,6 +125,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StoreRedirectMappingsResult"
+                },
+                "examples": {
+                  "StoreRedirectMappingsResultGetResponse": {
+                    "$ref": "#/components/examples/StoreRedirectMappingsResultGetResponse"
+                  }
                 }
               }
             }
@@ -128,26 +153,39 @@
     },
     "/organizations/{organizationId}/store-redirect-mappings/actions/bulk": {
       "post": {
+        "tags": [
+          "Store Redirect Mappings"
+        ],
+        "summary": "Create or update store redirect mappings.",
+        "description": "Performs a batch creation or update of store redirect mappings. \n* If a mapping for a `sourceStoreId` already exists, the system updates it; otherwise, it creates a new mapping.\n* If the request contains duplicate keys in the `storeRedirectMappings` object, the system processes only the last value provided for each key.\n* Entries with a blank `sourceStoreId` or `targetStoreId` are ignored.\n* To maintain efficiency with large datasets, the response returns execution counts rather than the full objects. \n\nTo verify the current state of mappings after a batch update, use the `GET` endpoint.\n",
         "operationId": "upsertStoreRedirectMappings",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -156,6 +194,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/StoreRedirectMappingsRequest"
+              },
+              "examples": {
+                "UpsertSingle": {
+                  "$ref": "#/components/examples/UpsertSingle"
+                },
+                "UpsertMultiple": {
+                  "$ref": "#/components/examples/UpsertMultiple"
+                }
               }
             }
           },
@@ -168,6 +214,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StoreRedirectMappingsBulkResponse"
+                },
+                "examples": {
+                  "StoreRedirectMappingsBulkUpsertResponse": {
+                    "$ref": "#/components/examples/StoreRedirectMappingsBulkUpsertResponse"
+                  }
                 }
               }
             }
@@ -178,6 +229,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "EmptyUpsertRequest": {
+                    "$ref": "#/components/examples/EmptyUpsertRequest"
+                  }
                 }
               }
             }
@@ -200,26 +256,39 @@
     },
     "/organizations/{organizationId}/store-redirect-mappings/actions/bulk-delete": {
       "post": {
+        "tags": [
+          "Store Redirect Mappings"
+        ],
+        "summary": "Delete store redirect mappings (batch).",
+        "description": "Deletes multiple store redirect mappings in a single request. \n* Accepts an array of source store IDs.\n* Blank IDs are skipped, and non-existent mappings are silently ignored.\n* The response returns summary counts instead of deleted items to optimize for large datasets. \n\nUse the `GET` endpoint to retrieve remaining mappings if needed.\n",
         "operationId": "deleteStoreRedirectMappings",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -228,6 +297,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/StoreRedirectMappingsDeleteRequest"
+              },
+              "examples": {
+                "DeleteSingle": {
+                  "$ref": "#/components/examples/DeleteSingle"
+                },
+                "DeleteMultiple": {
+                  "$ref": "#/components/examples/DeleteMultiple"
+                }
               }
             }
           },
@@ -240,6 +317,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StoreRedirectMappingsBulkResponse"
+                },
+                "examples": {
+                  "StoreRedirectMappingsBulkDeleteResponse": {
+                    "$ref": "#/components/examples/StoreRedirectMappingsBulkDeleteResponse"
+                  }
                 }
               }
             }
@@ -250,6 +332,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "EmptyDeleteRequest": {
+                    "$ref": "#/components/examples/EmptyDeleteRequest"
+                  }
                 }
               }
             }
@@ -272,21 +359,29 @@
     },
     "/organizations/{organizationId}/store-redirect-mappings/{sourceStoreId}": {
       "get": {
+        "tags": [
+          "Store Redirect Mappings"
+        ],
+        "summary": "Get a specific store redirect mapping.",
+        "description": "Retrieve a specific store redirect mapping by source store ID.\n",
         "operationId": "getStoreRedirectMapping",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "sourceStoreId",
             "in": "path",
+            "description": "The source store ID to use for retrieval.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -297,11 +392,17 @@
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -312,6 +413,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StoreRedirectMapping"
+                },
+                "examples": {
+                  "StoreRedirectMappingGetResponse": {
+                    "$ref": "#/components/examples/StoreRedirectMappingGetResponse"
+                  }
                 }
               }
             }
@@ -322,6 +428,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "BlankSourceStoreId": {
+                    "$ref": "#/components/examples/BlankSourceStoreId"
+                  }
                 }
               }
             }
@@ -338,6 +449,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "StoreRedirectMappingNotFound": {
+                    "$ref": "#/components/examples/StoreRedirectMappingNotFound"
+                  }
                 }
               }
             }
@@ -358,11 +474,15 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the organization the request is being made by",
+        "example": "f_ecom_zzxy_prd",
         "maxLength": 32,
         "minLength": 1
       },
       "SiteId": {
         "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
         "maxLength": 32,
         "minLength": 1
       },
@@ -370,16 +490,21 @@
         "type": "integer",
         "format": "int32",
         "default": 10,
+        "description": "Maximum records to retrieve per request, not to exceed the maximum defined. A limit must be at least 1 so at least one record is returned (if any match the criteria).",
+        "example": 10,
         "minimum": 1
       },
       "Total": {
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
         "minimum": 0
       },
       "ResultBase": {
         "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
         "properties": {
           "limit": {
             "allOf": [
@@ -402,6 +527,8 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
         "minimum": 0
       },
       "PaginatedResultBase": {
@@ -410,6 +537,7 @@
             "$ref": "#/components/schemas/ResultBase"
           }
         ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
         "properties": {
           "offset": {
             "$ref": "#/components/schemas/Offset"
@@ -423,11 +551,15 @@
       },
       "SourceStoreId": {
         "type": "string",
+        "description": "The source store ID that should redirect",
+        "example": "store1",
         "maxLength": 256,
         "minLength": 1
       },
       "TargetStoreId": {
         "type": "string",
+        "description": "The target store ID to redirect to",
+        "example": "store2",
         "maxLength": 256,
         "minLength": 1
       },
@@ -452,9 +584,11 @@
             "$ref": "#/components/schemas/PaginatedResultBase"
           }
         ],
+        "description": "Document representing a paginated list of store redirect mappings.",
         "properties": {
           "data": {
             "type": "array",
+            "description": "Array of store redirect mappings",
             "items": {
               "$ref": "#/components/schemas/StoreRedirectMapping"
             }
@@ -470,17 +604,25 @@
         "properties": {
           "title": {
             "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
             "maxLength": 2048
           },
           "detail": {
-            "type": "string"
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
           },
           "instance": {
             "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
             "maxLength": 2048
           }
         },
@@ -497,9 +639,11 @@
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "example": "target1",
               "maxLength": 256,
               "minLength": 1
             },
+            "description": "Map of source store IDs to target store IDs. Keys are source store IDs, values are target store IDs.\nNote: If duplicate keys are present in the JSON, only the last value for each key will be used.\n",
             "minProperties": 1
           }
         },
@@ -509,18 +653,25 @@
       },
       "StoreRedirectMappingsBulkResponse": {
         "type": "object",
+        "description": "Response for bulk operations (create/update/delete) containing operation counts",
         "properties": {
           "total": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Total number of items in the request",
+            "example": 60000
           },
           "success": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Number of items successfully processed",
+            "example": 50000
           },
           "failures": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Number of items that failed or were skipped (invalid or not found)",
+            "example": 10000
           }
         },
         "required": [
@@ -534,6 +685,7 @@
         "properties": {
           "sourceStoreIds": {
             "type": "array",
+            "description": "Array of source store IDs to delete",
             "items": {
               "$ref": "#/components/schemas/SourceStoreId"
             },
@@ -552,6 +704,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
             }
           }
         }
@@ -562,6 +719,11 @@
           "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
             }
           }
         }
@@ -571,27 +733,173 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the organization the request is being made by",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "siteId": {
         "name": "siteId",
         "in": "query",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
         "required": true,
         "style": "form",
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/SiteId"
+        },
+        "examples": {
+          "SiteId": {
+            "value": "RefArch"
+          }
+        }
+      }
+    },
+    "examples": {
+      "StoreRedirectMappingsResultGetResponse": {
+        "summary": "Successfully retrieved store redirect mappings",
+        "description": "Example response for GET all store redirect mappings",
+        "value": {
+          "data": [
+            {
+              "sourceStoreId": "store1",
+              "targetStoreId": "store2"
+            },
+            {
+              "sourceStoreId": "store3",
+              "targetStoreId": "store4"
+            }
+          ],
+          "offset": 0,
+          "limit": 25,
+          "total": 2
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Your access token is invalid or expired and can’t be used to identify a user."
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Your access token is valid, but you don’t have the required permissions to access the resource."
+        }
+      },
+      "UpsertSingle": {
+        "summary": "Upsert single store redirect mapping",
+        "description": "Example request body for creating or updating a single store redirect mapping",
+        "value": {
+          "storeRedirectMappings": {
+            "store1": "target1"
+          }
+        }
+      },
+      "UpsertMultiple": {
+        "summary": "Upsert multiple store redirect mappings",
+        "description": "Example request body for creating or updating multiple store redirect mappings",
+        "value": {
+          "storeRedirectMappings": {
+            "store1": "target1",
+            "store2": "target2",
+            "store3": "target3"
+          }
+        }
+      },
+      "StoreRedirectMappingsBulkUpsertResponse": {
+        "summary": "Bulk upsert operation response",
+        "description": "Example response for POST bulk upsert operation (HTTP 207 Multi-Status). The response contains operation counts (total, success, failures). This example shows a case where some items succeeded while others failed.",
+        "value": {
+          "total": 100,
+          "success": 95,
+          "failures": 5
+        }
+      },
+      "EmptyUpsertRequest": {
+        "summary": "Empty Upsert Request Body",
+        "description": "Example error response when upsert request body is missing or empty",
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "title": "Bad Request",
+          "detail": "The request body must contain at least one store redirect mapping in the storeRedirectMappings object."
+        }
+      },
+      "DeleteSingle": {
+        "summary": "Delete single store redirect mapping",
+        "description": "Example request body for deleting a single store redirect mapping",
+        "value": {
+          "sourceStoreIds": [
+            "store1"
+          ]
+        }
+      },
+      "DeleteMultiple": {
+        "summary": "Delete multiple store redirect mappings",
+        "description": "Example request body for deleting multiple store redirect mappings",
+        "value": {
+          "sourceStoreIds": [
+            "store1",
+            "store2",
+            "store3"
+          ]
+        }
+      },
+      "StoreRedirectMappingsBulkDeleteResponse": {
+        "summary": "Bulk delete operation response",
+        "description": "Example response for POST bulk delete operation (HTTP 207 Multi-Status). The response contains operation counts (total, success, failures). This example shows a case where some items succeeded while others failed.",
+        "value": {
+          "total": 50,
+          "success": 48,
+          "failures": 2
+        }
+      },
+      "EmptyDeleteRequest": {
+        "summary": "Empty Delete Request Body",
+        "description": "Example error response when delete request body is missing or contains no valid source store IDs",
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "title": "Bad Request",
+          "detail": "The request body must contain at least one valid source store ID in the sourceStoreIds array."
+        }
+      },
+      "StoreRedirectMappingGetResponse": {
+        "summary": "Successfully retrieved a store redirect mapping",
+        "description": "Example response for GET a specific store redirect mapping",
+        "value": {
+          "sourceStoreId": "store1",
+          "targetStoreId": "store2"
+        }
+      },
+      "BlankSourceStoreId": {
+        "summary": "Blank Source Store ID",
+        "description": "Example error response when sourceStoreId parameter is blank",
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "title": "Bad Request",
+          "detail": "The sourceStoreId parameter is required and cannot be blank."
+        }
+      },
+      "StoreRedirectMappingNotFound": {
+        "summary": "Store Redirect Mapping Not Found",
+        "description": "Example error response when the requested store redirect mapping was not found",
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/not-found",
+          "title": "Store Redirect Mapping Not Found",
+          "detail": "Store redirect mapping with source store ID 'nonexistent-store' was not found."
         }
       }
     },
     "securitySchemes": {
       "AmOAuth2": {
         "type": "oauth2",
+        "description": "OAuth 2.0 Authorization via Account Manager",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://account.demandware.com/dw/oauth2/access_token",

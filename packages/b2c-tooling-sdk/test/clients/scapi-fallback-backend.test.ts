@@ -160,7 +160,7 @@ describe('createFallbackBackend', () => {
   });
 
   describe('fallback path: SCAPI rejects a request before mutation', () => {
-    for (const status of [400, 401, 403, 404, 405, 406, 415]) {
+    for (const status of [401, 403, 404, 405, 406, 415]) {
       it(`falls back on a typed HTTP ${status} rejection`, async () => {
         const scapi = makeBackend('scapi', {
           doRead: async () => {
@@ -172,6 +172,17 @@ describe('createFallbackBackend', () => {
         expect(await createFallbackBackend<TestBackend>(scapi, ocapi, 'test').doRead()).to.equal('ocapi-read');
       });
     }
+
+    it('does not fall back on a typed 400 because the request itself is invalid', async () => {
+      const scapi = makeBackend('scapi', {
+        doRead: async () => {
+          throw new ScapiRequestError('unknown property', 400);
+        },
+      });
+      const ocapi = makeBackend('ocapi', {doRead: async () => 'should-not-reach-this'});
+
+      await expectRejected(createFallbackBackend<TestBackend>(scapi, ocapi, 'test').doRead(), 'unknown property');
+    });
 
     it('does not fall back on a typed server error because completion is ambiguous', async () => {
       const scapi = makeBackend('scapi', {

@@ -2,7 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Auth Admin",
-    "version": "1.18.0",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/auth-admin/auth-admin-oas-v1-public.yaml)\n\n# API Overview\n\nThe SLAS Admin API is a companion to the main [Shopper Login and API Access Service](https://developer.salesforce.com/docs/commerce/commerce-api/references?meta=shopper-login:Summary) (SLAS), which enables secure access to Commerce Cloud’s Shopper APIs. The SLAS Admin API is only used for administration tasks, not for requesting access to the Shopper APIs.\n\n**Important:** Before using this API, follow the instructions in [Authorization for Shopper APIs](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-shopper-apis.html) from the Get Started guides. The guide provides a complete set of instructions for setting up a SLAS client.\n\nFor more information, see the [SLAS guides](https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas.html).\n\n## Tenant Id\nIn context of SLAS administration a tenant identifier is used instead of the organization identifier.\n\nA B2C Commerce instance is considered a “tenant” when it's associated with a supporting system, such as the Shopper Login and API Access Service (SLAS). \nA tenant ID begins with a four-character realm ID, followed by an underscore (`_`) and an instance ID.\n\nThese are example tenant IDs for various types of instances:\n\n| Instance Type     | Realm ID | Instance ID | Tenant ID |\n| ----------------- | -------- | ----------- | --------- |\n| Staging           | bcgl     | stg         | bcgl_stg  |\n| On-demand sandbox | zzte     | 053         | zzte_053  |\n| POD sandbox       | zzrf     | s01         | zzrf_s01  |\n\n## Response Details\n\n### Timeouts\n\nAdmin API requests must respond within 60 seconds. If a response exceeds this threshold, an HTTP 504 status code is returned. For details, see [Timeouts and Limits.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/timeouts-limits.html)\n\n### Error Handling\n\nError responses follow the [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) problem detail format. To trace errors, include a `correlation-id` header in your request — the response returns it as `x-correlation-id`. For details, see [HTTP Status Codes and Errors.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/error-response-codes.html)\n\n## Related APIs\n\n- [Shopper Login (SLAS)](https://developer.salesforce.com/docs/commerce/commerce-api/references/auth?meta=Summary) — Authenticate shoppers and obtain access tokens.",
+    "version": "1.19.1",
     "x-api-type": "Admin",
     "x-api-family": "Shopper"
   },
@@ -11,6 +12,7 @@
       "url": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth-admin/v1",
       "variables": {
         "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
           "default": "shortCode"
         }
       }
@@ -19,16 +21,20 @@
   "paths": {
     "/tenants/{tenantId}": {
       "get": {
+        "summary": "Retrieve a tenant by tenant ID.",
+        "description": "Retrieve a tenant by tenant ID.",
         "operationId": "retrieveTenant",
         "parameters": [
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -40,6 +46,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Tenant"
+                },
+                "examples": {
+                  "Tenant": {
+                    "$ref": "#/components/examples/Tenant"
+                  }
                 }
               }
             }
@@ -50,6 +61,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "TenantRequestException400": {
+                    "$ref": "#/components/examples/TenantRequestException400"
+                  }
                 }
               }
             }
@@ -60,6 +76,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "TenantException401": {
+                    "$ref": "#/components/examples/TenantException401"
+                  }
                 }
               }
             }
@@ -70,6 +91,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "TenantNotFoundException404": {
+                    "$ref": "#/components/examples/TenantNotFoundException404"
+                  }
                 }
               }
             }
@@ -85,16 +111,20 @@
         ]
       },
       "put": {
+        "summary": "Create or update a tenant. Use the request body to provide identification and contact information for the tenant and its associated merchant.",
+        "description": "This API is used to create or update a tenant. The tenant ID is the unique identifier for the tenant and is used in all subsequent API calls. The tenant ID must be unique across all tenants in the system.",
         "operationId": "registerTenant",
         "parameters": [
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -104,6 +134,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TenantDto"
+              },
+              "examples": {
+                "TenantDto": {
+                  "$ref": "#/components/examples/TenantDto"
+                }
               }
             }
           },
@@ -116,6 +151,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Tenant"
+                },
+                "examples": {
+                  "Tenant": {
+                    "$ref": "#/components/examples/Tenant"
+                  }
                 }
               }
             }
@@ -126,6 +166,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Tenant"
+                },
+                "examples": {
+                  "Tenant": {
+                    "$ref": "#/components/examples/Tenant"
+                  }
                 }
               }
             }
@@ -136,6 +181,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "TenantUpdateException400": {
+                    "$ref": "#/components/examples/TenantUpdateException400"
+                  }
                 }
               }
             }
@@ -146,6 +196,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "TenantUpdateException401": {
+                    "$ref": "#/components/examples/TenantUpdateException401"
+                  }
                 }
               }
             }
@@ -156,6 +211,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "TenantNotFoundException404": {
+                    "$ref": "#/components/examples/TenantNotFoundException404"
+                  }
                 }
               }
             }
@@ -166,6 +226,116 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "TenantAlreadyExistsException409": {
+                    "$ref": "#/components/examples/TenantAlreadyExistsException409"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerToken": [
+              "SLAS_SERVICE_ADMIN",
+              "SLAS_ORGANIZATION_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
+    "/tenants/{tenantId}/batch-logout": {
+      "post": {
+        "summary": "Log out multiple shoppers in a single request by revoking active refresh and access tokens for each shopper and all their sessions.",
+        "description": "For each valid shopper in the request, this operation revokes the shopper's active refresh tokens and inactivates their active access tokens issued before the call, across all sessions. As a result, the shopper must log in again with their existing password (this action doesn't force a password change). For more information, see [Log Out Multiple Shoppers](https://developer.salesforce.com/docs/commerce/sfra/guide/slas-batch-logout.html).\n",
+        "operationId": "batchLogout",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "zzeu_001, bgvn_dev",
+              "maxLength": 32
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "query",
+            "description": "The identifier of the sales channel (site).",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "SiteGenesis",
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchLogoutRequest"
+              },
+              "examples": {
+                "BatchLogoutRequest": {
+                  "$ref": "#/components/examples/BatchLogoutRequest"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The batch logout request was processed successfully. The detailed message in response body will indicate which shoppers were actually logged out and which ones failed and why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchLogoutResponse"
+                },
+                "examples": {
+                  "BatchLogoutResponse": {
+                    "$ref": "#/components/examples/BatchLogoutResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is badly formatted or constructed. If syntactically the request was correct but the loginIds provided did not result in shoppers getting logged out, the result will still be a 200 with details in the response body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "BatchLogoutRequestException400": {
+                    "$ref": "#/components/examples/BatchLogoutRequestException400"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect Authorization provided.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "BatchLogoutTenantException401": {
+                    "$ref": "#/components/examples/BatchLogoutTenantException401"
+                  }
                 }
               }
             }
@@ -183,16 +353,20 @@
     },
     "/tenants/{tenantId}/clients": {
       "get": {
+        "summary": "Retrieve/Get all tenant clients.",
+        "description": "Retrieve a list of SLAS clients associated with the tenant_id.",
         "operationId": "retrieveClients",
         "parameters": [
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -204,6 +378,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClientListResponse"
+                },
+                "examples": {
+                  "ClientListResponse": {
+                    "$ref": "#/components/examples/ClientListResponse"
+                  }
                 }
               }
             }
@@ -214,6 +393,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientTenantException401": {
+                    "$ref": "#/components/examples/ClientTenantException401"
+                  }
                 }
               }
             }
@@ -224,6 +408,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientNotFoundException404": {
+                    "$ref": "#/components/examples/ClientNotFoundException404"
+                  }
                 }
               }
             }
@@ -240,27 +429,33 @@
     },
     "/tenants/{tenantId}/clients/{clientId}": {
       "get": {
+        "summary": "Retrieve a client.",
+        "description": "Retrieve a client by client ID. The client ID is the unique identifier for the client and is used in all subsequent API calls. The client ID must be unique across all tenants in the system.",
         "operationId": "retrieveClient",
         "parameters": [
           {
             "name": "clientId",
             "in": "path",
+            "description": "The SLAS client identifier.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "876aff68-6ee5-474f-932d-c90c1d79bcf7",
               "maxLength": 36
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -272,6 +467,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Client"
+                },
+                "examples": {
+                  "Client": {
+                    "$ref": "#/components/examples/Client"
+                  }
                 }
               }
             }
@@ -282,6 +482,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientRequestException400": {
+                    "$ref": "#/components/examples/ClientRequestException400"
+                  }
                 }
               }
             }
@@ -292,6 +497,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientTenantException401": {
+                    "$ref": "#/components/examples/ClientTenantException401"
+                  }
                 }
               }
             }
@@ -302,6 +512,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientNotFoundException404": {
+                    "$ref": "#/components/examples/ClientNotFoundException404"
+                  }
                 }
               }
             }
@@ -316,27 +531,33 @@
         ]
       },
       "put": {
+        "summary": "Create or update a client.",
+        "description": "It is strongly advised to refrain from using the “sfcc-shopper-context.rw” scope with a PUBLIC Client because it offers fewer protections and could potentially enable malicious actors to access Shopper Context enabled promotions. It is highly recommended to use “sfcc-shopper-context.rw” scope with a private client.",
         "operationId": "registerClient",
         "parameters": [
           {
             "name": "clientId",
             "in": "path",
+            "description": "The SLAS client identifier.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "876aff68-6ee5-474f-932d-c90c1d79bcf7",
               "maxLength": 36
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -346,6 +567,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ClientRequest"
+              },
+              "examples": {
+                "ClientRequest": {
+                  "$ref": "#/components/examples/ClientRequest"
+                }
               }
             }
           },
@@ -358,6 +584,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Client"
+                },
+                "examples": {
+                  "ClientRequest": {
+                    "$ref": "#/components/examples/ClientWithSecret"
+                  }
                 }
               }
             }
@@ -368,6 +599,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Client"
+                },
+                "examples": {
+                  "ClientRequest": {
+                    "$ref": "#/components/examples/ClientWithSecret"
+                  }
                 }
               }
             }
@@ -378,6 +614,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientRequestException400": {
+                    "$ref": "#/components/examples/ClientRequestException400"
+                  }
                 }
               }
             }
@@ -388,6 +629,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientTenantException401": {
+                    "$ref": "#/components/examples/ClientTenantException401"
+                  }
                 }
               }
             }
@@ -398,6 +644,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientNotFoundException404": {
+                    "$ref": "#/components/examples/ClientNotFoundException404"
+                  }
                 }
               }
             }
@@ -408,6 +659,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientConflictException409": {
+                    "$ref": "#/components/examples/ClientConflictException409"
+                  }
                 }
               }
             }
@@ -423,27 +679,33 @@
         ]
       },
       "delete": {
+        "summary": "Delete a client.",
+        "description": "Delete a client by client ID.",
         "operationId": "deleteClient",
         "parameters": [
           {
             "name": "clientId",
             "in": "path",
+            "description": "The SLAS client identifier.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "876aff68-6ee5-474f-932d-c90c1d79bcf7",
               "maxLength": 36
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -458,6 +720,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientRequestException400": {
+                    "$ref": "#/components/examples/ClientRequestException400"
+                  }
                 }
               }
             }
@@ -468,6 +735,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientTenantException401": {
+                    "$ref": "#/components/examples/ClientTenantException401"
+                  }
                 }
               }
             }
@@ -478,6 +750,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientNotFoundException404": {
+                    "$ref": "#/components/examples/ClientNotFoundException404"
+                  }
                 }
               }
             }
@@ -495,60 +772,72 @@
     },
     "/tenants/{tenantId}/clients/{clientId}/password-action-templates": {
       "get": {
+        "summary": "Retrieve/get a password action template.",
+        "description": "Retrieve a password action template by client ID.",
         "operationId": "retrievePwdActionTemplate",
         "parameters": [
           {
             "name": "clientId",
             "in": "path",
+            "description": "The SLAS client identifier.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "876aff68-6ee5-474f-932d-c90c1d79bcf7",
               "maxLength": 36
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           },
           {
             "name": "channelId",
             "in": "query",
+            "description": "The identifier of the sales channel (site).",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "SiteGenesis",
               "maxLength": 100
             }
           },
           {
             "name": "actionType",
             "in": "query",
+            "description": "The type of password action (reset or create).",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "description": "Describes the type of action that the password action template will be used for. \nHere are the actions that each enumerated string refers to:\n    - `PWDLESS_LOGIN`: Passwordless login\n    - `PWD_RESET_ACTION`: Password reset\n    - `PWD_RESET_CROSS_DEVICE_ACTION`: Password reset for cross-device flow",
               "enum": [
                 "PWDLESS_LOGIN",
                 "PWD_RESET_ACTION",
                 "PWD_RESET_CROSS_DEVICE_ACTION"
               ],
+              "example": "PWDLESS_LOGIN",
               "maxLength": 36
             }
           },
           {
             "name": "templateType",
             "in": "query",
+            "description": "The type of email template.",
             "required": true,
             "style": "form",
             "explode": true,
@@ -558,6 +847,7 @@
                 "EMAIL",
                 "SMS"
               ],
+              "example": "EMAIL",
               "maxLength": 8
             }
           }
@@ -569,6 +859,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PasswordActionTemplate"
+                },
+                "examples": {
+                  "PasswordActionTemplate": {
+                    "$ref": "#/components/examples/PasswordActionTemplate"
+                  }
                 }
               }
             }
@@ -579,6 +874,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "BadRequestException400": {
+                    "$ref": "#/components/examples/BadRequestException400"
+                  }
                 }
               }
             }
@@ -589,6 +889,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientTenantException401": {
+                    "$ref": "#/components/examples/ClientTenantException401"
+                  }
                 }
               }
             }
@@ -599,6 +904,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "PasswordActionTemplateNotFoundException404": {
+                    "$ref": "#/components/examples/PasswordActionTemplateNotFoundException404"
+                  }
                 }
               }
             }
@@ -614,27 +924,33 @@
         ]
       },
       "put": {
+        "summary": "Create or update a password action template.",
+        "description": "Create or update a password action template by client ID.",
         "operationId": "registerPwdActionTemplate",
         "parameters": [
           {
             "name": "clientId",
             "in": "path",
+            "description": "The SLAS client identifier.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "876aff68-6ee5-474f-932d-c90c1d79bcf7",
               "maxLength": 36
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -644,6 +960,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PasswordActionTemplate"
+              },
+              "examples": {
+                "PasswordActionTemplateRequest": {
+                  "$ref": "#/components/examples/PasswordActionTemplateRequest"
+                }
               }
             }
           },
@@ -656,6 +977,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PasswordActionTemplate"
+                },
+                "examples": {
+                  "PasswordActionTemplate": {
+                    "$ref": "#/components/examples/PasswordActionTemplate"
+                  }
                 }
               }
             }
@@ -666,6 +992,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PasswordActionTemplate"
+                },
+                "examples": {
+                  "PasswordActionTemplate": {
+                    "$ref": "#/components/examples/PasswordActionTemplate"
+                  }
                 }
               }
             }
@@ -676,6 +1007,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "PasswordActionTemplateCreateException400": {
+                    "$ref": "#/components/examples/PasswordActionTemplateCreateException400"
+                  }
                 }
               }
             }
@@ -686,6 +1022,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientTenantException401": {
+                    "$ref": "#/components/examples/ClientTenantException401"
+                  }
                 }
               }
             }
@@ -696,6 +1037,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "PasswordActionTemplateNotFoundException404": {
+                    "$ref": "#/components/examples/PasswordActionTemplateNotFoundException404"
+                  }
                 }
               }
             }
@@ -711,60 +1057,72 @@
         ]
       },
       "delete": {
+        "summary": "Delete a password action template.",
+        "description": "Delete a password action template.",
         "operationId": "deletePwdActionTemplate",
         "parameters": [
           {
             "name": "clientId",
             "in": "path",
+            "description": "The SLAS client identifier.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "876aff68-6ee5-474f-932d-c90c1d79bcf7",
               "maxLength": 36
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           },
           {
             "name": "channelId",
             "in": "query",
+            "description": "The identifier of the sales channel (site).",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "SiteGenesis",
               "maxLength": 100
             }
           },
           {
             "name": "actionType",
             "in": "query",
+            "description": "The type of password action (reset or create).",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "description": "Describes the type of action that the password action template will be used for. \nHere are the actions that each enumerated string refers to:\n    - `PWDLESS_LOGIN`: Passwordless login\n    - `PWD_RESET_ACTION`: Password reset\n    - `PWD_RESET_CROSS_DEVICE_ACTION`: Password reset for cross-device flow",
               "enum": [
                 "PWDLESS_LOGIN",
                 "PWD_RESET_ACTION",
                 "PWD_RESET_CROSS_DEVICE_ACTION"
               ],
+              "example": "PWDLESS_LOGIN",
               "maxLength": 36
             }
           },
           {
             "name": "templateType",
             "in": "query",
+            "description": "The type of email template.",
             "required": true,
             "style": "form",
             "explode": true,
@@ -774,17 +1132,20 @@
                 "EMAIL",
                 "SMS"
               ],
+              "example": "EMAIL",
               "maxLength": 8
             }
           },
           {
             "name": "locale",
             "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "en-US",
               "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
             }
           }
@@ -799,6 +1160,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "PasswordActionTemplateDeleteException400": {
+                    "$ref": "#/components/examples/PasswordActionTemplateDeleteException400"
+                  }
                 }
               }
             }
@@ -809,6 +1175,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ClientTenantException401": {
+                    "$ref": "#/components/examples/ClientTenantException401"
+                  }
                 }
               }
             }
@@ -819,6 +1190,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "PasswordActionTemplateNotFoundException404": {
+                    "$ref": "#/components/examples/PasswordActionTemplateNotFoundException404"
+                  }
                 }
               }
             }
@@ -836,16 +1212,20 @@
     },
     "/tenants/{tenantId}/idps": {
       "get": {
+        "summary": "Retrieve/Get all tenant identity providers.",
+        "description": "Retrieve a list of SLAS identity providers associated with the tenant_id.",
         "operationId": "retrieveIdentityProviders",
         "parameters": [
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -857,6 +1237,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IdpListResponse"
+                },
+                "examples": {
+                  "IdpListResponse": {
+                    "$ref": "#/components/examples/IdpListResponse"
+                  }
                 }
               }
             }
@@ -867,6 +1252,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpRequestException400": {
+                    "$ref": "#/components/examples/IdpRequestException400"
+                  }
                 }
               }
             }
@@ -877,6 +1267,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpTenantException401": {
+                    "$ref": "#/components/examples/IdpTenantException401"
+                  }
                 }
               }
             }
@@ -887,6 +1282,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpNotFoundException404": {
+                    "$ref": "#/components/examples/IdpNotFoundException404"
+                  }
                 }
               }
             }
@@ -903,27 +1303,33 @@
     },
     "/tenants/{tenantId}/idps/{name}": {
       "get": {
+        "summary": "Retrieve/Get a specific identity provider.",
+        "description": "Retrieve a specific identity provider by name.",
         "operationId": "retrieveIdentityProvider",
         "parameters": [
           {
             "name": "name",
             "in": "path",
+            "description": "The name of the identity provider.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "Name",
               "maxLength": 256
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -935,6 +1341,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IdentityProvider"
+                },
+                "examples": {
+                  "IdentityProvider": {
+                    "$ref": "#/components/examples/IdentityProvider"
+                  }
                 }
               }
             }
@@ -945,6 +1356,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpRequestException400": {
+                    "$ref": "#/components/examples/IdpRequestException400"
+                  }
                 }
               }
             }
@@ -955,6 +1371,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpTenantException401": {
+                    "$ref": "#/components/examples/IdpTenantException401"
+                  }
                 }
               }
             }
@@ -965,6 +1386,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpNotFoundException404": {
+                    "$ref": "#/components/examples/IdpNotFoundException404"
+                  }
                 }
               }
             }
@@ -980,27 +1406,33 @@
         ]
       },
       "put": {
+        "summary": "Create or update an identity provider.",
+        "description": "Create or update an identity provider by name.",
         "operationId": "registerIdentityProvider",
         "parameters": [
           {
             "name": "name",
             "in": "path",
+            "description": "The name of the identity provider.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "Name",
               "maxLength": 256
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -1010,6 +1442,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/IdentityProvider"
+              },
+              "examples": {
+                "IdentityProvider": {
+                  "$ref": "#/components/examples/IdentityProvider"
+                }
               }
             }
           },
@@ -1022,6 +1459,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IdentityProviderResponse"
+                },
+                "examples": {
+                  "IdpProviderResponse": {
+                    "$ref": "#/components/examples/IdpProviderResponse"
+                  }
                 }
               }
             }
@@ -1032,6 +1474,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IdentityProviderResponse"
+                },
+                "examples": {
+                  "IdpProviderResponse": {
+                    "$ref": "#/components/examples/IdpProviderResponse"
+                  }
                 }
               }
             }
@@ -1042,6 +1489,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpRequestException400": {
+                    "$ref": "#/components/examples/IdpRequestException400"
+                  }
                 }
               }
             }
@@ -1052,6 +1504,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpTenantException401": {
+                    "$ref": "#/components/examples/IdpTenantException401"
+                  }
                 }
               }
             }
@@ -1062,6 +1519,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpNotFoundException404": {
+                    "$ref": "#/components/examples/IdpNotFoundException404"
+                  }
                 }
               }
             }
@@ -1072,6 +1534,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpConflictException409": {
+                    "$ref": "#/components/examples/IdpConflictException409"
+                  }
                 }
               }
             }
@@ -1087,27 +1554,33 @@
         ]
       },
       "delete": {
+        "summary": "Delete an identity provider.",
+        "description": "Delete an identity provider by name.",
         "operationId": "deleteIdentityProvider",
         "parameters": [
           {
             "name": "name",
             "in": "path",
+            "description": "The name of the identity provider.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "Name",
               "maxLength": 256
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           }
@@ -1122,6 +1595,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpRequestException400": {
+                    "$ref": "#/components/examples/IdpRequestException400"
+                  }
                 }
               }
             }
@@ -1132,6 +1610,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpTenantException401": {
+                    "$ref": "#/components/examples/IdpTenantException401"
+                  }
                 }
               }
             }
@@ -1142,6 +1625,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdpNotFoundException404": {
+                    "$ref": "#/components/examples/IdpNotFoundException404"
+                  }
                 }
               }
             }
@@ -1159,38 +1647,46 @@
     },
     "/tenants/{tenantId}/customers/{customerId}": {
       "delete": {
+        "summary": "Delete all shopper records associated with a shopper's customer ID. The email ID is used if it's passed as a query parameter. This conforms to the GDPR regulations.",
+        "description": "Delete all shopper records associated with a shopper's customer ID. The email ID is used if it's passed as a query parameter. This conforms to the GDPR regulations.",
         "operationId": "deleteShopper",
         "parameters": [
           {
             "name": "customerId",
             "in": "path",
+            "description": "The unique identifier of a customer.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "bcJN7998472pLiZuyGabs8knlj",
               "maxLength": 28
             }
           },
           {
             "name": "tenantId",
             "in": "path",
+            "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "zzeu_001, bgvn_dev",
               "maxLength": 32
             }
           },
           {
             "name": "emailAddress",
             "in": "query",
+            "description": "The shoppers email address.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "string",
+              "example": "joe.shopper@foo.org",
               "maxLength": 256
             }
           }
@@ -1205,6 +1701,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ShopperDeleteException": {
+                    "$ref": "#/components/examples/ShopperDeleteException400"
+                  }
                 }
               }
             }
@@ -1215,6 +1716,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ShopperNotFoundException": {
+                    "$ref": "#/components/examples/ShopperNotFoundException404"
+                  }
                 }
               }
             }
@@ -1236,50 +1742,63 @@
       "Tenant": {
         "type": "object",
         "additionalProperties": true,
+        "description": "Tenant",
         "properties": {
           "tenantId": {
             "type": "string",
+            "example": "aaaa_prd",
             "maxLength": 8
           },
           "merchantId": {
             "type": "integer",
+            "example": 1,
             "minimum": 0
           },
           "description": {
             "type": "string",
+            "example": "SLAS Merchant Name",
             "maxLength": 256
           },
           "contact": {
             "type": "string",
+            "example": "SLAS Tenant Contact",
             "maxLength": 256
           },
           "emailAddress": {
             "type": "string",
+            "example": "tenant_contact@slas.tst",
             "maxLength": 200
           },
           "phoneNo": {
             "type": "string",
+            "example": "000-000-0000",
             "maxLength": 50
           },
           "isDeleted": {
             "type": "boolean",
+            "example": false,
             "maxLength": 1
           },
           "status": {
             "type": "string",
+            "example": "CLEAR",
             "maxLength": 16
           },
           "tier": {
             "type": "string",
+            "description": "This read only value relates to the B2C Comerce realm of the customer.\n  - XS = Bronze and Bronze+\n  - S = Silver and Silver+\n  - M = Gold and Gold+\n  - L = Platinum and Platinum+\n",
             "enum": [
               "XS",
               "S",
               "M",
               "L"
-            ]
+            ],
+            "example": "L"
           },
           "requestQuotaPerMinute": {
-            "type": "number"
+            "type": "number",
+            "description": "This read only value shows the the number of requests that can be made per minute.",
+            "example": 8000
           }
         },
         "required": [
@@ -1301,17 +1820,25 @@
         "properties": {
           "title": {
             "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
             "maxLength": 2048
           },
           "detail": {
-            "type": "string"
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
           },
           "instance": {
             "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
             "maxLength": 2048
           }
         },
@@ -1323,29 +1850,39 @@
       },
       "TenantDto": {
         "type": "object",
+        "description": "Create or update tenants",
         "properties": {
           "tenantId": {
             "type": "string",
+            "example": "aaaa_prd",
             "maxLength": 8
           },
           "merchantName": {
             "type": "string",
+            "description": "Name of the merchant.",
+            "example": "Merchant Name",
             "maxLength": 256
           },
           "description": {
             "type": "string",
+            "example": "Additional information about the tenant.",
             "maxLength": 256
           },
           "contact": {
             "type": "string",
+            "example": "Name of the merchant's designated contact.",
             "maxLength": 256
           },
           "emailAddress": {
             "type": "string",
+            "description": "Email address of the designated contact.",
+            "example": "joe.shopper@foo.org",
             "maxLength": 200
           },
           "phoneNo": {
             "type": "string",
+            "description": "Phone number of the designated contact.",
+            "example": "+1 000-000-0000",
             "maxLength": 50
           }
         },
@@ -1358,55 +1895,172 @@
           "tenantId"
         ]
       },
+      "BatchLogoutRequest": {
+        "type": "object",
+        "properties": {
+          "loginIds": {
+            "type": "array",
+            "description": "The list of login IDs to log out. Duplicate login IDs are deduplicated before processing and marked `not_processed` in the response. Exceeding the maximum returns a 400.",
+            "example": [
+              "user1@example.com",
+              "user2@example.com"
+            ],
+            "items": {
+              "type": "string",
+              "example": "user1@example.com",
+              "maxLength": 256
+            },
+            "maxItems": 50,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "loginIds"
+        ]
+      },
+      "LoginIdResult": {
+        "type": "object",
+        "properties": {
+          "loginId": {
+            "type": "string",
+            "example": "user1@example.com",
+            "maxLength": 256
+          },
+          "status": {
+            "type": "string",
+            "description": "The outcome of the logout for this login ID:\n  - `success`: Logout succeeded.\n  - `failure`: Logout failed. See `errorMessage` for details.\n  - `not_processed`: Skipped as a duplicate of another login ID in the request.",
+            "enum": [
+              "success",
+              "failure",
+              "not_processed"
+            ],
+            "example": "success"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "The reason the logout failed. Only present when `status` is `failure` or `not_processed`.",
+            "example": "User not found",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "loginId",
+          "status"
+        ]
+      },
+      "BatchLogoutResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "description": "The per-loginId outcome of the batch logout, in the same order as the request.",
+            "items": {
+              "$ref": "#/components/schemas/LoginIdResult"
+            }
+          },
+          "totalProcessed": {
+            "type": "integer",
+            "description": "The total number of login IDs processed.",
+            "example": 2
+          },
+          "successCount": {
+            "type": "integer",
+            "description": "The number of login IDs successfully logged out.",
+            "example": 2
+          },
+          "failureCount": {
+            "type": "integer",
+            "description": "The number of login IDs that failed to log out.",
+            "example": 0
+          }
+        },
+        "required": [
+          "failureCount",
+          "results",
+          "successCount",
+          "totalProcessed"
+        ]
+      },
       "Client": {
         "type": "object",
         "properties": {
           "clientId": {
             "type": "string",
+            "description": "Client ID",
+            "example": "fd0d4ab9-bb85-4c04-bebd-589bd74bdd75",
             "maxLength": 100
           },
           "name": {
             "type": "string",
+            "description": "Client Name",
+            "example": "Client Name",
             "maxLength": 100
           },
           "secret": {
             "type": "string",
+            "description": "Client Secret. The secret will only display on create and if the secret was updated when updating the client.",
+            "example": "client-secret",
             "maxLength": 256
           },
           "scopes": {
             "type": "array",
+            "description": "Merchant scopes. These scopes allows different permissions in SLAS and B2C commerce. \nShopper Custom Objects additionally provides a way to do granular scoping besides the standard `sfcc.shopper-custom-objects` like `sfcc.shopper-custom-objects.xyz`\nSLAS is capable of handling a maximum of 20 Custom Object scopes.\n\nFor B2C Commerce scope details, see the [Authorization Scopes Catalog](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html).\"",
+            "example": [
+              "sfcc.products",
+              "sfcc.catalogs",
+              "sfcc.customers:ro"
+            ],
             "items": {
               "type": "string",
+              "example": "sfcc.products sfcc.catalogs sfcc.customers:ro",
               "maxLength": 100
             }
           },
           "redirectUri": {
             "type": "string",
+            "description": "An absolute URL, beginning with a protocol",
+            "example": "https://www.salesforce.com",
             "maxLength": 2048
           },
           "callbackUri": {
             "type": "string",
+            "description": "An absolute URL, beginning with a protocol",
+            "example": "https://www.salesforce.com",
             "maxLength": 2048
           },
           "channels": {
             "type": "array",
+            "description": "Client Channels",
+            "example": [
+              "RefArch",
+              "SiteGenensis"
+            ],
             "items": {
               "type": "string",
+              "example": "RefArch SiteGenesis",
               "maxLength": 1024
             }
           },
           "isPrivateClient": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Private or Public Client",
+            "example": true
           },
           "loginEpRestrict": {
             "type": "boolean",
+            "description": "When enabling (true) this will restrict all calls to the `\\login` endpoint for the Client Id. When calling the `\\login` endpoint and `loginEpRestrict` is enabled a HTTP Status code of 403 will be returned.",
+            "example": false,
             "maxLength": 1
           },
           "isSixDigitOtp": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "If this attribute is set to true in the request for the clientId, a 6-digit OTP is generated during PasswordlessLogin, PasswordReset, and WebAuthn Authorization. If set to false or unspecified, an 8-digit OTP is generated by default for the aforementioned calls.",
+            "example": false
           },
           "strictClientAuth": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "When enabled, requests from this client to `/oauth2/login` and `/oauth2/authorize` are rejected with a 401 if the `x-slas-client-auth` header is missing. The `strictClientAuth` attribute applies only to private clients.\nThe 'x-slas-client-auth' header is a Base64-encoded string of client credentials. The string is composed of a client ID and client secret, separated by a colon (`:`). For example, `clientId:clientSecret`. Don't add the string `\"Basic\"`.",
+            "example": false
           }
         },
         "required": [
@@ -1424,6 +2078,7 @@
         "properties": {
           "data": {
             "type": "array",
+            "description": "An array of clients.",
             "items": {
               "$ref": "#/components/schemas/Client"
             }
@@ -1435,58 +2090,98 @@
       },
       "ClientRequest": {
         "type": "object",
+        "description": "Used to create and update a SLAS Client",
         "properties": {
           "name": {
             "type": "string",
+            "description": "Client Name",
+            "example": "High Adventure Wear",
             "maxLength": 100
           },
           "clientId": {
             "type": "string",
+            "description": "SLAS client id. Must match the query parameter.",
+            "example": "fd0d4ab9-bb85-4c04-bebd-589bd74bdd75",
             "maxLength": 100
           },
           "secret": {
             "type": "string",
+            "description": "SLAS client secret. On create if left blank then a secret will be generated.",
+            "example": "client_secret",
             "maxLength": 256
           },
           "scopes": {
             "type": "array",
+            "description": "Merchant scopes. These scopes allows different permissions in SLAS and B2C commerce. \nShopper Custom Objects additionally provides a way to do granular scoping besides the standard `sfcc.shopper-custom-objects` like `sfcc.shopper-custom-objects.xyz` \nSLAS is capable of handling a maximum of 20 Custom Object scopes.\"",
+            "example": [
+              "sfcc.products",
+              "sfcc.catalogs",
+              "sfcc.customers:ro"
+            ],
             "items": {
               "type": "string",
+              "example": "sfcc.products sfcc.catalogs sfcc.customers:ro",
               "maxLength": 4096
             }
           },
           "redirectUri": {
             "type": "array",
+            "description": "Array of SLAS redirect URLs. Include protocol and domain name in each URL. Wildcards supported.",
+            "example": [
+              "http://localhost:3000/callback",
+              "https://*.example.com/callback"
+            ],
             "items": {
               "type": "string",
+              "example": "http://localhost:3000/callback",
               "maxLength": 2048
             }
           },
           "callbackUri": {
             "type": "array",
+            "description": "Array of SLAS callback URLs that will be used for passworless login and password reset when mode=callback. Include protocol and domain name in each URL. Wildcards are NOT supported.",
+            "example": [
+              "http://localhost:3000/password-reset-callback",
+              "http://localhost:3000/passwordless-login-callback"
+            ],
             "items": {
               "type": "string",
+              "example": "localhost:3000/passwordless-login-callback",
               "maxLength": 2048
             }
           },
           "channels": {
             "type": "array",
+            "description": "Client Channels",
+            "example": [
+              "RefArch",
+              "SiteGenensis"
+            ],
             "items": {
               "type": "string",
+              "example": "RefArch SiteGenesis",
               "maxLength": 1024
             }
           },
           "isPrivateClient": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Private or Public Client. If left blank the client will default to private.",
+            "example": true
           },
           "loginEpRestrict": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "When enabling (true) this will restrict all calls to the `\\login` endpoint for the Client Id. When calling the `\\login` endpoint and `loginEpRestrict` is enabled a HTTP Status code of 403 will be returned.",
+            "example": false
           },
           "isSixDigitOtp": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "If this attribute is set to true in the request for the clientId, a 6-digit OTP is generated during PasswordlessLogin, PasswordReset, and WebAuthn Authorization. If set to false or unspecified, an 8-digit OTP is generated by default for the aforementioned calls.",
+            "example": false
           },
           "strictClientAuth": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "When enabled, requests from this client to `/oauth2/login` and `/oauth2/authorize` are rejected with a 401 if the `x-slas-client-auth` header is missing. The `strictClientAuth` attribute applies only to private clients.\nThe 'x-slas-client-auth' header is a Base64-encoded string of client credentials. The string is composed of a client ID and client secret, separated by a colon (`:`). For example, `clientId:clientSecret`. Don't add the string `\"Basic\"`.",
+            "example": false
           }
         },
         "required": [
@@ -1501,41 +2196,51 @@
       },
       "PasswordTemplateActionType": {
         "type": "string",
+        "description": "Describes the type of action that the password action template will be used for. \nHere are the actions that each enumerated string refers to:\n  - `PWDLESS_LOGIN`: Passwordless login\n  - `PWD_RESET_ACTION`: Password reset\n  - `PWD_RESET_CROSS_DEVICE_ACTION`: Password reset for cross-device flow\n  - `WEBAUTHN_AUTHORIZE_USER`: WebAuthn authorize user",
         "enum": [
           "PWDLESS_LOGIN",
           "PWD_RESET_ACTION",
           "PWD_RESET_CROSS_DEVICE_ACTION",
           "WEBAUTHN_AUTHORIZE_USER"
-        ]
+        ],
+        "example": "PWDLESS_LOGIN"
       },
       "PasswordTemplateType": {
         "type": "string",
+        "description": "Identifies the type of mode that the password action template will be used for.",
         "enum": [
           "SMS",
           "EMAIL"
-        ]
+        ],
+        "example": "EMAIL"
       },
       "PasswordActionTemplate": {
         "type": "object",
         "properties": {
           "channelId": {
             "type": "string",
+            "example": "SiteGenesis",
             "maxLength": 36
           },
           "name": {
             "type": "string",
+            "example": "Password Action Email Template",
             "maxLength": 128
           },
           "subject": {
             "type": "string",
+            "example": "Password Action Token Request",
             "maxLength": 128
           },
           "link": {
             "type": "string",
+            "example": "This is your password action token: ${token}",
             "maxLength": 2048
           },
           "locale": {
             "type": "string",
+            "description": "Identifies the locale of the template. Must be one of the [language tag strings supported by JDK 11](https://www.oracle.com/java/technologies/javase/jdk11-suported-locales.html). The string is stored in all lowercase.",
+            "example": "en-us",
             "maxLength": 16
           },
           "actionType": {
@@ -1546,6 +2251,7 @@
           },
           "template": {
             "type": "string",
+            "example": "Passwordless Login Token Request\nYou're receiving this because you requested a passwordless login token for your account. ${link}",
             "maxLength": 2048
           }
         },
@@ -1562,77 +2268,131 @@
       },
       "IdentityProviderResponse": {
         "type": "object",
+        "description": "Identity provider Response",
         "properties": {
           "name": {
             "type": "string",
+            "description": "Identity Provider Name",
+            "example": "google",
             "maxLength": 200
           },
           "authUrl": {
             "type": "string",
+            "description": "IDP authorization URL",
+            "example": "https://www.salesforce.com/authorize",
             "maxLength": 256
           },
           "tokenUrl": {
             "type": "string",
+            "description": "IDP token URL",
+            "example": "https://www.salesforce.com/token",
             "maxLength": 256
           },
           "tokenInfoUrl": {
             "type": "string",
+            "description": "IDP token info URL",
+            "example": "https://www.salesforce.com/inspect",
             "maxLength": 256
           },
           "userInfoUrl": {
             "type": "string",
+            "description": "IDP user info URL",
+            "example": "https://www.salesforce.com/userinfo",
             "maxLength": 256
           },
           "redirectUrl": {
             "type": "string",
+            "description": "Redirect URL to go to after IDP flow is complete. This URL must be registered with the IDP.",
+            "example": "https://www.salesforce.com/idp/callback",
             "maxLength": 256
           },
           "wellKnownUrl": {
             "type": "string",
+            "description": "IDP to get OIDC configuration.",
+            "example": "https://www.salesforce.com/.well-known/openid-configuration",
             "maxLength": 256
           },
           "clientId": {
             "type": "string",
+            "description": "Client Id of the third party IDP.",
+            "example": "934277749308-02dg4398n3s31ofge8cot46jirn3kpkf.apps.googleusercontent.com",
             "maxLength": 128
           },
           "clientSecret": {
             "type": "string",
+            "description": "Client Secret of the third party IDP. For Apple copy the contents from the .p8 file that was downloaded from Apple between -*----BEGIN PRIVATE KEY-----* and -*---END PRIVATE KEY-----* markers.",
+            "example": "aKZM1xEnZopNP2bm2gc3GKex",
             "maxLength": 512
           },
           "isPreferred": {
             "type": "boolean",
+            "description": "Indicates if the IDP configuration is the Preferred SLAS IDP for the Tenant Id.",
+            "example": true,
             "maxLength": 1
           },
           "isClientCredsBody": {
             "type": "boolean",
+            "description": "Default is to place the client credentials in a basic authorization header for the call to the IDP. If true, the client credentials are placed in the POST body to the IDP.",
+            "example": false,
             "maxLength": 1
           },
           "scopes": {
             "type": "array",
+            "description": "Scopes needed by the IDP.",
+            "example": [
+              "oidc",
+              "email",
+              "profile"
+            ],
             "items": {
               "type": "string",
+              "example": "openid email profile",
               "maxLength": 8192
             }
           },
           "teamId": {
             "type": "string",
+            "description": "Apple Team ID. Used primarily for Sign with Apple in generating the client secret.",
+            "example": "appleTeamId",
             "maxLength": 32
           },
           "keyId": {
             "type": "string",
+            "description": "Apple key ID. This is the Key ID that was obtained from Apple when the the private key for client authentication was created. Used primarily for Sign with Apple in generating the client secret.",
+            "example": "appleKeyId",
             "maxLength": 8192
           },
           "loginMergeClaims": {
             "type": "array",
+            "description": "List of user info claims that can be used as identifiers to look up and merge with an existing B2C Commerce profile for a registered shopper or an existing B2C Commerce profile created via federated login with an external Identity Provider with the same merge claim as this one. If multiple matching B2C Commerce shopper (customer) profiles are found, the external profile is merged with the most recently created shopper (customer) profile. Refer to the Merge Shopper Profiles user guide for more details.\n\nNote: When configuring an Apple IDP, 'email' and 'sub' are the only supported merge claims.\n",
+            "example": [
+              "email",
+              "phone"
+            ],
             "items": {
               "type": "string",
+              "example": "email",
               "maxLength": 256
             }
           },
           "oidcClaimMapper": {
             "type": "array",
+            "description": "Mapping from the identity provider’s token claims for SLAS to get user information values when the user successfully authenticates. The values in this array should be setup using the following `key=value` pair pattern. The key part is the SLAS key with the value part being the OIDC claim key.",
+            "example": [
+              "accessToken=access_token",
+              "refreshToken=refresh_token",
+              "accessTokenTTL=expires_in",
+              "idToken=id_token",
+              "subject=sub",
+              "email=email",
+              "userId=sub",
+              "familyName=family_name",
+              "givenName=given_name",
+              "name=name"
+            ],
             "items": {
               "type": "string",
+              "example": "accessToken=access refresh_token accessTokenTTL=expires_in idToken=id_token subject=sub email=email userId=sub familyName=family_name givenName=given_name name=name",
               "maxLength": 1024
             }
           }
@@ -1656,6 +2416,7 @@
         "properties": {
           "data": {
             "type": "array",
+            "description": "An array of identity providers.",
             "items": {
               "$ref": "#/components/schemas/IdentityProviderResponse"
             }
@@ -1667,9 +2428,11 @@
       },
       "IdentityProvider": {
         "type": "object",
+        "description": "Identity provider",
         "properties": {
           "name": {
             "type": "string",
+            "description": "Identity Provider Name",
             "enum": [
               "adfs",
               "apple",
@@ -1685,78 +2448,132 @@
               "ping",
               "salesforce"
             ],
+            "example": "google",
             "maxLength": 200
           },
           "authUrl": {
             "type": "string",
+            "description": "IDP authorize URL",
+            "example": "https://www.salesforce.com/authorize",
             "maxLength": 256
           },
           "tokenUrl": {
             "type": "string",
+            "description": "IDP token URL",
+            "example": "https://www.salesforce.com/token",
             "maxLength": 256
           },
           "tokenInfoUrl": {
             "type": "string",
+            "description": "IDP token info URL",
+            "example": "https://www.salesforce.com/introspect",
             "maxLength": 256
           },
           "userInfoUrl": {
             "type": "string",
+            "description": "IDP user info URL",
+            "example": "https://www.salesforce.com/userinfo",
             "maxLength": 256
           },
           "redirectUrl": {
             "type": "string",
+            "description": "Redirect URL to go to after IDP flow is complete. This URL must be registered with the IDP.",
+            "example": "https://www.salesforce.com/idp/callback",
             "maxLength": 256
           },
           "wellKnownUrl": {
             "type": "string",
+            "description": "IDP URL to get OIDC configuration.",
+            "example": "https://www.salesforce.com/.well-known/openid-configuration",
             "maxLength": 256
           },
           "clientId": {
             "type": "string",
+            "description": "Client Id of the third party IDP.",
+            "example": "934277749308-02dg4398n3s31ofge8cot46jirn3kpkf.apps.googleusercontent.com",
             "maxLength": 128
           },
           "clientSecret": {
             "type": "string",
+            "description": "Client Secret of the third party IDP. For Apple copy the contents from the .p8 file that was downloaded from Apple between -*----BEGIN PRIVATE KEY-----* and -*---END PRIVATE KEY-----* markers.",
+            "example": "aKZM1xEnZopNP2bm2gc3GKex",
             "maxLength": 512
           },
           "preferenceValue": {
             "type": "boolean",
+            "description": "Set the IDP configuration as the Preferred SLAS IDP. Default value is `false`.",
+            "example": true,
             "maxLength": 1
           },
           "isClientCredsBody": {
             "type": "boolean",
+            "description": "Default is to place the client credentials in a basic authorization header for the call to the IDP. If true, the client credentials are placed in the POST body to the IDP.",
+            "example": false,
             "maxLength": 1
           },
           "useWellKnown": {
             "type": "boolean",
+            "description": "If set to `true`, SLAS uses the `wellKnowUrl` value to populate the `authUrl`, `tokenUrl`, `userInfoUrl`, and `scopes` values from the identity provider. Default value is `false`.",
+            "example": false,
             "maxLength": 1
           },
           "scopes": {
             "type": "array",
+            "description": "IDP Scopes",
+            "example": [
+              "oidc",
+              "email",
+              "profile"
+            ],
             "items": {
               "type": "string",
+              "example": "openid email profile",
               "maxLength": 8192
             }
           },
           "teamId": {
             "type": "string",
+            "description": "Apple Team Id. Used primarily for Sign with Apple in generating the client secret.",
+            "example": "appleTeamId",
             "maxLength": 32
           },
           "keyId": {
             "type": "string",
+            "description": "Apple key id. This is the Key ID that was obtained from Apple when the the private key for client authentication was created. Used primarily for Sign with Apple in generating the client secret.",
+            "example": "appleKeyId",
             "maxLength": 32
           },
           "loginMergeClaims": {
             "type": "array",
+            "description": "List of user info claims that can be used as identifiers to look up and merge with an existing B2C Commerce profile for a registered shopper or an existing B2C Commerce profile created via federated login with an external Identity Provider with the same merge claim as this one. If multiple matching B2C Commerce shopper (customer) profiles are found, the external profile is merged with the most recently created shopper (customer) profile. Refer to the Merge Shopper Profiles user guide for more details.\nNote: When configuring an Apple IDP, 'email' and 'sub' are the only supported merge claims.\n",
+            "example": [
+              "email",
+              "phone"
+            ],
             "items": {
               "type": "string",
+              "example": "email",
               "maxLength": 256
             }
           },
           "oidcClaimMapper": {
             "type": "array",
+            "description": "Mapping from the identity provider’s token claims for SLAS to get user information values when the user successfully authenticates. The values in this array should be setup using the following `key=value` pair pattern. The key part is the SLAS key with the value part being the OIDC claim key.",
+            "example": [
+              "accessToken=access_token",
+              "refreshToken=refresh_token",
+              "accessTokenTTL=expires_in",
+              "idToken=id_token",
+              "subject=sub",
+              "email=email",
+              "userId=sub",
+              "familyName=family_name",
+              "givenName=given_name",
+              "name=name"
+            ],
             "items": {
               "type": "string",
+              "example": "accessToken=access_token efreshToken=refresh_token accessTokenTTL=expires_in idToken=id_token subject=sub email=email userId=sub familyName=family_name givenName=given_name name=name",
               "maxLength": 1024
             }
           }
@@ -1780,55 +2597,65 @@
       "tenantId": {
         "name": "tenantId",
         "in": "path",
+        "description": "The identifier of the SLAS tenant (format: realmId_instanceId).",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "zzeu_001, bgvn_dev",
           "maxLength": 32
-        }
-      },
-      "clientId": {
-        "name": "clientId",
-        "in": "path",
-        "required": true,
-        "style": "simple",
-        "explode": false,
-        "schema": {
-          "type": "string",
-          "maxLength": 36
         }
       },
       "channelId": {
         "name": "channelId",
         "in": "query",
+        "description": "The identifier of the sales channel (site).",
         "required": true,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "SiteGenesis",
           "maxLength": 100
+        }
+      },
+      "clientId": {
+        "name": "clientId",
+        "in": "path",
+        "description": "The SLAS client identifier.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "876aff68-6ee5-474f-932d-c90c1d79bcf7",
+          "maxLength": 36
         }
       },
       "actionType": {
         "name": "actionType",
         "in": "query",
+        "description": "The type of password action (reset or create).",
         "required": true,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "description": "Describes the type of action that the password action template will be used for. \nHere are the actions that each enumerated string refers to:\n    - `PWDLESS_LOGIN`: Passwordless login\n    - `PWD_RESET_ACTION`: Password reset\n    - `PWD_RESET_CROSS_DEVICE_ACTION`: Password reset for cross-device flow",
           "enum": [
             "PWDLESS_LOGIN",
             "PWD_RESET_ACTION",
             "PWD_RESET_CROSS_DEVICE_ACTION"
           ],
+          "example": "PWDLESS_LOGIN",
           "maxLength": 36
         }
       },
       "templateType": {
         "name": "templateType",
         "in": "query",
+        "description": "The type of email template.",
         "required": true,
         "style": "form",
         "explode": true,
@@ -1838,57 +2665,579 @@
             "EMAIL",
             "SMS"
           ],
+          "example": "EMAIL",
           "maxLength": 8
         }
       },
       "locale": {
         "name": "locale",
         "in": "query",
+        "description": "A descriptor for a geographical region by both a language and country code.",
         "required": true,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "en-US",
           "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
         }
       },
       "name": {
         "name": "name",
         "in": "path",
+        "description": "The name of the identity provider.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "Name",
           "maxLength": 256
         }
       },
       "customerId": {
         "name": "customerId",
         "in": "path",
+        "description": "The unique identifier of a customer.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "bcJN7998472pLiZuyGabs8knlj",
           "maxLength": 28
         }
       },
       "emailAddress": {
         "name": "emailAddress",
         "in": "query",
+        "description": "The shoppers email address.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "string",
+          "example": "joe.shopper@foo.org",
           "maxLength": 256
+        }
+      }
+    },
+    "examples": {
+      "Tenant": {
+        "value": {
+          "createdBy": "slas",
+          "modifiedBy": "slas",
+          "createdTime": "2021-02-25T00:55:54.119+0000",
+          "modifiedTime": "2021-02-25T00:55:54.119+0000",
+          "tenantId": "slsa_dev",
+          "merchantId": 2,
+          "description": "SLAS Default Tenant Two",
+          "contact": "Tenant Two",
+          "emailAddress": "tenant2@slas.tst",
+          "phoneNo": "111-222-4444",
+          "tier": "S",
+          "requestQuotaPerMinute": 8000,
+          "isDeleted": false,
+          "status": "CLEAR"
+        }
+      },
+      "TenantRequestException400": {
+        "value": {
+          "type": "TenantRequestException",
+          "title": "Unable to retrieve resource because the tenant id was invalid",
+          "detail": "Tenant id is invalid"
+        }
+      },
+      "TenantException401": {
+        "value": {
+          "type": "TenantException",
+          "title": "Unable to retrieve resource because the tenant id was invalid",
+          "detail": "Tenant id is invalid"
+        }
+      },
+      "TenantNotFoundException404": {
+        "value": {
+          "type": "TenantNotFoundException",
+          "title": "Unable to retrieve resource because no resource was found with that value",
+          "detail": "Tenant id Not Found"
+        }
+      },
+      "TenantDto": {
+        "value": {
+          "tenantId": "slsa_dev",
+          "merchantName": "Popular Merchant",
+          "description": "Merchant Description",
+          "contact": "Jerry Smith",
+          "emailAddress": "jerry@merchant.com",
+          "phoneNo": "801-555-1234"
+        }
+      },
+      "TenantUpdateException400": {
+        "value": {
+          "type": "TenantUpdateException",
+          "title": "Unable to retrieve resource because the tenant id was invalid",
+          "detail": "Tenant id was not updated"
+        }
+      },
+      "TenantUpdateException401": {
+        "value": {
+          "type": "TenantUpdateException",
+          "title": "Unable to retrieve resource because the tenant id was invalid",
+          "detail": "Tenant id was not updated"
+        }
+      },
+      "TenantAlreadyExistsException409": {
+        "value": {
+          "type": "TenantAlreadyExistsException",
+          "title": "Tenant[abcd_prd] already exists!",
+          "detail": "Tenant already exists"
+        }
+      },
+      "BatchLogoutRequest": {
+        "value": {
+          "loginIds": [
+            "user1@example.com",
+            "user2@example.com"
+          ]
+        }
+      },
+      "BatchLogoutResponse": {
+        "value": {
+          "results": [
+            {
+              "loginId": "user1@example.com",
+              "status": "success"
+            },
+            {
+              "loginId": "user2@example.com",
+              "status": "failure",
+              "errorMessage": "User not found"
+            }
+          ],
+          "totalProcessed": 2,
+          "successCount": 1,
+          "failureCount": 1
+        }
+      },
+      "BatchLogoutRequestException400": {
+        "value": {
+          "type": "BadRequestException",
+          "title": "Unable to process resource because the request body was invalid",
+          "detail": "Batch size 51 exceeds maximum allowed: 50"
+        }
+      },
+      "BatchLogoutTenantException401": {
+        "value": {
+          "type": "TenantException",
+          "title": "Unable to process resource because the tenant id was invalid and/or does not match authorization",
+          "detail": "Tenant id is invalid"
+        }
+      },
+      "ClientListResponse": {
+        "value": {
+          "data": [
+            {
+              "clientId": "a462b606-317c-4a3c-90a7-4b0b938f3807",
+              "secret": "",
+              "name": "Shop Mart",
+              "scopes": [
+                "sfcc.products sfcc.catalogs sfcc.products.ro"
+              ],
+              "redirectUri": "http://localhost:9010/callback",
+              "callbackUri": "http://localhost:9010/pwd/reset/callback",
+              "channels": [
+                "SiteGenesis",
+                "OtherSite"
+              ],
+              "isPrivateClient": true,
+              "loginEpRestrict": false,
+              "isSixDigitOtp": false,
+              "strictClientAuth": false
+            },
+            {
+              "clientId": "726bde86-7b99-415d-98ec-9290bad18904",
+              "secret": "",
+              "name": "High Adventure Wear",
+              "scopes": [
+                "sfcc.products sfcc.catalogs sfcc.products.ro"
+              ],
+              "redirectUri": "http://localhost:9010/callback",
+              "callbackUri": "http://localhost:9010/pwd/reset/callback",
+              "channels": [
+                "SiteGenesis",
+                "OtherSite"
+              ],
+              "isPrivateClient": true,
+              "loginEpRestrict": false,
+              "isSixDigitOtp": false,
+              "strictClientAuth": false
+            },
+            {
+              "clientId": "slas-default-client-1",
+              "secret": "",
+              "name": "Shop Salesforce",
+              "scopes": [
+                "sfcc.products.ro sfcc.catalogs.ro"
+              ],
+              "redirectUri": "http://localhost:9010/callback",
+              "callbackUri": "http://localhost:9010/pwd/reset/callback",
+              "channels": [
+                "SiteGenesis",
+                "OtherSite"
+              ],
+              "isPrivateClient": true,
+              "loginEpRestrict": false,
+              "isSixDigitOtp": false,
+              "strictClientAuth": false
+            }
+          ]
+        }
+      },
+      "ClientTenantException401": {
+        "value": {
+          "type": "ClientTenantException",
+          "title": "Unable to retrieve resource because the tenant id was invalid",
+          "detail": "Tenant id was not found. Please check the tenant id."
+        }
+      },
+      "ClientNotFoundException404": {
+        "value": {
+          "type": "ClientNotFoundException",
+          "title": "Unable to retrieve resource because no resource was found with that value",
+          "detail": "Client Not Found"
+        }
+      },
+      "Client": {
+        "value": {
+          "clientId": "client-id1",
+          "name": "High Adventure Wear",
+          "secret": "secret1234",
+          "scopes": [
+            "sfcc.products sfcc.catalogs sfcc.customers:ro"
+          ],
+          "redirectUri": "http://localhost/callback",
+          "callbackUri": "http://localhost:9010/pwd/reset/callback",
+          "channels": [
+            "SiteGenesis",
+            "OtherSite"
+          ],
+          "isPrivateClient": true,
+          "loginEpRestrict": false,
+          "isSixDigitOtp": false,
+          "strictClientAuth": false
+        }
+      },
+      "ClientRequestException400": {
+        "value": {
+          "type": "ClientRequestException",
+          "title": "Unable to retrieve resource because the client id was invalid",
+          "detail": "Client id is invalid"
+        }
+      },
+      "ClientRequest": {
+        "value": {
+          "clientId": "client-id1",
+          "secret": "secret12345",
+          "name": "High Adventure Wear",
+          "scopes": [
+            "sfcc.products",
+            "sfcc.catalogs",
+            "sfcc.products.ro"
+          ],
+          "redirectUri": [
+            "http://localhost:9010/callback"
+          ],
+          "callbackUri": [
+            "http://localhost:9010/pwd/reset/callback"
+          ],
+          "channels": [
+            "SiteGenesis",
+            "OtherSite"
+          ],
+          "isPrivateClient": true,
+          "loginEpRestrict": false,
+          "isSixDigitOtp": false,
+          "strictClientAuth": false
+        }
+      },
+      "ClientWithSecret": {
+        "value": {
+          "clientId": "client-id1",
+          "name": "High Adventure Wear",
+          "secret": "secret12345",
+          "scopes": [
+            "sfcc.products",
+            "sfcc.catalogs",
+            "sfcc.customers:ro"
+          ],
+          "redirectUri": "http://localhost:9010/callback",
+          "callbackUri": "http://localhost:9010/pwd/reset/callback",
+          "channels": [
+            "SiteGenesis",
+            "OtherSite"
+          ],
+          "isPrivateClient": true,
+          "loginEpRestrict": false,
+          "isSixDigitOtp": false,
+          "strictClientAuth": false
+        }
+      },
+      "ClientConflictException409": {
+        "value": {
+          "type": "ClientConflictException",
+          "title": "Unable to create resource because a duplicate resource was found",
+          "detail": "Client was not created. Duplicate resource was found."
+        }
+      },
+      "PasswordActionTemplate": {
+        "value": {
+          "channelId": "SiteGenesis",
+          "name": "Passwordless SMS Template",
+          "subject": "Passwordless Token Request",
+          "link": "This is your passwordless token: ${token}",
+          "locale": "en-us",
+          "actionType": "PWDLESS_LOGIN",
+          "templateType": "SMS",
+          "template": "Passwordless Login Token Request\n\nHello ${name},\nYou're receiving this because you requested a passwordless login token for your account.\n${link}"
+        }
+      },
+      "BadRequestException400": {
+        "value": {
+          "type": "BadRequestException",
+          "title": "Unable to update resource because the request body was invalid",
+          "detail": "Request body is invalid."
+        }
+      },
+      "PasswordActionTemplateNotFoundException404": {
+        "value": {
+          "type": "PasswordActionTemplateNotFoundException",
+          "title": "Template was not found",
+          "detail": "Template was not found."
+        }
+      },
+      "PasswordActionTemplateRequest": {
+        "value": {
+          "channelId": "SiteGenesis",
+          "name": "Passwordless SMS Template",
+          "subject": "Passwordless Token Request",
+          "link": "This is your passwordless token: ${token}",
+          "locale": "en-us",
+          "actionType": "PWDLESS_LOGIN",
+          "templateType": "SMS",
+          "template": "Passwordless Login Token Request\nHello ${name},\nYou're receiving this because you requested a passwordless login token for your account.\n${link}"
+        }
+      },
+      "PasswordActionTemplateCreateException400": {
+        "value": {
+          "type": "PasswordActionTemplateCreateException",
+          "title": "Template was not created or updated",
+          "detail": "Template was not created or updated."
+        }
+      },
+      "PasswordActionTemplateDeleteException400": {
+        "value": {
+          "type": "PasswordActionTemplateDeleteException",
+          "title": "Template was not deleted",
+          "detail": "Template was not deleted."
+        }
+      },
+      "IdpListResponse": {
+        "value": {
+          "data": [
+            {
+              "name": "google",
+              "clientId": "idp-client-id",
+              "clientSecret": "idp-secret",
+              "authUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "tokenInfoUrl": "https://oauth2.googleapis.com/tokeninfo",
+              "userInfoUrl": "https://www.googleapis.com/oauth2/v3/userinfo",
+              "redirectUrl": "http://localhost:9010/hydra/callback",
+              "wellKnownUrl": "https://accounts.google.com/.well-known/openid-configuration",
+              "scopes": [
+                "openid",
+                "email",
+                "profile"
+              ],
+              "isPreferred": true,
+              "isClientCredsBody": false,
+              "teamId": "appleTeamId",
+              "keyId": "appleKeyId",
+              "loginMergeClaims": [
+                "email"
+              ],
+              "oidcClaimMapper": [
+                "accessToken=access_token",
+                "refreshToken=refresh_token",
+                "accessTokenTTL=expires_in",
+                "idToken=id_token",
+                "subject=sub",
+                "email=email",
+                "userId=sub",
+                "familyName=family_name",
+                "givenName=given_name",
+                "name=name"
+              ]
+            },
+            {
+              "name": "Facebook",
+              "clientId": "idp-client-id",
+              "clientSecret": "idp-secret",
+              "authUrl": "https://www.facebook.com/v19.0/dialog/oauth",
+              "tokenUrl": "https://graph.facebook.com/v19.0/oauth/access_token",
+              "tokenInfoUrl": "https://graph.facebook.com/v19.0/debug_token",
+              "userInfoUrl": "https://graph.facebook.com/v19.0/me",
+              "redirectUrl": "http://my.host.com/api/v1/idp/callback/Facebook",
+              "wellKnownUrl": "https://www.facebook.com/.well-known/openid-configuration",
+              "scopes": [
+                "openid",
+                "email",
+                "profile"
+              ],
+              "isPreferred": true,
+              "isClientCredsBody": false,
+              "teamId": "appleTeamId",
+              "keyId": "appleKeyId",
+              "loginMergeClaims": [
+                "email"
+              ],
+              "oidcClaimMapper": [
+                "accessToken=access_token",
+                "refreshToken=refresh_token",
+                "accessTokenTTL=expires_in",
+                "idToken=id_token",
+                "subject=sub",
+                "email=email",
+                "userId=sub",
+                "familyName=family_name",
+                "givenName=given_name",
+                "name=name"
+              ]
+            }
+          ]
+        }
+      },
+      "IdpRequestException400": {
+        "value": {
+          "type": "IdpRequestException",
+          "title": "Unable to update resource because the request body was invalid",
+          "detail": "Request body is invalid."
+        }
+      },
+      "IdpTenantException401": {
+        "value": {
+          "type": "IdpTenantException",
+          "title": "Unable to update resource because the tenant id was invalid",
+          "detail": "Tenant id is invalid"
+        }
+      },
+      "IdpNotFoundException404": {
+        "value": {
+          "type": "IdpNotFoundException",
+          "title": "Unable to update resource because no resource was found with that value",
+          "detail": "Idp Not Found"
+        }
+      },
+      "IdentityProvider": {
+        "value": {
+          "name": "google",
+          "clientId": "idp-client-id",
+          "clientSecret": "idp-secret",
+          "authUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+          "tokenUrl": "https://oauth2.googleapis.com/token",
+          "tokenInfoUrl": "https://oauth2.googleapis.com/tokeninfo",
+          "userInfoUrl": "https://www.googleapis.com/oauth2/v3/userinfo",
+          "redirectUrl": "http://localhost:9010/hydra/callback",
+          "wellKnownUrl": "https://accounts.google.com/.well-known/openid-configuration",
+          "scopes": [
+            "openid",
+            "email",
+            "profile"
+          ],
+          "preferenceValue": true,
+          "isClientCredsBody": false,
+          "teamId": "appleTeamId",
+          "keyId": "appleKeyId",
+          "loginMergeClaims": [
+            "email"
+          ],
+          "oidcClaimMapper": [
+            "accessToken=access_token",
+            "refreshToken=refresh_token",
+            "accessTokenTTL=expires_in",
+            "idToken=id_token",
+            "subject=sub",
+            "email=email",
+            "userId=sub",
+            "familyName=family_name",
+            "givenName=given_name",
+            "name=name"
+          ]
+        }
+      },
+      "IdpProviderResponse": {
+        "value": {
+          "name": "google",
+          "clientId": "idp-client-id",
+          "clientSecret": "idp-secret",
+          "authUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+          "tokenUrl": "https://oauth2.googleapis.com/token",
+          "tokenInfoUrl": "https://oauth2.googleapis.com/tokeninfo",
+          "userInfoUrl": "https://www.googleapis.com/oauth2/v3/userinfo",
+          "redirectUrl": "http://localhost:9010/hydra/callback",
+          "wellKnownUrl": "https://accounts.google.com/.well-known/openid-configuration",
+          "scopes": [
+            "openid",
+            "email",
+            "profile"
+          ],
+          "isPreferred": true,
+          "isClientCredsBody": false,
+          "teamId": "appleTeamId",
+          "keyId": "appleKeyId",
+          "loginMergeClaims": [
+            "email"
+          ],
+          "oidcClaimMapper": [
+            "accessToken=access_token",
+            "refreshToken=refresh_token",
+            "accessTokenTTL=expires_in",
+            "idToken=id_token",
+            "subject=sub",
+            "email=email",
+            "userId=sub",
+            "familyName=family_name",
+            "givenName=given_name",
+            "name=name"
+          ]
+        }
+      },
+      "IdpConflictException409": {
+        "value": {
+          "type": "IdpConflictException",
+          "title": "Unable to create resource because a duplicate resource was found",
+          "detail": "Idp was not created. Duplicate resource was found."
+        }
+      },
+      "ShopperDeleteException400": {
+        "value": {
+          "type": "ShopperDeleteException",
+          "title": "Email address does not match stored email address",
+          "detail": "Email address does not match stored email address"
+        }
+      },
+      "ShopperNotFoundException404": {
+        "value": {
+          "type": "ShopperNotFoundException",
+          "title": "SLAS USER was not found by customer id",
+          "detail": "SLAS USER was not found by customer id"
         }
       }
     },
     "securitySchemes": {
       "BearerToken": {
         "type": "http",
+        "description": "A security scheme that supplements SLAS Administration APIs that are secured with an B2c Commerce Account Manager JWT. This security scheme expects a valid B2C Commerce Account Manager Bearer token passed in the Authorization header to permit API access.",
         "scheme": "bearer",
         "bearerFormat": "JWT"
       }

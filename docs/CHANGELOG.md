@@ -1,5 +1,19 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.6
+
+### Patch Changes
+
+- [#742](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/742) [`f7e5611`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f7e5611646830aaae56ee1d2c6a4493086ccd72f) - Published the SCAPI code mode presentation as an unlisted page on the docs site. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.4.5
+
+### Patch Changes
+
+- [#715](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/715) [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97) - Publish a JSON Schema for `dw.json`, which gives editors completion, hover descriptions, and validation. The VS Code extension applies it to every `dw.json`. In other editors, reference `https://salesforcecommercecloud.github.io/b2c-developer-tooling/schemas/dw.schema.json` as `"$schema"`. The schema also ships with the SDK as `@salesforce/b2c-tooling-sdk/schemas/dw.schema.json`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#738](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/738) [`1c73738`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1c73738ce3c395738307653755692ffc357463c4) - The `storefront-next` and `figma-to-sfnext-pagedesigner` skills are updated for the October 2026 Storefront Next template. Code examples, commands, and project paths are corrected, and new skills cover security, SEO, analytics and consent, accessibility, quality gates, revalidation, and commerce features (24 skills). Skills were renamed or merged: `sfnext-create-vertical` → `sfnext-theming`, `sfnext-create-component` → `sfnext-components`, and `sfnext-scapi-management` + `sfnext-custom-apis` → `sfnext-scapi`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.4
 
 ### Patch Changes

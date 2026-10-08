@@ -151,6 +151,8 @@ describe('SCAPI code mode', function () {
         const node = pending.pop();
         if (!node || typeof node !== 'object') continue;
         for (const [key, value] of Object.entries(node)) {
+          // Example payloads and OAuth scope docs may name c_ values; tenant properties would appear in definitions.
+          if (key === 'example' || key === 'examples' || key === 'scopes') continue;
           expect(key.startsWith('c_'), `${entry.id}: tenant property ${key}`).to.equal(false);
           pending.push(value);
         }

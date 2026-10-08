@@ -4,8 +4,11 @@
       "command": "npx",
       "args": [
         "-y",
-        "@salesforce/b2c-dx-mcp@3.2.1"
-      ]
+        "@salesforce/b2c-dx-mcp@3.5.0"
+      ],
+      "env": {
+        "npm_config_min_release_age": "0"
+      }
     }
   }
 }

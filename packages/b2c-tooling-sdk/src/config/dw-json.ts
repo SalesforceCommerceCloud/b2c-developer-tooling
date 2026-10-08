@@ -111,6 +111,8 @@ export interface DwJsonConfig {
   cipHost?: string;
   /** Documentation categories to expose (allowlist); dw.json key `docs-categories` */
   docsCategories?: string[];
+  /** Local SCAPI OpenAPI contracts (files, directories or http(s) URLs) for MCP code mode; dw.json key `scapi-schemas` */
+  scapiSchemas?: string[];
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
   certificate?: string;
   /** Passphrase for the certificate */
@@ -574,16 +576,19 @@ export async function updateInstanceConfig(
     throw new Error(`Instance "${options.instance}" not found`);
   }
 
+  // Rebuild the entry so a replaced key keeps its position in the file.
+  const entries = Object.entries(target);
   for (const [field, value] of Object.entries(patch)) {
-    for (const key of Object.keys(target)) {
-      if ((CONFIG_KEY_ALIASES[key] ?? kebabToCamelCase(key)) === field) {
-        delete target[key];
-      }
-    }
+    const matches = (key: string) => (CONFIG_KEY_ALIASES[key] ?? kebabToCamelCase(key)) === field;
+    const position = entries.findIndex(([key]) => matches(key));
+    const remaining = entries.filter(([key]) => !matches(key));
     if (value !== undefined) {
-      target[camelToKebabCase(field)] = value;
+      remaining.splice(position === -1 ? remaining.length : position, 0, [camelToKebabCase(field), value]);
     }
+    entries.splice(0, entries.length, ...remaining);
   }
+  for (const key of Object.keys(target)) delete target[key];
+  Object.assign(target, Object.fromEntries(entries));
 
   await saveDwJson(existing, dwJsonPath);
   return {name: target.name as string | undefined, path: dwJsonPath};

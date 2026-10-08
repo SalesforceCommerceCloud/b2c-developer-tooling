@@ -16,9 +16,9 @@ Use `--project-directory` when running outside the target project. Inspect with
 `b2c setup inspect --json` or MCP `config_inspect`; both mask secrets by default.
 Override configured values only when needed. For resolution issues, use `b2c-cli:b2c-config`.
 
-No dedicated MCP job tool exists. Prefer these CLI workflows for running/waiting
-on jobs and transferring archives. MCP `scapi_search`/`scapi_execute` can compose
-supported Admin requests; they do not replace the CLI's archive transfer workflow.
+No dedicated MCP job tool exists. In an MCP session, start, wait for, and review
+jobs in code mode (`skill://mcp/b2c-mcp-scapi/references/jobs.md`); use the CLI
+for archive transfer (import/export) and when running from a terminal.
 
 ## Run and inspect
 
@@ -28,6 +28,12 @@ b2c job run my-job --wait -P key=value
 b2c job search --job-id my-job --count 5
 b2c job wait my-job execution-id --timeout 600
 b2c job log my-job --failed
+```
+
+Rebuild a search index (system jobs take `--body`, never `-P`):
+
+```bash
+b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["MySite"]}'
 ```
 
 `job run` returns immediately unless `--wait` is supplied. For raw system-job

@@ -50,7 +50,12 @@
  * @module compat/dispatcher
  */
 import {getLogger} from '../logging/logger.js';
-import {isFallbackTrigger, scapiUnavailableMessage, type ApiBackendPreference} from '../clients/scapi-backend-utils.js';
+import {
+  isFallbackTrigger,
+  runOcapiFallback,
+  scapiUnavailableMessage,
+  type ApiBackendPreference,
+} from '../clients/scapi-backend-utils.js';
 
 export type {ApiBackendPreference};
 
@@ -132,7 +137,7 @@ export class BackendDispatcher<S> {
       if (isFallbackTrigger(error)) {
         getLogger().info(`SCAPI ${this.domainName} unavailable for this operation, falling back to OCAPI`);
         this.resolved = 'ocapi';
-        return branches.ocapi();
+        return runOcapiFallback(error, branches.ocapi);
       }
       throw error;
     }

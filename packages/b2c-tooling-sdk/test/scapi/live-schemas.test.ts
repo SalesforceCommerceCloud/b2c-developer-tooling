@@ -15,8 +15,10 @@ import {
   createLiveScapiDocument,
   createScapiRequest,
   loadScapiSchemas,
+  matchesScapiApi,
   mergeScapiSchemas,
   scapiTenantKey,
+  suggestScapiApis,
   type ApiDocument,
   type ScapiSchemaDocument,
 } from '@salesforce/b2c-tooling-sdk/scapi';
@@ -82,6 +84,19 @@ describe('SCAPI live schemas', () => {
     expect(calls).to.deep.equal([]);
     await cache.load(tenant, schemas, 'f_ecom_test_001', {api: 'product/widgets/v1', refresh: true});
     expect(calls).to.deep.equal(['list', 'product/widgets/v1']);
+    const family = await cache.load(tenant, schemas, 'f_ecom_test_001', {api: 'product'});
+    expect(family.documents.map((document) => document.entry.id)).to.deep.equal(['product/widgets/v1']);
+  });
+
+  it('selects APIs by whole leading segments and suggests close ids', () => {
+    for (const api of [undefined, 'cdn', 'CDN/zones', 'cdn/zones/v1', 'cdn/zones/'])
+      expect(matchesScapiApi('cdn/zones/v1', api)).to.equal(true);
+    for (const api of ['cd', 'cdn/zone', 'cdn/zones/v2', 'zones'])
+      expect(matchesScapiApi('cdn/zones/v1', api)).to.equal(false);
+    const ids = ['cdn/zones/v1', 'checkout/shopper-baskets/v2', 'product/products/v1'];
+    expect(suggestScapiApis(ids, 'ecdn')).to.deep.equal(['cdn/zones/v1']);
+    expect(suggestScapiApis(ids, 'basket')).to.deep.equal(['checkout/shopper-baskets/v2']);
+    expect(suggestScapiApis(ids, 'widgets')).to.deep.equal([]);
   });
 
   it('refetches stale contracts on discovery but never evicts them', async () => {
@@ -150,9 +165,18 @@ describe('SCAPI live schemas', () => {
       safety: {level: 'NONE'},
       documents: loadScapiSchemas(),
       middlewareRegistry: new MiddlewareRegistry(),
-      onSchema: (document, customProperties) => reported.push([document, customProperties]),
+      onSchema: (document, full) => reported.push([document, full]),
     });
     await rejects(() => call({method: 'GET', path: `/product/products/v1${path}`}, signal()), /NOT_FOUND/);
+    await call(
+      {
+        method: 'GET',
+        path: '/dx/scapi-schemas/v1/organizations/{organizationId}/schemas/product/products/v1',
+        query: {expand: 'all'},
+      },
+      signal(),
+    );
+    // Only a fetch with custom properties and prose is reported as full; a partial one must not displace it.
     await call(
       {
         method: 'GET',
@@ -161,8 +185,9 @@ describe('SCAPI live schemas', () => {
       },
       signal(),
     );
-    expect(reported.map(([document, expanded]) => [document.entry.id, expanded])).to.deep.equal([
+    expect(reported.map(([document, full]) => [document.entry.id, full])).to.deep.equal([
       ['product/products/v1', true],
+      ['product/products/v1', false],
     ]);
     expect(await call({method: 'GET', path: `/product/products/v1${path}`}, signal())).to.deep.include({ok: true});
   });

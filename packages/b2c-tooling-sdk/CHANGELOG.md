@@ -1,5 +1,76 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.6.0
+
+### Minor Changes
+
+- [#750](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/750) [`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e) - SCAPI code mode adds `spec.search()`, a ranked, typo-tolerant search over operation summaries, descriptions, tags, ids and paths, so assistants can find less familiar APIs by describing the task instead of guessing a regex. `scapi_execute` programs now get the same `spec` as `scapi_search` (it was previously empty there), so discovery and calls can share one run. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#750](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/750) [`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e) - XSD schema search now uses the same ranking as docs search and finds compound schema names from spaced queries (for example "gift certificate" or "content slot"). `searchSchemas()` scores are now higher-is-better, matching `searchDocs()`; the `fuse.js` dependency is removed. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 2.5.0
+
+### Minor Changes
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Local SCAPI contracts for MCP code mode can now be set in project configuration (dw.json `scapi-schemas` or `SFCC_SCAPI_SCHEMAS` in the project `.env`), so MCP plugin users can add beta APIs without changing the server's launch arguments. Relative paths resolve from the project directory; the `--scapi-schemas` flag still takes precedence. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - SCAPI code mode and `scapi_schemas_list` now see operation summaries, descriptions and examples (the bundled corpus grows to 61 APIs), so agents can search by what an operation does, not just its ID; `scapi_schemas_list` also falls back to the bundled contracts with a warning when the live Schemas API is unavailable. `scapi_search` returns a compact outline by default (nested descriptions and examples dropped to fit the 24 KB result cap); pass `detail: "full"` for all prose. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#745](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/745) [`c534797`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c5347970fc247f412b84c34c41d4df4965e2c710) - SCAPI schema overrides (`scapi-schemas`, `SFCC_SCAPI_SCHEMAS`, `--scapi-schemas`) now accept http(s) URLs, so you can share a beta contract with a config-only change. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - `b2c setup instance` commands now include instances from plugin config sources, not only dw.json. `create` stores new instances in the highest-priority source that can hold them (or the one you pick with `--source`), and stores credential pairs in a plugin credential store, such as a keychain, when one is installed. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Add `b2c setup set`, `get`, and `unset` to change one configuration value, for example `b2c setup set scapi-schemas=./scapi-schemas`. The value is written to the `dw.json` entry or project `.env` file that already supplies it, or else to the selected instance. Values are type-checked, and the command refuses to write to read-only sources. `get` masks secrets unless you pass `--unmask`. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Fix `docs-categories` in `dw.json` (and `SFCC_DOCS_CATEGORIES`) being ignored, so `b2c docs search` and `b2c docs read` now apply the configured default topics. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Fixed the search-index job examples (`{"site_scope":["Site"]}`, not an object), documented system-job request bodies for CLI and MCP code mode, and stopped `--api-backend auto` from retrying SCAPI 400 (invalid request) errors over OCAPI, which hid the real error. When a fallback does happen and OCAPI also fails, both errors are reported. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Plugins with the same priority now load in a consistent order (by plugin name), so the same plugin's settings win on every run and in every tool. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#746](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/746) [`163138e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/163138eb8ff1c045a64f3be246c1d1c2f37815f6) - `scapi_search` now accepts an API family or family/name for `api` (for example `cdn` or `cdn/zones`), and an unknown id suggests close matches. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e)]:
+  - @salesforce/b2c-api-schemas@0.3.0
+
+## 2.4.0
+
+### Minor Changes
+
+- [#715](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/715) [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97) - Detect AI coding agents (Claude Code, Cursor, Codex, Gemini CLI, GitHub Copilot, OpenCode, and others). Under an agent, `b2c --help` adds guidance for finding commands and docs, and interactive confirmations fail fast with a hint to pass `--force`/`--yes` instead of waiting for input. The same fail-fast behavior applies whenever no interactive terminal is available, so confirmations can no longer be answered by piping input (use `--force`/`--yes`). Set `SFCC_AGENT=0` to opt out of detection, or `SFCC_AGENT=1` to opt in. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#715](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/715) [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97) - Anonymous usage telemetry and the HTTP User-Agent now identify the detected AI agent, so agent-driven usage can be measured. Agent session IDs are never sent; only a one-way hash groups commands from the same session. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#715](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/715) [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97) - Add `b2c commands search <query>` to find the CLI command for a task by keyword (for example `b2c commands search "reset sandbox" --json`). It complements `b2c docs search`, which searches documentation. The SDK exports `CommandSearchIndex` from `@salesforce/b2c-tooling-sdk/cli`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - Documentation search now includes the B2C Commerce Solutions guides (bot management, caching strategies, flash-sale traffic, and industry solutions) in a new `commerce-solutions` category. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#715](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/715) [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97) - Add `b2c docs skill` to list, search, and read the agent skills bundled with the CLI, no plugin install required. Pass a skill, topic, or command (e.g. `b2c docs skill code deploy`); topic and command help now point to the covering skill. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - Added `--dotenv-file` / `SFCC_DOTENV_FILE` to use another env file (such as `.env.staging`) instead of `.env`. An empty `--dotenv-file ""` or `--config ""` now means no env file or no `dw.json`. With `--project-directory`, the `.env` is now read from that directory instead of the current one. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#715](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/715) [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97) - Publish a JSON Schema for `dw.json`, which gives editors completion, hover descriptions, and validation. The VS Code extension applies it to every `dw.json`. In other editors, reference `https://salesforcecommercecloud.github.io/b2c-developer-tooling/schemas/dw.schema.json` as `"$schema"`. The schema also ships with the SDK as `@salesforce/b2c-tooling-sdk/schemas/dw.schema.json`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - Fixed an explicit `--config` / `SFCC_CONFIG` path (or MCP `configPath`) also pulling in instances from the global default `dw.json`; the explicit file is now used on its own, and a missing file is reported. If you relied on instances from the global file, remove the explicit path or add those instances to the explicit file. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - The guidance catalog exposes skill metadata (verbatim frontmatter and per-file digests) through new `skills()` and `skill(uri)` methods. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#733](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/733) [`5220490`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/52204901a68467980e86d6c399869c93a26ed64a) - Add `--scapi-schemas` (`SFCC_SCAPI_SCHEMAS`) so SCAPI code mode can use local OpenAPI contracts for beta and pre-release APIs. A local contract replaces the bundled or live contract for the same API, or adds a new one. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#734](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/734) [`bea5bdc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bea5bdc81ae9353848b38258de4e5a32a76da9ae) - The default `--mrt-backend` is now `legacy` (the MRT Cloud API) instead of `auto`. MRT commands no longer auto-detect and prefer the SCAPI backend unless you opt in. To restore the previous behavior — prefer SCAPI when short code, tenant ID, and client-credentials/JWT Bearer auth are configured, otherwise fall back to legacy — pass `--mrt-backend auto` (or set `MRT_BACKEND=auto` / `mrtBackend` in `dw.json`). Use `--mrt-backend scapi` to require SCAPI with no fallback. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+### Patch Changes
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - Tenant/organization IDs are now automatically derived from sandbox patterns (`abcd-001.dx.commercecloud.salesforce.com` → `abcd_001`) when not configured, with a warning when a configured tenant ID doesn't match. Conversely, a sandbox tenant ID with no hostname now derives the hostname, so a Storefront Next project targeting a sandbox works without `SFCC_SERVER`. Sandboxes configured with only a short code can now use SCAPI when `apiBackend` is `auto`. `normalizeTenantId()` now only extracts tenants from sandbox hostnames and returns other dotted values unchanged. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#730](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/730) [`9cca45e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9cca45e02cfaf40b8ad45ddf76e3468a1ae0f9f8) - SCAPI code mode now accepts code that ends with a semicolon or a trailing line comment, instead of failing with a syntax error. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - Storefront Next variables (`PUBLIC__app__*`, `COMMERCE_API_SLAS_SECRET`) now only fill settings missing from the selected `dw.json` instance, so `-i <instance>` keeps that instance's tenant, short code, site, and SLAS client. A higher-priority source (such as an env file `SFCC_SERVER` or a config plugin) with a different hostname now skips lower-priority sources instead of mixing settings from both. SDK users reading Storefront Next variables through `EnvSource` should add `StorefrontNextEnvSource` after `dw.json`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.3.0
 
 ### Minor Changes

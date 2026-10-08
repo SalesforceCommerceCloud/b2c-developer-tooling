@@ -94,7 +94,7 @@ describe('operations/mrt/mrt-backend', () => {
       const {calls, branches} = makeBranches({
         scapi: async () => {
           calls.push('scapi');
-          throw new ScapiRequestError('bad request', 400);
+          throw new ScapiRequestError('bad request', 404);
         },
       });
       const fallbackReasons: string[] = [];

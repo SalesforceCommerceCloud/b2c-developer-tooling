@@ -1,5 +1,48 @@
 # Change Log
 
+## 1.5.1
+
+### Patch Changes
+
+- Updated dependencies [[`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e), [`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e)]:
+  - @salesforce/b2c-tooling-sdk@2.6.0
+
+## 1.5.0
+
+### Minor Changes
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - The API Browser now shows full operation summaries, descriptions, examples and documentation images for every API. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - The API Browser now loads bundled offline schemas when the live fetch fails (no configuration, no access, or the Schemas API is unreachable). It shows a warning and a banner, and Try it out is disabled because there are no live credentials. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - The instance picker now lists instances from installed plugin config sources, each in its own section. You can select them for a workspace and set them as the default, just like dw.json instances. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - The API Browser's Try it out form again pre-fills your configured organization ID instead of the API contract's example value. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e), [`c534797`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c5347970fc247f412b84c34c41d4df4965e2c710), [`163138e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/163138eb8ff1c045a64f3be246c1d1c2f37815f6), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da)]:
+  - @salesforce/b2c-tooling-sdk@2.5.0
+
+## 1.4.0
+
+### Minor Changes
+
+- [#715](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/715) [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97) - Publish a JSON Schema for `dw.json`, which gives editors completion, hover descriptions, and validation. The VS Code extension applies it to every `dw.json`. In other editors, reference `https://salesforcecommercecloud.github.io/b2c-developer-tooling/schemas/dw.schema.json` as `"$schema"`. The schema also ships with the SDK as `@salesforce/b2c-tooling-sdk/schemas/dw.schema.json`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - The status bar now shows the instance actually in use and warns when env variables override it. The instance picker adds **None**, unnamed `dw.json` entries, an **Env File** section for choosing `.env` or a `.env.*` file, and **Inspect Resolved Config** at the top. A workspace instance selected from a file that is no longer the global default is now dropped, and the workspace follows the default again. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - **B2C DX: Inspect Resolved Config** now shows the extension's own resolved configuration, including the selected instance and env file, where each value comes from, and which values were not used and why. It no longer requires the CLI or the onboarding feature flag. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - Storefront Next variables (`PUBLIC__app__*`, `COMMERCE_API_SLAS_SECRET`) now only fill settings missing from the selected `dw.json` instance, so `-i <instance>` keeps that instance's tenant, short code, site, and SLAS client. A higher-priority source (such as an env file `SFCC_SERVER` or a config plugin) with a different hostname now skips lower-priority sources instead of mixing settings from both. SDK users reading Storefront Next variables through `EnvSource` should add `StorefrontNextEnvSource` after `dw.json`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - Code Sync no longer retries failed uploads every 5 seconds forever. Authentication failures (401/403) pause sync with a single warning until the next save or **Retry**, other failures back off up to 5 minutes, and failed deletes are no longer dropped. After a configuration change (such as fixing credentials in `.env`), changes that failed are retried with the new configuration. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4), [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835), [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835), [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4), [`5220490`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/52204901a68467980e86d6c399869c93a26ed64a), [`bea5bdc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bea5bdc81ae9353848b38258de4e5a32a76da9ae), [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835), [`9cca45e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9cca45e02cfaf40b8ad45ddf76e3468a1ae0f9f8), [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835)]:
+  - @salesforce/b2c-tooling-sdk@2.4.0
+
 ## 1.3.2
 
 ### Patch Changes

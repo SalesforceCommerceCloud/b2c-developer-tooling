@@ -158,5 +158,6 @@ export function discoverPlugins(options: PluginDiscoveryOptions = {}): Discovere
     }
   }
 
-  return plugins;
+  // Same order as the CLI (see byPluginName), so sources of equal priority rank the same everywhere.
+  return plugins.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }

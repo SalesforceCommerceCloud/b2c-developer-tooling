@@ -18,8 +18,30 @@ import {findCartridgesSafe} from '../workspace-discovery.js';
 import {createScriptsBackendFromExtension} from './scripts-backend.js';
 
 const DEBOUNCE_MS = 150;
-const ERROR_RATE_LIMIT_MS = 5000;
 const STATE_KEY_PREFIX = 'b2c-dx.codeSync.state.';
+
+export interface CodeSyncRetryOptions {
+  /** Delay before the first retry after a failed upload. */
+  initialRetryMs: number;
+  /** Upper bound for the doubling retry delay. */
+  maxRetryMs: number;
+}
+
+const DEFAULT_RETRY: CodeSyncRetryOptions = {initialRetryMs: 5000, maxRetryMs: 5 * 60_000};
+
+/** HTTP status of an upload failure: from an HTTPError response, else from the message ("PUT failed: 401 ..."). */
+export function uploadErrorStatus(error: unknown): number | undefined {
+  const status = (error as {response?: {status?: unknown}} | undefined)?.response?.status;
+  if (typeof status === 'number') return status;
+  const match = /\b([45]\d\d)\b/.exec(error instanceof Error ? error.message : String(error));
+  return match ? Number(match[1]) : undefined;
+}
+
+/** Credential and permission failures don't go away on retry; they need the user to fix the configuration. */
+export function isAuthUploadError(error: unknown): boolean {
+  const status = uploadErrorStatus(error);
+  return status === 401 || status === 403;
+}
 
 export class CodeSyncManager implements vscode.Disposable {
   readonly outputChannel: vscode.OutputChannel;
@@ -35,11 +57,22 @@ export class CodeSyncManager implements vscode.Disposable {
   private pendingDeletes = new Map<string, FileChange>();
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private isProcessing = false;
-  private lastErrorTime = 0;
+
+  // Failure state: doubling retry delay for transient errors, a pause for auth errors
+  private retryDelayMs = 0;
+  private nextRetryAt = 0;
+  private retryTimer: ReturnType<typeof setTimeout> | undefined;
+  private authPaused = false;
+  private lastError: string | undefined;
+
+  /** Hostname whose pending changes were kept across a configuration reload. */
+  private suspendedHostname: string | undefined;
 
   constructor(
     private readonly workspaceState: vscode.Memento,
     private readonly configProvider: B2CExtensionConfig,
+    private readonly upload: typeof uploadFiles = uploadFiles,
+    private readonly retry: CodeSyncRetryOptions = DEFAULT_RETRY,
   ) {
     this.outputChannel = vscode.window.createOutputChannel('B2C Code Upload');
     this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
@@ -61,6 +94,7 @@ export class CodeSyncManager implements vscode.Disposable {
     }
 
     this.instance = instance;
+    this.resetFailureState();
 
     // Discover cartridges
     const cartridges = findCartridgesSafe(directory);
@@ -104,10 +138,14 @@ export class CodeSyncManager implements vscode.Disposable {
 
     this.watching = true;
 
-    this.outputChannel.clear();
-    this.outputChannel.show(true);
+    // A restart after a configuration reload keeps the log (and its errors) and doesn't steal focus.
+    const resuming = this.suspendedHostname !== undefined;
+    if (!resuming) {
+      this.outputChannel.clear();
+      this.outputChannel.show(true);
+    }
     const hostname = instance.config.hostname ?? 'unknown';
-    this.log(`--- Code Sync started ---`);
+    this.log(resuming ? `--- Code Sync restarted with the reloaded configuration ---` : `--- Code Sync started ---`);
     this.log(`Instance: ${hostname}`);
     if (this.codeVersion) {
       this.log(`Code Version: ${this.codeVersion}`);
@@ -116,6 +154,17 @@ export class CodeSyncManager implements vscode.Disposable {
     for (const c of cartridges) {
       this.log(`  ${c.name} (${c.src})`);
     }
+
+    // Changes that failed before a reload (for example with credentials the reload fixed)
+    // are retried, but only against the same instance.
+    const pending = this.pendingUploads.size + this.pendingDeletes.size;
+    if (pending > 0 && this.suspendedHostname === instance.config.hostname) {
+      this.log(`[Resume] Retrying ${pending} change(s) pending from before the reload`);
+      this.scheduleProcessing();
+    } else {
+      this.discardPending();
+    }
+    this.suspendedHostname = undefined;
 
     this.updateStatusBar();
   }
@@ -146,11 +195,12 @@ export class CodeSyncManager implements vscode.Disposable {
   async stopWatch(): Promise<void> {
     if (!this.watching) return;
 
-    // Clear debounce timer
+    // Clear debounce and retry timers
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = undefined;
     }
+    this.clearRetryTimer();
 
     // Dispose all file watchers first so no new changes accumulate while we drain.
     for (const w of this.fileWatchers) {
@@ -160,14 +210,17 @@ export class CodeSyncManager implements vscode.Disposable {
 
     // Drain any pending uploads/deletes accumulated since the last debounce tick
     // (or queued while a previous processChanges() loop was running). Without
-    // this drain, a save right before stop would be silently dropped.
+    // this drain, a save right before stop would be silently dropped. The drain
+    // is a single immediate attempt: stopping must not wait out a retry delay.
     if (this.pendingUploads.size > 0 || this.pendingDeletes.size > 0) {
       try {
-        await this.processChanges();
+        await this.processChanges({drain: true});
       } catch (error) {
         this.log(`[Stop] Error draining pending changes: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
+    const notUploaded = this.pendingUploads.size + this.pendingDeletes.size;
+    if (notUploaded > 0) this.log(`[Stop] ${notUploaded} pending change(s) were not synced`);
 
     this.pendingUploads.clear();
     this.pendingDeletes.clear();
@@ -175,9 +228,45 @@ export class CodeSyncManager implements vscode.Disposable {
 
     this.watching = false;
     this.instance = undefined;
+    this.resetFailureState();
 
     this.log(`--- Code Sync stopped ---`);
     this.updateStatusBar();
+  }
+
+  /**
+   * Stop watching for a configuration reload, keeping pending changes so a restart
+   * against the same instance retries them with the new configuration instead of
+   * a last attempt with the old one.
+   */
+  suspendForReload(): void {
+    if (!this.watching) return;
+
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = undefined;
+    }
+    for (const w of this.fileWatchers) {
+      w.dispose();
+    }
+    this.fileWatchers = [];
+
+    this.suspendedHostname = this.instance?.config.hostname ?? '';
+    this.watching = false;
+    this.instance = undefined;
+    this.resetFailureState();
+
+    this.log(`--- Code Sync suspended for configuration reload ---`);
+    this.updateStatusBar();
+  }
+
+  /** Drop changes kept by {@link suspendForReload} when sync doesn't restart for the same instance. */
+  discardPending(): void {
+    const pending = this.pendingUploads.size + this.pendingDeletes.size;
+    if (pending > 0) this.log(`[Stop] ${pending} pending change(s) were not synced`);
+    this.pendingUploads.clear();
+    this.pendingDeletes.clear();
+    this.suspendedHostname = undefined;
   }
 
   async toggle(instance: B2CInstance, directory: string, hostname: string): Promise<void> {
@@ -282,7 +371,16 @@ export class CodeSyncManager implements vscode.Disposable {
     await this.workspaceState.update(`${STATE_KEY_PREFIX}${hostname}`, enabled);
   }
 
+  /** Retry pending changes now, ignoring any retry delay or auth pause. */
+  retryNow(): void {
+    this.clearRetryTimer();
+    this.nextRetryAt = 0;
+    this.authPaused = false;
+    void this.processChanges();
+  }
+
   dispose(): void {
+    this.clearRetryTimer();
     if (this.watching) {
       this.stopWatch().catch((error: unknown) => {
         // Best-effort: extension is unloading; log to the channel so failures
@@ -324,7 +422,7 @@ export class CodeSyncManager implements vscode.Disposable {
     }, DEBOUNCE_MS);
   }
 
-  private async processChanges(): Promise<void> {
+  private async processChanges(options: {drain?: boolean} = {}): Promise<void> {
     if (this.isProcessing) return;
     if (!this.instance || !this.codeVersion) return;
 
@@ -332,10 +430,14 @@ export class CodeSyncManager implements vscode.Disposable {
 
     try {
       while (this.pendingUploads.size > 0 || this.pendingDeletes.size > 0) {
-        // Rate limit after errors
-        const timeSinceError = Date.now() - this.lastErrorTime;
-        if (timeSinceError < ERROR_RATE_LIMIT_MS) {
-          await new Promise((resolve) => setTimeout(resolve, ERROR_RATE_LIMIT_MS - timeSinceError));
+        // Suspended or stopped while an earlier batch was uploading.
+        if (!this.instance || !this.codeVersion) return;
+
+        // After a transient failure, wait out the retry delay instead of retrying on every save.
+        const wait = this.nextRetryAt - Date.now();
+        if (!options.drain && wait > 0) {
+          this.scheduleRetry(wait);
+          return;
         }
 
         const uploads = Array.from(this.pendingUploads.values());
@@ -344,7 +446,7 @@ export class CodeSyncManager implements vscode.Disposable {
         this.pendingDeletes.clear();
 
         try {
-          await uploadFiles(this.instance, this.codeVersion, uploads, deletes, {
+          await this.upload(this.instance, this.codeVersion, uploads, deletes, {
             onUpload: (files) => {
               const ts = new Date().toLocaleTimeString();
               for (const f of files) {
@@ -357,21 +459,98 @@ export class CodeSyncManager implements vscode.Disposable {
                 this.log(`${ts} [Delete] ${f}`);
               }
             },
-            onError: (error) => {
-              this.log(`[Error] ${error.message}`);
-            },
           });
-        } catch {
-          this.lastErrorTime = Date.now();
-          // Re-queue for retry
-          for (const f of uploads) {
-            this.pendingUploads.set(f.src, f);
-          }
+          this.onSyncSuccess();
+        } catch (error) {
+          this.requeue(uploads, deletes);
+          if (!this.watching && !options.drain) return;
+          this.onSyncFailure(error);
+          // An auth failure waits for the next save or an explicit retry.
+          if (options.drain || this.authPaused) return;
         }
       }
     } finally {
       this.isProcessing = false;
     }
+  }
+
+  /** Put a failed batch back without overwriting changes made since it was taken. */
+  private requeue(uploads: FileChange[], deletes: FileChange[]): void {
+    for (const f of uploads) {
+      if (!this.pendingUploads.has(f.src) && !this.pendingDeletes.has(f.src)) this.pendingUploads.set(f.src, f);
+    }
+    for (const f of deletes) {
+      if (!this.pendingUploads.has(f.src) && !this.pendingDeletes.has(f.src)) this.pendingDeletes.set(f.src, f);
+    }
+  }
+
+  private onSyncSuccess(): void {
+    if (this.lastError) this.log(`${new Date().toLocaleTimeString()} [Recovered] Uploads are working again`);
+    const wasFailing = Boolean(this.lastError);
+    this.resetFailureState();
+    if (wasFailing) this.updateStatusBar();
+  }
+
+  private onSyncFailure(error: unknown): void {
+    const message = error instanceof Error ? error.message : String(error);
+    const ts = new Date().toLocaleTimeString();
+    const pending = this.pendingUploads.size + this.pendingDeletes.size;
+
+    if (isAuthUploadError(error)) {
+      const firstPause = !this.authPaused;
+      this.authPaused = true;
+      this.retryDelayMs = 0;
+      this.nextRetryAt = 0;
+      this.log(`${ts} [Error] ${message}`);
+      this.log(
+        `${ts} [Paused] ${pending} change(s) pending; retrying on the next save. Check the instance credentials.`,
+      );
+      if (firstPause) {
+        void vscode.window
+          .showWarningMessage(
+            `B2C DX: Code Sync is paused: ${message}. Check the instance credentials; sync retries on the next save.`,
+            'Retry',
+            'Stop Code Sync',
+          )
+          .then((choice) => {
+            if (choice === 'Retry') this.retryNow();
+            else if (choice === 'Stop Code Sync') void vscode.commands.executeCommand('b2c-dx.codeSync.stop');
+          });
+      }
+    } else {
+      this.authPaused = false;
+      this.retryDelayMs = this.retryDelayMs
+        ? Math.min(this.retryDelayMs * 2, this.retry.maxRetryMs)
+        : this.retry.initialRetryMs;
+      this.nextRetryAt = Date.now() + this.retryDelayMs;
+      this.log(`${ts} [Error] ${message}`);
+      this.log(`${ts} [Retry] ${pending} change(s) pending; retrying in ${Math.round(this.retryDelayMs / 1000)}s`);
+    }
+    this.lastError = message;
+    this.updateStatusBar();
+  }
+
+  private scheduleRetry(delayMs: number): void {
+    if (this.retryTimer) return;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = undefined;
+      void this.processChanges();
+    }, delayMs);
+  }
+
+  private clearRetryTimer(): void {
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = undefined;
+    }
+  }
+
+  private resetFailureState(): void {
+    this.clearRetryTimer();
+    this.retryDelayMs = 0;
+    this.nextRetryAt = 0;
+    this.authPaused = false;
+    this.lastError = undefined;
   }
 
   private log(message: string): void {
@@ -383,6 +562,15 @@ export class CodeSyncManager implements vscode.Disposable {
     if (state === 'warning') {
       this.statusBar.text = '$(warning)';
       this.statusBar.tooltip = 'Code Sync: No code version configured\nClick to toggle';
+      this.statusBar.show();
+    } else if (this.watching && this.lastError) {
+      const lines = [
+        this.authPaused ? 'Code Sync: Paused (retries on the next save)' : 'Code Sync: Upload failed, retrying',
+        `Error: ${this.lastError}`,
+        'Click to stop',
+      ];
+      this.statusBar.text = '$(cloud-upload) $(warning)';
+      this.statusBar.tooltip = lines.join('\n');
       this.statusBar.show();
     } else if (this.watching) {
       const hostname = this.instance?.config.hostname ?? '';

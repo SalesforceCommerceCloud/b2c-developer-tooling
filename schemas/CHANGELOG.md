@@ -1,5 +1,11 @@
 # @salesforce/b2c-api-schemas
 
+## 0.3.0
+
+### Minor Changes
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - SCAPI code mode and `scapi_schemas_list` now see operation summaries, descriptions and examples (the bundled corpus grows to 61 APIs), so agents can search by what an operation does, not just its ID; `scapi_schemas_list` also falls back to the bundled contracts with a warning when the live Schemas API is unavailable. `scapi_search` returns a compact outline by default (nested descriptions and examples dropped to fit the 24 KB result cap); pass `detail: "full"` for all prose. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.2.0
 
 ### Minor Changes

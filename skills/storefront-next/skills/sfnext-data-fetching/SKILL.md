@@ -1,190 +1,140 @@
 ---
 name: sfnext-data-fetching
-description: Implement server-side data fetching in Storefront Next using loaders, actions, and useScapiFetcher. Use when writing loader functions, making SCAPI calls, handling form submissions, or implementing interactive data fetching. Covers synchronous loaders, streaming patterns, createApiClients, and parallel requests. NOT for client-side Zustand state — see sfnext-state-management.
+description: >-
+  Load and mutate data in a Storefront Next project: route loaders that call SCAPI through createApiClients from @/lib/api-clients.server, critical versus streamed (deferred) data, createBasketAction and BasketAction for cart actions, createActionError and ErrorCode, data() responses, useFetcher and the useScapiFetcher hook with its server allowlist, request-scoped dedupe and MRT timeouts, non-personalized SCAPI responses, shopper context, and custom API clients. Use for "fetch products in a loader", "stream data", "add a cart action", "call SCAPI from a component", "resource route", "NormalizedApiError", or "loader blocks the page". Do not use for route files or links (use `storefront-next:sfnext-routing`), when loaders re-run after actions (use `storefront-next:sfnext-revalidation`), Suspense/LCP tuning (use `storefront-next:sfnext-performance`), or defining SCAPI custom APIs (use `storefront-next:sfnext-scapi`).
 ---
 
-# Data Fetching Skill
+# Storefront Next Data Fetching
 
-This skill covers server-side data fetching patterns in Storefront Next — loaders, actions, and the useScapiFetcher hook.
+All data comes from the server. Loaders and actions run on the server with the shopper's session; the browser never calls SCAPI directly. Your project ships `docs/README-DATA.md`, `docs/README-SUSPENSE.md`, `docs/README-SCAPI-NON-PERSONALIZED-RESPONSES.md` and `docs/README-SHOPPER-CONTEXT.md`, plus the "Performance & Data Rules" in `AGENTS.md`; this skill is the quick path, those are authoritative.
 
-## Overview
+## The rules (same as AGENTS.md)
 
-Storefront Next mandates **server-only data loading**. All SCAPI requests execute on the MRT server, never in the browser. Three mechanisms exist:
+1. Fetch on the server in `loader` (reads) and `action` (writes). There is no `clientLoader` or `clientAction`.
+2. Classify every piece of data:
+   - **Critical** (needed for SEO, LCP, layout stability or the HTTP status): `await` it in the loader.
+   - **Non-critical** (below the fold, recommendations, reviews, secondary panels): start the request, do not await it, and return the unresolved promise so it streams.
+   - **Interaction-driven** (only after a click, hover or input): fetch on demand with a fetcher.
+3. Never block a loader on non-critical data.
+4. Pass the promise through `loaderData` and read it under its own `<Suspense>` with `use()` or `<Await>`. Keep the promise identity stable (compose it in the loader, never `Promise.all` or `.then` in render).
+5. Export `shouldRevalidate` on routes whose loaders depend on URL filters (see `storefront-next:sfnext-revalidation`).
 
-| Mechanism | When It Runs | Use Case |
-|-----------|-------------|----------|
-| `loader` | Route navigation | Initial page data |
-| `action` | Form submission | Mutations (add to cart, update profile) |
-| `useScapiFetcher` | User interaction | On-demand fetching (search suggestions, infinite scroll) |
+## Loader with critical and streamed data
 
-## Loader Patterns
+```tsx
+import { Suspense } from 'react';
+import { Await } from 'react-router';
+import type { Route } from './+types/_app.example';
+import { createApiClients } from '@/lib/api-clients.server';
+import { fetchProductById } from '@/lib/api/products.server';
+import { NormalizedApiError } from '@/lib/api/normalized-api-error';
 
-Loaders can be **synchronous** (returning promises for streaming) or **async** (awaiting critical data). Choose based on what the page needs:
-
-- **Sync loader** — Returns promises directly. Enables streaming SSR: the shell renders immediately while data streams in. Best when all data can render progressively.
-- **Async loader** — Awaits critical data before rendering. Use when data is required for SEO or the page shell (e.g., category name in breadcrumbs). Non-critical data can still be returned as promises for streaming.
-
-```typescript
-// Sync — full streaming (all data renders progressively)
-export function loader({ params, context }: LoaderFunctionArgs): ProductPageData {
-    const clients = createApiClients(context);
-    return {
-        product: clients.shopperProducts.getProduct({
-            params: { path: { id: params.productId } }
-        }).then(({ data }) => data),
-        reviews: clients.shopperProducts.getReviews({
-            params: { path: { id: params.productId } }
-        }).then(({ data }) => data),
-    };
-}
-
-// Async — await critical data, stream the rest (mixed strategy)
-export async function loader({ params, context }: LoaderFunctionArgs): Promise<CategoryPageData> {
+export async function loader({ context, params }: Route.LoaderArgs) {
     const clients = createApiClients(context);
 
-    // Await critical data needed for page shell/SEO
-    const category = await clients.shopperProducts.getCategory({
-        params: { path: { id: params.categoryId } }
-    }).then(({ data }) => data);
+    // Non-critical: start now, do not await.
+    const related = clients.shopperSearch
+        .productSearch({ params: { query: { q: 'shirt', limit: 8 } } })
+        .then(({ data }) => data.hits ?? []);
 
-    return {
-        category,  // Resolved immediately
-        products: clients.shopperSearch.productSearch({
-            params: { query: { q: '', refine: { cgid: params.categoryId } } }
-        }).then(({ data }) => data),  // Streamed
-    };
-}
-```
-
-## When to Use Each Pattern
-
-| Pattern | When | Example |
-|---------|------|---------|
-| Sync (full streaming) | All data can render progressively | Product page with reviews |
-| Async (await critical) | SEO-critical data needed for page shell | Category page (needs category name) |
-| Mixed | Some data critical, some deferrable | Category name (await) + product grid (stream) |
-
-See [Loader Patterns Reference](references/LOADER-PATTERNS.md) for more patterns and data flow diagrams.
-
-## Action Functions
-
-Handle mutations (form submissions, cart updates):
-
-```typescript
-import { data, redirect } from 'react-router';
-
-export async function action({ request, context }: ActionFunctionArgs) {
-    const formData = await request.formData();
-    const productId = formData.get('productId') as string;
-
-    const clients = createApiClients(context);
-
+    // Critical: needed for status, SEO and LCP.
     try {
-        await clients.shopperBasketsV2.addItemToBasket({
-            params: {
-                path: { basketId },
-                body: { productId, quantity: 1 },
-            },
-        });
-        return data({ success: true });
-    } catch (error) {
-        return data({ success: false, error: error.message }, { status: 400 });
+        const product = await fetchProductById(context, params.id ?? '', { expand: ['images', 'prices'] });
+        if (!product) throw new Response('Not found', { status: 404 });
+        return { product, related };
+    } catch (e) {
+        if (e instanceof NormalizedApiError && e.status) throw new Response(e.message, { status: e.status });
+        throw e;
     }
 }
-```
 
-## useScapiFetcher — Interactive Data Fetching
-
-For on-demand data fetching triggered by user interactions (after page load):
-
-```typescript
-import { useScapiFetcher } from '@/hooks/use-scapi-fetcher';
-
-export function useSearchSuggestions({ q, limit, currency }) {
-    const parameters = useMemo(
-        () => ({ params: { query: { q, limit, currency } } }),
-        [q, limit, currency]
+export default function Example({ loaderData }: Route.ComponentProps) {
+    return (
+        <>
+            <h1>{loaderData.product.name}</h1>
+            <Suspense fallback={<div className="h-40" aria-busy="true" />}>
+                <Await resolve={loaderData.related}>{(hits) => <ul>{hits.map((h) => <li key={h.productId}>{h.productName}</li>)}</ul>}</Await>
+            </Suspense>
+        </>
     );
-
-    const fetcher = useScapiFetcher(
-        'shopperSearch',
-        'getSearchSuggestions',
-        parameters
-    );
-
-    const refetch = useCallback(async () => {
-        await fetcher.load();
-    }, [fetcher]);
-
-    return {
-        data: fetcher.data,
-        isLoading: fetcher.state === 'loading',
-        refetch,
-    };
 }
 ```
 
-See [SCAPI Fetcher Reference](references/SCAPI-FETCHER.md) for the complete useScapiFetcher API.
+Real precedent: `src/routes/_app.p.$.tsx` awaits the product (404 becomes `throw new Response(..., { status: 404 })`) and streams the Page Designer page, schema and extras; `src/components/product-grid/deferred.tsx` is the streamed-grid pattern.
 
-## API Client Usage
+## SCAPI clients
 
-Always use `createApiClients(context)` in loaders and actions:
+`createApiClients(context)` from `@/lib/api-clients.server` returns `AppClients`: every generated Shopper API client (`shopperProducts`, `shopperSearch`, `shopperBasketsV2`, `shopperCustomers`, `shopperOrders`, `shopperLogin`, and more) plus generated clients for your custom APIs (`@/scapi/custom-clients`). Call shape:
 
-```typescript
-import { createApiClients } from '@/lib/api-clients';
-
-export function loader({ context }: LoaderFunctionArgs) {
-    const clients = createApiClients(context);
-
-    clients.shopperProducts.getProduct({...});
-    clients.shopperCustomers.getCustomer({...});
-    clients.shopperBasketsV2.getBasket({...});
-    clients.shopperSearch.productSearch({...});
-    clients.shopperOrders.getOrder({...});
-}
+```ts
+const { data } = await clients.shopperBasketsV2.addItemToBasket({
+    params: { path: { basketId }, query: {} },
+    body: [{ productId, quantity: 1 }],   // body is a sibling of params; this endpoint takes an array
+});
 ```
 
-## Parallel vs Sequential Requests
+Results are `{ data }`; failures throw. Prefer the thin wrappers in `src/lib/api/*.server.ts` (`fetchProductById`, `fetchProductsByIds` which chunks to the 24-id limit, category, search, order, customer and basket helpers): they log and rethrow as `NormalizedApiError` (`@/lib/api/normalized-api-error`, with `.status` and `.cause`). Add new wrappers there rather than calling clients inline in many routes.
 
-```typescript
-// GOOD — Parallel requests (all start simultaneously)
-export function loader({ context }: LoaderFunctionArgs) {
-    const clients = createApiClients(context);
-    return {
-        product: clients.shopperProducts.getProduct({...}).then(({ data }) => data),
-        reviews: clients.shopperProducts.getReviews({...}).then(({ data }) => data),
-        recommendations: clients.shopperProducts.getRecommendations({...}).then(({ data }) => data),
-    };
-}
+The clients already wrap `fetch` with request-scoped GET/HEAD dedupe (identical calls in one request share one response; any mutation clears the cache), a hard timeout from the `MRT_REQUEST_TIMEOUT` environment variable when set, and a health observer that logs 429 and load-status headers. Do not re-implement them. More: [API-CLIENTS.md](references/API-CLIENTS.md).
 
-// AVOID — Sequential awaits of independent requests (unnecessarily slow)
-export async function loader({ context }: LoaderFunctionArgs) {
-    const clients = createApiClients(context);
-    const product = await clients.shopperProducts.getProduct({...});  // Waits...
-    const reviews = await clients.shopperProducts.getReviews({...});  // Then waits again
-    return { product, reviews };
-}
+Trim payloads: pass only the `expand`/`select` values you render. Availability is cached about 60 seconds and prices/promotions about 15 minutes, so short-TTL data is a good candidate for streaming. Shopper-agnostic responses can be cached using the policy in `src/lib/scapi/non-personalized-response-policy.server.ts` (see the shipped README-SCAPI-NON-PERSONALIZED-RESPONSES); request `personalized: 'none'` only where the response truly is the same for all shoppers, as the navigation loader in `_app.tsx` does.
+
+## Mutations: actions
+
+Prefer an `action.*` route and a `<Form>` (navigating) or `useFetcher` (non-navigating).
+
+Basket mutations use the factory, which loads the basket, parses `FormData`, catches errors and wraps the result:
+
+```ts
+// src/routes/action.example-remove-item.ts
+import { data } from 'react-router';
+import { BasketAction, createBasketAction } from '@/lib/cart/basket-action.server';
+import { createActionError } from '@/lib/action-error-helpers.server';
+import { ErrorCode } from '@/lib/error-codes';
+
+export const action = createBasketAction(
+    { method: 'POST', action: BasketAction.CartItemRemove, parse: (fd) => ({ itemId: String(fd.get('itemId') ?? '') }) },
+    async ({ input, basketId, clients }) => {
+        if (!input.itemId) {
+            return data({ success: false, error: createActionError({ code: ErrorCode.REQUIRED_FIELD, message: 'itemId is required' }) }, { status: 400 });
+        }
+        const { data: basket } = await clients.shopperBasketsV2.removeItemFromBasket({ params: { path: { basketId, itemId: input.itemId } } });
+        return basket; // factory returns { success: true, basket } and syncs the basket resource
+    }
+);
 ```
 
-## Common Pitfalls
+Return the updated `Basket` for success. Return `data(payload, { status })` for validation errors (use `data()` from `react-router`, not `Response.json`). Thrown SCAPI 4xx errors pass their status through; others become 500. Available `BasketAction` values are listed in `src/lib/cart/basket-action.server.ts`. See the existing `action.cart-item-*.tsx` files. Details and non-basket actions: [ACTIONS.md](references/ACTIONS.md).
 
-| Pitfall | Problem | Solution |
-|---------|---------|----------|
-| Awaiting all data | Blocks page transition unnecessarily | Only await SEO-critical data; stream the rest |
-| Client loaders | Not permitted in Storefront Next | Use server `loader` or `useScapiFetcher` |
-| Sequential `await` | Slow data loading | Return promises in parallel |
-| Missing `context` in `getConfig()` | Config unavailable | Pass `context` in server loaders: `getConfig(context)` |
+## Fetching from components
+
+- Use `useFetcher` against your own `action.*`/`resource.*` routes (`resourceRoutes` in `@/route-paths`).
+- Use `useScapiFetcher(client, method, { params, body })` from `@/hooks/use-scapi-fetcher` for a small allowlisted set of Shopper calls without writing a route. It returns `.load()`, `.submit(payload)`, `.data`, `.errors`, `.success`. The server enforces an allowlist in `src/lib/scapi/resource-policy.ts` (for example `shopperProducts.getProduct`, `shopperBasketsV2.getBasket`, `shopperSearch.getSearchSuggestions`, and selected `shopperCustomers` address and profile mutations). Anything else needs a dedicated route. See [SCAPI-FETCHER.md](references/SCAPI-FETCHER.md).
+- Do not fetch in `useEffect` on mount what the loader could fetch (see the performance review checklist in `storefront-next:sfnext-performance`).
+- Fetchers and raw `fetch` calls that do not go through a submission do not trigger revalidation; actions do, for every active loader.
+
+## Checklist
+
+1. Can the loader fetch this at request time? If yes, do it there.
+2. Is it critical? `await`; otherwise return the promise with its own Suspense and a sized skeleton.
+3. Did you request only the fields you render?
+4. Mutation errors: `createActionError` with an `ErrorCode`, return with `data(..., { status })`.
+5. New shared fetch logic goes in `src/lib/api/*.server.ts` with a test (`storefront-next:sfnext-testing`).
+6. Run `pnpm typecheck` and `pnpm test`.
+
+Deeper: [LOADERS.md](references/LOADERS.md).
+
+## Finding more
+
+Open `AGENTS.md` ("Key Documentation") and `docs/README-DATA.md` in your project. Search product docs with `b2c docs search "<term>"` or the `docs_search` MCP tool.
 
 ## Related Skills
 
-- `storefront-next:sfnext-scapi-management` - Adding/removing SCAPI clients and discovering API shapes
-- `storefront-next:sfnext-custom-apis` - Calling custom API endpoints from loaders/actions
-- `storefront-next:sfnext-routing` - Route file conventions and module exports
-- `storefront-next:sfnext-components` - Rendering loader data with createPage and Suspense
-- `storefront-next:sfnext-state-management` - Client-side Zustand stores (NOT data fetching)
-- `storefront-next:sfnext-authentication` - Auth context in loaders
-
-## Reference Documentation
-
-- [Loader Patterns Reference](references/LOADER-PATTERNS.md) - Data flow diagrams and advanced patterns
-- [SCAPI Fetcher Reference](references/SCAPI-FETCHER.md) - Complete useScapiFetcher API and examples
+- `storefront-next:sfnext-routing` - route files and links
+- `storefront-next:sfnext-revalidation` - avoid wasted loader re-runs after actions
+- `storefront-next:sfnext-performance` - Suspense placement, LCP, review checklist
+- `storefront-next:sfnext-state-management` - basket provider and client state
+- `storefront-next:sfnext-scapi` - SCAPI access and custom APIs
+- `storefront-next:sfnext-authentication` - sessions behind loaders
+- `b2c-cli:b2c-scapi-custom` - inspect custom API endpoints
+- `b2c:b2c-custom-api-development` - build a custom API

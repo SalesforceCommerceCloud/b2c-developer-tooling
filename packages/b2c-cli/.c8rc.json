@@ -2,6 +2,7 @@
   "all": true,
   "src": ["src"],
   "exclude": [
+    "dist/**",
     "test/**",
     "**/*.d.ts"
   ],

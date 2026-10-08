@@ -16,7 +16,8 @@ import type {ClientAuthMethod} from '../auth/client-credentials.js';
 import {ALL_AUTH_METHODS} from '../auth/types.js';
 import {resolveConfig, type NormalizedConfig, type ConfigSource, type ResolvedB2CConfig} from '../config/index.js';
 import {findDwJson} from '../config/dw-json.js';
-import {getStorefrontNextEnvironmentConfig} from '../config/sources/env-source.js';
+import {readEnvFile} from '../config/project-environment.js';
+import {STOREFRONT_NEXT_ENV_VAR_MAP, StorefrontNextEnvSource} from '../config/sources/env-source.js';
 import {getLogger} from '../logging/logger.js';
 
 // Re-export for convenience
@@ -197,6 +198,15 @@ export interface LoadConfigOptions {
   credentialsFile?: string;
   /** Account Manager hostname for OAuth (passed to plugins for host-specific config) */
   accountManagerHost?: string;
+  /**
+   * Env file in effect for this command (see {@link resolveEnvFilePath}).
+   *
+   * Its Storefront Next variables fill settings left unset by flags, toolkit
+   * variables and dw.json. Toolkit variables (`SFCC_*`, `MRT_*`) from the file
+   * are expected to be loaded into the environment already (see {@link applyEnvFile}),
+   * so they resolve like shell variables.
+   */
+  envFile?: string;
 }
 
 /**
@@ -220,7 +230,7 @@ export interface PluginSources {
 }
 
 /**
- * Loads configuration with precedence: CLI flags/env vars > dw.json > ~/.mobify
+ * Loads configuration with precedence: CLI flags/env vars > dw.json > Storefront Next variables > ~/.mobify
  *
  * OCLIF handles environment variables automatically via flag `env` properties.
  * The flags parameter already contains resolved env var values.
@@ -253,15 +263,9 @@ export async function loadConfig(
 ): Promise<ResolvedB2CConfig> {
   const logger = getLogger();
 
-  // oclif has already populated `flags` from explicit arguments and canonical
-  // toolkit environment variables. Add Storefront Next names only where those
-  // higher-priority values are absent.
-  const definedFlags = Object.fromEntries(Object.entries(flags).filter(([, value]) => value !== undefined));
-
   // Preserve instanceName and projectDirectory from options if not already in flags
   const effectiveFlags = {
-    ...getStorefrontNextEnvironmentConfig(),
-    ...definedFlags,
+    ...flags,
     instanceName: flags.instanceName ?? options.instance,
     projectDirectory: flags.projectDirectory ?? options.projectDirectory,
     workingDirectory: flags.workingDirectory ?? options.workingDirectory,
@@ -279,7 +283,7 @@ export async function loadConfig(
     credentialsFile: options.credentialsFile,
     accountManagerHost: options.accountManagerHost,
     sourcesBefore: pluginSources.before,
-    sourcesAfter: pluginSources.after,
+    sourcesAfter: [...(pluginSources.after ?? []), createStorefrontNextSource(options.envFile)],
   });
 
   // Log warnings (at warn level so users can see configuration issues)
@@ -288,4 +292,18 @@ export async function loadConfig(
   }
 
   return resolved;
+}
+
+/**
+ * Creates the Storefront Next fallback source from the environment, labelled
+ * with the env file when every value it provides came from that file.
+ */
+function createStorefrontNextSource(envFile?: string): StorefrontNextEnvSource {
+  const fileValues = envFile ? readEnvFile(envFile) : {};
+  const env = {...fileValues, ...process.env};
+  const used = Object.keys(STOREFRONT_NEXT_ENV_VAR_MAP).filter((key) => env[key]);
+  const fromFile = envFile !== undefined && used.length > 0 && used.every((key) => fileValues[key] === env[key]);
+  return fromFile
+    ? new StorefrontNextEnvSource(env, {location: envFile, envFile})
+    : new StorefrontNextEnvSource(env, {location: 'environment variables'});
 }

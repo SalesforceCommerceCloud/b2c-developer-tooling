@@ -1,90 +1,59 @@
-# MRT Deployment Reference
+# Managed Runtime Deployment Reference
 
-## Managed Runtime (MRT)
+## What MRT provides
 
-MRT is the hosting platform for Storefront Next storefronts. It provides:
+Server-side rendering on Node 24, a CDN in front of the SSR function and static bundle assets, separate environments (for example development, staging, production), and versioned bundles that can be re-deployed. Project, environment, member, redirect, and certificate management is done with `b2c mrt ...` (`b2c-cli:b2c-mrt`) or Runtime Admin.
 
-- **Server-side rendering** — Node.js runtime for SSR and loader execution
-- **CDN** — Global content delivery for static assets
-- **Environment management** — Separate environments for development, staging, production
-- **Bundle management** — Versioned deployments with rollback capability
+## Push flow
 
-## Deployment Commands
+```
+pnpm build  ->  build/
+pnpm push   ->  sfnext push: creates a bundle from build/, uploads it to the project
+            ->  with a target env (MRT_TARGET / -e): deploys it; with --wait: blocks until done
+```
+
+Precedence for project and environment: CLI flag, then `MRT_PROJECT` / `MRT_TARGET`, then `SFCC_MRT_PROJECT` / `SFCC_MRT_ENVIRONMENT`, then `dw.json` (`mrtProject`, `mrtEnvironment`). Credentials: `--api-key` / `MRT_API_KEY`, or `--credentials-file` / `MRT_CREDENTIALS_FILE`, or `~/.mobify`.
+
+Send extra flags through pnpm with `--`: `pnpm push -- --wait -e production`.
+
+## What push sends to MRT
+
+- The bundle (server build + client assets).
+- SSR parameters from `config.server.ts` `runtime.ssrParameters` (`ssrFunctionNodeVersion`, `envBasePath`) and `runtime.ssrOnly` / `ssrShared`.
+
+It does not send `.env` values or cartridges.
+
+## Environment variables
+
+Set per environment in Runtime Admin or with the b2c CLI (`pnpm config:push-env`, `b2c mrt env var set|push|list|delete`). Changes to variables apply to that environment; confirm the behavior in Runtime Admin for your project. Server-only secrets (`COMMERCE_API_SLAS_SECRET` for private clients, `GUEST_ORDER_LOOKUP_COOKIE_SECRET`, `MARKETING_CLOUD_*`) go in unprefixed. `PUBLIC__` variables are merged into config and visible in the browser. Limits: see Salesforce's [constraints](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.html#constraints).
+
+Example of per-environment application variables (values are yours):
 
 ```bash
-# Build, then run the template's push script
-pnpm run build && pnpm run push
-
-# Push with deployment message
-pnpm run push --message "Fix checkout flow"
-
-# Push to specific environment
-pnpm run push --environment production --wait
-
-# Create a bundle without deploying (inspection/custom pipelines)
-pnpm sfnext create-bundle -d . -o .bundle
+PUBLIC__app__commerce__api__clientId=<slas-client-id>
+PUBLIC__app__commerce__api__organizationId=f_ecom_<realm>_<instance>
+PUBLIC__app__commerce__api__shortCode=<short-code>
+PUBLIC__app__defaultSiteId=<site-id>
+PUBLIC__app__commerce__sites='[{"id":"<site-id>","defaultLocale":"en-US","defaultCurrency":"USD","supportedLocales":[{"id":"en-US","preferredCurrency":"USD"}],"supportedCurrencies":["USD"]}]'
 ```
 
-## Environment Variables on MRT
+## Domains, base path, cookies
 
-### Setting Variables
+- Many domains on one environment: register each as an external hostname in Runtime Admin, add SLAS redirect URIs per domain, configure `images.realmHostMappings`. The public origin is resolved per request from `X-Forwarded-Host`.
+- Several storefronts under one domain: give each environment a distinct `runtime.ssrParameters.envBasePath` (`/shop-a`); the CDN routes on the first path segment; the value reaches MRT via `pnpm push`.
+- Shared cookies across subdomains: `app.cookies.domain` plus Business Manager Hybrid Auth cookie-domain level `2`.
 
-Environment variables are set per-environment through:
+Details: `storefront-next:sfnext-configuration` `references/MULTI-SITE-URLS.md`. If the domain is also fronted by eCDN, manage zones and rules with `b2c-cli:b2c-ecdn`.
 
-1. **Runtime Admin or `b2c mrt env var set/push`** — Application variables on the selected environment; changes redeploy it.
-2. **`MRT_PROJECT`, `MRT_TARGET`, `MRT_API_KEY`** — Deployment target and credentials for `pnpm sfnext push`; these do not upload application variables from `.env`.
+## Rollback
 
-### Variable Limits
+Each push creates a bundle. To return to an earlier version, list bundles and deploy one to the environment: `b2c mrt bundle history -p <project> -e <env>` and `b2c mrt bundle deploy <bundleId> -p <project> -e <env>`. Cartridge changes roll back separately by activating a previous code version (`b2c-cli:b2c-code`).
 
-See Salesforce's [Environment Variables constraints](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.html#constraints)
-for current limits. The 32 KB value-size limit covers all environment variables,
-not only `PUBLIC__` values. Public configuration paths must exist in `config.server.ts`.
+## Verifying a deployment
 
-### Production Configuration Example
-
-```bash
-# Commerce API credentials
-PUBLIC__app__commerce__api__clientId=prod-client-id
-PUBLIC__app__commerce__api__organizationId=f_ecom_abcd_001
-PUBLIC__app__commerce__api__siteId=RefArchGlobal
-PUBLIC__app__commerce__api__shortCode=kv7kzm78
-
-# Site configuration
-PUBLIC__app__defaultSiteId=RefArchGlobal
-PUBLIC__app__commerce__sites='[{"id":"RefArchGlobal","defaultLocale":"en-US","defaultCurrency":"USD","supportedLocales":[{"id":"en-US","preferredCurrency":"USD"},{"id":"de-DE","preferredCurrency":"EUR"}],"supportedCurrencies":["USD","EUR"]}]'
-
-# Server-only secrets (not exposed to client)
-COMMERCE_API_SLAS_SECRET=production-slas-secret
-```
-
-## Bundle Management
-
-Each `sfnext push` creates a versioned bundle on MRT:
-
-```
-Bundle v1 (active) ← current production
-Bundle v2          ← previous deployment
-Bundle v3          ← two deployments ago
-```
-
-### Rollback
-
-If a deployment causes issues, roll back to a previous bundle via the MRT Dashboard or CLI.
-
-## Multi-Environment Setup
-
-| Environment | Purpose                   | Auto-deploy           |
-| ----------- | ------------------------- | --------------------- |
-| Development | Feature testing           | From feature branches |
-| Staging     | Pre-production validation | From main branch      |
-| Production  | Live storefront           | Manual promotion      |
-
-## Deployment Verification
-
-After deploying, verify:
-
-1. **Health check** — Site loads without errors
-2. **SCAPI connectivity** — Products and categories display correctly
-3. **Authentication** — Login/logout flow works
-4. **Page Designer** — Merchant-editable pages render correctly
-5. **Performance** — No regression in page load times
+1. Home, category, product, cart, and checkout pages render.
+2. Products and prices load (SCAPI connectivity, correct site).
+3. Login/logout, including social or passwordless if enabled.
+4. A Page Designer page renders and the cartridge/code version is current.
+5. Response headers (CSP) and cookies have the expected `Domain` (`curl -sI`).
+6. Logs show no repeated `[Config Warning]` lines about ignored variables.

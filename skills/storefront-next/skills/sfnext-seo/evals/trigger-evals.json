@@ -1,0 +1,5 @@
+[
+  {"query": "Add SeoMeta with Open Graph tags and a Product JSON-LD block to my custom landing page route", "should_trigger": true},
+  {"query": "We want /p/<slug>/<id> product URLs per site - how do I configure url.seoRoutes without breaking indexed URLs?", "should_trigger": true},
+  {"query": "Create a new route file for /stores/:storeId with a loader and action", "should_trigger": false}
+]

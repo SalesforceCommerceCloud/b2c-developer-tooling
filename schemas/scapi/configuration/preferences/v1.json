@@ -2,7 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Preferences",
-    "version": "1.2.2",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/preferences/preferences-oas-v1-public.yaml)\n\n# API Overview\nB2C Commerce teams must regularly configure site and environment-specific settings to support changing business needs and technical integrations. In many instances, Storefront Reference Architecture (SFRA)/SiteGenesis implementations rely on declarative Custom Site Preferences to alter these settings without the need for deployment or significant engineering support. Site preferences allow teams to adapt their sites with minimal effort.\n\nThe following Preferences API endpoints retrieve preference-related information:\n\n- Global custom preferences: \nRetrieves all custom preferences at the organization level. \n\n- Site custom prefererences: \nRetrieves all custom preferences at the site level.\n\nThe Preferences API first checks to see if custom values have been set, and if so, returns the custom settings. Otherwise, the Preferences API returns the default values provided in Business Manager.\n\nNote: The Preferences API sets custom preferences. For details on working with non-custom preferences, see [Global Preferences for B2C Commerce](https://help.salesforce.com/s/articleView?id=cc.b2c_global_preferences.htm&type=5) and [Site Preferences in B2C Commerce](https://help.salesforce.com/s/articleView?id=cc.b2c_site_preferences.htm&type=5).\n\n## Authentication & Authorization\n\nFor resource access, you must use a client ID and client secret from Account Manager to request an access token. The access token is used as a bearer token and added to the Authorization header of your API request.\n\nYou must include `sfcc.preferences` in the client ID used to generate the token. For a full list of required permissions, see the [Authorization Scopes Catalog.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html)\n\nFor detailed setup instructions, see the [Authorization for Admin APIs guide.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-admin-apis.html)\n\n## Response Details\n\n### Timeouts\n\nAdmin API requests must respond within 60 seconds. If a response exceeds this threshold, an HTTP 504 status code is returned. For details, see [Timeouts and Limits.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/timeouts-limits.html)\n\n### Error Handling\n\nError responses follow the [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) problem detail format. To trace errors, include a `correlation-id` header in your request — the response returns it as `x-correlation-id`. For details, see [HTTP Status Codes and Errors.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/error-response-codes.html)\n\n## Use Cases\n### Global Custom Preference:\nA prominent private equity firm manages a diverse portfolio of brands, each operating its own site. Despite the individuality of these brands, they leverage shared third-party integrations for critical functionalities, such as payments and content management. Through a centralized approach, the firm establishes specifications for key components like the payments portal, ensuring consistency and efficiency across all sites. These specifications are meticulously crafted and undergo infrequent modifications to accommodate evolving needs while maintaining operational stability.\n\n### Site Custom Preference:  \nSite operators might have numerous tests or features tailored to their specific site. To facilitate streamlined control over these functionalities, they need a user-friendly mechanism for their merchant team to effortlessly toggle them on or off as needed. The site Preference API provides this mechanism.\n\n### Caching\nCaching capabilities are available for the Preferences APIs. For details, see [Server-Side Web-Tier Caching.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html)",
+    "version": "1.2.3",
     "x-api-type": "Admin",
     "x-api-family": "Configuration"
   },
@@ -11,6 +12,7 @@
       "url": "https://{shortCode}.api.commercecloud.salesforce.com/configuration/preferences/v1",
       "variables": {
         "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
           "default": "shortCode"
         }
       }
@@ -19,32 +21,38 @@
   "paths": {
     "/organizations/{organizationId}/global-custom-preferences": {
       "get": {
+        "summary": "Retrieves the Global Custom Preferences.",
         "operationId": "getGlobalCustomPreferenceList",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "maskPassword",
             "in": "query",
+            "description": "Whether to mask password or not.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": true
             }
           },
           {
             "name": "limit",
             "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 200.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -59,6 +67,7 @@
           {
             "name": "offset",
             "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -77,12 +86,17 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomPreferenceList"
+                },
+                "examples": {
+                  "GlobalCustomPreferenceExample": {
+                    "$ref": "#/components/examples/GlobalCustomPreferenceExample"
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Thrown if the query is ill-formed."
+            "description": "Returned if the query is ill-formed."
           },
           "401": {
             "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
@@ -90,6 +104,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InvalidAccessToken": {
+                    "$ref": "#/components/examples/InvalidAccessToken"
+                  }
                 }
               }
             }
@@ -107,42 +126,54 @@
     },
     "/organizations/{organizationId}/site-custom-preferences": {
       "get": {
+        "summary": "Retrieves the Custom Preferences for a specified siteId.",
         "operationId": "getSiteCustomPreferenceList",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "maskPassword",
             "in": "query",
+            "description": "Whether to mask password or not.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": true
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           },
           {
             "name": "limit",
             "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 200.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -157,6 +188,7 @@
           {
             "name": "offset",
             "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
             "required": false,
             "style": "form",
             "explode": true,
@@ -175,12 +207,17 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomPreferenceList"
+                },
+                "examples": {
+                  "SiteCustomPreferenceExample": {
+                    "$ref": "#/components/examples/SiteCustomPreferenceExample"
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Thrown if the query is ill-formed."
+            "description": "Returned if the query is ill-formed."
           },
           "401": {
             "description": "Unauthorized. Your Client ID is invalid, or you are not allowed to access\nthe content provided by the requested URL.\n",
@@ -188,6 +225,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InvalidAccessToken": {
+                    "$ref": "#/components/examples/InvalidAccessToken"
+                  }
                 }
               }
             }
@@ -205,26 +247,32 @@
     },
     "/organizations/{organizationId}/global-preference-groups/{groupId}/{instanceType}": {
       "get": {
+        "summary": "Read the custom preferences in a global preference group for a given instance type.",
+        "description": "For the specified instance, read the custom preferences in the preference group at the\nglobal (organization) level. Specify 'current' to retrieve the preferences for the instance\non which this call is being made. The system will recognize its type.\n\n\n**Note:** If instance type sandbox is used, the preference values of development instance type\nwill be returned as fallback.\n",
         "operationId": "getGlobalPreferenceGroup",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "groupId",
             "in": "path",
+            "description": "The preference group ID.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "WapiStringGroup",
               "maxLength": 256,
               "minLength": 1
             }
@@ -232,6 +280,7 @@
           {
             "name": "instanceType",
             "in": "path",
+            "description": "The instance type for which to read or update preferences.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -242,23 +291,28 @@
                 "development",
                 "sandbox",
                 "production"
-              ]
-            }
+              ],
+              "example": "staging"
+            },
+            "example": "staging"
           },
           {
             "name": "maskPasswords",
             "in": "query",
+            "description": "The preference values of type Password are masked when set.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": true
             }
           },
           {
             "name": "expand",
             "in": "query",
+            "description": "Expands the result document to include additional information. For global preference groups, the expansion \"sites\" retrieves the custom preferences for all the available sites.\n",
             "required": false,
             "style": "form",
             "explode": false,
@@ -268,7 +322,8 @@
                 "type": "string",
                 "enum": [
                   "sites"
-                ]
+                ],
+                "example": "sites"
               }
             }
           }
@@ -280,6 +335,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrganizationPreferences"
+                },
+                "examples": {
+                  "GetGlobalPreferencesExample": {
+                    "$ref": "#/components/examples/GetGlobalPreferencesExample"
+                  },
+                  "GetGlobalPreferencesWithSitesExample": {
+                    "$ref": "#/components/examples/GetGlobalPreferencesWithSitesExample"
+                  }
                 }
               }
             }
@@ -290,6 +353,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IllegalEnumerationValue": {
+                    "$ref": "#/components/examples/IllegalEnumerationValue"
+                  }
                 }
               }
             }
@@ -300,6 +368,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomPreferenceGroupNotFound": {
+                    "$ref": "#/components/examples/CustomPreferenceGroupNotFound"
+                  }
                 }
               }
             }
@@ -315,26 +388,32 @@
         ]
       },
       "patch": {
+        "summary": "Update the custom preferences in a global preference group for a given instance type.",
+        "description": "For the specified instance, update one or more custom preferences in the preference group\nat the global (organization) level.\n\n\n**Note:** If instance type sandbox is used, the preference values of development instance type\nwill be returned as fallback.\n",
         "operationId": "updateGlobalPreferenceGroup",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "groupId",
             "in": "path",
+            "description": "The preference group ID.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "WapiStringGroup",
               "maxLength": 256,
               "minLength": 1
             }
@@ -342,6 +421,7 @@
           {
             "name": "instanceType",
             "in": "path",
+            "description": "The instance type for which to read or update preferences.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -352,26 +432,36 @@
                 "development",
                 "sandbox",
                 "production"
-              ]
-            }
+              ],
+              "example": "staging"
+            },
+            "example": "staging"
           },
           {
             "name": "maskPasswords",
             "in": "query",
+            "description": "The preference values of type Password are masked when set.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": true
             }
           }
         ],
         "requestBody": {
+          "description": "The preferences to update. Custom preference attributes use the \"c_\" prefix.\n",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/OrganizationPreferences"
+              },
+              "examples": {
+                "UpdateGlobalPreferencesRequest": {
+                  "$ref": "#/components/examples/UpdateGlobalPreferencesRequest"
+                }
               }
             }
           },
@@ -384,6 +474,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrganizationPreferences"
+                },
+                "examples": {
+                  "UpdateGlobalPreferencesExample": {
+                    "$ref": "#/components/examples/UpdateGlobalPreferencesExample"
+                  }
                 }
               }
             }
@@ -394,6 +489,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IllegalEnumerationValue": {
+                    "$ref": "#/components/examples/IllegalEnumerationValue"
+                  }
                 }
               }
             }
@@ -404,6 +504,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomPreferenceGroupNotFound": {
+                    "$ref": "#/components/examples/CustomPreferenceGroupNotFound"
+                  }
                 }
               }
             }
@@ -420,26 +525,32 @@
     },
     "/organizations/{organizationId}/site-preference-groups/{groupId}/{instanceType}": {
       "get": {
+        "summary": "Read the custom preferences in a site preference group for a given instance type.",
+        "description": "For the specified site and instance, read the custom preferences in the preference group.\nSpecify 'current' to retrieve the preferences for the instance on which this call is being made.\nThe system will recognize its type.\n",
         "operationId": "getSitePreferenceGroup",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "groupId",
             "in": "path",
+            "description": "The preference group ID.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "WapiStringGroup",
               "maxLength": 256,
               "minLength": 1
             }
@@ -447,6 +558,7 @@
           {
             "name": "instanceType",
             "in": "path",
+            "description": "The instance type for which to read or update preferences.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -457,28 +569,38 @@
                 "development",
                 "sandbox",
                 "production"
-              ]
-            }
+              ],
+              "example": "staging"
+            },
+            "example": "staging"
           },
           {
             "name": "maskPasswords",
             "in": "query",
+            "description": "The preference values of type Password are masked when set.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": true
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
@@ -489,6 +611,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SitePreferences"
+                },
+                "examples": {
+                  "GetSitePreferencesExample": {
+                    "$ref": "#/components/examples/GetSitePreferencesExample"
+                  }
                 }
               }
             }
@@ -499,6 +626,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IllegalEnumerationValue": {
+                    "$ref": "#/components/examples/IllegalEnumerationValue"
+                  }
                 }
               }
             }
@@ -509,6 +641,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomPreferenceGroupNotFound": {
+                    "$ref": "#/components/examples/CustomPreferenceGroupNotFound"
+                  }
                 }
               }
             }
@@ -524,26 +661,32 @@
         ]
       },
       "patch": {
+        "summary": "Update the custom preferences in a site preference group for a given instance type.",
+        "description": "For the specified site and instance, update one or more custom preferences in the preference group.\nPreferences of type password cannot be set to \"************\" since it is a reserved value.\n",
         "operationId": "updateSitePreferenceGroup",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "groupId",
             "in": "path",
+            "description": "The preference group ID.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "WapiStringGroup",
               "maxLength": 256,
               "minLength": 1
             }
@@ -551,6 +694,7 @@
           {
             "name": "instanceType",
             "in": "path",
+            "description": "The instance type for which to read or update preferences.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -561,36 +705,52 @@
                 "development",
                 "sandbox",
                 "production"
-              ]
-            }
+              ],
+              "example": "staging"
+            },
+            "example": "staging"
           },
           {
             "name": "maskPasswords",
             "in": "query",
+            "description": "The preference values of type Password are masked when set.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": true
             }
           },
           {
             "name": "siteId",
             "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
             "required": true,
             "style": "form",
             "explode": true,
             "schema": {
               "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
             }
           }
         ],
         "requestBody": {
+          "description": "The site preferences to update. Custom preference attributes use the \"c_\" prefix.\n",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SitePreferences"
+              },
+              "examples": {
+                "UpdateSitePreferencesRequest": {
+                  "$ref": "#/components/examples/UpdateSitePreferencesRequest"
+                }
               }
             }
           },
@@ -603,6 +763,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SitePreferences"
+                },
+                "examples": {
+                  "UpdateSitePreferencesExample": {
+                    "$ref": "#/components/examples/UpdateSitePreferencesExample"
+                  }
                 }
               }
             }
@@ -613,6 +778,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IllegalEnumerationValue": {
+                    "$ref": "#/components/examples/IllegalEnumerationValue"
+                  }
                 }
               }
             }
@@ -623,6 +793,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomPreferenceGroupNotFound": {
+                    "$ref": "#/components/examples/CustomPreferenceGroupNotFound"
+                  }
                 }
               }
             }
@@ -639,26 +814,32 @@
     },
     "/organizations/{organizationId}/site-preference-groups/{groupId}/{instanceType}/preference-search": {
       "post": {
+        "summary": "Search preferences across sites in a preference group for a given instance type.",
+        "description": "Search preferences across sites in the specified preference group and instance.\nThe query attribute specifies a complex query that can be used to narrow down the search.\n\n\nThe following is a list of searchable fields:\n\n| Field | Type |\n|---|---|\n| id | String |\n| display_name | Localized String |\n| description | Localized String |\n| value_type | Enum (see below) |\n\n\nAllowed value_type values: string, int, double, text, html, date, image, boolean, money,\nquantity, datetime, email, password, set_of_string, set_of_int, set_of_double,\nenum_of_string, enum_of_int.\n\n\n**Note:** value_type can only be joined with other attributes using a conjunction (AND).\nOnly searchable attributes can be used in sorting.\n\n\n**Note:** If instance type sandbox is used, the preference values of development instance type\nwill be returned as fallback.\n",
         "operationId": "searchSitePreferences",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "groupId",
             "in": "path",
+            "description": "The preference group ID.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "WapiStringGroup",
               "maxLength": 256,
               "minLength": 1
             }
@@ -666,6 +847,7 @@
           {
             "name": "instanceType",
             "in": "path",
+            "description": "The instance type for which to read or update preferences.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -676,23 +858,28 @@
                 "development",
                 "sandbox",
                 "production"
-              ]
-            }
+              ],
+              "example": "staging"
+            },
+            "example": "staging"
           },
           {
             "name": "maskPasswords",
             "in": "query",
+            "description": "The preference values of type Password are masked when set.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": true
             }
           },
           {
             "name": "expand",
             "in": "query",
+            "description": "Expands the result document to include additional information. For preference search, the expansion \"value\" retrieves the value definitions of the attribute definition.\n",
             "required": false,
             "style": "form",
             "explode": false,
@@ -702,16 +889,23 @@
                 "type": "string",
                 "enum": [
                   "value"
-                ]
+                ],
+                "example": "value"
               }
             }
           }
         ],
         "requestBody": {
+          "description": "The search request document.",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SearchRequest"
+              },
+              "examples": {
+                "SearchSitePreferencesRequest": {
+                  "$ref": "#/components/examples/SearchSitePreferencesRequest"
+                }
               }
             }
           },
@@ -724,6 +918,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PreferenceValueSearchResult"
+                },
+                "examples": {
+                  "PreferenceSearchExample": {
+                    "$ref": "#/components/examples/PreferenceSearchExample"
+                  },
+                  "PreferenceSearchWithExpandValueExample": {
+                    "$ref": "#/components/examples/PreferenceSearchWithExpandValueExample"
+                  }
                 }
               }
             }
@@ -734,6 +936,14 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IllegalEnumerationValue": {
+                    "$ref": "#/components/examples/IllegalEnumerationValue"
+                  },
+                  "FieldNotSortable": {
+                    "$ref": "#/components/examples/FieldNotSortable"
+                  }
                 }
               }
             }
@@ -744,6 +954,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomPreferenceGroupNotFound": {
+                    "$ref": "#/components/examples/CustomPreferenceGroupNotFound"
+                  }
                 }
               }
             }
@@ -761,26 +976,32 @@
     },
     "/organizations/{organizationId}/site-preference-groups/{groupId}/{instanceType}/preferences/{preferenceId}": {
       "get": {
+        "summary": "Read a single preference value across sites in a preference group for a given instance type.",
+        "description": "Read a specific preference value identified by its ID within the given preference group\nand instance type. Returns the preference value for all sites.\n",
         "operationId": "getSitePreference",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "groupId",
             "in": "path",
+            "description": "The preference group ID.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "WapiStringGroup",
               "maxLength": 256,
               "minLength": 1
             }
@@ -788,6 +1009,7 @@
           {
             "name": "instanceType",
             "in": "path",
+            "description": "The instance type for which to read or update preferences.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -798,17 +1020,21 @@
                 "development",
                 "sandbox",
                 "production"
-              ]
-            }
+              ],
+              "example": "staging"
+            },
+            "example": "staging"
           },
           {
             "name": "preferenceId",
             "in": "path",
+            "description": "The preference attribute ID.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "WapiStringAttr",
               "maxLength": 256,
               "minLength": 1
             }
@@ -816,12 +1042,14 @@
           {
             "name": "maskPasswords",
             "in": "query",
+            "description": "The preference values of type Password are masked when set.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": true
             }
           }
         ],
@@ -832,6 +1060,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PreferenceValue"
+                },
+                "examples": {
+                  "GetPreferenceValueExample": {
+                    "$ref": "#/components/examples/GetPreferenceValueExample"
+                  },
+                  "GetPreferenceValueMultiSiteExample": {
+                    "$ref": "#/components/examples/GetPreferenceValueMultiSiteExample"
+                  }
                 }
               }
             }
@@ -842,6 +1078,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IllegalEnumerationValue": {
+                    "$ref": "#/components/examples/IllegalEnumerationValue"
+                  }
                 }
               }
             }
@@ -852,6 +1093,14 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomPreferenceGroupNotFound": {
+                    "$ref": "#/components/examples/CustomPreferenceGroupNotFound"
+                  },
+                  "PreferenceNotFound": {
+                    "$ref": "#/components/examples/PreferenceNotFound"
+                  }
                 }
               }
             }
@@ -867,26 +1116,32 @@
         ]
       },
       "patch": {
+        "summary": "Update a single preference value across sites in a preference group for a given instance type.",
+        "description": "Update a specific preference value identified by its ID within the given preference group\nand instance type. The siteValues map specifies the new values per site.\n",
         "operationId": "updateSitePreference",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "groupId",
             "in": "path",
+            "description": "The preference group ID.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "WapiStringGroup",
               "maxLength": 256,
               "minLength": 1
             }
@@ -894,6 +1149,7 @@
           {
             "name": "instanceType",
             "in": "path",
+            "description": "The instance type for which to read or update preferences.",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -904,17 +1160,21 @@
                 "development",
                 "sandbox",
                 "production"
-              ]
-            }
+              ],
+              "example": "staging"
+            },
+            "example": "staging"
           },
           {
             "name": "preferenceId",
             "in": "path",
+            "description": "The preference attribute ID.",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "WapiStringAttr",
               "maxLength": 256,
               "minLength": 1
             }
@@ -922,20 +1182,28 @@
           {
             "name": "maskPasswords",
             "in": "query",
+            "description": "The preference values of type Password are masked when set.",
             "required": false,
             "style": "form",
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "example": true
             }
           }
         ],
         "requestBody": {
+          "description": "The preference value to update with site-specific values.",
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PreferenceValue"
+              },
+              "examples": {
+                "UpdateSitePreferenceValueRequest": {
+                  "$ref": "#/components/examples/UpdateSitePreferenceValueRequest"
+                }
               }
             }
           },
@@ -948,6 +1216,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PreferenceValue"
+                },
+                "examples": {
+                  "UpdatePreferenceValueExample": {
+                    "$ref": "#/components/examples/UpdatePreferenceValueExample"
+                  }
                 }
               }
             }
@@ -958,6 +1231,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IllegalEnumerationValue": {
+                    "$ref": "#/components/examples/IllegalEnumerationValue"
+                  }
                 }
               }
             }
@@ -968,6 +1246,14 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CustomPreferenceGroupNotFound": {
+                    "$ref": "#/components/examples/CustomPreferenceGroupNotFound"
+                  },
+                  "PreferenceNotFound": {
+                    "$ref": "#/components/examples/PreferenceNotFound"
+                  }
                 }
               }
             }
@@ -987,20 +1273,27 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
         "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
       },
       "Total": {
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
         "minimum": 0
       },
       "ResultBase": {
         "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
         "properties": {
           "limit": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
           },
           "total": {
             "$ref": "#/components/schemas/Total"
@@ -1015,6 +1308,8 @@
         "type": "integer",
         "format": "int32",
         "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
         "minimum": 0
       },
       "PaginatedResultBase": {
@@ -1023,6 +1318,7 @@
             "$ref": "#/components/schemas/ResultBase"
           }
         ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
         "properties": {
           "offset": {
             "$ref": "#/components/schemas/Offset"
@@ -1036,14 +1332,19 @@
       },
       "CustomPreference": {
         "type": "object",
+        "description": "Preference object",
         "properties": {
           "groupId": {
-            "type": "string"
+            "type": "string",
+            "description": "The ID of the preference group."
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "The Preference Id."
           },
-          "value": {}
+          "value": {
+            "description": "The value for the Preference Id."
+          }
         },
         "required": [
           "groupId",
@@ -1057,9 +1358,11 @@
             "$ref": "#/components/schemas/PaginatedResultBase"
           }
         ],
+        "description": "Document representing a Custom Preference result.",
         "properties": {
           "data": {
             "type": "array",
+            "description": "The list of custom preferences in the search result.",
             "items": {
               "$ref": "#/components/schemas/CustomPreference"
             }
@@ -1078,17 +1381,25 @@
         "properties": {
           "title": {
             "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
             "maxLength": 256
           },
           "type": {
             "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
             "maxLength": 2048
           },
           "detail": {
-            "type": "string"
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
           },
           "instance": {
             "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
             "maxLength": 2048
           }
         },
@@ -1100,19 +1411,26 @@
       },
       "SiteId": {
         "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
         "maxLength": 32,
         "minLength": 1
       },
       "CustomerListLink": {
         "type": "object",
+        "description": "Document representing a link to a customer list.",
         "properties": {
           "customerListId": {
             "type": "string",
+            "description": "The customer list identifier",
+            "example": "customer-list-1",
             "maxLength": 256,
             "minLength": 1
           },
           "title": {
             "type": "string",
+            "description": "The title of the customer list link",
+            "example": "Default Customer List",
             "maxLength": 256
           }
         }
@@ -1125,57 +1443,99 @@
               {
                 "$ref": "#/components/schemas/SiteId"
               }
-            ]
+            ],
+            "description": "The ID of the site.",
+            "title": "ID"
           },
           "displayName": {
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Site Display Name",
               "maxLength": 4000
-            }
+            },
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "Site Display Name",
+              "en-US": "Site Display Name",
+              "de-DE": "Site-Anzeigename",
+              "ja-JP": "サイト表示名"
+            },
+            "x-format": "localized"
           },
           "description": {
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Site Description",
               "maxLength": 4000
-            }
+            },
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "Site Description",
+              "en-US": "Site Description",
+              "de-DE": "Site-Beschreibung",
+              "ja-JP": "サイトの説明"
+            },
+            "x-format": "localized"
           },
           "customerListLink": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/CustomerListLink"
               }
-            ]
+            ],
+            "description": "The link to the customer list"
           },
           "inDeletion": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Specifies whether the site status is in deletion (true) or not (false)",
+            "example": false
           },
           "storefrontStatus": {
             "type": "string",
+            "description": "Status of the storefront",
             "enum": [
               "online",
               "maintenance",
               "to_be_deleted",
               "protected"
-            ]
+            ],
+            "example": "online"
           },
           "siteCatalogId": {
             "type": "string",
+            "description": "The catalog bound to the given site.",
+            "example": "storefront-catalog-m-en",
             "maxLength": 256,
             "minLength": 1
           },
           "cartridges": {
             "type": "string",
+            "description": "The effective cartridge path for the site, delimited by ':'. Includes both system cartridges and the site's custom cartridges (see `customCartridges`).",
+            "example": "app_storefront_base:plugin_apple_pay:plugin_facebook:plugin_payments:plugin_pinterest_commerce:plugin_web_payments:bc_content:core",
+            "maxLength": 4000,
+            "readOnly": true
+          },
+          "customCartridges": {
+            "type": "string",
+            "description": "The custom cartridge path assigned to the site, delimited by ':'. Does not include system cartridges. This is the subset of `cartridges` that can be configured for the site.",
+            "example": "app_storefront_base",
             "maxLength": 4000
           },
           "creationDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The timestamp when the site was created.",
+            "example": "2024-01-15T10:00:00Z"
           },
           "lastModified": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "The timestamp when the site was last modified.",
+            "example": "2024-10-14T15:30:00Z"
           }
         },
         "required": [
@@ -1185,6 +1545,7 @@
       "SitePreferences": {
         "type": "object",
         "additionalProperties": true,
+        "description": "Represents custom preferences at the site level within a preference group. Custom preference attributes are returned with the \"c_\" prefix.\n",
         "properties": {
           "site": {
             "$ref": "#/components/schemas/Site"
@@ -1194,9 +1555,11 @@
       "OrganizationPreferences": {
         "type": "object",
         "additionalProperties": true,
+        "description": "Represents custom preferences at the global (organization) level within a preference group. Custom preference attributes are returned with the \"c_\" prefix.\n",
         "properties": {
           "sitePreferences": {
             "type": "array",
+            "description": "The list of site-specific preferences, returned when expand=sites.",
             "items": {
               "$ref": "#/components/schemas/SitePreferences"
             }
@@ -1206,6 +1569,28 @@
       "Query": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A set of objects that define criteria used to select records. A query can contain one of the following:\n* `MatchAllQuery`\n - Matches all documents.\n* `TermQuery`\n - Matches one or more documents against one or more document fields.\n* `TextQuery`\n - Matches text against one or more fields.\n* `BoolQuery`\n - Allows construction of a logical expression of multiple queries.\n* `FilteredQuery`\n - Allows a filter to be applied to a query.\n* `NestedQuery`\n - Allows you to query on nested documents.\n - _Only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation._",
+        "example": {
+          "filteredQuery": {
+            "query": {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "disabled"
+              }
+            },
+            "filter": {
+              "termFilter": {
+                "field": "enabled",
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          }
+        },
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -1232,21 +1617,58 @@
       "BoolQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A boolean query allows construction of full logical expression trees that are composed of other queries (usually term queries and text queries). A boolean query has three sets of clauses:\n  \n  - `must`, which combines as an `AND` operator.\n  - `should`, which combines as an `OR` operator.\n  - `must_not`, which combines as a `NOT` operator.\n  \nIf `must`, `mustNot`, or `should` appear in the same boolean query, they are combined logically using the `AND` operator. For example:\n\n    (must-1 AND must-1 AND ...)\n      AND (should-1 OR should-2 OR ...)\n      AND NOT (must_not-1 OR must_not-2 OR ...)\n",
+        "example": {
+          "must": [
+            {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "DEAL"
+              }
+            },
+            {
+              "textQuery": {
+                "fields": [
+                  "description"
+                ],
+                "searchPhrase": "Big bargain deal"
+              }
+            }
+          ],
+          "mustNot": [
+            {
+              "termQuery": {
+                "fields": [
+                  "enabled"
+                ],
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          ]
+        },
         "properties": {
           "must": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `AND` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "mustNot": {
             "type": "array",
+            "description": "List of queries to be evaluated as a `NOT` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
           },
           "should": {
             "type": "array",
+            "description": "List of queries to be evaluated as an `OR` operator.",
             "items": {
               "$ref": "#/components/schemas/Query"
             }
@@ -1256,6 +1678,7 @@
       "Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Contains a set of objects that define criteria used to select records. A filter can contain one of the following:\n  * `TermFilter`\n   - Matches records where a field (or fields) exactly matches some simple value (including `null`).\n  * `RangeFilter`\n   - Matches records where a field value lies within a specified range.\n  * `Range2Filter`\n   - Matches records in a specified range across fields.\n  * `QueryFilter`\n   - Matches records based on a query.\n  * `BoolFilter`\n   - Provides filtering of records using a set of filters combined using a logical operator.",
         "maxProperties": 1,
         "minProperties": 1,
         "properties": {
@@ -1279,20 +1702,47 @@
       "BoolFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to combine other filters into (possibly recursive) logical expression trees. A boolean filter is composed of a logical operator (`AND`, `OR`, `NOT`) and a list of filters that the operator relates to. Multiple filters can be negated with a single `NOT` operator, even when the filters are combined with the `AND` operator.",
+        "example": {
+          "operator": "and",
+          "filters": [
+            {
+              "termFilter": {
+                "field": "id",
+                "operator": "is",
+                "values": [
+                  "myId"
+                ]
+              }
+            },
+            {
+              "termFilter": {
+                "field": "couponId",
+                "operator": "is",
+                "values": [
+                  "couponOne"
+                ]
+              }
+            }
+          ]
+        },
         "properties": {
           "filters": {
             "type": "array",
+            "description": "A list of filters that are logically combined by an operator.",
             "items": {
               "$ref": "#/components/schemas/Filter"
             }
           },
           "operator": {
             "type": "string",
+            "description": "The logical operator that is used to combine the filters.",
             "enum": [
               "and",
               "or",
               "not"
-            ]
+            ],
+            "example": "and"
           }
         },
         "required": [
@@ -1301,6 +1751,7 @@
       },
       "QueryFilter": {
         "type": "object",
+        "description": "Wraps any query and allows it to be used as a filter.",
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
@@ -1312,45 +1763,71 @@
       },
       "Field": {
         "type": "string",
+        "description": "Name of the field. Might be a custom field name prefixed with c_.",
+        "example": "couponId",
         "maxLength": 260
       },
       "Range2Filter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits where a range defined by specified attributes has a certain relationship to a specified range.\n\nThe first range (R1) is defined by a pair of attributes (`fromField` and `toField`) that specify the extent of a range, such as attributes `validFrom` and `validTo`.\n\nThe second range (R2) is defined by `fromValue` and `toValue`.\n\nThe filter mode specifies the method used to compare the two ranges:\n\n* `overlap`: R1 overlaps fully or partially with R2.\n* `containing`: R1 contains R2.\n* `contained`: R1 is contained in R2.\n\nThe range filter supports several value types, and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range 2 filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "example": {
+          "fromField": "validFrom",
+          "toField": "validTo",
+          "filterMode": "overlap",
+          "fromValue": "2007-01-01T00:00:00.000Z",
+          "toValue": "2017-01-01T00:00:00.000Z"
+        },
         "properties": {
           "filterMode": {
             "type": "string",
             "default": "overlap",
+            "description": "Compare mode: overlap, containing, or contained.",
             "enum": [
               "overlap",
               "containing",
               "contained"
-            ]
+            ],
+            "example": "overlap"
           },
           "fromField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that starts the first range.",
+            "example": "validFrom"
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "fromValue": {},
+          "fromValue": {
+            "description": "The lower bound of the second range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "example": "2007-01-01T00:00:00.000Z"
+          },
           "toField": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The field name of the field that ends the first range.",
+            "example": "validTo"
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
-          "toValue": {}
+          "toValue": {
+            "description": "The upper bound of the second range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "example": "2017-01-01T00:00:00.000Z"
+          }
         },
         "required": [
           "fromField",
@@ -1359,49 +1836,64 @@
       },
       "RangeFilter": {
         "type": "object",
+        "description": "Allows you to restrict a search result to hits that have values for a given attribute that fall within a given value range. The range filter supports several value types and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The search field.",
+            "example": "validFrom"
           },
           "from": {
+            "description": "The lower bound of the filter range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-01T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 1
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 1
               }
             ]
           },
           "fromInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the lower bound of the range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
           },
           "to": {
+            "description": "The upper bound of the filter range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
             "oneOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "example": "2007-01-02T00:00:00Z"
               },
               {
-                "type": "integer"
+                "type": "integer",
+                "example": 2
               },
               {
-                "type": "number"
+                "type": "number",
+                "example": 2
               }
             ]
           },
           "toInclusive": {
             "type": "boolean",
-            "default": true
+            "default": true,
+            "description": "A flag indicating if the upper bound of the range is inclusive. To make the upper bound exclusive, set to `false`.",
+            "example": true
           }
         },
         "required": [
@@ -1411,16 +1903,26 @@
       "TermFilter": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits that match exactly one of the values configured for the filter. A term filter is useful for general restrictions that can be shared between searches. Use term filters whenever the criteria you filter on is a shared property of multiple searches (for example, like filtering by an order status). Use term filters for fields that have a discrete and small set of values only.",
+        "example": {
+          "field": "id",
+          "operator": "is",
+          "values": [
+            "myId"
+          ]
+        },
         "properties": {
           "field": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Field"
               }
-            ]
+            ],
+            "description": "The filter field."
           },
           "operator": {
             "type": "string",
+            "description": "The operator used to compare the field's values with the given values.",
             "enum": [
               "is",
               "one_of",
@@ -1430,12 +1932,15 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The filter values.",
             "items": {
-              "type": "string"
+              "type": "string",
+              "example": "myId"
             }
           }
         },
@@ -1447,6 +1952,26 @@
       "FilteredQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows to filter the result of a possibly complex query using a possibly complex filter.",
+        "example": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "couponId"
+              ],
+              "searchPhrase": "disabled"
+            }
+          },
+          "filter": {
+            "termFilter": {
+              "field": "enabled",
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          }
+        },
         "properties": {
           "filter": {
             "$ref": "#/components/schemas/Filter"
@@ -1461,14 +1986,62 @@
         ]
       },
       "MatchAllQuery": {
-        "type": "object"
+        "type": "object",
+        "description": "Matches all documents (namespace and document type). This query comes in handy if you just want to filter a search result or really do not have any constraints."
       },
       "NestedQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Allows you to query nested documents that are part of a larger document. Say, for example, that you have a main product with variations in one big document, and you want to constrain a search to main products that have variations that match multiple constraints. \n\nA `NestedQuery` is only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation.\n",
+        "example": {
+          "path": "order.shippingAddresses",
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.firstName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "John"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.lastName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "Doe"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "scoreMode": "avg"
+        },
         "properties": {
           "path": {
             "type": "string",
+            "description": "The path to the nested document.",
+            "example": "order.shippingAddresses",
             "maxLength": 2048
           },
           "query": {
@@ -1476,12 +2049,14 @@
           },
           "scoreMode": {
             "type": "string",
+            "description": "Indicates how scores for matching child objects affect the root parent document’s relevance score.",
             "enum": [
               "avg",
               "total",
               "max",
               "none"
-            ]
+            ],
+            "example": "avg"
           }
         },
         "required": [
@@ -1491,9 +2066,11 @@
       },
       "TermQuery": {
         "type": "object",
+        "description": "A term query matches one or more values against one or more document fields. A document is considered a hit if one of the values matches exactly with at least one of the given fields. The operator `is` can only take one value, while `one_of` can take multiple values. If multiple fields are specified, they are combined using a logical `OR` operator.\n\n**Limitations:**\n\n* The `greater` and `less` operators are not supported under certain conditions. Both operators are permitted unless the API documentation states otherwise.\n* A subset of Commerce APIs handle queries with multiple fields differently. If the query has multiple fields, the query is internally handled as a logical `OR` of `DisjointMaxQueries` (with the dismax matching a value against all fields). The dismax makes sure that a document carrying a single term in multiple fields does not get higher scores than a document matching multiple terms in multiple fields.",
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the values are matched against, combined with the operator.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
@@ -1501,6 +2078,7 @@
           },
           "operator": {
             "type": "string",
+            "description": "Returns the operator to use for the term query.",
             "enum": [
               "is",
               "one_of",
@@ -1510,23 +2088,30 @@
               "greater",
               "not_in",
               "neq"
-            ]
+            ],
+            "example": "is"
           },
           "values": {
             "type": "array",
+            "description": "The values that the fields are compared against, combined with the operator.",
             "items": {
+              "example": "myCouponId",
               "oneOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "example": "myCouponId"
                 },
                 {
-                  "type": "number"
+                  "type": "number",
+                  "example": 1
                 },
                 {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "example": true
                 },
                 {
-                  "type": "integer"
+                  "type": "integer",
+                  "example": 1
                 }
               ]
             }
@@ -1540,16 +2125,26 @@
       "TextQuery": {
         "type": "object",
         "additionalProperties": false,
+        "description": "A text query is used to match some text (for example, a search phrase possibly consisting of multiple terms) against one or more fields. When multiple fields are provided, the phrase conceptually forms a logical `OR` over the fields. In this case, the terms of the phrase basically have to match within the text, that would result in concatenating all given fields.",
+        "example": {
+          "fields": [
+            "couponId"
+          ],
+          "searchPhrase": "limit"
+        },
         "properties": {
           "fields": {
             "type": "array",
+            "description": "The document fields that the search phrase matches against.",
             "items": {
               "$ref": "#/components/schemas/Field"
             },
             "minItems": 1
           },
           "searchPhrase": {
-            "type": "string"
+            "type": "string",
+            "description": "A search phrase, which can include multiple terms separated by spaces.",
+            "example": "campaign summer"
           }
         },
         "required": [
@@ -1560,18 +2155,27 @@
       "Sort": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Document representing a sort request. Each API has a different default sort configuration that can be modified in the request.",
+        "example": {
+          "field": "couponId",
+          "sortOrder": "desc"
+        },
         "properties": {
           "field": {
             "type": "string",
+            "description": "The name of the field to sort on.",
+            "example": "couponId",
             "maxLength": 256
           },
           "sortOrder": {
             "type": "string",
             "default": "asc",
+            "description": "The sort order to be applied when sorting. When omitted, the default sort order (asc) is used.",
             "enum": [
               "asc",
               "desc"
-            ]
+            ],
+            "example": "asc"
           }
         },
         "required": [
@@ -1580,10 +2184,13 @@
       },
       "SearchRequest": {
         "type": "object",
+        "description": "Document representing a search request for retrieving items within the Data API. The query is a potentially complex set of expressions. The fields and expands that each query supports are defined within the search resource.",
         "properties": {
           "limit": {
             "type": "integer",
             "format": "int32",
+            "description": "Maximum records to retrieve per request, not to exceed 200.",
+            "example": 10,
             "maximum": 200,
             "minimum": 1
           },
@@ -1592,6 +2199,7 @@
           },
           "sorts": {
             "type": "array",
+            "description": "The list of sort clauses configured for the search request. Sort clauses are optional. See the description of the search endpoint for details on the default sorting behavior that is used when explicit sorts are not passed.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
@@ -1611,18 +2219,67 @@
             "$ref": "#/components/schemas/PaginatedResultBase"
           }
         ],
+        "description": "Document representing a generic search result. Each search resource should extend this to define what is returned in the `hits`.",
+        "example": {
+          "limit": 1,
+          "hits": [
+            {
+              "couponId": "coupon1",
+              "creationDate": "2019-10-20T12:00:00Z",
+              "description": "This coupon is used to give 10% off stuff.",
+              "enabled": false,
+              "exportedCodeCount": 0,
+              "lastModified": "2019-10-30T04:23:59Z",
+              "redemptionCount": 3,
+              "redemptionLimits": {
+                "limitPerCode": 1,
+                "limitPerCustomer": 1,
+                "limitPerTimeFrame": {
+                  "limit": 2,
+                  "redemptionTimeFrame": 24
+                }
+              },
+              "singleCode": "MyCode",
+              "systemCodesConfig": {
+                "codePrefix": "SG",
+                "numberOfCodes": 500000
+              },
+              "totalCodesCount": 50,
+              "type": "single_code"
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "stuff"
+            }
+          },
+          "sorts": [
+            {
+              "field": "couponId",
+              "sortOrder": "desc"
+            }
+          ],
+          "offset": 2,
+          "total": 8
+        },
         "properties": {
           "query": {
             "$ref": "#/components/schemas/Query"
           },
           "sorts": {
             "type": "array",
+            "description": "The sorting that was applied to the result.",
             "items": {
               "$ref": "#/components/schemas/Sort"
             }
           },
           "hits": {
             "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
             "items": {
               "type": "object"
             }
@@ -1634,6 +2291,7 @@
       },
       "ValueType": {
         "type": "string",
+        "description": "The type of an attribute value",
         "enum": [
           "string",
           "int",
@@ -1653,18 +2311,24 @@
           "set_of_double",
           "enum_of_string",
           "enum_of_int"
-        ]
+        ],
+        "example": "string"
       },
       "ObjectAttributeValueDefinition": {
         "type": "object",
+        "description": "An attribute definition value",
         "properties": {
           "id": {
             "type": "string",
+            "description": "The ID of the attribute value",
+            "example": "value-1",
             "maxLength": 256,
             "readOnly": true
           },
           "value": {
             "type": "string",
+            "description": "The value of the attribute",
+            "example": "1",
             "maxLength": 4000,
             "readOnly": true
           },
@@ -1672,35 +2336,60 @@
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Localized value",
               "maxLength": 4000
             },
-            "readOnly": true
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "One",
+              "de": "Eins",
+              "en": "One"
+            },
+            "readOnly": true,
+            "x-format": "localized"
           },
           "description": {
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Localized value",
               "maxLength": 4000
             },
-            "readOnly": true
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "Object type representing products.",
+              "de": "Objekttyp, der Produkte repräsentiert.",
+              "en": "Object type representing products."
+            },
+            "readOnly": true,
+            "x-format": "localized"
           },
           "position": {
             "type": "number",
             "format": "double",
+            "description": "The position of the attribute value within the set of attribute values",
+            "example": 1,
             "readOnly": true
           }
         }
       },
       "ObjectAttributeDefinition": {
         "type": "object",
+        "description": "Document representing an attribute definition",
         "properties": {
           "id": {
             "type": "string",
+            "description": "The user supplied ID of the attribute",
+            "example": "color",
             "maxLength": 256,
             "minLength": 1
           },
           "effectiveId": {
             "type": "string",
+            "description": "The effective ID, which is c_id if the attribute is custom, and just the id otherwise",
+            "example": "c_color",
             "maxLength": 256,
             "readOnly": true
           },
@@ -1708,108 +2397,179 @@
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Localized value",
               "maxLength": 4000
-            }
+            },
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "Product",
+              "de": "Produkt",
+              "en": "Product"
+            },
+            "x-format": "localized"
           },
           "description": {
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Localized value",
               "maxLength": 4000
-            }
+            },
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "Object type representing products.",
+              "de": "Objekttyp, der Produkte repräsentiert.",
+              "en": "Object type representing products."
+            },
+            "x-format": "localized"
           },
           "key": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if this is a key attribute",
+            "example": false
           },
           "mandatory": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if a value is mandatory for the attribute",
+            "example": false
           },
           "localizable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if this attribute can be localized",
+            "example": false
           },
           "siteSpecific": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if this attribute is site-specific",
+            "example": false
           },
           "searchable": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if this attribute is searchable",
+            "example": true
           },
           "queryable": {
             "type": "boolean",
+            "description": "Returns true if the attribute definition is explicitly marked queryable or if the attribute value type belongs to a queryable type. Computed and read-only.",
+            "example": true,
             "readOnly": true
           },
           "valueType": {
             "$ref": "#/components/schemas/ValueType"
           },
           "visible": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if this attribute is visible",
+            "example": true
           },
           "system": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if this attribute is a system attribute",
+            "example": false
           },
           "unit": {
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Localized value",
               "maxLength": 4000
-            }
+            },
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "General unit",
+              "de": "Allgemeine Einheit",
+              "en": "General unit"
+            },
+            "x-format": "localized"
           },
           "requiresEncoding": {
             "type": "boolean",
+            "description": "Flag indicating if this attribute can be encoded using the encoding='off' flag in ISML templates",
+            "example": false,
             "readOnly": true
           },
           "multiValueType": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "True if the attribute can have multiple values. Applicable to set_of_* and enum_of_* types.",
+            "example": false
           },
           "setValueType": {
             "type": "boolean",
+            "description": "Flag indicating if this attribute is of type 'Set of'",
+            "example": false,
             "readOnly": true
           },
           "externallyManaged": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if this attribute is externally managed",
+            "example": false
           },
           "externallyDefined": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if this attribute is externally defined",
+            "example": false
           },
           "orderRequired": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Flag indicating if this attribute is required for order of the attribute model's product",
+            "example": false
           },
           "regularExpression": {
             "type": "string",
+            "description": "A regular expression that defines the legal values for this attribute",
+            "example": "^[a-zA-Z]+$",
             "maxLength": 4000,
             "readOnly": true
           },
           "fieldLength": {
             "type": "integer",
             "format": "int32",
+            "description": "The length of the field for this attribute in the editor",
+            "example": 50,
             "readOnly": true
           },
           "fieldHeight": {
             "type": "integer",
             "format": "int32",
+            "description": "The height of the field for this attribute in the editor",
+            "example": 1,
             "readOnly": true
           },
           "minLength": {
             "type": "integer",
             "format": "int32",
+            "description": "The minimum length of the field for this attribute",
+            "example": 1,
             "readOnly": true
           },
           "readOnly": {
             "type": "boolean",
+            "description": "Flag indicating if this attribute is read-only",
+            "example": false,
             "readOnly": true
           },
           "minValue": {
             "type": "number",
             "format": "double",
+            "description": "The minimum possible value for this attribute",
+            "example": 0,
             "readOnly": true
           },
           "maxValue": {
             "type": "number",
             "format": "double",
+            "description": "The maximum possible value for this attribute",
+            "example": 100,
             "readOnly": true
           },
           "scale": {
             "type": "integer",
             "format": "int32",
+            "description": "The minimum number of fraction digits for a value of this attribute",
+            "example": 2,
             "readOnly": true
           },
           "defaultValue": {
@@ -1817,10 +2577,12 @@
               {
                 "$ref": "#/components/schemas/ObjectAttributeValueDefinition"
               }
-            ]
+            ],
+            "description": "The default value of this attribute. It can be updated, but not created."
           },
           "valueDefinitions": {
             "type": "array",
+            "description": "A set of values that are possible for this attribute",
             "items": {
               "$ref": "#/components/schemas/ObjectAttributeValueDefinition"
             },
@@ -1829,11 +2591,15 @@
           "creationDate": {
             "type": "string",
             "format": "date-time",
+            "description": "The date/time when the attribute definition was created",
+            "example": "2024-01-15T10:30:00Z",
             "readOnly": true
           },
           "lastModified": {
             "type": "string",
             "format": "date-time",
+            "description": "The date/time when the attribute definition was last modified",
+            "example": "2024-01-15T11:00:00Z",
             "readOnly": true
           }
         },
@@ -1843,9 +2609,12 @@
       },
       "PreferenceValue": {
         "type": "object",
+        "description": "Represents a single preference value with its attribute definition and site-specific values.",
         "properties": {
           "id": {
             "type": "string",
+            "description": "The preference attribute ID",
+            "example": "WapiStringAttr",
             "maxLength": 256,
             "minLength": 1
           },
@@ -1853,22 +2622,43 @@
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Preference Description",
               "maxLength": 4000
-            }
+            },
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "Preference Description",
+              "en-US": "Preference Description",
+              "de-DE": "Einstellungsbeschreibung",
+              "ja-JP": "設定の説明"
+            },
+            "x-format": "localized"
           },
           "displayName": {
             "type": "object",
             "additionalProperties": {
               "type": "string",
+              "description": "Localized string",
+              "example": "Preference Display Name",
               "maxLength": 4000
-            }
+            },
+            "description": "B2C Commerce API - Localization doc: https://developer.salesforce.com/docs/commerce/commerce-api/guide/b2c-localization.html",
+            "example": {
+              "default": "Preference Display Name",
+              "en-US": "Preference Display Name",
+              "de-DE": "Anzeigename der Einstellung",
+              "ja-JP": "設定の表示名"
+            },
+            "x-format": "localized"
           },
           "attributeDefinition": {
             "$ref": "#/components/schemas/ObjectAttributeDefinition"
           },
           "siteValues": {
             "type": "object",
-            "additionalProperties": true
+            "additionalProperties": true,
+            "description": "A mapping of site IDs to their preference values."
           },
           "valueType": {
             "$ref": "#/components/schemas/ValueType"
@@ -1884,9 +2674,11 @@
             "$ref": "#/components/schemas/PaginatedSearchResult"
           }
         ],
+        "description": "Document representing a preference value search result.",
         "properties": {
           "hits": {
             "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
             "items": {
               "$ref": "#/components/schemas/PreferenceValue"
             }
@@ -1898,42 +2690,54 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "maskPassword": {
         "name": "maskPassword",
         "in": "query",
+        "description": "Whether to mask password or not.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "example": true
         }
       },
       "siteId": {
         "name": "siteId",
         "in": "query",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
         "required": true,
         "style": "form",
         "explode": true,
         "schema": {
           "$ref": "#/components/schemas/SiteId"
+        },
+        "examples": {
+          "SiteId": {
+            "value": "RefArch"
+          }
         }
       },
       "groupId": {
         "name": "groupId",
         "in": "path",
+        "description": "The preference group ID.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "WapiStringGroup",
           "maxLength": 256,
           "minLength": 1
         }
@@ -1941,6 +2745,7 @@
       "instanceType": {
         "name": "instanceType",
         "in": "path",
+        "description": "The instance type for which to read or update preferences.",
         "required": true,
         "style": "simple",
         "explode": false,
@@ -1951,23 +2756,28 @@
             "development",
             "sandbox",
             "production"
-          ]
-        }
+          ],
+          "example": "staging"
+        },
+        "example": "staging"
       },
       "maskPasswords": {
         "name": "maskPasswords",
         "in": "query",
+        "description": "The preference values of type Password are masked when set.",
         "required": false,
         "style": "form",
         "explode": true,
         "schema": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "example": true
         }
       },
       "globalPreferenceGroupExpand": {
         "name": "expand",
         "in": "query",
+        "description": "Expands the result document to include additional information. For global preference groups, the expansion \"sites\" retrieves the custom preferences for all the available sites.\n",
         "required": false,
         "style": "form",
         "explode": false,
@@ -1977,13 +2787,15 @@
             "type": "string",
             "enum": [
               "sites"
-            ]
+            ],
+            "example": "sites"
           }
         }
       },
       "preferenceSearchExpand": {
         "name": "expand",
         "in": "query",
+        "description": "Expands the result document to include additional information. For preference search, the expansion \"value\" retrieves the value definitions of the attribute definition.\n",
         "required": false,
         "style": "form",
         "explode": false,
@@ -1993,26 +2805,602 @@
             "type": "string",
             "enum": [
               "value"
-            ]
+            ],
+            "example": "value"
           }
         }
       },
       "preferenceId": {
         "name": "preferenceId",
         "in": "path",
+        "description": "The preference attribute ID.",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "WapiStringAttr",
           "maxLength": 256,
           "minLength": 1
+        }
+      }
+    },
+    "examples": {
+      "GlobalCustomPreferenceExample": {
+        "value": {
+          "limit": 10,
+          "data": [
+            {
+              "groupId": "PreferenceGroup1",
+              "id": "booleanValue",
+              "value": true
+            },
+            {
+              "groupId": "PreferenceGroup1",
+              "id": "htmlValue",
+              "value": {
+                "markup": "<h1>HTML Value</h1>",
+                "source": "<h1>HTML Value</h1>"
+              }
+            },
+            {
+              "groupId": "PreferenceGroup1",
+              "id": "dateValue",
+              "value": "2007-06-20T00:00:00.000Z"
+            },
+            {
+              "groupId": "PreferenceGroup2",
+              "id": "integerValueValue",
+              "value": 12345
+            },
+            {
+              "groupId": "PreferenceGroup2",
+              "id": "stringValueList",
+              "value": "s1"
+            },
+            {
+              "groupId": "PreferenceGroup2",
+              "id": "imageValue",
+              "value": {
+                "abs_url": "https://localhost/on/demandware.static/-/Sites/default/v2d48bd5c705782218c66e02f6776751b2e227ac5/img/value.jpg",
+                "dis_base_url": "https://image.demandware.com/dw/image/v2/zzzz_s02/on/demandware.static/-/Sites/default/v2d48bd5c705782218c66e02f6776751b2e227ac5/img/value.jpg",
+                "path": "/img/value.jpg"
+              }
+            }
+          ],
+          "offset": 0,
+          "total": 100
+        }
+      },
+      "InvalidAccessToken": {
+        "value": {
+          "title": "Invalid Access Token",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-access-token",
+          "detail": "The request is unauthorized, the access token is invalid.",
+          "accessToken": "hbGciOiJIUzI1NiIsInR5cCI6Ikp"
+        }
+      },
+      "SiteCustomPreferenceExample": {
+        "value": {
+          "limit": 10,
+          "data": [
+            {
+              "groupId": "PreferenceGroup1",
+              "id": "booleanValue",
+              "value": true
+            },
+            {
+              "groupId": "PreferenceGroup1",
+              "id": "htmlValue",
+              "value": {
+                "markup": "<h1>HTML Value</h1>",
+                "source": "<h1>HTML Value</h1>"
+              }
+            },
+            {
+              "groupId": "PreferenceGroup2",
+              "id": "integerValueValue",
+              "value": 12345
+            },
+            {
+              "groupId": "PreferenceGroup2",
+              "id": "imageValue",
+              "value": {
+                "abs_url": "https://localhost/on/demandware.static/-/Sites/default/v2d48bd5c705782218c66e02f6776751b2e227ac5/img/value.jpg",
+                "dis_base_url": "https://image.demandware.com/dw/image/v2/zzzz_s02/on/demandware.static/-/Sites/default/v2d48bd5c705782218c66e02f6776751b2e227ac5/img/value.jpg",
+                "path": "/img/value.jpg"
+              }
+            }
+          ],
+          "offset": 0,
+          "total": 100
+        }
+      },
+      "GetGlobalPreferencesExample": {
+        "summary": "Global preferences with custom attributes.",
+        "value": {
+          "c_WapiStringAttr": "MyString",
+          "c_WapiLocalizedStringAttr": "MyLocalizedString",
+          "c_WapiSitespecificStringAttr": "MySiteSpecificString",
+          "c_WapiSetOfStringAttr": [
+            "value1",
+            "value2"
+          ],
+          "c_WapiEnumOfStringAttr": "WapiEnumOfStringValue1",
+          "c_WapiEnumOfStringMSAttr": [
+            "WapiEnumOfStringMSValue1",
+            "WapiEnumOfStringMSValue2"
+          ]
+        }
+      },
+      "GetGlobalPreferencesWithSitesExample": {
+        "summary": "Global preferences with site-specific expansions.",
+        "value": {
+          "c_WapiStringAttr": "MyString",
+          "c_WapiLocalizedStringAttr": {
+            "default": "MyLocalizedString",
+            "de-DE": "MeineLokalisierteZeichenkette"
+          },
+          "c_WapiSitespecificStringAttr": "MySiteSpecificString",
+          "c_WapiSetOfStringAttr": [
+            "value1",
+            "value2"
+          ],
+          "c_WapiEnumOfStringAttr": "WapiEnumOfStringValue1",
+          "c_WapiEnumOfStringMSAttr": [
+            "WapiEnumOfStringMSValue1",
+            "WapiEnumOfStringMSValue2"
+          ],
+          "c_WapiBooleanAttr": true,
+          "c_WapiIntAttr": 42,
+          "sitePreferences": [
+            {
+              "site": {
+                "id": "RefArch"
+              },
+              "c_WapiStringAttr": "SiteSpecificStringRefArch",
+              "c_WapiLocalizedStringAttr": {
+                "default": "SiteLocalizedString",
+                "de-DE": "StandortLokalisierteZeichenkette"
+              },
+              "c_WapiSitespecificStringAttr": "SiteSpecificValue",
+              "c_WapiSetOfStringAttr": [
+                "siteValue1",
+                "siteValue2"
+              ],
+              "c_WapiEnumOfStringAttr": "WapiEnumOfStringValue1",
+              "c_WapiBooleanAttr": false,
+              "c_WapiIntAttr": 10
+            },
+            {
+              "site": {
+                "id": "RefArchGlobal"
+              },
+              "c_WapiStringAttr": "AnotherSiteValue",
+              "c_WapiLocalizedStringAttr": {
+                "default": "AnotherSiteLocalizedString"
+              },
+              "c_WapiSitespecificStringAttr": "AnotherSiteSpecificValue",
+              "c_WapiSetOfStringAttr": [
+                "anotherValue1"
+              ],
+              "c_WapiBooleanAttr": true,
+              "c_WapiIntAttr": 99
+            }
+          ]
+        }
+      },
+      "IllegalEnumerationValue": {
+        "value": {
+          "title": "Illegal Enumeration Value",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/illegal-enumeration-value",
+          "detail": "The value 'bad' for type 'InstanceType' is invalid.",
+          "value": "bad"
+        }
+      },
+      "CustomPreferenceGroupNotFound": {
+        "value": {
+          "title": "Custom Preference Group Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/custom-preference-group-not-found",
+          "detail": "No preference group with ID 'Bad' could be found.",
+          "preferenceGroupId": "Bad"
+        }
+      },
+      "UpdateGlobalPreferencesRequest": {
+        "summary": "Update global custom preferences.",
+        "value": {
+          "c_WapiStringAttr": "UpdatedString",
+          "c_WapiIntAttr": 42,
+          "c_WapiBooleanAttr": true,
+          "c_WapiSetOfStringAttr": [
+            "newValue1",
+            "newValue2"
+          ]
+        }
+      },
+      "UpdateGlobalPreferencesExample": {
+        "summary": "Updated global preferences response.",
+        "value": {
+          "c_WapiStringAttr": "UpdatedString",
+          "c_WapiLocalizedStringAttr": "UpdatedLocalizedString",
+          "c_WapiSetOfStringAttr": [
+            "newValue1",
+            "newValue2"
+          ]
+        }
+      },
+      "GetSitePreferencesExample": {
+        "summary": "Site preferences with custom attributes.",
+        "value": {
+          "site": {
+            "id": "RefArch"
+          },
+          "c_WapiStringAttr": "MyString",
+          "c_WapiLocalizedStringAttr": "MyLocalizedString",
+          "c_WapiPasswordAttr": "************"
+        }
+      },
+      "UpdateSitePreferencesRequest": {
+        "summary": "Update site custom preferences.",
+        "value": {
+          "c_WapiStringAttr": "UpdatedString",
+          "c_WapiLocalizedStringAttr": {
+            "default": "UpdatedLocalizedString",
+            "de-DE": "AktualisierteLokalisierteZeichenkette"
+          },
+          "c_WapiIntAttr": 42,
+          "c_WapiBooleanAttr": true,
+          "c_WapiSetOfStringAttr": [
+            "newValue1",
+            "newValue2"
+          ]
+        }
+      },
+      "UpdateSitePreferencesExample": {
+        "summary": "Updated site preferences response.",
+        "value": {
+          "site": {
+            "id": "RefArch"
+          },
+          "c_WapiStringAttr": "UpdatedString",
+          "c_WapiLocalizedStringAttr": "UpdatedLocalizedString"
+        }
+      },
+      "SearchSitePreferencesRequest": {
+        "summary": "Search preferences by ID and value type.",
+        "value": {
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "textQuery": {
+                    "fields": [
+                      "id"
+                    ],
+                    "searchPhrase": "WapiString"
+                  }
+                },
+                {
+                  "termQuery": {
+                    "fields": [
+                      "valueType"
+                    ],
+                    "operator": "is",
+                    "values": [
+                      "string"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "sorts": [
+            {
+              "field": "id",
+              "sortOrder": "asc"
+            }
+          ],
+          "limit": 25,
+          "offset": 0
+        }
+      },
+      "PreferenceSearchExample": {
+        "summary": "Search result for preferences across sites.",
+        "value": {
+          "limit": 2,
+          "offset": 0,
+          "total": 2,
+          "hits": [
+            {
+              "id": "WapiStringAttr",
+              "displayName": {
+                "default": "String Attribute"
+              },
+              "description": {
+                "default": "String Attribute"
+              },
+              "valueType": "string",
+              "attributeDefinition": {
+                "id": "WapiStringAttr",
+                "displayName": {
+                  "default": "String Attribute"
+                },
+                "description": {
+                  "default": "String Attribute"
+                },
+                "valueType": "string"
+              },
+              "siteValues": {
+                "RefArch": "MyString-RefArch-Staging",
+                "RefArchGlobal": "MyString-RefArchGlobal-Staging"
+              }
+            },
+            {
+              "id": "WapiLocalizedStringAttr",
+              "displayName": {
+                "default": "Localized String Attribute"
+              },
+              "description": {
+                "default": "Localized String Attribute"
+              },
+              "valueType": "string",
+              "attributeDefinition": {
+                "id": "WapiLocalizedStringAttr",
+                "displayName": {
+                  "default": "Localized String Attribute"
+                },
+                "description": {
+                  "default": "Localized String Attribute"
+                },
+                "valueType": "string"
+              },
+              "siteValues": {
+                "RefArch": "MyLocalizedString-RefArch-Staging"
+              }
+            }
+          ],
+          "query": {
+            "matchAllQuery": {}
+          },
+          "sorts": [
+            {
+              "field": "id",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "PreferenceSearchWithExpandValueExample": {
+        "summary": "Search result with expanded value definitions.",
+        "value": {
+          "limit": 1,
+          "offset": 0,
+          "total": 1,
+          "hits": [
+            {
+              "id": "WapiEnumOfStringAttr",
+              "displayName": {
+                "default": "Enum Of String Attribute"
+              },
+              "description": {
+                "default": "Enum Of String Attribute"
+              },
+              "valueType": "enum_of_string",
+              "attributeDefinition": {
+                "id": "WapiEnumOfStringAttr",
+                "displayName": {
+                  "default": "Enum Of String Attribute"
+                },
+                "description": {
+                  "default": "Enum Of String Attribute"
+                },
+                "valueType": "enum_of_string",
+                "valueDefinitions": [
+                  {
+                    "id": "WapiEnumOfStringValue1",
+                    "displayValue": {
+                      "default": "Value 1"
+                    },
+                    "position": 0,
+                    "value": "WapiEnumOfStringValue1"
+                  },
+                  {
+                    "id": "WapiEnumOfStringValue2",
+                    "displayValue": {
+                      "default": "Value 2"
+                    },
+                    "position": 1,
+                    "value": "WapiEnumOfStringValue2"
+                  }
+                ]
+              },
+              "siteValues": {
+                "RefArch": "WapiEnumOfStringValue1"
+              }
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id"
+              ],
+              "searchPhrase": "WapiEnumOfStringAttr"
+            }
+          }
+        }
+      },
+      "FieldNotSortable": {
+        "value": {
+          "title": "Field Not Sortable",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/field-not-sortable",
+          "detail": "The field 'attributeDefinition' can't be used to sort the results.",
+          "field": "attributeDefinition"
+        }
+      },
+      "GetPreferenceValueExample": {
+        "summary": "A single preference value.",
+        "value": {
+          "id": "WapiStringAttr",
+          "displayName": {
+            "default": "String Attribute",
+            "de-DE": "Zeichenkettenattribut"
+          },
+          "description": {
+            "default": "A custom string preference attribute",
+            "de-DE": "Ein benutzerdefiniertes Zeichenkettenattribut"
+          },
+          "valueType": "string",
+          "siteValues": {
+            "RefArch": "MyString-RefArch-Sandbox",
+            "RefArchGlobal": "MyString-RefArchGlobal-Sandbox"
+          },
+          "attributeDefinition": {
+            "id": "WapiStringAttr",
+            "effectiveId": "c_WapiStringAttr",
+            "displayName": {
+              "default": "String Attribute",
+              "de-DE": "Zeichenkettenattribut"
+            },
+            "description": {
+              "default": "A custom string preference attribute",
+              "de-DE": "Ein benutzerdefiniertes Zeichenkettenattribut"
+            },
+            "valueType": "string",
+            "key": false,
+            "mandatory": false,
+            "localizable": true,
+            "siteSpecific": true,
+            "searchable": false,
+            "queryable": true,
+            "visible": true,
+            "system": false,
+            "unit": {
+              "default": ""
+            },
+            "requiresEncoding": false,
+            "multiValueType": false,
+            "setValueType": false,
+            "externallyManaged": false,
+            "externallyDefined": false,
+            "orderRequired": false,
+            "readOnly": false,
+            "regularExpression": "^[a-zA-Z0-9]*$",
+            "fieldLength": 256,
+            "fieldHeight": 1,
+            "minLength": 1,
+            "minValue": 0,
+            "maxValue": 100,
+            "scale": 2,
+            "defaultValue": {
+              "id": "defaultVal",
+              "value": "defaultString",
+              "position": 1,
+              "displayValue": {
+                "default": "Default Value"
+              },
+              "description": {
+                "default": "The default value"
+              }
+            },
+            "valueDefinitions": []
+          }
+        }
+      },
+      "GetPreferenceValueMultiSiteExample": {
+        "summary": "A single preference value with multiple site values.",
+        "value": {
+          "id": "WapiSetOfStringAttr",
+          "displayName": {
+            "default": "Set Of String Attribute"
+          },
+          "description": {
+            "default": "Set Of String Attribute"
+          },
+          "siteValues": {
+            "RefArch": [
+              "value1-RefArch-Sandbox"
+            ],
+            "RefArchGlobal": [
+              "value1-RefArchGlobal-Sandbox"
+            ]
+          },
+          "valueType": "set_of_string"
+        }
+      },
+      "PreferenceNotFound": {
+        "value": {
+          "title": "Preference Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/preference-not-found",
+          "detail": "No preference with ID 'noExists' could be found.",
+          "preferenceId": "noExists"
+        }
+      },
+      "UpdateSitePreferenceValueRequest": {
+        "summary": "Update a preference value for multiple sites.",
+        "value": {
+          "id": "WapiStringAttr",
+          "valueType": "string",
+          "displayName": {
+            "default": "My String Attribute",
+            "de-DE": "Mein Zeichenkettenattribut"
+          },
+          "description": {
+            "default": "A custom string preference attribute",
+            "de-DE": "Ein benutzerdefiniertes Zeichenkettenattribut"
+          },
+          "siteValues": {
+            "RefArch": "new value for RefArch",
+            "RefArchGlobal": "new value for RefArchGlobal"
+          },
+          "attributeDefinition": {
+            "id": "WapiStringAttr",
+            "displayName": {
+              "default": "My String Attribute",
+              "de-DE": "Mein Zeichenkettenattribut"
+            },
+            "description": {
+              "default": "A custom string preference attribute",
+              "de-DE": "Ein benutzerdefiniertes Zeichenkettenattribut"
+            },
+            "valueType": "string",
+            "key": false,
+            "mandatory": false,
+            "localizable": true,
+            "siteSpecific": true,
+            "searchable": false,
+            "visible": true,
+            "unit": {
+              "default": "kg"
+            },
+            "multiValueType": false,
+            "externallyManaged": false,
+            "externallyDefined": false,
+            "orderRequired": false
+          }
+        }
+      },
+      "UpdatePreferenceValueExample": {
+        "summary": "Updated preference value response.",
+        "value": {
+          "id": "WapiLocalizedStringAttr",
+          "displayName": {
+            "default": "Localized String Attribute"
+          },
+          "description": {
+            "default": "Localized String Attribute"
+          },
+          "siteValues": {
+            "RefArch": "value for RefArch",
+            "RefArchGlobal": "value for RefArchGlobal"
+          },
+          "valueType": "string"
         }
       }
     },
     "securitySchemes": {
       "AmOAuth2": {
         "type": "oauth2",
+        "description": "AccountManager OAuth 2.0 bearer token Authentication.",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
@@ -2024,10 +3412,8 @@
           "authorizationCode": {
             "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
             "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
-            "scopes": {
-              "sfcc.preferences": "Preferences read scope",
-              "sfcc.preferences.rw": "Preferences read/write scope"
-            }
+            "refreshUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {}
           }
         }
       }

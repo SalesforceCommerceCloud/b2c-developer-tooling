@@ -34,6 +34,13 @@ export function categoryEnumValues(enabledCategories?: readonly DocCategory[]): 
  * A sentence for a tool description noting the corpus is restricted to the
  * configured topics, or an empty string when there is no restriction.
  */
+/**
+ * Returned with every docs_search/docs_read result. Doc IDs are lookup keys for docs_read, not user-facing references;
+ * the rule sits next to the data because agents cite while reading results, long after reading tool descriptions.
+ */
+export const DOCS_CITATION_NOTE =
+  'Cite docs to users by url (sourceUrl for Markdown). Never show doc ids; they are docs_read keys. Show ids only if asked.';
+
 export function enabledCategoriesNote(enabledCategories?: readonly DocCategory[]): string {
   if (!enabledCategories || enabledCategories.length === 0) return '';
   if (DOC_CATEGORIES.every((category) => enabledCategories.includes(category))) return '';

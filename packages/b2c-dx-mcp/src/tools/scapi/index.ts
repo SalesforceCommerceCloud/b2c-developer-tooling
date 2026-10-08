@@ -19,24 +19,27 @@ import {createMetricsGetTool} from './metrics-get.js';
 import {createScapiCustomApisStatusTool} from './scapi-custom-apis-get-status.js';
 import {createScapiSchemasListTool} from './scapi-schemas-list.js';
 import {createScapiCodeTools} from './scapi-code.js';
-import {ScapiLiveSchemaCache, ScapiShopperSessions} from '@salesforce/b2c-tooling-sdk/scapi';
+import {ScapiLiveSchemaCache, ScapiShopperSessions, type ScapiSchemaDocument} from '@salesforce/b2c-tooling-sdk/scapi';
 import type {ScapiExecutionRegistry} from './execution-registry.js';
 
 /**
  * Creates all tools for the SCAPI toolset.
  *
  * @param loadServices - Function that loads configuration and returns Services instance
+ * @param executions - Server-scoped registry for retained code-mode executions
+ * @param localSchemas - Startup --scapi-schemas contracts; when omitted, each call reads the project's `scapiSchemas` config
  * @returns Array of MCP tools
  */
 export function createScapiTools(
   loadServices: () => Promise<Services> | Services,
   executions?: ScapiExecutionRegistry,
+  localSchemas?: readonly ScapiSchemaDocument[],
 ): McpTool[] {
   // Live contracts discovered by search or schema fetches are reused by execution for the same tenant.
   const schemaCache = new ScapiLiveSchemaCache();
   const shopperSessions = new ScapiShopperSessions();
   return [
-    ...createScapiCodeTools(loadServices, undefined, executions, schemaCache, shopperSessions),
+    ...createScapiCodeTools(loadServices, undefined, executions, schemaCache, shopperSessions, localSchemas),
     createMetricsGetTool(loadServices),
     createScapiCustomApisStatusTool(loadServices),
     createScapiSchemasListTool(loadServices, schemaCache),

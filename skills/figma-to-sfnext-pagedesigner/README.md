@@ -39,12 +39,12 @@ For file-copy install to any supported IDE, use `b2c setup skills figma-to-sfnex
 The skill asks for a Figma frame URL (must include `node-id`), a Storefront Next repo URL or local path, and a Page Designer group (palette folder). It then:
 
 1. Splits the frame into one Page Designer block per visual section.
-2. Shows you the authorable fields and default values for each block — and a **token reconciliation table** where the design diverges from your `brand.css` — then waits for your approval before writing any code.
-3. Generates React + Tailwind components using your project's brand tokens, adds Page Designer decorator metadata with defaults pre-filled from the Figma copy, and wires up SCAPI product loaders for catalog-backed sections.
-4. Registers each component, commits, and pushes.
+2. Shows you the authorable fields and default values for each block — and a **token reconciliation table** where the design diverges from your theme tokens (`src/theme/tokens/`) — then waits for your approval before writing any code.
+3. Generates React + Tailwind components using your project's brand tokens, adds Page Designer decorator metadata with defaults pre-filled from the Figma copy, and wires up product loaders for catalog-backed sections.
+4. Verifies each component in the generated registry, generates and validates the cartridge, and deploys it (`pnpm cartridge:deploy`) and the bundle (`pnpm push`) when you ask.
 5. Validates design fidelity in the browser (when a browser MCP is available).
 
-After CI runs (MRT deploy + cartridge deploy), the new blocks appear in the Business Manager Page Designer palette with fields pre-filled from the Figma design.
+After the cartridge and bundle are deployed, the new blocks appear in the Business Manager Page Designer palette with fields pre-filled from the Figma design.
 
 ## What's included
 

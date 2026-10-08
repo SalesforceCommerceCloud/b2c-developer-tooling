@@ -1,0 +1,5 @@
+[
+  {"query": "Add a small 'Find a store' badge next to the cart icon in the header without editing the header component", "should_trigger": true},
+  {"query": "I need a server-side fraud check that can block order placement in Storefront Next checkout; how do I register an action hook?", "should_trigger": true},
+  {"query": "Change the primary brand color and button radius across the storefront", "should_trigger": false}
+]

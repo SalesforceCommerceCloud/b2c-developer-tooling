@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
+import {ScapiRequestError} from '../../src/clients/scapi-backend-utils.js';
 import {BackendDispatcher} from '../../src/compat/dispatcher.js';
 
 interface FakeOps {
@@ -45,6 +46,27 @@ describe('BackendDispatcher', () => {
   });
 
   describe('run', () => {
+    it('keeps the SCAPI rejection visible when the OCAPI fallback also fails', async () => {
+      const d = new BackendDispatcher<FakeOps>('auto', () => makeOps(), 'jobs');
+      const scapiError = new ScapiRequestError('SCAPI route not found', 404);
+      try {
+        await d.run({
+          scapi: async () => {
+            throw scapiError;
+          },
+          ocapi: async () => {
+            throw new Error("Access to resource isn't allowed for the current client.");
+          },
+        });
+        expect.fail('should have thrown');
+      } catch (error) {
+        const e = error as Error & {scapiError?: unknown};
+        expect(e.message).to.include("isn't allowed for the current client");
+        expect(e.message).to.include('SCAPI route not found');
+        expect(e.scapiError).to.equal(scapiError);
+      }
+    });
+
     it('routes to scapi branch and caches the choice', async () => {
       const ops = makeOps();
       const d = new BackendDispatcher<FakeOps>('auto', () => ops, 'jobs');

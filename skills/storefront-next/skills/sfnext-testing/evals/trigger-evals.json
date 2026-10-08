@@ -1,0 +1,5 @@
+[
+  {"query": "Write a Storybook story with a play function for the new wishlist button component", "should_trigger": true},
+  {"query": "How do I unit test my route loader that calls the SCAPI shopper products client?", "should_trigger": true},
+  {"query": "pnpm lint fails with a jsx-a11y error about missing alt text on my image", "should_trigger": false}
+]

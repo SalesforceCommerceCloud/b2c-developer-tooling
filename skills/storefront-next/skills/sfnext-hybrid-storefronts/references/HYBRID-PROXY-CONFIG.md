@@ -1,123 +1,86 @@
 # Hybrid Proxy Configuration Reference
 
-## Overview
+Authoritative guide in your project: `docs/README-HYBRID-PROXY.md`. Plugin wiring: `vite-plugins/hybrid-proxy.ts`.
 
-The hybrid proxy is a **Vite dev server plugin** (`hybridProxyPlugin` from `@salesforce/storefront-next-dev`) that routes requests between Storefront Next and SFRA based on URL patterns during local development. In production, Cloudflare eCDN handles routing.
+## Environment variables
 
-## Environment Variables
+| Variable | Scope | Purpose |
+|---|---|---|
+| `PUBLIC__app__hybrid__enabled` | all environments | Activates the client-side legacy-routes middleware. Default `false`. |
+| `PUBLIC__app__hybrid__legacyRoutes` | all environments | JSON array of SFRA-owned routes (strings or `{ pattern, suffix }`). |
+| `HYBRID_PROXY_ENABLED` | dev only | `true` turns the proxy on. |
+| `SFCC_ORIGIN` | dev only | Full HTTPS URL of the SFRA sandbox. Highest priority target. |
+| `SCAPI_PROXY_HOST` | dev only | Secondary target-origin override. |
+| `HYBRID_ROUTING_RULES` | dev only | Cloudflare-style expression of paths Storefront Next owns. |
+| `HYBRID_PROXY_LOCALE` | dev only, optional | Fallback locale for the SFRA path; else `PUBLIC__app__i18n__fallbackLng`, else `default`. |
+| `PUBLIC__app__defaultSiteId` | dev | Site id used in `/s/<siteId>/...`. |
 
-### All Environments
+`hybrid` defaults to `{ enabled: false, legacyRoutes: [] }` in `config.server.ts`.
 
-```bash
-# Enable hybrid mode (activates client-side legacy-routes middleware)
-PUBLIC__app__hybrid__enabled=true
-
-# Routes owned by SFRA — Link clicks to these force full-page navigation
-# Supports exact paths and React Router parameterized routes (/product/:id)
-PUBLIC__app__hybrid__legacyRoutes='["/cart", "/checkout"]'
-```
-
-### Local Development Only
-
-```bash
-# Enable the Vite proxy
-HYBRID_PROXY_ENABLED=true
-
-# SFCC sandbox URL (the actual hostname, not the SCAPI base URL)
-SFCC_ORIGIN=https://zzrf-001.dx.commercecloud.salesforce.com
-
-# Cloudflare-style routing expression
-# Paths matching → Storefront Next; paths not matching → proxied to SFCC
-HYBRID_ROUTING_RULES='(http.request.uri.path matches "^/$" or http.request.uri.path matches "^/product.*" or http.request.uri.path matches "^/category.*" or http.request.uri.path matches "^/search.*" or http.request.uri.path matches "^/account.*" or http.request.uri.path matches "^/resource.*" or http.request.uri.path matches "^/action/.*")'
-
-# Optional: locale for SFRA path transformation
-HYBRID_PROXY_LOCALE=en-GB
-
-# Commerce Cloud site ID (likely already set)
-PUBLIC__app__defaultSiteId=RefArchGlobal
-```
-
-## Routing Rules Format
-
-Each clause follows `http.request.uri.path matches "<regex>"`, joined with `or`:
+## Routing rule format
 
 ```
 (http.request.uri.path matches "^/$" or http.request.uri.path matches "^/category.*")
 ```
 
-This is the same format used by Cloudflare eCDN origin rules — keep local and production in sync.
+Only `http.request.uri.path matches "<regex>"` clauses joined by `or` are parsed. Always include `^/resource.*` and `^/action/.*`. `.data` requests are excluded automatically.
 
-### Required Patterns
+| Pattern | Route |
+|---|---|
+| `^/$` | Home |
+| `^/login.*`, `^/logout.*`, `^/signup.*`, `^/reset-password.*` | Auth pages |
+| `^/account.*` | Account |
+| `^/product.*`, `^/category.*`, `^/search.*` | Catalog |
+| `^/social-callback.*` | Social login callback |
 
-| Pattern        | Why                                              |
-| -------------- | ------------------------------------------------ |
-| `^/resource.*` | React Router resource routes (server endpoints)  |
-| `^/action/.*`  | React Router actions (form submissions)          |
+## Path transformation
 
-### Automatically Excluded Paths (never proxied)
+| Browser URL | Proxied to |
+|---|---|
+| `/` | `/s/<siteId>` |
+| `/cart` | `/s/<siteId>/<locale>/cart` |
+| `/on/demandware.static/...`, `/s/...` | unchanged |
 
-- `/@*`, `/__*` — Vite internals
-- `/src/*`, `/node_modules/*` — Source files
-- `*.data` — React Router data requests
-- `/mobify/*` — SCAPI proxy paths
-- Static asset extensions (`.js`, `.css`, `.png`, `.woff2`, etc.)
+With `url.prefix` set in `config.server.ts`:
 
-SFRA static assets (`/on/demandware.static/*`, `/on/demandware.store/*`) are always proxied.
+| `url.prefix` | URL | Proxied to |
+|---|---|---|
+| `/:localeId` | `/uk/cart` | `/s/<siteId>/uk/cart` |
+| `/:localeId` | `/cart` | `/s/<siteId>/<fallback locale>/cart` (`cart` is not a known locale) |
+| `/:siteId/:localeId` | `/global/en-GB/cart` | `/s/global/en-GB/cart` |
 
-## Path Transformation
+Query strings are preserved.
 
-The proxy rewrites paths to SFRA format automatically:
+## Cookie layers (local dev)
 
-| Browser URL    | Proxied to SFCC as                    |
-| -------------- | ------------------------------------- |
-| `/cart`        | `/s/RefArchGlobal/en-GB/cart`         |
-| `/checkout`    | `/s/RefArchGlobal/en-GB/checkout`     |
+1. Set-Cookie headers from SFCC: `Domain=.salesforce.com` rewritten to `localhost`.
+2. Storefront Next's own cookies are written to `localhost` directly.
+3. Injected `document.cookie` patch in proxied HTML so SFRA client-side cookie writes get the same treatment (SFRA omits `Secure` on `http://localhost`). Localhost-only; no production equivalent.
 
-The `siteId` comes from `PUBLIC__app__defaultSiteId`. The locale uses `HYBRID_PROXY_LOCALE` → `PUBLIC__app__i18n__fallbackLng` → `default`.
+## Custom matcher (last resort)
 
-## Cookie Handling (Local Dev)
-
-Three layers keep cookies working on localhost:
-
-1. **Set-Cookie header rewriting** — `Domain=.salesforce.com` → `Domain=localhost`
-2. **Storefront Next server cookies** — Written directly to localhost
-3. **Client-side cookie interception** — Injected script patches `document.cookie` for SFRA JS
-
-## Custom Route Matching
-
-Override the default `shouldRouteToNext` matcher in `vite.config.ts`:
+Edit `vite-plugins/hybrid-proxy.ts`:
 
 ```typescript
 import { hybridProxyPlugin, shouldRouteToNext } from '@salesforce/storefront-next-dev';
 
 hybridProxyPlugin({
+    // ...existing options...
     routeMatcher: (pathname, rules) => {
-        if (pathname === '/my-custom-page') return true;  // → Storefront Next
-        if (pathname === '/legacy-only') return false;    // → SFRA
-        return shouldRouteToNext(pathname, rules);        // default
+        if (pathname === '/my-custom-page') return true;   // Storefront Next
+        if (pathname === '/legacy-only') return false;     // SFRA
+        return shouldRouteToNext(pathname, rules);         // default eCDN-style matching
     },
+    // rewritePath: (pathname) => myRewrite(pathname) ?? null, // non-standard URL models only
 });
 ```
 
-## CDN Routing (Production)
+If the matcher throws, the request falls through to React Router. Overriding the matcher means local routing no longer matches eCDN behavior; avoid unless necessary.
 
-In production, Cloudflare eCDN origin rules handle the split:
+## Gotchas
 
-```
-# Conceptual — configured in Cloudflare dashboard
-/                       → Storefront Next (MRT origin)
-/product/*              → Storefront Next (MRT origin)
-/category/*             → Storefront Next (MRT origin)
-/cart                   → SFRA (B2C Instance origin)
-/checkout/*             → SFRA (B2C Instance origin)
-/on/demandware.static/* → SFRA (B2C Instance origin)
-```
-
-## Shared Cookie Requirements
-
-Both storefronts must share a parent cookie domain:
-
-| Storefront      | Domain              | Cookie Domain   |
-| --------------- | ------------------- | --------------- |
-| Storefront Next | `www.example.com`   | `.example.com`  |
-| SFRA            | `legacy.example.com`| `.example.com`  |
+- Rules out of sync with eCDN: local behavior differs from production.
+- A proxied path that does not exist on SFRA returns whatever SFCC returns.
+- `HYBRID_PROXY_LOCALE` must be a locale SFRA accepts in `/s/<site>/<locale>/`; match the site's `defaultLocale`.
+- Unsupported compression formats skip body rewriting and leak SFCC URLs.
+- Production: do not rely on the plugin; configure eCDN routing (`b2c-cli:b2c-ecdn`) and the same cookie domain on both sides.

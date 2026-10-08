@@ -8,12 +8,7 @@ import cliui from 'cliui';
 import {join, resolve} from 'node:path';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import type {NormalizedConfig, ConfigSourceInfo, ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
-import {
-  EnvSource,
-  isSensitiveConfigField,
-  maskConfigValue,
-  redactConfigValues,
-} from '@salesforce/b2c-tooling-sdk/config';
+import {isSensitiveConfigField, maskConfigValue, redactConfigValues} from '@salesforce/b2c-tooling-sdk/config';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
 import {
@@ -22,6 +17,7 @@ import {
   resolveEffectiveSafetyConfig,
 } from '@salesforce/b2c-tooling-sdk/safety';
 import {t, withDocs} from '../../i18n/index.js';
+import {createEnvironmentSources} from '../../utils/setup/config-field-command.js';
 
 /**
  * JSON output structure for the inspect command.
@@ -140,9 +136,12 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     const accountManagerHost = this.flags['account-manager-host'] as string | undefined;
     const cloudOrigin = this.flags['cloud-origin'] as string | undefined;
 
-    // Include EnvSource so that SFCC_* environment variables are visible in inspect output.
+    // Include the environment as sources so that SFCC_* variables are visible in inspect output.
     // Other commands handle env vars via oclif flag mappings, but inspect needs to show them
-    // as a config source since it doesn't have those flags.
+    // as a config source since it doesn't have those flags. Variables from the .env file are
+    // reported separately so their provenance is visible.
+    const envSources = createEnvironmentSources(this.envFile);
+
     return loadConfig(
       {
         accountManagerHost,
@@ -153,7 +152,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         accountManagerHost,
         cloudOrigin,
       },
-      {before: [new EnvSource()]},
+      {before: envSources},
     );
   }
 
@@ -409,6 +408,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ['libraries', config.libraries],
         ['assetQuery', config.assetQuery],
         ['docsCategories', config.docsCategories],
+        ['scapiSchemas', config.scapiSchemas],
       ],
       fieldSources,
       unmask,
@@ -437,6 +437,18 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       for (const [index, source] of getSourceRows(sources).entries()) {
         ui.div({text: `  ${index + 1}. ${source.name}`, width: 34}, {text: source.location});
       }
+    }
+
+    const {configPath, defaultConfigPath} = this.getBaseConfigOptions();
+    if (configPath !== undefined && defaultConfigPath) {
+      ui.div({
+        text: t(
+          'commands.setup.inspect.globalDefaultSkipped',
+          'Global default dw.json not used: explicit config path ({{path}})',
+          {path: configPath === '' ? 'none' : configPath},
+        ),
+        padding: [1, 0, 0, 0],
+      });
     }
 
     ux.stdout(ui.toString());

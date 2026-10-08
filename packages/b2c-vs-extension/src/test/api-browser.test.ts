@@ -6,8 +6,18 @@
 
 import * as assert from 'assert';
 import type {SchemaEntry} from '../api-browser/api-browser-tree-provider.js';
+import {prefillParameters} from '../api-browser/prefill.js';
 import {detectApiType, injectCustomApiOrgPathPrefix} from '../api-browser/swagger-webview.js';
+import {
+  API_BROWSER_EXPAND,
+  OFFLINE_TOKEN_STATUS,
+  OfflineWarningGate,
+  cloneBundledSpec,
+  isLiveSource,
+  toSchemaEntries,
+} from '../api-browser/offline.js';
 import {resolveApiBrowserTenantId} from '../api-browser/tenant.js';
+import {fetchScapiSchemaWithFallback, listScapiSchemasWithFallback} from '@salesforce/b2c-tooling-sdk/scapi';
 
 function entry(apiFamily: string, apiName: string): SchemaEntry {
   return {apiFamily, apiName, apiVersion: 'v1'};
@@ -133,6 +143,36 @@ suite('injectCustomApiOrgPathPrefix', () => {
   });
 });
 
+suite('prefillParameters', () => {
+  test('replaces contract examples so Swagger UI fills the configured values', () => {
+    const organizationId: Record<string, unknown> = {
+      name: 'organizationId',
+      in: 'path',
+      schema: {$ref: '#/components/schemas/OrganizationId'},
+      example: 'f_ecom_zzxy_prd',
+    };
+    const siteId: Record<string, unknown> = {
+      name: 'siteId',
+      in: 'query',
+      schema: {type: 'string'},
+      examples: {SiteId: {value: 'RefArch'}},
+    };
+    const inline: Record<string, unknown> = {name: 'organizationId', in: 'path', example: 'f_ecom_zzxy_prd'};
+    const other: Record<string, unknown> = {name: 'productId', in: 'path', example: 'apple-ipod'};
+    const spec = {
+      components: {parameters: {organizationId, siteId}},
+      paths: {'/products/{productId}': {get: {parameters: [inline, other]}}},
+    };
+    prefillParameters(spec, {organizationId: 'f_ecom_zzpq_019', siteId: 'MarketStreet'});
+    assert.deepStrictEqual(organizationId.schema, {type: 'string', default: 'f_ecom_zzpq_019'});
+    assert.strictEqual(organizationId.example, 'f_ecom_zzpq_019');
+    assert.strictEqual(siteId.example, 'MarketStreet');
+    assert.ok(!('examples' in siteId));
+    assert.strictEqual(inline.example, 'f_ecom_zzpq_019');
+    assert.strictEqual(other.example, 'apple-ipod');
+  });
+});
+
 suite('resolveApiBrowserTenantId', () => {
   test('prefers and normalizes the configured tenant ID', () => {
     assert.strictEqual(
@@ -147,5 +187,81 @@ suite('resolveApiBrowserTenantId', () => {
 
   test('returns an empty value when neither coordinate is available', () => {
     assert.strictEqual(resolveApiBrowserTenantId({}), '');
+  });
+});
+
+suite('API Browser offline fallback', () => {
+  test('always requests the full expansion', () => {
+    assert.strictEqual(API_BROWSER_EXPAND, 'all');
+  });
+
+  test('lists the bundled corpus when the live listing fails', async () => {
+    const result = await listScapiSchemasWithFallback({}, async () => {
+      throw new Error('OAuth credentials are not configured');
+    });
+    assert.strictEqual(result.source, 'bundled');
+    assert.ok(result.schemas.length > 0);
+    assert.match(result.warning ?? '', /OAuth credentials are not configured/);
+    const entries = toSchemaEntries(result.schemas);
+    assert.ok(entries.some((e) => e.apiName === 'shopper-baskets' && e.apiFamily === 'checkout'));
+    assert.ok(entries.every((e) => e.apiFamily && e.apiName && e.apiVersion));
+  });
+
+  test('uses a bundled contract with prose when the live fetch fails', async () => {
+    const result = await fetchScapiSchemaWithFallback(
+      {apiFamily: 'checkout', apiName: 'shopper-baskets', apiVersion: 'v2'},
+      async () => {
+        throw new Error('HTTP 403');
+      },
+    );
+    assert.strictEqual(result.source, 'bundled');
+    assert.strictEqual(isLiveSource(result.source), false);
+    assert.match(result.warning ?? '', /HTTP 403/);
+    const paths = result.schema.paths as Record<string, Record<string, {summary?: string}>>;
+    const summaries = Object.values(paths).flatMap((item) => Object.values(item).map((op) => op.summary));
+    assert.ok(summaries.some(Boolean), 'bundled contract should carry operation summaries');
+  });
+
+  test('does not fall back for custom APIs', async () => {
+    await assert.rejects(
+      fetchScapiSchemaWithFallback({apiFamily: 'custom', apiName: 'loyalty', apiVersion: 'v1'}, async () => {
+        throw new Error('no access');
+      }),
+      /no access/,
+    );
+  });
+
+  test('keeps a live result live', async () => {
+    const result = await fetchScapiSchemaWithFallback(
+      {apiFamily: 'checkout', apiName: 'shopper-baskets', apiVersion: 'v2'},
+      async () => ({openapi: '3.0.0', paths: {}}),
+    );
+    assert.strictEqual(result.source, 'live');
+    assert.strictEqual(result.warning, undefined);
+  });
+
+  test('cloneBundledSpec isolates mutations from the shared bundled contract', async () => {
+    const result = await fetchScapiSchemaWithFallback(
+      {apiFamily: 'checkout', apiName: 'shopper-baskets', apiVersion: 'v2'},
+      async () => {
+        throw new Error('offline');
+      },
+    );
+    const copy = cloneBundledSpec(result.schema);
+    copy.servers = [{url: 'https://example.invalid'}];
+    assert.notDeepStrictEqual(result.schema.servers, copy.servers);
+  });
+
+  test('warns once per outage and re-arms after a live success', () => {
+    const gate = new OfflineWarningGate();
+    assert.strictEqual(gate.shouldWarn('bundled'), true);
+    assert.strictEqual(gate.shouldWarn('bundled'), false);
+    assert.strictEqual(gate.shouldWarn('live'), false);
+    assert.strictEqual(gate.shouldWarn('bundled'), true);
+  });
+
+  test('offline token status says Try it out is disabled', () => {
+    assert.match(OFFLINE_TOKEN_STATUS, /Offline/);
+    assert.match(OFFLINE_TOKEN_STATUS, /Try it out disabled/);
   });
 });

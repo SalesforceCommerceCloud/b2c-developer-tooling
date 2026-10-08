@@ -146,6 +146,11 @@ import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {serveStdio} from '@modelcontextprotocol/server/stdio';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
+import {
+  isRemoteScapiSchema,
+  loadScapiSchemaOverrides,
+  type ScapiSchemaDocument,
+} from '@salesforce/b2c-tooling-sdk/scapi';
 import {B2CDxMcpServer} from '../server.js';
 import {Services, type ServicesResolutionInputs} from '../services.js';
 import {ServerContext} from '../server-context.js';
@@ -225,6 +230,13 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         'Bounds the whole docs corpus; per-call category/storefront narrow within it. Unknown names are ignored.',
       env: 'SFCC_DOCS_TOPICS',
     }),
+    'scapi-schemas': Flags.string({
+      description:
+        'Local SCAPI OpenAPI contracts for scapi_search and scapi_execute (comma-separated JSON files, directories or http(s) URLs). ' +
+        'Each replaces the bundled or live contract with the same family/name/version from servers[0].url, or adds an API. ' +
+        'Developer option for beta and pre-release APIs. Overrides the project config scapi-schemas (dw.json or project .env).',
+      env: 'SFCC_SCAPI_SCHEMAS',
+    }),
   };
 
   /** Signal that triggered shutdown (if any) - used to exit process after finally() */
@@ -267,8 +279,10 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * 1. Per-call configPath
    * 2. Startup --config / SFCC_CONFIG
    * 3. SFCC_CONFIG from the selected project's .env
-   * 4. dw.json in the selected project directory
-   * 5. Shared default dw.json from the tooling settings
+   * 4. dw.json in the selected project directory, plus the shared default
+   *    dw.json from the tooling settings
+   *
+   * An explicit path (1-3) is used on its own; an empty one selects no dw.json.
    *
    * Values are then merged through the normal CLI resolver, including
    * environment, plugin, dw.json, ~/.mobify, and package.json sources.
@@ -287,15 +301,18 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         ? path.resolve(effectiveProjectDirectory ?? process.cwd(), projectContext.configPath)
         : undefined) ??
       baseOptions.configPath ??
-      (projectConfigPath && effectiveProjectDirectory
+      // An empty SFCC_CONFIG selects no dw.json, as in the CLI.
+      (projectConfigPath
         ? path.isAbsolute(projectConfigPath)
           ? projectConfigPath
           : path.resolve(effectiveProjectDirectory, projectConfigPath)
-        : undefined);
+        : projectConfigPath);
     const options: LoadConfigOptions = {
       ...baseOptions,
       ...mrt.options,
       configPath,
+      // The selected project's .env supplies Storefront Next fallbacks below dw.json.
+      envFile: projectEnvironment ? path.join(effectiveProjectDirectory, '.env') : baseOptions.envFile,
       instance: projectContext?.instanceName ?? baseOptions.instance,
       projectDirectory: effectiveProjectDirectory,
       workingDirectory: effectiveProjectDirectory,
@@ -336,17 +353,18 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         path: path.resolve(effectiveProjectDirectory, projectContext.configPath),
         source: 'argument',
       };
-    } else if (baseOptions.configPath) {
-      primaryConfiguration = {path: path.resolve(baseOptions.configPath), source: 'server'};
-    } else if (projectConfigPath) {
+    } else if (baseOptions.configPath !== undefined) {
+      primaryConfiguration = {path: baseOptions.configPath && path.resolve(baseOptions.configPath), source: 'server'};
+    } else if (projectConfigPath === undefined) {
+      primaryConfiguration = {path: path.join(effectiveProjectDirectory, 'dw.json'), source: 'projectDirectory'};
+    } else {
       primaryConfiguration = {
-        path: path.isAbsolute(projectConfigPath)
-          ? projectConfigPath
-          : path.resolve(effectiveProjectDirectory, projectConfigPath),
+        path:
+          projectConfigPath && !path.isAbsolute(projectConfigPath)
+            ? path.resolve(effectiveProjectDirectory, projectConfigPath)
+            : projectConfigPath,
         source: 'projectEnvironment',
       };
-    } else {
-      primaryConfiguration = {path: path.join(effectiveProjectDirectory, 'dw.json'), source: 'projectDirectory'};
     }
 
     return Services.fromResolvedConfig(config, projectEnvironment, {
@@ -397,13 +415,14 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     const startupFlags: StartupFlags = {
       toolsets: this.flags.toolsets ? this.flags.toolsets.split(',').map((s) => s.trim()) : undefined,
       tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
-      configPath: this.flags.config,
+      configPath: this.getConfigPathFlag(),
       // Default project directory for tool calls. oclif handles the environment fallback.
       projectDirectory: this.flags['project-directory'],
       // Docs topic allowlist (bounds the docs corpus at startup). Flag first
       // (--docs-topics / SFCC_DOCS_TOPICS), else config `docsCategories`
       // (dw.json `docs-categories`, SFCC_DOCS_CATEGORIES, package.json).
       docsTopics: this.flags['docs-topics'] ?? this.resolvedConfig?.values.docsCategories?.join(','),
+      scapiSchemas: await this.loadLocalScapiSchemas(),
     };
 
     // Add toolsets to telemetry attributes
@@ -484,6 +503,29 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     });
 
     this.logger.info({version: this.config.version}, 'MCP Server running on stdio');
+  }
+
+  /** Load --scapi-schemas once at startup; relative paths resolve from the project directory. */
+  private async loadLocalScapiSchemas(): Promise<readonly ScapiSchemaDocument[] | undefined> {
+    const value = this.flags['scapi-schemas'];
+    if (!value) return undefined;
+    const base = this.flags['project-directory'] ?? process.cwd();
+    const paths = value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => (isRemoteScapiSchema(entry) ? entry : path.resolve(base, entry)));
+    let documents: ScapiSchemaDocument[];
+    try {
+      documents = await loadScapiSchemaOverrides(paths);
+    } catch (error) {
+      this.error(error instanceof Error ? error.message : String(error));
+    }
+    this.logger.info(
+      {scapiSchemas: documents.map((document) => document.entry.id)},
+      `Using ${documents.length} local SCAPI contract(s)`,
+    );
+    return documents;
   }
 
   /** Parse a project's .env without mutating the long-lived MCP process environment. */

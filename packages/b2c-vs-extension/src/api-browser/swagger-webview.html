@@ -8,7 +8,7 @@
       content="default-src 'none';
              script-src 'nonce-__NONCE__' __CSP_SOURCE__;
              style-src __CSP_SOURCE__ 'unsafe-inline';
-             img-src __CSP_SOURCE__ data:;
+             img-src __CSP_SOURCE__ data: https://resources.docs.salesforce.com;
              font-src __CSP_SOURCE__;
              connect-src https://*.commercecloud.salesforce.com;"
     />
@@ -78,6 +78,15 @@
         outline: 1px solid var(--vscode-focusBorder, #007fd4);
         outline-offset: 2px;
       }
+      .offline-notice {
+        padding: 8px 16px;
+        background: var(--vscode-inputValidation-warningBackground, #352a05);
+        border-bottom: 1px solid var(--vscode-inputValidation-warningBorder, #b89500);
+        color: var(--vscode-foreground, #ccc);
+        font-family: var(--vscode-font-family, sans-serif);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
       .token-bar .help-button {
         background: var(--vscode-button-secondaryBackground, #3a3d41);
         color: var(--vscode-button-secondaryForeground, #fff);
@@ -110,6 +119,7 @@
       <button id="refreshTokenBtn" type="button">Refresh Token</button>
       <button id="setupHelpBtn" class="help-button" type="button">Setup Help</button>
     </div>
+    <div class="offline-notice" id="offlineNotice" role="note" hidden></div>
     <div id="swagger-ui"></div>
 
     <script src="__SWAGGER_BUNDLE_URI__"></script>
@@ -120,10 +130,21 @@
         var initialToken = '__INITIAL_TOKEN__';
         var currentToken = initialToken;
         var initialTokenError = __INITIAL_TOKEN_ERROR__;
-        setTokenStatus(
-          currentToken ? 'Token acquired' : 'Token error: ' + initialTokenError,
-          currentToken ? 'ok' : 'error',
-        );
+        // Offline: a bundled contract is shown read-only. No tokens, no requests, no Try it out.
+        var offlineWarning = __OFFLINE_WARNING__;
+        var offline = offlineWarning !== null;
+        if (offline) {
+          setTokenStatus(__OFFLINE_STATUS__, 'pending');
+          var notice = document.getElementById('offlineNotice');
+          notice.textContent = offlineWarning;
+          notice.hidden = false;
+          document.getElementById('refreshTokenBtn').hidden = true;
+        } else {
+          setTokenStatus(
+            currentToken ? 'Token acquired' : 'Token error: ' + initialTokenError,
+            currentToken ? 'ok' : 'error',
+          );
+        }
 
         var spec = __SPEC_JSON__;
 
@@ -180,6 +201,8 @@
               };
               pending.resolve(mockResponse);
             }
+          } else if (offline) {
+            return;
           } else if (msg.type === 'updateToken') {
             currentToken = msg.token;
             setTokenStatus('Token acquired', 'ok');
@@ -255,6 +278,8 @@
           presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
           layout: 'StandaloneLayout',
           deepLinking: false,
+          // Offline contracts are documentation only.
+          supportedSubmitMethods: offline ? [] : ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'],
           validatorUrl: null,
           // Authentication belongs to the extension, not Swagger's OAuth dialog.
           plugins: [
@@ -272,7 +297,7 @@
             },
           ],
           requestInterceptor: function (req) {
-            if (currentToken) {
+            if (!offline && currentToken) {
               req.headers['Authorization'] = 'Bearer ' + currentToken;
             }
             return req;

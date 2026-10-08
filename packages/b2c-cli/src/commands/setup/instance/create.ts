@@ -6,7 +6,11 @@
 import {Args, Flags, ux} from '@oclif/core';
 import {input, password, confirm, select} from '@inquirer/prompts';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {DwJsonSource, createInstanceFromConfig, type NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {
+  createInstanceFromConfig,
+  createInstanceManager,
+  type NormalizedConfig,
+} from '@salesforce/b2c-tooling-sdk/config';
 import {createScriptsBackend} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {withDocs} from '../../../i18n/index.js';
 
@@ -18,6 +22,10 @@ interface InstanceCreateResponse {
   hostname: string;
   created: boolean;
   active?: boolean;
+  /** Config source that stores the instance */
+  source?: string;
+  /** Credential fields stored in a credential store, and that store */
+  credentials?: Array<{field: string; source: string}>;
 }
 
 /**
@@ -104,12 +112,25 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
       description: 'Non-interactive mode (fail if required flags missing)',
       default: false,
     }),
+    source: Flags.string({
+      description:
+        'Config source to store the instance in (default: the highest-priority source that can, normally dw.json)',
+    }),
   };
 
   async run(): Promise<InstanceCreateResponse> {
-    const source = new DwJsonSource();
+    const manager = createInstanceManager();
     const configOptions = this.getBaseConfigOptions();
     const force = this.flags.force;
+
+    const targetSource = this.flags.source;
+    if (targetSource && !manager.getInstanceSources().some((s) => s.name === targetSource)) {
+      const available = manager
+        .getInstanceSources()
+        .map((s) => s.name)
+        .join(', ');
+      this.error(`Config source "${targetSource}" can't store instances. Sources that can: ${available || 'none'}`);
+    }
 
     if (!force) {
       ux.stdout('Create a new B2C Commerce instance configuration.');
@@ -131,7 +152,7 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
     }
 
     // Check if instance already exists
-    const existingInstances = await source.listInstances(configOptions);
+    const existingInstances = await manager.listAllInstances(configOptions);
     if (existingInstances.some((i) => i.name === name)) {
       this.error(`Instance "${name}" already exists. Use a different name.`);
     }
@@ -310,22 +331,30 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
     }
 
     // Create the instance
-    await source.createInstance({
-      name,
-      config,
-      setActive,
-      ...configOptions,
-    });
+    const created = await manager.createInstance(
+      {
+        name,
+        config,
+        setActive,
+        ...configOptions,
+      },
+      targetSource,
+    );
 
     const result: InstanceCreateResponse = {
       name,
       hostname,
       created: true,
       active: setActive,
+      source: created.source,
+      credentials: created.credentials,
     };
 
     if (!this.jsonEnabled()) {
-      ux.stdout(`Instance "${name}" created successfully.`);
+      ux.stdout(`Instance "${name}" created successfully (${created.source}).`);
+      for (const credential of created.credentials) {
+        ux.stdout(`  ${credential.field} stored in ${credential.source}`);
+      }
       if (setActive) {
         ux.stdout(`"${name}" is now the active instance.`);
       }

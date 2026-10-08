@@ -7,6 +7,7 @@
 import {expect} from 'chai';
 import {stub, restore} from 'sinon';
 import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {loadLocalScapiSchemas} from '@salesforce/b2c-tooling-sdk/scapi';
 import {mkdtempSync, mkdirSync, writeFileSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -56,6 +57,21 @@ describe('SCAPI code tools', function () {
     expect(readJson(result)).to.have.property('resolution');
   });
 
+  it('gives execute programs the same spec as search, so discovery and calls can share one run', async () => {
+    const [, execute] = createScapiCodeTools(() => Services.fromResolvedConfig(createMockResolvedConfig({})));
+    const result = await execute.handler({
+      skillRead: true,
+      code: `async () => {
+        const [match] = await spec.search('create product', {limit: 1});
+        return {match, operationId: spec.paths[match.path][match.method].operationId};
+      }`,
+    });
+    expect(result.isError).not.to.equal(true);
+    const data = readJson(result).result as {match: {operationId: string}; operationId: string};
+    expect(data.match.operationId).to.equal('createProduct');
+    expect(data.operationId).to.equal('createProduct');
+  });
+
   it('requires skill acknowledgment before configuration or code execution on both tools', async () => {
     const load = stub().throws(new Error('Configuration must not load'));
     await Promise.all(
@@ -76,7 +92,7 @@ describe('SCAPI code tools', function () {
     expect(load.called).to.equal(false);
   });
 
-  it('searches offline without resolving a project or credentials', async () => {
+  it('searches offline when project configuration cannot load', async () => {
     const load = stub().throws(new Error('Configuration must not load'));
     const [search] = createScapiCodeTools(load);
     const result = await search.handler({
@@ -86,7 +102,57 @@ describe('SCAPI code tools', function () {
     });
     expect(result.isError).not.to.equal(true);
     expect(readJson(result)).to.deep.equal({result: 'createProduct'});
-    expect(load.called).to.equal(false);
+  });
+
+  it('falls back to bundled contracts with a warning when live schemas are unavailable', async () => {
+    const services = Services.fromResolvedConfig(createMockResolvedConfig({}));
+    const [search] = createScapiCodeTools(() => services);
+    const result = readJson(
+      await search.handler({
+        skillRead: true,
+        schemas: 'live',
+        api: 'product/products/v1',
+        code: 'async () => spec.apis.map(a => a.id)',
+      }),
+    );
+    expect(result.result).to.deep.equal(['product/products/v1']);
+    expect(result.schemaSource).to.equal('bundled');
+    expect(result.warnings).to.have.length(1);
+    expect(String((result.warnings as string[])[0])).to.include('Live schemas unavailable');
+  });
+
+  it('filters by API family or family/name and names close ids for a near miss', async () => {
+    const [search] = createScapiCodeTools(stub().throws(new Error('no config')));
+    const ids = (api: string) => search.handler({skillRead: true, api, code: 'async () => spec.apis.map(a => a.id)'});
+    expect(readJson(await ids('cdn')).result).to.deep.equal(['cdn/zones/v1']);
+    expect(readJson(await ids('cdn/zones')).result).to.deep.equal(['cdn/zones/v1']);
+    const miss = await ids('ecdn');
+    expect(miss.isError).to.equal(true);
+    expect(readJson(miss).error).to.include('Close matches: cdn/zones/v1.');
+    const invalid = await ids('ecdn traffic');
+    expect(invalid.isError).to.equal(true);
+    expect(JSON.stringify(readJson(invalid))).to.include('api must be family, family/name or family/name/version');
+  });
+
+  it('does not fall back to bundled contracts for a custom API family', async () => {
+    const services = Services.fromResolvedConfig(createMockResolvedConfig({}));
+    const [search] = createScapiCodeTools(() => services);
+    const result = await search.handler({skillRead: true, schemas: 'live', api: 'custom', code: 'async () => 1'});
+    expect(result.isError).to.equal(true);
+    expect(readJson(result)).not.to.have.property('schemaSource');
+  });
+
+  it('does not fall back to bundled contracts for custom APIs', async () => {
+    const services = Services.fromResolvedConfig(createMockResolvedConfig({}));
+    const [search] = createScapiCodeTools(() => services);
+    const result = await search.handler({
+      skillRead: true,
+      schemas: 'live',
+      api: 'custom/widgets/v1',
+      code: 'async () => 1',
+    });
+    expect(result.isError).to.equal(true);
+    expect(readJson(result)).not.to.have.property('schemaSource');
   });
 
   it('saves the executed source on request and discovers it after server recreation', async () => {
@@ -133,16 +199,52 @@ describe('SCAPI code tools', function () {
     const response = await search.handler({
       skillRead: true,
       api: 'operation/jobs/v1',
+      detail: 'full',
       code: `async () => Object.entries(spec.paths).flatMap(([path, methods]) =>
-        Object.entries(methods).filter(([method]) => method === 'get' || path.endsWith('/job-execution-search'))
+        Object.entries(methods).filter(([method]) => method === 'post' && path.endsWith('/executions'))
           .map(([method, op]) => ({path, method, ...op})))`,
     });
     expect(response.isError).not.to.equal(true);
     const data = readJson(response);
-    expect(data.result).to.be.an('array').with.length(2);
+    expect(data.result).to.be.an('array').with.length(1);
     const text = (response.content[0] as {text: string}).text;
     expect(Buffer.byteLength(text)).to.be.lessThan(24_000);
-    expect(Buffer.byteLength(JSON.stringify(data, null, 2))).to.be.greaterThan(48_000);
+    expect(Buffer.byteLength(JSON.stringify(data, null, 2))).to.be.greaterThan(24_000);
+  });
+
+  it('ranks operations with spec.search within the api filter', async () => {
+    const [search] = createScapiCodeTools(stub());
+    const response = await search.handler({
+      skillRead: true,
+      api: 'cdn',
+      code: `async () => spec.search('block bots with firewall rules', {limit: 5})`,
+    });
+    expect(response.isError).not.to.equal(true);
+    const matches = readJson(response).result as Array<{api: string; path: string}>;
+    expect(matches).to.have.length(5);
+    expect(matches.every((match) => match.api.startsWith('cdn/') && match.path.startsWith(`/${match.api}/`))).to.equal(
+      true,
+    );
+  });
+
+  it('returns outlines by default and restores nested prose with detail full', async () => {
+    const [search] = createScapiCodeTools(stub());
+    const code = `async () => {
+      const op = spec.paths['/checkout/shopper-baskets/v2/organizations/{organizationId}/baskets'].post;
+      return {summary: op.summary, bytes: JSON.stringify(op).length, nested: JSON.stringify(op).includes('"example"')};
+    }`;
+    const run = async (detail?: 'full' | 'outline') =>
+      readJson(await search.handler({skillRead: true, api: 'checkout/shopper-baskets/v2', code, detail})).result as {
+        summary: string;
+        bytes: number;
+        nested: boolean;
+      };
+    const outline = await run();
+    const full = await run('full');
+    expect(outline.summary).to.be.a('string').that.is.not.empty;
+    expect(outline.summary).to.equal(full.summary);
+    expect(outline.bytes).to.be.lessThan(full.bytes);
+    expect(await run('outline')).to.deep.equal(outline);
   });
 
   it('uses fresh per-call configuration and preserves resolution on success and failure', async () => {
@@ -239,8 +341,9 @@ describe('SCAPI code tools', function () {
       expect(found.result).to.deep.equal({apis: [['product/widgets/v1', 'live']], color: 'string'});
       expect(found.schemaFailures).to.deep.equal([{api: 'product/broken/v1', error: 'HTTP 500'}]);
       expect(found).to.have.property('resolution');
+      expect(found.schemaSource).to.equal('live');
       expect(get.getCalls().find((call) => call.args[1].params.query)?.args[1].params.query).to.deep.equal({
-        expand: 'custom_properties',
+        expand: 'all',
       });
 
       const executed = await execute.handler({skillRead: true, code});
@@ -289,7 +392,6 @@ describe('SCAPI code tools', function () {
     });
     expect(noMatch.isError).to.equal(true);
     expect(readJson(noMatch)).to.have.property('error').that.includes('Omit authType');
-    expect(load.called).to.equal(false);
   });
 
   it('runs Shopper APIs with a guest session shared across executions', async () => {
@@ -433,5 +535,117 @@ describe('SCAPI code tools', function () {
       );
       expect(restricted.authenticate.called).to.equal(false);
     });
+  });
+
+  it('lets local contracts replace bundled and live ones in search and execution', async () => {
+    const operation = {get: {operationId: 'getZoneInsights', responses: {'200': {description: 'OK'}}}};
+    const contract = (api: string, path: string) => ({
+      openapi: '3.0.3',
+      info: {version: '1.0.0-beta'},
+      servers: [{url: `https://{shortCode}.api.commercecloud.salesforce.com/${api}`}],
+      security: [{AmOAuth2: ['sfcc.cdn-zones']}],
+      paths: {[path]: operation},
+    });
+    const directory = mkdtempSync(join(tmpdir(), 'b2c-local-scapi-'));
+    writeFileSync(
+      join(directory, 'zones.json'),
+      JSON.stringify(contract('cdn/zones/v1', '/organizations/{organizationId}/zones/{zoneId}/insights')),
+    );
+    const local = loadLocalScapiSchemas([directory]);
+    const get = stub().callsFake(async (path: string) =>
+      path === '/organizations/{organizationId}/schemas'
+        ? {data: {data: [{apiFamily: 'cdn', apiName: 'zones', apiVersion: 'v1'}]}, response: new Response()}
+        : {data: contract('cdn/zones/v1', '/organizations/{organizationId}/live-only'), response: new Response()},
+    );
+    const config = createMockResolvedConfig({shortCode: 'test', tenantId: 'test_001'});
+    const requested: string[] = [];
+    stub(globalThis, 'fetch').callsFake(async (input) => {
+      requested.push((input as Request).url);
+      return Response.json({ok: true});
+    });
+    config.createOAuth = () => ({fetch: globalThis.fetch, getAuthorizationHeader: async () => 'Bearer test'});
+    const services = new Services({resolvedConfig: config});
+    stub(services, 'getScapiSchemasClient').returns({GET: get} as never);
+    try {
+      const [search, execute] = createScapiCodeTools(() => services, undefined, undefined, undefined, undefined, local);
+      const code = `async () => ({origin: spec.apis[0].origin, paths: Object.keys(spec.paths)})`;
+      const expected = {
+        origin: 'local',
+        paths: ['/cdn/zones/v1/organizations/{organizationId}/zones/{zoneId}/insights'],
+      };
+      const found = await Promise.all(
+        (['bundled', 'live'] as const).map(async (schemas) =>
+          readJson(await search.handler({skillRead: true, schemas, api: 'cdn/zones/v1', code})),
+        ),
+      );
+      expect(found.map((data) => data.result)).to.deep.equal([expected, expected]);
+      const executed = await execute.handler({
+        skillRead: true,
+        code: `async () => scapi.request({method: 'GET', path: '/cdn/zones/v1/organizations/{organizationId}/zones/z1/insights'})`,
+      });
+      expect(readJson(executed).result).to.deep.include({ok: true});
+      expect(requested).to.deep.equal([
+        'https://test.api.commercecloud.salesforce.com/cdn/zones/v1/organizations/f_ecom_test_001/zones/z1/insights',
+      ]);
+    } finally {
+      restore();
+      rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
+  it('fetches URL entries from project config once per server', async () => {
+    const url = 'https://schemas.example.com/cdn-zones-v1.json';
+    const fetchStub = stub(globalThis, 'fetch').callsFake(async () =>
+      Response.json({
+        openapi: '3.0.3',
+        info: {version: '1.0.0-beta'},
+        servers: [{url: 'https://{shortCode}.api.commercecloud.salesforce.com/cdn/zones/v1'}],
+        paths: {'/from-url': {get: {operationId: 'getZoneInsights', responses: {'200': {description: 'OK'}}}}},
+      }),
+    );
+    try {
+      const config = createMockResolvedConfig({scapiSchemas: [url]});
+      const [search] = createScapiCodeTools(() => new Services({resolvedConfig: config}));
+      const input = {skillRead: true, api: 'cdn/zones/v1', code: `async () => Object.keys(spec.paths)`};
+      expect(readJson(await search.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-url']);
+      expect(readJson(await search.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-url']);
+      expect(fetchStub.calledOnceWith(url)).to.equal(true);
+    } finally {
+      restore();
+    }
+  });
+
+  it('reads local contracts from project config relative to the project directory', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'b2c-local-scapi-config-'));
+    const contract = (path: string) => ({
+      openapi: '3.0.3',
+      info: {version: '1.0.0-beta'},
+      servers: [{url: 'https://{shortCode}.api.commercecloud.salesforce.com/cdn/zones/v1'}],
+      paths: {[path]: {get: {operationId: 'getZoneInsights', responses: {'200': {description: 'OK'}}}}},
+    });
+    mkdirSync(join(directory, 'schemas'));
+    writeFileSync(join(directory, 'schemas', 'zones.json'), JSON.stringify(contract('/from-config')));
+    const flagFile = join(directory, 'flag.json');
+    writeFileSync(flagFile, JSON.stringify(contract('/from-flag')));
+    const config = createMockResolvedConfig({projectDirectory: directory, scapiSchemas: ['schemas']});
+    const load = () => new Services({resolvedConfig: config});
+    const code = `async () => Object.keys(spec.paths)`;
+    const input = {skillRead: true, api: 'cdn/zones/v1', code};
+    try {
+      const [search] = createScapiCodeTools(load);
+      expect(readJson(await search.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-config']);
+      // The startup --scapi-schemas flag overrides project configuration.
+      const [flagged] = createScapiCodeTools(
+        load,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        loadLocalScapiSchemas([flagFile]),
+      );
+      expect(readJson(await flagged.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-flag']);
+    } finally {
+      rmSync(directory, {recursive: true, force: true});
+    }
   });
 });

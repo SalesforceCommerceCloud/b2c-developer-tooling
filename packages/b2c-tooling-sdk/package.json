@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
-  "version": "2.3.0",
+  "version": "2.6.0",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -29,6 +29,7 @@
       "default": "./dist/esm/scapi/index.js"
     },
     "./package.json": "./package.json",
+    "./schemas/dw.schema.json": "./data/schemas/dw.schema.json",
     ".": {
       "development": "./src/index.ts",
       "types": "./dist/esm/index.d.ts",
@@ -272,6 +273,8 @@
     "check:guides-links": "tsx scripts/check-guides-links.ts",
     "generate:tooling-index": "tsx scripts/generate-tooling-index.ts",
     "check:tooling-index": "tsx scripts/generate-tooling-index.ts --check",
+    "generate:dw-json-schema": "tsx scripts/generate-dw-json-schema.ts",
+    "check:dw-json-schema": "tsx scripts/generate-dw-json-schema.ts --check",
     "generate:help-corpus": "tsx scripts/generate-help-corpus.ts",
     "enrich:docs": "tsx scripts/enrich-docs.ts"
   },
@@ -326,7 +329,6 @@
     "chokidar": "5.0.0",
     "cliui": "catalog:",
     "ejs": "3.1.10",
-    "fuse.js": "7.1.0",
     "glob": "catalog:",
     "i18next": "25.7.4",
     "jiti": "2.6.1",

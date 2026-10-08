@@ -138,10 +138,10 @@ The primary `dw.json` path is selected in this order:
 
 1. An explicit path, such as CLI `--config`.
 2. `SFCC_CONFIG` from the process environment.
-3. `SFCC_CONFIG` from the project's `.env`.
+3. `SFCC_CONFIG` from the env file (the project's `.env`, or the file given with `--dotenv-file`).
 4. `dw.json` in the project directory.
 
-A relative `SFCC_CONFIG` in `.env` is resolved from that project directory. The [global file](#global-default-configuration), when configured, also supplies available instances.
+A relative `SFCC_CONFIG` in `.env` is resolved from that project directory. The [global file](#global-default-configuration), when configured, also supplies available instances unless you pass an explicit path. An empty `--config ""` or `SFCC_CONFIG=` uses no `dw.json`.
 
 ```bash
 # Use another project directory
@@ -206,11 +206,13 @@ SFCC_SITE_ID=RefArch
 # SFCC_SLAS_CLIENT_SECRET=your-slas-client-secret
 ```
 
+To use another env file, such as `.env.staging`, pass `--dotenv-file .env.staging` (or set `SFCC_DOTENV_FILE`); it replaces `.env`.
+
 You do not need both file formats. Environment values override the selected `dw.json` entry, so keep instance-specific variables out of a shared shell environment if you regularly switch between named instances.
 
 ### Storefront Next Compatibility
 
-When you run the toolkit from a [Storefront Next](./storefront-next) project, its existing environment variables can supply the equivalent B2C Commerce settings. Toolkit-specific variables remain the default names and take priority when both forms are set.
+When you run the toolkit from a [Storefront Next](./storefront-next) project, its existing environment variables can fill in B2C Commerce settings that the selected `dw.json` instance doesn't set. Toolkit-specific variables remain the default names and take priority when both forms are set.
 
 | Storefront Next variable                     | `dw.json` field      | Default toolkit environment variable |
 | -------------------------------------------- | -------------------- | ------------------------------------ |
@@ -221,6 +223,8 @@ When you run the toolkit from a [Storefront Next](./storefront-next) project, it
 | `PUBLIC__app__defaultSiteId`                 | `site-id`            | `SFCC_SITE_ID`                       |
 | `MRT_PROJECT`                                | `mrt-project`        | `MRT_PROJECT`                        |
 | `MRT_TARGET`                                 | `mrt-environment`    | `MRT_ENVIRONMENT`                    |
+
+If nothing sets a hostname and the tenant ID is a sandbox tenant (`f_ecom_abcd_001` or `abcd_001`), the hostname is derived from it (`abcd-001.dx.commercecloud.salesforce.com`). A Storefront Next project that targets a sandbox doesn't need `SFCC_SERVER`.
 
 ## Check Your Configuration {#debugging-configuration}
 
@@ -250,8 +254,9 @@ With the built-in configuration sources, values take priority in this order:
 2. Process environment variables.
 3. The selected project's `.env`.
 4. The selected `dw.json` entry.
-5. `~/.mobify` for an MRT API key.
-6. `package.json` project defaults.
+5. [Storefront Next variables](#storefront-next-compatibility).
+6. `~/.mobify` for an MRT API key.
+7. `package.json` project defaults.
 
 Installed configuration plugins can supply values before or after the file sources. See [configuration plugins](./third-party-plugins) for available integrations or [Extending the CLI](./extending#custom-configuration-sources) for custom sources. Inspection shows which source supplied each value.
 
@@ -270,6 +275,19 @@ If a server override differs from the configured hostname, the lower-priority co
 `dw.json` accepts camelCase and kebab-case: `slasClientId` and `slas-client-id` are equivalent. Use one spelling per field. The tables pair each JSON field with its environment variable, where available. JSON field names use kebab-case consistently.
 
 Settings apply to the features that use them. CLI flags and environment overrides can be command-specific; use `b2c <command> --help` for that command's options.
+
+### Editor Validation (JSON Schema) {#json-schema}
+
+A JSON Schema for `dw.json` provides completion, hover descriptions, and validation in editors. The [IDE Extension](/vscode-extension/) applies it to every `dw.json` automatically. In other editors, add a `$schema` reference:
+
+```json
+{
+  "$schema": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/schemas/dw.schema.json",
+  "hostname": "abcd-001.dx.commercecloud.salesforce.com"
+}
+```
+
+The schema accepts every supported spelling (kebab-case, camelCase, and legacy aliases) and allows unknown fields used by other tools. It also ships with the SDK as `@salesforce/b2c-tooling-sdk/schemas/dw.schema.json`.
 
 ### Instance and Site
 
@@ -298,7 +316,7 @@ Settings apply to the features that use them. CLI flags and environment override
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `client-id`<br>`SFCC_CLIENT_ID`                       | Account Manager API client ID.                                                                                                   |
 | `client-secret`<br>`SFCC_CLIENT_SECRET`               | Account Manager client secret.                                                                                                   |
-| `client-auth-method`<br>`SFCC_CLIENT_AUTH_METHOD`     | How the client ID and secret are sent to Account Manager; see [client authentication method](#client-authentication-method). |
+| `client-auth-method`<br>`SFCC_CLIENT_AUTH_METHOD`     | How the client ID and secret are sent to Account Manager; see [client authentication method](#client-authentication-method).     |
 | `oauth-scopes`<br>`SFCC_OAUTH_SCOPES`                 | Requested OAuth scopes: a JSON string array or comma-separated environment value. Scope grants must be configured on the client. |
 | `jwt-cert-path`<br>`SFCC_JWT_CERT`                    | PEM certificate path for JWT authentication. CLI flag: `--jwt-cert`.                                                             |
 | `jwt-key-path`<br>`SFCC_JWT_KEY`                      | PEM private key path. CLI flag: `--jwt-key`.                                                                                     |
@@ -311,10 +329,10 @@ Settings apply to the features that use them. CLI flags and environment override
 
 `client-auth-method` (`SFCC_CLIENT_AUTH_METHOD`, CLI flag `--client-auth-method`) controls how client credentials are sent in the token request:
 
-| Value             | Sends                                                                                             |
-| ----------------- | ------------------------------------------------------------------------------------------------- |
-| `basic` (default) | A standard HTTP Basic `Authorization` header with the encoded client ID and secret.               |
-| `basic-unencoded` | A Basic header with the raw client ID and secret.                                                 |
+| Value             | Sends                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| `basic` (default) | A standard HTTP Basic `Authorization` header with the encoded client ID and secret.                        |
+| `basic-unencoded` | A Basic header with the raw client ID and secret.                                                          |
 | `body`            | `client_id` and `client_secret` in the form-encoded request body. Use when a proxy or gateway requires it. |
 
 The default works for most setups. Inside an [OpenShell sandbox](./agent-sandboxing#openshell), where the secret is a placeholder, the CLI and MCP server use `basic-unencoded` automatically unless you set a value.
@@ -352,6 +370,7 @@ Shopper authentication also uses `short-code`, `tenant-id`, and `site-id` from [
 | `asset-query`<br>`SFCC_ASSET_QUERY`               | JSON dot-paths for finding static asset URLs in content; default `["image.path"]`.                                                                               |
 | `import-set-exclude`<br>`SFCC_IMPORT_SET_EXCLUDE` | Project-relative directories to exclude recursively from import-set discovery.                                                                                   |
 | `docs-categories`<br>`SFCC_DOCS_CATEGORIES`       | Documentation category allowlist for supported searches.                                                                                                         |
+| `scapi-schemas`<br>`SFCC_SCAPI_SCHEMAS`           | Project-relative local SCAPI OpenAPI JSON files or folders, or http(s) URLs, for [MCP code mode](/mcp/configuration#local-scapi-schemas).                                          |
 
 Use JSON arrays for list fields unless another format is noted. Environment list values are comma-separated; `SFCC_LIBRARIES` accepts IDs, not the JSON object form.
 
@@ -387,6 +406,7 @@ These are not `dw.json` fields:
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `SFCC_PROJECT_DIRECTORY`     | Project directory used for configuration lookup.                                                                |
 | `SFCC_CONFIG`                | Path to the primary connection file in `dw.json` format.                                                        |
+| `SFCC_DOTENV_FILE`           | Env file used instead of the project `.env` (same as `--dotenv-file`); empty for none.                          |
 | `SFCC_INSTANCE`              | Named instance to select.                                                                                       |
 | `MRT_CREDENTIALS_FILE`       | MRT CLI override for the `~/.mobify` credentials file.                                                          |
 | `SFCC_REDIRECT_URI`          | Account Manager browser-login redirect URI override.                                                            |

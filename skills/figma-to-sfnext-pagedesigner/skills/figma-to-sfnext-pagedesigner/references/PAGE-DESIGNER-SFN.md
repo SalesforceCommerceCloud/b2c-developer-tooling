@@ -1,120 +1,95 @@
-# Page Designer + Storefront Next — mental model & gotchas
+# Page Designer + Storefront Next: mental model and gotchas
 
-> **Purpose:** background reference for the `figma-to-sfnext-pd` skill. It teaches the mental model, developer workflow, and gotchas for exposing React components to Page Designer in a Storefront Next project. The skill reads this file during its pre-flight step.
+> **Purpose:** background reference for the `figma-to-sfnext-pagedesigner` skill. It explains how React components become Page Designer components in a Storefront Next project. The skill reads this file during pre-flight. For the full decorator, registry and loader API, use `storefront-next:sfnext-page-designer`.
 
 ---
 
 ## 1. Related tooling
 
-Salesforce's official agent-skill plugins cover adjacent workflows and are worth installing alongside this skill:
+Install these alongside this skill:
 
 ```bash
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-claude plugin install storefront-next   # sf.next patterns incl. Page Designer decorators
-claude plugin install b2c-cli           # deploys, jobs, WebDAV, sandboxes
-claude plugin install b2c               # backend cartridge patterns
+claude plugin install storefront-next           # Storefront Next skills incl. sfnext-page-designer
+claude plugin install b2c-cli                   # cartridge/code deploys, Managed Runtime, WebDAV
+claude plugin install b2c                       # classic B2C and Page Designer background
 # optional:
-claude plugin install b2c-dx-mcp        # MCP server (SCAPI schema discovery, MRT)
-claude plugin install storefront-next-figma  # Figma design-kit sync workflows
+claude plugin install b2c-dx-mcp                # MCP server (docs search, SCAPI discovery, cartridge_deploy)
+claude plugin install storefront-next-figma     # Figma design-kit workflows
 ```
 
-When uncertain about anything below, fetch the official docs (Section 7) — this feature area is young and moving.
+When uncertain about anything below, read the official docs (section 7); this area evolves.
 
 ---
 
-## 2. Mental model — how Page Designer connects to Storefront Next
+## 2. Mental model
 
-Page Designer (PD) is the visual editor in Business Manager where merchants build pages by dragging **component types** into **page-type regions**. Classically (SFRA), developers hand-authored JSON meta-definition files + ISML render scripts in a cartridge.
+Page Designer (PD) is the visual editor in Business Manager where merchants drag **component types** into **page-type regions**. Classic (SFRA) PD needs hand-written JSON meta-definitions and ISML. In Storefront Next, **your React components are the PD components**. The bridge is decorator metadata:
 
-**Storefront Next changes the authoring model:** your React components ARE the Page Designer components. No separate ISML versions. The bridge is **component metadata**:
+1. You annotate components under `src/components` with decorators from `@/lib/decorators`: `@Component` (component type), `@AttributeDefinition` (editable fields), `@RegionDefinition` (named child slots). Page routes use `@PageType` (with `supportedAspectTypes` for dynamic PDP/PLP templates). There is no `@Aspect` decorator.
+2. The Vite plugin generates `src/lib/page-designer/static-registry.ts` from `@Component` classes, keyed `<Group>.<typeId>`. It is generated; do not hand-edit it.
+3. `pnpm cartridge:generate` (also run by `pnpm build`) turns the decorators into Business Manager JSON under `cartridges/app_storefrontnext_base/cartridge/experience/` (`components/<Group>/<typeId>.json`, `pages/`, `aspects/`).
+4. `pnpm cartridge:deploy` uploads that cartridge to the B2C instance, which makes the components appear in the PD palette.
+5. At runtime a route loader calls `fetchPageWithComponentData` (which reads the page from the Shopper Experience API and attaches each component's loader promise), and `<Region>` renders the components by registry id.
 
-1. You annotate React components in `src/` with TypeScript **decorators**: `@Component`, `@PageType`, `@Aspect`.
-2. The `sfnext` CLI **scans `src/` for those decorators and generates the classic PD JSON metadata** into `cartridge/cartridge/experience/` (separate files for components, page types, aspects).
-3. That generated cartridge is deployed to the B2C instance, which is what makes your components appear in the Page Designer visual editor for merchants.
-4. At runtime, the storefront renders PD pages via **prebuilt page manifests** served from the **MRT Data Store** (not assembled per shopper request), and/or the **`shopperExperience`** SCAPI client for page/content lookups.
+Two loops to keep straight:
 
-So there are two sync loops to keep straight:
-
-- **Dev-time loop (you):** decorated components → generated metadata cartridge → deployed to B2C. Keeps the _palette of available components_ in PD current.
-- **Merchant-time loop (automatic):** merchant edits pages in PD → system job prebuilds manifests → pushed to MRT Data Store → storefront reads them. Keeps the _page content_ current.
+- **Dev-time loop (you):** decorated components, generated cartridge, deployed to B2C. Keeps the palette current.
+- **Merchant-time loop:** merchants edit pages in PD; the storefront renders their content. For how published page content reaches your storefront (publishing, jobs, replication), see the official docs in section 7 rather than assuming timing.
 
 ---
 
 ## 3. Developer workflow
 
-### Author
-
-Create/modify a React component, annotate with the PD decorators (`@Component` for component types, `@PageType` for page layouts with regions, `@Aspect` for dynamic page types like PDP/PLP templates). The `storefront-next` plugin skill has the current decorator API — follow it rather than guessing attribute schemas.
-
-### Generate + deploy metadata
-
 ```bash
-pnpm sfnext generate-cartridge   # scans src/ decorators → JSON metadata in cartridge/cartridge/experience/
-pnpm sfnext deploy-cartridge     # uploads cartridge to B2C Commerce (reads dw.json / SDK config)
+pnpm dev                     # regenerates the registry as components change
+pnpm cartridge:generate      # decorators -> cartridge JSON
+pnpm cartridge:validate      # validate the generated JSON
+pnpm cartridge:deploy        # upload to B2C (-- --delete removes old files first)
+pnpm push                    # deploy the storefront bundle to Managed Runtime
 ```
 
-Requires valid B2C credentials resolvable by the tooling SDK (`dw.json`, env vars, or CLI flags).
+The same commands exist as `pnpm sfnext generate-cartridge`, `validate-cartridge`, `deploy-cartridge` and `push`. The optional MCP tool `cartridge_deploy` deploys the cartridge. Credentials come from `dw.json`, environment variables or CLI flags; see `b2c-cli:b2c-code`.
 
-### Keep metadata in sync automatically (recommended once stable)
-
-```ts
-// config.ts
-export const GENERATE_AND_DEPLOY_CARTRIDGE_ON_MRT_PUSH = true; // default: false
-```
-
-With this on, every `pnpm sfnext push` (MRT deploy) first regenerates and redeploys the cartridge metadata — code on MRT and component palette in PD can't drift.
-
-### Deploy the storefront itself
-
-```bash
-pnpm sfnext push -e <mrt-environment> -w
-```
+Deploy order: cartridge first (palette), bundle second (rendering). Both must be current before merchants see working blocks.
 
 ---
 
-## 4. Runtime & publishing (what merchants/admins do — you'll get support questions)
+## 4. Prerequisites and gotchas
 
-- Merchant authors PD content on **staging**. A system job (`sfcc-generate-and-push-page-manifests`) runs **every 5 minutes**, prebuilds each PD page, and pushes manifests to the MRT Data Store. Manifests are never authored manually.
-- **Staging → production:** admin replicates; the `sfcc-push-page-manifests` job runs automatically on production after replication. Then verify on the storefront.
-- **Edits made directly on production are NOT picked up automatically.** Fix: Business Manager → Administration → Operations → Jobs → run `sfcc-generate-and-push-page-manifests` manually, confirm success in Job History.
-- This manifest mechanism is **Storefront Next only** — it does not apply to PWA Kit, SFRA, or SiteGenesis. Don't apply old PWA Kit PD integration patterns (`page-designer.html` docs) to sf.next projects.
-
----
-
-## 5. Prerequisites & gotchas checklist
-
-- [ ] **Storefront connected in BM.** If the storefront was created via CLI/MRT API (not through Business Manager), PD and Storefront Preview can't see it until you connect it: BM → Administration → Sites → Storefronts → **Connect Existing** (needs Business Administrator-level role). BM-created storefronts are connected already.
-- [ ] `dw.json` (or equivalent env config) present and valid for `deploy-cartridge`.
-- [ ] MRT env vars set for `push`: `SFCC_MRT_PROJECT`, `SFCC_MRT_ENVIRONMENT`, `SFCC_MRT_API_KEY` (or credentials file).
-- [ ] Component not showing in PD editor? In order: regenerate cartridge → redeploy cartridge → confirm cartridge upload succeeded on the active code version → hard-refresh PD.
-- [ ] Content edits not showing on storefront? Check which instance was edited (direct-prod trap above) and the manifest job history; remember up to ~5 min staging job latency.
-- [ ] Rendering PD content in routes: fetch via the **`shopperExperience`** client from `@salesforce/storefront-next-runtime/scapi`, in a **server loader** (never client-side useEffect — sf.next is server-load-everything).
-- [ ] Node ≥ 24.13, pnpm ≥ 10.28; `sfnext` runs as `pnpm sfnext …` from project root, never installed globally.
+- [ ] **Storefront connected in Business Manager.** A storefront created outside Business Manager may need connecting before PD and Storefront Preview see it; check the official docs (section 7) for the current steps.
+- [ ] A valid `dw.json` (or equivalent) for `cartridge:deploy`; MRT credentials for `push` (see `b2c-cli:b2c-mrt`).
+- [ ] Component missing from the PD palette: regenerate, validate, redeploy to the active code version, hard-refresh PD. Also check the registry entry exists.
+- [ ] Block renders empty: the exported `loader` is not a function, or the attribute is read from the wrong place. Attributes are at `componentData.data.*` in loaders.
+- [ ] Every component needs a `fallback` export.
+- [ ] Render PD content in route loaders with `fetchPageWithComponentData` (server-side), not in client effects. `<Region>` takes `page` (and no `componentData`).
+- [ ] Node >= 24 and pnpm >= 10.28; run `sfnext` as `pnpm sfnext ...` from the project root.
 
 ---
 
-## 6. Vocabulary quick reference
+## 5. Vocabulary
 
-| Term                                              | Meaning                                                                                               |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Page type                                         | Layout definition with named regions merchants fill with components                                   |
-| Component type                                    | Reusable building block with merchant-editable attributes                                             |
-| Region                                            | Named slot in a page/component that accepts child components                                          |
-| Aspect / dynamic page                             | Template page driven by runtime attributes (e.g. PDP/PLP templates)                                   |
-| Decorators (`@Component`, `@PageType`, `@Aspect`) | TS annotations on React components that the CLI compiles into PD metadata                             |
-| Generated cartridge                               | `cartridge/cartridge/experience/` JSON produced by `generate-cartridge` — never hand-edit; regenerate |
-| Page manifest                                     | Prebuilt PD page description stored in the MRT Data Store, read at render time                        |
-| MRT Data Store                                    | MRT-side storage syncing site preferences + PD manifests from B2C                                     |
-| `shopperExperience`                               | SCAPI client namespace for fetching PD pages/content in loaders                                       |
+| Term | Meaning |
+| --- | --- |
+| Page type | Layout definition with named regions (`@PageType` on a route's metadata class) |
+| Component type | Reusable block with merchant-editable attributes (`@Component`) |
+| Region | Named slot that accepts child components (`@RegionDefinition`, rendered by `<Region>`) |
+| Aspect / dynamic page | Template page driven by runtime attributes, such as PDP or PLP (`supportedAspectTypes`) |
+| Generated cartridge | `cartridges/app_storefrontnext_base/cartridge/experience/` JSON; regenerate, never hand-edit |
+| Static registry | Generated map of `<Group>.<typeId>` to lazy component imports and loader/fallback flags |
 
 ---
 
-## 7. Official docs (fetch when uncertain — this area changes fast)
+## 6. Where this skill ends
+
+This skill produces components, metadata and a deployed palette. Placing blocks on a specific page, aspect types and critical regions are covered by `storefront-next:sfnext-page-designer`; token changes by `storefront-next:sfnext-theming`.
+
+---
+
+## 7. Official docs
 
 - Page Designer with Storefront Next: https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-page-designer.html
-- MRT Data Store & manifest jobs: https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-mrt-data-store.html
+- MRT Data Store: https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-mrt-data-store.html
 - Connect an existing storefront: https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-connect-storefront.html
-- CLI reference (generate-cartridge / deploy-cartridge / push): https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-cli.html
-- SCAPI client (shopperExperience): https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-api-integration.html
-- Agentic B2C Developer Toolkit (plugins/MCP): https://salesforcecommercecloud.github.io/b2c-developer-tooling/llms.txt
-- Classic PD concepts (background only — SFRA-era): https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-for-page-designer.html
+- CLI reference: https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/sfnext-cli.html
+- Agentic B2C Developer Toolkit: https://salesforcecommercecloud.github.io/b2c-developer-tooling/llms.txt

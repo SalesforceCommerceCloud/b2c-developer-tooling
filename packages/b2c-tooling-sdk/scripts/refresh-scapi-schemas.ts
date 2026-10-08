@@ -10,6 +10,7 @@ import {join} from 'node:path';
 import {parseArgs, promisify} from 'node:util';
 import {execFile} from 'node:child_process';
 import type {OpenApiSchema, SchemaListItem} from '../src/clients/scapi-schemas.js';
+import {SCAPI_STANDARD_SCHEMA_EXPAND} from '../src/scapi/schema-source.js';
 
 const {values} = parseArgs({options: {'project-directory': {type: 'string'}, instance: {type: 'string'}}});
 const context = [
@@ -38,10 +39,18 @@ try {
     if (!apiFamily || !apiName || !apiVersion) throw new Error('Missing schema identity.');
     if (![apiFamily, apiName, apiVersion].every((part) => /^[a-z0-9-]+$/.test(part)))
       throw new Error('Invalid schema identity.');
-    // No expand=custom_properties: this is a distributable standard corpus.
-
+    // Full prose and examples, but no custom_properties: this is a distributable standard corpus.
     const fetched = JSON.parse(
-      await cli(['get', apiFamily, apiName, apiVersion, '--expand-all', '--no-expand-custom-properties']),
+      await cli([
+        'get',
+        apiFamily,
+        apiName,
+        apiVersion,
+        '--expand-all',
+        '--no-expand-custom-properties',
+        '--include',
+        SCAPI_STANDARD_SCHEMA_EXPAND,
+      ]),
     ) as {schema: OpenApiSchema};
     const schema = fetched.schema;
     if (!schema.openapi || !schema.paths) throw new Error(`Invalid OpenAPI: ${apiName}`);
@@ -66,7 +75,7 @@ try {
   }
   await writeFile(
     join(staging, 'manifest.json'),
-    `${JSON.stringify({formatVersion: 1, customProperties: false, schemas: results}, null, 2)}\n`,
+    `${JSON.stringify({formatVersion: 1, customProperties: false, expand: SCAPI_STANDARD_SCHEMA_EXPAND, schemas: results}, null, 2)}\n`,
   );
   await rm(join(root, 'scapi'), {recursive: true, force: true});
   await rename(join(staging, 'scapi'), join(root, 'scapi'));

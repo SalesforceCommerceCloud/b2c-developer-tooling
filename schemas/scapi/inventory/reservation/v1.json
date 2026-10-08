@@ -2,6 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Inventory Reservation",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/inventory-reservation-service/reservation-oas-v1-public.yaml)\n# API Overview\n\nInventory Reservation APIs enable you to place, manage, and fulfill reservations using Omnichannel Inventory.\n\nInventory Reservation APIs can be segregated into the following functional categories.\n\n| Category                | Endpoint Description                                                                                                                           |\n| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |\n| Reservations Management | API endpoints for creating and editing order reservation data. Reserved amounts affect the quantities that are available to order and fulfill. |\n\n**Note**: Omnichannel Inventory uses the Tenant Group ID in place of the Organization ID. For more information, see [Base URL and Request Formation](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html).\n\n## Rate Limits\n\nFor load shedding and rate limiting information, see [Load Shedding and Rate Limiting.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/throttle-rates.html)\n\n## Authentication and Authorization\n\nClients calling Omnichannel Inventory can be authenticated in one of two ways.\n\n- Authenticate using Account Manager with your B2C Commerce credentials.\n- Authenticate using your Salesforce org credentials.\n\nIf you are using both B2C Commerce and Salesforce Order Management, you can use either authentication approach. However, we recommend choosing only one to avoid mixing approaches across your integrations.\n\nThe different authentication approaches do not impact the purpose or performance of the APIs.\n\nEach authentication approach uses a unique set of scopes.\n\n| Scopes for Account Manager Authentication | Scopes for Salesforce org Authentication |\n| ----------------------------------------- | ---------------------------------------- |\n| sfcc.inventory.impex-graphs               | sfcc_inventory_impex_graphs              |\n| sfcc.inventory.impex-inventory.rw         | sfcc_inventory_impex_inventory_rw        |\n| sfcc.inventory.impex-inventory            | sfcc_inventory_impex_inventory           |\n| sfcc.inventory.availability               | sfcc_inventory_availability              |\n| sfcc.inventory.availability.rw            | sfcc_inventory_availability_rw           |\n| sfcc.inventory.reservations               | sfcc_inventory_reservations              |\n| sfcc.inventory.reservations.rw            | sfcc_inventory_reservations_rw           |\n\nCalls through the API gateway to Omnichannel Inventory must have a valid OAUTH bearer token. The tenant identifier used by Omnichannel Inventory is supplied in the header of the token.\n\nAll request and response body entities are composed in JSON.\n\n## Use Cases \n\n### Reservation Management\n\nUse these API endpoints to create and edit order reservation data. Reserved amounts affect the quantities that are available to order and fulfill.\n\n#### Reserve Inventory\n\nThis endpoint contains data representing a client order in the body of the request. The response body contains the items Omnichannel Inventory was able to reserve, _which may be less than what was requested_.\n\n#### Update and Cancel Reservation\n\nThis endpoint is used primarily for adding items to an existing reservation. The reservation ID is provided as part of the URL, and will be used to locate the reservation document to update. The response body will contain information regarding which items were able to be added, as well as the items that failed to be added along with the reason for the failure.\n\nThis endpoint is also used to cancel a reservation request when you have the Reservation ID that was created at the time of the reservation. This is the preferred method for cancellation, and should always be used if the Reservation ID is available. When using the Cancel Reservation endpoint with the Reservation ID, the reservation document is marked as cancelled and OCI adjusts the reservation and inventory counts based on the reservation document details.\n\n#### Unreserve Quantity\n\nUse this endpoint to unreserve a previously reserved amount with the quantity, SKU, and place identifier (group or location) specified in the body of the request. This endpoint is provided in case you find yourself in any situation where the Reservation ID is unavailable, or if you find it easier to provide the details to unreserve directly (SKU, and Group or Location). The net effect is the same as using the Cancel Reservation endpoint. When performing an Unreserve, the reservation counts are removed from the location or group using the details provided in the call instead of the details in the reservation document.\n\n#### Move Reservation Quantity\n\nUse this endpoint to move reservation quantity between a group and location, a location and a group or between 2 locations, with the quantity and place identifiers specified in the body of the request. A Reservation ID is not required for reservation moves. A reservation move between groups and/or locations is determined in an OMS and only requires that a reserved quantity is moved from one group/location to another. It doesn't need to be aware of or alter the initial reservation document.\n\n#### Fulfill Quantity\n\nUse this endpoint to fulfill a reservation amount at a location with the SKU, quantity, and place identifier (group or location) specified in the body of the request. Fulfilling a reservation occurs when the client ships an order and needs to ensure the reserved and on-hand amounts are correct. This is an atomic operation to ensure that all values are successfully updated.\n\nIn the case of a response that includes errors, the caller must ensure that they do NOT resubmit the entire request. Doing so will result in a EntityAlreadyExists error response.  The HTTP 200 response should be parsed for the skus with errors and then each SKU handled individually to determine if resubmitting is necessary. \n\nProvided in the table below are a few examples of conditions that may exist in the system and the responses that would be expected from the fulfill call based on those conditions.\n\n|Condition | Request | Result |\n|:-------------|:--------------:|:----------------------------|\n| On Hand = 0 and Reserved = 1 | requested 1 QTY to fufill | the reservation will be fulfilled with no errors |\n| On hand = 1 and Reserved = 0 | requested 1 QTY to fufill | an insufficient quantity exception is thrown and OH remains the same |\n| On hand = 2 and Reserved = 1 | requested 2 QTY to fufill | an insufficient quantity exception is thrown and OH remains 2, Reserved remains 1 |\n| On hand = 1 and Reserved = 2 | requested 2 QTY to fufill | both reservations are fulfilled and OH is reduced to 0 |\n\n\n#### The Reservation Document\n\n- The api consumer creates the reservation document in order to have a reference containing pertinent information associated with the reservation (Reservation ID, SKU, Qty, Location Group or Location).\n\n- The api consumer sends the reservation document to OCI as part of reservation, and to an OMS (SOM or 3rd Party) as part of the order.\n\n- The reservation document is used by OMS to know which Group/Location a reservation was placed against for routing purposes.\n\n- The reservation document is used by OCI/ECOM in the event that the reservation needs to be cancelled with the Cancel endpoint. (The unreserve endpoint can be used as well, which doesn't require the Reservation ID, but does require other pertinent reservation details such as SKU, and Group or Location)\n\n### Group Reservations\n\nBecause inventory is only available at locations, group availability reflects the aggregation of all locations in the group. It also includes reservations placed at a group that has not been allocated to a specific location.\n\n#### General Lifecycle of a Group Reservation\n\n- Place the group reservation using `reservation-documents`.\n- Allocate the reservation to a location in the group using `transfers`.\n- Fulfill the reservation at the location using `fulfillments`.\n\n#### Example flow:\n\nAssume Group A has Location 1 and Location 2.\n\nGiven the following state of the group:\n\n| Place      | On hand | Reserved | ATO |\n| ---------- | ------- | -------- | --- |\n| Location 1 | 50      | 0        | 50  |\n| Location 2 | 50      | 0        | 50  |\n| Group A    | 100     | 0        | 100 |\n\n→ Place group reservation of 1\n\n| Place      | On hand | Reserved | ATO |\n| ---------- | ------- | -------- | --- |\n| Location 1 | 50      | 0        | 50  |\n| Location 2 | 50      | 0        | 50  |\n| Group A    | 100     | 1        | 99  |\n\n→ Allocate reservation to Location 2\n\n| Place      | On hand | Reserved | ATO |\n| ---------- | ------- | -------- | --- |\n| Location 1 | 50      | 0        | 50  |\n| Location 2 | 50      | 1        | 49  |\n| Group A    | 100     | 1        | 99  |\n\n→ Fulfill at Location 2\n\n| Place      | On hand | Reserved | ATO |\n| ---------- | ------- | -------- | --- |\n| Location 1 | 50      | 0        | 50  |\n| Location 2 | 49      | 0        | 49  |\n| Group A    | 99      | 0        | 99  |\n\nGroup Reservations **DO NOT** affect a location’s reported Available to Order (ATO) quantity. Essentially, group reservations are a promise returned by the group that one or more of its locations can satisfy the requested reservation quantity. It’s possible that a reservation made against a location could fail if Omnichannel Inventory determines it would break any such existing promises.\n\nFor example, a location with a reported ATO of 3 can fail with an ‘Insufficient Quantity’ response when a reservation quantity of 3 is made against it. This scenario happens when some or all of the location’s inventory is unavailable due to a promise (group reservation) made at one of its associated groups.\n\nFortunately, Omnichannel Inventory exhausts all possibilities to accommodate a group reservation before resulting in failure.\n\nAs shown in the Group A example above, a group reservation is only reflected at the location level when it's allocated to one or more locations.\n\n#### Shared Locations\n\nWhen groups share locations things get a little more complex. For example, group reservations made at one group could increase the count of reservations at another if they share one or more locations.\n\nExample Scenario:\n\nAssume that Group A has Location 1 and Location 2 and Group B has Location 2 and Location 3.\n\nThus, Location 2 is **shared**.\n\nGiven the following state of the groups:\n\n| Place      | On hand | Reserved | ATO |\n| ---------- | ------- | -------- | --- |\n| Location 1 | 5       | 0        | 5   |\n| Location 2 | 5       | 0        | 5   |\n| Group A    | 10      | 0        | 10  |\n|            |         |          |     |\n| Location 2 | 5       | 0        | 5   |\n| Location 3 | 15      | 0        | 15  |\n| Group B    | 20      | 0        | 20  |\n\n→ Placing a Group B reservation of 17\n\n| Place      | On hand | Reserved | ATO |\n| ---------- | ------- | -------- | --- |\n| Location 2 | 5       | 0        | 5   |\n| Location 3 | 15      | 0        | 15  |\n| Group B    | 20      | 17       | 3   |\n\n→ Will increase Group A's reservation count by 2\n\n| Place      | On hand | Reserved | ATO |\n| ---------- | ------- | -------- | --- |\n| Location 1 | 5       | 0        | 5   |\n| Location 2 | 5       | 0        | 5   |\n| Group A    | 10      | 2        | 8   |\n\nAs stated previously, group reservations are a promise returned by the group that one or more of its locations can satisfy the requested reservation quantity. When determining that promise, group reservations follow a \"least shared location\" approach in that they first lock inventory in their locations which are least shared with other groups. Consequently, that's why, when a reservation of a quantity of 17 was made at Group B, 15 of them were locked at Location 3 first, and the remaining 2 at shared Location 2. As a result, Group A increased its reservation count by 2 to reflect the fact that those 2 are promised elsewhere.\n\n### Temporary Reservations\n\nWhen creating reservations, the **expirationSeconds** value indicates the amount of time (in seconds) a reservation maintains a hold on its inventory before releasing it. This expiration time constitutes an approximate time because there’s typically a delay (up to 60+ seconds, under extreme load) from the specified expiration time and the actual release of inventory reflected in availability counts.\n\nConsequently, we suggest that you use the **expirationSeconds** value as a guarantee of a reservation's eventual release of inventory, in the event the client is unable to cancel the reservation due to unforeseen technical issues. In other words, we encourage you to let the client manage the timely cancellation of reservations rather than relying on a reservation's expiration time to prevent underselling scenarios and optimize the accuracy of real-time availability counts.\n\n## Common Response Codes\n\nThe following error codes apply to all API endpoints. See the API documentation for a complete list of the error codes and response bodies that can be expected on each endpoint.\n\n- 401 - The OATH bearer token is not valid for the tenant or is no longer valid. The response body has the details.\n- 403 - The tenant is not provisioned in the system.\n- 5XX - There was a server error. The response body has the details.\n- Unknown - If an Unknown error type is returned, it indicates that an unknown internal error occurred.\n\n## External Reference Identifier\n\nCurrently, there are a number of places where a consumer can submit an `ExternalRefId` with their request. This is to allow the consumer to submit user generated data along with their request as a link to other external systems data. For example, if I'm pulling data from an order that has an order ID, I can submit that order ID with my reservation request as the `externalRefId`. Then, if there is a problem with the reservation, there is a way to connect it with the order in the external system that generated the error or problem. This is NOT to be confused with `externalRefId` used in Salesforce Core, or any other services. The usage is exclusive to OCI and is not used anywhere else.\n\n## Correlation-ID\n\nIn order to facilitate tracking of operations in OCI, customers must populate a header with the name Correlation-ID, which will be passed through the CDN and sent with the request to OCI. This will help trace requests as they move throughout our service. To be accepted, the correlation-id must be a valid UUIDv2, otherwise, it will be ignored.\n\nWhen a web-request is passed through the CDN, the CDN's x-correlation-id header value (which comes from their ray-id) also comes into play. In this case, the correlation-id provided will be prepended to the CDN's x-correlation-id and both values will be passed through, separated by a comma.\n\nSome services use a header X-Correlation-ID. In the case of OCI, if this header is used, it is overwritten by the CDN with a new value and the initial purpose of the header is defeated. Use the Correlation-ID instead for a consistent result.",
     "version": "1.1.23",
     "x-api-type": "Admin",
     "x-api-family": "Inventory"
@@ -19,17 +20,21 @@
   "paths": {
     "/organizations/{organizationId}/reservation-documents/{reservationId}": {
       "put": {
+        "summary": "Create or update reservations for a number of location groups, locations, or both. If any of the location groups or locations provided in the request are invalid, nothing is processed.",
+        "description": "Creates or updates a reservation document for the specified organization and reservation ID.",
         "operationId": "createReservations",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "reservationId",
@@ -39,6 +44,7 @@
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "12345-23456-3456-4567-5678",
               "maxLength": 36,
               "pattern": "^[0-9a-fA-F\\-]{36}$"
             }
@@ -49,6 +55,23 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PlaceReservationRequest"
+              },
+              "examples": {
+                "placeReservationRequestBodyLocation": {
+                  "$ref": "#/components/examples/placeReservationRequestBodyLocation"
+                },
+                "placeReservationRequestBodyLocationAllOrNothing": {
+                  "$ref": "#/components/examples/placeReservationRequestBodyLocationAllOrNothing"
+                },
+                "placeReservationRequestBodyGroups": {
+                  "$ref": "#/components/examples/placeReservationRequestBodyGroups"
+                },
+                "placeReservationRequestBodyLocationAndGroup": {
+                  "$ref": "#/components/examples/placeReservationRequestBodyLocationAndGroup"
+                },
+                "placeReservationAgainstATFBody": {
+                  "$ref": "#/components/examples/placeReservationAgainstATFBody"
+                }
               }
             }
           },
@@ -59,14 +82,17 @@
             "description": "Successfully received and processed the request. The consumer is responsible for validating the returned data to ensure that the specified quantity was reserved as requested.",
             "headers": {
               "Location": {
+                "description": "URI used to retrieve the recorded reservation document.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
                   "type": "string",
+                  "example": "/organizations/org123/reservation-documents/2345-23456-3456-4567-5678",
                   "maxLength": 255
                 }
               },
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -74,6 +100,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -81,6 +108,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -92,6 +120,32 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PlaceReservationResponseBody"
+                },
+                "examples": {
+                  "reservationSuccessExample": {
+                    "$ref": "#/components/examples/reservationSuccessExample"
+                  },
+                  "placeReservationResponseBody": {
+                    "$ref": "#/components/examples/placeReservationResponseBody"
+                  },
+                  "reservationFail": {
+                    "$ref": "#/components/examples/reservationFail"
+                  },
+                  "reservationPartialQtySuccess": {
+                    "$ref": "#/components/examples/reservationPartialQtySuccess"
+                  },
+                  "reservationPartialItemSuccess": {
+                    "$ref": "#/components/examples/reservationPartialItemSuccess"
+                  },
+                  "reservationPartialNoItemSuccess": {
+                    "$ref": "#/components/examples/reservationPartialNoItemSuccess"
+                  },
+                  "reservationNonPartialSomeItemSuccessSomeFail": {
+                    "$ref": "#/components/examples/reservationNonPartialSomeItemSuccessSomeFail"
+                  },
+                  "reservationNonPartialAllItemsFail": {
+                    "$ref": "#/components/examples/reservationNonPartialAllItemsFail"
+                  }
                 }
               }
             }
@@ -100,6 +154,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -107,6 +162,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -114,6 +170,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -125,6 +182,17 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InvalidRequestLocOrGroupDoesNotExist"
+                },
+                "examples": {
+                  "locationGroupNotFound": {
+                    "$ref": "#/components/examples/LocationGroupNotFound"
+                  },
+                  "locationIdNotFound": {
+                    "$ref": "#/components/examples/LocationIdNotFound"
+                  },
+                  "noLocationOrGroupsNotProvided": {
+                    "$ref": "#/components/examples/NoLocationOrGroupsNotProvided"
+                  }
                 }
               }
             }
@@ -135,6 +203,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "TenantNotProvisioned": {
+                    "$ref": "#/components/examples/TenantNotProvisioned"
+                  }
                 }
               }
             }
@@ -143,6 +216,7 @@
             "description": "A reservation with the specified ID is in an invalid state.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -150,6 +224,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -157,6 +232,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -168,6 +244,17 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReservationInvalidState"
+                },
+                "examples": {
+                  "conflictExample": {
+                    "summary": "Example conflict response",
+                    "value": {
+                      "errorCode": "ReservationInvalidState",
+                      "message": "Reservation is in a CLOSED state.",
+                      "type": "about:blank",
+                      "parameterName": "sku"
+                    }
+                  }
                 }
               }
             }
@@ -186,18 +273,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -218,17 +318,21 @@
         ]
       },
       "patch": {
+        "summary": "Cancel a reservation or add items to an existing reservation document. This endpoint references the reservation document directly, marking it as cancelled or adding the items, and then adjusting the reservation and inventory counts based on the details of the reservation document.",
+        "description": "Cancels or updates an existing reservation document by ID.",
         "operationId": "updateReservation",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           },
           {
             "name": "reservationId",
@@ -238,6 +342,7 @@
             "explode": false,
             "schema": {
               "type": "string",
+              "example": "12345-23456-3456-4567-5678",
               "maxLength": 36,
               "pattern": "^[0-9a-fA-F\\-]{36}$"
             }
@@ -248,6 +353,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateReservationRequestBody"
+              },
+              "examples": {
+                "cancelReservation": {
+                  "$ref": "#/components/examples/CancelReservation"
+                },
+                "updateReservation": {
+                  "$ref": "#/components/examples/UpdateReservation"
+                }
               }
             }
           },
@@ -258,6 +371,7 @@
             "description": "Reservation update request was received and processed successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -265,6 +379,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -272,6 +387,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -283,6 +399,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UpdateReservationResponse"
+                },
+                "examples": {
+                  "successfulReservationUpdateResponse": {
+                    "$ref": "#/components/examples/SuccessfulReservationUpdateResponse"
+                  },
+                  "partialQuantitySuccessfulReservationUpdateResponse": {
+                    "$ref": "#/components/examples/PartialQuantitySuccessfulReservationUpdateResponse"
+                  },
+                  "partialAllItemsFailedReservationUpdateResponse": {
+                    "$ref": "#/components/examples/PartialAllItemsFailedReservationUpdateResponse"
+                  },
+                  "failedUpdateReservationUpdateResponse": {
+                    "$ref": "#/components/examples/FailedUpdateReservationUpdateResponse"
+                  }
                 }
               }
             }
@@ -291,6 +421,7 @@
             "description": "Reservation marked as cancelled. Inventory levels updated asynchronously.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -298,6 +429,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -305,6 +437,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -317,6 +450,7 @@
             "description": "Reservation cancelled successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -324,6 +458,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -331,6 +466,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -343,6 +479,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -350,6 +487,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -357,6 +495,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -368,6 +507,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "InvalidRequestParameter": {
+                    "$ref": "#/components/examples/InvalidRequestParameter"
+                  }
                 }
               }
             }
@@ -378,6 +522,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "TenantNotProvisioned": {
+                    "$ref": "#/components/examples/TenantNotProvisioned"
+                  }
                 }
               }
             }
@@ -386,6 +535,7 @@
             "description": "Entity not found.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -393,6 +543,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -400,6 +551,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -411,6 +563,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "EntityNotFound": {
+                    "$ref": "#/components/examples/EntityNotFound"
+                  }
                 }
               }
             }
@@ -419,6 +576,7 @@
             "description": "A reservation with the specified ID is in an invalid state.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -426,6 +584,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -433,6 +592,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -444,6 +604,17 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "conflictExample": {
+                    "summary": "Invalid reservation state",
+                    "value": {
+                      "errorCode": "ReservationInvalidState",
+                      "message": "Reservation is in a CLOSED state.",
+                      "type": "about:blank",
+                      "parameterName": "sku"
+                    }
+                  }
                 }
               }
             }
@@ -462,18 +633,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -496,17 +680,21 @@
     },
     "/organizations/{organizationId}/transfers": {
       "post": {
+        "summary": "Move reservation quantities between a group and its locations, or between locations. The system does not support transfers between groups. In the case of All or Nothing movements, only Group to Location movements are allowed.",
+        "description": "Moves reservation quantities between a group and its locations, or between locations.",
         "operationId": "moveReservationQuantity",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -514,6 +702,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/MoveReservationBatchPostBody"
+              },
+              "examples": {
+                "MoveReservationBatchPostBodyExample": {
+                  "$ref": "#/components/examples/MoveReservationBatchPostBodyExample"
+                }
               }
             }
           },
@@ -524,6 +717,7 @@
             "description": "Batch reservation transfer partially succeeded with errors reported.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -531,6 +725,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -538,6 +733,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -549,6 +745,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MoveReservationErrorsResponse"
+                },
+                "examples": {
+                  "MoveReservationErrorsResponseExample": {
+                    "$ref": "#/components/examples/MoveReservationErrorsResponseExample"
+                  }
                 }
               }
             }
@@ -557,6 +758,7 @@
             "description": "Reservation quantities moved successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -564,6 +766,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -571,6 +774,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -583,6 +787,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -590,6 +795,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -597,6 +803,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -608,6 +815,26 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "locationNotFound": {
+                    "$ref": "#/components/examples/LocationIdNotFound"
+                  },
+                  "locationGroupNotFound": {
+                    "$ref": "#/components/examples/LocationGroupNotFound"
+                  },
+                  "groupToGroupNotAllowed": {
+                    "$ref": "#/components/examples/GroupToGroupNotAllowed"
+                  },
+                  "locationToLocationNotAllowed": {
+                    "$ref": "#/components/examples/LocationToLocationNotAllowed"
+                  },
+                  "forceReservationLocationToGroupNotAllowed": {
+                    "$ref": "#/components/examples/ForceReservationLocationToGroupNotAllowed"
+                  },
+                  "invalidTransferAllOrNothing": {
+                    "$ref": "#/components/examples/InvalidTransferAllOrNothing"
+                  }
                 }
               }
             }
@@ -618,6 +845,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "TenantNotProvisioned": {
+                    "$ref": "#/components/examples/TenantNotProvisioned"
+                  }
                 }
               }
             }
@@ -636,18 +868,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -670,17 +915,21 @@
     },
     "/organizations/{organizationId}/releases": {
       "post": {
+        "summary": "Remove reservations for canceled orders or carts. When using the unreserve/release endpoint, the reservation counts are removed from the location or group using the details provided in the call instead of the details in a reservation document (which isn't provided as part of the call to this endpoint).",
+        "description": "Removes reservations for canceled orders or carts.",
         "operationId": "unreserveReservations",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -688,6 +937,57 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UnreserveRequestBody"
+              },
+              "examples": {
+                "RequestBodyGroupExample": {
+                  "summary": "Example request body for unreserving by group",
+                  "value": {
+                    "records": [
+                      {
+                        "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                        "externalRefId": "7282822-9823-aaa",
+                        "group": "UnitedStates",
+                        "sku": "sku1234",
+                        "quantity": 1200.35
+                      }
+                    ]
+                  }
+                },
+                "RequestBodyLocationExample": {
+                  "summary": "Example request body for unreserving by location",
+                  "value": {
+                    "records": [
+                      {
+                        "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                        "externalRefId": "7282822-9823-aaa",
+                        "location": "warehouse5",
+                        "sku": "sku1234",
+                        "quantity": 1200.35
+                      }
+                    ]
+                  }
+                },
+                "RequestBodyGroupAndLocationExample": {
+                  "summary": "Example request body for unreserving by group and location",
+                  "value": {
+                    "records": [
+                      {
+                        "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                        "externalRefId": "7282822-9823-aaa",
+                        "location": "warehouse5",
+                        "sku": "sku1234",
+                        "quantity": 1200.35
+                      },
+                      {
+                        "id": "82251928-8863-488e-840b-2aebd10b6666",
+                        "externalRefId": "7282822-9823-bbb",
+                        "group": "UnitedStates",
+                        "sku": "sku5678",
+                        "quantity": 1.35
+                      }
+                    ]
+                  }
+                }
               }
             }
           },
@@ -698,6 +998,7 @@
             "description": "The request was received and processed successfully. The consumer is responsible for validating the returned data to ensure that the specified quantity was released as requested.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -705,6 +1006,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -712,6 +1014,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -723,6 +1026,73 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnreserveResponseBody"
+                },
+                "examples": {
+                  "responseBodyGroup": {
+                    "summary": "Example response body for group-level unreserve errors",
+                    "value": {
+                      "errors": [
+                        {
+                          "details": {
+                            "id": "82251928-8863-488e-840b-2aebd10b6666",
+                            "externalRefId": "7282822-9823-bbb",
+                            "group": "UnitedStates",
+                            "sku": "sku5678",
+                            "quantity": 0
+                          },
+                          "message": "Insufficient Quantity",
+                          "errorCode": "InsufficientQuantity"
+                        }
+                      ]
+                    }
+                  },
+                  "responseBodyLocation": {
+                    "summary": "Example response body for location-level unreserve errors",
+                    "value": {
+                      "errors": [
+                        {
+                          "details": {
+                            "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                            "externalRefId": "7282822-9823-aaa",
+                            "location": "warehouse5",
+                            "sku": "sku1234",
+                            "quantity": 0
+                          },
+                          "message": "Insufficient Quantity",
+                          "errorCode": "InsufficientQuantity"
+                        }
+                      ]
+                    }
+                  },
+                  "responseBodyGroupAndLocation": {
+                    "summary": "Example response body for group and location-level unreserve errors",
+                    "value": {
+                      "errors": [
+                        {
+                          "details": {
+                            "id": "82251928-8863-488e-840b-2aebd10b6666",
+                            "externalRefId": "7282822-9823-bbb",
+                            "group": "UnitedStates",
+                            "sku": "sku5678",
+                            "quantity": 0
+                          },
+                          "message": "Insufficient Quantity",
+                          "errorCode": "InsufficientQuantity"
+                        },
+                        {
+                          "details": {
+                            "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                            "externalRefId": "7282822-9823-aaa",
+                            "location": "warehouse5",
+                            "sku": "sku1234",
+                            "quantity": 0
+                          },
+                          "message": "Insufficient Quantity",
+                          "errorCode": "InsufficientQuantity"
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -731,6 +1101,7 @@
             "description": "Reservations for specified items removed successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -738,6 +1109,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -745,6 +1117,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -757,6 +1130,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -764,6 +1138,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -771,6 +1146,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -782,6 +1158,20 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "genericErrorMessage": {
+                    "$ref": "#/components/examples/GenericErrorMessage"
+                  },
+                  "tooManyFieldsProvided": {
+                    "$ref": "#/components/examples/TooManyFieldsProvided"
+                  },
+                  "locationDoesNotExist": {
+                    "$ref": "#/components/examples/LocationIdNotFound"
+                  },
+                  "locationGroupNotFound": {
+                    "$ref": "#/components/examples/LocationGroupNotFound"
+                  }
                 }
               }
             }
@@ -792,6 +1182,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "TenantNotProvisioned": {
+                    "$ref": "#/components/examples/TenantNotProvisioned"
+                  }
                 }
               }
             }
@@ -810,18 +1205,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -844,17 +1252,21 @@
     },
     "/organizations/{organizationId}/fulfillments": {
       "post": {
+        "summary": "Adjust quantity for an item after fulfillment.",
+        "description": "Adjusts the reserved quantity for an item after fulfillment.",
         "operationId": "fulfillQuantity",
         "parameters": [
           {
             "name": "organizationId",
             "in": "path",
+            "description": "An identifier for the organization the request is being made by",
             "required": true,
             "style": "simple",
             "explode": false,
             "schema": {
               "$ref": "#/components/schemas/OrganizationId"
-            }
+            },
+            "example": "f_ecom_zzxy_prd"
           }
         ],
         "requestBody": {
@@ -862,6 +1274,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FulfillQuantityRequestBody"
+              },
+              "examples": {
+                "FulfillQuantityRequestBodyExample": {
+                  "$ref": "#/components/examples/FulfillQuantityRequestBodyExample"
+                }
               }
             }
           },
@@ -872,6 +1289,7 @@
             "description": "Fulfillment partially succeeded with errors reported.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -879,6 +1297,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -886,6 +1305,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -897,6 +1317,44 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FulfillQuantityResponseErrors"
+                },
+                "examples": {
+                  "locationNotFound": {
+                    "summary": "Example response when a location is not found",
+                    "value": {
+                      "errors": [
+                        {
+                          "details": {
+                            "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                            "externalRefId": "7282822-9823-aaa",
+                            "location": "warehouse5",
+                            "sku": "sku1234",
+                            "quantity": 1200.35
+                          },
+                          "message": "Failed to fulfill, invalid location provided.",
+                          "errorCode": "Unknown"
+                        }
+                      ]
+                    }
+                  },
+                  "insufficientQty": {
+                    "summary": "Example response when there is insufficient quantity",
+                    "value": {
+                      "errors": [
+                        {
+                          "details": {
+                            "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                            "externalRefId": "7282822-9823-aaa",
+                            "location": "warehouse5",
+                            "sku": "sku1234",
+                            "quantity": 1200.35
+                          },
+                          "message": "Insufficient Quantity.",
+                          "errorCode": "Unknown"
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -905,6 +1363,7 @@
             "description": "Quantity adjusted successfully.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -912,6 +1371,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -919,6 +1379,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -931,6 +1392,7 @@
             "description": "Invalid request.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -938,6 +1400,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -945,6 +1408,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -956,6 +1420,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "MissingParameter": {
+                    "$ref": "#/components/examples/MissingParameter"
+                  }
                 }
               }
             }
@@ -966,6 +1435,11 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "TenantNotProvisioned": {
+                    "$ref": "#/components/examples/TenantNotProvisioned"
+                  }
                 }
               }
             }
@@ -974,6 +1448,7 @@
             "description": "Reservation ID invalid.",
             "headers": {
               "X-RateLimit-Limit": {
+                "description": "The maximum number of requests permitted per minute.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -981,6 +1456,7 @@
                 }
               },
               "X-RateLimit-Remaining": {
+                "description": "The number of requests remaining in the current rate limit window.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -988,6 +1464,7 @@
                 }
               },
               "X-RateLimit-Reset": {
+                "description": "The time at which the current rate limit window resets in UTC epoch seconds.",
                 "style": "simple",
                 "explode": false,
                 "schema": {
@@ -999,6 +1476,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryResponseErrorSchema"
+                },
+                "examples": {
+                  "IDDoesNotExist": {
+                    "$ref": "#/components/examples/IDDoesNotExist"
+                  }
                 }
               }
             }
@@ -1017,18 +1499,31 @@
             "content": {
               "application/problem+json": {
                 "schema": {
+                  "example": {
+                    "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-requests",
+                    "title": "Too Many Requests",
+                    "detail": "You have performed too many requests in a short period of time."
+                  },
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the\nproblem, except for purposes of localization.\n",
+                      "example": "You do not have enough credit."
                     },
                     "type": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "https://example.com/probs/out-of-credit"
                     },
                     "detail": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A human-readable explanation specific to this\noccurrence of the problem.\n",
+                      "example": "Your current balance is 30, but that costs 50."
                     },
                     "instance": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+                      "example": "/account/12345/msgs/abc"
                     }
                   },
                   "required": [
@@ -1054,38 +1549,54 @@
     "schemas": {
       "OrganizationId": {
         "type": "string",
+        "description": "An identifier for the organization the request is being made by",
+        "example": "f_ecom_zzxy_prd",
         "maxLength": 32,
         "minLength": 1
       },
       "ExternalRefId": {
         "type": "string",
+        "description": "A convenience identifier for the consumer, used for auditing events. This field is NOT used by the service itself, but is intended for the consumer to be able to identify records submitted from their systems that are external to OCI.",
+        "example": "7282822-9823-aaa",
         "maxLength": 128,
         "pattern": "^[a-zA-Z0-9\\-]*$"
       },
       "ExpirationSeconds": {
         "type": "integer",
+        "description": "The number of seconds until this reservation expires. If not specified, this  reservation never expires. \n\nTypically, there's about a 10-15 second delay between the specified expiration time and its reflection on inventory counts under normal load, but usually stays within 60 seconds under higher loads. \n",
+        "example": 300,
         "maximum": 14400,
         "minimum": 1
       },
       "AllowPartialReservations": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Whether or not to allow partial reservations. The default value is 'true'.  If the value sent in is 'true', or no value is sent, the response will only include the quantity that was available to be reserved.  There will be no error message.  In this case, the response must be verified by the caller.",
+        "example": true
       },
       "FulfillOnlyReservations": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Whether or not to fulfill a reservation ONLY against the ATF amount. The default value is 'false'.  If the value sent in is 'false', or no value is sent, the reservations will apply normally.  If the value is sent as 'true', the reservation will ONLY be placed against the ATF amount and will fail if this amount is insufficient to fulfill the reservation request.",
+        "example": true
       },
       "ReservationTime": {
         "type": "string",
         "format": "date-time",
+        "description": "The time the reservation was placed",
+        "example": "2019-07-24T21:13:00Z",
         "maxLength": 30
       },
       "GroupId": {
         "type": "string",
+        "description": "An identifier for a collection of locations",
+        "example": "UnitedStates",
         "maxLength": 128,
         "minLength": 2,
         "pattern": "^[a-zA-Z0-9-_]*$"
       },
       "SkuId": {
         "type": "string",
+        "description": "The inventory identifier",
+        "example": "sku1234",
         "maxLength": 250,
         "minLength": 1,
         "pattern": "^[^\\\\<>;%/\\s]*$"
@@ -1093,11 +1604,14 @@
       "ReservedQuantity": {
         "type": "number",
         "format": "double",
+        "description": "The quantity to reserve",
+        "example": 10,
         "minimum": 0.001,
         "multipleOf": 0.001
       },
       "ReservationRequestRecord": {
         "type": "object",
+        "description": "Information about the SKU, and quantity to reserve.",
         "properties": {
           "sku": {
             "$ref": "#/components/schemas/SkuId"
@@ -1113,6 +1627,7 @@
       },
       "ReservationRequestGroup": {
         "type": "object",
+        "description": "The reservations to request at the location group.",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/GroupId"
@@ -1131,18 +1646,23 @@
       },
       "LocationId": {
         "type": "string",
+        "description": "The id of the location of the inventory.",
+        "example": "warehouse5",
         "maxLength": 128,
         "minLength": 2,
         "pattern": "^[a-zA-Z0-9-_]*$"
       },
       "AllOrNothingId": {
         "type": "string",
+        "description": "The used defined id of the All Or Nothing Reservation.",
+        "example": "a14s-4b1c-1a3cbd4",
         "maxLength": 128,
         "minLength": 1,
         "pattern": "^[a-zA-Z0-9-_]*$"
       },
       "ReservationRequestLocation": {
         "type": "object",
+        "description": "The reservations to request at the location.",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/LocationId"
@@ -1183,6 +1703,7 @@
       "PlaceReservationRequest": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Place a reservation Request",
         "properties": {
           "externalRefId": {
             "$ref": "#/components/schemas/ExternalRefId"
@@ -1201,33 +1722,45 @@
           },
           "groups": {
             "type": "array",
+            "description": "The reservations to request at the specified location groups.",
             "items": {
               "$ref": "#/components/schemas/ReservationRequestGroup"
             }
           },
           "locations": {
             "type": "array",
+            "description": "The reservations to request at the specified locations.",
             "items": {
               "$ref": "#/components/schemas/ReservationRequestLocation"
             }
           }
-        }
+        },
+        "title": "Reservation Request"
       },
       "ExpirationTime": {
         "type": "string",
         "format": "date-time",
+        "description": "The time the reservation expires",
+        "example": "2019-07-24T21:13:00Z",
         "maxLength": 30
       },
       "ErrorCode": {
         "type": "string",
+        "description": "The error code",
         "enum": [
           "InsufficientQuantity",
           "Unknown"
         ],
+        "example": "MoveError",
         "maxLength": 128,
         "pattern": "^[a-zA-Z0-9\\-]*$"
       },
       "ReservationResponseErrorRecord2": {
+        "description": "Information about any errors that occurred attempting to place the reservation.",
+        "example": {
+          "sku": "sku5678",
+          "errorCode": "Unknown"
+        },
         "maxLength": 250,
         "properties": {
           "sku": {
@@ -1259,20 +1792,25 @@
       },
       "PlaceReservationResponseBody": {
         "type": "object",
+        "description": "The response for a successful reservation placement.",
         "properties": {
           "reservationTime": {
             "type": "string",
             "format": "date-time",
+            "example": "2019-07-24T21:13:00Z",
             "maxLength": 30
           },
           "expirationTime": {
             "$ref": "#/components/schemas/ExpirationTime"
           },
           "success": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether or not the reservation was able to be placed successfully.",
+            "example": true
           },
           "groups": {
             "type": "array",
+            "description": "The results for the requested location group reservations.",
             "items": {
               "type": "object",
               "properties": {
@@ -1287,6 +1825,7 @@
                 },
                 "details": {
                   "type": "array",
+                  "description": "Information about the SKU, and the amount of quantity that was successfully reserved.",
                   "items": {
                     "$ref": "#/components/schemas/ReservedReservationRecord"
                   }
@@ -1299,6 +1838,7 @@
           },
           "locations": {
             "type": "array",
+            "description": "The results for the requested location reservations.",
             "items": {
               "type": "object",
               "properties": {
@@ -1313,6 +1853,7 @@
                 },
                 "details": {
                   "type": "array",
+                  "description": "Information about the SKU, and the amount of quantity that was successfully reserved.",
                   "items": {
                     "$ref": "#/components/schemas/ReservedReservationRecord"
                   }
@@ -1335,7 +1876,8 @@
           "InvalidRequest",
           "LocationDoesNotExist",
           "GroupDoesNotExist"
-        ]
+        ],
+        "example": "LocationDoesNotExist"
       },
       "InvalidRequestLocOrGroupDoesNotExist": {
         "type": "object",
@@ -1345,22 +1887,30 @@
           },
           "message": {
             "type": "string",
+            "example": "An invalid group was provided.",
             "maxLength": 250
           },
           "type": {
             "type": "string",
+            "example": "about:blank",
             "maxLength": 250
           },
           "parameterName": {
             "type": "string",
+            "description": "When invalid json is passed to the service, this field will indicate which piece of the supplied json was invalid.",
+            "example": "sku",
             "maxLength": 250
           },
           "group": {
             "type": "string",
+            "description": "Indicates which group was provided that does not exist",
+            "example": "UnitedStates",
             "maxLength": 250
           },
           "location": {
             "type": "string",
+            "description": "Indicates the location that was provided that does not exist",
+            "example": "warehouse5",
             "maxLength": 250
           }
         },
@@ -1375,18 +1925,23 @@
         "properties": {
           "errorCode": {
             "type": "string",
+            "example": "InvalidRequestParameter",
             "maxLength": 32
           },
           "message": {
             "type": "string",
+            "example": "An invalid request parameter was provided.",
             "maxLength": 250
           },
           "type": {
             "type": "string",
+            "example": "about:blank",
             "maxLength": 250
           },
           "parameterName": {
             "type": "string",
+            "description": "When invalid json is passed to the service, this field will indicate which piece of the supplied json was invalid.",
+            "example": "location",
             "maxLength": 250
           }
         },
@@ -1397,6 +1952,13 @@
         ]
       },
       "ReservationInvalidState": {
+        "description": "Error generated when attempting to create a reservation with the same ID as an existing one.",
+        "example": {
+          "errorCode": "ReservationInvalidState",
+          "message": "Reservation is in a CLOSED state.",
+          "type": "about:blank",
+          "parameterName": "sku"
+        },
         "maxLength": 1,
         "properties": {
           "errorCode": {
@@ -1411,18 +1973,23 @@
               "PreviousRequestAborted",
               "PreviousRequestCancelled"
             ],
+            "example": "ReservationInvalidState",
             "maxLength": 32
           },
           "message": {
             "type": "string",
+            "example": "Reservation is in a CLOSED state.",
             "maxLength": 250
           },
           "type": {
             "type": "string",
+            "example": "about:blank",
             "maxLength": 250
           },
           "parameterName": {
             "type": "string",
+            "description": "When invalid json is passed to the service, this field will indicate which piece of the supplied json was invalid.",
+            "example": "sku",
             "maxLength": 250
           }
         },
@@ -1434,6 +2001,8 @@
       },
       "IdempotenceId": {
         "type": "string",
+        "description": "A unique identifier, used in combination with the SKU, so that future requests with the same combination have the same result.",
+        "example": "82251928-8863-488e-840b-2aebd10b57ba",
         "maxLength": 128,
         "pattern": "^[a-zA-Z0-9\\-]*$"
       },
@@ -1457,6 +2026,7 @@
       },
       "UpdateReservationLocationType": {
         "type": "array",
+        "description": "The reservations to request at the specified locations.",
         "items": {
           "type": "object",
           "properties": {
@@ -1471,6 +2041,8 @@
               "properties": {
                 "id": {
                   "type": "string",
+                  "description": "The user defined ID of the all or nothing reservation",
+                  "example": "a14s-4b1c-1a3cbd4",
                   "maxLength": 32
                 },
                 "reservations": {
@@ -1492,6 +2064,7 @@
       },
       "UpdateReservationGroupType": {
         "type": "array",
+        "description": "The reservations to request at the specified location groups.",
         "items": {
           "type": "object",
           "properties": {
@@ -1506,6 +2079,8 @@
               "properties": {
                 "id": {
                   "type": "string",
+                  "description": "The user defined ID of the all or nothing reservation",
+                  "example": "a14s-4b1c-1a3cbd4",
                   "maxLength": 32
                 },
                 "reservations": {
@@ -1527,18 +2102,23 @@
       },
       "UpdateReservationRequestBody": {
         "type": "object",
+        "description": "The body that is sent requesting a reservation be cancelled.",
         "properties": {
           "status": {
             "type": "string",
+            "description": "The status to set on the reservation document",
             "enum": [
               "CANCELLED"
-            ]
+            ],
+            "example": "CANCELLED"
           },
           "externalRefId": {
             "$ref": "#/components/schemas/ExternalRefId"
           },
           "allowPartialReservations": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether or not to allow partial reservations. The default value is 'true'.  If the value sent in is 'true', or no value is sent, the response will only include the quantity that was available to be reserved.  There will be no error message.  In this case, the response must be verified by the caller.",
+            "example": true
           },
           "reservationTime": {
             "$ref": "#/components/schemas/ReservationTime"
@@ -1564,6 +2144,7 @@
             },
             "errorCode": {
               "type": "string",
+              "example": "InsufficientQuantity",
               "maxLength": 32
             }
           }
@@ -1579,7 +2160,8 @@
             "$ref": "#/components/schemas/ExpirationTime"
           },
           "success": {
-            "type": "boolean"
+            "type": "boolean",
+            "example": false
           },
           "groups": {
             "type": "array",
@@ -1602,11 +2184,13 @@
                       },
                       "quantity": {
                         "type": "number",
-                        "format": "float"
+                        "format": "float",
+                        "example": 8
                       },
                       "adjustment": {
                         "type": "number",
-                        "format": "float"
+                        "format": "float",
+                        "example": 4
                       }
                     }
                   }
@@ -1635,11 +2219,13 @@
                       },
                       "quantity": {
                         "type": "number",
-                        "format": "float"
+                        "format": "float",
+                        "example": 8
                       },
                       "adjustment": {
                         "type": "number",
-                        "format": "float"
+                        "format": "float",
+                        "example": 4
                       }
                     }
                   }
@@ -1703,6 +2289,7 @@
             "$ref": "#/components/schemas/ExternalRefId"
           },
           "from": {
+            "description": "The place from which the reservation quantity is being moved.",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/MoveReservationFromLocation"
@@ -1713,6 +2300,7 @@
             ]
           },
           "to": {
+            "description": "The place where the reservation quantity is being moved to.",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/MoveReservationToLocation"
@@ -1728,12 +2316,15 @@
           "quantity": {
             "type": "number",
             "format": "double",
+            "example": 2.011,
             "minimum": 0.001,
             "multipleOf": 0.001
           },
           "ignoreAvailabilityCheck": {
             "type": "boolean",
-            "default": false
+            "default": false,
+            "description": "It specifies if the reservation should be moved even if there is no inventory at the destination.",
+            "example": false
           }
         },
         "required": [
@@ -1742,7 +2333,8 @@
           "quantity",
           "sku",
           "to"
-        ]
+        ],
+        "title": "Location To Location Move Reservation Records"
       },
       "MoveReservationBatchPostBody": {
         "type": "object",
@@ -1752,6 +2344,7 @@
           },
           "records": {
             "type": "array",
+            "description": "List of records to process in a batch update.  The maximum number of entries in the array is 100.",
             "items": {
               "$ref": "#/components/schemas/MoveReservationBodyRecords"
             }
@@ -1760,7 +2353,8 @@
         "required": [
           "allOrNothingTransferId",
           "records"
-        ]
+        ],
+        "title": "Move Reservations Batch Call"
       },
       "MoveReservationErrorDetail": {
         "type": "object",
@@ -1797,6 +2391,7 @@
           "quantity": {
             "type": "number",
             "format": "double",
+            "example": 2.011,
             "minimum": 0.001,
             "multipleOf": 0.001
           }
@@ -1812,6 +2407,8 @@
       },
       "Message": {
         "type": "string",
+        "description": "The error message",
+        "example": "MoveError",
         "maxLength": 128,
         "pattern": "^[a-zA-Z0-9\\- ]*$"
       },
@@ -1837,9 +2434,30 @@
       "MoveReservationErrorsResponse": {
         "type": "object",
         "additionalProperties": false,
+        "example": {
+          "errors": [
+            {
+              "details": {
+                "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                "externalRefId": "7282822-9823-aaa",
+                "from": {
+                  "group": "UnitedStates"
+                },
+                "to": {
+                  "location": "warehouse5"
+                },
+                "sku": "sku-002",
+                "quantity": 2.011
+              },
+              "message": "Insufficient Quantity",
+              "errorCode": "InsufficientQuantity"
+            }
+          ]
+        },
         "properties": {
           "errors": {
             "type": "array",
+            "description": "Errors generated during transfer/move reservation",
             "items": {
               "$ref": "#/components/schemas/MoveReservationError"
             }
@@ -1847,11 +2465,14 @@
         },
         "required": [
           "errors"
-        ]
+        ],
+        "title": "moveReservationsErrorResponse"
       },
       "QuantityOnHand": {
         "type": "number",
         "format": "double",
+        "description": "Quantity on hand.",
+        "example": 1200.35,
         "minimum": 0,
         "multipleOf": 0.001
       },
@@ -1892,7 +2513,8 @@
         },
         "required": [
           "records"
-        ]
+        ],
+        "title": "Request Body By Location Only"
       },
       "UnreservedDetail": {
         "type": "object",
@@ -1913,7 +2535,8 @@
             "$ref": "#/components/schemas/SkuId"
           },
           "quantity": {
-            "type": "number"
+            "type": "number",
+            "example": 0
           }
         },
         "required": [
@@ -1928,6 +2551,19 @@
         "properties": {
           "errors": {
             "type": "array",
+            "example": [
+              {
+                "details": {
+                  "id": "82251928-8863-488e-840b-2aebd10b6666",
+                  "externalRefId": "7282822-9823-bbb",
+                  "group": "UnitedStates",
+                  "sku": "sku5678",
+                  "quantity": 0
+                },
+                "message": "Insufficient Quantity",
+                "errorCode": "InsufficientQuantity"
+              }
+            ],
             "items": {
               "type": "object",
               "properties": {
@@ -1949,21 +2585,46 @@
         },
         "required": [
           "errors"
-        ]
+        ],
+        "title": "Unreserve Response Body"
       },
       "FulfillmentTime": {
         "type": "string",
         "format": "date-time",
+        "description": "The time the fulfillment takes place",
+        "example": "2019-07-24T21:13:00Z",
         "maxLength": 30
       },
       "FulfillQuantityRequestBody": {
         "type": "object",
         "additionalProperties": false,
+        "description": "Fulfills the given quantity of reservations for a SKU at a given location. The given quantity will be subtracted from the reservation count and the quantity on hand, in an atomic operation.\n",
+        "example": {
+          "records": [
+            {
+              "id": "82251928-8863-488e-840b-2aebd10b57ba",
+              "externalRefId": "7282822-9823-aaa",
+              "location": "warehouse5",
+              "sku": "sku1234",
+              "quantity": 1200.35,
+              "fulfillmentTime": "2019-07-24T21:13:00Z"
+            },
+            {
+              "id": "82251928-8863-488e-840b-2aeb567d3a87",
+              "externalRefId": "7282822-9823-ddd",
+              "location": "warehouse4",
+              "sku": "sku5678",
+              "quantity": 201.27
+            }
+          ]
+        },
         "properties": {
           "records": {
             "type": "array",
+            "description": "List of records to process in a batch update.  The maximum number of entries in the array is 100.",
             "items": {
               "type": "object",
+              "description": "The records provided in a fulfillment request.",
               "properties": {
                 "id": {
                   "$ref": "#/components/schemas/IdempotenceId"
@@ -2000,14 +2661,31 @@
       "FulfillQuantityResponseErrors": {
         "type": "object",
         "additionalProperties": false,
+        "example": {
+          "errors": [
+            {
+              "details": {
+                "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                "externalRefId": "7282822-9823-aaa",
+                "location": "warehouse5",
+                "sku": "sku1234",
+                "quantity": 1200.35
+              },
+              "message": "Failed to fulfill, invalid location provided.",
+              "errorCode": "err751"
+            }
+          ]
+        },
         "properties": {
           "errors": {
             "type": "array",
             "items": {
               "type": "object",
+              "description": "Error message generated after a failed fulfillment.",
               "properties": {
                 "details": {
                   "type": "object",
+                  "description": "Reservation fulfillment error detail information",
                   "properties": {
                     "id": {
                       "$ref": "#/components/schemas/IdempotenceId"
@@ -2034,6 +2712,8 @@
                 },
                 "message": {
                   "type": "string",
+                  "description": "Error message",
+                  "example": "Fulfillment failed - invalid location provided",
                   "maxLength": 128
                 },
                 "errorCode": {
@@ -2057,12 +2737,14 @@
       "organizationId": {
         "name": "organizationId",
         "in": "path",
+        "description": "An identifier for the organization the request is being made by",
         "required": true,
         "style": "simple",
         "explode": false,
         "schema": {
           "$ref": "#/components/schemas/OrganizationId"
-        }
+        },
+        "example": "f_ecom_zzxy_prd"
       },
       "reservationId": {
         "name": "reservationId",
@@ -2072,14 +2754,837 @@
         "explode": false,
         "schema": {
           "type": "string",
+          "example": "12345-23456-3456-4567-5678",
           "maxLength": 36,
           "pattern": "^[0-9a-fA-F\\-]{36}$"
+        }
+      }
+    },
+    "examples": {
+      "placeReservationRequestBodyLocation": {
+        "summary": "Example request body for placing a reservation by location",
+        "value": {
+          "externalRefId": "7282822-9823-aaa",
+          "expirationSeconds": 300,
+          "allowPartialReservations": true,
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "locations": [
+            {
+              "id": "warehouse5",
+              "reservations": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "placeReservationRequestBodyLocationAllOrNothing": {
+        "summary": "Example request body for placing a reservation by location with all or nothing reservations",
+        "value": {
+          "externalRefId": "7282822-9823-aaa",
+          "expirationSeconds": 300,
+          "allowPartialReservations": true,
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "locations": [
+            {
+              "id": "warehouse5",
+              "reservations": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                }
+              ],
+              "allOrNothingReservations": [
+                {
+                  "id": "a14s-4b1c-1a3cbd4",
+                  "reservations": [
+                    {
+                      "sku": "sku1234",
+                      "quantity": 10
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "placeReservationRequestBodyGroups": {
+        "summary": "Example request body for placing a reservation by group",
+        "value": {
+          "externalRefId": "7282822-9823-aaa",
+          "expirationSeconds": 300,
+          "allowPartialReservations": true,
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "groups": [
+            {
+              "id": "UnitedStates",
+              "reservations": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "placeReservationRequestBodyLocationAndGroup": {
+        "summary": "Example request body for placing a reservation by both location and group",
+        "value": {
+          "externalRefId": "7282822-9823-aaa",
+          "expirationSeconds": 300,
+          "allowPartialReservations": true,
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "groups": [
+            {
+              "id": "UnitedStates",
+              "reservations": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "reservations": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "placeReservationAgainstATFBody": {
+        "summary": "Example request body for placing a reservation against ATF",
+        "value": {
+          "externalRefId": "7282822-9823-aaa",
+          "expirationSeconds": 300,
+          "allowPartialReservations": true,
+          "fulfillOnly": true,
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "locations": [
+            {
+              "id": "warehouse5",
+              "reservations": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "reservationSuccessExample": {
+        "summary": "Example response with successful reservation for groups and locations",
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T22:13:00Z",
+          "success": true,
+          "groups": [
+            {
+              "id": "UnitedStates",
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10.1
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10.1
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "placeReservationResponseBody": {
+        "summary": "Example response with partial failure for groups and locations",
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T22:13:00Z",
+          "success": false,
+          "groups": [
+            {
+              "id": "UnitedStates",
+              "errors": [
+                {
+                  "sku": "sku5678",
+                  "errorCode": "Unknown"
+                }
+              ],
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku5678",
+                  "errorCode": "Unknown"
+                }
+              ],
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "reservationFail": {
+        "summary": "Example response with reservation failure due to insufficient quantity",
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T22:13:00Z",
+          "success": false,
+          "groups": [
+            {
+              "id": "UnitedStates",
+              "errors": [
+                {
+                  "errorCode": "InsufficientQuantity",
+                  "sku": "sku1234"
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "reservationPartialQtySuccess": {
+        "summary": "Example response with partial quantity success for groups and locations",
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T22:13:00Z",
+          "success": false,
+          "groups": [
+            {
+              "id": "UnitedStates",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ],
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10.1
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ],
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10.1
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "reservationPartialItemSuccess": {
+        "summary": "Example response with partial item success for groups and locations",
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T22:13:00Z",
+          "success": true,
+          "groups": [
+            {
+              "id": "UnitedStates",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ],
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10.1
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ],
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10.1
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "reservationPartialNoItemSuccess": {
+        "summary": "Example response with no item success for groups and locations",
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T21:18:00Z",
+          "success": false,
+          "groups": [
+            {
+              "id": "Germany",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                },
+                {
+                  "sku": "sku5678",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                },
+                {
+                  "sku": "sku5678",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "reservationNonPartialSomeItemSuccessSomeFail": {
+        "summary": "Example response with some items succeeded and some failed for groups and locations",
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T21:18:00Z",
+          "success": false,
+          "groups": [
+            {
+              "id": "Germany",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                },
+                {
+                  "sku": "sku5678",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                },
+                {
+                  "sku": "sku5678",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "reservationNonPartialAllItemsFail": {
+        "summary": "Example response where all items failed for groups and locations",
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T21:18:00Z",
+          "success": false,
+          "groups": [
+            {
+              "id": "Germany",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                },
+                {
+                  "sku": "sku5678",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku1234",
+                  "errorCode": "InsufficientQuantity"
+                },
+                {
+                  "sku": "sku5678",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "LocationGroupNotFound": {
+        "value": {
+          "errorCode": "GroupDoesNotExist",
+          "message": "No group exists with ID",
+          "type": "about:blank"
+        }
+      },
+      "LocationIdNotFound": {
+        "value": {
+          "errorCode": "LocationDoesNotExist",
+          "message": "No location exists with ID 'warehouse5'",
+          "type": "about:blank"
+        }
+      },
+      "NoLocationOrGroupsNotProvided": {
+        "value": {
+          "errorCode": "InvalidRequest",
+          "message": "No location or groups provided.",
+          "type": "about:blank"
+        }
+      },
+      "TenantNotProvisioned": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "TenantNotProvisioned",
+          "message": "The client is not correctly configured to access the system."
+        }
+      },
+      "CancelReservation": {
+        "value": {
+          "status": "CANCELLED"
+        }
+      },
+      "UpdateReservation": {
+        "value": {
+          "externalRefId": "7282822-9823-aaa",
+          "allowPartialReservations": true,
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "id": "b45a0d25-d9e2-419f-a55a-f435c871fe2b",
+          "locations": [
+            {
+              "id": "warehouse5",
+              "reservations": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                },
+                {
+                  "sku": "sku5678",
+                  "quantity": 7
+                }
+              ],
+              "allOrNothingReservations": {
+                "id": "a14s-4b1c-1a3cbd4",
+                "reservations": [
+                  {
+                    "sku": "sku1234",
+                    "quantity": 10
+                  },
+                  {
+                    "sku": "skuABCDE",
+                    "quantity": 27
+                  }
+                ]
+              }
+            }
+          ],
+          "groups": [
+            {
+              "id": "Arizona",
+              "reservations": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10
+                },
+                {
+                  "sku": "skuHIJKL",
+                  "quantity": 37
+                }
+              ],
+              "allOrNothingReservations": {
+                "id": "a14s-4b1c-1a3cbd4",
+                "reservations": [
+                  {
+                    "sku": "sku1234",
+                    "quantity": 10
+                  },
+                  {
+                    "sku": "skuZYX",
+                    "quantity": 47
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "SuccessfulReservationUpdateResponse": {
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T22:13:00Z",
+          "success": true,
+          "groups": [
+            {
+              "id": "UnitedStates",
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 10,
+                  "adjustment": 5
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 8,
+                  "adjustment": 4
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "PartialQuantitySuccessfulReservationUpdateResponse": {
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T22:13:00Z",
+          "success": false,
+          "groups": [
+            {
+              "id": "Germany",
+              "errors": [
+                {
+                  "sku": "sku3456",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ],
+              "details": [
+                {
+                  "sku": "sku1234",
+                  "quantity": 8,
+                  "adjustment": 4
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku5678",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ],
+              "details": [
+                {
+                  "sku": "sku9875",
+                  "quantity": 8,
+                  "adjustment": 4
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "PartialAllItemsFailedReservationUpdateResponse": {
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T22:13:00Z",
+          "success": false,
+          "groups": [
+            {
+              "id": "Germany",
+              "errors": [
+                {
+                  "sku": "sku3456",
+                  "errorCode": "InsufficientQuantity"
+                },
+                {
+                  "sku": "sku5678",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku6789",
+                  "errorCode": "InsufficientQuantity"
+                },
+                {
+                  "sku": "sku7891",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "FailedUpdateReservationUpdateResponse": {
+        "value": {
+          "reservationTime": "2019-07-24T21:13:00Z",
+          "expirationTime": "2019-07-24T22:13:00Z",
+          "success": false,
+          "groups": [
+            {
+              "id": "Germany",
+              "errors": [
+                {
+                  "sku": "sku3456",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ],
+          "locations": [
+            {
+              "id": "warehouse5",
+              "errors": [
+                {
+                  "sku": "sku6789",
+                  "errorCode": "InsufficientQuantity"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "InvalidRequestParameter": {
+        "value": {
+          "errorCode": "InvalidRequestParameter",
+          "message": "Reservation ID provided does not exist",
+          "parameterName": "reservationId",
+          "type": "about:blank"
+        }
+      },
+      "EntityNotFound": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "EntityNotFound",
+          "message": "Reservation ID does not exist."
+        }
+      },
+      "MoveReservationBatchPostBodyExample": {
+        "value": {
+          "allOrNothingTransferId": "a14s-4b1c-1a3cbd4",
+          "records": [
+            {
+              "id": "82251928-8863-488e-840b-2aebd10b35ed",
+              "externalRefId": "7282822-9823-aaa",
+              "from": {
+                "location": "warehouse4"
+              },
+              "to": {
+                "location": "warehouse5"
+              },
+              "sku": "sku-001",
+              "quantity": 2.011
+            },
+            {
+              "id": "82251928-8863-488e-840b-2aebd10b57ba",
+              "externalRefId": "7282822-9823-bbb",
+              "from": {
+                "group": "UnitedStates"
+              },
+              "to": {
+                "location": "warehouse5"
+              },
+              "sku": "sku-002",
+              "quantity": 7.417,
+              "ignoreAvailabilityCheck": true
+            },
+            {
+              "id": "12345-23456-3456-4567-5678-6F6F",
+              "externalRefId": "1234561-3574-6B6D",
+              "from": {
+                "location": "warehouse5"
+              },
+              "to": {
+                "group": "UnitedStates"
+              },
+              "sku": "sku1000",
+              "quantity": 5.417
+            }
+          ]
+        }
+      },
+      "MoveReservationErrorsResponseExample": {
+        "value": {
+          "errors": [
+            {
+              "details": {
+                "id": "82251928-8863-488e-840b-2aebd10b57ba",
+                "externalRefId": "7282822-9823-aaa",
+                "from": {
+                  "group": "UnitedStates"
+                },
+                "to": {
+                  "location": "warehouse5"
+                },
+                "sku": "sku-002",
+                "quantity": 2.011
+              },
+              "message": "Insufficient Quantity",
+              "errorCode": "InsufficientQuantity"
+            }
+          ]
+        }
+      },
+      "GroupToGroupNotAllowed": {
+        "value": {
+          "errorCode": "InvalidRequestParameter",
+          "message": "Group to Group Transfers are not permitted.",
+          "type": "about:blank"
+        }
+      },
+      "LocationToLocationNotAllowed": {
+        "value": {
+          "errorCode": "InvalidRequestParameter",
+          "message": "'from and to' Transfers between locations is not allowed",
+          "type": "about:blank"
+        }
+      },
+      "ForceReservationLocationToGroupNotAllowed": {
+        "value": {
+          "errorCode": "InvalidRequestParameter",
+          "message": "Forcing a reservation cannot be done from a location to a group",
+          "type": "about:blank"
+        }
+      },
+      "InvalidTransferAllOrNothing": {
+        "value": {
+          "errorCode": "InvalidRequestParameter",
+          "message": "All or nothing transfers are only allowed from Group to Location transfer types. Invalid transfer type for request",
+          "type": "about:blank"
+        }
+      },
+      "GenericErrorMessage": {
+        "value": {
+          "errorCode": "InvalidRequest",
+          "message": "The format of the message is incorrect",
+          "type": "about:blank"
+        }
+      },
+      "TooManyFieldsProvided": {
+        "value": {
+          "errorCode": "InvalidRequestParameter",
+          "message": "User provided locationId AND groupId.  You can only provide one or the other, not both in a single record.",
+          "type": "about:blank"
+        }
+      },
+      "FulfillQuantityRequestBodyExample": {
+        "summary": "Example request body for fulfill quantity",
+        "value": {
+          "records": [
+            {
+              "id": "82251928-8863-488e-840b-2aebd10b57ba",
+              "externalRefId": "7282822-9823-aaa",
+              "location": "warehouse5",
+              "sku": "sku1234",
+              "quantity": 1200.35,
+              "fulfillmentTime": "2019-07-24T21:13:00Z"
+            },
+            {
+              "id": "82251928-8863-488e-840b-2aeb567d3a87",
+              "externalRefId": "7282822-9823-ddd",
+              "location": "warehouse4",
+              "sku": "sku5678",
+              "quantity": 201.27
+            }
+          ]
+        }
+      },
+      "MissingParameter": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "MissingParameter",
+          "message": "The field 'quantity' is missing from the request body."
+        }
+      },
+      "IDDoesNotExist": {
+        "value": {
+          "type": "about:blank",
+          "errorCode": "InvalidRequestParameter",
+          "message": "ID does not exist."
         }
       }
     },
     "securitySchemes": {
       "AmOAuth2": {
         "type": "oauth2",
+        "description": "AccountManager OAuth 2.0 bearer token Authentication.",
         "flows": {
           "clientCredentials": {
             "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",

@@ -191,6 +191,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     assetQuery: json.assetQuery,
     cipHost: json.cipHost,
     docsCategories: json.docsCategories,
+    scapiSchemas: json.scapiSchemas,
     instanceName: json.name,
     authMethods,
     accountManagerHost: json.accountManagerHost,
@@ -340,6 +341,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   if (config.docsCategories !== undefined) {
     result.docsCategories = config.docsCategories;
   }
+  if (config.scapiSchemas !== undefined) {
+    result.scapiSchemas = config.scapiSchemas;
+  }
   if (config.mrtProject !== undefined) {
     result.mrtProject = config.mrtProject;
   }
@@ -454,6 +458,21 @@ export interface MergeConfigResult {
  * // warnings = [{ code: 'HOSTNAME_MISMATCH', ... }]
  * ```
  */
+/**
+ * Whether two hostnames name the same server, ignoring case, an `https://`
+ * scheme, the default port and a trailing slash.
+ */
+export function isSameHostname(a: string, b: string): boolean {
+  const normalize = (hostname: string) =>
+    hostname
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/+$/, '')
+      .replace(/:443$/, '');
+  return normalize(a) === normalize(b);
+}
+
 export function mergeConfigsWithProtection(
   overrides: Partial<NormalizedConfig>,
   base: NormalizedConfig,
@@ -465,7 +484,8 @@ export function mergeConfigsWithProtection(
 
   // Check for hostname mismatch
   const hostnameExplicitlyProvided = Boolean(overrides.hostname);
-  const hostnameMismatch = hostnameExplicitlyProvided && Boolean(base.hostname) && overrides.hostname !== base.hostname;
+  const hostnameMismatch =
+    hostnameExplicitlyProvided && Boolean(base.hostname) && !isSameHostname(overrides.hostname!, base.hostname!);
 
   if (hostnameMismatch && hostnameProtection) {
     warnings.push({
@@ -566,6 +586,8 @@ export function mergeConfigsWithProtection(
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,
       assetQuery: overrides.assetQuery ?? base.assetQuery,
+      docsCategories: overrides.docsCategories ?? base.docsCategories,
+      scapiSchemas: overrides.scapiSchemas ?? base.scapiSchemas,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       realm: overrides.realm ?? base.realm,

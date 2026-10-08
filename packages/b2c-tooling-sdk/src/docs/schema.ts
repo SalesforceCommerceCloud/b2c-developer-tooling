@@ -6,12 +6,14 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import Fuse from 'fuse.js';
+import type MiniSearch from 'minisearch';
+import {createRankedIndex} from '../search/ranking.js';
 import {XSD_DATA_DIR, type SchemaEntry, type SchemaIndex, type SchemaSearchResult} from './types.js';
 
-// Lazy-loaded index and Fuse instance
+// Lazy-loaded index and search instance
 let schemaIndex: SchemaIndex | null = null;
-let fuseInstance: Fuse<SchemaEntry> | null = null;
+let searchInstance: MiniSearch | null = null;
+const entryById = new Map<string, SchemaEntry>();
 
 /**
  * Load the schema index from disk.
@@ -24,24 +26,35 @@ function loadIndex(): SchemaIndex {
   const indexPath = path.join(XSD_DATA_DIR, 'index.json');
   const content = fs.readFileSync(indexPath, 'utf-8');
   schemaIndex = JSON.parse(content) as SchemaIndex;
+  for (const entry of schemaIndex.entries) entryById.set(entry.id, entry);
   return schemaIndex;
 }
 
 /**
- * Get or create the Fuse.js search instance.
+ * Get or create the search instance over schema IDs.
  */
-function getFuse(): Fuse<SchemaEntry> {
-  if (fuseInstance) {
-    return fuseInstance;
+function getSearch(): MiniSearch {
+  if (searchInstance) {
+    return searchInstance;
   }
 
-  const index = loadIndex();
-  fuseInstance = new Fuse(index.entries, {
-    keys: [{name: 'id', weight: 1}],
-    includeScore: true,
-    threshold: 0.4,
-  });
-  return fuseInstance;
+  searchInstance = createRankedIndex(loadIndex().entries.map((entry) => ({id: entry.id, title: entry.id})));
+  return searchInstance;
+}
+
+/**
+ * Rank schema IDs for a query. IDs are compound words ("giftcertificate"), so the query is also tried with
+ * separators removed; "gift certificate" and "gift-certificate" both match.
+ */
+function rankSchemas(query: string, limit: number): SchemaSearchResult[] {
+  const compact = query.toLowerCase().replaceAll(/[^a-z\d]+/g, '');
+  return getSearch()
+    .search(
+      {combineWith: 'OR', queries: compact ? [query, compact] : [query]},
+      {fuzzy: (term) => (term.length > 3 ? 0.25 : false)},
+    )
+    .slice(0, limit)
+    .map((result) => ({entry: entryById.get(result.id as string)!, score: result.score}));
 }
 
 /**
@@ -96,18 +109,16 @@ export function readSchemaByQuery(query: string): {entry: SchemaEntry; content: 
   }
 
   // Try fuzzy search
-  const fuse = getFuse();
-  const results = fuse.search(query, {limit: 1});
+  const [bestMatch] = rankSchemas(query, 1);
 
-  if (results.length === 0) {
+  if (!bestMatch) {
     return null;
   }
 
-  const bestMatch = results[0];
-  const filePath = path.join(XSD_DATA_DIR, bestMatch.item.filePath);
+  const filePath = path.join(XSD_DATA_DIR, bestMatch.entry.filePath);
   const content = fs.readFileSync(filePath, 'utf-8');
 
-  return {entry: bestMatch.item, content, path: filePath};
+  return {entry: bestMatch.entry, content, path: filePath};
 }
 
 /**
@@ -115,7 +126,7 @@ export function readSchemaByQuery(query: string): {entry: SchemaEntry; content: 
  *
  * @param query - The search query string to match against schema IDs
  * @param limit - Maximum number of results to return (default: 20)
- * @returns Array of schema search results with relevance scores, sorted by match score (lower scores indicate better matches)
+ * @returns Array of schema search results with relevance scores, best match first (higher scores indicate better matches)
  *
  * @example
  * ```typescript
@@ -124,11 +135,5 @@ export function readSchemaByQuery(query: string): {entry: SchemaEntry; content: 
  * ```
  */
 export function searchSchemas(query: string, limit = 20): SchemaSearchResult[] {
-  const fuse = getFuse();
-  const results = fuse.search(query, {limit});
-
-  return results.map((result) => ({
-    entry: result.item,
-    score: result.score ?? 0,
-  }));
+  return rankSchemas(query, limit);
 }

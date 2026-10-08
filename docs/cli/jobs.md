@@ -126,15 +126,19 @@ b2c job run my-custom-job --wait --json
 
 ### System Jobs with Custom Request Bodies
 
-Some system jobs (like search indexing) use non-standard request schemas that don't follow the `parameters` array format. Use `--body` to provide a raw JSON request body:
+System jobs (`sfcc-*`, such as search indexing) do not accept the `parameters` array, so `-P` fails for them. Use `--body` with the job's own JSON document. The body is identical for SCAPI and OCAPI; `site_scope` is an array of site IDs:
 
 ```bash
-# Run search index job for specific sites
+# Rebuild the product search index for specific sites
 b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch","SiteGenesis"]}'
 
-# Run search index job for a single site
+# Rebuild the product search index for a single site
 b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch"]}'
 ```
+
+The same `{"site_scope":[...]}` body applies to `sfcc-search-index-{product,content,active-data}-{full,incremental}-update`. See the OCAPI [SearchIndexUpdateConfiguration](https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/searchindexupdateconfiguration.html) document.
+
+A SCAPI 400 (invalid request body) is reported as-is and is not retried over OCAPI. When `--api-backend auto` falls back on an auth or capability rejection and OCAPI also fails, the error includes both messages.
 
 ---
 
