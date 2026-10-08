@@ -542,9 +542,6 @@ importers:
       ejs:
         specifier: 3.1.10
         version: 3.1.10
-      fuse.js:
-        specifier: 7.1.0
-        version: 7.1.0
       glob:
         specifier: 'catalog:'
         version: 13.0.0
@@ -14554,7 +14551,8 @@ snapshots:
 
   functions-have-names@1.2.3: {}
 
-  fuse.js@7.1.0: {}
+  fuse.js@7.1.0:
+    optional: true
 
   generator-function@2.0.1: {}
 
