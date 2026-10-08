@@ -57,6 +57,21 @@ describe('SCAPI code tools', function () {
     expect(readJson(result)).to.have.property('resolution');
   });
 
+  it('gives execute programs the same spec as search, so discovery and calls can share one run', async () => {
+    const [, execute] = createScapiCodeTools(() => Services.fromResolvedConfig(createMockResolvedConfig({})));
+    const result = await execute.handler({
+      skillRead: true,
+      code: `async () => {
+        const [match] = await spec.search('create product', {limit: 1});
+        return {match, operationId: spec.paths[match.path][match.method].operationId};
+      }`,
+    });
+    expect(result.isError).not.to.equal(true);
+    const data = readJson(result).result as {match: {operationId: string}; operationId: string};
+    expect(data.match.operationId).to.equal('createProduct');
+    expect(data.operationId).to.equal('createProduct');
+  });
+
   it('requires skill acknowledgment before configuration or code execution on both tools', async () => {
     const load = stub().throws(new Error('Configuration must not load'));
     await Promise.all(

@@ -319,6 +319,13 @@ export function createScapiCodeTools(
             ]),
           );
           return await registry.start(input, context, async (execution) => {
+            // Live contracts discovered for this tenant replace bundled ones, and local ones replace both;
+            // the user owns their accuracy. The same set backs spec in the program and request matching.
+            const documents = mergeScapiSchemas(
+              loadScapiSchemas(),
+              tenant ? schemaCache.get(tenant) : [],
+              localDocuments,
+            );
             let managedRequest: ReturnType<typeof createScapiRequest>;
             const request = async (options: unknown, signal: AbortSignal) => {
               if (!shortCode || !tenantId)
@@ -335,9 +342,7 @@ export function createScapiCodeTools(
                   slasClientId: config.values.slasClientId,
                   slasClientSecret: config.values.slasClientSecret,
                 }),
-                // Live contracts discovered for this tenant replace bundled ones, and local ones replace both;
-                // the user owns their accuracy.
-                documents: mergeScapiSchemas(loadScapiSchemas(), tenant ? schemaCache.get(tenant) : [], localDocuments),
+                documents,
                 onSchema(document, full) {
                   // Keep full tenant contracts (custom properties and prose) from being replaced by lighter fetches.
                   if (tenant && (full || document.entry.apiFamily === 'custom')) schemaCache.put(tenant, document);
@@ -360,6 +365,7 @@ export function createScapiCodeTools(
             try {
               const result = await runScapiCode({
                 code: input.code!,
+                documents,
                 request: (options, signal) => execution.runCall('request', options, () => request(options, signal)),
                 auth: (operation, options, signal) =>
                   execution.runCall('auth', undefined, () => auth(operation, options, signal)),
