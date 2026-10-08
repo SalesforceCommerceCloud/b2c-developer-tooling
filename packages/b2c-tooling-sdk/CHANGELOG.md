@@ -1,5 +1,15 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.6.0
+
+### Minor Changes
+
+- [#750](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/750) [`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e) - SCAPI code mode adds `spec.search()`, a ranked, typo-tolerant search over operation summaries, descriptions, tags, ids and paths, so assistants can find less familiar APIs by describing the task instead of guessing a regex. `scapi_execute` programs now get the same `spec` as `scapi_search` (it was previously empty there), so discovery and calls can share one run. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#750](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/750) [`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e) - XSD schema search now uses the same ranking as docs search and finds compound schema names from spaced queries (for example "gift certificate" or "content slot"). `searchSchemas()` scores are now higher-is-better, matching `searchDocs()`; the `fuse.js` dependency is removed. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.5.0
 
 ### Minor Changes
