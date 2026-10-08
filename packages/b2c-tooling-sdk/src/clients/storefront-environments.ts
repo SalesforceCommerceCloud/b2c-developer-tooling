@@ -13,15 +13,15 @@
  *
  * This is one of the SCAPI `Storefront` API family (`storefront/<api>/v1`): a
  * dedicated client per API, each with its own path segment, spec, and scope
- * family. This client currently covers the Environments API's
- * environment-variables sub-resource (read + merge-PATCH), the
+ * family. This client covers the Environments API's lifecycle surface
+ * (list/create/clone/get/update/delete, set-primary, and cache-invalidation),
+ * the environment-variables sub-resource (read + merge-PATCH), the
  * access-control-headers sub-resource (list/create/get/delete), and the
  * redirects sub-resource (list/create/get/update/delete + clone action), which
- * is what the `mrt env var`, `mrt env access-control`, and `mrt env redirect`
- * commands need; the broader environment lifecycle surface is intentionally out
- * of scope. Sibling clients (`storefront-deployments`, `storefront-storefronts`)
- * follow the same pattern. The MRT-level composition of these clients lives in
- * `operations/mrt`.
+ * is what the `mrt env` lifecycle commands plus `mrt env var`,
+ * `mrt env access-control`, and `mrt env redirect` need. Sibling clients
+ * (`storefront-deployments`, `storefront-storefronts`) follow the same pattern.
+ * The MRT-level composition of these clients lives in `operations/mrt`.
  *
  * ID mapping for B2C Commerce MRT:
  *   - `organizationId` = `f_ecom_<tenant>`
@@ -43,6 +43,18 @@ export type {paths, components};
 export type StorefrontEnvironmentsClient = Client<paths>;
 export type StorefrontEnvironmentsResponse<T> = T extends {content: {'application/json': infer R}} ? R : never;
 export type StorefrontEnvironmentsError = components['schemas']['ErrorResponse'];
+
+export type Environment = components['schemas']['Environment'];
+export type EnvironmentResult = components['schemas']['EnvironmentResult'];
+export type EnvironmentCreateRequest = components['schemas']['EnvironmentCreateRequest'];
+export type EnvironmentUpdateRequest = components['schemas']['EnvironmentUpdateRequest'];
+export type EnvironmentCloneRequest = components['schemas']['EnvironmentCloneRequest'];
+export type CacheInvalidationRequest = components['schemas']['CacheInvalidationRequest'];
+/** Environment lifecycle status (`building` | `ready` | `build_failed` | `deleting` | `deleted` | `delete_failed`). */
+export type EnvironmentStatus = components['schemas']['EnvironmentStatus'];
+/** AWS region (underscored form) for an environment's SSR function. */
+export type SsrRegion = components['schemas']['SsrRegion'];
+export type SsrProxyConfig = components['schemas']['SsrProxyConfig'];
 
 export type EnvironmentVariables = components['schemas']['EnvironmentVariables'];
 export type EnvironmentVariableEntry = components['schemas']['EnvironmentVariableEntry'];

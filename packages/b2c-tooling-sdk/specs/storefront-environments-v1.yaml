@@ -11,27 +11,32 @@ openapi: "3.0.3"
 # is not directly consumable by openapi-typescript, and every other spec in this
 # repo is a single self-contained file, so this file inlines the referenced
 # components: the standard SCAPI `organizationId`/`storefrontId`/`environmentId`
-# parameters and the RFC 7807 `ErrorResponse` envelope.
+# parameters, the RFC 7807 `ErrorResponse` envelope, and the paginated-result
+# fields (`limit`/`offset`/`total`) that the upstream spec pulls in via
+# `PaginatedResultBase`.
 #
-# Scope note: this bundle covers the environment-variables sub-resource (GET +
-# merge-PATCH), the access-control-headers sub-resource (list/create/get/
-# delete), and the redirects sub-resource (list/create/get/update/delete and the
-# `/redirects/actions/clone` action), which is what the `mrt env var`,
-# `mrt env access-control`, and `mrt env redirect` commands need. The broader
-# Environments lifecycle surface (list/create/clone/get/update/delete/...) is
-# intentionally omitted; it belongs to a later story. When adding that surface or
-# bumping to a newer upstream version, re-bundle from the same source path.
+# Scope note: this bundle covers the environment lifecycle surface
+# (list/create/clone/get/update/delete, set-primary, and cache-invalidation),
+# the environment-variables sub-resource (GET + merge-PATCH), the
+# access-control-headers sub-resource (list/create/get/delete), and the
+# redirects sub-resource (list/create/get/update/delete and the
+# `/redirects/actions/clone` action), which is what the `mrt env` lifecycle
+# commands plus `mrt env var`, `mrt env access-control`, and `mrt env redirect`
+# need. When bumping to a newer upstream version, re-bundle from the same source
+# path.
 # ---------------------------------------------------------------------------
 info:
   x-api-type: Admin
   x-api-family: Storefront
   title: Environments
-  version: 1.0.1
+  version: 1.0.5
   description: >-
-    SCAPI Managed Runtime Storefront Environments API. Read and update the
-    environment variables for a storefront environment (values masked, merge-PATCH
-    semantics), manage the access control headers on an environment
-    (list/create/get/delete; header values masked on read), and manage the URL
+    SCAPI Managed Runtime Storefront Environments API. Manage the lifecycle of a
+    storefront's environments (list/create/clone/get/update/delete, set the
+    primary environment, and trigger CDN cache invalidations); read and update
+    the environment variables for an environment (values masked, merge-PATCH
+    semantics); manage the access control headers on an environment
+    (list/create/get/delete; header values masked on read); and manage the URL
     redirects on an environment (list/create/get/update/delete, plus cloning all
     redirects from another environment).
 servers:
@@ -40,6 +45,280 @@ servers:
       shortCode:
         default: "123456gf"
 paths:
+  /organizations/{organizationId}/storefronts/{storefrontId}/environments:
+    get:
+      summary: Get environments for a storefront.
+      description: >-
+        Retrieves the list of environments belonging to the specified
+        storefront, ordered by creation date in ascending order.
+      operationId: getEnvironmentsForStorefront
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - name: limit
+          in: query
+          required: false
+          description: Number of records to retrieve per request. Must be between 1 and 200. Defaults to 25.
+          schema:
+            type: integer
+            format: int32
+            default: 25
+            minimum: 1
+            maximum: 200
+        - name: offset
+          in: query
+          required: false
+          description: Zero-based index of the first record to include in the result.
+          schema:
+            type: integer
+            format: int32
+            default: 0
+            minimum: 0
+      responses:
+        "200":
+          description: List of environments successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentResult"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.environments"
+            - "sfcc.storefront.environments.rw"
+    post:
+      summary: Create an environment for a storefront.
+      description: >-
+        Queues creation of a new environment for the specified storefront.
+        Returns immediately with the environment resource in the `building`
+        status. Poll the environment by ID to track provisioning progress.
+      operationId: createEnvironmentForStorefront
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentCreateRequest"
+      responses:
+        "202":
+          description: Environment creation successfully queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        "400":
+          $ref: "#/components/responses/400BadRequest"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.environments.rw"
+  /organizations/{organizationId}/storefronts/{storefrontId}/environments/clone:
+    post:
+      summary: Clone an environment for a storefront.
+      description: >-
+        Queues creation of a new environment for the specified storefront by
+        cloning an existing environment. Returns immediately with the
+        environment resource in the `building` status. Poll the environment by
+        ID to track provisioning progress. The clone always starts as a
+        non-primary environment.
+      operationId: cloneEnvironmentForStorefront
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentCloneRequest"
+      responses:
+        "202":
+          description: Environment clone successfully queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        "400":
+          $ref: "#/components/responses/400BadRequest"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.environments.rw"
+  /organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}:
+    get:
+      summary: Get an environment by ID.
+      description: Retrieves the details of a specific environment, including its current status.
+      operationId: getEnvironmentById
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/environmentId"
+      responses:
+        "200":
+          description: Environment successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.environments"
+            - "sfcc.storefront.environments.rw"
+    patch:
+      summary: Update an environment.
+      description: >-
+        Partially updates the specified environment. Only the supplied fields
+        are changed; at least one field must be provided.
+      operationId: updateEnvironment
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/environmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentUpdateRequest"
+      responses:
+        "200":
+          description: Environment successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        "400":
+          $ref: "#/components/responses/400BadRequest"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.environments.rw"
+    delete:
+      summary: Delete an environment.
+      description: >-
+        Queues deletion of the environment. Returns immediately with the
+        environment resource in the `deleting` status. Poll the environment by
+        ID to track deletion progress.
+      operationId: deleteEnvironment
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/environmentId"
+      responses:
+        "202":
+          description: Environment deletion successfully queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+        "409":
+          $ref: "#/components/responses/409Conflict"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.environments.rw"
+  /organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/primary:
+    put:
+      summary: Set an environment as the storefront's primary environment.
+      description: >-
+        Marks the specified environment as the storefront's primary
+        environment. The environment must have a status of `ready` or
+        `build_failed`. Idempotent — setting an already-primary environment as
+        primary again has no effect.
+      operationId: setPrimaryEnvironment
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/environmentId"
+      responses:
+        "200":
+          description: Environment successfully set as primary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+        "409":
+          $ref: "#/components/responses/409Conflict"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.environments.rw"
+  /organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/cache-invalidations:
+    post:
+      summary: Trigger a cache invalidation.
+      description: >-
+        Triggers a CDN cache invalidation on the environment for the supplied
+        path prefix. Invalidation is always a wildcard operation — every cached
+        path beginning with the prefix is cleared. The request is
+        fire-and-forget: it returns `202 Accepted` with an empty body and no
+        invalidation id to poll, and the invalidation itself is performed
+        asynchronously. The environment must have an SSR bundle deployed.
+      operationId: createCacheInvalidation
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/environmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CacheInvalidationRequest"
+      responses:
+        "202":
+          description: Cache invalidation accepted. The invalidation is processed asynchronously; no body is returned.
+        "400":
+          $ref: "#/components/responses/400BadRequest"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+        "429":
+          $ref: "#/components/responses/429TooManyRequests"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.environments.rw"
   /organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/environment-variables:
     get:
       summary: Get environment variables for an environment.
@@ -555,6 +834,21 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    409Conflict:
+      description: >-
+        The request conflicts with the current state of the resource (for
+        example, deleting the primary environment, or setting an environment
+        that is not `ready`/`build_failed` as primary).
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    429TooManyRequests:
+      description: The request was throttled by the backend rate limits. Retry later.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
     # Standard SCAPI RFC 7807 error envelope (inlined from commerce-cloud-standards-oas).
     ErrorResponse:
@@ -576,6 +870,439 @@ components:
         - detail
         - title
         - type
+    EnvironmentStatus:
+      type: string
+      description: The current provisioning or lifecycle status of the environment.
+      enum:
+        - building
+        - ready
+        - build_failed
+        - deleting
+        - deleted
+        - delete_failed
+      example: "ready"
+    SsrRegion:
+      type: string
+      description: >-
+        The AWS region for the server-side rendering function of the
+        environment. Each value corresponds to the AWS region of the same name
+        with underscores substituted for hyphens (for example, `us_east_2` is
+        the AWS region `us-east-2`).
+      enum:
+        - us_east_1
+        - us_east_2
+        - us_west_1
+        - us_west_2
+        - ap_south_1
+        - ap_south_2
+        - ap_northeast_2
+        - ap_southeast_1
+        - ap_southeast_2
+        - ap_southeast_3
+        - ap_northeast_1
+        - ap_northeast_3
+        - ca_central_1
+        - eu_central_1
+        - eu_central_2
+        - eu_west_1
+        - eu_west_2
+        - eu_west_3
+        - eu_north_1
+        - eu_south_1
+        - sa_east_1
+      example: "us_east_2"
+    SsrProxyConfig:
+      type: object
+      description: >-
+        A single proxy configuration entry for the environment, defined by its
+        `path`, `host`, and `protocol`.
+      additionalProperties: false
+      properties:
+        path:
+          type: string
+          description: The request path prefix routed to the proxy origin.
+          maxLength: 2048
+          example: "/api"
+        host:
+          type: string
+          description: The proxy origin host.
+          maxLength: 255
+          example: "api.example.com"
+        protocol:
+          type: string
+          description: The protocol used to reach the proxy origin. Only `https` is supported.
+          enum:
+            - https
+          example: "https"
+    Environment:
+      description: >-
+        An environment within Managed Runtime (MRT) where storefronts are
+        deployed to separate phases of the development lifecycle, such as
+        development, staging, or production.
+      type: object
+      required:
+        - environmentId
+        - displayName
+        - status
+        - isPrimary
+      properties:
+        environmentId:
+          type: string
+          description: >-
+            The generated environment identifier. Unique within the storefront,
+            with an auto-generated hash suffix.
+          minLength: 1
+          maxLength: 19
+          pattern: "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          example: "production-a1b2c3d4"
+        displayName:
+          type: string
+          description: The display name of the environment.
+          maxLength: 256
+          example: "Production"
+        status:
+          $ref: "#/components/schemas/EnvironmentStatus"
+        isPrimary:
+          type: boolean
+          description: >-
+            Indicates whether the environment is the storefront's primary
+            environment. Only one environment per storefront can be primary.
+          example: true
+        subdomain:
+          type: string
+          nullable: true
+          description: >-
+            The subdomain assigned to this environment. Available after the
+            environment finishes building and null before then.
+          maxLength: 256
+          example: "production"
+        mrtOrigin:
+          type: string
+          nullable: true
+          description: >-
+            The Managed Runtime origin URL that backs this environment.
+            Available after the environment finishes building and null before
+            then.
+          maxLength: 512
+          example: "https://production-my-storefront.exp-delivery.com"
+        defaultEcdnHostname:
+          type: string
+          nullable: true
+          description: >-
+            The eCDN hostname for the environment's default domain zone, used by
+            the preview link. Available after the environment finishes building
+            and null before then.
+          maxLength: 256
+          example: "marketstreetb82739d375a9270f.zzzz-001.my.cc.salesforce.com"
+        creationDate:
+          type: string
+          format: date-time
+          description: The timestamp when the environment was created.
+          example: "2026-04-08T21:47:28.188965Z"
+        lastModified:
+          type: string
+          format: date-time
+          description: The timestamp when the environment was last modified.
+          example: "2026-04-08T21:47:31.307595Z"
+        ssrRegion:
+          $ref: "#/components/schemas/SsrRegion"
+        ssrArchitecture:
+          type: string
+          nullable: true
+          description: >-
+            The architecture for the environment's server-side rendering
+            function. Null when no architecture default is configured.
+          enum:
+            - x86
+            - arm64
+          example: "arm64"
+        ssrExternalHostname:
+          type: string
+          nullable: true
+          description: >-
+            The full custom hostname used by the environment (e.g.
+            www.customer.com). Null when not configured.
+          maxLength: 128
+          example: "www.customer.com"
+        ssrExternalDomain:
+          type: string
+          nullable: true
+          description: >-
+            The external domain for the ssrExternalHostname (e.g. customer.com).
+            When omitted it is derived from ssrExternalHostname. Null when not
+            configured.
+          maxLength: 128
+          example: "customer.com"
+        ssrWhitelistedIps:
+          type: string
+          nullable: true
+          description: >-
+            A space-separated list of IPv4 or IPv6 CIDR blocks permitted to
+            access the environment. Null or empty allows all IPs.
+          maxLength: 8192
+          example: "192.0.2.0/24 198.51.100.0/24"
+        ssrProxyConfigs:
+          type: array
+          nullable: true
+          description: The proxy configurations for the environment. Null when none are configured.
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/SsrProxyConfig"
+        isProduction:
+          type: boolean
+          description: Whether the environment is provisioned with production-tier capacity.
+          example: false
+        allowCookies:
+          type: boolean
+          description: Whether cookies are forwarded to and respected from the environment's origin.
+          example: true
+        preserveProxyUserAgent:
+          type: boolean
+          description: >-
+            Whether the end-user's User-Agent header is preserved on requests
+            forwarded through the environment's configured proxies.
+          example: false
+        enableSourceMaps:
+          type: boolean
+          description: Whether source maps are enabled for the environment's server-side rendering bundle.
+          example: false
+        logLevel:
+          type: string
+          nullable: true
+          description: >-
+            The minimum log level emitted by the environment's server-side
+            rendering function. Null when inherited from the default.
+          enum:
+            - trace
+            - debug
+            - info
+            - warn
+            - error
+            - fatal
+          example: "warn"
+        distributedTracing:
+          type: boolean
+          description: Whether distributed tracing is enabled for the environment.
+          example: false
+        distributedTracingSamplingRate:
+          type: number
+          format: double
+          description: The fraction of requests sampled for distributed tracing.
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.1
+        certificateId:
+          type: integer
+          format: int32
+          nullable: true
+          description: >-
+            The identifier of the certificate associated with the environment's
+            custom domain. Null when using the default Managed Runtime domain.
+          minimum: 0
+          example: 42
+    EnvironmentResult:
+      description: Paginated result containing a list of environments.
+      type: object
+      required:
+        - limit
+        - offset
+        - total
+        - data
+      properties:
+        limit:
+          type: integer
+          format: int32
+          description: Maximum number of records returned per request.
+          example: 25
+        offset:
+          type: integer
+          format: int32
+          description: Zero-based index of the first record included in the result.
+          example: 0
+        total:
+          type: integer
+          format: int32
+          description: Total number of environments matching the request.
+          example: 3
+        data:
+          type: array
+          description: The list of environments belonging to the storefront. May be empty.
+          items:
+            $ref: "#/components/schemas/Environment"
+    EnvironmentCreateRequest:
+      description: Request body to create an environment for a storefront.
+      type: object
+      required:
+        - displayName
+      properties:
+        displayName:
+          type: string
+          description: The display name for the new environment.
+          maxLength: 256
+          example: "Production"
+    EnvironmentUpdateRequest:
+      description: >-
+        Request body to update an environment. Every field is optional and only
+        the supplied fields are changed; at least one field must be provided.
+      type: object
+      minProperties: 1
+      properties:
+        displayName:
+          type: string
+          description: The new display name for the environment.
+          maxLength: 256
+          example: "Production"
+        ssrRegion:
+          $ref: "#/components/schemas/SsrRegion"
+        ssrArchitecture:
+          type: string
+          nullable: true
+          description: >-
+            The architecture for the environment's server-side rendering
+            function. Set to null to inherit the storefront default.
+          enum:
+            - x86
+            - arm64
+          example: "arm64"
+        ssrExternalHostname:
+          type: string
+          nullable: true
+          description: >-
+            The full custom hostname used by the environment (e.g.
+            www.customer.com). Set to null to clear it.
+          maxLength: 128
+          example: "www.customer.com"
+        ssrExternalDomain:
+          type: string
+          nullable: true
+          description: >-
+            The external domain for the ssrExternalHostname (e.g. customer.com).
+            When omitted it is derived from ssrExternalHostname. Set to null to
+            clear it.
+          maxLength: 128
+          example: "customer.com"
+        ssrWhitelistedIps:
+          type: string
+          nullable: true
+          description: >-
+            A space-separated list of IPv4 or IPv6 CIDR blocks permitted to
+            access the environment. Set to null or empty to allow all IPs.
+          maxLength: 8192
+          example: "192.0.2.0/24 198.51.100.0/24"
+        ssrProxyConfigs:
+          type: array
+          nullable: true
+          description: The proxy configurations for the environment. Set to null to clear them.
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/SsrProxyConfig"
+        isProduction:
+          type: boolean
+          description: Whether the environment is provisioned with production-tier capacity.
+          example: false
+        allowCookies:
+          type: boolean
+          description: Whether cookies are forwarded to and respected from the environment's origin.
+          example: true
+        preserveProxyUserAgent:
+          type: boolean
+          description: >-
+            Whether the end-user's User-Agent header is preserved on requests
+            forwarded through the environment's configured proxies.
+          example: false
+        enableSourceMaps:
+          type: boolean
+          description: Whether source maps are enabled for the environment's server-side rendering bundle.
+          example: false
+        logLevel:
+          type: string
+          nullable: true
+          description: >-
+            The minimum log level emitted by the environment's server-side
+            rendering function. Set to null to inherit the default.
+          enum:
+            - trace
+            - debug
+            - info
+            - warn
+            - error
+            - fatal
+          example: "warn"
+        distributedTracing:
+          type: boolean
+          description: Whether distributed tracing is enabled for the environment.
+          example: false
+        distributedTracingSamplingRate:
+          type: number
+          format: double
+          description: The fraction of requests sampled for distributed tracing.
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.1
+        certificateId:
+          type: integer
+          format: int32
+          nullable: true
+          description: >-
+            The identifier of the certificate to associate with the
+            environment's custom domain. Set to null to remove the certificate
+            association. Not permitted when using the default Managed Runtime
+            domain.
+          minimum: 0
+          example: 42
+    EnvironmentCloneRequest:
+      description: Request body to create an environment by cloning an existing one.
+      type: object
+      required:
+        - sourceEnvironmentId
+        - displayName
+      properties:
+        sourceEnvironmentId:
+          type: string
+          description: The identifier of the environment to clone.
+          minLength: 1
+          maxLength: 19
+          pattern: "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          example: "production-a1b2c3d4"
+        displayName:
+          type: string
+          description: The display name for the new environment.
+          maxLength: 256
+          example: "Production (EU)"
+        cloneEnvironmentVariables:
+          type: boolean
+          description: Whether to copy the source environment's environment variables to the new environment.
+          default: false
+          example: true
+        cloneRedirects:
+          type: boolean
+          description: Whether to copy the source environment's redirects to the new environment.
+          default: false
+          example: true
+        cloneB2cTargetInfo:
+          type: boolean
+          description: Whether to copy the source environment's B2C Commerce target information to the new environment.
+          default: true
+          example: true
+    CacheInvalidationRequest:
+      description: Request body to trigger a CDN cache invalidation on the environment.
+      type: object
+      required:
+        - pattern
+      properties:
+        pattern:
+          type: string
+          description: >-
+            The path prefix to invalidate. Must start with `/`. Cache
+            invalidation is always a wildcard operation: the CDN clears every
+            cached path that begins with this value (a trailing `*` is always
+            implied), so `/products` and `/products*` invalidate the same paths.
+            If the value contains a `*`, only the portion before the first `*`
+            is used as the prefix and the remainder is ignored. The invalidation
+            is performed asynchronously.
+          minLength: 1
+          pattern: "^/.*$"
+          example: "/products/*"
     PublishingStatus:
       type: string
       description: The publishing status of an environment variable.

@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Flags, ux} from '@oclif/core';
-import cliui from 'cliui';
+import {Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {updateEnv, type MrtEnvironmentUpdate} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {updateEnvironmentWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
+import {printEnvView} from './get.js';
 
 /**
  * Proxy configuration for SSR.
@@ -41,59 +41,6 @@ function parseProxyString(proxyStr: string): SsrProxyConfig {
 }
 
 /**
- * Print environment details in a formatted table.
- */
-function printEnvDetails(env: MrtEnvironmentUpdate, project: string): void {
-  const ui = cliui({width: process.stdout.columns || 80});
-  const labelWidth = 18;
-
-  ui.div('');
-  ui.div({text: 'Slug:', width: labelWidth}, {text: env.slug ?? ''});
-  ui.div({text: 'Name:', width: labelWidth}, {text: env.name ?? ''});
-  ui.div({text: 'Project:', width: labelWidth}, {text: project});
-  ui.div({text: 'State:', width: labelWidth}, {text: env.state ?? 'unknown'});
-  ui.div({text: 'Production:', width: labelWidth}, {text: env.is_production ? 'Yes' : 'No'});
-
-  if (env.ssr_region) {
-    ui.div({text: 'Region:', width: labelWidth}, {text: env.ssr_region});
-  }
-
-  if (env.hostname) {
-    ui.div({text: 'Hostname:', width: labelWidth}, {text: env.hostname});
-  }
-
-  if (env.ssr_external_hostname) {
-    ui.div({text: 'External Host:', width: labelWidth}, {text: env.ssr_external_hostname});
-  }
-
-  if (env.ssr_external_domain) {
-    ui.div({text: 'External Domain:', width: labelWidth}, {text: env.ssr_external_domain});
-  }
-
-  if (env.allow_cookies) {
-    ui.div({text: 'Allow Cookies:', width: labelWidth}, {text: 'Yes'});
-  }
-
-  if (env.enable_source_maps) {
-    ui.div({text: 'Source Maps:', width: labelWidth}, {text: 'Yes'});
-  }
-
-  if (env.log_level) {
-    ui.div({text: 'Log Level:', width: labelWidth}, {text: env.log_level});
-  }
-
-  if (env.ssr_proxy_configs && env.ssr_proxy_configs.length > 0) {
-    ui.div({text: 'Proxies:', width: labelWidth}, {text: ''});
-    for (const proxy of env.ssr_proxy_configs) {
-      const proxyPath = (proxy as {path?: string}).path ?? '';
-      ui.div({text: '', width: labelWidth}, {text: `  ${proxyPath} → ${proxy.host}`});
-    }
-  }
-
-  ux.stdout(ui.toString());
-}
-
-/**
  * Valid log levels for MRT environments.
  */
 const LOG_LEVELS = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'TRACE', 'FATAL'] as const;
@@ -102,6 +49,9 @@ type LogLevel = (typeof LOG_LEVELS)[number];
 
 /**
  * Update a Managed Runtime environment.
+ *
+ * The SCAPI MRT backend updates the environment's display name only (`--name`);
+ * all other flags configure the legacy MRT Cloud API and are legacy-only.
  */
 export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
   static description = withDocs(
@@ -116,6 +66,7 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --enable-source-maps',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --production',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --proxy api=api.example.com',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --name "New Name" --mrt-backend scapi',
   ];
 
   static flags = {
@@ -125,42 +76,49 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
       description: 'Display name for the environment',
     }),
     production: Flags.boolean({
-      description: 'Mark as a production environment',
+      description: 'Mark as a production environment (legacy backend only)',
       allowNo: true,
     }),
     hostname: Flags.string({
-      description: 'Hostname pattern for V8 Tag loading (use empty string to clear)',
+      description: 'Hostname pattern for V8 Tag loading (use empty string to clear) (legacy backend only)',
     }),
     'external-hostname': Flags.string({
-      description: 'Full external hostname (use empty string to clear)',
+      description: 'Full external hostname (use empty string to clear) (legacy backend only)',
     }),
     'external-domain': Flags.string({
-      description: 'External domain for Universal PWA SSR (use empty string to clear)',
+      description: 'External domain for Universal PWA SSR (use empty string to clear) (legacy backend only)',
     }),
     'allow-cookies': Flags.boolean({
-      description: 'Forward HTTP cookies to origin',
+      description: 'Forward HTTP cookies to origin (legacy backend only)',
+      allowNo: true,
+    }),
+    'preserve-proxy-user-agent': Flags.boolean({
+      description:
+        'Forward the original client User-Agent header to proxy origins instead of overwriting it with "Amazon CloudFront" (legacy backend only)',
       allowNo: true,
     }),
     'enable-source-maps': Flags.boolean({
-      description: 'Enable source map support in the environment',
+      description: 'Enable source map support in the environment (legacy backend only)',
       allowNo: true,
     }),
     'log-level': Flags.string({
-      description: 'Log level for the environment',
+      description: 'Log level for the environment (legacy backend only)',
       options: LOG_LEVELS as unknown as string[],
     }),
     'whitelisted-ips': Flags.string({
-      description: 'IP whitelist (CIDR blocks, space-separated; use empty string to clear)',
+      description: 'IP whitelist (CIDR blocks, space-separated; use empty string to clear) (legacy backend only)',
     }),
     proxy: Flags.string({
-      description: 'Proxy configuration in format path=host (can be specified multiple times)',
+      description: 'Proxy configuration in format path=host (can be specified multiple times) (legacy backend only)',
       multiple: true,
     }),
   };
 
-  async run(): Promise<MrtEnvironmentUpdate> {
-    this.requireMrtCredentials();
+  protected operations = {
+    updateEnvironmentWithBackend,
+  };
 
+  async run(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
@@ -181,13 +139,21 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
       'external-hostname': externalHostname,
       'external-domain': externalDomain,
       'allow-cookies': allowCookies,
+      'preserve-proxy-user-agent': preserveProxyUserAgent,
       'enable-source-maps': enableSourceMaps,
       'log-level': logLevel,
       'whitelisted-ips': whitelistedIps,
       proxy: proxyStrings,
     } = this.flags;
 
-    // Parse proxy configurations
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
+    const scapi = preference === 'scapi' || (preference === 'auto' && Boolean(scapiConnection));
+
+    if (scapi && name === undefined) {
+      this.error('The SCAPI MRT backend updates the environment display name only; provide --name.');
+    }
+
+    // Parse proxy configurations (legacy backend only)
     const proxyConfigs = proxyStrings?.map((p) => parseProxyString(p));
 
     this.log(
@@ -197,45 +163,46 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
       }),
     );
 
-    try {
-      const result = await updateEnv(
-        {
-          projectSlug: project,
-          slug: environment,
-          name,
-          isProduction: production,
-          hostname: hostname === '' ? null : hostname,
-          externalHostname: externalHostname === '' ? null : externalHostname,
-          externalDomain: externalDomain === '' ? null : externalDomain,
-          allowCookies,
-          enableSourceMaps,
-          logLevel: logLevel as LogLevel | undefined,
-          whitelistedIps: whitelistedIps === '' ? null : whitelistedIps,
-          proxyConfigs,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    const result = await this.operations.updateEnvironmentWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      name,
+      isProduction: production,
+      hostname: hostname === '' ? null : hostname,
+      externalHostname: externalHostname === '' ? null : externalHostname,
+      externalDomain: externalDomain === '' ? null : externalDomain,
+      allowCookies,
+      preserveProxyUserAgent,
+      enableSourceMaps,
+      logLevel: logLevel as LogLevel | undefined,
+      whitelistedIps: whitelistedIps === '' ? null : whitelistedIps,
+      proxyConfigs,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Updating environment via backend'),
+    });
 
-      if (!this.jsonEnabled()) {
-        this.log(t('commands.mrt.env.update.success', 'Environment updated successfully.'));
+    if (!this.jsonEnabled()) {
+      this.log(t('commands.mrt.env.update.success', 'Environment updated successfully.'));
+      if (result.backend === 'legacy') {
         this.log(
           t(
             'commands.mrt.env.update.note',
             'Note: SSR-related changes will trigger an automatic redeployment of the current bundle.',
           ),
         );
-        printEnvDetails(result, project);
       }
-
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.env.update.failed', 'Failed to update environment: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
+      printEnvView(result.environment, project);
     }
+
+    // Under --json, emit the backend's native update response verbatim.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

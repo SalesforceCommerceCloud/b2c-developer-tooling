@@ -6,58 +6,48 @@
 import {ux} from '@oclif/core';
 import cliui from 'cliui';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getEnv, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {getEnvironmentWithBackend, type MrtEnvironmentView} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
 /**
- * Print environment details in a formatted table.
+ * Print a backend-neutral environment view in a formatted table.
  */
-function printEnvDetails(env: MrtEnvironment, project: string): void {
+export function printEnvView(env: MrtEnvironmentView, project: string): void {
   const ui = cliui({width: process.stdout.columns || 80});
   const labelWidth = 18;
 
   ui.div('');
-  ui.div({text: 'Slug:', width: labelWidth}, {text: env.slug ?? ''});
+  ui.div({text: 'Slug:', width: labelWidth}, {text: env.id});
   ui.div({text: 'Name:', width: labelWidth}, {text: env.name});
   ui.div({text: 'Project:', width: labelWidth}, {text: project});
-  ui.div({text: 'State:', width: labelWidth}, {text: env.state ?? 'unknown'});
-  ui.div({text: 'Production:', width: labelWidth}, {text: env.is_production ? 'Yes' : 'No'});
+  ui.div({text: 'State:', width: labelWidth}, {text: env.status ?? 'unknown'});
 
-  if (env.ssr_region) {
-    ui.div({text: 'Region:', width: labelWidth}, {text: env.ssr_region});
+  // Primary is a SCAPI-only concept; omit the row on legacy where it is undefined.
+  if (env.isPrimary !== undefined) {
+    ui.div({text: 'Primary:', width: labelWidth}, {text: env.isPrimary ? 'Yes' : 'No'});
   }
 
-  if (env.hostname) {
-    ui.div({text: 'Hostname:', width: labelWidth}, {text: env.hostname});
+  if (env.isProduction !== undefined) {
+    ui.div({text: 'Production:', width: labelWidth}, {text: env.isProduction ? 'Yes' : 'No'});
   }
 
-  if (env.ssr_external_hostname) {
-    ui.div({text: 'External Host:', width: labelWidth}, {text: env.ssr_external_hostname});
+  if (env.region) {
+    ui.div({text: 'Region:', width: labelWidth}, {text: env.region});
   }
 
-  if (env.ssr_external_domain) {
-    ui.div({text: 'External Domain:', width: labelWidth}, {text: env.ssr_external_domain});
+  if (env.architecture) {
+    ui.div({text: 'Architecture:', width: labelWidth}, {text: env.architecture});
   }
 
-  if (env.allow_cookies) {
-    ui.div({text: 'Allow Cookies:', width: labelWidth}, {text: 'Yes'});
+  if (env.origin) {
+    ui.div({text: 'Origin:', width: labelWidth}, {text: env.origin});
   }
 
-  if (env.enable_source_maps) {
-    ui.div({text: 'Source Maps:', width: labelWidth}, {text: 'Yes'});
+  if (env.createdAt) {
+    ui.div({text: 'Created:', width: labelWidth}, {text: new Date(env.createdAt).toLocaleString()});
   }
 
-  if (env.log_level) {
-    ui.div({text: 'Log Level:', width: labelWidth}, {text: env.log_level});
-  }
-
-  if (env.ssr_proxy_configs && env.ssr_proxy_configs.length > 0) {
-    ui.div({text: 'Proxies:', width: labelWidth}, {text: ''});
-    for (const proxy of env.ssr_proxy_configs) {
-      const proxyPath = (proxy as {path?: string}).path ?? '';
-      ui.div({text: '', width: labelWidth}, {text: `  ${proxyPath} → ${proxy.host}`});
-    }
-  }
+  ui.div({text: 'Backend:', width: labelWidth}, {text: env.backend});
 
   ux.stdout(ui.toString());
 }
@@ -76,15 +66,18 @@ export default class MrtEnvGet extends MrtCommand<typeof MrtEnvGet> {
   static examples = [
     '<%= config.bin %> <%= command.id %> --project my-storefront --environment staging',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e production --json',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e production --mrt-backend scapi',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
   };
 
-  async run(): Promise<MrtEnvironment> {
-    this.requireMrtCredentials();
+  protected operations = {
+    getEnvironmentWithBackend,
+  };
 
+  async run(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
@@ -98,6 +91,8 @@ export default class MrtEnvGet extends MrtCommand<typeof MrtEnvGet> {
       );
     }
 
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
+
     this.log(
       t('commands.mrt.env.get.fetching', 'Fetching environment {{environment}} in {{project}}...', {
         project,
@@ -105,28 +100,26 @@ export default class MrtEnvGet extends MrtCommand<typeof MrtEnvGet> {
       }),
     );
 
-    try {
-      const result = await getEnv(
-        {
-          projectSlug: project,
-          slug: environment,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    const result = await this.operations.getEnvironmentWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Getting environment via backend'),
+    });
 
-      if (!this.jsonEnabled()) {
-        printEnvDetails(result, project);
-      }
-
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.env.get.failed', 'Failed to get environment: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
+    if (!this.jsonEnabled()) {
+      printEnvView(result.environment, project);
     }
+
+    // Under --json, emit the backend's native environment response verbatim.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

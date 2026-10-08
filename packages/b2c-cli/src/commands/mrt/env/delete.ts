@@ -5,7 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {deleteEnv} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {deleteEnvironmentWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 import {confirm} from '../../../prompts.js';
 
@@ -30,6 +30,7 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
   static examples = [
     '<%= config.bin %> <%= command.id %> feature-test --project my-storefront',
     '<%= config.bin %> <%= command.id %> old-staging -p my-storefront --force',
+    '<%= config.bin %> <%= command.id %> old-staging -p my-storefront --mrt-backend scapi',
   ];
 
   static flags = {
@@ -43,14 +44,12 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
 
   protected operations = {
     confirm,
-    deleteEnv,
+    deleteEnvironmentWithBackend,
   };
 
-  async run(): Promise<{slug: string; project: string}> {
+  async run(): Promise<{slug: string; project: string; deleted: boolean}> {
     // Prevent deletion in safe mode
     this.assertDestructiveOperationAllowed('delete MRT environment');
-
-    this.requireMrtCredentials();
 
     const slug = this.resolveEnvironmentSlug(this.args.slug);
     const {mrtProject: project} = this.resolvedConfig.values;
@@ -78,39 +77,38 @@ export default class MrtEnvDelete extends MrtCommand<typeof MrtEnvDelete> {
 
       if (!confirmed) {
         this.log(t('commands.mrt.env.delete.cancelled', 'Deletion cancelled.'));
-        return {slug, project};
+        return {slug, project, deleted: false};
       }
     }
+
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
     this.log(
       t('commands.mrt.env.delete.deleting', 'Deleting environment "{{slug}}" from {{project}}...', {slug, project}),
     );
 
-    try {
-      await this.operations.deleteEnv(
-        {
-          projectSlug: project,
-          slug,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    await this.operations.deleteEnvironmentWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment: slug,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Deleting environment via backend'),
+    });
 
-      this.log(
-        t('commands.mrt.env.delete.success', 'Environment "{{slug}}" deleted from {{project}}.', {
-          slug,
-          project,
-        }),
-      );
+    this.log(
+      t('commands.mrt.env.delete.success', 'Environment "{{slug}}" deleted from {{project}}.', {
+        slug,
+        project,
+      }),
+    );
 
-      return {slug, project};
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.env.delete.failed', 'Failed to delete environment: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
-    }
+    return {slug, project, deleted: true};
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

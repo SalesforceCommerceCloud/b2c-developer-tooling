@@ -5614,6 +5614,11 @@
             "nullable": true,
             "description": "Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped."
           },
+          "preserve_proxy_user_agent": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with \"Amazon CloudFront\"."
+          },
           "enable_source_maps": {
             "type": "boolean",
             "nullable": true,
@@ -5824,6 +5829,11 @@
             "type": "boolean",
             "nullable": true,
             "description": "Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped."
+          },
+          "preserve_proxy_user_agent": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with \"Amazon CloudFront\"."
           },
           "enable_source_maps": {
             "type": "boolean",
@@ -7352,6 +7362,11 @@
             "type": "boolean",
             "nullable": true,
             "description": "Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped."
+          },
+          "preserve_proxy_user_agent": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with \"Amazon CloudFront\"."
           },
           "enable_source_maps": {
             "type": "boolean",
