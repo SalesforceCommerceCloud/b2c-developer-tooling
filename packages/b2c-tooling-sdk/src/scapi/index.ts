@@ -42,6 +42,8 @@ export type {ScapiLiveSchemaCacheOptions, ScapiLiveSchemaLoadOptions, ScapiLiveS
 export {ScapiShopperSessions} from './shopper.js';
 export type {ScapiShopperAuth, ScapiShopperConfig} from './shopper.js';
 export {runScapiCode} from './runtime.js';
+export {createScapiOperationSearch, scapiFullPath, searchScapiOperations} from './search.js';
+export type {ScapiOperationMatch, ScapiOperationSearchOptions} from './search.js';
 export {createScapiAuth} from './auth-primitives.js';
 export type {ScapiCodeOptions, ScapiRuntimeControl} from './runtime.js';
 export {

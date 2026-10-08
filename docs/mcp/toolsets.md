@@ -79,7 +79,7 @@ write code or choose API calls.
 
 | Tool                 | Capability                                                                |
 | -------------------- | ------------------------------------------------------------------------- |
-| `scapi_search`       | Find Admin and Shopper API operations and their requirements.             |
+| `scapi_search`       | Find Admin and Shopper API operations by task, and their requirements.    |
 | `scapi_execute`      | Read and manage B2C Commerce data through standard and custom Admin APIs. |
 | `scapi_snippet_save` | Save a workflow for reuse across sessions.                                |
 

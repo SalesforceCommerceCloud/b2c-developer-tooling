@@ -194,6 +194,6 @@ export interface SchemaIndex {
 export interface SchemaSearchResult {
   /** The matching schema entry */
   entry: SchemaEntry;
-  /** Match score (lower is better in Fuse.js, 0 = perfect match) */
+  /** Relevance score; higher is better */
   score: number;
 }

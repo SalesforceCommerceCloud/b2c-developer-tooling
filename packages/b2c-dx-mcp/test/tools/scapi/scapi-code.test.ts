@@ -57,6 +57,21 @@ describe('SCAPI code tools', function () {
     expect(readJson(result)).to.have.property('resolution');
   });
 
+  it('gives execute programs the same spec as search, so discovery and calls can share one run', async () => {
+    const [, execute] = createScapiCodeTools(() => Services.fromResolvedConfig(createMockResolvedConfig({})));
+    const result = await execute.handler({
+      skillRead: true,
+      code: `async () => {
+        const [match] = await spec.search('create product', {limit: 1});
+        return {match, operationId: spec.paths[match.path][match.method].operationId};
+      }`,
+    });
+    expect(result.isError).not.to.equal(true);
+    const data = readJson(result).result as {match: {operationId: string}; operationId: string};
+    expect(data.match.operationId).to.equal('createProduct');
+    expect(data.operationId).to.equal('createProduct');
+  });
+
   it('requires skill acknowledgment before configuration or code execution on both tools', async () => {
     const load = stub().throws(new Error('Configuration must not load'));
     await Promise.all(
@@ -195,6 +210,21 @@ describe('SCAPI code tools', function () {
     const text = (response.content[0] as {text: string}).text;
     expect(Buffer.byteLength(text)).to.be.lessThan(24_000);
     expect(Buffer.byteLength(JSON.stringify(data, null, 2))).to.be.greaterThan(24_000);
+  });
+
+  it('ranks operations with spec.search within the api filter', async () => {
+    const [search] = createScapiCodeTools(stub());
+    const response = await search.handler({
+      skillRead: true,
+      api: 'cdn',
+      code: `async () => spec.search('block bots with firewall rules', {limit: 5})`,
+    });
+    expect(response.isError).not.to.equal(true);
+    const matches = readJson(response).result as Array<{api: string; path: string}>;
+    expect(matches).to.have.length(5);
+    expect(matches.every((match) => match.api.startsWith('cdn/') && match.path.startsWith(`/${match.api}/`))).to.equal(
+      true,
+    );
   });
 
   it('returns outlines by default and restores nested prose with detail full', async () => {
