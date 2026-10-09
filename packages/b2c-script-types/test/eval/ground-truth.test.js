@@ -28,6 +28,11 @@
 //   silent   no inference
 //
 // Precision = (exact + union + related) / fired, recall = the same / total.
+// Every silent parameter is triaged into why it stayed silent (no call sites
+// found, budget exhausted, evidence dropped by the policy, no evidence), so a
+// change can target the largest bucket. Local variables whose `dw.*` type
+// came only from the blanked JSDoc are re-inferred and scored too: that is
+// the end-to-end effect a user sees in hovers and completions on locals.
 // Parameters that carry no type at all in the original source are hovered
 // too, to measure how often inference fires on genuinely undocumented code.
 // Cost is reported as wall time and as reference searches per request; the
@@ -44,7 +49,9 @@ const path = require('node:path');
 const ts = require('typescript');
 
 const {discoverCartridgesOnDisk, orderCartridges} = require('../../src/resolver/cartridge-discovery');
-const {createInferenceContext, describeTypes, inferReturnType} = require('../../src/usage-inference');
+const {collectCallSites, getReferenceNameNode} = require('../../src/inference/call-sites');
+const {inferTypeForExpression} = require('../../src/inference/core');
+const {createInferenceContext, describeTypes, inferReturnType, inferTypeForNode} = require('../../src/usage-inference');
 const {createPluginProxy} = require('../helpers/plugin-proxy');
 
 const CORPUS = process.env.B2C_INFERENCE_CORPUS;
@@ -186,13 +193,35 @@ function collectFunctionTargets(checker, fn, sourceFile, out) {
   }
 }
 
+/** True when `type` (or a non-nullable part of it) is declared by the vendored Script API. */
+function isScriptApiType(type) {
+  const parts = type.isUnion() ? type.types : [type];
+  return parts.some((part) =>
+    (part.getSymbol()?.declarations ?? []).some((decl) => decl.getSourceFile().fileName.includes('/types/dw/')),
+  );
+}
+
+/** A local variable whose checker type is a Script API class: a candidate for the downstream metric. */
+function collectVariableTarget(checker, decl, sourceFile, out) {
+  if (!ts.isIdentifier(decl.name) || decl.type) return;
+  const type = checker.getTypeAtLocation(decl.name);
+  if (!isScriptApiType(type)) return;
+  const line = sourceFile.getLineAndCharacterOfPosition(decl.getStart(sourceFile)).line + 1;
+  out.variables.push({
+    label: `${path.basename(sourceFile.fileName)}:${line} var ${decl.name.text}`,
+    position: decl.name.getStart(sourceFile),
+    names: documentedNames(checker, type),
+  });
+}
+
 function collectFileTargets(program, fileName) {
   const sourceFile = program.getSourceFile(fileName);
   const checker = program.getTypeChecker();
-  const out = {fileName, params: [], returns: [], undocumented: [], blanks: []};
+  const out = {fileName, params: [], returns: [], variables: [], undocumented: [], blanks: []};
   if (!sourceFile) return out;
   const visit = (node) => {
     if (ts.isFunctionLike(node) && 'parameters' in node) collectFunctionTargets(checker, node, sourceFile, out);
+    if (ts.isVariableDeclaration(node)) collectVariableTarget(checker, node, sourceFile, out);
     ts.forEachChild(node, visit);
   };
   visit(sourceFile);
@@ -260,19 +289,66 @@ function inferredFromHover(proxy, fileName, position) {
   return index === -1 ? undefined : text.slice(index + INFERRED_NOTE.length).trim();
 }
 
-function inferredReturn(languageService, fileName, position) {
-  const ctx = createInferenceContext(ts, languageService);
-  const sourceFile = ctx?.program.getSourceFile(fileName);
-  if (!ctx || !sourceFile) return undefined;
-  let fn;
+/** The node starting exactly at `position` that satisfies `predicate`, outermost first. */
+function findNodeAt(sourceFile, position, predicate) {
+  let found;
   const visit = (node) => {
-    if (fn) return;
-    if (ts.isFunctionLike(node) && node.getStart(sourceFile) === position) fn = node;
+    if (found || position < node.getStart(sourceFile) || position >= node.getEnd()) return;
+    if (predicate(node) && node.getStart(sourceFile) === position) found = node;
     else ts.forEachChild(node, visit);
   };
   visit(sourceFile);
-  const types = fn ? inferReturnType(ctx, fn) : [];
-  return types.length > 0 ? describeTypes(ctx, types) : undefined;
+  return found;
+}
+
+/** A fresh inference context and the evaluated file in the current (blanked) program. */
+function freshRequest(languageService, fileName) {
+  const ctx = createInferenceContext(ts, languageService);
+  const sourceFile = ctx?.program.getSourceFile(fileName);
+  return ctx && sourceFile ? {ctx, sourceFile} : undefined;
+}
+
+function inferredReturn(languageService, fileName, position) {
+  const request = freshRequest(languageService, fileName);
+  const fn = request && findNodeAt(request.sourceFile, position, ts.isFunctionLike);
+  const types = fn ? inferReturnType(request.ctx, fn) : [];
+  return types.length > 0 ? describeTypes(request.ctx, types) : undefined;
+}
+
+/**
+ * What inference shows for a local variable, or null when the variable is
+ * still typed by the checker after blanking (its type never depended on the
+ * removed JSDoc, so it says nothing about inference).
+ */
+function inferredVariable(languageService, fileName, position) {
+  const request = freshRequest(languageService, fileName);
+  const name = request && findNodeAt(request.sourceFile, position, ts.isIdentifier);
+  if (!name || isScriptApiType(request.ctx.checker.getTypeAtLocation(name))) return null;
+  const types = inferTypeForNode(request.ctx, name);
+  return types.length > 0 ? describeTypes(request.ctx, types) : undefined;
+}
+
+/**
+ * Why a parameter stayed silent, re-derived with a fresh request: an
+ * anonymous callback (nothing to search for), no call sites found, a search
+ * or reference budget that ran out, call-site evidence the policy dropped
+ * (fit, union limit), or call sites whose arguments say nothing.
+ */
+function silentReason(languageService, fileName, position) {
+  const request = freshRequest(languageService, fileName);
+  const param = request && findNodeAt(request.sourceFile, position, ts.isIdentifier)?.parent;
+  if (!param || !ts.isParameter(param)) return 'not-a-parameter';
+  const {ctx} = request;
+  const fn = param.parent;
+  const nameNode = getReferenceNameNode(fn, ts);
+  if (!nameNode) return 'anonymous-callback';
+  const sites = collectCallSites(ctx, nameNode);
+  const exhausted = () => ctx.searchBudget <= 0 || ctx.referenceBudget <= 0;
+  if (sites.length === 0) return exhausted() ? 'budget' : 'no-call-sites';
+  const index = fn.parameters.indexOf(param);
+  const evidence = sites.flatMap((site) => (site.args[index] ? inferTypeForExpression(ctx, site.args[index]) : []));
+  if (evidence.length > 0) return 'dropped-by-policy';
+  return exhausted() ? 'budget' : 'no-evidence';
 }
 
 const SLOWEST_REPORTED = 20;
@@ -292,12 +368,13 @@ function timed(report, label, compute) {
   return result;
 }
 
-function scoreTarget(report, ancestry, kind, target, inferred) {
+function scoreTarget(report, ancestry, kind, target, inferred, explainSilence) {
   const verdict = classify(ancestry, target.names, inferred);
   report[kind][verdict]++;
-  if (verdict !== 'exact' && verdict !== 'union') {
-    report.mismatches.push({kind, verdict, target: target.label, documented: target.names.join(' | '), inferred});
-  }
+  if (verdict === 'exact' || verdict === 'union') return;
+  const reason = verdict === 'silent' && explainSilence ? explainSilence() : undefined;
+  if (reason) report.silentReasons[reason] = (report.silentReasons[reason] ?? 0) + 1;
+  report.mismatches.push({kind, verdict, target: target.label, documented: target.names.join(' | '), inferred, reason});
 }
 
 function emptyScore() {
@@ -310,13 +387,22 @@ function evaluateFile(plugin, ancestry, targets, report) {
   try {
     for (const target of targets.params) {
       const inferred = timed(report, target.label, () => inferredFromHover(proxy, targets.fileName, target.position));
-      scoreTarget(report, ancestry, 'params', target, inferred);
+      scoreTarget(report, ancestry, 'params', target, inferred, () =>
+        silentReason(languageService, targets.fileName, target.position),
+      );
     }
     for (const target of targets.returns) {
       const inferred = timed(report, target.label, () =>
         inferredReturn(languageService, targets.fileName, target.position),
       );
       scoreTarget(report, ancestry, 'returns', target, inferred);
+    }
+    // Untimed, and after the timed requests: the triage and variable
+    // requests warm this program's reference cache, which must not lower the
+    // search counts measured above.
+    for (const target of targets.variables) {
+      const inferred = inferredVariable(languageService, targets.fileName, target.position);
+      if (inferred !== null) scoreTarget(report, ancestry, 'variables', target, inferred);
     }
   } finally {
     setOverride(targets.fileName, undefined);
@@ -355,9 +441,14 @@ function summarize(report) {
   const sorted = [...report.timings].sort((a, b) => a - b);
   const searches = [...report.searches].sort((a, b) => a - b);
   const u = report.undocumented;
+  const reasons = Object.entries(report.silentReasons)
+    .sort((a, b) => b[1] - a[1])
+    .map(([reason, count]) => `${reason}=${count}`);
   return [
     line('params'),
     line('returns'),
+    line('variables'),
+    `silent params: ${reasons.join(' ') || 'none'}`,
     `undocumented params fired on ${u.fired}/${u.total}`,
     `latency ms p50=${percentile(sorted, 50).toFixed(1)} p95=${percentile(sorted, 95).toFixed(1)} ` +
       `max=${(sorted.at(-1) ?? 0).toFixed(1)} over ${sorted.length} requests`,
@@ -379,6 +470,8 @@ function summarize(report) {
     const report = {
       params: emptyScore(),
       returns: emptyScore(),
+      variables: emptyScore(),
+      silentReasons: {},
       undocumented: {total: 0, fired: 0, samples: []},
       mismatches: [],
       timings: [],
