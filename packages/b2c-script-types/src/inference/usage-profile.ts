@@ -8,12 +8,14 @@
 // walk: the members it is accessed by (duck typing), the classes it is
 // tested against (`instanceof`, `typeof`), the types the code passes it as
 // (a typed call argument or assignment target), and the values assigned to
-// it. Every rule in ./policy reads this same profile, so a hover, a member
-// hover and a completion all see the same evidence.
+// it, pushed into it and written to its members. Every rule in ./policy
+// reads this same profile, so a hover, a member hover and a completion all
+// see the same evidence.
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import type {InferenceContext} from './context';
+import {acceptsArgumentCount} from './signatures';
 import {isOpenForUsageInference} from './type-helpers';
 
 export interface UsageProfile {
@@ -37,6 +39,10 @@ export interface UsageProfile {
   readonly contextualTypes: readonly tsserver.Type[];
   /** Right-hand sides of `x = value` assignments to the value after its declaration. */
   readonly assignedValues: readonly tsserver.Expression[];
+  /** Values the code adds to it as elements: `x.push(v)`, `x.unshift(v)`, `x[i] = v`. */
+  readonly pushedValues: readonly tsserver.Expression[];
+  /** Values the code writes to its members, by member name: `x.m = v`, `x['m'] = v`. */
+  readonly memberValues: ReadonlyMap<string, readonly tsserver.Expression[]>;
 }
 
 interface ProfileBuilder {
@@ -45,6 +51,8 @@ interface ProfileBuilder {
   readonly guardTypes: tsserver.Type[];
   readonly contextualTypes: tsserver.Type[];
   readonly assignedValues: tsserver.Expression[];
+  readonly pushedValues: tsserver.Expression[];
+  readonly memberValues: Map<string, tsserver.Expression[]>;
 }
 
 function emptyProfile(): ProfileBuilder {
@@ -54,6 +62,8 @@ function emptyProfile(): ProfileBuilder {
     guardTypes: [],
     contextualTypes: [],
     assignedValues: [],
+    pushedValues: [],
+    memberValues: new Map(),
   };
 }
 
@@ -163,16 +173,6 @@ function declaredArgumentType(
   const declaration = parameter?.valueDeclaration;
   if (!parameter || (declaration && ctx.ts.isParameter(declaration) && declaration.dotDotDotToken)) return undefined;
   return ctx.checker.getTypeOfSymbolAtLocation(parameter, call);
-}
-
-/** True when `signature` takes `count` arguments (synthetic signatures without a declaration always do). */
-function acceptsArgumentCount(ctx: InferenceContext, signature: tsserver.Signature, count: number): boolean {
-  const {ts, checker} = ctx;
-  const declaration = signature.getDeclaration() as tsserver.SignatureDeclaration | undefined;
-  if (!declaration) return true;
-  const parameters = declaration.parameters;
-  const required = parameters.filter((parameter) => !checker.isOptionalParameter(parameter)).length;
-  return count >= required && (count <= parameters.length || ts.hasRestParameter(declaration));
 }
 
 /**
@@ -333,7 +333,49 @@ function recordPresenceTest({ctx, reference}: ReferenceUse, profile: ProfileBuil
   return member !== undefined;
 }
 
-/** `x.m` / `x['m']`: a member the value is accessed by. */
+// Array methods whose arguments become elements of the receiver.
+const ELEMENT_ADDING_METHODS: ReadonlySet<string> = new Set(['push', 'unshift']);
+
+/** The value `access = value` assigns, if `access` is the target of a plain assignment. */
+function valueAssignedTo(ctx: InferenceContext, access: tsserver.Expression): tsserver.Expression | undefined {
+  const {ts} = ctx;
+  const assignment = access.parent;
+  const isAssignment =
+    ts.isBinaryExpression(assignment) &&
+    assignment.left === access &&
+    assignment.operatorToken.kind === ts.SyntaxKind.EqualsToken;
+  return isAssignment ? assignment.right : undefined;
+}
+
+/** The values `x.push(a, b)` / `x.unshift(a)` add as elements, when `access` is such a call's callee. */
+function addedElements(
+  ctx: InferenceContext,
+  access: tsserver.Expression,
+  member: string | undefined,
+): tsserver.Expression[] | undefined {
+  const {ts} = ctx;
+  const call = access.parent;
+  if (member === undefined || !ELEMENT_ADDING_METHODS.has(member)) return undefined;
+  if (!ts.isCallExpression(call) || call.expression !== access) return undefined;
+  return call.arguments.filter((argument) => !ts.isSpreadElement(argument));
+}
+
+/** What an access writes into the value: elements (`x.push(v)`, `x[i] = v`) or a member (`x.m = v`). */
+function recordWrite(
+  ctx: InferenceContext,
+  access: tsserver.PropertyAccessExpression | tsserver.ElementAccessExpression,
+  member: string | undefined,
+  profile: ProfileBuilder,
+): void {
+  const added = addedElements(ctx, access, member);
+  const value = added ? undefined : valueAssignedTo(ctx, access);
+  if (added) profile.pushedValues.push(...added);
+  else if (value && member !== undefined) {
+    profile.memberValues.set(member, [...(profile.memberValues.get(member) ?? []), value]);
+  } else if (value && ctx.ts.isElementAccessExpression(access)) profile.pushedValues.push(value);
+}
+
+/** `x.m` / `x['m']`: a member the value is accessed by, and anything the access writes into it. */
 function recordMemberAccess({ctx, reference, inVariantBranch}: ReferenceUse, profile: ProfileBuilder): boolean {
   const {ts} = ctx;
   const access = reference.parent;
@@ -341,6 +383,7 @@ function recordMemberAccess({ctx, reference, inVariantBranch}: ReferenceUse, pro
   if (!isAccess || access.expression !== reference) return false;
   const member = accessedMemberName(ctx, access);
   if (member !== undefined) recordMember(profile, member, inVariantBranch);
+  recordWrite(ctx, access, member, profile);
   return true;
 }
 

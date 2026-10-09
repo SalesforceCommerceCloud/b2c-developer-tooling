@@ -14,26 +14,15 @@ const context_1 = require("./context");
 const ast_helpers_1 = require("./ast-helpers");
 const call_sites_1 = require("./call-sites");
 const framework_contracts_1 = require("./framework-contracts");
+const generic_calls_1 = require("./generic-calls");
+const member_values_1 = require("./member-values");
 const policy_1 = require("./policy");
+const signatures_1 = require("./signatures");
 const super_module_1 = require("./super-module");
 const type_helpers_1 = require("./type-helpers");
 const usage_profile_1 = require("./usage-profile");
 function identifierText(ctx, name) {
     return ctx.ts.isIdentifier(name) ? name.text : undefined;
-}
-/**
- * Resolves the function-like declaration a call expression's callee refers
- * to, via its symbol or — as a fallback for shapes the symbol lookup misses
- * — the checker's resolved signature.
- */
-function resolveCalleeDeclaration(ctx, call) {
-    const { checker, ts } = ctx;
-    const sym = checker.getSymbolAtLocation(call.expression);
-    const decl = sym?.valueDeclaration ?? sym?.declarations?.[0];
-    if (decl && ts.isFunctionLike(decl))
-        return decl;
-    const sigDecl = checker.getResolvedSignature(call)?.declaration;
-    return sigDecl && ts.isFunctionLike(sigDecl) ? sigDecl : undefined;
 }
 /**
  * Everything a local variable can hold: its initializer plus every later
@@ -52,10 +41,23 @@ function resolveVariableTypes(ctx, decl, depth, chainHops) {
         return [];
     return (0, context_1.withCycleGuard)(ctx, decl, [], () => {
         const profile = (0, usage_profile_1.usageProfileOf)(ctx, decl);
-        const values = decl.initializer ? [decl.initializer, ...profile.assignedValues] : profile.assignedValues;
-        const evidence = values.flatMap((value) => resolveExpressionTypes(ctx, value, depth, chainHops));
+        const initial = decl.initializer
+            ? resolveInitializerTypes(ctx, decl.initializer, profile.pushedValues, depth, chainHops)
+            : [];
+        const evidence = [...initial, ...resolveValues(ctx, profile.assignedValues, depth, chainHops)];
         return (0, policy_1.decideType)(ctx, evidence, profile, identifierText(ctx, decl.name), false);
     });
+}
+/** A variable's initializer; an array literal later filled by `items.push(x)` is an array of what it holds. */
+function resolveInitializerTypes(ctx, initializer, pushedValues, depth, chainHops) {
+    if (pushedValues.length === 0 || !ctx.ts.isArrayLiteralExpression(initializer)) {
+        return resolveExpressionTypes(ctx, initializer, depth, chainHops);
+    }
+    return resolveArrayTypes(ctx, [...initializer.elements, ...pushedValues], depth, chainHops);
+}
+/** The types of several values the same thing can hold, each one hop further along the expression. */
+function resolveValues(ctx, values, depth, chainHops) {
+    return values.flatMap((value) => resolveExpressionTypes(ctx, value, depth, chainHops + 1));
 }
 /**
  * The types one `module.exports = X` assignment of a superModule level
@@ -107,28 +109,27 @@ function resolveSuperModuleMemberTypes(ctx, superAccess, memberName, depth, chai
     return [];
 }
 /**
- * Infers the type of a callback's first parameter from sibling arguments of
- * the call the callback is passed to: `collections.forEach` / `map` /
- * `filter` / `every` / `some` / `find` / `first` (see
- * {@link ELEMENT_FIRST_CALLBACK_CALLEES}). A function expression in argument
- * position has no name to run a reference search on, but the collection
- * travelling alongside it names the element type. Unknown callees and
- * `reduce` (accumulator first) are left alone — applying the heuristic to an
- * arbitrary helper would guess wrong more often than it helps.
+ * Infers a callback parameter's type from the call the callback is passed
+ * to. A method on a known receiver declares it (`value: T` of
+ * `items.filter(function (item) {...})` once `items` is inferred as a
+ * `ProductLineItem[]`). Otherwise, for an element-first helper
+ * (`collections.forEach(coll, fn)`, see {@link isElementFirstCallbackCall}),
+ * the first parameter is an element of the collection travelling alongside
+ * it. Unknown helpers are left alone — applying the heuristic to an arbitrary
+ * helper would guess wrong more often than it helps.
  */
 function inferCallbackParameterTypes(ctx, fn, paramIndex, depth) {
-    const { ts } = ctx;
     const call = fn.parent;
-    if (paramIndex !== 0 || !call || !ts.isCallExpression(call) || !call.arguments.includes(fn)) {
+    if (!call || !ctx.ts.isCallExpression(call))
         return [];
-    }
-    const callee = ts.isPropertyAccessExpression(call.expression) ? call.expression.name : call.expression;
-    if (!ts.isIdentifier(callee) || !constants_1.ELEMENT_FIRST_CALLBACK_CALLEES.has(callee.text))
-        return [];
-    return call.arguments
-        .filter((arg) => arg !== fn)
-        .flatMap((arg) => resolveExpressionTypes(ctx, arg, depth).map((type) => (0, type_helpers_1.collectionElementType)(ctx, type, arg)))
-        .filter((element) => element !== undefined);
+    const argIndex = call.arguments.indexOf(fn);
+    const access = call.expression;
+    const declared = ctx.ts.isPropertyAccessExpression(access)
+        ? (0, signatures_1.callbackParameterTypes)(ctx, memberTypesOfReceiver(ctx, access.expression, access.name, depth, 0), call, argIndex, paramIndex)
+        : [];
+    if (declared.length > 0 || paramIndex !== 0 || !(0, signatures_1.isElementFirstCallbackCall)(ctx, call))
+        return declared;
+    return call.arguments.filter((arg) => arg !== fn).flatMap((arg) => resolveElementTypes(ctx, arg, depth, 0));
 }
 /**
  * Resolves the candidate type(s) of `expr`: the checker's own type when it is
@@ -171,12 +172,38 @@ function resolveFromParts(ctx, expr, depth, chainHops) {
         return resolveIdentifierTypes(ctx, expr, depth, chainHops);
     if (ts.isParenthesizedExpression(expr))
         return resolveExpressionTypes(ctx, expr.expression, depth, chainHops);
+    if (ts.isElementAccessExpression(expr))
+        return resolveElementAccessTypes(ctx, expr, depth, chainHops);
+    if (ts.isArrayLiteralExpression(expr))
+        return resolveArrayTypes(ctx, expr.elements, depth, chainHops);
     // `it.hasNext() ? it.next() : null` (the body of SFRA's collections.first)
     // and `a || b` / `a ?? b` can each evaluate to either side.
     if (ts.isConditionalExpression(expr)) {
         return resolveAlternatives(ctx, [expr.whenTrue, expr.whenFalse], depth, chainHops);
     }
     return ts.isBinaryExpression(expr) ? resolveLogicalTypes(ctx, expr, depth, chainHops) : [];
+}
+/** The element types of whatever arrays or collections `collection` holds. */
+function resolveElementTypes(ctx, collection, depth, chainHops) {
+    return resolveExpressionTypes(ctx, collection, depth, chainHops + 1).flatMap((type) => (0, type_helpers_1.elementTypeOf)(ctx, type, collection) ?? []);
+}
+/** `x[i]` is an element of `x` (a Script API collection has no index signature to say so); `x['m']` reads member `m`. */
+function resolveElementAccessTypes(ctx, expr, depth, chainHops) {
+    const index = expr.argumentExpression;
+    if (ctx.ts.isStringLiteralLike(index)) {
+        return resolveMemberValueTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, index, depth, chainHops));
+    }
+    return (0, type_helpers_1.dedupeTypes)(ctx, resolveElementTypes(ctx, expr.expression, depth, chainHops));
+}
+/** `[a, ...rest]`: an array of the one type its elements share; elements of unrelated types name no array. */
+function resolveArrayTypes(ctx, elements, depth, chainHops) {
+    const { ts } = ctx;
+    const elementTypes = elements.flatMap((element) => ts.isSpreadElement(element)
+        ? resolveElementTypes(ctx, element.expression, depth, chainHops)
+        : resolveExpressionTypes(ctx, element, depth, chainHops + 1));
+    const [element, ...others] = (0, policy_1.limitUnion)(ctx, (0, policy_1.normalizeCandidates)(ctx, elementTypes));
+    const array = element && others.length === 0 ? (0, type_helpers_1.arrayTypeOf)(ctx, element) : undefined;
+    return array ? [array] : [];
 }
 function resolveAlternatives(ctx, alternatives, depth, chainHops) {
     return (0, type_helpers_1.dedupeTypes)(ctx, alternatives.flatMap((alternative) => resolveExpressionTypes(ctx, alternative, depth, chainHops + 1)));
@@ -195,23 +222,43 @@ function resolveLogicalTypes(ctx, expr, depth, chainHops) {
     }
 }
 /**
- * The declared types of `access`'s member on each candidate type of its
- * receiver (`x.getPriceModel` when `x` is undocumented but inferable). When
- * no receiver type carries the member and the receiver is (an alias of)
+ * The types of member `name` on each candidate type of `receiver`
+ * (`x.getPriceModel` when `x` is undocumented but inferable). When no
+ * receiver type carries the member and the receiver is (an alias of)
  * `module.superModule`, the member may be an export augmentation added by a
- * pass-through overlay level, which no export type can carry.
+ * pass-through overlay level, which no export type can carry. A member the
+ * checker binds on a receiver it types as nothing worth showing (`this` in a
+ * prototype method) is the member it binds; on an untyped local receiver, it
+ * is whatever the code writes to it (`productData.apiProduct = ...`).
  */
-function memberTypesOfReceiver(ctx, access, depth, chainHops) {
+function memberTypesOfReceiver(ctx, receiver, name, depth, chainHops) {
     const { ts, checker } = ctx;
-    const memberName = access.name.text;
-    const types = resolveExpressionTypes(ctx, access.expression, depth, chainHops + 1).flatMap((receiverType) => {
+    const memberName = name.text;
+    const types = resolveExpressionTypes(ctx, receiver, depth, chainHops + 1).flatMap((receiverType) => {
         const member = (0, type_helpers_1.getMemberOfType)(checker, receiverType, memberName);
-        return member ? [checker.getTypeOfSymbolAtLocation(member, access.name)] : [];
+        return member ? memberTypes(ctx, member, name, depth, chainHops) : [];
     });
     if (types.length > 0)
         return types;
-    const superAccess = (0, super_module_1.traceSuperModuleAccess)(ts, checker, access.expression);
-    return superAccess ? resolveSuperModuleMemberTypes(ctx, superAccess, memberName, depth, chainHops) : [];
+    const superAccess = (0, super_module_1.traceSuperModuleAccess)(ts, checker, receiver);
+    if (superAccess)
+        return resolveSuperModuleMemberTypes(ctx, superAccess, memberName, depth, chainHops);
+    const bound = checker.getSymbolAtLocation(name);
+    if (bound)
+        return memberTypes(ctx, bound, name, depth, chainHops);
+    return resolveValues(ctx, (0, member_values_1.localMemberValues)(ctx, receiver, memberName), depth, chainHops);
+}
+/**
+ * A member's declared type, or — when that says nothing, as for most
+ * undocumented members (`{apiProduct: apiProduct}`, `this.productSearch =
+ * productSearch`) — the types of the values it is declared with.
+ */
+function memberTypes(ctx, member, location, depth, chainHops) {
+    const declared = ctx.checker.getTypeOfSymbolAtLocation(member, location);
+    const declaration = member.valueDeclaration ?? member.declarations?.[0];
+    if ((0, type_helpers_1.informativeParts)(ctx, declared).length > 0 || !declaration)
+        return [declared];
+    return (0, context_1.withCycleGuard)(ctx, declaration, [], () => resolveValues(ctx, (0, member_values_1.memberValueExpressions)(ctx, member), depth, chainHops));
 }
 /**
  * The return types of `methodType`'s call signatures. A signature returning
@@ -235,20 +282,33 @@ function signatureReturnTypes(ctx, methodType, depth) {
  * the receiver's inferred type(s).
  */
 function resolveCallResultTypes(ctx, expr, depth, chainHops) {
-    const calleeFn = resolveCalleeDeclaration(ctx, expr);
+    const calleeFn = (0, signatures_1.resolveCalleeDeclaration)(ctx, expr);
     const inferred = calleeFn ? inferReturnType(ctx, calleeFn, depth + 1) : [];
-    if (inferred.length > 0 || !ctx.ts.isPropertyAccessExpression(expr.expression))
+    if (inferred.length > 0)
         return inferred;
-    return (0, type_helpers_1.dedupeTypes)(ctx, memberTypesOfReceiver(ctx, expr.expression, depth, chainHops).flatMap((methodType) => signatureReturnTypes(ctx, methodType, depth)));
+    const generic = (0, generic_calls_1.genericResultSource)(ctx, expr);
+    if (generic) {
+        return generic.kind === 'return'
+            ? inferReturnType(ctx, generic.fn, depth + 1)
+            : resolveExpressionTypes(ctx, generic.argument, depth, chainHops + 1);
+    }
+    const callee = expr.expression;
+    if (!ctx.ts.isPropertyAccessExpression(callee))
+        return [];
+    return (0, type_helpers_1.dedupeTypes)(ctx, memberTypesOfReceiver(ctx, callee.expression, callee.name, depth, chainHops).flatMap((methodType) => signatureReturnTypes(ctx, methodType, depth)));
 }
 /** Resolves an `any` property access (`x.ID`) on an undocumented receiver from the receiver's inferred type(s). */
 function resolvePropertyTypes(ctx, expr, depth, chainHops) {
-    return (0, type_helpers_1.dedupeTypes)(ctx, memberTypesOfReceiver(ctx, expr, depth, chainHops).filter((type) => !(0, type_helpers_1.isAnyType)(ctx.ts, type)));
+    return resolveMemberValueTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, expr.name, depth, chainHops));
+}
+/** The member types worth keeping as a property's value. */
+function resolveMemberValueTypes(ctx, types) {
+    return (0, type_helpers_1.dedupeTypes)(ctx, types.filter((type) => !(0, type_helpers_1.isAnyType)(ctx.ts, type)));
 }
 /** Resolves an `any` identifier through what it names: a parameter's call sites or a variable's values. */
 function resolveIdentifierTypes(ctx, expr, depth, chainHops) {
-    const { ts, checker } = ctx;
-    const decl = checker.getSymbolAtLocation(expr)?.valueDeclaration;
+    const { ts } = ctx;
+    const decl = (0, member_values_1.valueDeclarationOf)(ctx, expr);
     if (decl && ts.isParameter(decl))
         return inferParameterType(ctx, decl, depth + 1);
     if (decl && ts.isVariableDeclaration(decl))

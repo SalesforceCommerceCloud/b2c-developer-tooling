@@ -199,6 +199,25 @@ function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     return limitUnion(ctx, matches.map((match) => match.type), memberNames);
 }
 /**
+ * What a candidate lacking some members the body uses can still be: the one
+ * subclass that has them all (a body relying on `paymentTransaction` is
+ * handed `OrderPaymentInstrument`s, whatever the argument is documented as),
+ * or — when several subclasses would do (`getMasterProduct()` on a `Variant`
+ * or a `VariationGroup`, called once the body knows which) — the candidate
+ * itself. Root classes (`PersistentObject`, ...) never stand in for a
+ * subclass this way; nearly every class extends them.
+ */
+function downcastOf(ctx, type, memberNames) {
+    const own = classOf(ctx, type);
+    if (!own || constants_1.UNINFORMATIVE_ANCESTORS.has(own.symbol?.name ?? ''))
+        return [];
+    const fitting = (0, ambient_index_1.getAmbientClasses)(ctx).filter((ambientClass) => [...memberNames].every((name) => ambientClass.memberNames.has(name)));
+    const subclasses = mostGeneral(ctx, resolveMatches(ctx, fitting)
+        .map((match) => match.type)
+        .filter((subclass) => isAncestorOf(ctx, type, subclass)));
+    return subclasses.length > 1 ? [type] : subclasses;
+}
+/**
  * The required members that can tell candidates apart: those some ambient
  * class, JavaScript built-in or candidate declares. A member nothing declares
  * (`searchHit.discountedPromotionIDs`, newer than the vendored Script API)
@@ -228,9 +247,13 @@ function decideType(ctx, evidence, profile, identifierName, fitUsage) {
     const required = requiredMembers(profile);
     const checkable = checkableMembers(ctx, required, candidates);
     const uses = constrainingUses(ctx, profile);
-    const fits = (type) => guardKeys.has((0, type_helpers_1.typeDisplayString)(ctx, type)) ||
-        ((0, type_helpers_1.hasAllMembers)(ctx.checker, type, checkable) && fitsEveryUse(ctx, type, uses));
-    const fitting = fitUsage ? candidates.filter(fits) : candidates;
+    const fit = (type) => {
+        if (guardKeys.has((0, type_helpers_1.typeDisplayString)(ctx, type)))
+            return [type];
+        const fitted = (0, type_helpers_1.hasAllMembers)(ctx.checker, type, checkable) ? [type] : downcastOf(ctx, type, checkable);
+        return fitted.filter((fittedType) => fitsEveryUse(ctx, fittedType, uses));
+    };
+    const fitting = fitUsage ? (0, type_helpers_1.dedupeTypes)(ctx, candidates.flatMap(fit)) : candidates;
     if (fitting.length > 0)
         return limitUnion(ctx, fitting, checkable);
     const used = mostSpecificUse(ctx, profile, required);

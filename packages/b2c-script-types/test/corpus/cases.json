@@ -537,5 +537,22 @@
     },
     "target": {"file": "/collections.js", "function": "forEach", "param": 0},
     "expect": "Collection"
+  },
+  {
+    "id": "cart-matching-line-items-push",
+    "source": "SFRA cartHelpers.getMatchingProducts shape",
+    "description": "An array filled by push() inside collections.forEach and returned in an object reads back as an array of the collection's elements",
+    "dwTypes": ["Basket", "Collection", "ProductLineItem"],
+    "globals": "function getBasket(): Basket;",
+    "files": {
+      "/collections.js": "function forEach(collection, callback) {\n  var iterator = collection.iterator();\n  while (iterator.hasNext()) {\n    callback(iterator.next());\n  }\n}\nmodule.exports = {forEach: forEach};\n",
+      "/cartHelpers.js": "var collections = require('./collections');\n\nfunction getMatchingProducts(productId, productLineItems) {\n  var matchingProducts = [];\n  var uuid;\n  collections.forEach(productLineItems, function (item) {\n    if (item.productID === productId) {\n      matchingProducts.push(item);\n      uuid = item.UUID;\n    }\n  });\n  return {matchingProducts: matchingProducts, uuid: uuid};\n}\n\nfunction getExistingProductLineItemInCart(productId) {\n  var matching = getMatchingProducts(productId, getBasket().productLineItems).matchingProducts;\n  return matching[0];\n}\n\nmodule.exports = {getExistingProductLineItemInCart: getExistingProductLineItemInCart};\n"
+    },
+    "target": {
+      "file": "/cartHelpers.js",
+      "kind": "variable",
+      "name": "matching"
+    },
+    "expect": "ProductLineItem[]"
   }
 ]

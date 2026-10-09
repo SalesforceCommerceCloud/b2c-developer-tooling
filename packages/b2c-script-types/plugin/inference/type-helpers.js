@@ -12,7 +12,8 @@ exports.typeDisplayString = typeDisplayString;
 exports.dedupeTypes = dedupeTypes;
 exports.getMemberOfType = getMemberOfType;
 exports.hasAllMembers = hasAllMembers;
-exports.collectionElementType = collectionElementType;
+exports.elementTypeOf = elementTypeOf;
+exports.arrayTypeOf = arrayTypeOf;
 exports.describeTypes = describeTypes;
 exports.inferredCompletionEntry = inferredCompletionEntry;
 exports.typesToCompletionEntries = typesToCompletionEntries;
@@ -138,14 +139,19 @@ function classDisplayName(checker, symbol) {
  * interface instantiated only with default type arguments reads as the bare
  * class name (`Product`, `LineItemCtnr`); one with real type arguments
  * renders them the same way (`Collection<Product>`, not the checker's
- * `Collection<Product<Product>>`). Everything else — primitives, object
- * literals, arrays, lib types — is rendered by the checker as TypeScript
- * itself would.
+ * `Collection<Product<Product>>`), and an array reads as its element's
+ * display (`Product[]`). Everything else — primitives, object literals, lib
+ * types — is rendered by the checker as TypeScript itself would.
  */
 function computeTypeDisplayString(ts, checker, type) {
+    if (checker.isArrayType(type)) {
+        const [element] = checker.getTypeArguments(type);
+        const display = element ? computeTypeDisplayString(ts, checker, element) : 'any';
+        return element?.isUnion() ? `(${display})[]` : `${display}[]`;
+    }
     const symbol = type.getSymbol();
     const isClassOrInterface = symbol !== undefined && (symbol.flags & (ts.SymbolFlags.Class | ts.SymbolFlags.Interface)) !== 0;
-    if (!isClassOrInterface || checker.isArrayType(type))
+    if (!isClassOrInterface)
         return checker.typeToString(type);
     if (hasOnlyDefaultTypeArguments(ts, checker, type))
         return classDisplayName(checker, symbol);
@@ -227,6 +233,27 @@ function collectionElementType(ctx, type, location) {
     if (element.flags & (ts.TypeFlags.Void | ts.TypeFlags.Unknown | ts.TypeFlags.Never))
         return undefined;
     return element;
+}
+/**
+ * The element type of an array (`ProductLineItem[]`) or of a Script API
+ * collection or iterator (see {@link collectionElementType}): what `x[i]`,
+ * `x.pop()` or a `forEach` callback over `x` sees.
+ */
+function elementTypeOf(ctx, type, location) {
+    const { checker } = ctx;
+    if (checker.isArrayType(type))
+        return checker.getTypeArguments(type)[0];
+    return collectionElementType(ctx, type, location);
+}
+/**
+ * `element[]`, built by the checker itself so an inferred array reads, and
+ * resolves members (`filter`, `[0]`, `forEach`), exactly like a declared one.
+ * The factory is internal to TypeScript, so it is feature-detected: a
+ * TypeScript without it leaves inferred arrays silent rather than wrong.
+ */
+function arrayTypeOf(ctx, element) {
+    const factory = ctx.checker;
+    return typeof factory.createArrayType === 'function' ? factory.createArrayType(element) : undefined;
 }
 /** Renders candidate types as hover text, e.g. `"Product | Category"`. */
 function describeTypes(ctx, types) {

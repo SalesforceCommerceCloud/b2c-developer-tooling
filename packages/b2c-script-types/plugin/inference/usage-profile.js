@@ -6,6 +6,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.usageProfileOf = usageProfileOf;
+const signatures_1 = require("./signatures");
 const type_helpers_1 = require("./type-helpers");
 function emptyProfile() {
     return {
@@ -14,6 +15,8 @@ function emptyProfile() {
         guardTypes: [],
         contextualTypes: [],
         assignedValues: [],
+        pushedValues: [],
+        memberValues: new Map(),
     };
 }
 const EMPTY_PROFILE = emptyProfile();
@@ -111,16 +114,6 @@ function declaredArgumentType(ctx, signature, index, call) {
         return undefined;
     return ctx.checker.getTypeOfSymbolAtLocation(parameter, call);
 }
-/** True when `signature` takes `count` arguments (synthetic signatures without a declaration always do). */
-function acceptsArgumentCount(ctx, signature, count) {
-    const { ts, checker } = ctx;
-    const declaration = signature.getDeclaration();
-    if (!declaration)
-        return true;
-    const parameters = declaration.parameters;
-    const required = parameters.filter((parameter) => !checker.isOptionalParameter(parameter)).length;
-    return count >= required && (count <= parameters.length || ts.hasRestParameter(declaration));
-}
 /**
  * The type argument `index` of `call` is passed as. For an overloaded callee
  * it counts only when every overload taking that many arguments agrees on it
@@ -134,7 +127,7 @@ function argumentType(ctx, call, reference, index) {
     const argumentCount = call.arguments?.length ?? 0;
     const callee = checker.getTypeAtLocation(call.expression);
     const signatures = ts.isNewExpression(call) ? callee.getConstructSignatures() : callee.getCallSignatures();
-    const overloads = signatures.filter((signature) => acceptsArgumentCount(ctx, signature, argumentCount));
+    const overloads = signatures.filter((signature) => (0, signatures_1.acceptsArgumentCount)(ctx, signature, argumentCount));
     if (overloads.length <= 1)
         return checker.getContextualType(reference);
     const [first, ...rest] = overloads.map((signature) => declaredArgumentType(ctx, signature, index, call));
@@ -232,7 +225,40 @@ function recordPresenceTest({ ctx, reference }, profile) {
         recordMember(profile, member, true);
     return member !== undefined;
 }
-/** `x.m` / `x['m']`: a member the value is accessed by. */
+// Array methods whose arguments become elements of the receiver.
+const ELEMENT_ADDING_METHODS = new Set(['push', 'unshift']);
+/** The value `access = value` assigns, if `access` is the target of a plain assignment. */
+function valueAssignedTo(ctx, access) {
+    const { ts } = ctx;
+    const assignment = access.parent;
+    const isAssignment = ts.isBinaryExpression(assignment) &&
+        assignment.left === access &&
+        assignment.operatorToken.kind === ts.SyntaxKind.EqualsToken;
+    return isAssignment ? assignment.right : undefined;
+}
+/** The values `x.push(a, b)` / `x.unshift(a)` add as elements, when `access` is such a call's callee. */
+function addedElements(ctx, access, member) {
+    const { ts } = ctx;
+    const call = access.parent;
+    if (member === undefined || !ELEMENT_ADDING_METHODS.has(member))
+        return undefined;
+    if (!ts.isCallExpression(call) || call.expression !== access)
+        return undefined;
+    return call.arguments.filter((argument) => !ts.isSpreadElement(argument));
+}
+/** What an access writes into the value: elements (`x.push(v)`, `x[i] = v`) or a member (`x.m = v`). */
+function recordWrite(ctx, access, member, profile) {
+    const added = addedElements(ctx, access, member);
+    const value = added ? undefined : valueAssignedTo(ctx, access);
+    if (added)
+        profile.pushedValues.push(...added);
+    else if (value && member !== undefined) {
+        profile.memberValues.set(member, [...(profile.memberValues.get(member) ?? []), value]);
+    }
+    else if (value && ctx.ts.isElementAccessExpression(access))
+        profile.pushedValues.push(value);
+}
+/** `x.m` / `x['m']`: a member the value is accessed by, and anything the access writes into it. */
 function recordMemberAccess({ ctx, reference, inVariantBranch }, profile) {
     const { ts } = ctx;
     const access = reference.parent;
@@ -242,6 +268,7 @@ function recordMemberAccess({ ctx, reference, inVariantBranch }, profile) {
     const member = accessedMemberName(ctx, access);
     if (member !== undefined)
         recordMember(profile, member, inVariantBranch);
+    recordWrite(ctx, access, member, profile);
     return true;
 }
 /** `typeof x === 'string'`: a primitive the value is tested against. */

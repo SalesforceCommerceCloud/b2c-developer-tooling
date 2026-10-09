@@ -154,12 +154,19 @@ function dwTypeSpan(tag) {
   return {start: expression.getStart(), end: expression.getEnd()};
 }
 
+/** A documented type's simple class name; an array reads as its element's (`dw.order.Basket[]` -> 'Basket[]'). */
+function documentedName(checker, type) {
+  if (!checker.isArrayType(type)) return (type.aliasSymbol ?? type.getSymbol())?.getName();
+  const element = documentedName(checker, checker.getTypeArguments(type)[0]);
+  return element && `${element}[]`;
+}
+
 /** Simple class names of a documented type's non-nullable constituents (`dw.order.Basket|null` -> ['Basket']). */
 function documentedNames(checker, type) {
   const parts = type.isUnion() ? type.types : [type];
   return parts
     .filter((t) => !(t.flags & (ts.TypeFlags.Null | ts.TypeFlags.Undefined)))
-    .map((t) => (t.aliasSymbol ?? t.getSymbol())?.getName())
+    .map((t) => documentedName(checker, t))
     .filter(Boolean);
 }
 
@@ -270,6 +277,8 @@ function parseInferredNames(description) {
 }
 
 function isRelated(ancestry, a, b) {
+  const arrays = a.endsWith('[]') && b.endsWith('[]');
+  if (arrays) return isRelated(ancestry, a.slice(0, -2), b.slice(0, -2));
   return a === b || ancestry.get(a)?.has(b) === true || ancestry.get(b)?.has(a) === true;
 }
 

@@ -8,7 +8,8 @@
 // other types that carry no information, rendering a type the way a reader
 // expects to see it, de-duplicating candidates by that rendering, reaching a
 // type's real members (stripping nullability), pulling the element type out
-// of a collection, and turning candidate types into completion entries.
+// of an array or collection (and building an array of one), and turning
+// candidate types into completion entries.
 // These are the "leaf" operations the recursive engine in ./core and the
 // decision rules in ./policy build on.
 
@@ -141,15 +142,20 @@ function classDisplayName(checker: tsserver.TypeChecker, symbol: tsserver.Symbol
  * interface instantiated only with default type arguments reads as the bare
  * class name (`Product`, `LineItemCtnr`); one with real type arguments
  * renders them the same way (`Collection<Product>`, not the checker's
- * `Collection<Product<Product>>`). Everything else — primitives, object
- * literals, arrays, lib types — is rendered by the checker as TypeScript
- * itself would.
+ * `Collection<Product<Product>>`), and an array reads as its element's
+ * display (`Product[]`). Everything else — primitives, object literals, lib
+ * types — is rendered by the checker as TypeScript itself would.
  */
 function computeTypeDisplayString(ts: typeof tsserver, checker: tsserver.TypeChecker, type: tsserver.Type): string {
+  if (checker.isArrayType(type)) {
+    const [element] = checker.getTypeArguments(type as tsserver.TypeReference);
+    const display = element ? computeTypeDisplayString(ts, checker, element) : 'any';
+    return element?.isUnion() ? `(${display})[]` : `${display}[]`;
+  }
   const symbol = type.getSymbol();
   const isClassOrInterface =
     symbol !== undefined && (symbol.flags & (ts.SymbolFlags.Class | ts.SymbolFlags.Interface)) !== 0;
-  if (!isClassOrInterface || checker.isArrayType(type)) return checker.typeToString(type);
+  if (!isClassOrInterface) return checker.typeToString(type);
   if (hasOnlyDefaultTypeArguments(ts, checker, type)) return classDisplayName(checker, symbol);
   const typeArguments = checker
     .getTypeArguments(type as tsserver.TypeReference)
@@ -224,7 +230,7 @@ export function hasAllMembers(
  * @param location - any node in the file where the type is being used;
  * required by getTypeOfSymbolAtLocation to resolve member types.
  */
-export function collectionElementType(
+function collectionElementType(
   ctx: InferenceContext,
   type: tsserver.Type,
   location: tsserver.Node,
@@ -241,6 +247,37 @@ export function collectionElementType(
   if (!element || isAnyType(ts, element)) return undefined;
   if (element.flags & (ts.TypeFlags.Void | ts.TypeFlags.Unknown | ts.TypeFlags.Never)) return undefined;
   return element;
+}
+
+/**
+ * The element type of an array (`ProductLineItem[]`) or of a Script API
+ * collection or iterator (see {@link collectionElementType}): what `x[i]`,
+ * `x.pop()` or a `forEach` callback over `x` sees.
+ */
+export function elementTypeOf(
+  ctx: InferenceContext,
+  type: tsserver.Type,
+  location: tsserver.Node,
+): tsserver.Type | undefined {
+  const {checker} = ctx;
+  if (checker.isArrayType(type)) return checker.getTypeArguments(type as tsserver.TypeReference)[0];
+  return collectionElementType(ctx, type, location);
+}
+
+/** The checker's own array factory, which TypeScript keeps off its public typings. */
+interface ArrayTypeFactory {
+  createArrayType?(elementType: tsserver.Type): tsserver.Type;
+}
+
+/**
+ * `element[]`, built by the checker itself so an inferred array reads, and
+ * resolves members (`filter`, `[0]`, `forEach`), exactly like a declared one.
+ * The factory is internal to TypeScript, so it is feature-detected: a
+ * TypeScript without it leaves inferred arrays silent rather than wrong.
+ */
+export function arrayTypeOf(ctx: InferenceContext, element: tsserver.Type): tsserver.Type | undefined {
+  const factory = ctx.checker as tsserver.TypeChecker & ArrayTypeFactory;
+  return typeof factory.createArrayType === 'function' ? factory.createArrayType(element) : undefined;
 }
 
 /** Renders candidate types as hover text, e.g. `"Product | Category"`. */

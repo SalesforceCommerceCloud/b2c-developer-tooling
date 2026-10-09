@@ -16,7 +16,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import {ELEMENT_FIRST_CALLBACK_CALLEES, MAX_CHAIN_HOPS} from './constants';
+import {MAX_CHAIN_HOPS} from './constants';
 import {withCycleGuard, withInferenceGuards} from './context';
 import type {InferenceContext} from './context';
 import {
@@ -27,7 +27,10 @@ import {
 } from './ast-helpers';
 import {collectCallSites, getReferenceNameNode} from './call-sites';
 import {frameworkParameterTypes} from './framework-contracts';
+import {genericResultSource} from './generic-calls';
+import {localMemberValues, memberValueExpressions, valueDeclarationOf} from './member-values';
 import {decideType, limitUnion, normalizeCandidates} from './policy';
+import {callbackParameterTypes, isElementFirstCallbackCall, resolveCalleeDeclaration} from './signatures';
 import {
   collectExportAssignments,
   findSuperModuleFile,
@@ -35,28 +38,11 @@ import {
   superModuleLevels,
   traceSuperModuleAccess,
 } from './super-module';
-import {collectionElementType, dedupeTypes, getMemberOfType, informativeParts, isAnyType} from './type-helpers';
+import {arrayTypeOf, dedupeTypes, elementTypeOf, getMemberOfType, informativeParts, isAnyType} from './type-helpers';
 import {usageProfileOf} from './usage-profile';
 
 function identifierText(ctx: InferenceContext, name: tsserver.BindingName): string | undefined {
   return ctx.ts.isIdentifier(name) ? name.text : undefined;
-}
-
-/**
- * Resolves the function-like declaration a call expression's callee refers
- * to, via its symbol or — as a fallback for shapes the symbol lookup misses
- * — the checker's resolved signature.
- */
-function resolveCalleeDeclaration(
-  ctx: InferenceContext,
-  call: tsserver.CallExpression,
-): tsserver.SignatureDeclaration | undefined {
-  const {checker, ts} = ctx;
-  const sym = checker.getSymbolAtLocation(call.expression);
-  const decl = sym?.valueDeclaration ?? sym?.declarations?.[0];
-  if (decl && ts.isFunctionLike(decl)) return decl;
-  const sigDecl = checker.getResolvedSignature(call)?.declaration;
-  return sigDecl && ts.isFunctionLike(sigDecl) ? sigDecl : undefined;
 }
 
 /**
@@ -80,10 +66,36 @@ function resolveVariableTypes(
   if (hasExplicitVariableType(decl, ctx.ts)) return [];
   return withCycleGuard(ctx, decl, [], () => {
     const profile = usageProfileOf(ctx, decl);
-    const values = decl.initializer ? [decl.initializer, ...profile.assignedValues] : profile.assignedValues;
-    const evidence = values.flatMap((value) => resolveExpressionTypes(ctx, value, depth, chainHops));
+    const initial = decl.initializer
+      ? resolveInitializerTypes(ctx, decl.initializer, profile.pushedValues, depth, chainHops)
+      : [];
+    const evidence = [...initial, ...resolveValues(ctx, profile.assignedValues, depth, chainHops)];
     return decideType(ctx, evidence, profile, identifierText(ctx, decl.name), false);
   });
+}
+
+/** A variable's initializer; an array literal later filled by `items.push(x)` is an array of what it holds. */
+function resolveInitializerTypes(
+  ctx: InferenceContext,
+  initializer: tsserver.Expression,
+  pushedValues: readonly tsserver.Expression[],
+  depth: number,
+  chainHops: number,
+): tsserver.Type[] {
+  if (pushedValues.length === 0 || !ctx.ts.isArrayLiteralExpression(initializer)) {
+    return resolveExpressionTypes(ctx, initializer, depth, chainHops);
+  }
+  return resolveArrayTypes(ctx, [...initializer.elements, ...pushedValues], depth, chainHops);
+}
+
+/** The types of several values the same thing can hold, each one hop further along the expression. */
+function resolveValues(
+  ctx: InferenceContext,
+  values: readonly tsserver.Expression[],
+  depth: number,
+  chainHops: number,
+): tsserver.Type[] {
+  return values.flatMap((value) => resolveExpressionTypes(ctx, value, depth, chainHops + 1));
 }
 
 /**
@@ -163,14 +175,14 @@ function resolveSuperModuleMemberTypes(
 }
 
 /**
- * Infers the type of a callback's first parameter from sibling arguments of
- * the call the callback is passed to: `collections.forEach` / `map` /
- * `filter` / `every` / `some` / `find` / `first` (see
- * {@link ELEMENT_FIRST_CALLBACK_CALLEES}). A function expression in argument
- * position has no name to run a reference search on, but the collection
- * travelling alongside it names the element type. Unknown callees and
- * `reduce` (accumulator first) are left alone — applying the heuristic to an
- * arbitrary helper would guess wrong more often than it helps.
+ * Infers a callback parameter's type from the call the callback is passed
+ * to. A method on a known receiver declares it (`value: T` of
+ * `items.filter(function (item) {...})` once `items` is inferred as a
+ * `ProductLineItem[]`). Otherwise, for an element-first helper
+ * (`collections.forEach(coll, fn)`, see {@link isElementFirstCallbackCall}),
+ * the first parameter is an element of the collection travelling alongside
+ * it. Unknown helpers are left alone — applying the heuristic to an arbitrary
+ * helper would guess wrong more often than it helps.
  */
 function inferCallbackParameterTypes(
   ctx: InferenceContext,
@@ -178,17 +190,21 @@ function inferCallbackParameterTypes(
   paramIndex: number,
   depth: number,
 ): tsserver.Type[] {
-  const {ts} = ctx;
   const call = fn.parent;
-  if (paramIndex !== 0 || !call || !ts.isCallExpression(call) || !call.arguments.includes(fn as tsserver.Expression)) {
-    return [];
-  }
-  const callee = ts.isPropertyAccessExpression(call.expression) ? call.expression.name : call.expression;
-  if (!ts.isIdentifier(callee) || !ELEMENT_FIRST_CALLBACK_CALLEES.has(callee.text)) return [];
-  return call.arguments
-    .filter((arg) => arg !== fn)
-    .flatMap((arg) => resolveExpressionTypes(ctx, arg, depth).map((type) => collectionElementType(ctx, type, arg)))
-    .filter((element): element is tsserver.Type => element !== undefined);
+  if (!call || !ctx.ts.isCallExpression(call)) return [];
+  const argIndex = call.arguments.indexOf(fn as tsserver.Expression);
+  const access = call.expression;
+  const declared = ctx.ts.isPropertyAccessExpression(access)
+    ? callbackParameterTypes(
+        ctx,
+        memberTypesOfReceiver(ctx, access.expression, access.name, depth, 0),
+        call,
+        argIndex,
+        paramIndex,
+      )
+    : [];
+  if (declared.length > 0 || paramIndex !== 0 || !isElementFirstCallbackCall(ctx, call)) return declared;
+  return call.arguments.filter((arg) => arg !== fn).flatMap((arg) => resolveElementTypes(ctx, arg, depth, 0));
 }
 
 /**
@@ -237,12 +253,58 @@ function resolveFromParts(
   if (ts.isPropertyAccessExpression(expr)) return resolvePropertyTypes(ctx, expr, depth, chainHops);
   if (ts.isIdentifier(expr)) return resolveIdentifierTypes(ctx, expr, depth, chainHops);
   if (ts.isParenthesizedExpression(expr)) return resolveExpressionTypes(ctx, expr.expression, depth, chainHops);
+  if (ts.isElementAccessExpression(expr)) return resolveElementAccessTypes(ctx, expr, depth, chainHops);
+  if (ts.isArrayLiteralExpression(expr)) return resolveArrayTypes(ctx, expr.elements, depth, chainHops);
   // `it.hasNext() ? it.next() : null` (the body of SFRA's collections.first)
   // and `a || b` / `a ?? b` can each evaluate to either side.
   if (ts.isConditionalExpression(expr)) {
     return resolveAlternatives(ctx, [expr.whenTrue, expr.whenFalse], depth, chainHops);
   }
   return ts.isBinaryExpression(expr) ? resolveLogicalTypes(ctx, expr, depth, chainHops) : [];
+}
+
+/** The element types of whatever arrays or collections `collection` holds. */
+function resolveElementTypes(
+  ctx: InferenceContext,
+  collection: tsserver.Expression,
+  depth: number,
+  chainHops: number,
+): tsserver.Type[] {
+  return resolveExpressionTypes(ctx, collection, depth, chainHops + 1).flatMap(
+    (type) => elementTypeOf(ctx, type, collection) ?? [],
+  );
+}
+
+/** `x[i]` is an element of `x` (a Script API collection has no index signature to say so); `x['m']` reads member `m`. */
+function resolveElementAccessTypes(
+  ctx: InferenceContext,
+  expr: tsserver.ElementAccessExpression,
+  depth: number,
+  chainHops: number,
+): tsserver.Type[] {
+  const index = expr.argumentExpression;
+  if (ctx.ts.isStringLiteralLike(index)) {
+    return resolveMemberValueTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, index, depth, chainHops));
+  }
+  return dedupeTypes(ctx, resolveElementTypes(ctx, expr.expression, depth, chainHops));
+}
+
+/** `[a, ...rest]`: an array of the one type its elements share; elements of unrelated types name no array. */
+function resolveArrayTypes(
+  ctx: InferenceContext,
+  elements: readonly tsserver.Expression[],
+  depth: number,
+  chainHops: number,
+): tsserver.Type[] {
+  const {ts} = ctx;
+  const elementTypes = elements.flatMap((element) =>
+    ts.isSpreadElement(element)
+      ? resolveElementTypes(ctx, element.expression, depth, chainHops)
+      : resolveExpressionTypes(ctx, element, depth, chainHops + 1),
+  );
+  const [element, ...others] = limitUnion(ctx, normalizeCandidates(ctx, elementTypes));
+  const array = element && others.length === 0 ? arrayTypeOf(ctx, element) : undefined;
+  return array ? [array] : [];
 }
 
 function resolveAlternatives(
@@ -277,27 +339,54 @@ function resolveLogicalTypes(
 }
 
 /**
- * The declared types of `access`'s member on each candidate type of its
- * receiver (`x.getPriceModel` when `x` is undocumented but inferable). When
- * no receiver type carries the member and the receiver is (an alias of)
+ * The types of member `name` on each candidate type of `receiver`
+ * (`x.getPriceModel` when `x` is undocumented but inferable). When no
+ * receiver type carries the member and the receiver is (an alias of)
  * `module.superModule`, the member may be an export augmentation added by a
- * pass-through overlay level, which no export type can carry.
+ * pass-through overlay level, which no export type can carry. A member the
+ * checker binds on a receiver it types as nothing worth showing (`this` in a
+ * prototype method) is the member it binds; on an untyped local receiver, it
+ * is whatever the code writes to it (`productData.apiProduct = ...`).
  */
 function memberTypesOfReceiver(
   ctx: InferenceContext,
-  access: tsserver.PropertyAccessExpression,
+  receiver: tsserver.Expression,
+  name: tsserver.MemberName | tsserver.StringLiteralLike,
   depth: number,
   chainHops: number,
 ): tsserver.Type[] {
   const {ts, checker} = ctx;
-  const memberName = access.name.text;
-  const types = resolveExpressionTypes(ctx, access.expression, depth, chainHops + 1).flatMap((receiverType) => {
+  const memberName = name.text;
+  const types = resolveExpressionTypes(ctx, receiver, depth, chainHops + 1).flatMap((receiverType) => {
     const member = getMemberOfType(checker, receiverType, memberName);
-    return member ? [checker.getTypeOfSymbolAtLocation(member, access.name)] : [];
+    return member ? memberTypes(ctx, member, name, depth, chainHops) : [];
   });
   if (types.length > 0) return types;
-  const superAccess = traceSuperModuleAccess(ts, checker, access.expression);
-  return superAccess ? resolveSuperModuleMemberTypes(ctx, superAccess, memberName, depth, chainHops) : [];
+  const superAccess = traceSuperModuleAccess(ts, checker, receiver);
+  if (superAccess) return resolveSuperModuleMemberTypes(ctx, superAccess, memberName, depth, chainHops);
+  const bound = checker.getSymbolAtLocation(name);
+  if (bound) return memberTypes(ctx, bound, name, depth, chainHops);
+  return resolveValues(ctx, localMemberValues(ctx, receiver, memberName), depth, chainHops);
+}
+
+/**
+ * A member's declared type, or — when that says nothing, as for most
+ * undocumented members (`{apiProduct: apiProduct}`, `this.productSearch =
+ * productSearch`) — the types of the values it is declared with.
+ */
+function memberTypes(
+  ctx: InferenceContext,
+  member: tsserver.Symbol,
+  location: tsserver.Node,
+  depth: number,
+  chainHops: number,
+): tsserver.Type[] {
+  const declared = ctx.checker.getTypeOfSymbolAtLocation(member, location);
+  const declaration = member.valueDeclaration ?? member.declarations?.[0];
+  if (informativeParts(ctx, declared).length > 0 || !declaration) return [declared];
+  return withCycleGuard(ctx, declaration, [], () =>
+    resolveValues(ctx, memberValueExpressions(ctx, member), depth, chainHops),
+  );
 }
 
 /**
@@ -329,10 +418,18 @@ function resolveCallResultTypes(
 ): tsserver.Type[] {
   const calleeFn = resolveCalleeDeclaration(ctx, expr);
   const inferred = calleeFn ? inferReturnType(ctx, calleeFn, depth + 1) : [];
-  if (inferred.length > 0 || !ctx.ts.isPropertyAccessExpression(expr.expression)) return inferred;
+  if (inferred.length > 0) return inferred;
+  const generic = genericResultSource(ctx, expr);
+  if (generic) {
+    return generic.kind === 'return'
+      ? inferReturnType(ctx, generic.fn, depth + 1)
+      : resolveExpressionTypes(ctx, generic.argument, depth, chainHops + 1);
+  }
+  const callee = expr.expression;
+  if (!ctx.ts.isPropertyAccessExpression(callee)) return [];
   return dedupeTypes(
     ctx,
-    memberTypesOfReceiver(ctx, expr.expression, depth, chainHops).flatMap((methodType) =>
+    memberTypesOfReceiver(ctx, callee.expression, callee.name, depth, chainHops).flatMap((methodType) =>
       signatureReturnTypes(ctx, methodType, depth),
     ),
   );
@@ -345,9 +442,14 @@ function resolvePropertyTypes(
   depth: number,
   chainHops: number,
 ): tsserver.Type[] {
+  return resolveMemberValueTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, expr.name, depth, chainHops));
+}
+
+/** The member types worth keeping as a property's value. */
+function resolveMemberValueTypes(ctx: InferenceContext, types: readonly tsserver.Type[]): tsserver.Type[] {
   return dedupeTypes(
     ctx,
-    memberTypesOfReceiver(ctx, expr, depth, chainHops).filter((type) => !isAnyType(ctx.ts, type)),
+    types.filter((type) => !isAnyType(ctx.ts, type)),
   );
 }
 
@@ -358,8 +460,8 @@ function resolveIdentifierTypes(
   depth: number,
   chainHops: number,
 ): tsserver.Type[] {
-  const {ts, checker} = ctx;
-  const decl = checker.getSymbolAtLocation(expr)?.valueDeclaration;
+  const {ts} = ctx;
+  const decl = valueDeclarationOf(ctx, expr);
   if (decl && ts.isParameter(decl)) return inferParameterType(ctx, decl, depth + 1);
   if (decl && ts.isVariableDeclaration(decl)) return resolveVariableTypes(ctx, decl, depth, chainHops + 1);
   return [];

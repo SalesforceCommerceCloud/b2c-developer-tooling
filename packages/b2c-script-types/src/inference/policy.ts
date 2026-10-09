@@ -12,13 +12,15 @@
 // 1. Normalize: split unions, widen literals, drop types that say nothing
 //    (`null`, `any`, `T`, `{}`), dedupe by display.
 // 2. Fit: a parameter keeps only candidates exposing every member its body
-//    relies on — members it tests for first (`'ID' in x`) aside, and members
+//    relies on — members it tests for first (`'ID' in x`) aside, members
 //    no declared type has at all (an API newer than the vendored types,
 //    an expando property), which can't tell candidates apart — and able
 //    to stand wherever the body passes the value to a documented helper, or
 //    a class its body tests for with `instanceof`/`typeof`. A duck-typed view
 //    model, or a wrong argument at one buggy call site, can't masquerade as
-//    the Script API class the body actually needs.
+//    the Script API class the body actually needs. A class missing members
+//    only its subclasses have is a downcast: it narrows to the one subclass
+//    that has them, or stays itself when several do.
 // 3. Union like IntelliJ: up to MAX_UNION_TYPES, after dropping any candidate
 //    whose superclass is also a candidate (`Variant | Product` is `Product`).
 //    Wider evidence first reads instantiations of one generic class as the
@@ -276,6 +278,30 @@ export function matchAmbientTypesByUsage(
 }
 
 /**
+ * What a candidate lacking some members the body uses can still be: the one
+ * subclass that has them all (a body relying on `paymentTransaction` is
+ * handed `OrderPaymentInstrument`s, whatever the argument is documented as),
+ * or — when several subclasses would do (`getMasterProduct()` on a `Variant`
+ * or a `VariationGroup`, called once the body knows which) — the candidate
+ * itself. Root classes (`PersistentObject`, ...) never stand in for a
+ * subclass this way; nearly every class extends them.
+ */
+function downcastOf(ctx: InferenceContext, type: tsserver.Type, memberNames: ReadonlySet<string>): tsserver.Type[] {
+  const own = classOf(ctx, type);
+  if (!own || UNINFORMATIVE_ANCESTORS.has(own.symbol?.name ?? '')) return [];
+  const fitting = getAmbientClasses(ctx).filter((ambientClass) =>
+    [...memberNames].every((name) => ambientClass.memberNames.has(name)),
+  );
+  const subclasses = mostGeneral(
+    ctx,
+    resolveMatches(ctx, fitting)
+      .map((match) => match.type)
+      .filter((subclass) => isAncestorOf(ctx, type, subclass)),
+  );
+  return subclasses.length > 1 ? [type] : subclasses;
+}
+
+/**
  * The required members that can tell candidates apart: those some ambient
  * class, JavaScript built-in or candidate declares. A member nothing declares
  * (`searchHit.discountedPromotionIDs`, newer than the vendored Script API)
@@ -318,10 +344,12 @@ export function decideType(
   const required = requiredMembers(profile);
   const checkable = checkableMembers(ctx, required, candidates);
   const uses = constrainingUses(ctx, profile);
-  const fits = (type: tsserver.Type): boolean =>
-    guardKeys.has(typeDisplayString(ctx, type)) ||
-    (hasAllMembers(ctx.checker, type, checkable) && fitsEveryUse(ctx, type, uses));
-  const fitting = fitUsage ? candidates.filter(fits) : candidates;
+  const fit = (type: tsserver.Type): tsserver.Type[] => {
+    if (guardKeys.has(typeDisplayString(ctx, type))) return [type];
+    const fitted = hasAllMembers(ctx.checker, type, checkable) ? [type] : downcastOf(ctx, type, checkable);
+    return fitted.filter((fittedType) => fitsEveryUse(ctx, fittedType, uses));
+  };
+  const fitting = fitUsage ? dedupeTypes(ctx, candidates.flatMap(fit)) : candidates;
   if (fitting.length > 0) return limitUnion(ctx, fitting, checkable);
   const used = mostSpecificUse(ctx, profile, required);
   if (used.length > 0) return used;
