@@ -25,6 +25,7 @@ import {
 import {invalidateCache} from './cache.js';
 import {getLogger} from '../../logging/logger.js';
 import {
+  MrtScapiPreconditionError,
   runMrtWithFallback,
   type MrtBackend,
   type MrtBackendPreference,
@@ -956,11 +957,30 @@ export interface MrtEnvironmentView {
   createdAt?: string;
   /** Last-modified timestamp (ISO 8601), when present (SCAPI only). */
   updatedAt?: string;
+  /** Hostname pattern for V8 Tag loading (legacy only). */
+  hostname?: string;
+  /** Full external hostname (legacy only). */
+  externalHostname?: string;
+  /** External domain for Universal PWA SSR (legacy only). */
+  externalDomain?: string;
+  /** Whether HTTP cookies are forwarded to the origin (legacy only). */
+  allowCookies?: boolean;
+  /** Whether source maps are enabled (legacy only). */
+  enableSourceMaps?: boolean;
+  /** Minimum log level, in the backend's own form (legacy only). */
+  logLevel?: string;
+  /** SSR proxy configurations (legacy only). */
+  proxies?: Array<{path?: string; host: string}>;
   /** Backend that produced this row. */
   backend: MrtBackend;
 }
 
-/** Normalizes a legacy MRT environment ({@link MrtEnvironment}) into a {@link MrtEnvironmentView}. */
+/**
+ * Normalizes a legacy MRT environment ({@link MrtEnvironment}) into a
+ * {@link MrtEnvironmentView}, carrying the legacy-only configuration fields
+ * (hostname, external host/domain, cookies, source maps, log level, proxies) so
+ * the shared view keeps the detail the old per-command printers showed.
+ */
 export function normalizeLegacyEnv(env: MrtEnvironment | MrtEnvironmentUpdate): MrtEnvironmentView {
   const e = env as MrtEnvironmentUpdate;
   return {
@@ -970,6 +990,16 @@ export function normalizeLegacyEnv(env: MrtEnvironment | MrtEnvironmentUpdate): 
     region: e.ssr_region || undefined,
     architecture: e.ssr_architecture ?? undefined,
     isProduction: e.is_production ?? undefined,
+    hostname: e.hostname || undefined,
+    externalHostname: e.ssr_external_hostname || undefined,
+    externalDomain: e.ssr_external_domain || undefined,
+    allowCookies: e.allow_cookies ?? undefined,
+    enableSourceMaps: e.enable_source_maps ?? undefined,
+    logLevel: (e.log_level as string) || undefined,
+    // `path` is returned by the API but not in the generated proxy type.
+    proxies: e.ssr_proxy_configs
+      ? e.ssr_proxy_configs.map((p) => ({path: (p as {path?: string}).path, host: p.host}))
+      : undefined,
     backend: 'legacy',
   };
 }
@@ -1494,8 +1524,13 @@ export async function listEnvironmentsWithBackend(
 
 /** Options for {@link createEnvironmentWithBackend}. */
 export interface CreateEnvironmentBackendOptions extends EnvBackendOptions {
-  /** Display name for the new environment (both backends). */
-  name: string;
+  /**
+   * Display name for the new environment. SCAPI requires it (the only field it
+   * accepts on create); legacy defaults it to the slug. Optional here so each
+   * backend branch validates it — SCAPI throws a {@link MrtScapiPreconditionError}
+   * when absent so `auto` can fall back to legacy.
+   */
+  name?: string;
   /** Environment slug (legacy only; SCAPI generates the environment ID). */
   slug?: string;
   /** Default SSR region, hyphenated legacy form (legacy only). */
@@ -1560,7 +1595,14 @@ export async function createEnvironmentWithBackend(
       onResolve,
     },
     {
-      scapi: () => createEnvironmentScapi(scapiConnection!, {storefrontId: projectSlug, displayName: name}),
+      scapi: () => {
+        if (!name) {
+          throw new MrtScapiPreconditionError(
+            'The SCAPI MRT backend requires a display name (--name) to create an environment.',
+          );
+        }
+        return createEnvironmentScapi(scapiConnection!, {storefrontId: projectSlug, displayName: name});
+      },
       legacy: async () => {
         if (!legacyAuth) {
           throw new Error(LEGACY_AUTH_REQUIRED_MESSAGE);
@@ -1572,7 +1614,8 @@ export async function createEnvironmentWithBackend(
           {
             projectSlug,
             slug,
-            name,
+            // Legacy defaults the display name to the slug when not provided.
+            name: name ?? slug,
             region,
             isProduction,
             hostname,
@@ -1656,7 +1699,9 @@ export async function cloneEnvironmentWithBackend(
     {
       scapi: () => {
         if (!displayName) {
-          throw new Error('The SCAPI MRT backend requires a display name (--name) to clone an environment.');
+          throw new MrtScapiPreconditionError(
+            'The SCAPI MRT backend requires a display name (--name) to clone an environment.',
+          );
         }
         return cloneEnvironmentScapi(scapiConnection!, {
           storefrontId: projectSlug,
@@ -1803,7 +1848,9 @@ export async function updateEnvironmentWithBackend(
     {
       scapi: () => {
         if (name === undefined) {
-          throw new Error('The SCAPI MRT backend only updates the environment display name; provide --name.');
+          throw new MrtScapiPreconditionError(
+            'The SCAPI MRT backend only updates the environment display name; provide --name.',
+          );
         }
         return updateEnvironmentScapi(scapiConnection!, {
           storefrontId: projectSlug,

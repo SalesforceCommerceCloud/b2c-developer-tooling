@@ -130,7 +130,7 @@ describe('mrt env clone', () => {
     expect(result.slug).to.equal('qa');
   });
 
-  it('requires --name on the SCAPI backend', async () => {
+  it('rejects on the SCAPI backend when no display name is provided', async () => {
     const command = createCommand();
     stubParse(
       command,
@@ -142,13 +142,14 @@ describe('mrt env clone', () => {
     stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'p', mrtEnvironment: 'staging'}}));
-    const errorStub = sinon.stub(command, 'error').throws(new Error('expected'));
 
+    // The SCAPI clone branch rejects when the display name is missing, and
+    // explicit scapi never falls back to legacy.
     try {
       await command.run();
       expect.fail('expected error');
-    } catch {
-      expect(errorStub.firstCall.args[0]).to.include('requires --name');
+    } catch (error) {
+      expect((error as Error).message).to.include('--name');
     }
   });
 

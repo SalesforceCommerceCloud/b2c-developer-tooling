@@ -84,6 +84,9 @@ b2c mrt env clone qa -p my-storefront -e staging --clone-redirects --clone-env-v
 # Get environment details
 b2c mrt env get -p my-storefront -e production
 
+# Promote an environment to primary (SCAPI backend only)
+b2c mrt env set-primary -p my-storefront -e production --mrt-backend scapi
+
 # Invalidate CDN cache
 b2c mrt env invalidate -p my-storefront -e production
 ```

@@ -160,6 +160,23 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     waitForEnv,
   };
 
+  // SCAPI only accepts a display name on create; these configure the legacy MRT
+  // Cloud API and are dropped on SCAPI. (--wait has its own SCAPI notice below.)
+  protected override mrtBackendOnlyFlags() {
+    return {
+      legacy: [
+        {name: '--region', char: 'r'},
+        {name: '--production'},
+        {name: '--hostname'},
+        {name: '--external-hostname'},
+        {name: '--external-domain'},
+        {name: '--allow-cookies'},
+        {name: '--enable-source-maps'},
+        {name: '--proxy'},
+      ],
+    };
+  }
+
   async run(): Promise<unknown> {
     const {mrtProject: project} = this.resolvedConfig.values;
 
@@ -185,23 +202,15 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     } = this.flags;
 
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
-    // Whether the resolved preference + config will route this run to SCAPI, so
-    // required fields can be validated against the backend that actually runs.
-    const scapi = preference === 'scapi' || (preference === 'auto' && Boolean(scapiConnection));
 
-    // The slug positional/flag is the legacy environment identifier. SCAPI
-    // generates the environment ID, so it only requires a display name.
-    const slug = scapi ? this.args.slug : this.resolveEnvironmentSlug(this.args.slug);
-
-    if (scapi && !nameFlag) {
-      this.error('The SCAPI MRT backend requires --name to create an environment.');
-    }
+    // The slug positional/flag is the legacy environment identifier (SCAPI
+    // generates the environment ID and only needs a display name). Resolve it
+    // without erroring; each backend branch validates what it actually needs —
+    // legacy requires the slug, SCAPI requires the display name.
+    const slug = this.args.slug ?? this.resolvedConfig.values.mrtEnvironment;
 
     // Default name to slug on the legacy backend when not provided.
     const name = nameFlag ?? slug;
-    if (!name) {
-      this.error('An environment name is required. Provide --name (or a slug argument on the legacy backend).');
-    }
 
     // Parse proxy configurations (legacy backend only)
     const proxyConfigs = proxyStrings?.map((p) => parseProxyString(p));

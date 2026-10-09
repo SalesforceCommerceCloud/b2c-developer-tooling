@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, ux} from '@oclif/core';
 import MrtRedirectList from '../../../../../src/commands/mrt/env/redirect/list.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../../helpers/stub-parse.js';
@@ -209,5 +209,47 @@ describe('mrt env redirect list', () => {
   it('supports the SCAPI MRT backend', () => {
     const command = createCommand();
     expect(command.supportsScapiMrt()).to.equal(true);
+  });
+
+  describe('renderTable — deprecated column aliases', () => {
+    const REDIRECTS = [{id: '/old', source: '/old', destination: '/new', backend: 'legacy'}];
+
+    function capture(fn: () => void): string {
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      fn();
+      return stdoutStub
+        .getCalls()
+        .map((call) => String(call.args[0] ?? ''))
+        .join('\n');
+    }
+
+    it('remaps the fromPath/toUrl aliases to source/destination without warning or duplicate columns', async () => {
+      const command = createCommand();
+      stubParse(command, {project: 'my-project', environment: 'staging', columns: 'fromPath,toUrl'}, {});
+      await command.init();
+      const warnStub = sinon.stub(command, 'warn').returns(void 0);
+
+      const output = capture(() => command.renderTable(REDIRECTS));
+
+      // The aliases resolve to real columns, so no "unknown column" warning fires.
+      expect(warnStub.called).to.equal(false);
+      // The From/To columns render exactly once each (no duplicate alias columns).
+      expect(output.match(/From/g)).to.have.lengthOf(1);
+      expect(output.match(/To/g)).to.have.lengthOf(1);
+      expect(output).to.include('/old');
+      expect(output).to.include('/new');
+    });
+
+    it('still warns and falls back to defaults for a genuinely unknown column', async () => {
+      const command = createCommand();
+      stubParse(command, {project: 'my-project', environment: 'staging', columns: 'nope'}, {});
+      await command.init();
+      const warnStub = sinon.stub(command, 'warn').returns(void 0);
+
+      capture(() => command.renderTable(REDIRECTS));
+
+      expect(warnStub.calledOnce).to.equal(true);
+      expect(warnStub.firstCall.args[0]).to.include('No valid columns specified');
+    });
   });
 });

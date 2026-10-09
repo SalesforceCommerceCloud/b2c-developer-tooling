@@ -115,7 +115,7 @@ describe('mrt env update', () => {
     expect(result.name).to.equal('Updated Staging');
   });
 
-  it('requires --name on the SCAPI backend', async () => {
+  it('rejects on the SCAPI backend when no display name is provided', async () => {
     const command = createCommand();
 
     stubParse(command, {project: 'my-project', 'mrt-backend': 'scapi'}, {});
@@ -129,14 +129,13 @@ describe('mrt env update', () => {
       .stub(command, 'resolvedConfig')
       .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtBackend: 'scapi'}}));
 
-    const errorStub = stubErrorToThrow(command);
-
+    // The SCAPI update branch updates the display name only and rejects when
+    // --name is absent; explicit scapi never falls back to legacy.
     try {
       await command.run();
       expect.fail('Expected error');
-    } catch {
-      expect(errorStub.calledOnce).to.equal(true);
-      expect(errorStub.firstCall.args[0]).to.include('display name only');
+    } catch (error) {
+      expect((error as Error).message).to.include('--name');
     }
   });
 

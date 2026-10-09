@@ -85,6 +85,16 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
     waitForEnvironmentScapi,
   };
 
+  // --name sets the SCAPI clone's display name; the legacy clone identifies the
+  // new environment by slug and ignores it. The certificate/hostname fields
+  // configure the legacy MRT Cloud API only.
+  protected override mrtBackendOnlyFlags() {
+    return {
+      legacy: [{name: '--external-hostname'}, {name: '--external-domain'}, {name: '--certificate-id'}],
+      scapi: [{name: '--name', char: 'n'}],
+    };
+  }
+
   async run(): Promise<unknown> {
     const {slug} = this.args;
     const {mrtProject: project, mrtEnvironment: fromSlug} = this.resolvedConfig.values;
@@ -117,16 +127,9 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
     } = this.flags;
 
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
-    const scapi = preference === 'scapi' || (preference === 'auto' && Boolean(scapiConnection));
 
-    if (scapi) {
-      if (!displayName) {
-        this.error('The SCAPI MRT backend requires --name to clone an environment.');
-      }
-    } else if (!slug) {
-      this.error('The legacy MRT backend requires a slug argument for the new environment.');
-    }
-
+    // Each backend branch validates its own required input: SCAPI needs the
+    // display name (--name), legacy needs the new environment slug.
     this.log(
       t('commands.mrt.env.clone.cloning', 'Cloning environment "{{fromSlug}}" → "{{slug}}" in {{project}}...', {
         fromSlug,

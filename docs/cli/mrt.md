@@ -51,7 +51,7 @@ MRT commands resolve configuration in the following order of precedence:
 
 MRT commands use API key authentication against the legacy MRT Cloud API. The API key is configured in the Managed Runtime dashboard.
 
-Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), the `mrt env var` family (`list` / `set` / `push` / `delete`), the `mrt env redirect` family (`list` / `create` / `get` / `update` / `delete` / `clone`), the `mrt env access-control` family (`list` / `create` / `get` / `delete`), and the `mrt project` family (`list` / `create` / `get` / `update` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
+Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), the `mrt env` lifecycle family (`list` / `create` / `clone` / `get` / `update` / `delete` / `set-primary` / `invalidate`), the `mrt env var` family (`list` / `set` / `push` / `delete`), the `mrt env redirect` family (`list` / `create` / `get` / `update` / `delete` / `clone`), the `mrt env access-control` family (`list` / `create` / `get` / `delete`), and the `mrt project` family (`list` / `create` / `get` / `update` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
 
 ### Getting an API Key
 
@@ -94,6 +94,14 @@ These commands implement the SCAPI backend today:
 - `b2c mrt bundle list` — list bundles
 - `b2c mrt bundle deploy <bundleId>` — deploy an existing bundle
 - `b2c mrt bundle deploy` (no bundle ID) — upload a local build and optionally deploy it
+- `b2c mrt env list` — list environments
+- `b2c mrt env create` — create an environment
+- `b2c mrt env clone` — clone an environment
+- `b2c mrt env get` — get a single environment
+- `b2c mrt env update` — update an environment (display name only on SCAPI)
+- `b2c mrt env delete` — delete an environment
+- `b2c mrt env set-primary` — promote an environment to primary (SCAPI-only)
+- `b2c mrt env invalidate` — invalidate the environment's cache
 - `b2c mrt env var list` — list environment variables
 - `b2c mrt env var set` — set/update environment variables (merge)
 - `b2c mrt env var push` — sync a local `.env` file
@@ -500,6 +508,18 @@ b2c mrt env invalidate -p my-storefront -e production --pattern "/*"
 
 # Invalidate a specific path
 b2c mrt env invalidate -p my-storefront -e production --pattern "/products/*"
+```
+
+### b2c mrt env set-primary
+
+Promote an environment to the storefront's primary environment. **SCAPI-only** — the legacy MRT Cloud API has no primary-environment concept, so this command requires the SCAPI backend and rejects `--mrt-backend legacy`. The environment must be `ready` (or `build_failed`), and the operation is idempotent (promoting the already-primary environment is a no-op success).
+
+```bash
+# Promote an environment to primary
+b2c mrt env set-primary production --project my-storefront
+
+# Explicit SCAPI backend
+b2c mrt env set-primary -p my-storefront -e production --mrt-backend scapi
 ```
 
 ### b2c mrt env b2c

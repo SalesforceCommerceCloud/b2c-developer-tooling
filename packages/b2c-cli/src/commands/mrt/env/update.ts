@@ -118,6 +118,25 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
     updateEnvironmentWithBackend,
   };
 
+  // The SCAPI backend updates the display name (--name) only; every other flag
+  // configures the legacy MRT Cloud API and is dropped on SCAPI.
+  protected override mrtBackendOnlyFlags() {
+    return {
+      legacy: [
+        {name: '--production'},
+        {name: '--hostname'},
+        {name: '--external-hostname'},
+        {name: '--external-domain'},
+        {name: '--allow-cookies'},
+        {name: '--preserve-proxy-user-agent'},
+        {name: '--enable-source-maps'},
+        {name: '--log-level'},
+        {name: '--whitelisted-ips'},
+        {name: '--proxy'},
+      ],
+    };
+  }
+
   async run(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
@@ -147,12 +166,10 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
     } = this.flags;
 
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
-    const scapi = preference === 'scapi' || (preference === 'auto' && Boolean(scapiConnection));
 
-    if (scapi && name === undefined) {
-      this.error('The SCAPI MRT backend updates the environment display name only; provide --name.');
-    }
-
+    // Each backend branch validates its own input: the SCAPI backend updates the
+    // display name only and requires --name; the legacy backend accepts the full
+    // configuration set below.
     // Parse proxy configurations (legacy backend only)
     const proxyConfigs = proxyStrings?.map((p) => parseProxyString(p));
 

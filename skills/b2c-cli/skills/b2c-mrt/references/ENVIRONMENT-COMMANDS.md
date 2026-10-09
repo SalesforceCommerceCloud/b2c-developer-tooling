@@ -89,6 +89,15 @@ b2c mrt env invalidate -p my-storefront -e production \
   --path "/products/*" --path "/categories/*"
 ```
 
+### Set Primary Environment
+
+Promote an environment to the storefront's primary environment. **SCAPI backend only** — the legacy MRT Cloud API has no primary-environment concept, so this rejects `--mrt-backend legacy`. The environment must be `ready` (or `build_failed`); promoting the already-primary environment is a no-op success.
+
+```bash
+b2c mrt env set-primary production --project my-storefront --mrt-backend scapi
+b2c mrt env set-primary -p my-storefront -e production --mrt-backend scapi
+```
+
 ### B2C Commerce Connection
 
 Get or set B2C Commerce instance connection for an environment.

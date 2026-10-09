@@ -34,7 +34,7 @@ import {
   setPrimaryEnvironmentWithBackend,
   invalidateCacheWithBackend,
 } from '../../../src/operations/mrt/env.js';
-import type {ScapiMrtConnection} from '../../../src/operations/mrt/mrt-backend.js';
+import {MrtScapiPreconditionError, type ScapiMrtConnection} from '../../../src/operations/mrt/mrt-backend.js';
 
 const DEFAULT_BASE_URL = DEFAULT_MRT_ORIGIN;
 
@@ -1088,6 +1088,42 @@ describe('operations/mrt/env', () => {
         expect(error.message).to.include('requires an environment slug');
       }
     });
+
+    it('explicit scapi create without a display name throws a precondition error', async () => {
+      try {
+        await createEnvironmentWithBackend({
+          preference: 'scapi',
+          scapiConnection: scapiConn(),
+          legacyAuth: new MockAuthStrategy(),
+          projectSlug: STOREFRONT_ID,
+        });
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error).to.be.instanceOf(MrtScapiPreconditionError);
+        expect(error.message).to.include('--name');
+      }
+    });
+
+    it('auto create without a display name falls back to the legacy backend (using the slug)', async () => {
+      let receivedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.post(LEGACY_TARGETS, async ({request}) => {
+          receivedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json(legacyTarget({state: 'creating'}), {status: 201});
+        }),
+      );
+
+      const result = await createEnvironmentWithBackend({
+        preference: 'auto',
+        scapiConnection: scapiConn(),
+        legacyAuth: new MockAuthStrategy(),
+        projectSlug: STOREFRONT_ID,
+        slug: ENVIRONMENT_ID,
+      });
+
+      expect(result.backend).to.equal('legacy');
+      expect(receivedBody).to.include({slug: ENVIRONMENT_ID});
+    });
   });
 
   describe('cloneEnvironmentWithBackend', () => {
@@ -1126,8 +1162,29 @@ describe('operations/mrt/env', () => {
         });
         expect.fail('Should have thrown');
       } catch (error: any) {
+        expect(error).to.be.instanceOf(MrtScapiPreconditionError);
         expect(error.message).to.include('requires a display name');
       }
+    });
+
+    it('auto clone without a display name falls back to the legacy backend', async () => {
+      server.use(
+        http.post(LEGACY_CLONE, ({params}) => {
+          return HttpResponse.json(legacyTarget({slug: params.targetSlug, state: 'CREATE_IN_PROGRESS'}), {status: 201});
+        }),
+      );
+
+      const result = await cloneEnvironmentWithBackend({
+        preference: 'auto',
+        scapiConnection: scapiConn(),
+        legacyAuth: new MockAuthStrategy(),
+        projectSlug: STOREFRONT_ID,
+        slug: 'staging-copy',
+        sourceEnvironment: SOURCE_ENVIRONMENT_ID,
+      });
+
+      expect(result.backend).to.equal('legacy');
+      expect(result.environment).to.deep.include({id: 'staging-copy', backend: 'legacy'});
     });
 
     it('clones via legacy requiring a slug', async () => {
@@ -1214,8 +1271,31 @@ describe('operations/mrt/env', () => {
         });
         expect.fail('Should have thrown');
       } catch (error: any) {
+        expect(error).to.be.instanceOf(MrtScapiPreconditionError);
         expect(error.message).to.include('display name');
       }
+    });
+
+    it('auto update without a name falls back to the legacy backend', async () => {
+      let receivedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.patch(LEGACY_TARGET, async ({request}) => {
+          receivedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json(legacyTarget({is_production: true}));
+        }),
+      );
+
+      const result = await updateEnvironmentWithBackend({
+        preference: 'auto',
+        scapiConnection: scapiConn(),
+        legacyAuth: new MockAuthStrategy(),
+        projectSlug: STOREFRONT_ID,
+        environment: ENVIRONMENT_ID,
+        isProduction: true,
+      });
+
+      expect(result.backend).to.equal('legacy');
+      expect(receivedBody).to.include({is_production: true});
     });
 
     it('updates via legacy forwarding the full field set', async () => {

@@ -25,6 +25,7 @@ import {
 } from '../../clients/storefront-storefronts.js';
 import {getLogger} from '../../logging/logger.js';
 import {
+  MrtScapiPreconditionError,
   runMrtWithFallback,
   type MrtBackend,
   type MrtBackendPreference,
@@ -874,9 +875,9 @@ export interface CreateProjectBackendOptions extends ProjectBackendOptions {
 
 /**
  * Creates a project, routing to the SCAPI or legacy backend per the given
- * preference (with safe `auto` fallback). The caller is responsible for
- * validating backend-specific required fields (`organization` for legacy,
- * `sites` for SCAPI) against the backend that will actually run.
+ * preference (with safe `auto` fallback). Each backend branch validates its own
+ * required inputs: SCAPI needs at least one site (a {@link MrtScapiPreconditionError}
+ * so `auto` can fall back to legacy), legacy needs an organization.
  */
 export async function createProjectWithBackend(options: CreateProjectBackendOptions): Promise<MrtProjectResult> {
   const {
@@ -904,12 +905,18 @@ export async function createProjectWithBackend(options: CreateProjectBackendOpti
       onResolve,
     },
     {
-      scapi: () =>
-        createStorefrontScapi(scapiConnection!, {
+      scapi: () => {
+        if (!sites || sites.length === 0) {
+          throw new MrtScapiPreconditionError(
+            'The SCAPI MRT backend requires at least one site (--site) to create a storefront.',
+          );
+        }
+        return createStorefrontScapi(scapiConnection!, {
           storefrontName: name,
           type: type ?? 'storefront_next',
-          sites: sites ?? [],
-        }),
+          sites,
+        });
+      },
       legacy: async () => {
         if (!legacyAuth) {
           throw new Error(LEGACY_AUTH_REQUIRED_MESSAGE);

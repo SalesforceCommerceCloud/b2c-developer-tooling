@@ -3,4 +3,4 @@
 '@salesforce/b2c-cli': minor
 ---
 
-`mrt env redirect` now supports `get` and `update` in addition to `list` / `create` / `delete` / `clone`, and every command is backend-aware: each honors `--mrt-backend` and can run over the SCAPI Storefront Environments API (scopes `sfcc.storefront.environments` for reads, `sfcc.storefront.environments.rw` for writes) or the legacy MRT Cloud API. The two backends identify a redirect differently (legacy source path vs SCAPI redirect ID), so `get` / `update` / `delete` take a neutral identifier; `update` is a partial update and `clone` rejects a same-source clone.
+`mrt env redirect` now supports `get` / `update` alongside `list` / `create` / `delete` / `clone` and is backend-aware via `--mrt-backend` (SCAPI Storefront Environments API or legacy MRT Cloud API); `--columns fromPath,toUrl` keep working as aliases for the renamed `source` / `destination` columns, and `--search` is honored on the legacy backend only (it warns and is dropped on SCAPI).

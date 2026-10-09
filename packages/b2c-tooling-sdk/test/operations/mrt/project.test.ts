@@ -26,7 +26,7 @@ import {
   normalizeLegacyProject,
   normalizeProjectScapi,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import type {ScapiMrtConnection} from '../../../src/operations/mrt/mrt-backend.js';
+import {MrtScapiPreconditionError, type ScapiMrtConnection} from '../../../src/operations/mrt/mrt-backend.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 const DEFAULT_BASE_URL = DEFAULT_MRT_ORIGIN;
@@ -670,6 +670,40 @@ describe('operations/mrt/project', () => {
       } catch (error) {
         expect((error as Error).message).to.include('requires --organization');
       }
+    });
+
+    it('explicit SCAPI create without a site throws a precondition error (no fallback)', async () => {
+      try {
+        await createProjectWithBackend({
+          preference: 'scapi',
+          scapiConnection: scapiConn(),
+          legacyAuth: new MockAuthStrategy(),
+          name: 'My Storefront',
+        });
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).to.be.instanceOf(MrtScapiPreconditionError);
+        expect((error as Error).message).to.include('--site');
+      }
+    });
+
+    it('auto SCAPI create without a site falls back to the legacy backend', async () => {
+      server.use(
+        http.post(LEGACY_PROJECTS, () => {
+          return HttpResponse.json({slug: STOREFRONT_ID, name: 'My Storefront'}, {status: 201});
+        }),
+      );
+
+      const result = await createProjectWithBackend({
+        preference: 'auto',
+        scapiConnection: scapiConn(),
+        legacyAuth: new MockAuthStrategy(),
+        name: 'My Storefront',
+        organization: 'my-org',
+      });
+
+      expect(result.backend).to.equal('legacy');
+      expect(result.project).to.deep.include({id: STOREFRONT_ID, backend: 'legacy'});
     });
   });
 

@@ -151,6 +151,16 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
     createProjectWithBackend,
   };
 
+  // SCAPI is scoped to the connection's tenant and generates the storefront ID;
+  // --organization/--url/--region configure the legacy MRT Cloud API, while
+  // --type/--site target the SCAPI Storefronts API.
+  protected override mrtBackendOnlyFlags() {
+    return {
+      legacy: [{name: '--organization', char: 'o'}, {name: '--url'}, {name: '--region', char: 'r'}],
+      scapi: [{name: '--type'}, {name: '--site'}],
+    };
+  }
+
   async run(): Promise<unknown> {
     const {name} = this.args;
     const {organization, url, region, type, site} = this.flags;
@@ -160,19 +170,9 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
     const slug = this.resolvedConfig.values.mrtProject;
 
     const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
-    // Whether the resolved preference + config will route this run to SCAPI, so
-    // required fields can be validated against the backend that actually runs.
-    const scapi = preference === 'scapi' || (preference === 'auto' && Boolean(scapiConnection));
 
-    // Validate the required fields for the backend that will actually run.
-    if (scapi) {
-      if (!site || site.length === 0) {
-        this.error('The SCAPI MRT backend requires at least one --site to create a storefront.');
-      }
-    } else if (!organization) {
-      this.error('The legacy MRT backend requires --organization to create a project.');
-    }
-
+    // Each backend branch validates its own required input: SCAPI needs at least
+    // one --site, legacy needs --organization.
     this.log(t('commands.mrt.project.create.creating', 'Creating project "{{name}}"...', {name}));
 
     const result = await this.operations.createProjectWithBackend({

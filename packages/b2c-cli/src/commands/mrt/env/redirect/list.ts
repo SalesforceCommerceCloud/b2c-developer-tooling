@@ -27,17 +27,6 @@ const COLUMNS: Record<string, ColumnDef<MrtRedirectView>> = {
     header: 'To',
     get: (r) => r.destination || '-',
   },
-  // Backward-compatible aliases for the pre-SCAPI column keys. `--columns
-  // fromPath,toUrl` worked before the source/destination rename, so retain them
-  // as aliases rather than breaking existing scripts.
-  fromPath: {
-    header: 'From',
-    get: (r) => r.source || '-',
-  },
-  toUrl: {
-    header: 'To',
-    get: (r) => r.destination || '-',
-  },
   status: {
     header: 'HTTP',
     get: (r) => r.httpStatusCode?.toString() ?? '301',
@@ -60,6 +49,13 @@ const COLUMNS: Record<string, ColumnDef<MrtRedirectView>> = {
 // default view leads with the human-readable source/destination; `id` and
 // `backend` are opt-in columns.
 const DEFAULT_COLUMNS = ['source', 'destination', 'status', 'publishingStatus'];
+
+// Backward-compatible aliases for the pre-SCAPI column keys. `--columns
+// fromPath,toUrl` worked before the source/destination rename, so map them onto
+// the real column keys rather than defining duplicate column definitions —
+// which would otherwise surface duplicate From/To columns under `-x`/`--extended`
+// and in the `--columns` help list.
+const COLUMN_ALIASES: Record<string, string> = {fromPath: 'source', toUrl: 'destination'};
 
 const tableRenderer = new TableRenderer(COLUMNS);
 
@@ -101,7 +97,16 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
   };
 
   protected renderTable(redirects: MrtRedirectView[]): void {
-    tableRenderer.render(redirects, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
+    // Translate any deprecated alias (fromPath/toUrl) in --columns to its real
+    // column key before selection, so the aliases keep working without appearing
+    // as separate columns.
+    const columns = this.flags.columns
+      ?.split(',')
+      .map((c) => c.trim())
+      .map((c) => COLUMN_ALIASES[c] ?? c)
+      .join(',');
+    const flags = {...this.flags, columns};
+    tableRenderer.render(redirects, selectColumns(flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
   }
 
   async run(): Promise<unknown> {

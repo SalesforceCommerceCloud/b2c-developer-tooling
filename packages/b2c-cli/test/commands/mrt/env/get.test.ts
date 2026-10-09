@@ -6,8 +6,8 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
-import MrtEnvGet from '../../../../src/commands/mrt/env/get.js';
+import {Config, ux} from '@oclif/core';
+import MrtEnvGet, {printEnvView} from '../../../../src/commands/mrt/env/get.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../helpers/stub-parse.js';
 
@@ -141,5 +141,81 @@ describe('mrt env get', () => {
   it('supports the SCAPI MRT backend', () => {
     const command = createCommand();
     expect(command.supportsScapiMrt()).to.equal(true);
+  });
+
+  describe('printEnvView — legacy-only fields', () => {
+    function capture(fn: () => void): string {
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      fn();
+      return stdoutStub
+        .getCalls()
+        .map((call) => String(call.args[0] ?? ''))
+        .join('\n');
+    }
+
+    it('prints the legacy-only configuration fields when present', () => {
+      const output = capture(() =>
+        printEnvView(
+          {
+            id: 'staging',
+            name: 'Staging',
+            status: 'ready',
+            backend: 'legacy',
+            hostname: 'tag.example.com',
+            externalHostname: 'www.example.com',
+            externalDomain: 'example.com',
+            allowCookies: true,
+            enableSourceMaps: true,
+            logLevel: 'DEBUG',
+            proxies: [{path: '/api', host: 'api.example.com'}, {host: 'ocapi.example.com'}],
+          } as any,
+          'my-project',
+        ),
+      );
+
+      expect(output).to.include('Hostname:');
+      expect(output).to.include('tag.example.com');
+      expect(output).to.include('External Host:');
+      expect(output).to.include('www.example.com');
+      expect(output).to.include('External Domain:');
+      expect(output).to.include('example.com');
+      expect(output).to.include('Allow Cookies:');
+      expect(output).to.include('Source Maps:');
+      expect(output).to.include('Log Level:');
+      expect(output).to.include('DEBUG');
+      expect(output).to.include('Proxies:');
+      expect(output).to.include('/api → api.example.com');
+      expect(output).to.include('→ ocapi.example.com');
+    });
+
+    it('omits the legacy-only fields when absent (SCAPI-style view)', () => {
+      const output = capture(() =>
+        printEnvView(
+          {id: 'staging', name: 'Staging', status: 'ready', backend: 'scapi', isPrimary: true} as any,
+          'my-project',
+        ),
+      );
+
+      expect(output).to.not.include('Hostname:');
+      expect(output).to.not.include('External Host:');
+      expect(output).to.not.include('Allow Cookies:');
+      expect(output).to.not.include('Source Maps:');
+      expect(output).to.not.include('Log Level:');
+      expect(output).to.not.include('Proxies:');
+      // The SCAPI-only Primary row is still shown.
+      expect(output).to.include('Primary:');
+    });
+
+    it('hides Allow Cookies and Source Maps rows when the flags are false', () => {
+      const output = capture(() =>
+        printEnvView(
+          {id: 'staging', name: 'Staging', backend: 'legacy', allowCookies: false, enableSourceMaps: false} as any,
+          'my-project',
+        ),
+      );
+
+      expect(output).to.not.include('Allow Cookies:');
+      expect(output).to.not.include('Source Maps:');
+    });
   });
 });

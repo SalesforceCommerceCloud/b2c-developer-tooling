@@ -144,6 +144,22 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
     updateProjectWithBackend,
   };
 
+  // SCAPI cannot rename a storefront or set a URL (--name/--url are legacy-only);
+  // the sites/architecture/cookie flags target the SCAPI Storefronts API. --region
+  // is honored by both backends, so it is not listed. Without this, `project
+  // update --name X` on SCAPI sent an empty PATCH and still reported success.
+  protected override mrtBackendOnlyFlags() {
+    return {
+      legacy: [{name: '--name', char: 'n'}, {name: '--url'}],
+      scapi: [
+        {name: '--site'},
+        {name: '--ssr-architecture'},
+        {name: '--allow-cookies'},
+        {name: '--preserve-proxy-user-agent'},
+      ],
+    };
+  }
+
   async run(): Promise<unknown> {
     const slug = this.resolveProjectSlug(this.args.slug);
     const {

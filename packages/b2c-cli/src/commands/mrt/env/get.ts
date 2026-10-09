@@ -43,6 +43,40 @@ export function printEnvView(env: MrtEnvironmentView, project: string): void {
     ui.div({text: 'Origin:', width: labelWidth}, {text: env.origin});
   }
 
+  // Legacy-only configuration fields, shown when present so the backend-neutral
+  // view keeps the detail the old per-command printers displayed. Cookies and
+  // source maps print only when enabled, matching the prior behavior.
+  if (env.hostname) {
+    ui.div({text: 'Hostname:', width: labelWidth}, {text: env.hostname});
+  }
+
+  if (env.externalHostname) {
+    ui.div({text: 'External Host:', width: labelWidth}, {text: env.externalHostname});
+  }
+
+  if (env.externalDomain) {
+    ui.div({text: 'External Domain:', width: labelWidth}, {text: env.externalDomain});
+  }
+
+  if (env.allowCookies) {
+    ui.div({text: 'Allow Cookies:', width: labelWidth}, {text: 'Yes'});
+  }
+
+  if (env.enableSourceMaps) {
+    ui.div({text: 'Source Maps:', width: labelWidth}, {text: 'Yes'});
+  }
+
+  if (env.logLevel) {
+    ui.div({text: 'Log Level:', width: labelWidth}, {text: env.logLevel});
+  }
+
+  if (env.proxies && env.proxies.length > 0) {
+    ui.div({text: 'Proxies:', width: labelWidth}, {text: ''});
+    for (const proxy of env.proxies) {
+      ui.div({text: '', width: labelWidth}, {text: `  ${proxy.path ?? ''} → ${proxy.host}`});
+    }
+  }
+
   if (env.createdAt) {
     ui.div({text: 'Created:', width: labelWidth}, {text: new Date(env.createdAt).toLocaleString()});
   }

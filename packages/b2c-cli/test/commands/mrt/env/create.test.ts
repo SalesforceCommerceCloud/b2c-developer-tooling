@@ -110,7 +110,7 @@ describe('mrt env create', () => {
     expect(result.slug).to.equal('staging');
   });
 
-  it('requires --name on the SCAPI backend', async () => {
+  it('rejects on the SCAPI backend when no display name is available', async () => {
     const command = createCommand();
 
     stubParse(command, {project: 'my-project', 'mrt-backend': 'scapi'}, {});
@@ -122,14 +122,13 @@ describe('mrt env create', () => {
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project', mrtBackend: 'scapi'}}));
 
-    const errorStub = stubErrorToThrow(command);
-
+    // No command-level gate: the SCAPI create branch rejects when no display
+    // name is available, and explicit scapi never falls back to legacy.
     try {
       await command.run();
-      expect.fail('Expected error');
-    } catch {
-      expect(errorStub.calledOnce).to.equal(true);
-      expect(errorStub.firstCall.args[0]).to.include('requires --name');
+      expect.fail('Expected rejection');
+    } catch (error) {
+      expect((error as Error).message).to.include('--name');
     }
   });
 

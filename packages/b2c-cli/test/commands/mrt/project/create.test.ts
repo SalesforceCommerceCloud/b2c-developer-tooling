@@ -28,10 +28,6 @@ describe('mrt project create', () => {
     return new MrtProjectCreate([], config);
   }
 
-  function stubErrorToThrow(command: any): sinon.SinonStub {
-    return sinon.stub(command, 'error').throws(new Error('Expected error'));
-  }
-
   function stubBackendContext(
     command: any,
     ctx: {preference?: string; scapiConnection?: unknown; legacyAuth?: unknown} = {},
@@ -49,19 +45,17 @@ describe('mrt project create', () => {
     stubParse(command, {type: 'storefront_next'}, {name: 'My Storefront'});
     await command.init();
 
-    // auto with no SCAPI connection resolves to legacy, which requires --organization.
+    // auto with no SCAPI connection resolves to legacy, whose create branch
+    // requires --organization and rejects when it is missing.
     stubBackendContext(command, {preference: 'auto', scapiConnection: undefined});
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {}}));
 
-    const errorStub = stubErrorToThrow(command);
-
     try {
       await command.run();
       expect.fail('Expected error');
-    } catch {
-      expect(errorStub.calledOnce).to.equal(true);
-      expect(errorStub.firstCall.args[0]).to.include('--organization');
+    } catch (error) {
+      expect((error as Error).message).to.include('--organization');
     }
   });
 
@@ -76,14 +70,13 @@ describe('mrt project create', () => {
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtBackend: 'scapi'}}));
 
-    const errorStub = stubErrorToThrow(command);
-
+    // The SCAPI create branch requires at least one --site and rejects when none
+    // is provided; explicit scapi never falls back to legacy.
     try {
       await command.run();
       expect.fail('Expected error');
-    } catch {
-      expect(errorStub.calledOnce).to.equal(true);
-      expect(errorStub.firstCall.args[0]).to.include('--site');
+    } catch (error) {
+      expect((error as Error).message).to.include('--site');
     }
   });
 
