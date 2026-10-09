@@ -689,6 +689,44 @@ describe('create() proxy — usage inference wiring', () => {
     assert.ok(names.includes('geolocation'), `expected geolocation among completions, got: ${names.join(', ')}`);
   });
 
+  it("types a route event listener's parameters through the route a middleware step runs on", () => {
+    // SFRA calls each middleware step with the route as `this`, so the
+    // listeners a step registers with `this.on(...)` are typed by Route.on.
+    const files = {
+      '/c/cartridge/controllers/Cart.js': `
+        var server = require('server');
+        server.get('Show', function (req, res, next) {
+          this.on('route:BeforeComplete', function (request, response) {
+            var data = response.getViewData();
+          });
+          next();
+        });
+        module.exports = server.exports();
+      `,
+    };
+    const {proxy} = createPluginProxy({
+      files,
+      config: {
+        enabled: true,
+        autoDiscover: false,
+        cartridges: [
+          {name: 'c', src: '/c/'},
+          {name: 'modules', src: '/modules/'},
+        ],
+        inferUsage: true,
+      },
+    });
+    const controllerFile = '/c/cartridge/controllers/Cart.js';
+    const source = files[controllerFile];
+
+    const hover = proxy.getQuickInfoAtPosition(controllerFile, source.indexOf('response)'));
+    const hoverText = (hover?.displayParts ?? []).map((p) => p.text).join('');
+    assert.match(hoverText, /response: Response/);
+    const dotPos = source.indexOf('response.getViewData') + 'response.'.length;
+    const names = (proxy.getCompletionsAtPosition(controllerFile, dotPos, undefined)?.entries ?? []).map((e) => e.name);
+    assert.ok(names.includes('setViewData'), `expected setViewData among completions, got: ${names.join(', ')}`);
+  });
+
   it('resolves members across a multi-cartridge superModule stack, including intermediate augmentations', () => {
     const files = {
       '/types.d.ts': AMBIENT_TYPES,
