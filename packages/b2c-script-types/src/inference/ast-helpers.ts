@@ -205,6 +205,25 @@ export function exportsObjectWrittenBy(stmt: tsserver.Statement, ts: typeof tsse
   return isModuleExports(target, ts) ? target : undefined;
 }
 
+/** A call read as an invocation of the function its callee names, with the arguments that function receives. */
+export interface Invocation {
+  readonly callee: tsserver.Expression;
+  /** Empty for `fn.apply(scope, args)`, whose arguments are not known one by one. */
+  readonly args: readonly tsserver.Expression[];
+}
+
+/**
+ * `call` as an invocation of the function its callee names: `fn(a)`,
+ * `fn.call(scope, a)` without its `this` argument, or `fn.apply(scope, args)`.
+ * Any other method call (`list.push(a)`) invokes a member, not its receiver.
+ */
+export function invocationOf(call: tsserver.CallExpression, ts: typeof tsserver): Invocation | undefined {
+  const callee = call.expression;
+  if (!ts.isPropertyAccessExpression(callee)) return {callee, args: call.arguments};
+  if (callee.name.text === 'call') return {callee: callee.expression, args: call.arguments.slice(1)};
+  return callee.name.text === 'apply' ? {callee: callee.expression, args: []} : undefined;
+}
+
 /**
  * Recursively walks a function body collecting `return` expressions, without
  * descending into nested function-like boundaries (their returns belong to

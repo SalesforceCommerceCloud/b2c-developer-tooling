@@ -17,6 +17,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
+import {invocationOf} from './ast-helpers';
 import type {InferenceContext} from './context';
 import {valueDeclarationOf} from './member-values';
 import {functionOf} from './signatures';
@@ -111,14 +112,9 @@ function boundFunction(ctx: InferenceContext, expr: tsserver.Expression): tsserv
  * binds none of them.
  */
 export function boundCallback(ctx: InferenceContext, call: tsserver.CallExpression): BoundCallback | undefined {
-  const {ts} = ctx;
-  const callee = call.expression;
-  const borrowed = ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
-  if (borrowed !== undefined && borrowed !== 'call' && borrowed !== 'apply') return undefined;
-  const fn = boundFunction(ctx, ts.isPropertyAccessExpression(callee) ? callee.expression : callee);
-  if (!fn) return undefined;
-  if (borrowed === 'apply') return {fn, args: []};
-  return {fn, args: borrowed === 'call' ? call.arguments.slice(1) : call.arguments};
+  const invocation = invocationOf(call, ctx.ts);
+  const fn = invocation && boundFunction(ctx, invocation.callee);
+  return fn && {fn, args: invocation.args};
 }
 
 /** True when `type` instantiates a generic with `any` (`Collection<any>` of a bare `{dw.util.Collection}`). */

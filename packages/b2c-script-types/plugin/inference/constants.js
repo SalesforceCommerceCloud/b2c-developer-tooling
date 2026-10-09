@@ -117,9 +117,11 @@ exports.BUILTIN_VALUE_TYPES = [
     'RegExp',
 ];
 // Callee names whose callbacks lead with the collection element
-// (`collections.forEach(coll, function (item) {...})`). Only these get the
-// sibling-collection element-type heuristic; `reduce` (accumulator first)
-// and unknown helpers stay out.
+// (`collections.forEach(coll, function (item) {...})`). A project helper's
+// callbacks are typed from what its body passes them; this list only covers
+// helpers whose body can't be read, and for those only these names get the
+// sibling-collection element-type heuristic. `reduce` (accumulator first)
+// and other unknown helpers stay out.
 exports.ELEMENT_FIRST_CALLBACK_CALLEES = new Set([
     'forEach',
     'map',

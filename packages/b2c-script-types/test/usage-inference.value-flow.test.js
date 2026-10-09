@@ -835,6 +835,106 @@ describe('usage-inference — call-specific returns', () => {
     ]);
   });
 
+  describe('callback parameters', () => {
+    // A callback's parameter is what the helper it is passed to calls it
+    // with, for the arguments of that one call. The helpers are undocumented
+    // project code, so no name-based shape is assumed, and the callbacks only
+    // use `.UUID`, which every class has: their usage says nothing.
+    const ITERATING_HELPERS = `
+      function reduce(collection, callback, initial) {
+        var iterator = collection.iterator();
+        var value = arguments.length > 2 ? initial : iterator.next();
+        while (iterator.hasNext()) {
+          value = callback(value, iterator.next());
+        }
+        return value;
+      }
+      function forEachIn(collection, fn, scope) {
+        var iterator = collection.iterator();
+        while (iterator.hasNext()) {
+          fn.call(scope, iterator.next());
+        }
+      }
+      function eachLineItem(basket, fn) { forEachIn(basket.productLineItems, fn); }
+      function withBasket(fn) { return fn(getBasket()); }
+      function register(handlers, name, fn) { handlers[name] = fn; }
+    `;
+
+    runCases([
+      {
+        title: 'a reduce-style helper hands each element to the second parameter',
+        types: COLLECTION_TYPES,
+        source: `${ITERATING_HELPERS}
+          function lineItemUUIDs(basket) {
+            return reduce(basket.productLineItems, function (uuids, entry) { return uuids + entry.UUID; }, '');
+          }
+          function shipmentUUIDs(basket) {
+            return reduce(basket.shipments, function (uuids, other) { return uuids + other.UUID; }, '');
+          }
+          lineItemUUIDs(getBasket());
+          shipmentUUIDs(getBasket());
+        `,
+        kind: 'param',
+        name: 'entry',
+        expected: 'ProductLineItem',
+      },
+      {
+        title: 'an accumulator the callback’s result is fed back into stays silent, like a native reduce’s',
+        types: COLLECTION_TYPES,
+        source: `${ITERATING_HELPERS}
+          function byUUID(basket) {
+            return reduce(basket.productLineItems, function (index, entry) { index[entry.UUID] = entry; return index; }, {});
+          }
+          byUUID(getBasket());
+        `,
+        kind: 'param',
+        name: 'index',
+        expected: '',
+      },
+      {
+        title: 'callback.call(scope, x) hands x, not scope, to the first parameter',
+        types: COLLECTION_TYPES,
+        source: `${ITERATING_HELPERS}
+          function shipmentUUIDs(basket) { forEachIn(basket.shipments, function (entry) { return entry.UUID; }, this); }
+          shipmentUUIDs(getBasket());
+        `,
+        kind: 'param',
+        name: 'entry',
+        expected: 'Shipment',
+      },
+      {
+        title: 'a wrapper handing its callback on to another helper is followed into it',
+        types: COLLECTION_TYPES,
+        source: `${ITERATING_HELPERS}
+          eachLineItem(getBasket(), function (entry) { return entry.UUID; });
+        `,
+        kind: 'param',
+        name: 'entry',
+        expected: 'ProductLineItem',
+      },
+      {
+        title: 'a callback may be handed any value, not only an element',
+        types: COLLECTION_TYPES,
+        source: `${ITERATING_HELPERS}
+          withBasket(function (current) { return current.UUID; });
+        `,
+        kind: 'param',
+        name: 'current',
+        expected: 'Basket',
+      },
+      {
+        title: 'a helper that never calls its callback says nothing about its parameters',
+        types: COLLECTION_TYPES,
+        source: `${ITERATING_HELPERS}
+          register({}, 'basket', function (event) { return event; });
+        `,
+        kind: 'param',
+        name: 'event',
+        expected: '',
+      },
+    ]);
+  });
+
   it('keeps call-specific results out of the request memo', () => {
     const languageService = createFixtureLanguageService({
       '/types.d.ts': COLLECTION_TYPES,

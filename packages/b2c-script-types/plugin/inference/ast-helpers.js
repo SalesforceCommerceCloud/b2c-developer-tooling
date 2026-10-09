@@ -15,6 +15,7 @@ exports.memberAssignmentOf = memberAssignmentOf;
 exports.isExportsObject = isExportsObject;
 exports.isModuleExports = isModuleExports;
 exports.exportsObjectWrittenBy = exportsObjectWrittenBy;
+exports.invocationOf = invocationOf;
 exports.collectReturnExpressions = collectReturnExpressions;
 /**
  * Finds the most specific node whose span contains `pos`. Standard technique
@@ -184,6 +185,19 @@ function exportsObjectWrittenBy(stmt, ts) {
     if (isExportsObject(target.expression, ts))
         return target.expression;
     return isModuleExports(target, ts) ? target : undefined;
+}
+/**
+ * `call` as an invocation of the function its callee names: `fn(a)`,
+ * `fn.call(scope, a)` without its `this` argument, or `fn.apply(scope, args)`.
+ * Any other method call (`list.push(a)`) invokes a member, not its receiver.
+ */
+function invocationOf(call, ts) {
+    const callee = call.expression;
+    if (!ts.isPropertyAccessExpression(callee))
+        return { callee, args: call.arguments };
+    if (callee.name.text === 'call')
+        return { callee: callee.expression, args: call.arguments.slice(1) };
+    return callee.name.text === 'apply' ? { callee: callee.expression, args: [] } : undefined;
 }
 /**
  * Recursively walks a function body collecting `return` expressions, without

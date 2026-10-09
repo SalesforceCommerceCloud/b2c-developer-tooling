@@ -12,6 +12,7 @@ exports.boundArgument = boundArgument;
 exports.boundCallback = boundCallback;
 exports.hasAnyTypeArgument = hasAnyTypeArgument;
 exports.narrows = narrows;
+const ast_helpers_1 = require("./ast-helpers");
 const member_values_1 = require("./member-values");
 const signatures_1 = require("./signatures");
 const type_helpers_1 = require("./type-helpers");
@@ -80,17 +81,9 @@ function boundFunction(ctx, expr) {
  * binds none of them.
  */
 function boundCallback(ctx, call) {
-    const { ts } = ctx;
-    const callee = call.expression;
-    const borrowed = ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
-    if (borrowed !== undefined && borrowed !== 'call' && borrowed !== 'apply')
-        return undefined;
-    const fn = boundFunction(ctx, ts.isPropertyAccessExpression(callee) ? callee.expression : callee);
-    if (!fn)
-        return undefined;
-    if (borrowed === 'apply')
-        return { fn, args: [] };
-    return { fn, args: borrowed === 'call' ? call.arguments.slice(1) : call.arguments };
+    const invocation = (0, ast_helpers_1.invocationOf)(call, ctx.ts);
+    const fn = invocation && boundFunction(ctx, invocation.callee);
+    return fn && { fn, args: invocation.args };
 }
 /** True when `type` instantiates a generic with `any` (`Collection<any>` of a bare `{dw.util.Collection}`). */
 function hasAnyTypeArgument(ctx, type) {

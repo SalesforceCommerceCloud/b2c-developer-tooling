@@ -13,6 +13,7 @@ const constants_1 = require("./constants");
 const context_1 = require("./context");
 const ast_helpers_1 = require("./ast-helpers");
 const bindings_1 = require("./bindings");
+const callback_arguments_1 = require("./callback-arguments");
 const call_sites_1 = require("./call-sites");
 const value_flow_1 = require("./value-flow");
 const framework_contracts_1 = require("./framework-contracts");
@@ -67,11 +68,12 @@ function resolveValues(ctx, values, depth, chainHops) {
  * Infers a callback parameter's type from the call the callback is passed
  * to. A method on a known receiver declares it (`value: T` of
  * `items.filter(function (item) {...})` once `items` is inferred as a
- * `ProductLineItem[]`). Otherwise, for an element-first helper
- * (`collections.forEach(coll, fn)`, see {@link isElementFirstCallbackCall}),
- * the first parameter is an element of the collection travelling alongside
- * it. Unknown helpers are left alone — applying the heuristic to an arbitrary
- * helper would guess wrong more often than it helps.
+ * `ProductLineItem[]`). A project helper says it by what it passes the
+ * callback (see {@link invokedCallbackTypes}). A helper that can't be read,
+ * when it is an element-first one by name (`collections.forEach(coll, fn)`,
+ * see {@link isElementFirstCallbackCall}), hands the first parameter an
+ * element of the collection travelling alongside it. Other unknown helpers
+ * are left alone: guessing their shape would be wrong more often than not.
  */
 function inferCallbackParameterTypes(ctx, fn, paramIndex, depth) {
     const call = fn.parent;
@@ -82,9 +84,32 @@ function inferCallbackParameterTypes(ctx, fn, paramIndex, depth) {
     const declared = ctx.ts.isPropertyAccessExpression(access)
         ? (0, signatures_1.callbackParameterTypes)(ctx, memberTypesOfReceiver(ctx, access.expression, access.name, depth, 0), call, argIndex, paramIndex)
         : [];
-    if (declared.length > 0 || paramIndex !== 0 || !(0, signatures_1.isElementFirstCallbackCall)(ctx, call))
+    if (declared.length > 0)
         return declared;
+    const invoked = invokedCallbackTypes(ctx, call, argIndex, paramIndex, depth);
+    if (invoked.length > 0 || paramIndex !== 0 || !(0, signatures_1.isElementFirstCallbackCall)(ctx, call))
+        return invoked;
     return call.arguments.filter((arg) => arg !== fn).flatMap((arg) => resolveElementTypes(ctx, arg, depth, 0));
+}
+/**
+ * What the project helper `call` invokes passes parameter `paramIndex` of
+ * the callback it receives as argument `argIndex`, resolved with the
+ * helper's parameters bound to this call's arguments: an element of the
+ * collection this call passes, for `collections.reduce(lineItems, function
+ * (total, lineItem) {...})` as for a project's own `eachShipment(basket,
+ * fn)`. A helper handing the callback on to another one is followed into
+ * that one, a level deeper.
+ */
+function invokedCallbackTypes(ctx, call, argIndex, paramIndex, depth) {
+    const helper = depth < constants_1.MAX_INFERENCE_DEPTH ? (0, signatures_1.resolveCalleeDeclaration)(ctx, call) : undefined;
+    const { passed, forwarded } = helper ? (0, callback_arguments_1.callbackUses)(ctx, helper, argIndex, paramIndex) : callback_arguments_1.NO_CALLBACK_USES;
+    if (!helper || (passed.length === 0 && forwarded.length === 0))
+        return [];
+    const bindings = (0, bindings_1.argumentBindings)(ctx, helper, call.arguments, depth) ?? ctx.bindings;
+    return (0, bindings_1.withBindings)(ctx, bindings, () => [
+        ...passed.flatMap((value) => resolveExpressionTypes(ctx, value, depth + 1)),
+        ...forwarded.flatMap((use) => invokedCallbackTypes(ctx, use.call, use.argIndex, paramIndex, depth + 1)),
+    ]);
 }
 /**
  * Resolves the candidate type(s) of `expr`: the checker's own type when it is

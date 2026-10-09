@@ -16,7 +16,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import {MAX_CHAIN_HOPS} from './constants';
+import {MAX_CHAIN_HOPS, MAX_INFERENCE_DEPTH} from './constants';
 import {withCycleGuard, withInferenceGuards} from './context';
 import type {InferenceContext} from './context';
 import {
@@ -35,6 +35,7 @@ import {
   withBindings,
 } from './bindings';
 import type {ArgumentBinding, BoundCallback} from './bindings';
+import {NO_CALLBACK_USES, callbackUses} from './callback-arguments';
 import {collectCallSites, forwardedParameter} from './call-sites';
 import {getReferenceNameNode} from './value-flow';
 import {frameworkParameterTypes} from './framework-contracts';
@@ -118,11 +119,12 @@ function resolveValues(
  * Infers a callback parameter's type from the call the callback is passed
  * to. A method on a known receiver declares it (`value: T` of
  * `items.filter(function (item) {...})` once `items` is inferred as a
- * `ProductLineItem[]`). Otherwise, for an element-first helper
- * (`collections.forEach(coll, fn)`, see {@link isElementFirstCallbackCall}),
- * the first parameter is an element of the collection travelling alongside
- * it. Unknown helpers are left alone — applying the heuristic to an arbitrary
- * helper would guess wrong more often than it helps.
+ * `ProductLineItem[]`). A project helper says it by what it passes the
+ * callback (see {@link invokedCallbackTypes}). A helper that can't be read,
+ * when it is an element-first one by name (`collections.forEach(coll, fn)`,
+ * see {@link isElementFirstCallbackCall}), hands the first parameter an
+ * element of the collection travelling alongside it. Other unknown helpers
+ * are left alone: guessing their shape would be wrong more often than not.
  */
 function inferCallbackParameterTypes(
   ctx: InferenceContext,
@@ -143,8 +145,36 @@ function inferCallbackParameterTypes(
         paramIndex,
       )
     : [];
-  if (declared.length > 0 || paramIndex !== 0 || !isElementFirstCallbackCall(ctx, call)) return declared;
+  if (declared.length > 0) return declared;
+  const invoked = invokedCallbackTypes(ctx, call, argIndex, paramIndex, depth);
+  if (invoked.length > 0 || paramIndex !== 0 || !isElementFirstCallbackCall(ctx, call)) return invoked;
   return call.arguments.filter((arg) => arg !== fn).flatMap((arg) => resolveElementTypes(ctx, arg, depth, 0));
+}
+
+/**
+ * What the project helper `call` invokes passes parameter `paramIndex` of
+ * the callback it receives as argument `argIndex`, resolved with the
+ * helper's parameters bound to this call's arguments: an element of the
+ * collection this call passes, for `collections.reduce(lineItems, function
+ * (total, lineItem) {...})` as for a project's own `eachShipment(basket,
+ * fn)`. A helper handing the callback on to another one is followed into
+ * that one, a level deeper.
+ */
+function invokedCallbackTypes(
+  ctx: InferenceContext,
+  call: tsserver.CallExpression,
+  argIndex: number,
+  paramIndex: number,
+  depth: number,
+): tsserver.Type[] {
+  const helper = depth < MAX_INFERENCE_DEPTH ? resolveCalleeDeclaration(ctx, call) : undefined;
+  const {passed, forwarded} = helper ? callbackUses(ctx, helper, argIndex, paramIndex) : NO_CALLBACK_USES;
+  if (!helper || (passed.length === 0 && forwarded.length === 0)) return [];
+  const bindings = argumentBindings(ctx, helper, call.arguments, depth) ?? ctx.bindings;
+  return withBindings(ctx, bindings, () => [
+    ...passed.flatMap((value) => resolveExpressionTypes(ctx, value, depth + 1)),
+    ...forwarded.flatMap((use) => invokedCallbackTypes(ctx, use.call, use.argIndex, paramIndex, depth + 1)),
+  ]);
 }
 
 /**
