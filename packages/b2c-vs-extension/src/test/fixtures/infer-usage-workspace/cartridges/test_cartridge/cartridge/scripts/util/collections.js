@@ -20,5 +20,5 @@ function first(collection) {
 
 module.exports = {
   forEach: forEach,
-  first: first
+  first: first,
 };

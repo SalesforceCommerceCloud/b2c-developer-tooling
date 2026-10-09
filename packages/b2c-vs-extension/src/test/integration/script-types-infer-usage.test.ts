@@ -795,3 +795,60 @@ suite('scriptTypesInferUsage — *LineItem subclass disambiguation and real-JSDo
     );
   });
 });
+
+suite('scriptTypesInferUsage — .call() inheritance, typed API uses, and union call sites', () => {
+  let modelDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    modelDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'scripts', 'helpers', 'modelHelpers.js'),
+      ),
+    );
+    await vscode.window.showTextDocument(modelDoc);
+  });
+
+  test('infers Product for a base model reached only through BaseModel.call(this, source)', async () => {
+    // `source` is a neutral name and `.ID` alone fits many classes, so only
+    // the `.call` call site (fed by `new FullModel(product)`) can type it.
+    const text = await hoverTextMatching(
+      modelDoc,
+      offsetPosition(modelDoc, 'function BaseModel(source', 'function BaseModel('.length),
+      /Product/,
+      true,
+    );
+    assert.ok(/Product/.test(text), `expected Product through the .call() call site, got: ${text}`);
+  });
+
+  test('infers LineItemCtnr for a never-called parameter passed on to ShippingMgr.applyShippingCost', async () => {
+    const text = await hoverTextMatching(
+      modelDoc,
+      offsetPosition(modelDoc, 'function recalculate(container', 'function recalculate('.length),
+      /LineItemCtnr/,
+      true,
+    );
+    assert.ok(/LineItemCtnr/.test(text), `expected LineItemCtnr from the typed API use, got: ${text}`);
+  });
+
+  test('shows the union of conflicting call sites, IntelliJ style (Product | Category)', async () => {
+    const text = await hoverTextMatching(
+      modelDoc,
+      offsetPosition(modelDoc, 'function describeItem(item', 'function describeItem('.length),
+      /Product \| Category/,
+      true,
+    );
+    assert.ok(/Product \| Category/.test(text), `expected the Product | Category union, got: ${text}`);
+  });
+});

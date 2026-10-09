@@ -29,5 +29,5 @@ function isOrderable(product, quantity) {
 module.exports = {
   getSalePrice: getSalePrice,
   getListPriceValue: getListPriceValue,
-  isOrderable: isOrderable
+  isOrderable: isOrderable,
 };

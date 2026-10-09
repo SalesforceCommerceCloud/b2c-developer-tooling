@@ -28,5 +28,5 @@ function describeCatalogProduct(catalogProduct) {
 
 module.exports = {
   countBonusChoices: countBonusChoices,
-  describeCatalogProduct: describeCatalogProduct
+  describeCatalogProduct: describeCatalogProduct,
 };

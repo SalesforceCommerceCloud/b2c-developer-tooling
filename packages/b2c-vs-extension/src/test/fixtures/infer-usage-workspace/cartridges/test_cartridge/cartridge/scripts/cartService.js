@@ -17,10 +17,10 @@ function buildLineItemInfo(productId, quantity) {
     priceValue: productHelpers.getListPriceValue(product),
     orderable: productHelpers.isOrderable(product, quantity),
     variantIds: variantHelpers.collectVariantIds(product),
-    firstVariant: variantHelpers.firstVariantName(product)
+    firstVariant: variantHelpers.firstVariantName(product),
   };
 }
 
 module.exports = {
-  buildLineItemInfo: buildLineItemInfo
+  buildLineItemInfo: buildLineItemInfo,
 };

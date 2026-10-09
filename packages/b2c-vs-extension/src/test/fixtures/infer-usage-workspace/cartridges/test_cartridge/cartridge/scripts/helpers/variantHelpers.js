@@ -24,5 +24,5 @@ function firstVariantName(product) {
 
 module.exports = {
   collectVariantIds: collectVariantIds,
-  firstVariantName: firstVariantName
+  firstVariantName: firstVariantName,
 };

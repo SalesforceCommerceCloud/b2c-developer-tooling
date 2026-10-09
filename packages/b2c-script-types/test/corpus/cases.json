@@ -439,5 +439,91 @@
     },
     "target": {"file": "/helpers.js", "function": "surcharge", "param": 0},
     "expect": "ProductShippingLineItem"
+  },
+  {
+    "id": "call-this-model-inheritance",
+    "source": "SFRA product decorators: base.call(this, product, ...)",
+    "description": "`base.call(this, product)` counts as a call site, with the arguments after thisArg",
+    "dwTypes": ["Product"],
+    "files": {
+      "/base.js": "function BaseModel(product, quantity) {\n  this.id = product.ID;\n  this.quantity = quantity;\n}\nmodule.exports = BaseModel;\n",
+      "/full.js": "var BaseModel = require('./base');\nfunction FullModel(product) {\n  BaseModel.call(this, product, 1);\n}\nnew FullModel(getProduct());\n"
+    },
+    "globals": "  function getProduct(): Product<any>;",
+    "target": {"file": "/base.js", "function": "BaseModel", "param": 0},
+    "expect": "Product"
+  },
+  {
+    "id": "apply-arguments-forwarding",
+    "source": "storefront wrappers: helper.apply(this, arguments)",
+    "description": "`helper.apply(this, arguments)` forwards the wrapper's own call-site arguments",
+    "dwTypes": ["Product"],
+    "files": {
+      "/helpers.js": "function helper(product) {\n  return product.ID;\n}\nfunction logged(product) {\n  return helper.apply(this, arguments);\n}\nlogged(getProduct());\n"
+    },
+    "globals": "  function getProduct(): Product<any>;",
+    "target": {"file": "/helpers.js", "function": "helper", "param": 0},
+    "expect": "Product"
+  },
+  {
+    "id": "contextual-type-without-call-sites",
+    "source": "storefront productHelpers: ProductMgr.getProduct(pid)",
+    "description": "A never-called helper's parameter passed on to a typed API takes that API's parameter type",
+    "dwTypes": ["Product"],
+    "files": {
+      "/helpers.js": "function lookup(pid) {\n  return findProduct(pid);\n}\nmodule.exports = {lookup: lookup};\n"
+    },
+    "globals": "  function findProduct(productID: string): Product<any>;",
+    "target": {"file": "/helpers.js", "function": "lookup", "param": 0},
+    "expect": "string"
+  },
+  {
+    "id": "logical-or-initializer-ignores-literal-fallback",
+    "source": "SFRA models: var safeOptions = options || {}",
+    "description": "`x || {}` initializes to x's type; the literal fallback adds nothing",
+    "dwTypes": ["Basket"],
+    "files": {
+      "/helpers.js": "function totals(lineItemContainer) {\n  var container = lineItemContainer || {};\n  return container;\n}\ntotals(getBasket());\n"
+    },
+    "globals": "  function getBasket(): Basket;",
+    "target": {"file": "/helpers.js", "kind": "variable", "name": "container"},
+    "expect": "Basket"
+  },
+  {
+    "id": "reassigned-variable-union",
+    "source": "storefront helpers: var target; if (...) target = a; else target = b;",
+    "description": "A variable declared without a value takes the union of what it is assigned",
+    "dwTypes": ["Product", "Category"],
+    "files": {
+      "/helpers.js": "function pick(useCategory) {\n  var target;\n  if (useCategory) {\n    target = getCategory();\n  } else {\n    target = getProduct();\n  }\n  return target;\n}\n"
+    },
+    "globals": "  function getProduct(): Product<any>;\n  function getCategory(): Category;",
+    "target": {"file": "/helpers.js", "kind": "variable", "name": "target"},
+    "expect": "Category | Product"
+  },
+  {
+    "id": "named-element-callback",
+    "source": "storefront helpers: collections.forEach(variants, handleVariant)",
+    "description": "A named function passed by reference as an element-first callback takes the element type",
+    "dwTypes": ["Product", "Collection", "Variant"],
+    "files": {
+      "/collections.js": "function forEach(collection, callback) {\n  var iterator = collection.iterator();\n  while (iterator.hasNext()) {\n    callback(iterator.next());\n  }\n}\nmodule.exports = {forEach: forEach};\n",
+      "/helpers.js": "var collections = require('./collections');\nfunction handleVariant(variant) {\n  return variant.ID;\n}\nfunction allVariants(product) {\n  collections.forEach(product.getVariants(), handleVariant);\n}\nallVariants(getProduct());\n"
+    },
+    "globals": "  function getProduct(): Product<any>;",
+    "target": {"file": "/helpers.js", "function": "handleVariant", "param": 0},
+    "expect": "Variant"
+  },
+  {
+    "id": "contextual-class-type-without-call-sites",
+    "source": "storefront cartHelpers: ShippingMgr.applyShippingCost(basket)",
+    "description": "A never-called helper's parameter passed on as a typed dw.* class takes that class",
+    "dwTypes": ["Basket"],
+    "files": {
+      "/helpers.js": "function recalculate(currentBasket) {\n  applyShippingCost(currentBasket);\n}\nmodule.exports = {recalculate: recalculate};\n"
+    },
+    "globals": "  function applyShippingCost(basket: Basket): void;",
+    "target": {"file": "/helpers.js", "function": "recalculate", "param": 0},
+    "expect": "Basket"
   }
 ]

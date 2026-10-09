@@ -18,7 +18,7 @@ function sendPasswordResetEmail(email, resettingCustomer, currentLocale) {
     firstName: resettingCustomer.profile.firstName,
     lastName: resettingCustomer.profile.lastName,
     locale: currentLocale.ID,
-    token: token
+    token: token,
   };
 }
 
@@ -42,5 +42,5 @@ module.exports = {
   sendPasswordResetEmail: sendPasswordResetEmail,
   getLineItemAdjustmentCount: getLineItemAdjustmentCount,
   isProductLineItem: isProductLineItem,
-  firstVariantId: firstVariantId
+  firstVariantId: firstVariantId,
 };
