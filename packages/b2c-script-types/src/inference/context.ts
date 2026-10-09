@@ -61,7 +61,6 @@ export interface InferenceContext {
   readonly ts: typeof tsserver;
   readonly program: tsserver.Program;
   readonly checker: tsserver.TypeChecker;
-  readonly languageService: tsserver.LanguageService;
   /**
    * Recursion guard for the current inference request only (cleared as the
    * call stack unwinds) — NOT a cross-request memoization cache. It exists
@@ -161,12 +160,24 @@ export function createInferenceContext(
   triggerPosition?: number,
 ): InferenceContext | undefined {
   const program = languageService.getProgram();
-  if (!program) return undefined;
+  return program && contextForProgram(ts, program, host, triggerPosition);
+}
+
+/**
+ * Like {@link createInferenceContext}, for a caller that already holds the
+ * request's Program: asking the language service for it again brings it up
+ * to date with the host again, which reads the version of every file.
+ */
+export function contextForProgram(
+  ts: typeof tsserver,
+  program: tsserver.Program,
+  host: InferenceHost = {},
+  triggerPosition?: number,
+): InferenceContext {
   return {
     ts,
     program,
     checker: program.getTypeChecker(),
-    languageService,
     visiting: new Set(),
     memo: new Map(),
     referenceBudget: MAX_REFERENCES_PER_REQUEST,

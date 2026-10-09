@@ -155,8 +155,9 @@ function isReferenceTo(ctx, target, node) {
 }
 /** True when `condition` tests the value for a member (`'m' in x`, `x.hasOwnProperty('m')`, ...). */
 function testsPresence(ctx, target, condition) {
-    const visit = (node) => (isReferenceTo(ctx, target, node) && presenceTestedMember(ctx, node) !== undefined) ||
-        ctx.ts.forEachChild(node, visit) === true;
+    const visit = (node) => target.mayReference(node) &&
+        ((isReferenceTo(ctx, target, node) && presenceTestedMember(ctx, node) !== undefined) ||
+            ctx.ts.forEachChild(node, visit) === true);
     return visit(condition);
 }
 /** True when `statement` always leaves its block: a `return`/`throw`, or a block ending in one. */
@@ -339,6 +340,8 @@ function recordReference(use, profile) {
 function collectProfile(ctx, target, scope) {
     const profile = emptyProfile();
     const visit = (node, inVariantBranch) => {
+        if (!target.mayReference(node))
+            return;
         if (isReferenceTo(ctx, target, node))
             recordReference({ ctx, target, reference: node, inVariantBranch }, profile);
         const branches = inVariantBranch ? [] : variantBranches(ctx, target, node);
@@ -387,7 +390,8 @@ function ownProfileOf(ctx, declaration) {
     if (!scope)
         return EMPTY_PROFILE;
     const declaredType = checker.getTypeOfSymbolAtLocation(symbol, declarationName);
-    const profile = collectProfile(ctx, { symbol, declarationName, declaredType, storedIn }, scope);
+    const mayReference = (0, ast_helpers_1.spellingFilter)(scope, [declarationName.text, ...[...storedIn].map((member) => member.name)]);
+    const profile = collectProfile(ctx, { symbol, declarationName, declaredType, storedIn, mayReference }, scope);
     ctx.profiles.set(symbol, profile);
     return profile;
 }

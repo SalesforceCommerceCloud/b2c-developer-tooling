@@ -24,7 +24,7 @@ import diagnosticsChannel from 'node:diagnostics_channel';
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import type {InferenceContext} from './context';
-import {getNodeAtPosition} from './ast-helpers';
+import {spellingFilter} from './ast-helpers';
 
 /** A reference a search finds: a name, or the module path of a require() call that loads the searched module. */
 export type Reference = tsserver.Identifier | tsserver.StringLiteralLike;
@@ -72,13 +72,16 @@ function namesIn(ts: typeof tsserver, file: tsserver.SourceFile): NameTable {
   return names;
 }
 
-/** The identifiers spelled `text` in `file`, found where its text spells them. */
+/** The identifiers named `text` in `file`, read along the paths that lead to where its text spells them. */
 function identifiersNamed(ts: typeof tsserver, file: tsserver.SourceFile, text: string): tsserver.Identifier[] {
+  const spells = spellingFilter(file, [text]);
   const found: tsserver.Identifier[] = [];
-  for (let pos = file.text.indexOf(text); pos >= 0; pos = file.text.indexOf(text, pos + text.length)) {
-    const node = getNodeAtPosition(file, ts, pos);
-    if (node && ts.isIdentifier(node) && node.text === text && node.getStart(file) === pos) found.push(node);
-  }
+  const visit = (node: tsserver.Node): void => {
+    if (!spells(node)) return;
+    if (!ts.isIdentifier(node)) ts.forEachChild(node, visit);
+    else if (node.text === text) found.push(node);
+  };
+  visit(file);
   return found;
 }
 

@@ -15,6 +15,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
+import {spellingFilter} from './ast-helpers';
 import type {InferenceContext} from './context';
 
 /** `this.x = value`: a plain assignment to a member of `this`. */
@@ -49,7 +50,9 @@ export function thisMembersStoring(
   const body = (param.parent as tsserver.FunctionLikeDeclaration).body;
   const paramSymbol = ts.isIdentifier(param.name) ? checker.getSymbolAtLocation(param.name) : undefined;
   if (!body || !paramSymbol) return members;
+  const spellsParam = spellingFilter(body, [paramSymbol.name]);
   const visit = (node: tsserver.Node): void => {
+    if (!spellsParam(node)) return;
     const stores = isThisMemberStore(ts, node) && checker.getSymbolAtLocation(node.right) === paramSymbol;
     const member = stores ? checker.getSymbolAtLocation(node.left.name) : undefined;
     if (member) members.add(member);

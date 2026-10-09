@@ -15,6 +15,8 @@ const {searchReferences} = require('../src/inference/reference-search');
 const {createFixtureHost, createFixtureLanguageService} = require('./helpers/fixture-language-service');
 const {countReferenceSearches} = require('./helpers/reference-searches');
 
+const BACKSLASH = '\\';
+
 /** The identifier `text` starts with, in `fileName` (`'helper(p)'` names the `helper` before `(p)`). */
 function nameAt(ctx, fileName, text) {
   const file = ctx.program.getSourceFile(fileName);
@@ -138,6 +140,29 @@ describe('reference search', () => {
       '/c.js h.helper',
       '/helpers.js function helper(p) { return p; }',
       '/helpers.js {helper}',
+    ]);
+  });
+
+  it('finds a use whose name is spelled with a unicode escape, and one deep inside nested code', () => {
+    // `helper` with its `e` written as a unicode escape sequence.
+    const e = `${BACKSLASH}u0065`;
+    const result = search(
+      {
+        '/helpers.js': [
+          'function helper(p) { return p; }',
+          `h${e}lper(1);`,
+          'function outer() { return [{run: function () { if (true) { return helper(2); } }}]; }',
+          'module.exports = {};',
+        ].join('\n'),
+      },
+      '/helpers.js',
+      'helper(p)',
+    );
+
+    assert.deepEqual(result.references, [
+      '/helpers.js function helper(p) { return p; }',
+      `/helpers.js h${e}lper(1)`,
+      '/helpers.js helper(2)',
     ]);
   });
 

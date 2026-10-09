@@ -14,7 +14,8 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import {hasExplicitParameterType} from './ast-helpers';
+import {hasExplicitParameterType, spellingFilter} from './ast-helpers';
+import type {SpellingFilter} from './ast-helpers';
 import {MAX_USAGE_FORWARDING_HOPS} from './constants';
 import type {InferenceContext} from './context';
 import {acceptsArgumentCount} from './signatures';
@@ -229,13 +230,16 @@ function usedAsType(ctx: InferenceContext, reference: tsserver.Expression): tsse
 /**
  * The value a profile describes: its symbol, the name it is declared by, its
  * own (unnarrowed) type, and the members of `this` it is stored in (see
- * ./this-properties), whose reads are reads of the value.
+ * ./this-properties), whose reads are reads of the value. `mayReference`
+ * tells the walks which subtrees spell one of those names at all; no other
+ * one can hold a reference.
  */
 interface ProfileTarget {
   readonly symbol: tsserver.Symbol;
   readonly declarationName: tsserver.Identifier;
   readonly declaredType: tsserver.Type;
   readonly storedIn: ReadonlySet<tsserver.Symbol>;
+  readonly mayReference: SpellingFilter;
 }
 
 function isReferenceTo(ctx: InferenceContext, target: ProfileTarget, node: tsserver.Node): node is tsserver.Expression {
@@ -250,8 +254,9 @@ function isReferenceTo(ctx: InferenceContext, target: ProfileTarget, node: tsser
 /** True when `condition` tests the value for a member (`'m' in x`, `x.hasOwnProperty('m')`, ...). */
 function testsPresence(ctx: InferenceContext, target: ProfileTarget, condition: tsserver.Node): boolean {
   const visit = (node: tsserver.Node): boolean =>
-    (isReferenceTo(ctx, target, node) && presenceTestedMember(ctx, node) !== undefined) ||
-    ctx.ts.forEachChild(node, visit) === true;
+    target.mayReference(node) &&
+    ((isReferenceTo(ctx, target, node) && presenceTestedMember(ctx, node) !== undefined) ||
+      ctx.ts.forEachChild(node, visit) === true);
   return visit(condition);
 }
 
@@ -480,6 +485,7 @@ function recordReference(use: ReferenceUse, profile: ProfileBuilder): void {
 function collectProfile(ctx: InferenceContext, target: ProfileTarget, scope: tsserver.Node): UsageProfile {
   const profile = emptyProfile();
   const visit = (node: tsserver.Node, inVariantBranch: boolean): void => {
+    if (!target.mayReference(node)) return;
     if (isReferenceTo(ctx, target, node)) recordReference({ctx, target, reference: node, inVariantBranch}, profile);
     const branches = inVariantBranch ? [] : variantBranches(ctx, target, node);
     ctx.ts.forEachChild(node, (child) => visit(child, inVariantBranch || branches.includes(child)));
@@ -532,7 +538,8 @@ function ownProfileOf(
   const scope = profileScope(ctx, declaration, storedIn);
   if (!scope) return EMPTY_PROFILE;
   const declaredType = checker.getTypeOfSymbolAtLocation(symbol, declarationName);
-  const profile = collectProfile(ctx, {symbol, declarationName, declaredType, storedIn}, scope);
+  const mayReference = spellingFilter(scope, [declarationName.text, ...[...storedIn].map((member) => member.name)]);
+  const profile = collectProfile(ctx, {symbol, declarationName, declaredType, storedIn, mayReference}, scope);
   ctx.profiles.set(symbol, profile);
   return profile;
 }

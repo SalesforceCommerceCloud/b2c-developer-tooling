@@ -16,7 +16,7 @@ import type tsserver from 'typescript/lib/tsserverlibrary';
 import {getNodeAtPosition, memberCompletionAccess, propertyAccessNamedBy} from './ast-helpers';
 import {MAX_DISPLAY_CACHE_ENTRIES} from './constants';
 import type {HookRegistration} from '../resolver/hook-registry';
-import {createInferenceContext} from './context';
+import {contextForProgram} from './context';
 import type {InferenceContext, InferenceHost} from './context';
 import {inferTypeForExpression, inferTypeForNode} from './core';
 import {collectSuperModuleAugmentedMembers, traceSuperModuleAccess} from './super-module';
@@ -126,10 +126,6 @@ function isInferenceTarget(ts: typeof tsserver, checker: tsserver.TypeChecker, e
   return isOpenForUsageInference(ts, checker.getTypeAtLocation(expr)) || !!traceSuperModuleAccess(ts, checker, expr);
 }
 
-function newContext(env: HookEnvironment, triggerPosition?: number): InferenceContext | undefined {
-  return createInferenceContext(env.ts, env.languageService, env, triggerPosition);
-}
-
 /**
  * The declaration a member-name hover documents: the member every inferred
  * receiver type resolves the name to. Receivers that resolve it to different
@@ -168,9 +164,8 @@ function documentationOf(
  * Documentation comes from the member's declaration, or from the inferred
  * class when there is exactly one.
  */
-function inferHover(env: HookEnvironment, node: tsserver.Identifier): HoverInference | undefined {
-  const ctx = newContext(env);
-  if (!ctx) return undefined;
+function inferHover(env: HookEnvironment, file: OpenFile, node: tsserver.Identifier): HoverInference | undefined {
+  const ctx = contextForProgram(env.ts, file.program, env);
   const access = propertyAccessNamedBy(node, env.ts);
   const types = access ? inferTypeForExpression(ctx, access) : inferTypeForNode(ctx, node);
   if (types.length === 0) return undefined;
@@ -227,7 +222,7 @@ function decorateQuickInfo(
   const node = file && getNodeAtPosition(file.sourceFile, ts, position);
   if (!file || !node || !ts.isIdentifier(node) || !isInferenceTarget(ts, file.checker, node)) return original;
   const key = `hover:${fileName}:${node.getStart(file.sourceFile)}`;
-  const inferred = cache.get(key, file.program, () => inferHover(env, node));
+  const inferred = cache.get(key, file.program, () => inferHover(env, file, node));
   return inferred ? withHoverInference(original, inferred) : original;
 }
 
@@ -239,11 +234,11 @@ function decorateQuickInfo(
  */
 function inferMemberEntries(
   env: HookEnvironment,
+  file: OpenFile,
   receiver: tsserver.Expression,
   position: number,
 ): tsserver.CompletionEntry[] {
-  const ctx = newContext(env, position);
-  if (!ctx) return [];
+  const ctx = contextForProgram(env.ts, file.program, env, position);
   const augmented = collectSuperModuleAugmentedMembers(ctx, receiver).map((member) =>
     inferredCompletionEntry(env.ts, member.name, member.isMethod),
   );
@@ -288,7 +283,7 @@ function decorateCompletions(
   const key = `completions:${fileName}:${receiver.getStart(file.sourceFile)}-${receiver.getEnd()}`;
   return mergeCompletions(
     original,
-    cache.get(key, file.program, () => inferMemberEntries(env, receiver, position)),
+    cache.get(key, file.program, () => inferMemberEntries(env, file, receiver, position)),
   );
 }
 

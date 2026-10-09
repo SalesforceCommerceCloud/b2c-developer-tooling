@@ -21,7 +21,10 @@ import {typeDisplayString} from './type-helpers';
 /**
  * Resolves the function-like declaration a call expression's callee refers
  * to, via its symbol or — as a fallback for shapes the symbol lookup misses
- * — the checker's resolved signature.
+ * (`var Model = require('./model'); new Model(x)`) — the signature the call
+ * resolves to. Only a callee with several signatures needs the checker to
+ * pick one, which checks every argument the call passes (callback bodies
+ * included); a callee with one signature can only mean that one.
  */
 export function resolveCalleeDeclaration(
   ctx: InferenceContext,
@@ -31,8 +34,23 @@ export function resolveCalleeDeclaration(
   const sym = checker.getSymbolAtLocation(call.expression);
   const decl = sym?.valueDeclaration ?? sym?.declarations?.[0];
   if (decl && ts.isFunctionLike(decl)) return decl;
-  const sigDecl = checker.getResolvedSignature(call)?.declaration;
+  const signatures = calleeSignatures(ctx, call);
+  const sigDecl = (signatures.length > 1 ? checker.getResolvedSignature(call) : signatures[0])?.declaration;
   return sigDecl && ts.isFunctionLike(sigDecl) ? sigDecl : undefined;
+}
+
+/**
+ * The signatures `call` chooses from: a `new` call's construct signatures,
+ * or the call signatures of a callee without any (a JS constructor
+ * function, which `new` calls like any other function).
+ */
+function calleeSignatures(
+  ctx: InferenceContext,
+  call: tsserver.CallExpression | tsserver.NewExpression,
+): readonly tsserver.Signature[] {
+  const callee = ctx.checker.getTypeAtLocation(call.expression);
+  const construct = ctx.ts.isNewExpression(call) ? callee.getConstructSignatures() : [];
+  return construct.length > 0 ? construct : callee.getCallSignatures();
 }
 
 /** The function `value` is or names (`function () {...}`, `() => x`, a local function's identifier). */

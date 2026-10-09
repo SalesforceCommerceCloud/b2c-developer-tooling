@@ -57,7 +57,10 @@ function callbackUses(ctx, helper, callbackIndex, paramIndex) {
         if (argIndex >= 0)
             forwarded.push({ call, argIndex });
     };
+    const spellsCallback = (0, ast_helpers_1.spellingFilter)(body, [text]);
     const visit = (node) => {
+        if (!spellsCallback(node))
+            return;
         if (ts.isCallExpression(node))
             record(node);
         ts.forEachChild(node, visit);

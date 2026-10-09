@@ -60,14 +60,19 @@ function namesIn(ts, file) {
     }
     return names;
 }
-/** The identifiers spelled `text` in `file`, found where its text spells them. */
+/** The identifiers named `text` in `file`, read along the paths that lead to where its text spells them. */
 function identifiersNamed(ts, file, text) {
+    const spells = (0, ast_helpers_1.spellingFilter)(file, [text]);
     const found = [];
-    for (let pos = file.text.indexOf(text); pos >= 0; pos = file.text.indexOf(text, pos + text.length)) {
-        const node = (0, ast_helpers_1.getNodeAtPosition)(file, ts, pos);
-        if (node && ts.isIdentifier(node) && node.text === text && node.getStart(file) === pos)
+    const visit = (node) => {
+        if (!spells(node))
+            return;
+        if (!ts.isIdentifier(node))
+            ts.forEachChild(node, visit);
+        else if (node.text === text)
             found.push(node);
-    }
+    };
+    visit(file);
     return found;
 }
 /**

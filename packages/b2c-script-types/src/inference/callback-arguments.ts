@@ -17,7 +17,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import {invocationOf} from './ast-helpers';
+import {invocationOf, spellingFilter} from './ast-helpers';
 import type {InferenceContext} from './context';
 
 /** A call a helper hands its callback on to, as argument `argIndex`. */
@@ -91,7 +91,9 @@ export function callbackUses(
     const argIndex = call.arguments.findIndex(namesCallback);
     if (argIndex >= 0) forwarded.push({call, argIndex});
   };
+  const spellsCallback = spellingFilter(body, [text]);
   const visit = (node: tsserver.Node): void => {
+    if (!spellsCallback(node)) return;
     if (ts.isCallExpression(node)) record(node);
     ts.forEachChild(node, visit);
   };

@@ -66,9 +66,6 @@ function openFile(env, fileName) {
 function isInferenceTarget(ts, checker, expr) {
     return (0, type_helpers_1.isOpenForUsageInference)(ts, checker.getTypeAtLocation(expr)) || !!(0, super_module_1.traceSuperModuleAccess)(ts, checker, expr);
 }
-function newContext(env, triggerPosition) {
-    return (0, context_1.createInferenceContext)(env.ts, env.languageService, env, triggerPosition);
-}
 /**
  * The declaration a member-name hover documents: the member every inferred
  * receiver type resolves the name to. Receivers that resolve it to different
@@ -99,10 +96,8 @@ function documentationOf(checker, symbol) {
  * Documentation comes from the member's declaration, or from the inferred
  * class when there is exactly one.
  */
-function inferHover(env, node) {
-    const ctx = newContext(env);
-    if (!ctx)
-        return undefined;
+function inferHover(env, file, node) {
+    const ctx = (0, context_1.contextForProgram)(env.ts, file.program, env);
     const access = (0, ast_helpers_1.propertyAccessNamedBy)(node, env.ts);
     const types = access ? (0, core_1.inferTypeForExpression)(ctx, access) : (0, core_1.inferTypeForNode)(ctx, node);
     if (types.length === 0)
@@ -150,7 +145,7 @@ function decorateQuickInfo(env, cache, fileName, position, original) {
     if (!file || !node || !ts.isIdentifier(node) || !isInferenceTarget(ts, file.checker, node))
         return original;
     const key = `hover:${fileName}:${node.getStart(file.sourceFile)}`;
-    const inferred = cache.get(key, file.program, () => inferHover(env, node));
+    const inferred = cache.get(key, file.program, () => inferHover(env, file, node));
     return inferred ? withHoverInference(original, inferred) : original;
 }
 /**
@@ -159,10 +154,8 @@ function decorateQuickInfo(env, cache, fileName, position, original) {
  * (`module.exports = base; module.exports.extra = fn;`), which no candidate
  * type can carry.
  */
-function inferMemberEntries(env, receiver, position) {
-    const ctx = newContext(env, position);
-    if (!ctx)
-        return [];
+function inferMemberEntries(env, file, receiver, position) {
+    const ctx = (0, context_1.contextForProgram)(env.ts, file.program, env, position);
     const augmented = (0, super_module_1.collectSuperModuleAugmentedMembers)(ctx, receiver).map((member) => (0, type_helpers_1.inferredCompletionEntry)(env.ts, member.name, member.isMethod));
     return [...(0, type_helpers_1.typesToCompletionEntries)(env.ts, ctx.checker, (0, core_1.inferTypeForExpression)(ctx, receiver)), ...augmented];
 }
@@ -196,7 +189,7 @@ function decorateCompletions(env, cache, fileName, position, original) {
     // nested receivers share a start (`a` and `a.b`), so the key spans it.
     const receiver = access.expression;
     const key = `completions:${fileName}:${receiver.getStart(file.sourceFile)}-${receiver.getEnd()}`;
-    return mergeCompletions(original, cache.get(key, file.program, () => inferMemberEntries(env, receiver, position)));
+    return mergeCompletions(original, cache.get(key, file.program, () => inferMemberEntries(env, file, receiver, position)));
 }
 /**
  * Creates the hover and completion decorators for one language service. Each

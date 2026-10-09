@@ -6,6 +6,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createInferenceContext = createInferenceContext;
+exports.contextForProgram = contextForProgram;
 exports.withCycleGuard = withCycleGuard;
 exports.withInferenceGuards = withInferenceGuards;
 const bindings_1 = require("./bindings");
@@ -16,13 +17,18 @@ const constants_1 = require("./constants");
  */
 function createInferenceContext(ts, languageService, host = {}, triggerPosition) {
     const program = languageService.getProgram();
-    if (!program)
-        return undefined;
+    return program && contextForProgram(ts, program, host, triggerPosition);
+}
+/**
+ * Like {@link createInferenceContext}, for a caller that already holds the
+ * request's Program: asking the language service for it again brings it up
+ * to date with the host again, which reads the version of every file.
+ */
+function contextForProgram(ts, program, host = {}, triggerPosition) {
     return {
         ts,
         program,
         checker: program.getTypeChecker(),
-        languageService,
         visiting: new Set(),
         memo: new Map(),
         referenceBudget: constants_1.MAX_REFERENCES_PER_REQUEST,

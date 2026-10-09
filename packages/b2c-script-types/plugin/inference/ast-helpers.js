@@ -6,6 +6,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getNodeAtPosition = getNodeAtPosition;
+exports.spellingFilter = spellingFilter;
 exports.propertyAccessNamedBy = propertyAccessNamedBy;
 exports.memberCompletionAccess = memberCompletionAccess;
 exports.hasExplicitParameterType = hasExplicitParameterType;
@@ -24,25 +25,61 @@ exports.collectReturnExpressions = collectReturnExpressions;
  *
  * The walk stops scanning a sibling list as soon as it passes `pos`
  * (forEachChild aborts when the callback returns truthy, and siblings are
- * ordered and non-overlapping). Without that, every call in a file whose
- * top-level (or any enclosing) node has thousands of children — a generated
- * data file with an 8,000-element array literal, say — pays for the full
- * child list on every one of the up-to-50 reference hits collectCallSites()
- * resolves in that file.
+ * ordered and non-overlapping), and skips the siblings before `pos` by their
+ * end alone, so a node's start (which means scanning its leading comments)
+ * is computed only for the one sibling that reaches `pos`. Without that, a
+ * hover in a file whose top-level (or any enclosing) node has thousands of
+ * children — a generated data file with an 8,000-element array literal, say
+ * — pays for the full child list.
  */
 function getNodeAtPosition(sourceFile, ts, pos) {
     let result;
     const visit = (node) => {
-        if (pos < node.getStart(sourceFile))
-            return true; // walked past pos — later siblings can't contain it
         if (pos >= node.getEnd())
             return undefined; // before pos — keep scanning this sibling list
+        if (pos < node.getStart(sourceFile))
+            return true; // walked past pos — later siblings can't contain it
         result = node;
         ts.forEachChild(node, visit);
         return true; // containing child handled — siblings don't overlap
     };
     visit(sourceFile);
     return result;
+}
+/**
+ * A pre-test for walks of `scope` looking for identifiers named one of
+ * `names`: true when a node's text spells one of them. An identifier's text
+ * starts with its name, so a subtree the test is false for holds none of
+ * them and the walk can skip it, reading only the few paths that lead to
+ * one. An identifier written with a unicode escape sequence spells its
+ * name in other characters, so a subtree holding an escape is always read.
+ */
+function spellingFilter(scope, names) {
+    const { text } = scope.getSourceFile();
+    const offsets = [];
+    for (const spelling of new Set([...names, '\\u'])) {
+        let at = text.indexOf(spelling, scope.pos);
+        for (; at >= 0 && at < scope.end; at = text.indexOf(spelling, at + spelling.length))
+            offsets.push(at);
+    }
+    offsets.sort((a, b) => a - b);
+    return (node) => {
+        const next = firstAtOrAfter(offsets, node.pos);
+        return next < offsets.length && offsets[next] < node.end;
+    };
+}
+/** The index of the first of the ascending `offsets` that is at or after `pos`. */
+function firstAtOrAfter(offsets, pos) {
+    let low = 0;
+    let high = offsets.length;
+    while (low < high) {
+        const middle = (low + high) >>> 1;
+        if (offsets[middle] < pos)
+            low = middle + 1;
+        else
+            high = middle;
+    }
+    return low;
 }
 /** The property access whose member name `node` is (`productLineItems` in `shipment.productLineItems`), if any. */
 function propertyAccessNamedBy(node, ts) {

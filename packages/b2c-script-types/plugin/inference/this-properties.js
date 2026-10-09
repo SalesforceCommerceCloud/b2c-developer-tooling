@@ -7,6 +7,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.thisMembersStoring = thisMembersStoring;
 exports.isStoredMemberRead = isStoredMemberRead;
+const ast_helpers_1 = require("./ast-helpers");
 /** `this.x = value`: a plain assignment to a member of `this`. */
 function isThisMemberStore(ts, node) {
     return (ts.isBinaryExpression(node) &&
@@ -30,7 +31,10 @@ function thisMembersStoring(ctx, param) {
     const paramSymbol = ts.isIdentifier(param.name) ? checker.getSymbolAtLocation(param.name) : undefined;
     if (!body || !paramSymbol)
         return members;
+    const spellsParam = (0, ast_helpers_1.spellingFilter)(body, [paramSymbol.name]);
     const visit = (node) => {
+        if (!spellsParam(node))
+            return;
         const stores = isThisMemberStore(ts, node) && checker.getSymbolAtLocation(node.right) === paramSymbol;
         const member = stores ? checker.getSymbolAtLocation(node.left.name) : undefined;
         if (member)
