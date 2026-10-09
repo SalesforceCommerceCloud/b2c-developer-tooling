@@ -49,8 +49,21 @@ const INFERRED_NOTE = 'Inferred from usage: ';
 const DW_TYPE_EXPRESSION = /^\{[^{}]*\bdw\.[^{}]*\}$/;
 const SERVER_SIDE_EXCLUDES = ['**/client/**', '**/static/**', '**/node_modules/**'];
 
+// `.project` markers are what the plugin itself discovers by, but some
+// published cartridges ship without one — any direct child with a
+// `cartridge/` folder counts too.
+function cartridgesWithoutProjectFile(root, known) {
+  return fs
+    .readdirSync(root, {withFileTypes: true})
+    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(root, entry.name, 'cartridge')))
+    .map((entry) => ({name: entry.name, src: path.join(root, entry.name)}))
+    .filter((c) => !known.has(c.name));
+}
+
 function discoverCorpusCartridges(roots) {
   const discovered = roots.flatMap((root) => discoverCartridgesOnDisk(ts, root, ts.sys.fileExists));
+  const known = new Set(discovered.map((c) => c.name));
+  discovered.push(...roots.flatMap((root) => cartridgesWithoutProjectFile(root, known)));
   const configured = process.env.B2C_INFERENCE_CARTRIDGE_PATH?.split(':').filter(Boolean);
   return orderCartridges(discovered, configured);
 }
