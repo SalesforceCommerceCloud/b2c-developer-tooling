@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
-  "version": "1.24.1",
+  "version": "2.6.0",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -23,7 +23,13 @@
     "registry": "https://registry.npmjs.org/"
   },
   "exports": {
+    "./scapi": {
+      "development": "./src/scapi/index.ts",
+      "types": "./dist/esm/scapi/index.d.ts",
+      "default": "./dist/esm/scapi/index.js"
+    },
     "./package.json": "./package.json",
+    "./schemas/dw.schema.json": "./data/schemas/dw.schema.json",
     ".": {
       "development": "./src/index.ts",
       "types": "./dist/esm/index.d.ts",
@@ -69,6 +75,11 @@
       "types": "./dist/esm/schemas/index.d.ts",
       "default": "./dist/esm/schemas/index.js"
     },
+    "./openshell": {
+      "development": "./src/openshell/index.ts",
+      "types": "./dist/esm/openshell/index.d.ts",
+      "default": "./dist/esm/openshell/index.js"
+    },
     "./operations/logs": {
       "development": "./src/operations/logs/index.ts",
       "types": "./dist/esm/operations/logs/index.d.ts",
@@ -99,6 +110,11 @@
       "types": "./dist/esm/operations/sites/index.d.ts",
       "default": "./dist/esm/operations/sites/index.js"
     },
+    "./operations/catalogs": {
+      "development": "./src/operations/catalogs/index.ts",
+      "types": "./dist/esm/operations/catalogs/index.d.ts",
+      "default": "./dist/esm/operations/catalogs/index.js"
+    },
     "./operations/orgs": {
       "development": "./src/operations/orgs/index.ts",
       "types": "./dist/esm/operations/orgs/index.d.ts",
@@ -119,6 +135,11 @@
       "types": "./dist/esm/operations/metrics/index.d.ts",
       "default": "./dist/esm/operations/metrics/index.js"
     },
+    "./operations/mtls": {
+      "development": "./src/operations/mtls/index.ts",
+      "types": "./dist/esm/operations/mtls/index.d.ts",
+      "default": "./dist/esm/operations/mtls/index.js"
+    },
     "./slas": {
       "development": "./src/slas/index.ts",
       "types": "./dist/esm/slas/index.d.ts",
@@ -133,6 +154,11 @@
       "development": "./src/clients/index.ts",
       "types": "./dist/esm/clients/index.d.ts",
       "default": "./dist/esm/clients/index.js"
+    },
+    "./compat": {
+      "development": "./src/compat/index.ts",
+      "types": "./dist/esm/compat/index.d.ts",
+      "default": "./dist/esm/compat/index.js"
     },
     "./logging": {
       "development": "./src/logging/index.ts",
@@ -203,6 +229,11 @@
       "development": "./src/ux/index.ts",
       "types": "./dist/esm/ux/index.d.ts",
       "default": "./dist/esm/ux/index.js"
+    },
+    "./guidance": {
+      "development": "./src/guidance/index.ts",
+      "types": "./dist/esm/guidance/index.d.ts",
+      "default": "./dist/esm/guidance/index.js"
     }
   },
   "main": "./dist/esm/index.js",
@@ -214,7 +245,7 @@
     "!data/script-api/*.md"
   ],
   "scripts": {
-    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts && openapi-typescript specs/am-apiclients-api-v1.yaml -o src/clients/am-apiclients-api.generated.ts && openapi-typescript specs/granular-replications-v1.yaml -o src/clients/granular-replications.generated.ts && openapi-typescript specs/preferences-v1.yaml -o src/clients/preferences.generated.ts && openapi-typescript specs/metrics-v1.json -o src/clients/metrics.generated.ts",
+    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/slas-shopper-v1.yaml -o src/clients/slas-shopper.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts && openapi-typescript specs/am-apiclients-api-v1.yaml -o src/clients/am-apiclients-api.generated.ts && openapi-typescript specs/granular-replications-v1.yaml -o src/clients/granular-replications.generated.ts && openapi-typescript specs/operations-jobs-v1.yaml -o src/clients/scapi-jobs.generated.ts && openapi-typescript specs/dx-scripts-v1.yaml -o src/clients/scapi-scripts.generated.ts && openapi-typescript specs/merchant-users-v1.yaml -o src/clients/scapi-merchant-users.generated.ts && openapi-typescript specs/merchant-roles-v1.yaml -o src/clients/scapi-merchant-roles.generated.ts && openapi-typescript specs/site-sites-v1.yaml -o src/clients/scapi-sites.generated.ts && openapi-typescript specs/product-catalogs-v1.yaml -o src/clients/scapi-catalogs.generated.ts && openapi-typescript specs/preferences-v1.yaml -o src/clients/preferences.generated.ts && openapi-typescript specs/metrics-v1.json -o src/clients/metrics.generated.ts && openapi-typescript specs/storefront-deployments-v1.yaml -o src/clients/storefront-deployments.generated.ts && openapi-typescript specs/storefront-environments-v1.yaml -o src/clients/storefront-environments.generated.ts",
     "build": "pnpm run generate:types && pnpm run build:esm",
     "build:esm": "tsc -p tsconfig.esm.json",
     "clean": "shx rm -rf dist",
@@ -237,14 +268,19 @@
     "generate:job-steps-docs": "tsx scripts/generate-job-steps-docs.ts",
     "refresh:docs-data": "tsx scripts/refresh-docs-data.ts",
     "prepack": "pnpm run generate:tooling-index && node scripts/strip-dev-exports.cjs",
-    "postpack": "git checkout package.json",
+    "postpack": "node scripts/restore-package-json.cjs",
     "generate:guides-index": "tsx scripts/generate-guides-index.ts",
     "check:guides-links": "tsx scripts/check-guides-links.ts",
     "generate:tooling-index": "tsx scripts/generate-tooling-index.ts",
     "check:tooling-index": "tsx scripts/generate-tooling-index.ts --check",
+    "generate:dw-json-schema": "tsx scripts/generate-dw-json-schema.ts",
+    "check:dw-json-schema": "tsx scripts/generate-dw-json-schema.ts --check",
     "generate:help-corpus": "tsx scripts/generate-help-corpus.ts",
     "enrich:docs": "tsx scripts/enrich-docs.ts"
   },
+  "bundledDependencies": [
+    "@salesforce/b2c-api-schemas"
+  ],
   "devDependencies": {
     "@eslint/compat": "catalog:",
     "@oclif/core": "catalog:",
@@ -256,6 +292,7 @@
     "@types/js-yaml": "4.0.9",
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
+    "@types/node-forge": "1.3.14",
     "@types/sinon": "catalog:",
     "@types/tar-fs": "^2.0.4",
     "@types/xml2js": "^0.4.14",
@@ -287,18 +324,20 @@
     "node": ">=22.16.0"
   },
   "dependencies": {
+    "@salesforce/b2c-api-schemas": "workspace:*",
     "@vscode/debugadapter": "1.68.0",
     "chokidar": "5.0.0",
     "cliui": "catalog:",
     "ejs": "3.1.10",
-    "fuse.js": "7.1.0",
     "glob": "catalog:",
     "i18next": "25.7.4",
+    "jiti": "2.6.1",
     "js-yaml": "4.2.0",
     "jsonschema": "catalog:",
     "jszip": "3.10.1",
     "minimatch": "10.2.4",
     "minisearch": "7.2.0",
+    "node-forge": "1.4.0",
     "open": "catalog:",
     "openapi-fetch": "0.15.0",
     "pino": "10.1.0",

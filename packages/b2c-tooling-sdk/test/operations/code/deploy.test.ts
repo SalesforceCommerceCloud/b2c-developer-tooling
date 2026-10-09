@@ -6,6 +6,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {expect} from 'chai';
+import JSZip from 'jszip';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import * as fs from 'node:fs';
@@ -158,6 +159,40 @@ describe('operations/code/deploy', () => {
       expect(uploadedZip).to.not.be.null;
       expect(uploadedZip!.length).to.be.greaterThan(0);
       expect(unzipRequested).to.be.true;
+    });
+
+    it('should exclude node_modules and other ignored dirs from the archive', async () => {
+      const cartridgeDir = path.join(tempDir, 'app_test');
+      fs.mkdirSync(path.join(cartridgeDir, 'cartridge', 'scripts'), {recursive: true});
+      fs.writeFileSync(path.join(cartridgeDir, 'cartridge', 'scripts', 'a.js'), 'console.log("a");');
+      fs.mkdirSync(path.join(cartridgeDir, 'node_modules', 'x'), {recursive: true});
+      fs.writeFileSync(path.join(cartridgeDir, 'node_modules', 'x', 'index.js'), 'module.exports = {};');
+
+      const cartridges: CartridgeMapping[] = [{name: 'app_test', src: cartridgeDir, dest: 'app_test'}];
+
+      let uploadedZip: Buffer | null = null;
+
+      server.use(
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          const url = new URL(request.url);
+          if (request.method === 'PUT' && url.pathname.includes('_sync-') && url.pathname.endsWith('.zip')) {
+            uploadedZip = Buffer.from(await request.arrayBuffer());
+            return new HttpResponse(null, {status: 201});
+          }
+          if (request.method === 'POST' || request.method === 'DELETE') {
+            return new HttpResponse(null, {status: 204});
+          }
+          return new HttpResponse(null, {status: 404});
+        }),
+      );
+
+      await uploadCartridges(mockInstance, cartridges);
+
+      expect(uploadedZip).to.not.be.null;
+      const zip = await JSZip.loadAsync(uploadedZip!);
+      const entryPaths = Object.keys(zip.files).map((p) => p.replaceAll('\\', '/'));
+      expect(entryPaths.some((p) => p.endsWith('cartridge/scripts/a.js'))).to.be.true;
+      expect(entryPaths.some((p) => p.includes('node_modules/'))).to.be.false;
     });
 
     it('should throw error when cartridges array is empty', async () => {

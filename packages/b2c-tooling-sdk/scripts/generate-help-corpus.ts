@@ -5,8 +5,7 @@
  */
 /**
  * Generates the **Salesforce Help** documentation corpus (help.salesforce.com
- * administration + merchandising content) from a local clone of the
- * `content-commerce-cloud` DITA source repository.
+ * administration + merchandising content) from a local DITA source directory.
  *
  * Unlike the Developer Center guides (which fetch raw `.md` from
  * developer.salesforce.com at read time), Help content is fully JS-rendered and
@@ -62,15 +61,14 @@
  * empty id are skipped (they are not standalone-published).
  *
  * Usage:
- *   CONTENT_COMMERCE_CLOUD_REPO=/path/to/content-commerce-cloud \
+ *   HELP_CONTENT_DIR=/path/to/help-content \
  *     pnpm --filter @salesforce/b2c-tooling-sdk run generate:help-corpus
  *
- * Defaults to ~/code/content-commerce-cloud when the env var is unset.
+ * HELP_CONTENT_DIR must contain the maps/ and topics/ directories.
  */
 
 import {execFileSync} from 'node:child_process';
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -123,6 +121,9 @@ const ADMIN_MAPS = new Set([
   'b2c_data_protection_and_privacy',
   'b2c_storefront_toolkit',
   'b2c_openai_feed',
+  'b2c_ai_social_integrations',
+  'b2c_google_feed',
+  'b2c_commerce_apps',
   'b2c_salesforce_payments',
   'b2c_inventory', // OCI integration/ops content -> admin, not merchandising
 ]);
@@ -191,17 +192,14 @@ interface SearchIndex {
 type XmlNode = Record<string, unknown>;
 
 // ---------------------------------------------------------------------------
-// Repo resolution
+// Content resolution
 // ---------------------------------------------------------------------------
-function resolveContentRepo(): string {
-  const env = process.env.CONTENT_COMMERCE_CLOUD_REPO;
-  const repo = env ? path.resolve(env) : path.join(os.homedir(), 'code', 'content-commerce-cloud');
-  const base = path.join(repo, 'content/ht/en-us/b2c_merchandiser_administrator');
-  if (!fs.existsSync(base)) {
-    throw new Error(
-      `content-commerce-cloud English content not found at ${base}. ` +
-        `Clone the repo and set CONTENT_COMMERCE_CLOUD_REPO to its root (default: ~/code/content-commerce-cloud).`,
-    );
+function resolveContentDir(): string {
+  const configured = process.env.HELP_CONTENT_DIR;
+  if (!configured) throw new Error('Set HELP_CONTENT_DIR to the local Salesforce Help source directory.');
+  const base = path.resolve(configured);
+  if (!fs.existsSync(path.join(base, 'maps')) || !fs.existsSync(path.join(base, 'topics'))) {
+    throw new Error(`Salesforce Help maps and topics not found at ${base}. Check HELP_CONTENT_DIR.`);
   }
   return base;
 }
@@ -721,10 +719,8 @@ function pagesFromMap(mapsDir: string, mapName: string): Page[] {
 // Main
 // ---------------------------------------------------------------------------
 function main(): void {
-  const contentBase = resolveContentRepo();
-  // contentBase is `<repo>/content/ht/en-us/b2c_merchandiser_administrator`;
-  // capture provenance from the repo root (four levels up).
-  const source = captureSourceProvenance(path.resolve(contentBase, '..', '..', '..', '..'));
+  const contentBase = resolveContentDir();
+  const source = captureSourceProvenance(contentBase);
   const mapsDir = path.join(contentBase, 'maps');
   const topicsDir = path.join(contentBase, 'topics');
 
@@ -849,7 +845,11 @@ function main(): void {
   // Pack the staged content tree into the committed tarball (the docs build's
   // VitePress buildEnd hook extracts it into the site output). `-C STAGING_DIR
   // help` yields archive paths rooted at `help/…`.
-  execFileSync('tar', ['-czf', TARBALL, '-C', STAGING_DIR, 'help'], {stdio: 'inherit'});
+  execFileSync('tar', ['-czf', TARBALL, '-C', STAGING_DIR, 'help'], {
+    stdio: 'inherit',
+    // Avoid publishing macOS AppleDouble metadata alongside every article.
+    env: {...process.env, COPYFILE_DISABLE: '1'},
+  });
 
   console.log(
     `Generated help corpus: ${entries.length} pages ` +

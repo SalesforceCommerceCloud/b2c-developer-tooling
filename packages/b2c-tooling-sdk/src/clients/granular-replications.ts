@@ -17,9 +17,8 @@ import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './granular-replications.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
-import {OAuthStrategy} from '../auth/oauth.js';
-import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {buildTenantScope, toOrganizationId, normalizeTenantId} from './custom-apis.js';
+import {withScopes} from './scapi-backend-utils.js';
 
 export {toOrganizationId, normalizeTenantId, buildTenantScope};
 
@@ -106,10 +105,7 @@ export function createGranularReplicationsClient(
 
   // Build required scopes: domain scope + tenant-specific scope
   const requiredScopes = config.scopes ?? ['sfcc.granular-replications.rw', buildTenantScope(config.tenantId)];
-  const scopedAuth =
-    auth instanceof OAuthStrategy || auth instanceof JwtOAuthStrategy
-      ? auth.withAdditionalScopes(requiredScopes)
-      : auth;
+  const scopedAuth = withScopes(auth, requiredScopes);
 
   client.use(createAuthMiddleware(scopedAuth));
 

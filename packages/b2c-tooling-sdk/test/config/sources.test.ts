@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import {ConfigResolver, DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {ConfigResolver, DwJsonSource, type ConfigSource} from '@salesforce/b2c-tooling-sdk/config';
 import {PackageJsonSource} from '../../src/config/sources/package-json-source.js';
 
 describe('config/sources', () => {
@@ -30,6 +30,34 @@ describe('config/sources', () => {
   });
 
   describe('DwJsonSource', () => {
+    for (const [selection, dwJson] of Object.entries({
+      root: {name: 'sandbox', hostname: 'sandbox.example.com'},
+      active: {
+        name: 'default',
+        hostname: 'default.example.com',
+        configs: [{name: 'sandbox', hostname: 'sandbox.example.com', active: true}],
+      },
+    })) {
+      it(`passes the ${selection} instance name to subsequent credential sources`, async () => {
+        fs.writeFileSync(path.join(tempDir, 'dw.json'), JSON.stringify(dwJson));
+        const credentials: ConfigSource = {
+          name: 'credentials',
+          priority: 10,
+          load(options) {
+            const name = options.instance ?? '_default';
+            return {config: {clientId: `${name}-client`, clientSecret: `${name}-secret`}};
+          },
+        };
+        const resolver = new ConfigResolver([new DwJsonSource(), credentials]);
+
+        const {config} = await resolver.resolve();
+
+        expect(config.instanceName).to.equal('sandbox');
+        expect(config.clientId).to.equal('sandbox-client');
+        expect(config.clientSecret).to.equal('sandbox-secret');
+      });
+    }
+
     it('loads config from dw.json in current directory', async () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(
@@ -170,6 +198,21 @@ describe('config/sources', () => {
       );
 
       expect(config.hostname).to.equal('explicit.demandware.net');
+    });
+
+    it('warns when an explicit config path does not exist and does not fall back', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      fs.writeFileSync(defaultConfigPath, JSON.stringify({hostname: 'global.demandware.net'}));
+
+      const resolver = new ConfigResolver();
+      const {config, warnings} = await resolver.resolve(
+        {},
+        {configPath: path.join(tempDir, 'missing.json'), defaultConfigPath},
+      );
+
+      expect(config.hostname).to.be.undefined;
+      expect(warnings.map((warning) => warning.code)).to.deep.equal(['SOURCE_ERROR']);
+      expect(warnings[0].message).to.include('missing.json');
     });
 
     it('prefers the explicit file default over an active global instance', async () => {

@@ -467,7 +467,7 @@
     <xsd:simpleType name="simpleType.Generic.String.256">
         <xsd:restriction base="simpleType.Generic.String">
             <xsd:minLength value="0"/>
-            <xsd:maxLength value="10"/>
+            <xsd:maxLength value="256"/>
         </xsd:restriction>
     </xsd:simpleType>
 

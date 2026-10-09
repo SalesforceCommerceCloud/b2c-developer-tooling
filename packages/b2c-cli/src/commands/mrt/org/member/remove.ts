@@ -50,9 +50,7 @@ export default class MrtOrgMemberRemove extends MrtCommand<typeof MrtOrgMemberRe
       this.getMrtAuth(),
     );
 
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.mrt.org.member.remove.success', 'Removed {{email}} from {{org}}.', {email, org}));
-    }
+    this.log(t('commands.mrt.org.member.remove.success', 'Removed {{email}} from {{org}}.', {email, org}));
 
     return {email, removed: true};
   }

@@ -31,9 +31,22 @@ b2c mrt bundle deploy -p my-storefront --ssr-param SSRProxyPath=/api
 b2c mrt bundle deploy -p my-storefront \
   --ssr-param SSRProxyPath=/api \
   --ssr-param SSRTimeout=30000
+
+# Push a local build and deploy it via the SCAPI backend
+b2c mrt bundle deploy -p my-storefront -e staging --mrt-backend scapi
+
+# Push via SCAPI with a custom v2 archive layout
+b2c mrt bundle deploy -p my-storefront --mrt-backend scapi --root-dir bld --match-mode ignore_missing
+
+# Push via the legacy v2 endpoint (opt in with --v2)
+b2c mrt bundle deploy -p my-storefront --mrt-backend legacy --v2 --match-mode ignore_missing
 ```
 
+**Bundle format:** SCAPI always uploads the v2 format. The legacy backend defaults to v1; pass `--v2` to upload through the legacy v2 endpoint (upload, plus a separate deploy when `-e` is given). `--root-dir`, `--config-path`, and `--match-mode` control the v2 archive layout and only take effect on a v2 upload — on a legacy v1 push they are ignored and the command warns (pass `--v2` to enable them). `b2c mrt bundle deploy --v2` performs the same v2 upload as `b2c mrt bundle upload-v2` and can also deploy in one step.
+
 ### Deploy Existing Bundle
+
+Both the local-build push and deploying an existing bundle (with a bundle ID) are backend-aware — they honor `--mrt-backend` (`auto` / `legacy` / `scapi`). For a local-build push under `auto`, a safe SCAPI upload failure falls back to legacy, but once the bundle is uploaded a later deploy failure is not retried on legacy (so a bundle is never uploaded twice). See the "MRT Backends" section in the skill overview.
 
 ```bash
 # Deploy existing bundle by ID
@@ -41,6 +54,9 @@ b2c mrt bundle deploy 12345 -p my-storefront -e production
 
 # Deploy with JSON output
 b2c mrt bundle deploy 12345 -p my-storefront -e staging --json
+
+# Deploy via the SCAPI backend and wait for completion
+b2c mrt bundle deploy 12345 -p my-storefront -e production --mrt-backend scapi --wait
 ```
 
 **Flags:**
@@ -50,30 +66,80 @@ b2c mrt bundle deploy 12345 -p my-storefront -e staging --json
 | `--build-dir`, `-b` | Path to build directory | `build` |
 | `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
-| `--node-version`, `-n` | Node.js version for SSR | `22.x` |
+| `--v2` | Use the v2 bundle format/endpoint (SCAPI always uses v2; opt in on legacy) | `false` |
+| `--root-dir` | Archive path prefix for built files and the config file (v2 uploads only) | `bld` |
+| `--config-path` | In-archive config file path, relative to `--root-dir` (v2 uploads only) | `.mrt/config.json` |
+| `--match-mode` | Handling of SSR patterns matching no files — `strict` or `ignore_missing` (v2 uploads only) | `strict` |
+| `--node-version`, `-n` | Node.js version for SSR | `24.x` |
 | `--ssr-param` | SSR parameters (key=value, can repeat) | |
+
+## Bundle Upload (v2)
+
+Build and upload a **v2-format** bundle. This is **upload only** — it does not deploy. Deploy the returned bundle ID separately with `b2c mrt bundle deploy <bundleId> -e <env>`.
+
+Unlike `deploy` (v1), the v2 archive is a gzip tar whose files live under a root directory (default `bld/`), and the SSR configuration is written **inside** the archive at `{root-dir}/{config-path}` (default `bld/.mrt/config.json`) rather than sent as request fields.
+
+The SSR configuration is read from the build's on-disk v2 config file at `{build-dir}/{config-path}` when present. Otherwise it is read from `config.server.ts` in the project directory (`--project-directory`, default the current directory — a compiled `config.server.js`/`config.server.mjs` or the legacy `build/config.server.js` is also accepted), then defaults. Flags override the resolved values per key. If the build already emits the v2 config file, it is excluded from the archive and replaced by the resolved config (no duplicate entry).
+
+`config.server.ts` is evaluated from source (via jiti), so keep type-only imports as `import type`. A `config.server.ts` that exists but fails to import errors the command rather than silently falling back to defaults.
+
+Both `deploy` (v1) and `upload-v2` record the project's `package.json` dependencies (`dependencies` + `devDependencies`) as bundle metadata (v1 `bundle_metadata.dependencies`; v2 `bundleMetadata.dependencies` inside the archive config), matching pwa-kit/storefront-next. An explicit `--dependencies` (v2) or dependencies already in the v2 config file take precedence; collection is best-effort and never blocks a bundle.
+
+```bash
+# Build and upload from ./build
+b2c mrt bundle upload-v2 --project my-storefront
+
+# Upload from a custom build directory
+b2c mrt bundle upload-v2 -p my-storefront --build-dir ./dist
+
+# Allow SSR patterns that match no files
+b2c mrt bundle upload-v2 -p my-storefront --match-mode ignore_missing
+
+# SSR parameters and bundle metadata
+b2c mrt bundle upload-v2 -p my-storefront --ssr-param EnvBasePath=/mobify --node-version 20.x
+b2c mrt bundle upload-v2 -p my-storefront --dependencies @./deps.json --cc-override plugin-a
+```
+
+**Flags:**
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--message`, `-m` | Bundle message/description | |
+| `--build-dir`, `-b` | Path to build directory | `build` |
+| `--root-dir` | Archive path prefix for built files and the config file | `bld` |
+| `--config-path` | In-archive config file path, relative to `--root-dir` | `.mrt/config.json` |
+| `--match-mode` | Handling of SSR patterns matching no files (`strict` or `ignore_missing`) | `strict` |
+| `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
+| `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
+| `--node-version`, `-n` | Node.js version for SSR | `24.x` |
+| `--ssr-param` | SSR parameters (key=value, can repeat) | |
+| `--dependencies` | Bundle dependencies as inline JSON or a `@path` to a JSON file | |
+| `--cc-override` | Commerce Cloud override identifier (can repeat) | |
 
 ## Bundle List
 
-List bundles in a project.
+List bundles in a project. Backend-aware (`--mrt-backend`); under `--json` it returns the serving backend's native response verbatim (legacy vs SCAPI shapes differ).
 
 ```bash
 b2c mrt bundle list --project my-storefront
 b2c mrt bundle list -p my-storefront --limit 10
 b2c mrt bundle list -p my-storefront --offset 20
 b2c mrt bundle list -p my-storefront --json
+
+# Force the SCAPI backend
+b2c mrt bundle list -p my-storefront --mrt-backend scapi
 ```
 
-**Output columns:** Bundle ID, Message, Status, Created
+**Output columns:** Bundle ID, Message, Status, User, Created
 
 ## Bundle History
 
-View deployment history for an environment.
+View deployment history for an environment. Backend-aware (`--mrt-backend`); under `--json` it returns the serving backend's native response verbatim (legacy vs SCAPI shapes differ).
 
 ```bash
 b2c mrt bundle history -p my-storefront -e production
 b2c mrt bundle history -p my-storefront -e staging --limit 5
 b2c mrt bundle history -p my-storefront -e production --json
+b2c mrt bundle history -p my-storefront -e staging --mrt-backend scapi
 ```
 
 **Output columns:** Bundle ID, Message, Status, Type, Created

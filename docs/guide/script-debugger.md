@@ -18,42 +18,40 @@ The debugger uses the same resolved credentials as the rest of the CLI (flags, `
 | ---------------------------------- | ----------------------------------------- | ----------------------------------------------------------- |
 | Debug from VS Code (recommended)   | Salesforce B2C Commerce VS Code Extension | [VS Code Extension](/vscode-extension/#b2c-script-debugger) |
 | Debug from another IDE (JetBrains) | `b2c debug` (DAP debug adapter)           | [Debug Commands](/cli/debug#b2c-debug)                      |
-| Let an AI agent drive the debugger | MCP Script Debugger tools                 | [Script Debugger](/mcp/tools/diagnostics)                   |
+| Debug with your AI assistant       | B2C MCP                                   | [Debug with your assistant](#debug-with-your-assistant)     |
 
 The **VS Code extension is the recommended interface** for interactive debugging — it provides the full graphical debugger (breakpoints, log points, watch expressions, step controls), just like any other Node project. The CLI's DAP debug adapter (`b2c debug`) also offers a headless terminal mode for scripting; see [Debug Commands](/cli/debug) for details.
 
 They all share the same workflow: connect a session, set breakpoints (by local file path, cartridge-prefixed path, or server path), trigger the code on the instance, then inspect the halted thread.
 
-## Server affinity (hitting breakpoints)
+> **Rare PIG-only troubleshooting:** If a breakpoint is never hit after confirming the request exercises the expected code and the source mapping is correct, the request may be reaching a different app server on a multi-app-server Production Instance Group. In that case, use **Copy Debugger Session ID (dwsid)** in VS Code or the MCP session's `session_cookie`, then send the triggering request with `Cookie: dwsid=<value>` (or `sfdc_dwsid: <value>` for a headless request). Sandboxes are single-app-server and never need this.
 
-A breakpoint only fires when the code runs on the **same application server** the debugger is attached to. On a single-app-server environment this is automatic. But some **Production Instance Group (PIG)** environments run **multiple application servers** behind a load balancer — there, a request that triggers your code may land on a different app server than the debugger, and the breakpoint never fires.
+## Debug with your assistant
 
-> **Sandboxes (ODS) are single-app-server and are not affected.** This only matters on certain multi-app-server PIG environments.
+With the [B2C MCP](/mcp/#setup), your assistant can investigate live cartridge
+execution: set a breakpoint, inspect variables and call stacks, and step through
+the code to test an explanation. Use it for an unexpected controller response,
+a failing hook, or a custom job step whose inputs differ from what you expected.
 
-To pin a triggering request to the correct app server, send it with the debugger's session cookie (`dwsid`). How you obtain the value depends on the interface:
+Share the relevant source and a way to reproduce the issue in your sandbox.
+Your assistant can connect the observed values to the code and
+[Script API documentation](/mcp/toolsets#documentation), then explain the finding
+before you decide whether to change anything.
 
-- **MCP:** `debug_start_session` and `debug_list_sessions` return a `session_cookie` (`{name, value}`). See [Script Debugger → Server affinity](/mcp/tools/diagnostics#server-affinity-hitting-breakpoints).
-- **VS Code:** the cookie is logged to the extension output channel when the session connects, and the **Copy Debugger Session ID (dwsid)** command copies it to your clipboard.
-- **CLI:** the cookie is logged when the session connects (`Debug session cookie: dwsid=…`).
+<ExamplePrompt>
 
-Send the request that triggers your code — a browser session, `curl`, an integration test — with that cookie:
+> This custom job step skips products I expect it to update. Inspect its inputs and filtering logic with the debugger while I run it in my sandbox. Explain which condition excludes a product, then resume and disconnect. Don't change the code.
 
-```
-Cookie: dwsid=<value>
-```
+</ExamplePrompt>
 
-For headless requests where you can't (or don't want to) set a cookie — server-to-server calls that trigger hooks, custom APIs, or SCAPI/OCAPI endpoints — pass the same value as the `sfdc_dwsid` request header instead:
-
-```
-sfdc_dwsid: <value>
-```
-
-If you cannot set the cookie or header on the triggering request, you may need to retry until the load balancer happens to route to the attached app server.
+Breakpoints pause requests or jobs. Use a sandbox; evaluating expressions can
+change application state. The MCP uses the [same debugger credentials](#requirements).
+See [MCP debugger access](/mcp/security#debugger) for permissions and precautions.
 
 ## See Also
 
 - [VS Code Extension](/vscode-extension/#b2c-script-debugger) — the recommended graphical debugger
 - [Debug Commands](/cli/debug) — `b2c debug` DAP debug adapter and `b2c debug cli` reference
-- [Script Debugger](/mcp/tools/diagnostics) — MCP tools for agent-driven debugging
+- [MCP debugging tools](/mcp/toolsets#diagnostics) — capabilities and required access
 - [Authentication Setup](/guide/authentication) — WebDAV access key configuration
 - [IDE Integration](/guide/ide-integration) — connecting other IDEs to your CLI configuration

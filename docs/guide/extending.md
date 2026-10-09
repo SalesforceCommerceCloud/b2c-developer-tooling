@@ -8,13 +8,13 @@ The B2C CLI can be extended with custom plugins using the [oclif plugin system](
 
 ## Available Hooks
 
-| Hook | Purpose | SDK Support |
-|------|---------|-------------|
-| [`b2c:config-sources`](#custom-configuration-sources) | Custom configuration loading | CLI only |
-| [`b2c:http-middleware`](#http-middleware) | HTTP request/response middleware | Yes |
-| [`b2c:operation-lifecycle`](#operation-lifecycle-hooks) | Operation before/after callbacks | CLI only |
-| [`b2c:cartridge-providers`](#cartridge-providers) | Custom cartridge discovery | CLI only |
-| [`b2c:scaffold-providers`](#scaffold-providers) | Custom scaffold providers | Yes |
+| Hook                                                    | Purpose                          | SDK Support |
+| ------------------------------------------------------- | -------------------------------- | ----------- |
+| [`b2c:config-sources`](#custom-configuration-sources)   | Custom configuration loading     | CLI only    |
+| [`b2c:http-middleware`](#http-middleware)               | HTTP request/response middleware | Yes         |
+| [`b2c:operation-lifecycle`](#operation-lifecycle-hooks) | Operation before/after callbacks | CLI only    |
+| [`b2c:cartridge-providers`](#cartridge-providers)       | Custom cartridge discovery       | CLI only    |
+| [`b2c:scaffold-providers`](#scaffold-providers)         | Custom scaffold providers        | Yes         |
 
 **SDK Support** indicates whether the hook can be used programmatically without the CLI. Only HTTP middleware supports direct SDK registration via `globalMiddlewareRegistry`.
 
@@ -48,17 +48,17 @@ This hook is called during command initialization, after CLI flags are parsed bu
 
 **Hook Options:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `instance` | `string \| undefined` | The `--instance` flag value |
-| `configPath` | `string \| undefined` | The `--config` flag value |
+| Property         | Type                   | Description                              |
+| ---------------- | ---------------------- | ---------------------------------------- |
+| `instance`       | `string \| undefined`  | The `--instance` flag value              |
+| `configPath`     | `string \| undefined`  | The `--config` flag value                |
 | `resolveOptions` | `ResolveConfigOptions` | Full resolution options for advanced use |
 
 **Hook Result:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `sources` | `ConfigSource[]` | Config sources to add to resolution |
+| Property   | Type                            | Description                                          |
+| ---------- | ------------------------------- | ---------------------------------------------------- |
+| `sources`  | `ConfigSource[]`                | Config sources to add to resolution                  |
 | `priority` | `'before' \| 'after' \| number` | Priority for sources (see below). Default: `'after'` |
 
 ::: tip Numeric Priorities
@@ -69,12 +69,12 @@ String values map to numeric priorities: `'before'` → -1, `'after'` → 10. Yo
 
 Configuration sources use a numeric priority system where **lower numbers = higher priority**:
 
-| Priority | Description | Example |
-|----------|-------------|---------|
-| < 0 | Override built-in sources | `'before'` maps to -1 |
-| 0 | Built-in sources | `dw.json`, `~/.mobify` |
-| 1-999 | After built-in sources | `'after'` maps to 10 |
-| 1000 | Lowest priority | `package.json` |
+| Priority | Description               | Example                |
+| -------- | ------------------------- | ---------------------- |
+| < 0      | Override built-in sources | `'before'` maps to -1  |
+| 0        | Built-in sources          | `dw.json`, `~/.mobify` |
+| 1-999    | After built-in sources    | `'after'` maps to 10   |
+| 1000     | Lowest priority           | `package.json`         |
 
 Configuration is resolved with the following precedence:
 
@@ -85,6 +85,16 @@ Configuration is resolved with the following precedence:
 5. **package.json** - Project-level defaults (priority 1000)
 
 Each source fills in missing values - it doesn't override values from higher-priority sources.
+
+Sources with the same priority from different plugins are ordered by plugin name.
+
+Credential sources should select the instance inside `load(options)`, using
+`options.instance`. This contains the explicit `--instance` selection or, for
+sources loaded after `dw.json`, the selected configuration's `name`. The earlier
+`b2c:config-sources` hook runs before configuration loading, so its instance value
+only reflects an explicit selection. Use `priority: 'after'` to fill credentials
+for the instance selected by `dw.json`; credentials already present in that file
+retain precedence.
 
 ::: tip Custom ConfigSource Priority
 When implementing a custom `ConfigSource`, you can set the `priority` property directly on your class:
@@ -99,6 +109,7 @@ export class MyCustomSource implements ConfigSource {
   }
 }
 ```
+
 :::
 
 ::: warning Credential Grouping
@@ -157,10 +168,10 @@ You only need to register hooks your plugin actually implements. The example abo
 
 ```typescript
 // src/hooks/config-sources.ts
-import type { ConfigSourcesHook } from '@salesforce/b2c-tooling-sdk/cli';
-import { MyCustomSource } from '../sources/my-custom-source.js';
+import type {ConfigSourcesHook} from '@salesforce/b2c-tooling-sdk/cli';
+import {MyCustomSource} from '../sources/my-custom-source.js';
 
-const hook: ConfigSourcesHook = async function(options) {
+const hook: ConfigSourcesHook = async function (options) {
   // Access oclif context via `this`
   this.debug(`Hook called with instance: ${options.instance}`);
 
@@ -179,11 +190,7 @@ export default hook;
 
 ```typescript
 // src/sources/my-custom-source.ts
-import type {
-  ConfigSource,
-  ConfigLoadResult,
-  ResolveConfigOptions
-} from '@salesforce/b2c-tooling-sdk/config';
+import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions} from '@salesforce/b2c-tooling-sdk/config';
 
 export class MyCustomSource implements ConfigSource {
   readonly name = 'my-custom-source';
@@ -208,7 +215,7 @@ export class MyCustomSource implements ConfigSource {
 
 ### Instance Management Methods
 
-Config sources can optionally implement instance management methods to support the `b2c setup instance` commands. This enables plugins to store and manage instance configurations in custom locations (cloud config, global registry, etc.).
+Config sources can optionally implement instance management methods to support the `b2c setup instance` commands and the VS Code extension's instance picker. This enables plugins to store and manage instance configurations in custom locations (cloud config, global registry, etc.).
 
 ```typescript
 import type {
@@ -256,40 +263,42 @@ export class MyInstanceSource implements ConfigSource {
 }
 ```
 
-When a source implements `listInstances()`, its instances appear in `b2c setup instance list`. The `InstanceManager` class aggregates instances from all sources.
+The `b2c setup instance` commands use these methods on every registered source, including dw.json, in priority order:
+
+- `list` shows the instances from every source that implements `listInstances()`. The `Source` column shows where each one comes from.
+- `create` stores the new instance in the highest-priority source that implements `createInstance()`. With the default priority (`'after'`), that is dw.json. With `'before'`, it is your source. `--source <name>` picks a source explicitly.
+- `set-active` and `remove` act on the highest-priority source that lists the instance.
+
+Each source tracks its own active instance. Making an instance active in one source doesn't clear an active instance in another.
+
+The `InstanceManager` class (`createInstanceManager()` from `@salesforce/b2c-tooling-sdk/config`) provides the same behavior to SDK consumers.
 
 ### Credential Storage Methods
 
 Config sources can optionally implement credential storage methods to securely store secrets. This is useful for keychain integrations, vault plugins, or other secure storage backends.
 
 ```typescript
-import type {
-  ConfigSource,
-  NormalizedConfig,
-  ResolveConfigOptions,
-} from '@salesforce/b2c-tooling-sdk/config';
+import type {ConfigSource, NormalizedConfig, ResolveConfigOptions} from '@salesforce/b2c-tooling-sdk/config';
 
 export class KeychainSource implements ConfigSource {
   readonly name = 'keychain';
 
-  // Declare which credential fields this source can store
-  readonly credentialFields: (keyof NormalizedConfig)[] = [
-    'password',
-    'clientSecret',
-  ];
+  // Declare which credential fields this source can store. Declare both halves
+  // of a pair: configuration resolution reads a pair from one source only.
+  readonly credentialFields: (keyof NormalizedConfig)[] = ['clientId', 'clientSecret'];
 
   load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
     // Load credentials from keychain for the requested instance
     const instanceName = options.instance || '_default';
-    const password = this.getFromKeychain(`b2c/${instanceName}/password`);
+    const clientId = this.getFromKeychain(`b2c/${instanceName}/clientId`);
     const clientSecret = this.getFromKeychain(`b2c/${instanceName}/clientSecret`);
 
-    if (!password && !clientSecret) {
+    if (!clientId && !clientSecret) {
       return undefined;
     }
 
     return {
-      config: { password, clientSecret },
+      config: {clientId, clientSecret},
       location: `keychain:b2c/${instanceName}`,
     };
   }
@@ -299,17 +308,13 @@ export class KeychainSource implements ConfigSource {
     instanceName: string,
     field: keyof NormalizedConfig,
     value: string,
-    options?: ResolveConfigOptions
+    options?: ResolveConfigOptions,
   ): void {
     this.saveToKeychain(`b2c/${instanceName}/${String(field)}`, value);
   }
 
   // Remove a credential for an instance
-  removeCredential(
-    instanceName: string,
-    field: keyof NormalizedConfig,
-    options?: ResolveConfigOptions
-  ): void {
+  removeCredential(instanceName: string, field: keyof NormalizedConfig, options?: ResolveConfigOptions): void {
     this.deleteFromKeychain(`b2c/${instanceName}/${String(field)}`);
   }
 
@@ -327,7 +332,49 @@ export class KeychainSource implements ConfigSource {
 }
 ```
 
-When `b2c setup instance create` collects credentials, it checks for sources with `credentialFields` and can route secrets to secure storage instead of plaintext files.
+When `b2c setup instance create` is given a credential pair (client ID and secret, username and password, or SLAS client ID and secret), it stores the pair in the first credential store that declares every field given. The pair is then left out of the instance itself. A store that declares only the secret never receives it, because a pair is always read from a single source: `client-id` from dw.json and `client-secret` from a keychain would not be combined. `b2c setup instance remove` calls `removeCredential()` on every credential store for each declared field, so no secrets are left behind. Make `removeCredential()` a no-op for credentials that don't exist.
+
+`b2c setup set` and `b2c setup unset` also write through `storeCredential()` and `removeCredential()`. They do this when a credential store supplies one of its declared `credentialFields`, or supplies the other half of that field's credential pair.
+
+### Field Write Methods
+
+Config sources can optionally implement `updateConfig()` so that `b2c setup set` and `b2c setup unset` can write to them. The built-in dw.json and project `.env` sources work this way. A source without `updateConfig()` (or the credential methods above) is read-only. Writes that would land on it fail and leave everything unchanged.
+
+```typescript
+import type {
+  ConfigSource,
+  ConfigLoadResult,
+  ConfigUpdateResult,
+  NormalizedConfig,
+  ResolveConfigOptions,
+} from '@salesforce/b2c-tooling-sdk/config';
+
+export class YamlConfigSource implements ConfigSource {
+  readonly name = 'yaml-config';
+  readonly priority = -5; // ahead of dw.json
+
+  load(options: ResolveConfigOptions): ConfigLoadResult | undefined {
+    // Return the selected instance, including instanceName and hostname
+  }
+
+  // Apply a patch to the entry load() selects for the same options.
+  // A field set to undefined is removed.
+  updateConfig(patch: Partial<NormalizedConfig>, options: ResolveConfigOptions): ConfigUpdateResult {
+    // Write the YAML file...
+    return {location: '/path/to/b2c.yaml', instance: 'staging'};
+  }
+}
+```
+
+The CLI picks the source to write to from the resolved configuration, in this order:
+
+1. The source that currently supplies the field. This way the new value takes effect.
+2. For a credential pair (`client-id`/`client-secret`, `username`/`password`, `slas-client-id`/`slas-client-secret`), the source that supplies the other half.
+3. For a field nothing sets yet, the source that supplied the instance: whichever supplies `instanceName`, or `hostname` if no source supplies `instanceName`.
+
+So a high-priority source that defines the instance receives every new field. The dw.json source still loads underneath it, and fields that dw.json already supplies are still written there.
+
+A sandbox hostname derived from a tenant ID counts as supplied by the source of the tenant ID, so a source that supplies only `tenantId` receives `hostname` writes.
 
 ### Error Handling
 
@@ -375,7 +422,7 @@ b2c code deploy
 The hook receives a `flags` property containing all parsed CLI flags from the current command:
 
 ```typescript
-const hook: ConfigSourcesHook = async function(options) {
+const hook: ConfigSourcesHook = async function (options) {
   // Access parsed flags (read-only)
   this.debug(`Debug mode: ${options.flags?.debug}`);
 
@@ -393,22 +440,22 @@ const hook: ConfigSourcesHook = async function(options) {
 
 Your `ConfigSource` can return any of these configuration fields:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `hostname` | `string` | B2C instance hostname |
-| `webdavHostname` | `string` | Separate WebDAV hostname |
-| `codeVersion` | `string` | Code version for deployments |
-| `username` | `string` | Basic auth username |
-| `password` | `string` | Basic auth password |
-| `clientId` | `string` | OAuth client ID |
-| `clientSecret` | `string` | OAuth client secret |
-| `scopes` | `string[]` | OAuth scopes |
-| `authMethods` | `AuthMethod[]` | Allowed auth methods |
-| `accountManagerHost` | `string` | Account Manager hostname |
-| `shortCode` | `string` | SCAPI short code |
-| `mrtProject` | `string` | MRT project slug |
-| `mrtEnvironment` | `string` | MRT environment name |
-| `mrtApiKey` | `string` | MRT API key |
+| Field                | Type           | Description                  |
+| -------------------- | -------------- | ---------------------------- |
+| `hostname`           | `string`       | B2C instance hostname        |
+| `webdavHostname`     | `string`       | Separate WebDAV hostname     |
+| `codeVersion`        | `string`       | Code version for deployments |
+| `username`           | `string`       | Basic auth username          |
+| `password`           | `string`       | Basic auth password          |
+| `clientId`           | `string`       | OAuth client ID              |
+| `clientSecret`       | `string`       | OAuth client secret          |
+| `scopes`             | `string[]`     | OAuth scopes                 |
+| `authMethods`        | `AuthMethod[]` | Allowed auth methods         |
+| `accountManagerHost` | `string`       | Account Manager hostname     |
+| `shortCode`          | `string`       | SCAPI short code             |
+| `mrtProject`         | `string`       | MRT project slug             |
+| `mrtEnvironment`     | `string`       | MRT environment name         |
+| `mrtApiKey`          | `string`       | MRT API key                  |
 
 ## HTTP Middleware
 
@@ -420,20 +467,20 @@ This hook is called during command initialization, after flags are parsed but be
 
 **Hook Options:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `flags` | `Record<string, unknown>` | Parsed CLI flags (read-only) |
+| Property | Type                      | Description                  |
+| -------- | ------------------------- | ---------------------------- |
+| `flags`  | `Record<string, unknown>` | Parsed CLI flags (read-only) |
 
 **Hook Result:**
 
-| Property | Type | Description |
-|----------|------|-------------|
+| Property    | Type                       | Description                      |
+| ----------- | -------------------------- | -------------------------------- |
 | `providers` | `HttpMiddlewareProvider[]` | Middleware providers to register |
 
 ### HttpMiddlewareProvider Interface
 
 ```typescript
-import type { HttpMiddlewareProvider, HttpClientType } from '@salesforce/b2c-tooling-sdk/clients';
+import type {HttpMiddlewareProvider, HttpClientType} from '@salesforce/b2c-tooling-sdk/clients';
 
 const provider: HttpMiddlewareProvider = {
   name: 'my-middleware',
@@ -442,12 +489,12 @@ const provider: HttpMiddlewareProvider = {
     // Return middleware for specific client types
     // Return undefined to skip this client type
     return {
-      onRequest({ request }) {
+      onRequest({request}) {
         // Modify request before sending
         request.headers.set('X-Custom-Header', 'value');
         return request;
       },
-      onResponse({ response }) {
+      onResponse({response}) {
         // Process response
         console.log(`Status: ${response.status}`);
         return response;
@@ -458,6 +505,7 @@ const provider: HttpMiddlewareProvider = {
 ```
 
 **Client Types:**
+
 - `ocapi` - OCAPI Data API
 - `slas` - SLAS Admin API
 - `ods` - On-Demand Sandbox API
@@ -469,21 +517,21 @@ const provider: HttpMiddlewareProvider = {
 
 ```typescript
 // src/hooks/http-middleware.ts
-import type { HttpMiddlewareHook } from '@salesforce/b2c-tooling-sdk/cli';
-import type { HttpMiddlewareProvider } from '@salesforce/b2c-tooling-sdk/clients';
+import type {HttpMiddlewareHook} from '@salesforce/b2c-tooling-sdk/cli';
+import type {HttpMiddlewareProvider} from '@salesforce/b2c-tooling-sdk/clients';
 
-const hook: HttpMiddlewareHook = async function(options) {
+const hook: HttpMiddlewareHook = async function (options) {
   const loggingProvider: HttpMiddlewareProvider = {
     name: 'request-logger',
     getMiddleware(clientType) {
       return {
-        onRequest({ request }) {
+        onRequest({request}) {
           const startTime = Date.now();
           (request as any)._startTime = startTime;
           console.log(`[${clientType}] ${request.method} ${request.url}`);
           return request;
         },
-        onResponse({ request, response }) {
+        onResponse({request, response}) {
           const duration = Date.now() - ((request as any)._startTime || 0);
           console.log(`[${clientType}] ${response.status} (${duration}ms)`);
           return response;
@@ -492,7 +540,7 @@ const hook: HttpMiddlewareHook = async function(options) {
     },
   };
 
-  return { providers: [loggingProvider] };
+  return {providers: [loggingProvider]};
 };
 
 export default hook;
@@ -503,13 +551,13 @@ export default hook;
 For programmatic SDK usage without the CLI, register middleware directly:
 
 ```typescript
-import { globalMiddlewareRegistry } from '@salesforce/b2c-tooling-sdk/clients';
+import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 
 globalMiddlewareRegistry.register({
   name: 'my-sdk-middleware',
   getMiddleware(clientType) {
     return {
-      onRequest({ request }) {
+      onRequest({request}) {
         // Modify request
         return request;
       },
@@ -530,24 +578,24 @@ This hook is called during command initialization. Registered providers receive 
 
 **Hook Options:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `flags` | `Record<string, unknown>` | Parsed CLI flags (read-only) |
+| Property | Type                      | Description                  |
+| -------- | ------------------------- | ---------------------------- |
+| `flags`  | `Record<string, unknown>` | Parsed CLI flags (read-only) |
 
 **Hook Result:**
 
-| Property | Type | Description |
-|----------|------|-------------|
+| Property    | Type                              | Description                     |
+| ----------- | --------------------------------- | ------------------------------- |
 | `providers` | `B2COperationLifecycleProvider[]` | Lifecycle providers to register |
 
 ### Supported Operations
 
-| Operation Type | Command |
-|----------------|---------|
-| `job:run` | `b2c job run` |
-| `job:import` | `b2c job import` |
-| `job:export` | `b2c job export` |
-| `code:deploy` | `b2c code deploy` |
+| Operation Type | Command           |
+| -------------- | ----------------- |
+| `job:run`      | `b2c job run`     |
+| `job:import`   | `b2c job import`  |
+| `job:export`   | `b2c job export`  |
+| `code:deploy`  | `b2c code deploy` |
 
 ### B2COperationLifecycleProvider Interface
 
@@ -567,7 +615,7 @@ const provider: B2COperationLifecycleProvider = {
     console.log(`Starting: ${context.operationType}`);
 
     // Access the B2C instance for API calls
-    const { instance } = context;
+    const {instance} = context;
     console.log(`Target: ${instance.config.hostname}`);
 
     // Optional: skip operation based on policy
@@ -598,15 +646,16 @@ const provider: B2COperationLifecycleProvider = {
 
 The context includes the full `B2CInstance`, giving plugins access to API clients without reconstruction.
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `operationType` | `B2COperationType` | Operation type (e.g., `job:run`) |
-| `operationId` | `string` | Unique ID for this invocation |
-| `instance` | `B2CInstance` | Target B2C instance with configured clients |
-| `startTime` | `number` | Start timestamp |
-| `metadata` | `Record<string, unknown>` | Operation-specific data |
+| Property        | Type                      | Description                                 |
+| --------------- | ------------------------- | ------------------------------------------- |
+| `operationType` | `B2COperationType`        | Operation type (e.g., `job:run`)            |
+| `operationId`   | `string`                  | Unique ID for this invocation               |
+| `instance`      | `B2CInstance`             | Target B2C instance with configured clients |
+| `startTime`     | `number`                  | Start timestamp                             |
+| `metadata`      | `Record<string, unknown>` | Operation-specific data                     |
 
 **Accessing the instance:**
+
 ```typescript
 async beforeOperation(context) {
   const { instance } = context;
@@ -622,50 +671,54 @@ async beforeOperation(context) {
 
 ### B2COperationResult
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `success` | `boolean` | Whether operation succeeded |
-| `error` | `Error \| undefined` | Error if failed |
-| `duration` | `number` | Execution time in ms |
-| `data` | `unknown` | Operation-specific result data |
+| Property   | Type                 | Description                    |
+| ---------- | -------------------- | ------------------------------ |
+| `success`  | `boolean`            | Whether operation succeeded    |
+| `error`    | `Error \| undefined` | Error if failed                |
+| `duration` | `number`             | Execution time in ms           |
+| `data`     | `unknown`            | Operation-specific result data |
 
 ### Example: Audit Logging Plugin
 
 ```typescript
 // src/hooks/operation-lifecycle.ts
-import type { B2COperationLifecycleHook } from '@salesforce/b2c-tooling-sdk/cli';
-import type { B2COperationLifecycleProvider } from '@salesforce/b2c-tooling-sdk/cli';
+import type {B2COperationLifecycleHook} from '@salesforce/b2c-tooling-sdk/cli';
+import type {B2COperationLifecycleProvider} from '@salesforce/b2c-tooling-sdk/cli';
 
-const hook: B2COperationLifecycleHook = async function(options) {
+const hook: B2COperationLifecycleHook = async function (options) {
   const auditProvider: B2COperationLifecycleProvider = {
     name: 'audit-logger',
 
     async beforeOperation(context) {
-      console.log(JSON.stringify({
-        event: 'operation_start',
-        type: context.operationType,
-        id: context.operationId,
-        hostname: context.instance.config.hostname,
-        metadata: context.metadata,
-        timestamp: new Date().toISOString(),
-      }));
+      console.log(
+        JSON.stringify({
+          event: 'operation_start',
+          type: context.operationType,
+          id: context.operationId,
+          hostname: context.instance.config.hostname,
+          metadata: context.metadata,
+          timestamp: new Date().toISOString(),
+        }),
+      );
       return {};
     },
 
     async afterOperation(context, result) {
-      console.log(JSON.stringify({
-        event: 'operation_end',
-        type: context.operationType,
-        id: context.operationId,
-        success: result.success,
-        duration: result.duration,
-        error: result.error?.message,
-        timestamp: new Date().toISOString(),
-      }));
+      console.log(
+        JSON.stringify({
+          event: 'operation_end',
+          type: context.operationType,
+          id: context.operationId,
+          success: result.success,
+          duration: result.duration,
+          error: result.error?.message,
+          timestamp: new Date().toISOString(),
+        }),
+      );
     },
   };
 
-  return { providers: [auditProvider] };
+  return {providers: [auditProvider]};
 };
 
 export default hook;
@@ -707,26 +760,23 @@ This hook is called during cartridge command initialization. Providers and trans
 
 **Hook Options:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `directory` | `string` | Directory being searched |
-| `flags` | `Record<string, unknown>` | Parsed CLI flags (read-only) |
+| Property    | Type                      | Description                  |
+| ----------- | ------------------------- | ---------------------------- |
+| `directory` | `string`                  | Directory being searched     |
+| `flags`     | `Record<string, unknown>` | Parsed CLI flags (read-only) |
 
 **Hook Result:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `providers` | `CartridgeProvider[]` | Cartridge discovery providers |
+| Property       | Type                     | Description                    |
+| -------------- | ------------------------ | ------------------------------ |
+| `providers`    | `CartridgeProvider[]`    | Cartridge discovery providers  |
 | `transformers` | `CartridgeTransformer[]` | Cartridge mapping transformers |
 
 ### CartridgeProvider Interface
 
 ```typescript
-import type {
-  CartridgeProvider,
-  CartridgeDiscoveryOptions,
-} from '@salesforce/b2c-tooling-sdk/cli';
-import type { CartridgeMapping } from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {CartridgeProvider, CartridgeDiscoveryOptions} from '@salesforce/b2c-tooling-sdk/cli';
+import type {CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
 
 const provider: CartridgeProvider = {
   name: 'manifest-provider',
@@ -747,6 +797,7 @@ const provider: CartridgeProvider = {
 ```
 
 **Priority:**
+
 - `'before'` - Runs before default `.project` discovery (can override defaults)
 - `'after'` - Runs after default discovery (adds additional cartridges)
 
@@ -757,14 +808,14 @@ Cartridges are deduplicated by name (first wins).
 Transformers modify the final cartridge list after all providers have contributed:
 
 ```typescript
-import type { CartridgeTransformer } from '@salesforce/b2c-tooling-sdk/cli';
+import type {CartridgeTransformer} from '@salesforce/b2c-tooling-sdk/cli';
 
 const transformer: CartridgeTransformer = {
   name: 'version-suffix',
 
   async transform(cartridges, options) {
     // Modify cartridge mappings
-    return cartridges.map(c => ({
+    return cartridges.map((c) => ({
       ...c,
       dest: `${c.name}_v2`, // Rename destination
     }));
@@ -774,24 +825,24 @@ const transformer: CartridgeTransformer = {
 
 ### CartridgeDiscoveryOptions
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `directory` | `string` | Search directory (absolute path) |
-| `include` | `string[]` | Cartridge names to include |
-| `exclude` | `string[]` | Cartridge names to exclude |
-| `codeVersion` | `string` | Target code version (if known) |
-| `instance` | `B2CInstance` | Target B2C instance |
+| Property      | Type          | Description                      |
+| ------------- | ------------- | -------------------------------- |
+| `directory`   | `string`      | Search directory (absolute path) |
+| `include`     | `string[]`    | Cartridge names to include       |
+| `exclude`     | `string[]`    | Cartridge names to exclude       |
+| `codeVersion` | `string`      | Target code version (if known)   |
+| `instance`    | `B2CInstance` | Target B2C instance              |
 
 ### Example: Manifest-Based Discovery
 
 ```typescript
 // src/hooks/cartridge-providers.ts
-import type { CartridgeProvidersHook } from '@salesforce/b2c-tooling-sdk/cli';
-import type { CartridgeProvider } from '@salesforce/b2c-tooling-sdk/cli';
+import type {CartridgeProvidersHook} from '@salesforce/b2c-tooling-sdk/cli';
+import type {CartridgeProvider} from '@salesforce/b2c-tooling-sdk/cli';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const hook: CartridgeProvidersHook = async function(options) {
+const hook: CartridgeProvidersHook = async function (options) {
   const manifestProvider: CartridgeProvider = {
     name: 'manifest-provider',
     priority: 'before',
@@ -813,7 +864,7 @@ const hook: CartridgeProvidersHook = async function(options) {
     },
   };
 
-  return { providers: [manifestProvider] };
+  return {providers: [manifestProvider]};
 };
 
 export default hook;
@@ -830,7 +881,7 @@ const envFilterTransformer: CartridgeTransformer = {
 
     // Exclude test cartridges in production
     if (env === 'production') {
-      return cartridges.filter(c => !c.name.startsWith('test_'));
+      return cartridges.filter((c) => !c.name.startsWith('test_'));
     }
 
     return cartridges;
@@ -848,25 +899,21 @@ This hook is called during scaffold command initialization. Providers and transf
 
 **Hook Options:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `flags` | `Record<string, unknown>` | Parsed CLI flags (read-only) |
+| Property | Type                      | Description                  |
+| -------- | ------------------------- | ---------------------------- |
+| `flags`  | `Record<string, unknown>` | Parsed CLI flags (read-only) |
 
 **Hook Result:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `providers` | `ScaffoldProvider[]` | Scaffold discovery providers |
+| Property       | Type                    | Description                   |
+| -------------- | ----------------------- | ----------------------------- |
+| `providers`    | `ScaffoldProvider[]`    | Scaffold discovery providers  |
 | `transformers` | `ScaffoldTransformer[]` | Scaffold mapping transformers |
 
 ### ScaffoldProvider Interface
 
 ```typescript
-import type {
-  ScaffoldProvider,
-  ScaffoldDiscoveryOptions,
-  Scaffold,
-} from '@salesforce/b2c-tooling-sdk/scaffold';
+import type {ScaffoldProvider, ScaffoldDiscoveryOptions, Scaffold} from '@salesforce/b2c-tooling-sdk/scaffold';
 
 const provider: ScaffoldProvider = {
   name: 'my-scaffold-provider',
@@ -882,7 +929,9 @@ const provider: ScaffoldProvider = {
         category: 'cartridge',
         source: 'plugin',
         path: '/path/to/scaffold',
-        manifest: { /* scaffold.json contents */ },
+        manifest: {
+          /* scaffold.json contents */
+        },
       },
     ];
   },
@@ -890,6 +939,7 @@ const provider: ScaffoldProvider = {
 ```
 
 **Priority:**
+
 - `'before'` - Runs before default discovery (can be overridden by built-in/user/project scaffolds)
 - `'after'` - Runs after default discovery (overrides scaffolds with same ID)
 
@@ -900,14 +950,14 @@ Scaffolds are deduplicated by ID (last provider wins for same ID).
 Transformers modify the final scaffold list after all providers have contributed:
 
 ```typescript
-import type { ScaffoldTransformer, Scaffold } from '@salesforce/b2c-tooling-sdk/scaffold';
+import type {ScaffoldTransformer, Scaffold} from '@salesforce/b2c-tooling-sdk/scaffold';
 
 const transformer: ScaffoldTransformer = {
   name: 'scaffold-filter',
 
   async transform(scaffolds: Scaffold[], options): Promise<Scaffold[]> {
     // Filter or modify scaffolds
-    return scaffolds.filter(s => !s.id.startsWith('internal-'));
+    return scaffolds.filter((s) => !s.id.startsWith('internal-'));
   },
 };
 ```
@@ -917,27 +967,33 @@ const transformer: ScaffoldTransformer = {
 For programmatic SDK usage without the CLI, create a scaffold registry and register providers and transformers on it:
 
 ```typescript
-import { createScaffoldRegistry } from '@salesforce/b2c-tooling-sdk/scaffold';
+import {createScaffoldRegistry} from '@salesforce/b2c-tooling-sdk/scaffold';
 
 // Create a registry instance
 const registry = createScaffoldRegistry();
 
 // Add a custom provider
-registry.addProviders([{
-  name: 'my-provider',
-  priority: 'after',
-  async getScaffolds(options) {
-    return [/* scaffolds */];
+registry.addProviders([
+  {
+    name: 'my-provider',
+    priority: 'after',
+    async getScaffolds(options) {
+      return [
+        /* scaffolds */
+      ];
+    },
   },
-}]);
+]);
 
 // Add a transformer
-registry.addTransformers([{
-  name: 'my-transformer',
-  async transform(scaffolds, options) {
-    return scaffolds;
+registry.addTransformers([
+  {
+    name: 'my-transformer',
+    async transform(scaffolds, options) {
+      return scaffolds;
+    },
   },
-}]);
+]);
 ```
 
 ::: tip Programmatic Registration
@@ -951,26 +1007,26 @@ See [Scaffolding Guide](./scaffolding) for details on creating custom scaffolds.
 Extend the B2C base command classes to create commands with built-in configuration and authentication:
 
 ```typescript
-import { InstanceCommand } from '@salesforce/b2c-tooling-sdk/cli';
-import { Flags } from '@oclif/core';
+import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {Flags} from '@oclif/core';
 
 export default class MyCommand extends InstanceCommand<typeof MyCommand> {
   static description = 'My custom command';
 
   static flags = {
-    site: Flags.string({ description: 'Site ID', required: true }),
+    site: Flags.string({description: 'Site ID', required: true}),
   };
 
   async run(): Promise<void> {
     // Access resolved configuration
-    const { hostname, clientId } = this.resolvedConfig;
+    const {hostname, clientId} = this.resolvedConfig;
 
     // Access B2C instance with pre-configured clients
     const instance = this.instance;
 
     // Make API calls
-    const { data } = await instance.ocapi.GET('/sites/{site_id}', {
-      params: { path: { site_id: this.flags.site } },
+    const {data} = await instance.ocapi.GET('/sites/{site_id}', {
+      params: {path: {site_id: this.flags.site}},
     });
 
     this.log(`Site: ${data.id}`);
@@ -980,16 +1036,16 @@ export default class MyCommand extends InstanceCommand<typeof MyCommand> {
 
 ### Base Command Classes
 
-| Class | Use Case |
-|-------|----------|
-| `BaseCommand` | Minimal base with logging and config loading |
-| `OAuthCommand` | Commands requiring OAuth authentication |
-| `InstanceCommand` | Commands targeting a B2C instance |
-| `CartridgeCommand` | Code deployment commands |
-| `JobCommand` | Job execution commands |
-| `WebDavCommand` | WebDAV file operations |
-| `MrtCommand` | Managed Runtime operations |
-| `OdsCommand` | On-Demand Sandbox operations |
+| Class              | Use Case                                     |
+| ------------------ | -------------------------------------------- |
+| `BaseCommand`      | Minimal base with logging and config loading |
+| `OAuthCommand`     | Commands requiring OAuth authentication      |
+| `InstanceCommand`  | Commands targeting a B2C instance            |
+| `CartridgeCommand` | Code deployment commands                     |
+| `JobCommand`       | Job execution commands                       |
+| `WebDavCommand`    | WebDAV file operations                       |
+| `MrtCommand`       | Managed Runtime operations                   |
+| `OdsCommand`       | On-Demand Sandbox operations                 |
 
 ## Testing Plugins
 

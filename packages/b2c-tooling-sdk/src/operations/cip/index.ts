@@ -128,7 +128,10 @@ export async function listCipTables(
 
   const whereClauseSql = whereClauses.length > 0 ? ` WHERE ${whereClauses.join(' AND ')}` : '';
   const sql = `SELECT tableSchem, tableName, tableType FROM metadata.TABLES${whereClauseSql} ORDER BY tableSchem, tableName`;
-  const result = await client.query(sql, {fetchSize: options.fetchSize});
+  const result = await client.query(sql, {
+    fetchSize: options.fetchSize,
+    ...(options.maxRows === undefined ? {} : {maxRows: options.maxRows}),
+  });
 
   const tables: CipTableMetadata[] = result.rows.map((row) => ({
     tableName: toStringOrEmpty(pickRowValue(row, /^tablename$/)),
@@ -140,6 +143,7 @@ export async function listCipTables(
     schema: options.schema,
     tableCount: tables.length,
     tables,
+    ...(result.truncated === undefined ? {} : {truncated: result.truncated}),
   };
 }
 
@@ -162,7 +166,10 @@ export async function describeCipTable(
     `WHERE tableSchem = '${escapeSqlString(tableSchema)}' AND tableName = '${escapeSqlString(tableName)}' ` +
     `ORDER BY ordinalPosition`;
 
-  const result = await client.query(sql, {fetchSize: options.fetchSize});
+  const result = await client.query(sql, {
+    fetchSize: options.fetchSize,
+    ...(options.maxRows === undefined ? {} : {maxRows: options.maxRows}),
+  });
 
   const columns: CipColumnMetadata[] = result.rows.map((row) => ({
     columnName: toStringOrEmpty(pickRowValue(row, /^columnname$/)),
@@ -178,6 +185,7 @@ export async function describeCipTable(
     columns,
     tableName,
     tableSchema,
+    ...(result.truncated === undefined ? {} : {truncated: result.truncated}),
   };
 }
 

@@ -54,6 +54,14 @@
       ]
     },
     {
+      "schema": "channels.xsd",
+      "fileMatch": [
+        "**/sites/*/channels.xml",
+        "**/metadata/sites/*/channels.xml",
+        "**/metadata/channels/*.xml"
+      ]
+    },
+    {
       "schema": "commercefeaturestate.xsd",
       "fileMatch": [
         "**/commerce-feature-states.xml",

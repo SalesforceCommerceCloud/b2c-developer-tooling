@@ -20,6 +20,7 @@ export const WEBDAV_ROOTS = {
   CATALOGS: 'Catalogs',
   LIBRARIES: 'Libraries',
   STATIC: 'Static',
+  DYNAMIC: 'Dynamic',
   LOGS: 'Logs',
   SECURITYLOGS: 'Securitylogs',
 } as const;

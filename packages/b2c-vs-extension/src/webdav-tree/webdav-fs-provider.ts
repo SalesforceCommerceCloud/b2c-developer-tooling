@@ -32,6 +32,7 @@ const MIME_BY_EXT: Record<string, string> = {
   '.xml': 'application/xml',
   '.zip': 'application/zip',
   '.js': 'application/javascript',
+  '.ds': 'application/javascript',
   '.ts': 'application/typescript',
   '.html': 'text/html',
   '.css': 'text/css',

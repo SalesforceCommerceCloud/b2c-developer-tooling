@@ -165,10 +165,10 @@ describe('plugins/discovery', () => {
       expect(result[0].name).to.equal('@myorg/b2c-keychain');
     });
 
-    it('discovers multiple plugins', () => {
+    it('discovers multiple plugins in name order, not install order', () => {
       fs.writeFileSync(
         path.join(tempDir, 'package.json'),
-        JSON.stringify({oclif: {plugins: ['plugin-a', 'plugin-b']}}),
+        JSON.stringify({oclif: {plugins: ['plugin-b', 'plugin-a']}}),
       );
 
       for (const name of ['plugin-a', 'plugin-b']) {
@@ -243,7 +243,7 @@ describe('plugins/discovery', () => {
 
       const result = discoverPlugins({dataDir: tempDir});
       expect(result).to.have.length(2);
-      expect(result.map((p) => p.name)).to.deep.equal(['string-plugin', 'object-plugin']);
+      expect(result.map((p) => p.name)).to.deep.equal(['object-plugin', 'string-plugin']);
     });
 
     it('skips entries with no extractable name', () => {

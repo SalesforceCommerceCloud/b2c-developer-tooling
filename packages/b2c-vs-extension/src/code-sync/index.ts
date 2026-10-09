@@ -23,7 +23,7 @@ export function registerCodeSync(
   cartridgeService: CartridgeService,
   log: vscode.OutputChannel,
 ): void {
-  const manager = new CodeSyncManager(context.workspaceState);
+  const manager = new CodeSyncManager(context.workspaceState, configProvider);
   const treeProvider = new CartridgeTreeProvider(cartridgeService);
   const treeView = vscode.window.createTreeView('b2cCartridgeExplorer', {treeDataProvider: treeProvider});
 
@@ -180,19 +180,31 @@ export function registerCodeSync(
     await updateCodeVersionDisplay(configProvider, treeView);
   }
 
-  // Wire config resets
-  configProvider.onDidReset(async () => {
-    if (manager.isWatching) {
-      await manager.stopWatch();
-    }
+  // Wire config resets. Pending changes survive the restart, so changes that
+  // failed with the old configuration (for example a 401 before fixing .env)
+  // are retried with the new one.
+  async function handleConfigReload(): Promise<void> {
+    manager.suspendForReload();
     // CartridgeService listens to onDidReset itself and refreshes its cache;
     // the tree updates via the cartridge-service onDidChange event.
     updateContextKey();
     await evaluateAutoStart();
-  });
+    if (!manager.isWatching) manager.discardPending();
+  }
 
-  // Initial auto-start
-  void evaluateAutoStart();
+  // One save can fire several resets (editor save and file watcher); handle
+  // them one at a time so restarts don't overlap and register duplicate watchers.
+  const logged = async (step: () => Promise<void>, label: string): Promise<void> => {
+    try {
+      await step();
+    } catch (err) {
+      log.appendLine(`[CodeSync] ${label} failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  let reloads = logged(evaluateAutoStart, 'Auto-start');
+  configProvider.onDidReset(() => {
+    reloads = reloads.then(() => logged(handleConfigReload, 'Configuration reload'));
+  });
 
   context.subscriptions.push(
     manager,

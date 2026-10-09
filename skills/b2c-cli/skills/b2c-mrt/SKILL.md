@@ -11,9 +11,24 @@ Use the `b2c` CLI to manage Managed Runtime (MRT) projects, environments, bundle
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the MRT API key from `SFCC_MRT_API_KEY`, `~/.mobify`, `dw.json`, `package.json`, and configuration plugins. Project and environment defaults can come from `dw.json` (`mrtProject`, `mrtEnvironment`) or env vars. **Flags like `--api-key`, `-p`, and `-e` are usually unnecessary** when defaults are configured — only pass them to override.
+The CLI resolves the MRT API key from `MRT_API_KEY` (or `SFCC_MRT_API_KEY`), `dw.json`, `~/.mobify`, or configuration plugins. Project and environment defaults can also come from `package.json` under `b2c` (`mrtProject`, `mrtEnvironment`) or environment variables. `package.json` cannot supply API keys or other secrets. **Flags like `--api-key`, `-p`, and `-e` are usually unnecessary** when defaults are configured — only pass them to override.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; keep secrets masked unless the user explicitly requests their values). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+
+### MRT Backends (legacy vs SCAPI)
+
+Most MRT commands run against the legacy MRT Cloud API (API key). Several commands can also run over the SCAPI MRT backend: `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), and the `mrt env var` family (`list` / `set` / `push` / `delete`). Choose with `--mrt-backend` (`MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
+
+- `legacy` (default) — always the MRT Cloud API.
+- `auto` — use SCAPI when it's configured (`--short-code` + `--tenant-id` + client-credentials or JWT Bearer auth), otherwise legacy. Falls back to legacy on safe pre-execution errors. Each command requests its own scopes: bundle commands use `sfcc.storefront.deployments[.rw]`; env var commands use `sfcc.storefront.environments[.rw]` (reads accept either tier, writes require `.rw`).
+- `scapi` — always SCAPI, with no fallback; errors if prerequisites are missing. Also errors on unsupported commands (every MRT command except the bundle and env var commands above).
+
+Notes:
+
+- Under `--json`, these commands emit the **serving backend's native shape** (e.g. `bundle history` is legacy `{count, next, previous, deployments}` vs SCAPI `{limit, offset, total, data}`; `env var list` is legacy `{count, variables}` vs the SCAPI native environment-variables map). The human table is normalized; `--json` is not. Pin `legacy` or `scapi` when a script needs a stable shape.
+- Env vars over SCAPI use the Storefront Environments API. `set` and `delete` apply a merge-PATCH (only the keys you pass change; `delete` sends the key with a `null` value); values are always masked by both backends. `push` resolves the backend once from its initial read and pins every write to it, so a single `push` never crosses backends.
+- Legacy-only flags (`--api-key`, `--cloud-origin` / `-u`, `--credentials-file` / `-c`) are ignored — with a warning — when SCAPI serves the request.
+- `--storefront` (long) and `-s` (short) are aliases of `--project` / `-p` — the SCAPI storefront ID is the project slug, so all four are interchangeable on every `mrt` command. On `mrt project create` this flag sets the new project's slug (auto-generated from the name if omitted); `mrt bundle save` uses `-d` for `--save-dir`, keeping `-s` free for the storefront alias.
 
 ## Command Structure
 
@@ -46,6 +61,9 @@ b2c mrt bundle deploy -p my-storefront -e production -m "Release v1.0.0"
 
 # Deploy existing bundle by ID
 b2c mrt bundle deploy 12345 -p my-storefront -e production
+
+# Build and upload a v2-format bundle (upload only; deploy the returned ID separately)
+b2c mrt bundle upload-v2 -p my-storefront
 ```
 
 ### Manage Environments
@@ -165,6 +183,7 @@ Configure MRT settings in your project's `dw.json`:
 export MRT_API_KEY=your-api-key
 export MRT_PROJECT=my-storefront
 export MRT_ENVIRONMENT=staging
+export MRT_BACKEND=legacy      # legacy (default) | auto | scapi
 ```
 
 ### ~/.mobify Config

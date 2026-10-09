@@ -174,6 +174,8 @@ export class WebDavClient {
         method: request.method,
         headers: request.headers,
         body: init?.body, // Use original body since Request body may have been consumed
+        signal: request.signal,
+        redirect: request.redirect,
         dispatcher: this.dispatcher,
       });
     } catch (err) {
@@ -210,7 +212,8 @@ export class WebDavClient {
     // Trace: Log response details
     const responseHeaders = this.headersToObject(response.headers);
     let responseBody: string | undefined;
-    if (response.headers.get('content-type')?.includes('xml')) {
+    // File downloads must remain streamable; tracing must not buffer an entire XML file.
+    if (request.method !== 'GET' && response.headers.get('content-type')?.includes('xml')) {
       const clonedResponse = response.clone();
       responseBody = await clonedResponse.text();
     }

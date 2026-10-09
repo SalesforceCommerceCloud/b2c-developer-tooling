@@ -1,0 +1,5 @@
+[
+  {"query": "Add a merchant-editable promo banner component with a headline, image, and alignment option to my Storefront Next project so it shows up in the Page Designer palette.", "should_trigger": true},
+  {"query": "My new Page Designer component deployed with pnpm cartridge:deploy but renders empty and the loader data is undefined. What's wrong?", "should_trigger": true},
+  {"query": "Build a classic SFRA Page Designer component with an ISML template and a meta-definition JSON for my cartridge.", "should_trigger": false}
+]

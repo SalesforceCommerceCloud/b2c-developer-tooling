@@ -96,7 +96,7 @@
  */
 
 // High-level API (preferred)
-export {resolveConfig, ConfigResolver, createConfigResolver} from './resolver.js';
+export {resolveConfig, createConfigSources, ConfigResolver, createConfigResolver} from './resolver.js';
 
 // Types
 export type {
@@ -113,12 +113,32 @@ export type {
   ResolveConfigOptions,
   ResolvedB2CConfig,
   CreateOAuthOptions,
+  CreateB2CInstanceOptions,
   InstanceInfo,
   CreateInstanceOptions,
+  ConfigUpdateResult,
 } from './types.js';
+
+// Field-level reads and writes (`b2c setup get/set/unset`)
+export {
+  ConfigWriteError,
+  listConfigKeys,
+  locateConfigField,
+  parseConfigValue,
+  removeConfigField,
+  resolveConfigKey,
+  writeConfigField,
+} from './config-write.js';
+export type {ConfigFieldLocation, ConfigKey} from './config-write.js';
+export {getConfigOrigins} from './config-origins.js';
+export type {ConfigOrigin} from './config-origins.js';
 
 // Instance creation utility (public API for CLI commands)
 export {createInstanceFromConfig, normalizeConfigKeys, resolveLibraryEntries} from './mapping.js';
+
+// dw.json JSON Schema (published as data/schemas/dw.schema.json)
+export {buildDwJsonSchema, DW_JSON_FIELDS, DW_JSON_SCHEMA_URL} from './dw-json-schema.js';
+export type {JsonSchema} from './dw-json-schema.js';
 
 // Low-level dw.json API (still available for advanced use)
 export {
@@ -129,6 +149,7 @@ export {
   addInstance,
   removeInstance,
   setActiveInstance,
+  updateInstanceConfig,
 } from './dw-json.js';
 export type {
   DwJsonConfig,
@@ -138,10 +159,12 @@ export type {
   AddInstanceOptions,
   RemoveInstanceOptions,
   SetActiveInstanceOptions,
+  UpdateInstanceConfigOptions,
 } from './dw-json.js';
 
 // Instance management
 export {InstanceManager, createInstanceManager} from './instance-manager.js';
+export type {InstanceCreateResult} from './instance-manager.js';
 
 // Redaction helpers for displaying resolved config (CLI inspect, MCP config_inspect)
 export {SENSITIVE_CONFIG_FIELDS, isSensitiveConfigField, maskConfigValue, redactConfigValues} from './redaction.js';
@@ -160,8 +183,25 @@ export {
 export type {B2CSettings, B2CSettingsPathOptions} from './settings.js';
 
 // Project-scoped environment loading
-export {mergeProjectEnvironment, readProjectEnvironment} from './project-environment.js';
+export {
+  ENV_FILE_ENV_VAR,
+  applyEnvFile,
+  loadEnvFileForArgv,
+  mergeProjectEnvironment,
+  preloadEnvFile,
+  readEnvFile,
+  readProjectEnvironment,
+  resolveEnvFilePath,
+  takePreloadedEnvFile,
+} from './project-environment.js';
+export type {EnvFileSelectionOptions, LoadedEnvFile} from './project-environment.js';
 
 // Config sources (for direct use)
 export {DwJsonSource} from './sources/dw-json-source.js';
-export {EnvSource} from './sources/env-source.js';
+export {
+  DotenvFileSource,
+  EnvSource,
+  StorefrontNextEnvSource,
+  STOREFRONT_NEXT_ENV_VAR_MAP,
+} from './sources/env-source.js';
+export type {EnvSourceOptions} from './sources/env-source.js';

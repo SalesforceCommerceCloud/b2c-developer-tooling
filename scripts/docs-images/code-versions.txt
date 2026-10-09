@@ -1,0 +1,4 @@
+ID                  Active  Rollback
+──────────────────────────────────────
+SFRA_AP_07_10_2024  Yes     No
+version1            No      Yes

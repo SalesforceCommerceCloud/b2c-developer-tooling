@@ -77,7 +77,14 @@ export type {
 export {ALL_AUTH_METHODS} from './types.js';
 
 // Client credential encoding (RFC 6749 §2.3.1)
-export {encodeBasicClientCredentials} from './client-credentials.js';
+export {
+  applyClientCredentials,
+  CLIENT_AUTH_METHODS,
+  encodeBasicClientCredentials,
+  isCredentialPlaceholder,
+  resolveClientAuthMethod,
+} from './client-credentials.js';
+export type {ClientAuthMethod} from './client-credentials.js';
 
 // Strategies
 export {BasicAuthStrategy} from './basic.js';
@@ -116,8 +123,8 @@ export {
 export type {AuthSession, AuthSessionBackend, AuthSessionFlow} from './session-store.js';
 
 // Resolution helpers
-export {resolveAuthStrategy, checkAvailableAuthMethods} from './resolve.js';
-export type {ResolveAuthStrategyOptions, AvailableAuthMethods} from './resolve.js';
+export {resolveAuthStrategy, checkAvailableAuthMethods, resolveSystemOAuthStrategy} from './resolve.js';
+export type {ResolveAuthStrategyOptions, AvailableAuthMethods, SystemOAuthCredentials} from './resolve.js';
 
 // Auth middleware
 export {

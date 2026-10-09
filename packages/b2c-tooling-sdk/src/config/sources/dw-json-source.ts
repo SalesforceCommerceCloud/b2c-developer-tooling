@@ -10,8 +10,22 @@
  */
 import {existsSync} from 'node:fs';
 import path from 'node:path';
-import {loadDwJson, loadFullDwJson, addInstance, removeInstance, saveDwJson, setActiveInstance} from '../dw-json.js';
-import {getPopulatedFields, mapDwJsonToNormalizedConfig, mapNormalizedConfigToDwJson} from '../mapping.js';
+import {
+  loadDwJson,
+  loadFullDwJson,
+  addInstance,
+  removeInstance,
+  saveDwJson,
+  setActiveInstance,
+  updateInstanceConfig,
+} from '../dw-json.js';
+import {listConfigKeys} from '../config-write.js';
+import {
+  getPopulatedFields,
+  kebabToCamelCase,
+  mapDwJsonToNormalizedConfig,
+  mapNormalizedConfigToDwJson,
+} from '../mapping.js';
 import type {
   ConfigSource,
   ConfigLoadResult,
@@ -19,11 +33,18 @@ import type {
   InstanceInfo,
   CreateInstanceOptions,
   ConfigCatalogFile,
+  ConfigUpdateResult,
+  NormalizedConfig,
 } from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
-/** Select the explicit, project-local, or global-default dw.json path. */
+/**
+ * Select the explicit, project-local, or global-default dw.json path.
+ *
+ * @throws Error if an empty config path selected no dw.json
+ */
 function selectConfigPath(options: ResolveConfigOptions): string | undefined {
+  if (options.configPath === '') throw new Error('No dw.json is selected (empty config path).');
   if (options.configPath) return options.configPath;
 
   const projectConfigPath = path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json');
@@ -32,11 +53,23 @@ function selectConfigPath(options: ResolveConfigOptions): string | undefined {
   return options.defaultConfigPath;
 }
 
-/** Select the ordered files that contribute instances to the effective catalog. */
+/**
+ * Select the ordered files that contribute instances to the effective catalog.
+ *
+ * An explicit config path is exact: it is the only file used, without the
+ * global default. An empty config path selects no dw.json at all. A discovered
+ * project dw.json is still supplemented by the global default.
+ */
 function selectConfigPaths(options: ResolveConfigOptions): string[] {
+  if (options.configPath === '') return [];
+  if (options.configPath !== undefined) {
+    const explicitPath = path.resolve(options.configPath);
+    return existsSync(explicitPath) ? [explicitPath] : [];
+  }
+
   const paths: string[] = [];
   const primaryPath = path.resolve(
-    options.configPath ?? path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json'),
+    path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json'),
   );
 
   if (existsSync(primaryPath)) paths.push(primaryPath);
@@ -154,22 +187,13 @@ export class DwJsonSource implements ConfigSource {
   async load(options: ResolveConfigOptions): Promise<ConfigLoadResult | undefined> {
     const logger = getLogger();
 
-    const configPaths = selectConfigPaths(options);
-    let result: Awaited<ReturnType<typeof loadDwJson>>;
-    if (options.instance) {
-      for (const configPath of configPaths) {
-        result = await loadDwJson({instance: options.instance, path: configPath});
-        if (result) break;
-      }
-    } else {
-      for (const configPath of configPaths) {
-        result = await loadActiveConfig(configPath);
-        if (!result) {
-          result = await loadDefaultConfig(configPath);
-        }
-        if (result) break;
-      }
+    // Reported as a SOURCE_ERROR warning; an explicit path never falls back to another file.
+    if (options.configPath && !existsSync(path.resolve(options.configPath))) {
+      throw new Error(`Config file not found: ${path.resolve(options.configPath)}`);
     }
+
+    const configPaths = selectConfigPaths(options);
+    const result = await this.selectEntry(configPaths, options);
 
     const instanceCatalog = createInstanceCatalog(configPaths, result?.path, options);
     if (!result) {
@@ -187,6 +211,39 @@ export class DwJsonSource implements ConfigSource {
     logger.trace({location: result.path, scope, fields}, '[DwJsonSource] Loaded config');
 
     return {config, location: result.path, scope, instanceCatalog};
+  }
+
+  /**
+   * Update fields of the entry {@link load} selects for the same options.
+   *
+   * @throws Error if no entry is selected or a field has no dw.json key
+   */
+  async updateConfig(patch: Partial<NormalizedConfig>, options: ResolveConfigOptions): Promise<ConfigUpdateResult> {
+    const selected = await this.selectEntry(selectConfigPaths(options), options);
+    if (!selected) throw new Error('No dw.json entry is selected to update.');
+
+    const dwPatch: Record<string, unknown> = {};
+    for (const [field, value] of Object.entries(patch)) {
+      const key = listConfigKeys().find((entry) => entry.field === field);
+      if (!key) throw new Error(`${field} can't be stored in dw.json.`);
+      dwPatch[kebabToCamelCase(key.key)] = value;
+    }
+    const result = await updateInstanceConfig(dwPatch, {path: selected.path, instance: selected.config.name});
+    return {location: result.path, instance: result.name};
+  }
+
+  /** Select the named, active, or root entry across the catalog files, in order. */
+  private async selectEntry(
+    configPaths: string[],
+    options: ResolveConfigOptions,
+  ): Promise<Awaited<ReturnType<typeof loadDwJson>>> {
+    for (const configPath of configPaths) {
+      const result = options.instance
+        ? await loadDwJson({instance: options.instance, path: configPath})
+        : ((await loadActiveConfig(configPath)) ?? (await loadDefaultConfig(configPath)));
+      if (result) return result;
+    }
+    return undefined;
   }
 
   /**

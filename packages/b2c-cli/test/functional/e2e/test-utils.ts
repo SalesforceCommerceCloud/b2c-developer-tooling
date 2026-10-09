@@ -147,8 +147,10 @@ export async function runCLI(args: string[], options: CLIOptions = {}): Promise<
     env: {
       ...process.env,
       ...env,
-      SFCC_LOG_LEVEL: env.SFCC_LOG_LEVEL || process.env.SFCC_LOG_LEVEL || 'silent',
+      SFCC_LOG_LEVEL: env.SFCC_LOG_LEVEL || process.env.SFCC_LOG_LEVEL || 'debug',
     },
+    // Preserve stderr for assertions while also showing diagnostics in CI logs.
+    stderr: ['pipe', 'inherit'],
     reject: false,
     timeout,
     cwd,
@@ -337,6 +339,28 @@ export function parseJSONOutput(result: ExecaReturnValue): any {
   } catch {
     throw new Error(`Failed to parse JSON output:\n${stdout.slice(0, 500)}${stdout.length > 500 ? '...' : ''}`);
   }
+}
+
+interface CLIErrorOutput {
+  error: {message?: string; detail?: string; status?: number; code?: number | string};
+}
+
+/** Extract the CLI JSON error envelope without treating debug logs as JSON. */
+export function parseJSONErrorOutput(result: Pick<ExecaReturnValue, 'stderr' | 'stdout'>): CLIErrorOutput {
+  for (const output of [toString(result.stderr), toString(result.stdout)]) {
+    // BaseCommand emits the error as one JSON line; also accept standalone formatted JSON.
+    for (const candidate of [output, ...output.split(/\r?\n/).reverse()]) {
+      try {
+        const parsed = JSON.parse(candidate) as CLIErrorOutput;
+        if (parsed?.error && typeof parsed.error.message === 'string' && !('level' in parsed)) {
+          return parsed;
+        }
+      } catch {
+        // Diagnostic lines are expected alongside the JSON error.
+      }
+    }
+  }
+  throw new Error('Command did not return a JSON error object');
 }
 
 /**

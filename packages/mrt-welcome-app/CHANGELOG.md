@@ -1,5 +1,19 @@
 # @salesforce/mrt-welcome-app
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [[`98aa9ae`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/98aa9aecb89164dc6bb709e00b4194e7678ecdc4)]:
+  - @salesforce/mrt-utilities@0.3.2
+
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`a4a87a9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a4a87a9d60552e6fad01a0d0c074fbc7e5ab6264)]:
+  - @salesforce/mrt-utilities@0.3.1
+
 ## 0.0.2
 
 ### Patch Changes

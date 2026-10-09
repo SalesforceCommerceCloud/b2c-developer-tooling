@@ -274,6 +274,17 @@ function init({ typescript: ts }) {
             }
             return undefined;
         };
+        // TS derives a file's ScriptKind from its extension and falls back to TS
+        // for anything it doesn't recognize, which would parse legacy .ds scripts
+        // as TypeScript. Report JS so they get the same JavaScript semantics
+        // (allowJs/checkJs, JSDoc types) as their .js siblings. Returning Unknown
+        // for everything else lets TS fall back to its own extension mapping.
+        const origGetScriptKind = host.getScriptKind?.bind(host);
+        host.getScriptKind = (fileName) => {
+            if (enabled && fileName.endsWith('.ds'))
+                return ts.ScriptKind.JS;
+            return origGetScriptKind ? origGetScriptKind(fileName) : ts.ScriptKind.Unknown;
+        };
         const origResolveModuleNameLiterals = host.resolveModuleNameLiterals?.bind(host);
         if (origResolveModuleNameLiterals) {
             host.resolveModuleNameLiterals = (moduleLiterals, containingFile, redirectedReference, options, containingSourceFile, reusedNames) => {

@@ -1,0 +1,3221 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Roles",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/roles/roles-oas-v1-public.yaml)\n\n# API Overview\n\nThe Roles API provides endpoints for managing access roles and their associated users and permissions within Salesforce Commerce Cloud.\n\n## Overview\n\nThis API allows administrators to create, retrieve, update, and delete access roles. It also supports managing user assignments to roles, retrieving and setting role permissions, and searching for users within a specific role.\n\n## Key Features\n\n- **Role Management**: Create, retrieve, and delete access roles\n- **Permission Management**: Get and set permissions for access roles\n- **User Assignment**: Assign and unassign users to/from roles\n- **User Search**: Search for users assigned to a specific role using complex queries\n\n## Searchable Attributes (User Search)\n\nThe following attributes can be used in user search queries within a role:\n\n- `login`: The user login identifier (String)\n- `email`: The user email address (String)\n- `firstName`: The user first name (String)\n- `lastName`: The user last name (String)\n- `externalId`: The external identifier (String)\n- `lastLoginDate`: The date of last login (Date)\n\n## Sortable Attributes (User Search)\n\nSearch results can be sorted by:\n\n- `login`: Sort by user login\n- `email`: Sort by email address\n- `firstName`: Sort by first name\n- `lastName`: Sort by last name\n- `externalId`: Sort by external identifier\n- `lastLoginDate`: Sort by last login date\n\n## Use Cases\n\n- **Access Control**: Define and manage role-based access control for Business Manager\n- **User Management**: Assign users to appropriate roles for their job functions\n- **Permission Auditing**: Review and update role permissions\n- **Compliance**: Ensure proper access controls are in place\n\n## Authentication\n\nThis API requires OAuth 2.0 authentication with the appropriate scopes:\n- `sfcc.roles` - Read access to role resources\n- `sfcc.roles.rw` - Read and write access to role resources\n\n## Best Practices\n\n1. Use the Administrator role carefully as permission changes are limited for system roles\n2. Review role permissions regularly for security compliance\n3. Use the user search endpoint for efficient user-role lookups\n4. Avoid deleting roles that have active user assignments",
+    "version": "1.0.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Merchant"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/merchant/roles/v1",
+      "variables": {
+        "shortCode": {
+          "default": "123456gf"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/roles": {
+      "get": {
+        "summary": "Get Roles",
+        "description": "Retrieves all access roles with no filtering.\n",
+        "operationId": "getRoles",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "description": "The list of resource types to include in the response.",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "users",
+                  "permissions"
+                ],
+                "example": "users"
+              }
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            },
+            "examples": {
+              "select": {
+                "value": "(**)"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 25.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the collection of access roles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleSearch"
+                },
+                "examples": {
+                  "RoleSearchResult": {
+                    "$ref": "#/components/examples/RoleSearchResult"
+                  },
+                  "RoleSearchExpandUsersResult": {
+                    "$ref": "#/components/examples/RoleSearchExpandUsersResult"
+                  },
+                  "RoleSearchExpandPermissionsResult": {
+                    "$ref": "#/components/examples/RoleSearchExpandPermissionsResult"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles",
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/roles/{roleId}": {
+      "get": {
+        "summary": "Get Role",
+        "description": "Retrieves a single access role by its identifier.\n",
+        "operationId": "getRole",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "roleId",
+            "in": "path",
+            "description": "The identifier of the access role.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "description": "The list of resource types to include in the response.",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "users",
+                  "permissions"
+                ],
+                "example": "users"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the access role details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Role"
+                },
+                "examples": {
+                  "RoleDetailsResult": {
+                    "$ref": "#/components/examples/RoleDetailsResult"
+                  },
+                  "RoleDetailsExpandUsersResult": {
+                    "$ref": "#/components/examples/RoleDetailsExpandUsersResult"
+                  },
+                  "RoleDetailsExpandPermissionsResult": {
+                    "$ref": "#/components/examples/RoleDetailsExpandPermissionsResult"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Role not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RoleNotFound": {
+                    "$ref": "#/components/examples/RoleNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles",
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "summary": "Create Role",
+        "description": "Creates a new access role with the specified identifier.\n",
+        "operationId": "createRole",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "roleId",
+            "in": "path",
+            "description": "The identifier of the access role.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The access role to create",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Role"
+              },
+              "examples": {
+                "CreateRole": {
+                  "$ref": "#/components/examples/CreateRole"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The access role was successfully updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Role"
+                },
+                "examples": {
+                  "RoleCreated": {
+                    "$ref": "#/components/examples/RoleCreated"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The access role was successfully created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Role"
+                },
+                "examples": {
+                  "RoleCreated": {
+                    "$ref": "#/components/examples/RoleCreated"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid role request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdConflict": {
+                    "$ref": "#/components/examples/IdConflict"
+                  },
+                  "RoleAlreadyExists": {
+                    "$ref": "#/components/examples/RoleAlreadyExists"
+                  },
+                  "RoleOperationNotAllowed": {
+                    "$ref": "#/components/examples/RoleOperationNotAllowed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete Role",
+        "description": "Deletes a single access role.\n",
+        "operationId": "deleteRole",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "roleId",
+            "in": "path",
+            "description": "The identifier of the access role.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The access role was successfully deleted"
+          },
+          "404": {
+            "description": "Role not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RoleNotFound": {
+                    "$ref": "#/components/examples/RoleNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/roles/{roleId}/permissions": {
+      "get": {
+        "summary": "Get Role Permissions",
+        "description": "Retrieves the list of permissions assigned to the given role.\n",
+        "operationId": "getRolePermissions",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "roleId",
+            "in": "path",
+            "description": "The identifier of the access role.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the role permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolePermissions"
+                },
+                "examples": {
+                  "RolePermissionsSuccess": {
+                    "$ref": "#/components/examples/RolePermissionsSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Role not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RoleNotFound": {
+                    "$ref": "#/components/examples/RoleNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles",
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "summary": "Set Role Permissions",
+        "description": "Assigns permissions to the given role. This will replace the current permission assignments.\nFor the 'Administrator' role only adjustments for custom module permissions will be processed\nbut other given permissions will be ignored.\n",
+        "operationId": "setRolePermissions",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "roleId",
+            "in": "path",
+            "description": "The identifier of the access role.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The permissions to assign to the role",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolePermissions"
+              },
+              "examples": {
+                "SetPermissions": {
+                  "$ref": "#/components/examples/SetPermissions"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The permissions were successfully updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolePermissions"
+                },
+                "examples": {
+                  "RolePermissionsSuccess": {
+                    "$ref": "#/components/examples/RolePermissionsSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The permissions were successfully assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolePermissions"
+                },
+                "examples": {
+                  "RolePermissionsSuccess": {
+                    "$ref": "#/components/examples/RolePermissionsSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid permissions request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InvalidPermissionType": {
+                    "$ref": "#/components/examples/InvalidPermissionType"
+                  },
+                  "UnknownPermission": {
+                    "$ref": "#/components/examples/UnknownPermission"
+                  },
+                  "InvalidPermissionValue": {
+                    "$ref": "#/components/examples/InvalidPermissionValue"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Role not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RoleNotFound": {
+                    "$ref": "#/components/examples/RoleNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/roles/{roleId}/user-search": {
+      "post": {
+        "summary": "Search Role Users",
+        "description": "Searches for users of the specified access role.\n\nThe query attribute specifies a complex query that can be used to narrow down the search. These are the list of\nsearchable attributes:\n\n- login - String\n- email - String\n- firstName - String\n- lastName - String\n- externalId - String\n- lastLoginDate - Date\n- isLocked - Boolean\n- isDisabled - Boolean\n\nThe output of the query can also be sorted. These are the list of sortable attributes:\n\n- login - String\n- email - String\n- firstName - String\n- lastName - String\n- externalId - String\n- lastLoginDate - Date\n",
+        "operationId": "searchRoleUsers",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "roleId",
+            "in": "path",
+            "description": "The identifier of the access role.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The search request document for role users",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleUserSearchRequest"
+              },
+              "examples": {
+                "SearchUsersByLogin": {
+                  "$ref": "#/components/examples/SearchUsersByLogin"
+                },
+                "SearchUsersByEmail": {
+                  "$ref": "#/components/examples/SearchUsersByEmail"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Returns role user search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleUserSearchResult"
+                },
+                "examples": {
+                  "RoleUserSearchResultSuccess": {
+                    "$ref": "#/components/examples/RoleUserSearchResultSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Malformed search query or invalid parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UnqueryableField": {
+                    "$ref": "#/components/examples/UnqueryableField"
+                  },
+                  "FieldNotSortable": {
+                    "$ref": "#/components/examples/FieldNotSortable"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Role not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RoleNotFound": {
+                    "$ref": "#/components/examples/RoleNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles",
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/roles/{roleId}/users": {
+      "get": {
+        "summary": "Get Role Users",
+        "description": "Retrieves all users assigned to the specified access role.\n",
+        "operationId": "getRoleUsers",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "roleId",
+            "in": "path",
+            "description": "The identifier of the access role.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            },
+            "examples": {
+              "select": {
+                "value": "(**)"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 25.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the collection of users assigned to the role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSearch"
+                },
+                "examples": {
+                  "RoleUserCollectionSuccess": {
+                    "$ref": "#/components/examples/RoleUserCollectionSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Role not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RoleNotFound": {
+                    "$ref": "#/components/examples/RoleNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles",
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/roles/{roleId}/users/{login}": {
+      "put": {
+        "summary": "Assign User to Role",
+        "description": "Assigns a user to the specified access role.\n",
+        "operationId": "assignUserToRole",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "roleId",
+            "in": "path",
+            "description": "The identifier of the access role.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "login",
+            "in": "path",
+            "description": "The login of the user.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "admin-user",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The user was successfully re-assigned to the role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                },
+                "examples": {
+                  "UserAssigned": {
+                    "$ref": "#/components/examples/UserAssigned"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The user was successfully assigned to the role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                },
+                "examples": {
+                  "UserAssigned": {
+                    "$ref": "#/components/examples/UserAssigned"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Role or user not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RoleNotFound": {
+                    "$ref": "#/components/examples/RoleNotFound"
+                  },
+                  "UserNotFound": {
+                    "$ref": "#/components/examples/UserNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Unassign User from Role",
+        "description": "Unassigns a user from the specified access role.\n",
+        "operationId": "unassignUserFromRole",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "roleId",
+            "in": "path",
+            "description": "The identifier of the access role.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "login",
+            "in": "path",
+            "description": "The login of the user.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "admin-user",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The user was successfully unassigned from the role"
+          },
+          "404": {
+            "description": "Role or user not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RoleNotFound": {
+                    "$ref": "#/components/examples/RoleNotFound"
+                  },
+                  "UserNotFound": {
+                    "$ref": "#/components/examples/UserNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.roles.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "description": "An identifier for the organization the request is being made by",
+        "example": "f_ecom_zzxy_prd",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Select": {
+        "type": "string",
+        "description": "The property selector declaring which fields are included into the response payload. You can specify a single field name, a comma-separated list of names or work with wildcards. You can also specify array operations and filter expressions. The actual selector value must be enclosed within parentheses. For more information, please read the documentation about property selectors [here](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html).",
+        "example": "(name,id,variationAttributes.(**))",
+        "minLength": 1,
+        "pattern": "^[(].*[)]$"
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "RoleModulePermission": {
+        "type": "object",
+        "description": "Document representing a single module permission entry.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The related menu action name of the module permission.",
+            "example": "jobschedules",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "description": "The permission type. Always \"module\" for module permissions.",
+            "example": "module",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "application": {
+            "type": "string",
+            "description": "The permission application (e.g. \"bm\" for Business Manager, \"csc\" for Commerce Service Cloud).",
+            "example": "bm",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "system": {
+            "type": "boolean",
+            "description": "Indicates whether this is a system menu action. False for custom menu actions.",
+            "example": true
+          },
+          "value": {
+            "type": "string",
+            "description": "The non domain-specific permission value used in organization scope (e.g. ACCESS, READONLY).",
+            "example": "ACCESS",
+            "maxLength": 256
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "example": "ACCESS",
+              "maxLength": 256
+            },
+            "description": "A map of site identifiers to permission values, used in site scope.",
+            "example": {
+              "SiteGenesis": "ACCESS",
+              "RefArch": "ACCESS"
+            }
+          }
+        },
+        "required": [
+          "application",
+          "name",
+          "type"
+        ]
+      },
+      "RoleModulePermissions": {
+        "type": "object",
+        "description": "Document listing the module permissions assigned to a role, scoped to organization and site levels.",
+        "properties": {
+          "organization": {
+            "type": "array",
+            "description": "Organization-level module permissions. Each entry uses a single `value`.",
+            "items": {
+              "$ref": "#/components/schemas/RoleModulePermission"
+            }
+          },
+          "site": {
+            "type": "array",
+            "description": "Site-level module permissions. Each entry uses a `values` map keyed by site ID.",
+            "items": {
+              "$ref": "#/components/schemas/RoleModulePermission"
+            }
+          }
+        }
+      },
+      "RoleFunctionalPermission": {
+        "type": "object",
+        "description": "Document representing a single functional permission entry.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the functional permission.",
+            "example": "Delete_All_Catalogs",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "description": "The permission type. Always \"functional\" for functional permissions.",
+            "example": "functional",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "description": "The non domain-specific permission value used in organization scope (e.g. ACCESS).",
+            "example": "ACCESS",
+            "maxLength": 256
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "example": "ACCESS",
+              "maxLength": 256
+            },
+            "description": "A map of site identifiers to permission values, used in site scope.",
+            "example": {
+              "SiteGenesis": "ACCESS"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "RoleFunctionalPermissions": {
+        "type": "object",
+        "description": "Document listing the functional permissions assigned to a role, scoped to organization and site levels.",
+        "properties": {
+          "organization": {
+            "type": "array",
+            "description": "Organization-level functional permissions. Each entry uses a single `value`.",
+            "items": {
+              "$ref": "#/components/schemas/RoleFunctionalPermission"
+            }
+          },
+          "site": {
+            "type": "array",
+            "description": "Site-level functional permissions. Each entry uses a `values` map keyed by site ID.",
+            "items": {
+              "$ref": "#/components/schemas/RoleFunctionalPermission"
+            }
+          }
+        }
+      },
+      "LanguageCountry": {
+        "type": "string",
+        "description": "A concatenated version of the standard Language and Country codes, combined with a hyphen '`-`'.",
+        "example": "en-US",
+        "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
+      },
+      "LanguageCode": {
+        "type": "string",
+        "description": "A two letter lowercase language code conforming to the [ISO 639-1](https://www.iso.org/iso-639-language-codes.html) standard. Additionally, this may be used to submit requests with the header parameter `Accept-Language`, following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766).",
+        "example": "en",
+        "pattern": "^[a-z][a-z]$"
+      },
+      "DefaultFallback": {
+        "type": "string",
+        "default": "default",
+        "description": "A specialized value indicating the system default values for locales.",
+        "example": "default",
+        "pattern": "^default$"
+      },
+      "LocaleCode": {
+        "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/LanguageCountry"
+          },
+          {
+            "$ref": "#/components/schemas/LanguageCode"
+          },
+          {
+            "$ref": "#/components/schemas/DefaultFallback"
+          }
+        ]
+      },
+      "RoleLocalePermission": {
+        "type": "object",
+        "description": "Document representing a single locale permission entry.",
+        "properties": {
+          "localeId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocaleCode"
+              }
+            ],
+            "description": "The related locale id of the locale permission."
+          },
+          "type": {
+            "type": "string",
+            "description": "The permission type. Always \"locale\" for locale permissions.",
+            "example": "locale",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "description": "The non domain-specific permission value (e.g. ACCESS, READONLY).",
+            "example": "ACCESS",
+            "maxLength": 256
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "example": "ACCESS",
+              "maxLength": 256
+            },
+            "description": "A map of domain identifiers to permission values."
+          }
+        },
+        "required": [
+          "localeId",
+          "type"
+        ]
+      },
+      "RoleLocalePermissions": {
+        "type": "object",
+        "description": "Document listing the locale permissions assigned to a role (unscoped).",
+        "properties": {
+          "unscoped": {
+            "type": "array",
+            "description": "Unscoped locale permissions. A permission for the \"default\" locale is mandatory.",
+            "items": {
+              "$ref": "#/components/schemas/RoleLocalePermission"
+            }
+          }
+        }
+      },
+      "RoleWebdavPermission": {
+        "type": "object",
+        "description": "Document representing a single WebDAV permission entry.",
+        "properties": {
+          "folder": {
+            "type": "string",
+            "description": "The WebDAV folder path for this permission.",
+            "example": "/catalogs/apparel-catalog",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "description": "The permission type. Always \"webdav\" for WebDAV permissions.",
+            "example": "webdav",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "description": "The non domain-specific permission value (e.g. ACCESS, READONLY).",
+            "example": "ACCESS",
+            "maxLength": 256
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "example": "ACCESS",
+              "maxLength": 256
+            },
+            "description": "A map of domain identifiers to permission values."
+          }
+        },
+        "required": [
+          "folder",
+          "type"
+        ]
+      },
+      "RoleWebdavPermissions": {
+        "type": "object",
+        "description": "Document listing the WebDAV permissions assigned to a role (unscoped).",
+        "properties": {
+          "unscoped": {
+            "type": "array",
+            "description": "Unscoped WebDAV permissions.",
+            "items": {
+              "$ref": "#/components/schemas/RoleWebdavPermission"
+            }
+          }
+        }
+      },
+      "RolePermissions": {
+        "type": "object",
+        "description": "Document representing the complete set of permissions for an access role.",
+        "properties": {
+          "module": {
+            "$ref": "#/components/schemas/RoleModulePermissions"
+          },
+          "functional": {
+            "$ref": "#/components/schemas/RoleFunctionalPermissions"
+          },
+          "locale": {
+            "$ref": "#/components/schemas/RoleLocalePermissions"
+          },
+          "webdav": {
+            "$ref": "#/components/schemas/RoleWebdavPermissions"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "description": "Document representing a user.",
+        "properties": {
+          "login": {
+            "type": "string",
+            "description": "The login of the user.",
+            "example": "admin-user",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "description": "The password of the user.",
+            "example": "password",
+            "maxLength": 256
+          },
+          "email": {
+            "type": "string",
+            "description": "The email address of the user.",
+            "example": "admin@example.com",
+            "maxLength": 256
+          },
+          "firstName": {
+            "type": "string",
+            "description": "The first name of the user.",
+            "example": "John",
+            "maxLength": 256
+          },
+          "lastName": {
+            "type": "string",
+            "description": "The last name of the user.",
+            "example": "Doe",
+            "maxLength": 256
+          },
+          "externalId": {
+            "type": "string",
+            "description": "The external identifier for the user.",
+            "example": "ext-12345",
+            "maxLength": 256
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Indicates whether the user is disabled.",
+            "example": false
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Indicates whether the user is locked.",
+            "example": false
+          },
+          "lastLoginDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The date of the user's last login.",
+            "example": "2024-10-14"
+          },
+          "passwordExpirationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time when the user's password expires.",
+            "example": "2025-01-14T00:00:00Z"
+          },
+          "passwordModificationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time when the user's password was last modified.",
+            "example": "2024-10-14T10:00:00Z"
+          },
+          "preferredDataLocale": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocaleCode"
+              }
+            ],
+            "description": "The preferred data locale for the user."
+          },
+          "preferredUiLocale": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocaleCode"
+              }
+            ],
+            "description": "The preferred UI locale for the user."
+          },
+          "roles": {
+            "type": "array",
+            "description": "The list of role identifiers assigned to the user.",
+            "items": {
+              "type": "string",
+              "example": "Administrator",
+              "maxLength": 256
+            }
+          }
+        },
+        "required": [
+          "email",
+          "login"
+        ]
+      },
+      "Role": {
+        "type": "object",
+        "description": "Document representing an access role.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The identifier of the access role.",
+            "example": "Administrator",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the access role.",
+            "example": "Full administrative access",
+            "maxLength": 4000
+          },
+          "userCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of users assigned to this role.",
+            "example": 5
+          },
+          "userManager": {
+            "type": "boolean",
+            "description": "Indicates whether this role has user management capabilities.",
+            "example": true
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/RolePermissions"
+          },
+          "users": {
+            "type": "array",
+            "description": "The users assigned to the access role. Available through expands.",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          }
+        }
+      },
+      "RoleSearch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Document representing a collection of access roles.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "The collection of roles.",
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "Query": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A set of objects that define criteria used to select records. A query can contain one of the following:\n* `MatchAllQuery`\n - Matches all documents.\n* `TermQuery`\n - Matches one or more documents against one or more document fields.\n* `TextQuery`\n - Matches text against one or more fields.\n* `BoolQuery`\n - Allows construction of a logical expression of multiple queries.\n* `FilteredQuery`\n - Allows a filter to be applied to a query.\n* `NestedQuery`\n - Allows you to query on nested documents.\n - _Only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation._",
+        "example": {
+          "filteredQuery": {
+            "query": {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "disabled"
+              }
+            },
+            "filter": {
+              "termFilter": {
+                "field": "enabled",
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          }
+        },
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolQuery": {
+            "$ref": "#/components/schemas/BoolQuery"
+          },
+          "filteredQuery": {
+            "$ref": "#/components/schemas/FilteredQuery"
+          },
+          "matchAllQuery": {
+            "$ref": "#/components/schemas/MatchAllQuery"
+          },
+          "nestedQuery": {
+            "$ref": "#/components/schemas/NestedQuery"
+          },
+          "termQuery": {
+            "$ref": "#/components/schemas/TermQuery"
+          },
+          "textQuery": {
+            "$ref": "#/components/schemas/TextQuery"
+          }
+        }
+      },
+      "BoolQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A boolean query allows construction of full logical expression trees that are composed of other queries (usually term queries and text queries). A boolean query has three sets of clauses:\n  \n  - `must`, which combines as an `AND` operator.\n  - `should`, which combines as an `OR` operator.\n  - `must_not`, which combines as a `NOT` operator.\n  \nIf `must`, `mustNot`, or `should` appear in the same boolean query, they are combined logically using the `AND` operator. For example:\n\n    (must-1 AND must-1 AND ...)\n      AND (should-1 OR should-2 OR ...)\n      AND NOT (must_not-1 OR must_not-2 OR ...)\n",
+        "example": {
+          "value": {
+            "must": [
+              {
+                "textQuery": {
+                  "fields": [
+                    "couponId"
+                  ],
+                  "searchPhrase": "DEAL"
+                }
+              },
+              {
+                "textQuery": {
+                  "fields": [
+                    "description"
+                  ],
+                  "searchPhrase": "Big bargain deal"
+                }
+              }
+            ],
+            "mustNot": [
+              {
+                "termQuery": {
+                  "fields": [
+                    "enabled"
+                  ],
+                  "operator": "is",
+                  "values": [
+                    false
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "properties": {
+          "must": {
+            "type": "array",
+            "description": "List of queries to be evaluated as an `AND` operator.",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "mustNot": {
+            "type": "array",
+            "description": "List of queries to be evaluated as a `NOT` operator.",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "should": {
+            "type": "array",
+            "description": "List of queries to be evaluated as an `OR` operator.",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Contains a set of objects that define criteria used to select records. A filter can contain one of the following:\n  * `TermFilter`\n   - Matches records where a field (or fields) exactly matches some simple value (including `null`).\n  * `RangeFilter`\n   - Matches records where a field value lies within a specified range.\n  * `Range2Filter`\n   - Matches records in a specified range across fields.\n  * `QueryFilter`\n   - Matches records based on a query.\n  * `BoolFilter`\n   - Provides filtering of records using a set of filters combined using a logical operator.",
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolFilter": {
+            "$ref": "#/components/schemas/BoolFilter"
+          },
+          "queryFilter": {
+            "$ref": "#/components/schemas/QueryFilter"
+          },
+          "range2Filter": {
+            "$ref": "#/components/schemas/Range2Filter"
+          },
+          "rangeFilter": {
+            "$ref": "#/components/schemas/RangeFilter"
+          },
+          "termFilter": {
+            "$ref": "#/components/schemas/TermFilter"
+          }
+        }
+      },
+      "BoolFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to combine other filters into (possibly recursive) logical expression trees. A boolean filter is composed of a logical operator (`AND`, `OR`, `NOT`) and a list of filters that the operator relates to. Multiple filters can be negated with a single `NOT` operator, even when the filters are combined with the `AND` operator.",
+        "example": {
+          "value": {
+            "operator": "and",
+            "filters": [
+              {
+                "termFilter": {
+                  "field": "id",
+                  "operator": "is",
+                  "values": [
+                    "myId"
+                  ]
+                }
+              },
+              {
+                "termFilter": {
+                  "field": "couponId",
+                  "operator": "is",
+                  "values": [
+                    "couponOne"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "properties": {
+          "filters": {
+            "type": "array",
+            "description": "A list of filters that are logically combined by an operator.",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            }
+          },
+          "operator": {
+            "type": "string",
+            "description": "The logical operator that is used to combine the filters.",
+            "enum": [
+              "and",
+              "or",
+              "not"
+            ],
+            "example": "and"
+          }
+        },
+        "required": [
+          "operator"
+        ]
+      },
+      "QueryFilter": {
+        "type": "object",
+        "description": "Wraps any query and allows it to be used as a filter.",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Field": {
+        "type": "string",
+        "description": "Name of the field. Might be a custom field name prefixed with c_.",
+        "example": "couponId",
+        "maxLength": 260
+      },
+      "Range2Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits where a range defined by specified attributes has a certain relationship to a specified range.\n\nThe first range (R1) is defined by a pair of attributes (`fromField` and `toField`) that specify the extent of a range, such as attributes `validFrom` and `validTo`.\n\nThe second range (R2) is defined by `fromValue` and `toValue`.\n\nThe filter mode specifies the method used to compare the two ranges:\n\n* `overlap`: R1 overlaps fully or partially with R2.\n* `containing`: R1 contains R2.\n* `contained`: R1 is contained in R2.\n\nThe range filter supports several value types, and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range 2 filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "example": {
+          "fromField": "validFrom",
+          "toField": "validTo",
+          "filterMode": "overlap",
+          "fromValue": "2007-01-01T00:00:00.000Z",
+          "toValue": "2017-01-01T00:00:00.000Z"
+        },
+        "properties": {
+          "filterMode": {
+            "type": "string",
+            "default": "overlap",
+            "description": "Compare mode: overlap, containing, or contained.",
+            "enum": [
+              "overlap",
+              "containing",
+              "contained"
+            ],
+            "example": "overlap"
+          },
+          "fromField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The field name of the field that starts the first range.",
+            "example": "validFrom"
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the lower bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
+          },
+          "fromValue": {
+            "description": "The lower bound of the second range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "example": "2007-01-01T00:00:00.000Z"
+          },
+          "toField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The field name of the field that ends the first range.",
+            "example": "validTo"
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the upper bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
+          },
+          "toValue": {
+            "description": "The upper bound of the second range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "example": "2017-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "fromField",
+          "toField"
+        ]
+      },
+      "RangeFilter": {
+        "type": "object",
+        "description": "Allows you to restrict a search result to hits that have values for a given attribute that fall within a given value range. The range filter supports several value types and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The search field.",
+            "example": "validFrom"
+          },
+          "from": {
+            "description": "The lower bound of the filter range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "example": "2007-01-01T00:00:00Z"
+              },
+              {
+                "type": "integer",
+                "example": 1
+              },
+              {
+                "type": "number",
+                "example": 1
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the lower bound of the range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
+          },
+          "to": {
+            "description": "The upper bound of the filter range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "example": "2007-01-02T00:00:00Z"
+              },
+              {
+                "type": "integer",
+                "example": 2
+              },
+              {
+                "type": "number",
+                "example": 2
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the upper bound of the range is inclusive. To make the upper bound exclusive, set to `false`.",
+            "example": true
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "TermFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits that match exactly one of the values configured for the filter. A term filter is useful for general restrictions that can be shared between searches. Use term filters whenever the criteria you filter on is a shared property of multiple searches (for example, like filtering by an order status). Use term filters for fields that have a discrete and small set of values only.",
+        "example": {
+          "field": "id",
+          "operator": "is",
+          "values": [
+            "myId"
+          ]
+        },
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The filter field."
+          },
+          "operator": {
+            "type": "string",
+            "description": "The operator used to compare the field's values with the given values.",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ],
+            "example": "is"
+          },
+          "values": {
+            "type": "array",
+            "description": "The filter values.",
+            "items": {
+              "type": "string",
+              "example": "myId"
+            }
+          }
+        },
+        "required": [
+          "field",
+          "operator"
+        ]
+      },
+      "FilteredQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows to filter the result of a possibly complex query using a possibly complex filter.",
+        "example": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "couponId"
+              ],
+              "searchPhrase": "disabled"
+            }
+          },
+          "filter": {
+            "termFilter": {
+              "field": "enabled",
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          }
+        },
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/Filter"
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "filter",
+          "query"
+        ]
+      },
+      "MatchAllQuery": {
+        "type": "object",
+        "description": "Matches all documents (namespace and document type). This query comes in handy if you just want to filter a search result or really do not have any constraints."
+      },
+      "NestedQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to query nested documents that are part of a larger document. Say, for example, that you have a main product with variations in one big document, and you want to constrain a search to main products that have variations that match multiple constraints. \n\nA `NestedQuery` is only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation.\n",
+        "example": {
+          "path": "order.shippingAddresses",
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.firstName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "John"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.lastName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "Doe"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "scoreMode": "avg"
+        },
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The path to the nested document.",
+            "example": "order.shippingAddresses",
+            "maxLength": 2048
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "scoreMode": {
+            "type": "string",
+            "description": "Indicates how scores for matching child objects affect the root parent document’s relevance score.",
+            "enum": [
+              "avg",
+              "total",
+              "max",
+              "none"
+            ],
+            "example": "avg"
+          }
+        },
+        "required": [
+          "path",
+          "query"
+        ]
+      },
+      "TermQuery": {
+        "type": "object",
+        "description": "A term query matches one or more values against one or more document fields. A document is considered a hit if one of the values matches exactly with at least one of the given fields. The operator `is` can only take one value, while `one_of` can take multiple values. If multiple fields are specified, they are combined using a logical `OR` operator.\n\n**Limitations:**\n\n* The `greater` and `less` operators are not supported under certain conditions. Both operators are permitted unless the API documentation states otherwise.\n* A subset of Commerce APIs handle queries with multiple fields differently. If the query has multiple fields, the query is internally handled as a logical `OR` of `DisjointMaxQueries` (with the dismax matching a value against all fields). The dismax makes sure that a document carrying a single term in multiple fields does not get higher scores than a document matching multiple terms in multiple fields.",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "description": "The document fields that the values are matched against, combined with the operator.",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "operator": {
+            "type": "string",
+            "description": "Returns the operator to use for the term query.",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ],
+            "example": "is"
+          },
+          "values": {
+            "type": "array",
+            "description": "The values that the fields are compared against, combined with the operator.",
+            "items": {
+              "example": "myCouponId",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "example": "myCouponId"
+                },
+                {
+                  "type": "number",
+                  "example": 1
+                },
+                {
+                  "type": "boolean",
+                  "example": true
+                },
+                {
+                  "type": "integer",
+                  "example": 1
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "fields",
+          "operator"
+        ]
+      },
+      "TextQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A text query is used to match some text (for example, a search phrase possibly consisting of multiple terms) against one or more fields. When multiple fields are provided, the phrase conceptually forms a logical `OR` over the fields. In this case, the terms of the phrase basically have to match within the text, that would result in concatenating all given fields.",
+        "example": {
+          "fields": [
+            "couponId"
+          ],
+          "searchPhrase": "limit"
+        },
+        "properties": {
+          "fields": {
+            "type": "array",
+            "description": "The document fields that the search phrase matches against.",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "searchPhrase": {
+            "type": "string",
+            "description": "A search phrase, which can include multiple terms separated by spaces.",
+            "example": "campaign summer"
+          }
+        },
+        "required": [
+          "fields",
+          "searchPhrase"
+        ]
+      },
+      "Sort": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Document representing a sort request. Each API has a different default sort configuration that can be modified in the request.",
+        "example": {
+          "field": "couponId",
+          "sortOrder": "desc"
+        },
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "The name of the field to sort on.",
+            "example": "couponId",
+            "maxLength": 256
+          },
+          "sortOrder": {
+            "type": "string",
+            "default": "asc",
+            "description": "The sort order to be applied when sorting. When omitted, the default sort order (asc) is used.",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "example": "asc"
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "SearchRequest": {
+        "type": "object",
+        "description": "Document representing a search request for retrieving items within the Data API. The query is a potentially complex set of expressions. The fields and expands that each query supports are defined within the search resource.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request, not to exceed 200.",
+            "example": 10,
+            "maximum": 200,
+            "minimum": 1
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "description": "The list of sort clauses configured for the search request. Sort clauses are optional. See the description of the search endpoint for details on the default sorting behavior that is used when explicit sorts are not passed.",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "RoleUserSearchRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SearchRequest"
+          }
+        ],
+        "description": "Document representing a search request for retrieving users assigned to an access role.\n\nSearchable attributes:\n- login - String\n- email - String\n- firstName - String\n- lastName - String\n- externalId - String\n- lastLoginDate - Date\n- isLocked - Boolean\n- isDisabled - Boolean\n\nSortable attributes:\n- login - String\n- email - String\n- firstName - String\n- lastName - String\n- externalId - String\n- lastLoginDate - Date\n"
+      },
+      "PaginatedSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Document representing a generic search result. Each search resource should extend this to define what is returned in the `hits`.",
+        "example": {
+          "limit": 1,
+          "hits": [
+            {
+              "couponId": "coupon1",
+              "creationDate": "2019-10-20T12:00:00Z",
+              "description": "This coupon is used to give 10% off stuff.",
+              "enabled": false,
+              "exportedCodeCount": 0,
+              "lastModified": "2019-10-30T04:23:59Z",
+              "redemptionCount": 3,
+              "redemptionLimits": {
+                "limitPerCode": 1,
+                "limitPerCustomer": 1,
+                "limitPerTimeFrame": {
+                  "limit": 2,
+                  "redemptionTimeFrame": 24
+                }
+              },
+              "singleCode": "MyCode",
+              "systemCodesConfig": {
+                "codePrefix": "SG",
+                "numberOfCodes": 500000
+              },
+              "totalCodesCount": 50,
+              "type": "single_code"
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "stuff"
+            }
+          },
+          "sorts": [
+            {
+              "field": "couponId",
+              "sortOrder": "desc"
+            }
+          ],
+          "offset": 2,
+          "total": 8
+        },
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "description": "The sorting that was applied to the result.",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "hits": {
+            "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "RoleUserSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "description": "Document representing a role user search result. This includes the query, sorts, hits (array of user objects), and pagination information.",
+        "properties": {
+          "hits": {
+            "type": "array",
+            "description": "The sorted array of search hits (user objects). Can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          }
+        },
+        "required": [
+          "hits",
+          "query"
+        ]
+      },
+      "UserSearch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Document representing a collection of users assigned to an access role.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "The collection of users.",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "description": "An identifier for the organization the request is being made by",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        },
+        "example": "f_ecom_zzxy_prd"
+      },
+      "expand": {
+        "name": "expand",
+        "in": "query",
+        "description": "The list of resource types to include in the response.",
+        "required": false,
+        "style": "form",
+        "explode": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "users",
+              "permissions"
+            ],
+            "example": "users"
+          }
+        }
+      },
+      "select": {
+        "name": "select",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/Select"
+        },
+        "examples": {
+          "select": {
+            "value": "(**)"
+          }
+        }
+      },
+      "roleId": {
+        "name": "roleId",
+        "in": "path",
+        "description": "The identifier of the access role.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "Administrator",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      },
+      "login": {
+        "name": "login",
+        "in": "path",
+        "description": "The login of the user.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "admin-user",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      }
+    },
+    "examples": {
+      "RoleSearchResult": {
+        "summary": "Role search result",
+        "description": "Example of a role search response. By default, only IDs are returned.",
+        "value": {
+          "limit": 3,
+          "offset": 0,
+          "total": 3,
+          "data": [
+            {
+              "id": "Administrator"
+            },
+            {
+              "id": "CustomManager"
+            },
+            {
+              "id": "ContentEditor"
+            }
+          ]
+        }
+      },
+      "RoleSearchExpandUsersResult": {
+        "summary": "Role search with expand users",
+        "description": "Example of a role search response with `expand=users` and `select=(**)`. All role fields are returned and each role includes its full users.",
+        "value": {
+          "limit": 3,
+          "offset": 0,
+          "total": 3,
+          "data": [
+            {
+              "id": "Administrator",
+              "description": "Full administrative access to Business Manager",
+              "userCount": 2,
+              "userManager": true,
+              "users": [
+                {
+                  "login": "admin-user",
+                  "email": "admin@example.com",
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "externalId": "ext-12345",
+                  "disabled": false,
+                  "locked": false,
+                  "lastLoginDate": "2024-10-14",
+                  "passwordExpirationDate": "2025-01-14T00:00:00.000Z",
+                  "passwordModificationDate": "2024-10-14T10:00:00.000Z",
+                  "preferredDataLocale": "en-US",
+                  "preferredUiLocale": "en-US",
+                  "roles": [
+                    "Administrator"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CustomManager",
+              "description": "Custom manager role for site operations",
+              "userCount": 5,
+              "userManager": false,
+              "users": [
+                {
+                  "login": "manager-user",
+                  "email": "manager@example.com",
+                  "firstName": "Alice",
+                  "lastName": "Brown",
+                  "externalId": "ext-11111",
+                  "disabled": false,
+                  "locked": false,
+                  "lastLoginDate": "2024-12-01",
+                  "passwordExpirationDate": "2025-03-01T00:00:00.000Z",
+                  "passwordModificationDate": "2024-12-01T09:00:00.000Z",
+                  "preferredDataLocale": "en-US",
+                  "preferredUiLocale": "en-US",
+                  "roles": [
+                    "CustomManager"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "ContentEditor",
+              "description": "Content editing access",
+              "userCount": 8,
+              "userManager": false,
+              "users": [
+                {
+                  "login": "editor-user",
+                  "email": "editor@example.com",
+                  "firstName": "Jane",
+                  "lastName": "Smith",
+                  "externalId": "ext-67890",
+                  "disabled": false,
+                  "locked": false,
+                  "lastLoginDate": "2024-11-20",
+                  "passwordExpirationDate": "2025-02-20T00:00:00.000Z",
+                  "passwordModificationDate": "2024-11-20T08:30:00.000Z",
+                  "preferredDataLocale": "en-US",
+                  "preferredUiLocale": "en-US",
+                  "roles": [
+                    "ContentEditor"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "RoleSearchExpandPermissionsResult": {
+        "summary": "Role search with expand permissions",
+        "description": "Example of a role search response with `expand=permissions` and `select=(**)`. All role fields are returned and each role includes its full permissions.",
+        "value": {
+          "limit": 3,
+          "offset": 0,
+          "total": 3,
+          "data": [
+            {
+              "id": "Administrator",
+              "description": "Full administrative access to Business Manager",
+              "userCount": 2,
+              "userManager": true,
+              "permissions": {
+                "module": {
+                  "organization": [
+                    {
+                      "name": "jobschedules",
+                      "application": "bm",
+                      "system": true,
+                      "type": "module",
+                      "value": "ACCESS"
+                    },
+                    {
+                      "name": "customreports",
+                      "application": "bm",
+                      "system": false,
+                      "type": "module",
+                      "value": "ACCESS"
+                    }
+                  ],
+                  "site": [
+                    {
+                      "name": "library_content",
+                      "application": "bm",
+                      "system": true,
+                      "type": "module",
+                      "values": {
+                        "SiteGenesis": "ACCESS",
+                        "RefArch": "READONLY"
+                      }
+                    }
+                  ]
+                },
+                "functional": {
+                  "organization": [
+                    {
+                      "name": "Delete_All_Catalogs",
+                      "type": "functional",
+                      "value": "ACCESS"
+                    }
+                  ],
+                  "site": [
+                    {
+                      "name": "ViewOrders",
+                      "type": "functional",
+                      "values": {
+                        "SiteGenesis": "ACCESS"
+                      }
+                    }
+                  ]
+                },
+                "locale": {
+                  "unscoped": [
+                    {
+                      "localeId": "default",
+                      "type": "locale",
+                      "value": "ACCESS"
+                    },
+                    {
+                      "localeId": "en",
+                      "type": "locale",
+                      "value": "ACCESS"
+                    }
+                  ]
+                },
+                "webdav": {
+                  "unscoped": [
+                    {
+                      "folder": "/catalogs/apparel-catalog",
+                      "type": "webdav",
+                      "value": "ACCESS"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "CustomManager",
+              "description": "Custom manager role for site operations",
+              "userCount": 5,
+              "userManager": false,
+              "permissions": {
+                "module": {
+                  "site": [
+                    {
+                      "name": "library_content",
+                      "application": "bm",
+                      "system": true,
+                      "type": "module",
+                      "values": {
+                        "SiteGenesis": "ACCESS"
+                      }
+                    }
+                  ]
+                },
+                "locale": {
+                  "unscoped": [
+                    {
+                      "localeId": "default",
+                      "type": "locale",
+                      "value": "ACCESS"
+                    }
+                  ]
+                },
+                "webdav": {
+                  "unscoped": []
+                }
+              }
+            },
+            {
+              "id": "ContentEditor",
+              "description": "Content editing access",
+              "userCount": 8,
+              "userManager": false,
+              "permissions": {
+                "module": {
+                  "site": [
+                    {
+                      "name": "library_content",
+                      "application": "bm",
+                      "system": true,
+                      "type": "module",
+                      "values": {
+                        "SiteGenesis": "READONLY"
+                      }
+                    }
+                  ]
+                },
+                "locale": {
+                  "unscoped": [
+                    {
+                      "localeId": "default",
+                      "type": "locale",
+                      "value": "ACCESS"
+                    },
+                    {
+                      "localeId": "en",
+                      "type": "locale",
+                      "value": "READONLY"
+                    }
+                  ]
+                },
+                "webdav": {
+                  "unscoped": []
+                }
+              }
+            }
+          ]
+        }
+      },
+      "RoleDetailsResult": {
+        "summary": "Single role",
+        "description": "Example of a single role response. By default, only the ID is returned.",
+        "value": {
+          "id": "Administrator"
+        }
+      },
+      "RoleDetailsExpandUsersResult": {
+        "summary": "Single role with expand users",
+        "description": "Example of a single role response with `expand=users` and `select=(**)`. All role fields are returned including the assigned users.",
+        "value": {
+          "id": "Administrator",
+          "description": "Full administrative access to Business Manager",
+          "userCount": 2,
+          "userManager": true,
+          "users": [
+            {
+              "login": "admin-user",
+              "email": "admin@example.com",
+              "firstName": "John",
+              "lastName": "Doe",
+              "externalId": "ext-12345",
+              "disabled": false,
+              "locked": false,
+              "lastLoginDate": "2024-10-14",
+              "passwordExpirationDate": "2025-01-14T00:00:00.000Z",
+              "passwordModificationDate": "2024-10-14T10:00:00.000Z",
+              "preferredDataLocale": "en-US",
+              "preferredUiLocale": "en-US",
+              "roles": [
+                "Administrator"
+              ]
+            }
+          ]
+        }
+      },
+      "RoleDetailsExpandPermissionsResult": {
+        "summary": "Single role with expand permissions",
+        "description": "Example of a single role response with `expand=permissions` and `select=(**)`. All role fields are returned including the full permissions.",
+        "value": {
+          "id": "Administrator",
+          "description": "Full administrative access to Business Manager",
+          "userCount": 2,
+          "userManager": true,
+          "permissions": {
+            "module": {
+              "organization": [
+                {
+                  "name": "jobschedules",
+                  "application": "bm",
+                  "system": true,
+                  "type": "module",
+                  "value": "ACCESS"
+                },
+                {
+                  "name": "customreports",
+                  "application": "bm",
+                  "system": false,
+                  "type": "module",
+                  "value": "ACCESS"
+                }
+              ],
+              "site": [
+                {
+                  "name": "library_content",
+                  "application": "bm",
+                  "system": true,
+                  "type": "module",
+                  "values": {
+                    "SiteGenesis": "ACCESS",
+                    "RefArch": "READONLY"
+                  }
+                }
+              ]
+            },
+            "functional": {
+              "organization": [
+                {
+                  "name": "Delete_All_Catalogs",
+                  "type": "functional",
+                  "value": "ACCESS"
+                }
+              ],
+              "site": [
+                {
+                  "name": "ViewOrders",
+                  "type": "functional",
+                  "values": {
+                    "SiteGenesis": "ACCESS"
+                  }
+                }
+              ]
+            },
+            "locale": {
+              "unscoped": [
+                {
+                  "localeId": "default",
+                  "type": "locale",
+                  "value": "ACCESS"
+                },
+                {
+                  "localeId": "en",
+                  "type": "locale",
+                  "value": "ACCESS"
+                },
+                {
+                  "localeId": "de",
+                  "type": "locale",
+                  "value": "READONLY"
+                }
+              ]
+            },
+            "webdav": {
+              "unscoped": [
+                {
+                  "folder": "/catalogs/apparel-catalog",
+                  "type": "webdav",
+                  "value": "ACCESS"
+                },
+                {
+                  "folder": "/impex",
+                  "type": "webdav",
+                  "value": "ACCESS"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "RoleNotFound": {
+        "summary": "Role not found",
+        "description": "Example of an error when the specified role does not exist",
+        "value": {
+          "title": "Role Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/role-not-found",
+          "detail": "No access role with ID 'nonexistent-role' could be found."
+        }
+      },
+      "CreateRole": {
+        "summary": "Create an access role",
+        "description": "Example of creating a new access role",
+        "value": {
+          "id": "CustomManager",
+          "description": "Custom manager role for site operations"
+        }
+      },
+      "RoleCreated": {
+        "summary": "Newly created role",
+        "description": "Example of a successfully created access role",
+        "value": {
+          "id": "CustomManager",
+          "description": "Custom manager role for site operations",
+          "userCount": 0,
+          "userManager": false
+        }
+      },
+      "IdConflict": {
+        "summary": "ID conflict",
+        "description": "Example of an error when the ID in the request body does not match the ID in the URL",
+        "value": {
+          "title": "Id Conflict",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/id-conflict",
+          "detail": "The ID in the request body ('DifferentRoleId') doesn't match the ID in the URL ('ScapiTestRole')."
+        }
+      },
+      "RoleAlreadyExists": {
+        "summary": "Role already exists",
+        "description": "Example of an error when trying to create a role that already exists",
+        "value": {
+          "title": "Role Already Exists",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/role-already-exists",
+          "detail": "An access role with ID 'ScapiTestRole' already exists. Please delete the existing role before creating a role with the same ID."
+        }
+      },
+      "RoleOperationNotAllowed": {
+        "summary": "Role operation not allowed",
+        "description": "Example of an error when the operation is not allowed for the given role",
+        "value": {
+          "title": "Role Operation Not Allowed",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/role-operation-not-allowed",
+          "detail": "The operation isn't allowed for the role with ID 'Administrator'."
+        }
+      },
+      "RolePermissionsSuccess": {
+        "summary": "Successful role permissions retrieval",
+        "description": "Example of a successful retrieval of role permissions",
+        "value": {
+          "module": {
+            "organization": [
+              {
+                "name": "jobschedules",
+                "application": "bm",
+                "system": true,
+                "type": "module",
+                "value": "ACCESS"
+              },
+              {
+                "name": "customreports",
+                "application": "bm",
+                "system": false,
+                "type": "module",
+                "value": "ACCESS"
+              }
+            ],
+            "site": [
+              {
+                "name": "library_content",
+                "application": "bm",
+                "system": true,
+                "type": "module",
+                "values": {
+                  "SiteGenesis": "ACCESS",
+                  "RefArch": "READONLY"
+                }
+              }
+            ]
+          },
+          "functional": {
+            "organization": [
+              {
+                "name": "Delete_All_Catalogs",
+                "type": "functional",
+                "value": "ACCESS"
+              }
+            ],
+            "site": [
+              {
+                "name": "ViewOrders",
+                "type": "functional",
+                "values": {
+                  "SiteGenesis": "ACCESS"
+                }
+              }
+            ]
+          },
+          "locale": {
+            "unscoped": [
+              {
+                "localeId": "default",
+                "type": "locale",
+                "value": "ACCESS"
+              },
+              {
+                "localeId": "en",
+                "type": "locale",
+                "value": "ACCESS"
+              },
+              {
+                "localeId": "de",
+                "type": "locale",
+                "value": "READONLY"
+              }
+            ]
+          },
+          "webdav": {
+            "unscoped": [
+              {
+                "folder": "/catalogs/apparel-catalog",
+                "type": "webdav",
+                "value": "ACCESS"
+              },
+              {
+                "folder": "/impex",
+                "type": "webdav",
+                "value": "ACCESS"
+              }
+            ]
+          }
+        }
+      },
+      "SetPermissions": {
+        "summary": "Set role permissions",
+        "description": "Example of setting permissions for an access role",
+        "value": {
+          "module": {
+            "organization": [
+              {
+                "name": "jobschedules",
+                "application": "bm",
+                "system": true,
+                "type": "module",
+                "value": "ACCESS"
+              }
+            ],
+            "site": [
+              {
+                "name": "library_content",
+                "application": "bm",
+                "system": true,
+                "type": "module",
+                "values": {
+                  "SiteGenesis": "ACCESS"
+                }
+              }
+            ]
+          },
+          "functional": {
+            "organization": [
+              {
+                "name": "Delete_All_Catalogs",
+                "type": "functional",
+                "value": "ACCESS"
+              }
+            ]
+          }
+        }
+      },
+      "InvalidPermissionType": {
+        "summary": "Invalid permission type",
+        "description": "Example of an error when the type of a permission does not match the expected type",
+        "value": {
+          "title": "Invalid Permission Type",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-permission-type",
+          "detail": "The expected permission type is 'module' but provided was 'locale' for permission 'jobschedules(system)' in path 'module.organization'."
+        }
+      },
+      "UnknownPermission": {
+        "summary": "Unknown permission",
+        "description": "Example of an error when a permission ID cannot be resolved",
+        "value": {
+          "title": "Unknown Permission",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unknown-permission",
+          "detail": "Permission 'nonexistent-permission-xyz(system)' for application 'bm' in path 'module.organization' is unknown."
+        }
+      },
+      "InvalidPermissionValue": {
+        "summary": "Invalid permission value",
+        "description": "Example of an error when a permission value is unknown or not supported",
+        "value": {
+          "title": "Invalid Permission Value",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-permission-value",
+          "detail": "Permission 'jobschedules(system)' in path 'module.organization' doesn't support a value of 'INVALID_VALUE'."
+        }
+      },
+      "SearchUsersByLogin": {
+        "summary": "Search role users by login",
+        "description": "Example of searching for users assigned to a role by their login",
+        "value": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "login"
+              ],
+              "searchPhrase": "admin"
+            }
+          },
+          "limit": 25,
+          "offset": 0
+        }
+      },
+      "SearchUsersByEmail": {
+        "summary": "Search role users by email",
+        "description": "Example of searching for users assigned to a role by their email",
+        "value": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "email"
+              ],
+              "searchPhrase": "@salesforce.com"
+            }
+          },
+          "limit": 10,
+          "offset": 0,
+          "sorts": [
+            {
+              "field": "login",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "RoleUserSearchResultSuccess": {
+        "summary": "Successful role user search result",
+        "description": "Example of a successful role user search",
+        "value": {
+          "limit": 1,
+          "offset": 0,
+          "total": 1,
+          "hits": [
+            {
+              "login": "admin-user",
+              "email": "admin@example.com",
+              "firstName": "John",
+              "lastName": "Doe",
+              "externalId": "ext-12345",
+              "disabled": false,
+              "locked": false,
+              "lastLoginDate": "2024-10-14",
+              "passwordExpirationDate": "2025-01-14T00:00:00.000Z",
+              "passwordModificationDate": "2024-10-14T10:00:00.000Z",
+              "preferredDataLocale": "en-US",
+              "preferredUiLocale": "en-US",
+              "roles": [
+                "Administrator"
+              ]
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "login"
+              ],
+              "searchPhrase": "admin"
+            }
+          },
+          "sorts": [
+            {
+              "field": "login",
+              "sortOrder": "asc"
+            }
+          ]
+        }
+      },
+      "UnqueryableField": {
+        "summary": "Unqueryable field",
+        "description": "Example of an error when an invalid field name is used in the search query",
+        "value": {
+          "title": "Unqueryable Field",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unqueryable-field",
+          "detail": "The field 'nonexistent_field' can't be queried."
+        }
+      },
+      "FieldNotSortable": {
+        "summary": "Field not sortable",
+        "description": "Example of an error when a field that cannot be used for sorting is specified",
+        "value": {
+          "title": "Field Not Sortable",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/field-not-sortable",
+          "detail": "The field 'locked' can't be used to sort the results."
+        }
+      },
+      "RoleUserCollectionSuccess": {
+        "summary": "Successful role user collection",
+        "description": "Example of a successful retrieval of users assigned to a role with `select=(**)`",
+        "value": {
+          "limit": 2,
+          "offset": 0,
+          "total": 2,
+          "data": [
+            {
+              "login": "admin-user",
+              "email": "admin@example.com",
+              "firstName": "John",
+              "lastName": "Doe",
+              "externalId": "ext-12345",
+              "disabled": false,
+              "locked": false,
+              "lastLoginDate": "2024-10-14",
+              "passwordExpirationDate": "2025-01-14T00:00:00.000Z",
+              "passwordModificationDate": "2024-10-14T10:00:00.000Z",
+              "preferredDataLocale": "en-US",
+              "preferredUiLocale": "en-US",
+              "roles": [
+                "Administrator"
+              ]
+            },
+            {
+              "login": "editor-user",
+              "email": "editor@example.com",
+              "firstName": "Jane",
+              "lastName": "Smith",
+              "externalId": "ext-67890",
+              "disabled": false,
+              "locked": false,
+              "lastLoginDate": "2024-11-20",
+              "passwordExpirationDate": "2025-02-20T00:00:00.000Z",
+              "passwordModificationDate": "2024-11-20T08:30:00.000Z",
+              "preferredDataLocale": "en-US",
+              "preferredUiLocale": "en-US",
+              "roles": [
+                "ContentEditor"
+              ]
+            }
+          ]
+        }
+      },
+      "UserAssigned": {
+        "summary": "User assigned to role",
+        "description": "Example of a user successfully assigned to an access role",
+        "value": {
+          "login": "admin-user",
+          "email": "admin@example.com",
+          "firstName": "John",
+          "lastName": "Doe",
+          "externalId": "ext-12345",
+          "disabled": false,
+          "locked": false,
+          "lastLoginDate": "2024-10-14",
+          "passwordExpirationDate": "2025-01-14T00:00:00.000Z",
+          "passwordModificationDate": "2024-10-14T10:00:00.000Z",
+          "preferredDataLocale": "en-US",
+          "preferredUiLocale": "en-US",
+          "roles": [
+            "Administrator"
+          ]
+        }
+      },
+      "UserNotFound": {
+        "summary": "User not found",
+        "description": "Example of an error when the specified user does not exist",
+        "value": {
+          "title": "User Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/user-not-found",
+          "detail": "No user with login 'nonexistent-user-xyz' could be found."
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "description": "OAuth 2.0 security scheme for Admin API access using Account Manager.\nRequires appropriate scopes for role management operations.\n",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dw/oauth2/access_token",
+            "scopes": {
+              "sfcc.roles": "Read access to role resources",
+              "sfcc.roles.rw": "Read and write access to role resources"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -72,8 +72,9 @@ export const SFRA_AMBIENT_MODULES = new Set([
 
 // Candidate suffixes appended when resolving a SFCC-style relative require to
 // a cartridge file. SFRA convention is to omit the .js extension, so .js wins
-// first; .json captures the occasional resource bundle import.
-export const CANDIDATE_EXTENSIONS = ['.js', '.json', '/index.js'];
+// first; .json captures the occasional resource bundle import; .ds covers
+// legacy pipeline-era scripts, which the platform also resolves after .js.
+export const CANDIDATE_EXTENSIONS = ['.js', '.json', '.ds', '/index.js', '/index.ds'];
 
 // Cartridges that conventionally sit at the bottom of the cartridge path when
 // the user hasn't told us otherwise (no `cartridges` in dw.json/SFCC_CARTRIDGES).

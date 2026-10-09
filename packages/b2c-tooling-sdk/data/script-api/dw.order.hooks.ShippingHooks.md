@@ -37,7 +37,8 @@ hooks inside the hooks property:
 ```
 "hooks": [
    {"name": "sfcc.app.shipping.quote", "script": "./quote.js"},
-   {"name": "sfcc.app.shipping.calculate", "script": "./calculate.js"}
+   {"name": "sfcc.app.shipping.calculate", "script": "./calculate.js"},
+   {"name": "sfcc.app.shipping.estimate", "script": "./estimate.js"}
 ]
 ```
 
@@ -53,13 +54,14 @@ A hook entry has a `name` and a `script` property:
 
 
 **Function Naming Convention:** The exported JavaScript function name must match the last segment of the
-extension point name, for example, `quote` or `calculate`.
+extension point name, for example, `quote`, `calculate`, or `estimate`.
 
 
 Hook Lifecycle Each hook fires at a specific surface and lifecycle stage:
 
 - **quote**(checkout): Fires on every invocation of  `GET /baskets/{basket_id}/shipments/{shipment_id}/shipping_methods`. Lets the Commerce App override native  shipping prices and add delivery information for the methods it can quote.
 - **calculate**(basket calculation): Fires during basket calculation on every basket operation that  recomputes shipping. Applies provider-supplied shipping rates to the selected `ShippingLineItem`and may  persist provider metadata on the shipment.
+- **estimate**(product delivery estimates): Fires on every invocation of  `GET /product/shopper-delivery-estimates/v1/.../delivery-estimates`. The platform pre-populates a result  with one shipping option per applicable method. The hook mutates that result in place.
 
 Hook Precedence
 
@@ -75,6 +77,7 @@ Hook Precedence
 | --- | --- |
 | [SHIPPING_DOMAIN](#shipping_domain): [String](TopLevel.String.md) = "shipping" | The shipping app domain segment used to compose extension-point names under the shared  `sfcc.app` prefix. |
 | [extensionPointCalculate](#extensionpointcalculate): [String](TopLevel.String.md) = "sfcc.app.shipping.calculate" | The extension point name sfcc.app.shipping.calculate. |
+| [extensionPointEstimate](#extensionpointestimate): [String](TopLevel.String.md) = "sfcc.app.shipping.estimate" | The extension point name sfcc.app.shipping.estimate. |
 | [extensionPointQuote](#extensionpointquote): [String](TopLevel.String.md) = "sfcc.app.shipping.quote" | The extension point name sfcc.app.shipping.quote. |
 
 ## Constructor Summary
@@ -85,6 +88,7 @@ This class does not have a constructor, so you cannot create it directly.
 | Method | Description |
 | --- | --- |
 | [calculate](dw.order.hooks.ShippingHooks.md#calculatelineitemctnr)([LineItemCtnr](dw.order.LineItemCtnr.md)) | The function is called by extension point [extensionPointCalculate](dw.order.hooks.ShippingHooks.md#extensionpointcalculate) during basket calculation. |
+| [estimate](dw.order.hooks.ShippingHooks.md#estimatedeliveryestimatesresultwo)(DeliveryEstimatesResultWO) | The function is called by extension point [extensionPointEstimate](dw.order.hooks.ShippingHooks.md#extensionpointestimate) on every invocation of  `GET /product/shopper-delivery-estimates/v1/.../delivery-estimates`. |
 | [quote](dw.order.hooks.ShippingHooks.md#quoteshipment-shippingmethodresultwo)([Shipment](dw.order.Shipment.md), ShippingMethodResultWO) | The function is called by extension point [extensionPointQuote](dw.order.hooks.ShippingHooks.md#extensionpointquote) on every invocation of  `GET /baskets/{basket_id}/shipments/{shipment_id}/shipping_methods`. |
 
 ### Methods inherited from class Object
@@ -106,6 +110,14 @@ This class does not have a constructor, so you cannot create it directly.
 
 - extensionPointCalculate: [String](TopLevel.String.md) = "sfcc.app.shipping.calculate"
   - : The extension point name sfcc.app.shipping.calculate.
+
+
+---
+
+### extensionPointEstimate
+
+- extensionPointEstimate: [String](TopLevel.String.md) = "sfcc.app.shipping.estimate"
+  - : The extension point name sfcc.app.shipping.estimate.
 
 
 ---
@@ -195,6 +207,73 @@ This class does not have a constructor, so you cannot create it directly.
               calculation with details about the failure. Throwing an exception will also block the basket
               calculation.
 
+
+
+---
+
+### estimate(DeliveryEstimatesResultWO)
+- estimate(result: DeliveryEstimatesResultWO): [Status](dw.system.Status.md)
+  - : The function is called by extension point [extensionPointEstimate](dw.order.hooks.ShippingHooks.md#extensionpointestimate) on every invocation of
+      `GET /product/shopper-delivery-estimates/v1/.../delivery-estimates`. The platform pre-populates a
+      `DeliveryEstimatesResult` with one shipping option per applicable method. Each option
+      already has `shippingMethodId`, `name`, and `description` set. Native
+      `price` and `currency` are set when a product-level shipping cost exists; otherwise they are
+      left unset for the hook to fill. The result also carries `productId` and a `destination`
+      object with `postalCode` and `countryCode` on each product delivery estimate entry. The hook
+      implementation mutates the result in place.
+      
+      
+      An option is returned on the wire only when the hook sets `deliveryWindow` or
+      `nonDeliverableReason`. Setting only `price`, `carrier`, or
+      `orderCutoffAt` is not enough — those fields are kept when present, but the option is still dropped.
+      
+      
+      
+      
+      **Error Handling:** To signal a failure, return `new Status(Status.ERROR)`. The platform
+      logs that an error status was returned for this hook and the request fails with HTTP 500. Uncaught exceptions
+      thrown from the hook are also treated as failures.
+      
+      
+      
+      
+      **Sample Implementation:**
+      
+      
+      
+      
+      ```
+      function estimate(result) {
+          var Status = require('dw/system/Status');
+      
+          var estimates = result.productDeliveryEstimates;
+          for (var i = 0; i < estimates.length; i++) {
+              var options = estimates[i].shippingOptions;
+              for (var j = 0; j < options.length; j++) {
+                  var option = options[j];
+                  // shippingMethodId, name, and description are pre-populated
+                  var deliveryDates = getDeliveryDates(option);
+                  option.carrier = 'UPS';
+                  option.price = 9.99;
+                  option.currency = 'USD';
+                  option.deliveryWindow = {
+                      startAt: deliveryDates.startAt,
+                      endAt: deliveryDates.endAt
+                  };
+              }
+          }
+          return new Status(Status.OK);
+      }
+      
+      exports.estimate = estimate;
+      ```
+
+
+    **Parameters:**
+    - result - the pre-populated result containing `productId`, `destination`, and             shipping options. Mutated in place by the hook.
+
+    **Returns:**
+    - `Status.OK` or `null` for success; `Status.ERROR` to block the request.
 
 
 ---

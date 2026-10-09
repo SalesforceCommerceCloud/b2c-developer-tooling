@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "b2c-dx-mcp": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/launch.mjs"]
+    }
+  }
+}

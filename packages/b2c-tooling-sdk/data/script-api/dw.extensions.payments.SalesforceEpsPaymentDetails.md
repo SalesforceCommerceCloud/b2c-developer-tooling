@@ -5,27 +5,27 @@
   - [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)
     - [dw.extensions.payments.SalesforceEpsPaymentDetails](dw.extensions.payments.SalesforceEpsPaymentDetails.md)
 
-
-
-Details to a Salesforce Payments payment of type [SalesforcePaymentMethod.TYPE_EPS](dw.extensions.payments.SalesforcePaymentMethod.md#type_eps). See Salesforce Payments
-documentation for how to gain access and configure it for use on your sites.
-
+Details to a payment of type [SalesforcePaymentDetails.TYPE_EPS](dw.extensions.payments.SalesforcePaymentDetails.md#type_eps).
 
 
 ## Property Summary
 
 | Property | Description |
 | --- | --- |
-| [bank](#bank): [String](TopLevel.String.md) `(read-only)` | Returns the bank used for the payment, or `null` if not known. |
+| [bank](#bank): [String](TopLevel.String.md) | Returns the bank used for the payment, or `null` if not known. |
 
 ## Constructor Summary
 
-This class does not have a constructor, so you cannot create it directly.
+| Constructor | Description |
+| --- | --- |
+| [SalesforceEpsPaymentDetails](#salesforceepspaymentdetails)() | Constructs an empty EPS payment details object. |
+
 ## Method Summary
 
 | Method | Description |
 | --- | --- |
 | [getBank](dw.extensions.payments.SalesforceEpsPaymentDetails.md#getbank)() | Returns the bank used for the payment, or `null` if not known. |
+| [setBank](dw.extensions.payments.SalesforceEpsPaymentDetails.md#setbankstring)([String](TopLevel.String.md)) | Sets the bank used for the payment. |
 
 ### Methods inherited from class SalesforcePaymentDetails
 
@@ -36,11 +36,17 @@ This class does not have a constructor, so you cannot create it directly.
 ## Property Details
 
 ### bank
-- bank: [String](TopLevel.String.md) `(read-only)`
+- bank: [String](TopLevel.String.md)
   - : Returns the bank used for the payment, or `null` if not known.
 
-    **See Also:**
-    - [SalesforcePaymentMethod.getBank()](dw.extensions.payments.SalesforcePaymentMethod.md#getbank)
+
+---
+
+## Constructor Details
+
+### SalesforceEpsPaymentDetails()
+- SalesforceEpsPaymentDetails()
+  - : Constructs an empty EPS payment details object.
 
 
 ---
@@ -54,8 +60,15 @@ This class does not have a constructor, so you cannot create it directly.
     **Returns:**
     - bank
 
-    **See Also:**
-    - [SalesforcePaymentMethod.getBank()](dw.extensions.payments.SalesforcePaymentMethod.md#getbank)
+
+---
+
+### setBank(String)
+- setBank(bank: [String](TopLevel.String.md)): void
+  - : Sets the bank used for the payment.
+
+    **Parameters:**
+    - bank - bank
 
 
 ---

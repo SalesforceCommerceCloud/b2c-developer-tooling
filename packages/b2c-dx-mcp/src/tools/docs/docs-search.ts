@@ -4,24 +4,29 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {TOOLSETS} from '../../utils/constants.js';
 import {z} from 'zod';
 import {searchDocs, type DocCategory, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import {categoryEnumValues, enabledCategoriesNote} from './topics.js';
-import {WORKSPACE_VALUES, detectedWorkspaceNote, resolveWorkspace, type WorkspaceParam} from './storefront.js';
+import {DOCS_CITATION_NOTE, categoryEnumValues, enabledCategoriesNote} from './topics.js';
+import {
+  workspaceInputSchema,
+  detectedWorkspaceNote,
+  resolveProjectWorkspace,
+  type WorkspaceContextInput,
+} from './storefront.js';
 
 /** Default number of results returned when `limit` is not supplied. Kept small to bound payload size for agents. */
 const DEFAULT_LIMIT = 5;
 
-interface SearchInput {
+interface SearchInput extends WorkspaceContextInput {
   limit?: number;
   offset?: number;
   query: string;
   category?: DocCategory;
-  workspace?: WorkspaceParam;
   verbose?: boolean;
 }
 
@@ -32,9 +37,10 @@ interface LeanResult {
   category?: DocCategory;
   summary?: string;
   score: number;
+  /** Canonical page to cite to users. */
+  url?: string;
   // Only present in verbose mode:
   keywords?: string[];
-  url?: string;
   sourceUrl?: string;
 }
 
@@ -44,6 +50,7 @@ interface SearchOutput {
   workspace?: ProjectType[];
   total: number;
   offset: number;
+  citation: string;
   results: LeanResult[];
   truncated?: boolean;
   nextOffset?: number;
@@ -51,9 +58,9 @@ interface SearchOutput {
 
 /**
  * Projects a search hit to the payload returned to an agent. By default we keep
- * only the triage-critical fields (id, title, category, summary, score) and drop
- * `keywords` (index-tuning metadata) and `url` (derivable / returned on read),
- * which together roughly double the payload. `verbose` restores them.
+ * the triage-critical fields (id, title, category, summary, score) plus `url`,
+ * so an agent can cite the page without exposing the id. `keywords`
+ * (index-tuning metadata) and `sourceUrl` (Markdown twin) are verbose-only.
  */
 function leanResult(entry: DocEntry, score: number, verbose: boolean): LeanResult {
   const base: LeanResult = {
@@ -63,9 +70,9 @@ function leanResult(entry: DocEntry, score: number, verbose: boolean): LeanResul
     score,
   };
   if (entry.summary) base.summary = entry.summary;
+  if (entry.url) base.url = entry.url;
   if (verbose) {
     if (entry.keywords && entry.keywords.length > 0) base.keywords = entry.keywords;
-    if (entry.url) base.url = entry.url;
     if (entry.sourceUrl) base.sourceUrl = entry.sourceUrl;
   }
   return base;
@@ -79,19 +86,20 @@ export function createDocsSearchTool(
   return createToolAdapter<SearchInput, SearchOutput>(
     {
       name: 'docs_search',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Search B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
-        'Use for natural-language queries or unknown IDs; call docs_read with a result ID.' +
+        'Use for natural-language queries or unknown IDs; call docs_read with a result ID. ' +
+        'Cite by url; never show doc IDs.' +
         enabledCategoriesNote(enabledCategories) +
         detectedWorkspaceNote(detectedWorkspaces),
-      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: [...TOOLSETS],
       inputSchema: {
+        ...workspaceInputSchema,
         query: z.string().min(1).describe('Search query (class name, topic, or natural-language phrase).'),
         category: z.enum(categoryEnumValues(enabledCategories)).optional().describe('Restrict results to one corpus.'),
-        workspace: z
-          .enum(WORKSPACE_VALUES)
-          .optional()
-          .describe('"auto" uses startup workspace; "all" disables weighting; or select a workspace type.'),
         limit: z
           .number()
           .int()
@@ -107,10 +115,10 @@ export function createDocsSearchTool(
         verbose: z
           .boolean()
           .optional()
-          .describe('Include keywords and canonical url on each result (larger payload). Defaults to false.'),
+          .describe('Include keywords and the Markdown sourceUrl on each result (larger payload). Defaults to false.'),
       },
       async execute(args) {
-        const workspace = resolveWorkspace(args.workspace, detectedWorkspaces);
+        const workspace = await resolveProjectWorkspace(args, detectedWorkspaces);
         const limit = args.limit ?? DEFAULT_LIMIT;
         const offset = args.offset ?? 0;
         // The SDK returns top-N search hits. Retrieve the complete ranked set here
@@ -130,6 +138,7 @@ export function createDocsSearchTool(
           ...(workspace && {workspace}),
           total: ranked.length,
           offset,
+          citation: DOCS_CITATION_NOTE,
           results: results.map((r) => leanResult(r.entry, r.score, args.verbose ?? false)),
           ...(truncated && {truncated: true, nextOffset: end}),
         };

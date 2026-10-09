@@ -20,8 +20,10 @@
     "docs:preview": "pnpm --filter @salesforce/b2c-dx-docs run docs:preview",
     "skills:eval": "uv run skills/eval/run_eval.py --model us.anthropic.claude-sonnet-4-6 --verbose",
     "skills:eval:optimize": "uv run skills/eval/run_loop.py --model us.anthropic.claude-sonnet-4-6 --verbose",
+    "mcp:eval": "claude plugin eval packages/b2c-dx-mcp/evals --trust-plugin --mocks off --allow-tools 'mcp__plugin_b2c-dx-mcp_b2c-dx-mcp__*' --model claude-sonnet-5-5 --no-publish --ablation none",
+    "mcp:eval:ablation": "claude plugin eval packages/b2c-dx-mcp/evals --trust-plugin --mocks off --allow-tools 'mcp__plugin_b2c-dx-mcp_b2c-dx-mcp__*' --model claude-sonnet-5-5 --no-publish --tag ablation --ablation with-without",
     "changeset": "changeset",
-    "version": "changeset version && node scripts/sync-plugin-versions.mjs && date -u > .changeset/RELEASE",
+    "version": "changeset version && node scripts/sync-plugin-versions.mjs && node scripts/sync-python-sdk-version.mjs && node scripts/sync-actions-version.mjs && date -u > .changeset/RELEASE",
     "release": "echo 'Releases are handled by CI (publish.yml). Use workflow_dispatch for manual releases.' && exit 1"
   },
   "keywords": [],
@@ -36,7 +38,8 @@
   },
   "pnpm": {
     "patchedDependencies": {
-      "yargs@17.7.2": "patches/yargs@17.7.2.patch"
+      "yargs@17.7.2": "patches/yargs@17.7.2.patch",
+      "@modelcontextprotocol/server@2.0.0": "patches/@modelcontextprotocol__server@2.0.0.patch"
     }
   }
 }

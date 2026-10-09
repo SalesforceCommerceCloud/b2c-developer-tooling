@@ -11,6 +11,7 @@
  *
  * @module config/types
  */
+import type {ClientAuthMethod} from '../auth/client-credentials.js';
 import type {AuthMethod, AuthStrategy} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
 import type {SafetyLevel} from '../safety/safety-middleware.js';
@@ -71,6 +72,8 @@ export interface NormalizedConfig {
   authMethods?: AuthMethod[];
   /** Account Manager hostname for OAuth (default: account.demandware.com) */
   accountManagerHost?: string;
+  /** How client credentials are sent to Account Manager (default: basic) */
+  clientAuthMethod?: ClientAuthMethod;
 
   // Auth fields (JWT Bearer)
   /** Path to JWT certificate file (cert.pem) for JWT authentication */
@@ -166,6 +169,17 @@ export interface NormalizedConfig {
    */
   docsCategories?: string[];
 
+  // SCAPI
+  /**
+   * Local SCAPI OpenAPI 3 JSON contracts (files, directories or http(s) URLs) for MCP code mode.
+   * Each replaces the bundled or live contract for the same API, or adds one.
+   * Relative paths resolve from the project directory.
+   *
+   * Sourced from `scapi-schemas` (dw.json) or `SFCC_SCAPI_SCHEMAS` (env, comma-separated).
+   * The MCP `--scapi-schemas` flag, when provided, overrides this config value.
+   */
+  scapiSchemas?: string[];
+
   // Metadata
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
@@ -181,6 +195,20 @@ export interface NormalizedConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+
+  // API backend
+  /** API backend preference for operations that support both OCAPI and SCAPI */
+  apiBackend?: 'ocapi' | 'scapi' | 'auto';
+
+  // MRT backend
+  /**
+   * MRT backend preference for MRT operations that support both the legacy MRT
+   * Cloud API and the SCAPI MRT backend. Independent of {@link apiBackend} (MRT
+   * is a distinct subsystem). `legacy` = the per-user API-key MRT Cloud API;
+   * `scapi` = the OAuth SCAPI MRT backend; `auto` prefers SCAPI when
+   * prerequisites are present and falls back to legacy.
+   */
+  mrtBackend?: 'auto' | 'legacy' | 'scapi';
 
   // Safety
   /** Safety configuration for this instance */
@@ -201,6 +229,7 @@ export type ConfigWarningCode =
   | 'HOSTNAME_MISMATCH'
   | 'CLIENT_ID_MISMATCH'
   | 'SLAS_CLIENT_ID_MISMATCH'
+  | 'TENANT_MISMATCH'
   | 'DEPRECATED_FIELD'
   | 'MISSING_REQUIRED'
   | 'SOURCE_ERROR';
@@ -243,6 +272,12 @@ export interface ConfigSourceInfo {
   fieldsIgnored?: (keyof NormalizedConfig)[];
   /** dw.json files available to this source for named/default instance selection. */
   instanceCatalog?: ConfigCatalogFile[];
+  /**
+   * For a value worked out from another field (such as a sandbox hostname from
+   * its tenant ID): the field it came from and the source that supplied that
+   * field (absent when it came from a flag).
+   */
+  derivedFrom?: {field: keyof NormalizedConfig; source?: string; location?: string};
 }
 
 /**
@@ -261,11 +296,15 @@ export interface ConfigResolutionResult {
  * Options for configuration resolution.
  */
 export interface ResolveConfigOptions {
-  /** Named instance for supporting ConfigSources */
+  /** Explicit instance name, or the name resolved from an earlier source during loading. */
   instance?: string;
-  /** Explicit path to config file (defaults to auto-discover) */
+  /**
+   * Explicit path to config file (defaults to auto-discover). An explicit path
+   * is used on its own, without {@link defaultConfigPath}. An empty string
+   * selects no dw.json at all.
+   */
   configPath?: string;
-  /** Global instance-catalog fallback used after an explicit or project-local dw.json */
+  /** Global instance-catalog fallback used after a discovered project-local dw.json */
   defaultConfigPath?: string;
   /** Starting directory for config file search */
   projectDirectory?: string;
@@ -428,6 +467,37 @@ export interface ConfigSource {
     field: keyof NormalizedConfig,
     options?: ResolveConfigOptions,
   ): MaybePromise<void>;
+
+  // === Field Writes (for `b2c setup set`) ===
+
+  /**
+   * Persist field values to the exact entry {@link load} returns for the same
+   * options (for example the selected dw.json instance). An `undefined` value
+   * removes the field. Implement only for sources the user owns and can edit;
+   * throw when the target is ambiguous or a value can't be represented.
+   *
+   * `b2c setup set` calls this on the source that supplies the field, or for a
+   * field nothing sets, on the source that supplied the instance (its
+   * `instanceName`, else `hostname`). Sources without this method are treated
+   * as read-only, except credential stores, which receive
+   * {@link storeCredential} / {@link removeCredential} for their
+   * {@link credentialFields}.
+   *
+   * @param patch - Fields to set, or `undefined` to remove
+   * @param options - The options this source was loaded with
+   * @returns Where the values were written
+   */
+  updateConfig?(patch: Partial<NormalizedConfig>, options: ResolveConfigOptions): MaybePromise<ConfigUpdateResult>;
+}
+
+/**
+ * Where a {@link ConfigSource.updateConfig} call wrote its values.
+ */
+export interface ConfigUpdateResult {
+  /** File or other location that was updated */
+  location: string;
+  /** Instance entry that was updated, when the source has named entries */
+  instance?: string;
 }
 
 /**
@@ -442,6 +512,16 @@ export interface CreateOAuthOptions {
   redirectUri?: string;
   /** Custom browser opener for browser OAuth flows. Receives the authorization URL. */
   openBrowser?: (url: string) => Promise<void>;
+}
+
+/** Options for constructing a B2C instance from resolved configuration. */
+export interface CreateB2CInstanceOptions extends Pick<CreateOAuthOptions, 'redirectUri' | 'openBrowser'> {
+  /**
+   * Pre-resolved OAuth strategy, or a lazy factory for one. CLI command bases
+   * use the factory form to preserve stored PKCE sessions and avoid prompting
+   * unless an OAuth-backed client is actually used.
+   */
+  oauthStrategy?: AuthStrategy | (() => AuthStrategy);
 }
 
 /**
@@ -539,10 +619,10 @@ export interface ResolvedB2CConfig {
 
   /**
    * Creates a B2CInstance from the resolved configuration.
-   * @param options - Options for implicit OAuth (redirectUri, openBrowser)
+   * @param options - OAuth runtime options and optional pre-resolved strategy
    * @throws Error if hostname is not configured
    */
-  createB2CInstance(options?: Pick<CreateOAuthOptions, 'redirectUri' | 'openBrowser'>): B2CInstance;
+  createB2CInstance(options?: CreateB2CInstanceOptions): B2CInstance;
 
   /**
    * Creates a Basic auth strategy.

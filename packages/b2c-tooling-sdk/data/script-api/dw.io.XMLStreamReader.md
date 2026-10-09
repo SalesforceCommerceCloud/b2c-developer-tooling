@@ -1027,7 +1027,7 @@ Use [readXMLObject()](dw.io.XMLStreamReader.md#readxmlobject)
       
       
       
-      **NOTE:** empty element (such as <tag/>) will be reported
+      **NOTE:** empty element (such as <tag/&gt;) will be reported
        with  two separate events: START\_ELEMENT, END\_ELEMENT - This preserves
         parsing equivalency of empty element to <tag></tag>.
       

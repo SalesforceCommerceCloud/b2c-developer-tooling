@@ -31,6 +31,7 @@
 | [OrderMgr](dw.order.OrderMgr.md) | <p>  Provides static helper methods for managing orders. |
 | [OrderPaymentInstrument](dw.order.OrderPaymentInstrument.md) | Represents any payment instrument used to pay orders, such as credit card  or bank transfer. |
 | [OrderProcessStatusCodes](dw.order.OrderProcessStatusCodes.md) | Contains constants representing different status codes  for interacting with an order, such as cancelling  or editing an order. |
+| [OrderTransitionResult](dw.order.OrderTransitionResult.md) | Read-only result of [OrderMgr.attemptOrderTransition(Order)](dw.order.OrderMgr.md#attemptordertransitionorder). |
 | [PaymentCard](dw.order.PaymentCard.md) | Represents payment cards and provides methods to access the payment card  attributes and status. |
 | [PaymentInstrument](dw.order.PaymentInstrument.md) | Base class for payment instrument either stored in the customers profile  or related to an order. |
 | [PaymentMethod](dw.order.PaymentMethod.md) | The PaymentMethod class represents a logical type of payment a customer can  make in the storefront. |

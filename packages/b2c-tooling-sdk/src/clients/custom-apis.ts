@@ -14,11 +14,10 @@
  */
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
-import {OAuthStrategy} from '../auth/oauth.js';
-import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import type {paths, components} from './custom-apis.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
+import {withScopes} from './scapi-backend-utils.js';
 
 /**
  * Re-export generated types for external use.
@@ -150,10 +149,7 @@ export function createCustomApisClient(config: CustomApisClientConfig, auth: Aut
   const requiredScopes = config.scopes ?? [...CUSTOM_APIS_DEFAULT_SCOPES, buildTenantScope(config.tenantId)];
 
   // If auth supports scopes, add required scopes; otherwise use as-is
-  const scopedAuth =
-    auth instanceof OAuthStrategy || auth instanceof JwtOAuthStrategy
-      ? auth.withAdditionalScopes(requiredScopes)
-      : auth;
+  const scopedAuth = withScopes(auth, requiredScopes);
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(scopedAuth));
@@ -191,6 +187,55 @@ export function toOrganizationId(tenantId: string): string {
 }
 
 /**
+ * Sandbox hostnames encode the tenant ID in their first label, for example
+ * `abcd-123.dx.commercecloud.salesforce.com` (tenant `abcd_123`).
+ */
+const SANDBOX_HOSTNAME_REGEX = /^([a-z\d]{4})-(\d{3})\.(?:[a-z\d-]+\.)*dx\.commercecloud\.salesforce\.com$/i;
+
+/**
+ * Derives a tenant ID from a sandbox hostname.
+ *
+ * Returns `undefined` for any hostname that doesn't follow the sandbox naming
+ * convention, so callers never infer a tenant from an ambiguous hostname such as
+ * a primary instance group host.
+ *
+ * @param hostname - Instance hostname
+ * @returns The tenant ID in canonical underscore format, or undefined
+ *
+ * @example
+ * tenantIdFromSandboxHostname('zzpq-013.dx.commercecloud.salesforce.com') // Returns 'zzpq_013'
+ * tenantIdFromSandboxHostname('staging-realm-customer.demandware.net')  // Returns undefined
+ */
+export function tenantIdFromSandboxHostname(hostname: string): string | undefined {
+  const match = hostname.trim().match(SANDBOX_HOSTNAME_REGEX);
+  if (!match) return undefined;
+  return `${match[1]}_${match[2]}`.toLowerCase();
+}
+
+/** Sandbox tenant IDs are a four-character realm and a three-digit instance number. */
+const SANDBOX_TENANT_ID_REGEX = /^([a-z\d]{4})_(\d{3})$/i;
+
+/**
+ * Derives the sandbox hostname from a sandbox tenant ID.
+ *
+ * Returns `undefined` for any tenant ID that doesn't follow the sandbox naming
+ * convention (for example a production `abcd_prd` tenant), whose hostname can't
+ * be inferred.
+ *
+ * @param tenantId - Tenant ID or organization ID
+ * @returns The sandbox hostname, or undefined
+ *
+ * @example
+ * sandboxHostnameFromTenantId('f_ecom_zzpq_013') // Returns 'zzpq-013.dx.commercecloud.salesforce.com'
+ * sandboxHostnameFromTenantId('zzxy_prd')        // Returns undefined
+ */
+export function sandboxHostnameFromTenantId(tenantId: string): string | undefined {
+  const match = normalizeTenantId(tenantId).match(SANDBOX_TENANT_ID_REGEX);
+  if (!match) return undefined;
+  return `${match[1]}-${match[2]}.dx.commercecloud.salesforce.com`.toLowerCase();
+}
+
+/**
  * Normalizes any parseable tenant/organization ID form to the canonical underscore format.
  *
  * Supported input forms (all resolve to `abcd_123`):
@@ -200,20 +245,25 @@ export function toOrganizationId(tenantId: string): string {
  * - `f_ecom_abcd-123` — org ID with hyphenated tenant
  * - `abcd-123.dx.commercecloud.salesforce.com` — sandbox hostname
  *
- * @param value - The tenant ID, organization ID, or hostname
+ * Only sandbox hostnames carry the tenant ID by convention. Other hostnames
+ * (for example `staging-realm-customer.demandware.net`) are returned unchanged
+ * rather than guessing a tenant from the first label.
+ *
+ * @param value - The tenant ID, organization ID, or sandbox hostname
  * @returns The normalized tenant ID in canonical underscore format (e.g., "abcd_123")
  *
  * @example
  * normalizeTenantId('f_ecom_zzxy_prd') // Returns 'zzxy_prd'
  * normalizeTenantId('zzxy-prd')        // Returns 'zzxy_prd'
- * normalizeTenantId('zzxy-prd.dx.commercecloud.salesforce.com') // Returns 'zzxy_prd'
+ * normalizeTenantId('zzxy-001.dx.commercecloud.salesforce.com') // Returns 'zzxy_001'
  */
 export function normalizeTenantId(value: string): string {
   let id = value.trim();
 
-  // Extract hostname prefix: "abcd-123.dx.commercecloud.salesforce.com" → "abcd-123"
   if (id.includes('.')) {
-    id = id.split('.')[0];
+    const fromHostname = tenantIdFromSandboxHostname(id);
+    if (!fromHostname) return id;
+    id = fromHostname;
   }
 
   // Strip f_ecom_ prefix (handles org ID form)

@@ -4,9 +4,10 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 /**
- * OPTIONAL build-time enrichment of the Developer Center guides corpus.
+ * OPTIONAL build-time enrichment of a docs corpus: the Developer Center guides
+ * (default) or the Salesforce Help Knowledge Articles (`--corpus help-kb`).
  *
- * For each guide it generates, via a fast/cheap LLM (Claude Haiku by default), a
+ * For each doc it generates, via a fast/cheap LLM (Claude Haiku by default), a
  * one-line `summary` and a set of search `keywords`/synonyms. Merged into the
  * guides search index by `generate-guides-index.ts`, these measurably improve
  * recall for natural-language / agentic queries (a doc titled "Multiple Sites"
@@ -16,31 +17,35 @@
  * This step is entirely optional and non-blocking:
  *   - If no API key is configured it prints a notice and exits 0 (no-op), so the
  *     normal build never depends on an LLM.
- *   - Output is a committed sidecar (`data/guides/enrichment.json`, id -> {summary,
+ *   - Output is a committed sidecar (`data/<corpus>/enrichment.json`, id -> {summary,
  *     keywords}); the index build merges whatever exists.
  *
  * Modes:
- *   (default)   enrich only guides MISSING from the existing enrichment.json
- *   --full      re-enrich every guide (overwrites existing enrichment)
+ *   (default)          enrich only docs MISSING from the existing enrichment.json
+ *   --full             re-enrich every doc (overwrites existing enrichment)
+ *   --corpus help-kb   enrich the Knowledge Articles in HELP_KB_CONTENT instead of the guides
  *
  * Env:
  *   ANTHROPIC_API_KEY      required to run (else no-op). Bearer token.
  *   ANTHROPIC_BASE_URL     default https://api.anthropic.com
  *   DOCS_ENRICH_MODEL      default claude-haiku-4-5
- *   COMMERCE_DOCS_REPO     local commerce-cloud-docs clone (default ~/code/commerce-cloud-docs)
+ *   GUIDES_CONTENT_DIR    local Developer Center source directory (required for guides)
+ *   HELP_KB_CONTENT       help-kb article directory or tarball (default docs/help-kb-content.tar.gz)
  *   DOCS_ENRICH_CONCURRENCY default 6
  *
  * Usage:
  *   ANTHROPIC_API_KEY=... pnpm --filter @salesforce/b2c-tooling-sdk run enrich:docs
  *   ANTHROPIC_API_KEY=... pnpm --filter @salesforce/b2c-tooling-sdk run enrich:docs -- --full
+ *   ANTHROPIC_API_KEY=... pnpm --filter @salesforce/b2c-tooling-sdk run enrich:docs -- --corpus help-kb
  */
 
+import {execFileSync} from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-const CATEGORIES = ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'] as const;
+import {GUIDES_SOURCES} from './guides-sources.js';
 
 interface EnrichmentEntry {
   summary: string;
@@ -55,8 +60,11 @@ interface GuideSource {
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const GUIDES_DIR = path.resolve(__dirname, '../data/guides');
-const ENRICHMENT_PATH = path.join(GUIDES_DIR, 'enrichment.json');
+const corpusArg = process.argv.indexOf('--corpus');
+const CORPUS = corpusArg > 0 ? process.argv[corpusArg + 1] : 'guides';
+if (CORPUS !== 'guides' && CORPUS !== 'help-kb') throw new Error(`Unknown --corpus "${CORPUS}" (guides | help-kb)`);
+const DATA_DIR = path.resolve(__dirname, '../data', CORPUS);
+const ENRICHMENT_PATH = path.join(DATA_DIR, 'enrichment.json');
 
 const MODEL = process.env.DOCS_ENRICH_MODEL || 'claude-haiku-4-5';
 const BASE_URL = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/$/, '');
@@ -64,11 +72,11 @@ const API_KEY = process.env.ANTHROPIC_API_KEY;
 const CONCURRENCY = Number(process.env.DOCS_ENRICH_CONCURRENCY || 6);
 
 function resolveContentDir(): string {
-  const env = process.env.COMMERCE_DOCS_REPO;
-  const repo = env ? path.resolve(env) : path.join(os.homedir(), 'code', 'commerce-cloud-docs');
-  const contentDir = path.join(repo, 'content', 'en-us');
-  if (!fs.existsSync(contentDir)) {
-    throw new Error(`commerce-cloud-docs content not found at ${contentDir}. Set COMMERCE_DOCS_REPO.`);
+  const configured = process.env.GUIDES_CONTENT_DIR;
+  if (!configured) throw new Error('Set GUIDES_CONTENT_DIR to the local Developer Center source directory.');
+  const contentDir = path.resolve(configured);
+  if (!GUIDES_SOURCES.some((source) => fs.existsSync(path.join(contentDir, source.dir)))) {
+    throw new Error(`Developer Center guide content not found at ${contentDir}. Check GUIDES_CONTENT_DIR.`);
   }
   return contentDir;
 }
@@ -97,8 +105,8 @@ function toExcerpt(md: string): string {
 function collectSources(contentDir: string): GuideSource[] {
   const sources: GuideSource[] = [];
   const seen = new Set<string>();
-  for (const category of CATEGORIES) {
-    for (const file of walkMarkdown(path.join(contentDir, category, 'guides'))) {
+  for (const {category, dir} of GUIDES_SOURCES) {
+    for (const file of walkMarkdown(path.join(contentDir, dir))) {
       const basename = path.basename(file, '.md');
       const id = `${category}/${basename}`;
       if (seen.has(id)) continue;
@@ -111,6 +119,31 @@ function collectSources(contentDir: string): GuideSource[] {
   return sources;
 }
 
+/**
+ * Collects the Knowledge Articles (`help-kb/<ArticleNumber>.md`) from the
+ * extracted content directory or the committed `help-kb-content.tar.gz`.
+ */
+function collectHelpKbSources(): GuideSource[] {
+  let dir = path.resolve(
+    process.env.HELP_KB_CONTENT || path.resolve(__dirname, '../../../docs/help-kb-content.tar.gz'),
+  );
+  if (!fs.existsSync(dir)) throw new Error(`help-kb content not found at ${dir}. Check HELP_KB_CONTENT.`);
+  if (dir.endsWith('.tar.gz')) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'help-kb-enrich-'));
+    execFileSync('tar', ['-xzf', dir, '-C', tmp]);
+    dir = path.join(tmp, 'help/help-kb');
+  }
+  return walkMarkdown(dir)
+    .sort()
+    .map((file) => {
+      const basename = path.basename(file, '.md');
+      // Drop the "> Salesforce Help Knowledge Article N · Last published …" provenance line.
+      const md = fs.readFileSync(file, 'utf-8').replace(/^> Salesforce Help Knowledge Article.*$/m, '');
+      const title = md.match(/^#\s+(.+)$/m)?.[1]?.trim() || basename;
+      return {id: `help-kb/${basename}`, category: 'help-kb', title, excerpt: toExcerpt(md)};
+    });
+}
+
 function loadExisting(): Record<string, EnrichmentEntry> {
   if (!fs.existsSync(ENRICHMENT_PATH)) return {};
   try {
@@ -120,13 +153,23 @@ function loadExisting(): Record<string, EnrichmentEntry> {
   }
 }
 
-const SYSTEM_PROMPT =
+const GUIDES_SYSTEM_PROMPT =
   'You enrich B2C Commerce developer documentation for a search index. Given one doc (title + text ' +
   'excerpt), return a JSON object with exactly two fields: "summary" (ONE dense sentence, <=160 chars, ' +
   'stating what task/topic the doc helps a developer accomplish) and "keywords" (5-12 short search ' +
   'terms/synonyms/acronyms a developer or AI coding agent would type to find this doc, including common ' +
   'alternate phrasings). Base everything ONLY on the provided content; do not invent APIs. Respond with ' +
   'ONLY the JSON object, no prose, no code fences.';
+
+const HELP_KB_SYSTEM_PROMPT =
+  'You enrich Salesforce B2C Commerce Help knowledge articles for a search index used by developers, ' +
+  'administrators, and AI coding agents. Given one article (title + text excerpt), return a JSON object ' +
+  'with exactly two fields: "summary" (ONE dense sentence, <=160 chars, stating the problem, question, or ' +
+  'task the article addresses and its key answer when short) and "keywords" (5-12 short search ' +
+  'terms/synonyms/acronyms/error strings someone would type to find it, including alternate phrasings). ' +
+  'Base everything ONLY on the provided content. Respond with ONLY the JSON object, no prose, no code fences.';
+
+const SYSTEM_PROMPT = CORPUS === 'help-kb' ? HELP_KB_SYSTEM_PROMPT : GUIDES_SYSTEM_PROMPT;
 
 /** Calls the Anthropic Messages API for one doc; returns null on failure. */
 async function enrichOne(src: GuideSource): Promise<EnrichmentEntry | null> {
@@ -199,13 +242,12 @@ async function main(): Promise<void> {
     return;
   }
 
-  const contentDir = resolveContentDir();
-  const sources = collectSources(contentDir);
+  const sources = CORPUS === 'help-kb' ? collectHelpKbSources() : collectSources(resolveContentDir());
   const existing = loadExisting();
 
   const todo = full ? sources : sources.filter((s) => !existing[s.id]);
   console.log(
-    `enrich:docs — ${sources.length} guides total; ${todo.length} to enrich ` +
+    `enrich:docs — ${sources.length} ${CORPUS} docs total; ${todo.length} to enrich ` +
       `(${full ? 'full re-run' : 'missing only'}); model=${MODEL}, concurrency=${CONCURRENCY}`,
   );
   if (todo.length === 0) {
@@ -233,11 +275,13 @@ async function main(): Promise<void> {
   const sorted: Record<string, EnrichmentEntry> = {};
   for (const id of Object.keys(result).sort()) sorted[id] = result[id];
 
-  fs.mkdirSync(GUIDES_DIR, {recursive: true});
+  fs.mkdirSync(DATA_DIR, {recursive: true});
   fs.writeFileSync(ENRICHMENT_PATH, JSON.stringify(sorted, null, 2));
   console.log(
     `Wrote ${Object.keys(sorted).length} enrichment entries to ${ENRICHMENT_PATH} (${failed} failed this run).\n` +
-      '  Re-run `generate:guides-index` to merge into the search index.',
+      (CORPUS === 'help-kb'
+        ? '  Regenerate the help-kb index to merge into the search index.'
+        : '  Re-run `generate:guides-index` to merge into the search index.'),
   );
 }
 

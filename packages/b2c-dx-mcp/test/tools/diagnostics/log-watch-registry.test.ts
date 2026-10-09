@@ -143,7 +143,7 @@ describe('LogWatchRegistry', () => {
       // A newly discovered file shows up on the next drain only.
       registry.appendFileDiscovered(e.watchId, makeFile('error-2.log'));
       expect(registry.drain(e.watchId, 100).filesDiscovered.map((f) => f.name)).to.deep.equal(['error-2.log']);
-      // Cumulative list (used by logs_watch_list) still has both.
+      // Cumulative list (used by logs_watch(action: list)) still has both.
       expect(e.filesDiscovered.map((f) => f.name)).to.deep.equal(['error-1.log', 'error-2.log']);
     });
   });

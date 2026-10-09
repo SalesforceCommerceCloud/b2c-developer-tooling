@@ -7,22 +7,22 @@
  * Site cartridge path operations for B2C Commerce instances.
  *
  * Provides functions for managing the ordered list of active cartridges
- * on a site via OCAPI Data API, with automatic fallback to site archive
- * import/export when OCAPI permissions are unavailable.
+ * on a site via SCAPI with temporary OCAPI fallback, plus site archive
+ * import/export when neither direct API is available.
  */
 import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
-import type {components} from '../../clients/ocapi.generated.js';
-import {getApiErrorMessage} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
 import {siteArchiveImport, siteArchiveExportToBuffer} from '../jobs/site-archive.js';
 import type {WaitForJobOptions} from '../jobs/run.js';
+import {createSitesBackend} from './sites-backend.js';
+import type {CartridgePosition} from './sites-types.js';
 
 /** The special site ID for Business Manager. */
 export const BM_SITE_ID = 'Sites-Site';
 
 /** Position options for adding a cartridge. */
-export type CartridgePosition = 'first' | 'last' | 'before' | 'after';
+export type {CartridgePosition} from './sites-types.js';
 
 /** Options for adding a cartridge to a site's cartridge path. */
 export interface AddCartridgeOptions {
@@ -52,8 +52,6 @@ export interface CartridgePathResult {
   cartridgeList: string[];
 }
 
-type CartridgePathApiResponse = components['schemas']['cartridge_path_api_response'];
-
 /**
  * Parses a colon-separated cartridge path string into a CartridgePathResult.
  */
@@ -69,7 +67,8 @@ function toResult(siteId: string, cartridges: string): CartridgePathResult {
 /**
  * Gets the cartridge path for a site.
  *
- * Uses OCAPI `GET /sites/{site_id}` to read the cartridge path.
+ * Uses the configured Sites backend to read the cartridge path. Auto mode
+ * prefers SCAPI and temporarily falls back to OCAPI.
  * Works for all sites including Business Manager (Sites-Site).
  *
  * @param instance - B2C instance to query
@@ -86,25 +85,20 @@ function toResult(siteId: string, cartridges: string): CartridgePathResult {
  * ```
  */
 export async function getCartridgePath(instance: B2CInstance, siteId: string): Promise<CartridgePathResult> {
-  const {data, error, response} = await instance.ocapi.GET('/sites/{site_id}', {
-    params: {path: {site_id: siteId}},
-  });
-
-  if (error) {
-    throw new Error(`Failed to get cartridge path for site "${siteId}": ${getApiErrorMessage(error, response)}`, {
-      cause: error,
-    });
+  try {
+    const cartridges = await createSitesBackend({instance}).getCartridgePath(siteId);
+    return toResult(siteId, cartridges);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to get cartridge path for site "${siteId}": ${message}`, {cause: error});
   }
-
-  const site = data as components['schemas']['site'];
-  return toResult(siteId, site.cartridges ?? '');
 }
 
 /**
  * Adds a cartridge to a site's cartridge path.
  *
- * For regular sites, tries OCAPI `POST /sites/{site_id}/cartridges` first,
- * falling back to site archive import if OCAPI permissions are unavailable.
+ * For regular sites, uses the SCAPI-first Sites backend and falls back to site
+ * archive import if neither direct backend is available.
  * For Business Manager (Sites-Site), always uses site archive import.
  *
  * @param instance - B2C instance
@@ -140,21 +134,11 @@ export async function addCartridge(
     return addCartridgeViaImport(instance, siteId, options, updateOptions);
   }
 
-  // Try OCAPI first for regular sites
+  const backend = createSitesBackend({instance});
   try {
-    const {data, error, response} = await instance.ocapi.POST('/sites/{site_id}/cartridges', {
-      params: {path: {site_id: siteId}},
-      body: options as components['schemas']['cartridge_path_add_request'],
-    });
-
-    if (error) {
-      throw new OcapiError(getApiErrorMessage(error, response), response.status);
-    }
-
-    const result = data as CartridgePathApiResponse;
-    return toResult(siteId, result.cartridges ?? '');
-  } catch (ocapiError) {
-    return handleFallback(instance, siteId, 'add', ocapiError, () =>
+    return toResult(siteId, await backend.addCartridge(siteId, options.name, options.position, options.target));
+  } catch (backendError) {
+    return handleFallback(instance, siteId, 'add', backendError, () =>
       addCartridgeViaImport(instance, siteId, options, updateOptions),
     );
   }
@@ -163,8 +147,8 @@ export async function addCartridge(
 /**
  * Removes a cartridge from a site's cartridge path.
  *
- * For regular sites, tries OCAPI `DELETE /sites/{site_id}/cartridges/{cartridge_name}`
- * first, falling back to site archive import if OCAPI permissions are unavailable.
+ * For regular sites, uses the SCAPI-first Sites backend and falls back to site
+ * archive import if neither direct backend is available.
  * For Business Manager (Sites-Site), always uses site archive import.
  *
  * @param instance - B2C instance
@@ -190,19 +174,11 @@ export async function removeCartridge(
     return removeCartridgeViaImport(instance, siteId, cartridgeName, updateOptions);
   }
 
+  const backend = createSitesBackend({instance});
   try {
-    const {data, error, response} = await instance.ocapi.DELETE('/sites/{site_id}/cartridges/{cartridge_name}', {
-      params: {path: {site_id: siteId, cartridge_name: cartridgeName}},
-    });
-
-    if (error) {
-      throw new OcapiError(getApiErrorMessage(error, response), response.status);
-    }
-
-    const result = data as CartridgePathApiResponse;
-    return toResult(siteId, result.cartridges ?? '');
-  } catch (ocapiError) {
-    return handleFallback(instance, siteId, 'remove', ocapiError, () =>
+    return toResult(siteId, await backend.removeCartridge(siteId, cartridgeName));
+  } catch (backendError) {
+    return handleFallback(instance, siteId, 'remove', backendError, () =>
       removeCartridgeViaImport(instance, siteId, cartridgeName, updateOptions),
     );
   }
@@ -211,8 +187,8 @@ export async function removeCartridge(
 /**
  * Replaces the entire cartridge path for a site.
  *
- * For regular sites, tries OCAPI `PUT /sites/{site_id}/cartridges` first,
- * falling back to site archive import if OCAPI permissions are unavailable.
+ * For regular sites, uses the SCAPI-first Sites backend and falls back to site
+ * archive import if neither direct backend is available.
  * For Business Manager (Sites-Site), always uses site archive import.
  *
  * @param instance - B2C instance
@@ -238,35 +214,13 @@ export async function setCartridgePath(
     return setCartridgePathViaImport(instance, siteId, cartridges, updateOptions);
   }
 
+  const backend = createSitesBackend({instance});
   try {
-    const {data, error, response} = await instance.ocapi.PUT('/sites/{site_id}/cartridges', {
-      params: {path: {site_id: siteId}},
-      body: {cartridges} as components['schemas']['cartridge_path_create_request'],
-    });
-
-    if (error) {
-      throw new OcapiError(getApiErrorMessage(error, response), response.status);
-    }
-
-    const result = data as CartridgePathApiResponse;
-    return toResult(siteId, result.cartridges ?? '');
-  } catch (ocapiError) {
-    return handleFallback(instance, siteId, 'set', ocapiError, () =>
+    return toResult(siteId, await backend.setCartridgePath(siteId, cartridges));
+  } catch (backendError) {
+    return handleFallback(instance, siteId, 'set', backendError, () =>
       setCartridgePathViaImport(instance, siteId, cartridges, updateOptions),
     );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Internal: OCAPI error wrapper
-// ---------------------------------------------------------------------------
-
-class OcapiError extends Error {
-  statusCode: number;
-  constructor(message: string, statusCode: number) {
-    super(message);
-    this.name = 'OcapiError';
-    this.statusCode = statusCode;
   }
 }
 
@@ -278,15 +232,15 @@ async function handleFallback(
   instance: B2CInstance,
   siteId: string,
   operation: string,
-  ocapiError: unknown,
+  backendError: unknown,
   fallbackFn: () => Promise<CartridgePathResult>,
 ): Promise<CartridgePathResult> {
   const logger = getLogger();
-  const ocapiMessage = ocapiError instanceof Error ? ocapiError.message : String(ocapiError);
+  const backendMessage = backendError instanceof Error ? backendError.message : String(backendError);
 
   logger.warn(
-    {siteId, operation, error: ocapiMessage},
-    `OCAPI ${operation} failed, trying site archive import fallback`,
+    {siteId, operation, error: backendMessage},
+    `Direct API ${operation} failed, trying site archive import fallback`,
   );
 
   try {
@@ -297,10 +251,11 @@ async function handleFallback(
       [
         `Failed to ${operation} cartridge path for site "${siteId}".`,
         '',
-        `OCAPI direct update failed: ${ocapiMessage}`,
+        `SCAPI/OCAPI direct update failed: ${backendMessage}`,
         `Site archive import fallback also failed: ${importMessage}`,
         '',
         'To fix, configure one of:',
+        '  • SCAPI Sites API: Grant sfcc.sites.rw',
         '  • OCAPI Data API: Grant POST/PUT/DELETE on /sites/*/cartridges',
         '  • Site import: Grant job execution permissions for sfcc-site-archive-import and WebDAV write access to Impex/',
         '',

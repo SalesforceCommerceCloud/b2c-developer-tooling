@@ -16,6 +16,7 @@ import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './mrt-b2c.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
+import {createMrtMaintenanceMiddleware} from './mrt.js';
 
 /**
  * Re-export generated types for external use.
@@ -163,6 +164,9 @@ export function createMrtB2CClient(config: MrtB2CClientConfig, auth: AuthStrateg
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(auth));
+
+  // Maintenance detection: typed error for writes rejected in read-only mode.
+  client.use(createMrtMaintenanceMiddleware());
 
   // Plugin middleware from registry
   for (const middleware of registry.getMiddleware('mrt-b2c')) {

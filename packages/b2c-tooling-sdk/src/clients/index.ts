@@ -151,6 +151,8 @@ export type {
 } from './ocapi.js';
 
 export {createSlasClient} from './slas-admin.js';
+export {createSlasShopperClient, type SlasShopperClient, type SlasShopperClientConfig} from './slas-shopper.js';
+export type {paths as SlasShopperPaths, components as SlasShopperComponents} from './slas-shopper.js';
 export type {
   SlasClient,
   SlasClientConfig,
@@ -170,12 +172,21 @@ export type {
   components as OdsComponents,
 } from './ods.js';
 
-export {createMrtClient, DEFAULT_MRT_ORIGIN} from './mrt.js';
+export {
+  createMrtClient,
+  createMrtMaintenanceMiddleware,
+  runWithMrtReadOnlyListener,
+  DEFAULT_MRT_ORIGIN,
+  MRT_READ_ONLY_HEADER,
+  isMrtReadOnlyResponse,
+  MrtMaintenanceError,
+} from './mrt.js';
 export type {
   MrtClient,
   MrtClientConfig,
   MrtError,
   MrtResponse,
+  MrtReadOnlyListener,
   BuildPushResponse,
   paths as MrtPaths,
   components as MrtComponents,
@@ -185,6 +196,8 @@ export {
   createCustomApisClient,
   toOrganizationId,
   normalizeTenantId,
+  tenantIdFromSandboxHostname,
+  sandboxHostnameFromTenantId,
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
@@ -358,7 +371,156 @@ export type {
   components as GranularReplicationsComponents,
 } from './granular-replications.js';
 
-export {getApiErrorMessage} from './error-utils.js';
+// SCAPI Jobs
+export {createScapiJobsClient, SCAPI_JOBS_CASCADE} from './scapi-jobs.js';
+export type {
+  ScapiJobsClient,
+  ScapiJobsClientConfig,
+  ScapiJobsError,
+  ScapiJobsResponse,
+  paths as ScapiJobsPaths,
+  components as ScapiJobsComponents,
+} from './scapi-jobs.js';
+
+// SCAPI Merchant Roles
+export {
+  createScapiMerchantRolesClient,
+  SCAPI_MERCHANT_ROLES_READ_SCOPES,
+  SCAPI_MERCHANT_ROLES_RW_SCOPES,
+} from './scapi-merchant-roles.js';
+export type {
+  ScapiMerchantRolesClient,
+  ScapiMerchantRolesClientConfig,
+  ScapiMerchantRolesError,
+  ScapiMerchantRolesResponse,
+  paths as ScapiMerchantRolesPaths,
+  components as ScapiMerchantRolesComponents,
+} from './scapi-merchant-roles.js';
+
+// SCAPI Merchant Users
+export {
+  createScapiMerchantUsersClient,
+  SCAPI_MERCHANT_USERS_READ_SCOPES,
+  SCAPI_MERCHANT_USERS_RW_SCOPES,
+} from './scapi-merchant-users.js';
+export type {
+  ScapiMerchantUsersClient,
+  ScapiMerchantUsersClientConfig,
+  ScapiMerchantUsersError,
+  ScapiMerchantUsersResponse,
+  paths as ScapiMerchantUsersPaths,
+  components as ScapiMerchantUsersComponents,
+} from './scapi-merchant-users.js';
+
+// SCAPI Scripts (code versions)
+export {createScapiScriptsClient, SCAPI_SCRIPTS_READ_SCOPES, SCAPI_SCRIPTS_RW_SCOPES} from './scapi-scripts.js';
+export type {
+  ScapiScriptsClient,
+  ScapiScriptsClientConfig,
+  ScapiScriptsError,
+  ScapiScriptsResponse,
+  paths as ScapiScriptsPaths,
+  components as ScapiScriptsComponents,
+} from './scapi-scripts.js';
+
+// SCAPI Sites
+export {createScapiSitesClient, SCAPI_SITES_CASCADE} from './scapi-sites.js';
+export type {
+  ScapiSitesClient,
+  ScapiSitesClientConfig,
+  ScapiSitesError,
+  Site as ScapiSite,
+  Sites as ScapiSites,
+  SiteSearchResult as ScapiSiteSearchResult,
+  paths as ScapiSitesPaths,
+  components as ScapiSitesComponents,
+} from './scapi-sites.js';
+
+// SCAPI Catalogs
+export {createScapiCatalogsClient, SCAPI_CATALOGS_CASCADE} from './scapi-catalogs.js';
+export type {
+  ScapiCatalogsClient,
+  ScapiCatalogsClientConfig,
+  Catalog as ScapiCatalog,
+  Catalogs as ScapiCatalogs,
+  paths as ScapiCatalogsPaths,
+  components as ScapiCatalogsComponents,
+} from './scapi-catalogs.js';
+
+// SCAPI Storefront family (storefront/*/v1) — the modern MRT backend. One
+// client per API; Deployments now, Environments + Storefronts to follow.
+export {createStorefrontDeploymentsClient, STOREFRONT_DEPLOYMENTS_CASCADE} from './storefront-deployments.js';
+export type {
+  StorefrontDeploymentsClient,
+  StorefrontDeploymentsClientConfig,
+  StorefrontDeploymentsError,
+  StorefrontDeploymentsResponse,
+  Bundle as StorefrontBundle,
+  BundleResult as StorefrontBundleResult,
+  BundleUploadResponse as StorefrontBundleUploadResponse,
+  Deployment as StorefrontDeployment,
+  DeploymentResult as StorefrontDeploymentResult,
+  DeploymentCreateRequest as StorefrontDeploymentCreateRequest,
+  DeploymentStatus as StorefrontDeploymentStatus,
+  paths as StorefrontDeploymentsPaths,
+  components as StorefrontDeploymentsComponents,
+} from './storefront-deployments.js';
+
+export {createStorefrontEnvironmentsClient, STOREFRONT_ENVIRONMENTS_CASCADE} from './storefront-environments.js';
+export type {
+  StorefrontEnvironmentsClient,
+  StorefrontEnvironmentsClientConfig,
+  StorefrontEnvironmentsError,
+  StorefrontEnvironmentsResponse,
+  EnvironmentVariables as StorefrontEnvironmentVariables,
+  EnvironmentVariableEntry as StorefrontEnvironmentVariableEntry,
+  EnvironmentVariablesUpdateRequest as StorefrontEnvironmentVariablesUpdateRequest,
+  EnvironmentVariableUpdateEntry as StorefrontEnvironmentVariableUpdateEntry,
+  PublishingStatus as StorefrontEnvironmentVariablePublishingStatus,
+  paths as StorefrontEnvironmentsPaths,
+  components as StorefrontEnvironmentsComponents,
+} from './storefront-environments.js';
+
+// SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
+export {
+  createScapiRequestError,
+  assertOcapiCompatibilityAllowed,
+  assertScapiAdminAuthSupported,
+  isFallbackTrigger,
+  isInvalidScopeError,
+  resolvePreferredBackend,
+  resolveScapiOrOcapi,
+  SAFE_SCAPI_FALLBACK_STATUSES,
+  SCAPI_CAPABILITY_BASELINE_RELEASE,
+  ScapiCapabilityUnsupportedError,
+  ScapiRequestError,
+  ScapiUserAuthUnsupportedError,
+  scapiUnavailableMessage,
+  scapiCapabilityUnsupportedMessage,
+  withScopes,
+} from './scapi-backend-utils.js';
+export type {
+  ApiBackendPreference,
+  BackendBase,
+  ResolveBackendOptions,
+  ResolvePreferredBackendOptions,
+} from './scapi-backend-utils.js';
+export {createFallbackBackend} from './scapi-fallback-backend.js';
+export {createDualBackend} from './dual-backend-factory.js';
+export type {DualBackendConfig, DualBackendCtors, ScapiBackendCtorConfig} from './dual-backend-factory.js';
+export {buildScapiClient} from './scapi-client-factory.js';
+export type {BuildScapiClientOptions, ScapiClientConfig} from './scapi-client-factory.js';
+export {ScopeTierManager} from './scapi-scope-tier.js';
+export type {ScopeTier, ScopeTierManagerOptions} from './scapi-scope-tier.js';
+
+export {
+  getApiErrorMessage,
+  isOcapiDeprecatedFault,
+  throwOcapiError,
+  OcapiDeprecatedError,
+  OCAPI_DEPRECATED_MESSAGE,
+  ocapiDeprecatedMessage,
+} from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';
 export type {TlsOptions} from './tls-dispatcher.js';

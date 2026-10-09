@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags} from '@oclif/core';
-import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {Args} from '@oclif/core';
+import {ExistingSlasClientCommand} from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
 async function openBrowser(url: string): Promise<void> {
@@ -16,11 +16,11 @@ async function openBrowser(url: string): Promise<void> {
   }
 }
 
-export default class SlasClientOpen extends BaseCommand<typeof SlasClientOpen> {
+export default class SlasClientOpen extends ExistingSlasClientCommand<typeof SlasClientOpen> {
   static args = {
     clientId: Args.string({
-      description: 'SLAS client ID to open in the admin UI',
-      required: true,
+      description: 'SLAS client ID to open in the admin UI (defaults to configured slasClientId)',
+      required: false,
     }),
   };
 
@@ -30,27 +30,19 @@ export default class SlasClientOpen extends BaseCommand<typeof SlasClientOpen> {
   );
 
   static examples = [
+    '<%= config.bin %> <%= command.id %> --tenant-id abcd_123',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --short-code kv7kzm78',
   ];
 
   static flags = {
-    ...BaseCommand.baseFlags,
-    'tenant-id': Flags.string({
-      description: 'SLAS tenant ID (organization ID)',
-      env: 'SFCC_TENANT_ID',
-      required: true,
-    }),
-    'short-code': Flags.string({
-      description: 'SCAPI short code',
-      env: 'SFCC_SHORTCODE',
-      default: async () => process.env.SFCC_SHORT_CODE || undefined,
-    }),
+    ...ExistingSlasClientCommand.baseFlags,
   };
 
   async run(): Promise<{url: string}> {
-    const {'tenant-id': tenantId, 'short-code': shortCodeFlag} = this.flags;
-    const {clientId} = this.args;
+    const shortCodeFlag = this.flags['short-code'];
+    const tenantId = this.requireTenantId();
+    const clientId = this.requireSlasClientId(this.args.clientId);
 
     const shortCode = shortCodeFlag ?? this.resolvedConfig.values.shortCode;
 

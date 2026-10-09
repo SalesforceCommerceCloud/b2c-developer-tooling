@@ -1,7 +1,7 @@
 ---
 name: b2c-hooks
 description: >-
-  Register and implement B2C Commerce platform hooks -- scripts registered in a cartridge's hooks.json and invoked by HookMgr during OCAPI/SCAPI requests or system events. Applies ONLY to writing or debugging code registered in hooks.json and called by the HookMgr dispatcher. Key identifiers: hooks.json, HookMgr.callHook(), dw.system.Status returns, dw.ocapi.shop.* extension points (beforePOST/afterPOST/modifyResponse), dw.order.calculate, app.payment.processor.*. Covers hook script authoring, registration, Status OK/ERROR/rollback semantics, request.custom inter-hook data passing, and custom extension points. Do NOT trigger for these even if the query mentions hook or order: outbound webhook/notification endpoints on external Node.js/Express services (not hooks.json-registered); SFRA controller routes, middleware, or prepend/append chains; scheduled job step modules (execute/beforeStep/afterStep in steptypes.json, not hooks.json); Git or CI hooks (husky, pre-commit).
+  Register and implement B2C Commerce platform hooks declared in hooks.json and invoked by HookMgr during OCAPI/SCAPI requests or system events. Use for hooks.json, HookMgr.callHook(), dw.system.Status, dw.ocapi.shop.* before/after/modifyResponse hooks, dw.order.payment.authorize/authorizeCreditCard, dw.order.calculate, app.payment.processor.*, SCAPI order-payment authorization and placement, rollback semantics, and request.custom transport. Do not use for external Node.js webhooks, SFRA controller middleware or prepend/append chains, scheduled job steps in steptypes.json, or Git/CI hooks.
 ---
 
 # B2C Commerce Hooks
@@ -235,160 +235,122 @@ exports.afterPOST = function(basket) {
 };
 ```
 
-## Order `afterPOST`: Headless Order Placement
+## Headless Order Payment: Use the Order-PI Authorization Seam
 
-The `dw.ocapi.shop.order.afterPOST(order): Status` hook is the extension point for completing a **headless (SCAPI) checkout**. When the SCAPI Shopper Orders API (`POST /checkout/shopper-orders/.../orders`) creates an order, the order is left in **`CREATED`** status — it is *not* yet placed. This hook is where you authorize payment and decide the order's fate. Getting the operational rules wrong here produces opaque failures, so read this section carefully.
+Lead with the documented Shopper Orders lifecycle. Do not authorize payment in
+`dw.ocapi.shop.order.afterPOST` by default:
 
-### Operational Rules (read before writing the hook)
+```text
+POST /orders
+  -> order persists in CREATED
+PATCH /orders/{orderNo}/payment-instruments/{paymentInstrumentId}
+  -> platform updates the order PI
+  -> dw.order.payment.authorizeCreditCard or dw.order.payment.authorize
+  -> order.payment_instrument.afterPATCH(..., successfullyAuthorized)
+  -> default afterPATCH places the order when authorized coverage >= order total
+```
 
-1. **`afterPOST` already runs inside a platform transaction.** Do **NOT** wrap `OrderMgr.placeOrder()`, `OrderMgr.failOrder()`, or payment-instrument mutations in your own `Transaction.wrap()` / `Transaction.begin()`. A nested transaction causes the inner change to be **rolled back**, and the platform surfaces it to the API caller as an opaque:
+This separates order creation from the gateway call, preserves a durable order number for recovery,
+uses the same authorization extension points as the standard Commerce implementation and payment
+extensions, and lets the platform own final coverage-based placement.
 
-   ```
-   HTTP 400
-   An error occurred in ExtensionPoint dw.ocapi.shop.order.afterPOST
-   ```
+### Authorization Semantics
 
-   Call `placeOrder` / `failOrder` **directly**, with no transaction wrapper. (This is the opposite of a job- or controller-driven flow — see [b2c-ordering](../b2c-ordering/SKILL.md), where the same calls *are* wrapped because they run outside a hook transaction.)
+The order-PI `PATCH` chooses the payment hook as follows:
 
-2. **The hook owns the `CREATED → NEW` / `CREATED → FAILED` transition.** SCAPI leaves the order in `CREATED`. The hook must:
-   - Authorize the payment instruments, then
-   - `OrderMgr.placeOrder(order)` to advance **`CREATED → NEW`** on success, or
-   - `OrderMgr.failOrder(order, true|false)` to advance to **`FAILED`** on decline (`true` reopens the basket so the shopper can retry; `false` discards it).
+- Require the selected payment method to be active and applicable to the order. For
+  `CREDIT_CARD`, include `paymentCard` in the request.
+- Call `dw.order.payment.authorizeCreditCard` when the request includes `paymentCard` or the order PI
+  contains a credit-card type.
+- Otherwise call `dw.order.payment.authorize`.
+- For a saved payment method, pass the documented customer payment-instrument ID (called
+  `customer_payment_instrument_id` in the OCAPI documentation; generated SCAPI clients can expose a
+  camel-case property). Commerce resolves it from the order customer's payment instruments and
+  copies that PI for authorization; an unknown ID throws. Amount and card security code from the
+  request are still propagated to `authorizeCreditCard`.
+- Without a customer PI reference, the authorization input is populated from request data such as
+  `paymentCard` or bank-account information. Do not assume the `paymentDetails` argument is the same
+  object instance as the persistent PI already attached to `order`; resolve and validate the
+  persistent instrument when provider state was stored there.
+- Do not accept a client-supplied reusable payment token as an ownership substitute.
+- Set the payment transaction's processor, amount, type, and provider transaction identifiers in the
+  authorization implementation. Return `Status.OK` only for a successful authorization and
+  `Status.ERROR` otherwise.
 
-   If the hook does neither, the order is **stranded in `CREATED` indefinitely** — never placed and invisible to most order reporting. Never leave the hook without resolving the order.
+Register `dw.order.payment.authorizeCreditCard`, `dw.order.payment.authorize`, and the order-PI
+`beforePATCH`/`afterPATCH` hooks. In `beforePATCH`, validate the untrusted request against persistent
+order state before any gateway call: PI count, method, applicable processor, server-owned tender
+allocation, amount, ownership/token provenance, and integration state. A single-PI checkout can
+require the requested amount to equal the order total; validate each server-owned allocation for
+split tender.
 
-3. **Returning `Status.ERROR` is how the hook declines the request**, but the platform reports it to the caller as the same generic *"An error occurred in ExtensionPoint…"* message — the decline reason is **not** propagated. Therefore **log the meaningful detail yourself** (`Logger.error(...)`) before returning, or you will have no record of *why* an order failed.
-
-### Canonical `afterPOST` Example
-
-Authorizes every payment instrument via the SFRA `app.payment.processor.<id>` Authorize hook convention, fails the order on any decline, and places it (setting confirmation + export status) only when fully paid. Note the complete absence of `Transaction.wrap` — every mutation runs directly in the hook's ambient transaction.
+Use all four documented `afterPATCH` parameters. The platform reduces the payment authorization
+`Status` to `successfullyAuthorized`; preserve a richer processor outcome in `request.custom` only
+when the distinction is needed within this same request:
 
 ```javascript
-// hooks/order.js
-var HookMgr = require('dw/system/HookMgr');
-var OrderMgr = require('dw/order/OrderMgr');
-var Order = require('dw/order/Order');
-var PaymentMgr = require('dw/order/PaymentMgr');
 var Status = require('dw/system/Status');
-var Logger = require('dw/system/Logger');
 
-exports.afterPOST = function (order) {
-    var log = Logger.getLogger('checkout', 'orderAfterPOST');
-
-    // SCAPI delivers the order in CREATED status. Authorize each payment
-    // instrument by delegating to its processor's Authorize hook.
-    // getPaymentInstruments() returns a dw.util.Collection — call toArray()
-    // for index access (Collections are not directly indexable).
-    var instruments = order.getPaymentInstruments().toArray();
-    for (var i = 0; i < instruments.length; i++) {
-        var pi = instruments[i];
-        var method = PaymentMgr.getPaymentMethod(pi.getPaymentMethod());
-        var processor = method ? method.getPaymentProcessor() : null;
-
-        if (!processor) {
-            log.error('Order {0}: no payment processor for method {1}',
-                order.orderNo, pi.getPaymentMethod());
-            // No Transaction.wrap — we are already inside the hook transaction.
-            OrderMgr.failOrder(order, false);
-            return new Status(Status.ERROR, 'PAYMENT_ERROR', 'Missing payment processor');
+exports.afterPATCH = function (order, paymentInstrument, newPaymentInstrument, successfullyAuthorized) {
+    if (!successfullyAuthorized) {
+        if (request.custom.deterministicPaymentDecline === true) {
+            return new Status(Status.ERROR, 'PAYMENT_DECLINED');
         }
-
-        // SFRA convention: app.payment.processor.<processorID lowercased>, fn "Authorize"
-        var hookID = 'app.payment.processor.' + processor.getID().toLowerCase();
-        var result;
-        if (HookMgr.hasHook(hookID)) {
-            result = HookMgr.callHook(hookID, 'Authorize', order.orderNo, pi, processor);
-        } else {
-            result = HookMgr.callHook('app.payment.processor.default', 'Authorize',
-                order.orderNo, pi, processor);
-        }
-
-        if (!result || result.error) {
-            // Log the real reason here — the API caller only sees a generic 400.
-            log.error('Order {0}: authorization declined by {1}', order.orderNo, hookID);
-            OrderMgr.failOrder(order, true); // reopen basket so the shopper can retry
-            return new Status(Status.ERROR, 'PAYMENT_DECLINED', 'Payment authorization failed');
-        }
+        return; // Preserve indeterminate/review state for reconciliation.
     }
 
-    // Fully authorized — place the order (CREATED -> NEW) and mark it ready.
-    // placeOrder returns a dw.system.Status object; check .error (not === Status.ERROR).
-    var placeStatus = OrderMgr.placeOrder(order);
-    if (placeStatus.error) {
-        log.error('Order {0}: placeOrder failed', order.orderNo);
-        OrderMgr.failOrder(order, false);
-        return new Status(Status.ERROR, 'PLACE_FAILED', 'Order placement failed');
-    }
-
-    order.setConfirmationStatus(Order.CONFIRMATION_STATUS_CONFIRMED);
-    order.setExportStatus(Order.EXPORT_STATUS_READY);
-
-    // Return nothing — let the system implementation and any later hooks run.
+    var validation = validateAuthorizedInstrument(order, paymentInstrument);
+    if (validation) { return validation; }
+    // Return undefined so the default placement implementation still runs.
 };
 ```
 
-Register it like any order hook:
+`successfullyAuthorized === true` applies to the payment instrument just processed; it does not by
+itself prove that a multi-instrument order is fully covered. Let the default implementation place the
+still-`CREATED` order only when authorized payment coverage equals or exceeds the order total. The
+result changes the order to `NEW` and prepares it for export.
 
-```json
-{
-  "hooks": [
-    { "name": "dw.ocapi.shop.order.afterPOST", "script": "./hooks/order.js" }
-  ]
-}
-```
+### Storefront/BFF Outcome Handling
 
-> The `app.payment.processor.<id>` Authorize hooks are themselves custom hooks (one per payment processor, function `Authorize`). By SFRA convention they return a plain object whose `error` flag signals the outcome — `{ authorized: true }` on success, `{ error: true }` on decline — which is why the example treats a missing result or `result.error` as a failure. This mirrors the SFRA `handlePayments` checkout helper. For order-status semantics (`placeOrder`/`failOrder`, reopen-basket behavior, status transitions) see [b2c-ordering](../b2c-ordering/SKILL.md).
+Treat the returned order status as the authoritative placement result:
 
-## Order Hook Lifecycle and Rollback Semantics
+- `NEW`: placement succeeded.
+- `CREATED`: the order was not placed. This can be expected while authorizing multiple instruments,
+  or it can represent decline/review/unknown state.
+- Deterministic authorization failure: call Shopper Orders
+  `POST /orders/{orderNo}/actions/fail?reopenBasket=true` with reason code
+  `payment_auth_failure` so Commerce persists the failed order and restores the basket.
+- Indeterminate gateway result: do not automatically retry or reopen the basket. Preserve the
+  `CREATED` order for reconciliation to avoid duplicate authorization.
 
-The order POST hooks execute in a defined sequence with different transaction semantics at each phase:
+In this recommended flow, use the Shopper Orders fail action for the durable state transition rather
+than coordinating failure across the order POST hooks.
 
-```
-beforePOST(basket)          ← Validation; Status.ERROR rejects before order creation
-       ↓
-[Order created: CREATED]    ← Platform creates order from basket
-       ↓
-afterPOST(order)            ← Inside platform transaction; owns CREATED→NEW/FAILED
-       ↓
-[Transaction commits]
-       ↓
-modifyPOSTResponse(order, response)  ← After commit; response-shaping only
-```
+### Alternative: Authorize and Place in `order.afterPOST`
 
-### Rollback Semantics
+Use `dw.ocapi.shop.order.afterPOST` when a checkout deliberately needs one server-side phase that
+creates the order, authorizes every PI, and performs the Commerce-side place-or-fail transition in
+the order-creation transaction, or when a processor cannot participate in the order-PI authorization
+endpoints. This keeps the storefront orchestration simple. The external gateway side effect is not
+rolled back with the Commerce transaction, so balance that benefit against these tradeoffs:
 
-| Phase | Transaction context | `Status.ERROR` effect |
-|-------|--------------------|-----------------------|
-| `afterPOST` | Inside transaction | **Rolls back** — no order record survives |
-| `modifyPOSTResponse` | After commit | **No rollback** — order already persisted; only sets HTTP response to 400 |
+- The external payment call runs inside order creation's platform transaction and consumes the
+  order-POST timeout budget.
+- Returning `Status.ERROR` rolls back order creation, so the caller can lose both the order and the
+  original basket reference.
+- The implementation must manually authorize every PI, verify total coverage, call
+  `OrderMgr.placeOrder`/`failOrder`, and preserve any later platform or cartridge behavior.
+- Do not add `Transaction.wrap()` around `OrderMgr.placeOrder()` or `OrderMgr.failOrder()` inside
+  `afterPOST`; it already runs in a platform transaction.
 
-This means `afterPOST` gives you EITHER a persisted failed order (return `Status.OK` after `OrderMgr.failOrder`) OR an HTTP error (return `Status.ERROR`), **not both**.
-
-### Two-Hook Pattern: Persist Failed Order AND Return HTTP Error
-
-When you need a queryable FAILED order (for metrics/triage) AND an HTTP error to the storefront (so the UI shows a decline):
-
-1. **`afterPOST`**: Call `OrderMgr.failOrder(order, false)`, stash decline details on `request.custom`, return `Status.OK` so the transaction commits.
-2. **`modifyPOSTResponse`**: Read `request.custom`, return `new Status(Status.ERROR, code, message)` — this sets the HTTP response to 400 without rolling back the persisted order.
-
-See [Order Hook Lifecycle reference](references/ORDER-HOOK-LIFECYCLE.md) for the full code example and verified test results.
+If choosing this option, see
+[Order Hook Lifecycle](references/ORDER-HOOK-LIFECYCLE.md) for transaction semantics and the
+two-hook variant that persists a failed order while returning an HTTP error.
 
 ### `request.custom` for Inter-Hook Data Passing
 
-`request.custom` (`dw.system.Request`) is the idiomatic channel to pass data between hooks within the same request. It persists for the request's lifetime and works across all hook phases (before → after → modifyResponse).
-
-```javascript
-// In afterPOST
-request.custom.declineInfo = { code: 'PAYMENT_DECLINED', reason: 'Insufficient funds' };
-
-// In modifyPOSTResponse (same request, after commit)
-var info = request.custom.declineInfo;
-if (info) {
-    return new Status(Status.ERROR, info.code, info.reason);
-}
-```
-
-This technique applies generally — not just to orders. Any pair of hooks in the same request can communicate via `request.custom`.
+Use `request.custom` only as request-scoped transport between hook phases. Do not add persistent
+metadata solely to carry a richer outcome from `authorize*` to `afterPATCH` in the same request.
 
 ## System Hooks
 
@@ -423,6 +385,7 @@ exports.calculate = function(lineItemCtnr) {
 | Extension Point | Function | Purpose |
 |-----------------|----------|---------|
 | `dw.order.payment.authorize` | `authorize` | Payment authorization |
+| `dw.order.payment.authorizeCreditCard` | `authorizeCreditCard` | Credit-card authorization invoked by order-PI POST/PATCH |
 | `dw.order.payment.capture` | `capture` | Capture authorized payment |
 | `dw.order.payment.refund` | `refund` | Refund payment |
 | `dw.order.payment.validateAuthorization` | `validateAuthorization` | Check authorization validity |

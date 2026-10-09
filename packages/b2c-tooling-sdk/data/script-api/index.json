@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-08-03T18:24:52.134Z",
-  "platformDocVersion": "DWAPP 26.8",
+  "generatedAt": "2026-09-25T17:26:00.048Z",
+  "platformDocVersion": "DWAPP 26.10",
   "entries": [
     {
       "id": "dw.alert",
@@ -28,6 +28,41 @@
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.alert.Alerts.md",
       "headings": "Constructor Summary • Method Summary • Methods inherited from class Object • Method Details • addAlert(String, PersistentObject, String[]) • addAlert(String, String, String[]) • addAlert(String, String[]) • getAlerts(String...) • getAlertsForContextObject(PersistentObject, String...) • getAlertsForContextObject(String, String...) • removeAlert(String) • removeAlert(String, PersistentObject) • removeAlert(String, String) • revalidateAlert(String, Function, String[]) • revalidateAlert(String, PersistentObject, Function, String[]) • revalidateAlert(String, Object, String, Function, String[])",
       "preview": "- [dw.alert.Alerts](dw.alert.Alerts.md)"
+    },
+    {
+      "id": "dw.apps.checkout.hooks",
+      "title": "Package dw.apps.checkout.hooks",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.apps.checkout.hooks.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.apps.checkout.hooks.md",
+      "headings": "Classes"
+    },
+    {
+      "id": "dw.apps.checkout.hooks.FraudAppHooks",
+      "title": "Class FraudAppHooks",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.apps.checkout.hooks.FraudAppHooks.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.apps.checkout.hooks.FraudAppHooks.md",
+      "headings": "Constant Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • extensionPointAfterPayment • extensionPointBeforePayment • Method Details • afterPayment(Order) • beforePayment(Basket)",
+      "preview": "- [dw.apps.checkout.hooks.FraudAppHooks](dw.apps.checkout.hooks.FraudAppHooks.md)"
+    },
+    {
+      "id": "dw.apps.checkout.hooks.GiftCardHooks",
+      "title": "Class GiftCardHooks",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.apps.checkout.hooks.GiftCardHooks.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.apps.checkout.hooks.GiftCardHooks.md",
+      "headings": "Constant Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • extensionPointCapture • extensionPointGetBalance • extensionPointRefund • Method Details • capture(Order, OrderPaymentInstrument) • getBalance(PaymentInstrumentBalanceRequestWO) • refund(Order, OrderPaymentInstrument)",
+      "preview": "- [dw.apps.checkout.hooks.GiftCardHooks](dw.apps.checkout.hooks.GiftCardHooks.md)"
+    },
+    {
+      "id": "dw.apps.checkout.hooks.PaymentAppHooks",
+      "title": "Class PaymentAppHooks",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.apps.checkout.hooks.PaymentAppHooks.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.apps.checkout.hooks.PaymentAppHooks.md",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • extensionPointAfterCreateBasketPaymentInstrument • extensionPointAfterCreateOrderPaymentInstrument • extensionPointAfterUpdateBasketPaymentInstrument • extensionPointAfterUpdateOrderPaymentInstrument • extensionPointAuthorizePayment • extensionPointCancelAuthorization • extensionPointCapturePayment • extensionPointGetClaimedPaymentMethods • extensionPointOnAttemptOrderTransition • extensionPointRefundCapture • extensionPointReversePayment • Property Details • claimedPaymentMethods • Method Details • afterCreateBasketPaymentInstrument(Basket, OrderPaymentInstrument, BasketPaymentInstrumentRequestWO) • afterCreateOrderPaymentInstrument(Order, OrderPaymentInstrument, OrderPaymentInstrumentRequestWO) • afterUpdateBasketPaymentInstrument(Basket, OrderPaymentInstrument, BasketPaymentInstrumentRequestWO) • afterUpdateOrderPaymentInstrument(Order, OrderPaymentInstrument, OrderPaymentInstrumentRequestWO) • authorizePayment(Order, OrderPaymentInstrument) • cancelAuthorization(Order, OrderPaymentInstrument) • capturePayment(Order, OrderPaymentInstrument) • getClaimedPaymentMethods() • onAttemptOrderTransition(Order, OrderPaymentInstrument) • refundCapture(Order, OrderPaymentInstrument) • reversePayment(Order, OrderPaymentInstrument)",
+      "preview": "- [dw.apps.checkout.hooks.PaymentAppHooks](dw.apps.checkout.hooks.PaymentAppHooks.md)"
     },
     {
       "id": "dw.campaign",
@@ -546,7 +581,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.catalog.ProductSearchModel.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.catalog.ProductSearchModel.md",
-      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class SearchModel • Methods inherited from class Object • Constant Details • CATEGORYID_PARAMETER • INVENTORY_LIST_IDS_PARAMETER • MAXIMUM_INVENTORY_LIST_IDS • MAXIMUM_PRODUCT_IDS • MAXIMUM_STORE_INVENTORY_FILTER_VALUES • PRICE_MAX_PARAMETER • PRICE_MIN_PARAMETER • PRODUCTID_PARAMETER • PROMOTIONID_PARAMETER • PROMOTION_PRODUCT_TYPE_ALL • PROMOTION_PRODUCT_TYPE_BONUS • PROMOTION_PRODUCT_TYPE_DISCOUNTED • PROMOTION_PRODUCT_TYPE_PARAMETER • PROMOTION_PRODUCT_TYPE_QUALIFYING • REFINE_NAME_PARAMETER_PREFIX • REFINE_VALUE_PARAMETER_PREFIX • SORTING_OPTION_PARAMETER • SORTING_RULE_PARAMETER • SORT_BY_PARAMETER_PREFIX • SORT_DIRECTION_PARAMETER_PREFIX • Property Details • category • categoryID • categorySearch • deepestCommonCategory • effectiveSearchMode • effectiveSortingRule • inventoryIDs • orderableProductsOnly • pageMetaTags • personalizedSort • priceMax • priceMin • productID • productIDs • productSearchHits • products • promotionID • promotionIDs • promotionProductType • recursiveCategorySearch • refinedByCategory • refinedByPrice • refinedByPromotion • refinedCategorySearch • refinementCategory • refinements • searchMode • searchPhraseSuggestions • searchableImageUploadURL • sortingRule • storeInventoryFilter • suggestedSearchPhrase • suggestedSearchPhrases • trackingEmptySearchesEnabled • visualSearch • Constructor Details • ProductSearchModel() • Method Details • addHitTypeRefinement(String...) • excludeHitType(String...) • getCategory() • getCategoryID() • getDeepestCommonCategory() • getEffectiveSearchMode() • getEffectiveSortingRule() • getInventoryIDs() • getOrderableProductsOnly() • getPageMetaTag(String) • getPageMetaTags() • getPriceMax() • getPriceMin() • getProductID() • getProductIDs() • getProductSearchHit(Product) • getProductSearchHits() • getProducts() • getPromotionID() • getPromotionIDs() • getPromotionProductType() • getRefinementCategory() • getRefinements() • getSearchMode() • getSearchPhraseSuggestions() • getSearchableImageUploadURL() • getSortingRule() • getStoreInventoryFilter() • getSuggestedSearchPhrase() • getSuggestedSearchPhrases() • isCategorySearch() • isPersonalizedSort() • isRecursiveCategorySearch() • isRefinedByCategory() • isRefinedByPrice() • isRefinedByPriceRange(Number, Number) • isRefinedByPromotion() • isRefinedByPromotion(String) • isRefinedCategorySearch() • isTrackingEmptySearchesEnabled() • isVisualSearch() • search() • setCategoryID(String) • setEnableTrackingEmptySearches(Boolean) • setInventoryListIDs(List) • setOrderableProductsOnly(Boolean) • setPriceMax(Number) • setPriceMin(Number) • setProductID(String) • setProductIDs(List) • setPromotionID(String) • setPromotionIDs(List) • setPromotionProductType(String) • setRecursiveCategorySearch(Boolean) • setRefinementCategory(Category) • setSearchMode(String) • setSearchableImageID(String) • setSortingCondition(String, Number) • setSortingOption(SortingOption) • setSortingRule(SortingRule) • setStoreInventoryFilter(StoreInventoryFilter) • urlForCategory(URL, String) • urlForCategory(String, String) • urlForProduct(URL, String, String) • urlForProduct(String, String, String) • urlForRefine(URL, String, String) • urlForRefine(String, String, String) • urlRefineCategory(URL, String) • urlRefineCategory(String, String) • urlRefinePrice(URL, Number, Number) • urlRefinePrice(String, Number, Number) • urlRefinePromotion(URL, String) • urlRefinePromotion(String, String) • urlRelaxCategory(URL) • urlRelaxCategory(String) • urlRelaxPrice(URL) • urlRelaxPrice(String) • urlRelaxPromotion(URL) • urlRelaxPromotion(String) • urlSortingOption(URL, SortingOption) • urlSortingOption(String, SortingOption) • urlSortingRule(URL, SortingRule) • urlSortingRule(String, SortingRule)",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class SearchModel • Methods inherited from class Object • Constant Details • CATEGORYID_PARAMETER • INVENTORY_LIST_IDS_PARAMETER • MAXIMUM_INVENTORY_LIST_IDS • MAXIMUM_PRODUCT_IDS • MAXIMUM_STORE_INVENTORY_FILTER_VALUES • PRICE_MAX_PARAMETER • PRICE_MIN_PARAMETER • PRODUCTID_PARAMETER • PROMOTIONID_PARAMETER • PROMOTION_PRODUCT_TYPE_ALL • PROMOTION_PRODUCT_TYPE_BONUS • PROMOTION_PRODUCT_TYPE_DISCOUNTED • PROMOTION_PRODUCT_TYPE_PARAMETER • PROMOTION_PRODUCT_TYPE_QUALIFYING • REFINE_NAME_PARAMETER_PREFIX • REFINE_VALUE_PARAMETER_PREFIX • SORTING_OPTION_PARAMETER • SORTING_RULE_PARAMETER • SORT_BY_PARAMETER_PREFIX • SORT_DIRECTION_PARAMETER_PREFIX • Property Details • category • categoryID • categorySearch • deepestCommonCategory • effectiveSearchMode • effectiveSortingRule • inventoryIDs • orderableProductsOnly • pageMetaTags • personalizedSort • priceMax • priceMin • productID • productIDs • productSearchHits • products • promotionID • promotionIDs • promotionProductType • recursiveCategorySearch • refinedByCategory • refinedByPrice • refinedByPromotion • refinedCategorySearch • refinementCategory • refinements • searchMode • searchPhraseSuggestions • searchableImageUploadURL • sortingRule • storeInventoryFilter • suggestedSearchPhrase • suggestedSearchPhrases • trackingEmptySearchesEnabled • visualSearch • Constructor Details • ProductSearchModel() • Method Details • addHitTypeRefinement(String...) • excludeHitType(String...) • getCategory() • getCategoryID() • getDeepestCommonCategory() • getEffectiveSearchMode() • getEffectiveSortingRule() • getInventoryIDs() • getOrderableProductsOnly() • getPageMetaTag(String) • getPageMetaTags() • getPriceMax() • getPriceMin() • getProductID() • getProductIDs() • getProductSearchHit(Product) • getProductSearchHits() • getProducts() • getPromotionID() • getPromotionIDs() • getPromotionProductType() • getRefinementCategory() • getRefinements() • getSearchMode() • getSearchPhraseSuggestions() • getSearchableImageUploadURL() • getSortingRule() • getStoreInventoryFilter() • getSuggestedSearchPhrase() • getSuggestedSearchPhrases() • isCategorySearch() • isPersonalizedSort() • isRecursiveCategorySearch() • isRefinedByCategory() • isRefinedByPrice() • isRefinedByPriceRange(Number, Number) • isRefinedByPromotion() • isRefinedByPromotion(String) • isRefinedCategorySearch() • isTrackingEmptySearchesEnabled() • isVisualSearch() • search() • setCategoryID(String) • setEnableTrackingEmptySearches(Boolean) • setInventoryListIDs(List) • setOrderableProductsOnly(Boolean) • setPageSize(Number) • setPriceMax(Number) • setPriceMin(Number) • setProductID(String) • setProductIDs(List) • setPromotionID(String) • setPromotionIDs(List) • setPromotionProductType(String) • setRecursiveCategorySearch(Boolean) • setRefinementCategory(Category) • setSearchMode(String) • setSearchableImageID(String) • setSortingCondition(String, Number) • setSortingOption(SortingOption) • setSortingRule(SortingRule) • setStart(Number) • setStoreInventoryFilter(StoreInventoryFilter) • urlForCategory(URL, String) • urlForCategory(String, String) • urlForProduct(URL, String, String) • urlForProduct(String, String, String) • urlForRefine(URL, String, String) • urlForRefine(String, String, String) • urlRefineCategory(URL, String) • urlRefineCategory(String, String) • urlRefinePrice(URL, Number, Number) • urlRefinePrice(String, Number, Number) • urlRefinePromotion(URL, String) • urlRefinePromotion(String, String) • urlRelaxCategory(URL) • urlRelaxCategory(String) • urlRelaxPrice(URL) • urlRelaxPrice(String) • urlRelaxPromotion(URL) • urlRelaxPromotion(String) • urlSortingOption(URL, SortingOption) • urlSortingOption(String, SortingOption) • urlSortingRule(URL, SortingRule) • urlSortingRule(String, SortingRule)",
       "preview": "- [dw.catalog.SearchModel](dw.catalog.SearchModel.md)"
     },
     {
@@ -1107,7 +1142,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.customer.consent.ShopperConsentErrorCodes.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.customer.consent.ShopperConsentErrorCodes.md",
-      "headings": "Constant Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • CUSTOMER_NOT_AUTHENTICATED • FEATURE_DISABLED • INTERNAL_ERROR • RETRIEVAL_ERROR • UPDATE_ERROR",
+      "headings": "Constant Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • CONTACT_POINT_VALUE_TOO_LONG • CUSTOMER_NOT_AUTHENTICATED • FEATURE_DISABLED • INTERNAL_ERROR • INVALID_CHANNEL • INVALID_CONSENT_STATUS • INVALID_CONTACT_POINT_VALUE • RETRIEVAL_ERROR • SUBSCRIPTION_ID_TOO_LONG • UPDATE_ERROR",
       "preview": "- [dw.customer.consent.ShopperConsentErrorCodes](dw.customer.consent.ShopperConsentErrorCodes.md)"
     },
     {
@@ -1415,6 +1450,41 @@
       "preview": "- [dw.customer.Wallet](dw.customer.Wallet.md)"
     },
     {
+      "id": "dw.event",
+      "title": "Package dw.event",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.event.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.event.md",
+      "headings": "Classes"
+    },
+    {
+      "id": "dw.event.EventManager",
+      "title": "Class EventManager",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.event.EventManager.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.event.EventManager.md",
+      "headings": "Constructor Summary • Method Summary • Methods inherited from class Object • Constructor Details • EventManager() • Method Details • isEnabled(String) • sendEvent(String, String) • sendEventOnCommit(String, String)",
+      "preview": "- [dw.event.EventManager](dw.event.EventManager.md)"
+    },
+    {
+      "id": "dw.event.EventQueueFullException",
+      "title": "Class EventQueueFullException",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.event.EventQueueFullException.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.event.EventQueueFullException.md",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class Error • Methods inherited from class Object • Property Details • eventID • Method Details • getEventID()",
+      "preview": "- [dw.event.EventQueueFullException](dw.event.EventQueueFullException.md)"
+    },
+    {
+      "id": "dw.event.EventRateLimitExceededException",
+      "title": "Class EventRateLimitExceededException",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.event.EventRateLimitExceededException.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.event.EventRateLimitExceededException.md",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class Error • Methods inherited from class Object • Property Details • eventID • Method Details • getEventID()",
+      "preview": "- [dw.event.EventRateLimitExceededException](dw.event.EventRateLimitExceededException.md)"
+    },
+    {
       "id": "dw.experience",
       "title": "Package dw.experience",
       "category": "script-api",
@@ -1677,6 +1747,24 @@
       "headings": "Classes"
     },
     {
+      "id": "dw.extensions.payments.GiftCardPaymentDetails",
+      "title": "Class GiftCardPaymentDetails",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.GiftCardPaymentDetails.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.GiftCardPaymentDetails.md",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • last4 • Constructor Details • GiftCardPaymentDetails() • Method Details • getLast4() • setLast4(String)",
+      "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
+    },
+    {
+      "id": "dw.extensions.payments.GiftCardTransactionDetails",
+      "title": "Class GiftCardTransactionDetails",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.GiftCardTransactionDetails.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.GiftCardTransactionDetails.md",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • REASON_CODE_DECLINED • REASON_CODE_INSUFFICIENT_FUNDS • Property Details • approvalCode • processorResponseText • reasonCode • Constructor Details • GiftCardTransactionDetails() • Method Details • getApprovalCode() • getProcessorResponseText() • getReasonCode() • setApprovalCode(String) • setProcessorResponseText(String) • setReasonCode(String)",
+      "preview": "- [dw.extensions.payments.SalesforceTransactionDetails](dw.extensions.payments.SalesforceTransactionDetails.md)"
+    },
+    {
       "id": "dw.extensions.payments.SalesforceAdyenPaymentIntent",
       "title": "Class SalesforceAdyenPaymentIntent",
       "category": "script-api",
@@ -1700,7 +1788,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceBancontactPaymentDetails.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceBancontactPaymentDetails.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • bankName • last4 • Method Details • getBankName() • getLast4()",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • bankName • last4 • Constructor Details • SalesforceBancontactPaymentDetails() • Method Details • getBankName() • getLast4() • setBankName(String) • setLast4(String)",
       "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
     },
     {
@@ -1709,8 +1797,17 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceCardPaymentDetails.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceCardPaymentDetails.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • brand • last4 • walletType • Method Details • getBrand() • getLast4() • getWalletType()",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Constant Details • BRAND_AMEX • BRAND_DINERS • BRAND_DISCOVER • BRAND_JCB • BRAND_MASTERCARD • BRAND_UNIONPAY • BRAND_UNKNOWN • BRAND_VISA • FUNDING_TYPE_CREDIT • FUNDING_TYPE_DEBIT • FUNDING_TYPE_PREPAID • TOKEN_TYPE_GATEWAY • TOKEN_TYPE_NETWORK • WALLET_TYPE_APPLE_PAY • WALLET_TYPE_GOOGLE_PAY • Property Details • bin • brand • dpanLast4 • expirationMonth • expirationYear • fundingType • issuingCountry • last4 • token • tokenType • walletType • Constructor Details • SalesforceCardPaymentDetails() • Method Details • getBin() • getBrand() • getDpanLast4() • getExpirationMonth() • getExpirationYear() • getFundingType() • getIssuingCountry() • getLast4() • getToken() • getTokenType() • getWalletType() • setBin(String) • setBrand(String) • setDpanLast4(String) • setExpirationMonth(Number) • setExpirationYear(Number) • setFundingType(String) • setIssuingCountry(String) • setLast4(String) • setToken(String) • setTokenType(String) • setWalletType(String)",
       "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
+    },
+    {
+      "id": "dw.extensions.payments.SalesforceCardTransactionDetails",
+      "title": "Class SalesforceCardTransactionDetails",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceCardTransactionDetails.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceCardTransactionDetails.md",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • AVS_RESULT_MATCH • AVS_RESULT_NOT_SUPPORTED • AVS_RESULT_NO_MATCH • AVS_RESULT_PARTIAL_MATCH_ADDRESS • AVS_RESULT_PARTIAL_MATCH_ZIP • AVS_RESULT_RETRY • AVS_RESULT_UNAVAILABLE • CVC_RESULT_MATCH • CVC_RESULT_NOT_PROCESSED • CVC_RESULT_NO_MATCH • CVC_RESULT_UNAVAILABLE • THREE_DS_RESULT_ATTEMPTED • THREE_DS_RESULT_AUTHENTICATED • THREE_DS_RESULT_FAILED • THREE_DS_RESULT_REJECTED • THREE_DS_RESULT_UNAVAILABLE • THREE_DS_VERSION_V1 • THREE_DS_VERSION_V2 • Property Details • avsResult • cvcResult • electronicCommerceIndicator • threeDSResult • threeDSTransactionId • threeDSVersion • Constructor Details • SalesforceCardTransactionDetails() • Method Details • getAvsResult() • getCvcResult() • getElectronicCommerceIndicator() • getThreeDSResult() • getThreeDSTransactionId() • getThreeDSVersion() • setAvsResult(String) • setCvcResult(String) • setElectronicCommerceIndicator(String) • setThreeDSResult(String) • setThreeDSTransactionId(String) • setThreeDSVersion(String)",
+      "preview": "- [dw.extensions.payments.SalesforceTransactionDetails](dw.extensions.payments.SalesforceTransactionDetails.md)"
     },
     {
       "id": "dw.extensions.payments.SalesforceEpsPaymentDetails",
@@ -1718,7 +1815,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceEpsPaymentDetails.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceEpsPaymentDetails.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • bank • Method Details • getBank()",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • bank • Constructor Details • SalesforceEpsPaymentDetails() • Method Details • getBank() • setBank(String)",
       "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
     },
     {
@@ -1727,7 +1824,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceIdealPaymentDetails.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceIdealPaymentDetails.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • bank • Method Details • getBank()",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • bank • Constructor Details • SalesforceIdealPaymentDetails() • Method Details • getBank() • setBank(String)",
       "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
     },
     {
@@ -1736,7 +1833,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceKlarnaPaymentDetails.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceKlarnaPaymentDetails.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • paymentMethodCategory • Method Details • getPaymentMethodCategory()",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • paymentMethodCategory • Constructor Details • SalesforceKlarnaPaymentDetails() • Method Details • getPaymentMethodCategory() • setPaymentMethodCategory(String)",
       "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
     },
     {
@@ -1745,7 +1842,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforcePaymentDetails.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforcePaymentDetails.md",
-      "headings": "All Known Subclasses • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Property Details • type • Method Details • getType()",
+      "headings": "All Known Subclasses • Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • TYPE_AFTERPAY_CLEARPAY • TYPE_AMAZON_PAY • TYPE_BANCONTACT • TYPE_CARD • TYPE_EPS • TYPE_GIFT_CARD • TYPE_IDEAL • TYPE_KLARNA • TYPE_PAYPAL • TYPE_SEPA_DEBIT • TYPE_TWINT • TYPE_VENMO • Property Details • type • Constructor Details • SalesforcePaymentDetails(String) • Method Details • getType()",
       "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
     },
     {
@@ -1862,7 +1959,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforcePayPalPaymentDetails.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforcePayPalPaymentDetails.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • captureID • payerEmailAddress • Method Details • getCaptureID() • getPayerEmailAddress()",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • captureID • payerEmailAddress • Constructor Details • SalesforcePayPalPaymentDetails() • Method Details • getCaptureID() • getPayerEmailAddress() • setCaptureID(String) • setPayerEmailAddress(String)",
       "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
     },
     {
@@ -1871,8 +1968,17 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceSepaDebitPaymentDetails.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceSepaDebitPaymentDetails.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • last4 • Method Details • getLast4()",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • accountHolderName • last4 • Constructor Details • SalesforceSepaDebitPaymentDetails() • Method Details • getAccountHolderName() • getLast4() • setAccountHolderName(String) • setLast4(String)",
       "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
+    },
+    {
+      "id": "dw.extensions.payments.SalesforceTransactionDetails",
+      "title": "Class SalesforceTransactionDetails",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceTransactionDetails.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceTransactionDetails.md",
+      "headings": "All Known Subclasses • Constructor Summary • Method Summary • Methods inherited from class Object • Constructor Details • SalesforceTransactionDetails()",
+      "preview": "- [dw.extensions.payments.SalesforceTransactionDetails](dw.extensions.payments.SalesforceTransactionDetails.md)"
     },
     {
       "id": "dw.extensions.payments.SalesforceVenmoPaymentDetails",
@@ -1880,7 +1986,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceVenmoPaymentDetails.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.extensions.payments.SalesforceVenmoPaymentDetails.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • captureID • payerEmailAddress • Method Details • getCaptureID() • getPayerEmailAddress()",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class SalesforcePaymentDetails • Methods inherited from class Object • Property Details • captureID • payerEmailAddress • Constructor Details • SalesforceVenmoPaymentDetails() • Method Details • getCaptureID() • getPayerEmailAddress() • setCaptureID(String) • setPayerEmailAddress(String)",
       "preview": "- [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)"
     },
     {
@@ -2575,7 +2681,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.hooks.ShippingHooks.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.hooks.ShippingHooks.md",
-      "headings": "Constant Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • SHIPPING_DOMAIN • extensionPointCalculate • extensionPointQuote • Method Details • calculate(LineItemCtnr) • quote(Shipment, ShippingMethodResultWO)",
+      "headings": "Constant Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • SHIPPING_DOMAIN • extensionPointCalculate • extensionPointEstimate • extensionPointQuote • Method Details • calculate(LineItemCtnr) • estimate(DeliveryEstimatesResultWO) • quote(Shipment, ShippingMethodResultWO)",
       "preview": "- [dw.order.hooks.ShippingHooks](dw.order.hooks.ShippingHooks.md)"
     },
     {
@@ -2638,8 +2744,8 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.LineItemTax.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.LineItemTax.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Property Details • taxId • taxRate • taxValue • Constructor Details • LineItemTax(String, Number) • LineItemTax(String, Number, Money) • Method Details • getTaxId() • getTaxRate() • getTaxValue()",
-      "preview": "- [dw.order.LineItemTax](dw.order.LineItemTax.md)"
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class Extensible • Methods inherited from class Object • Property Details • taxId • taxRate • taxValue • Constructor Details • LineItemTax(String, Number) • LineItemTax(String, Number, Money) • Method Details • getTaxId() • getTaxRate() • getTaxValue()",
+      "preview": "- [dw.object.Extensible](dw.object.Extensible.md)"
     },
     {
       "id": "dw.order.Order",
@@ -2674,7 +2780,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.OrderMgr.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.OrderMgr.md",
-      "headings": "Constructor Summary • Method Summary • Methods inherited from class Object • Method Details • cancelOrder(Order) • createOrder(Basket) • createOrder(Basket, String) • createOrderNo() • createOrderSequenceNo() • createShippingOrders(Order) • describeOrder() • failOrder(Order) • failOrder(Order, Boolean) • getOrder(String) • getOrder(String, String) • placeOrder(Order) • processOrders(Function, String, Object...) • queryOrder(String, Object...) • queryOrders(Map, String) • queryOrders(String, String, Object...) • searchOrder(String, Object...) • searchOrders(Map, String) • searchOrders(String, String, Object...) • undoCancelOrder(Order) • undoFailOrder(Order)",
+      "headings": "Constructor Summary • Method Summary • Methods inherited from class Object • Method Details • attemptOrderTransition(Order) • cancelOrder(Order) • createOrder(Basket) • createOrder(Basket, String) • createOrderNo() • createOrderSequenceNo() • createShippingOrders(Order) • describeOrder() • failOrder(Order) • failOrder(Order, Boolean) • getOrder(String) • getOrder(String, String) • placeOrder(Order) • processOrders(Function, String, Object...) • queryOrder(String, Object...) • queryOrders(Map, String) • queryOrders(String, String, Object...) • searchOrder(String, Object...) • searchOrders(Map, String) • searchOrders(String, String, Object...) • undoCancelOrder(Order) • undoFailOrder(Order)",
       "preview": "- [dw.order.OrderMgr](dw.order.OrderMgr.md)"
     },
     {
@@ -2683,7 +2789,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.OrderPaymentInstrument.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.OrderPaymentInstrument.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class PaymentInstrument • Methods inherited from class ExtensibleObject • Methods inherited from class PersistentObject • Methods inherited from class Object • Property Details • bankAccountDriversLicense • bankAccountNumber • capturedAmount • creditCardNumber • paymentTransaction • refundedAmount • Method Details • getBankAccountDriversLicense() • getBankAccountNumber() • getCapturedAmount() • getCreditCardNumber() • getPaymentTransaction() • getRefundedAmount()",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class PaymentInstrument • Methods inherited from class ExtensibleObject • Methods inherited from class PersistentObject • Methods inherited from class Object • Property Details • bankAccountDriversLicense • bankAccountNumber • capturedAmount • creditCardNumber • paymentDetails • paymentTransaction • refundedAmount • Method Details • getBankAccountDriversLicense() • getBankAccountNumber() • getCapturedAmount() • getCreditCardNumber() • getPaymentDetails() • getPaymentTransaction() • getRefundedAmount() • setPaymentDetails(SalesforcePaymentDetails)",
       "preview": "- [dw.object.PersistentObject](dw.object.PersistentObject.md)"
     },
     {
@@ -2694,6 +2800,15 @@
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.OrderProcessStatusCodes.md",
       "headings": "Constant Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • COUPON_INVALID • INVENTORY_RESERVATION_FAILED • ORDER_ALREADY_CANCELLED • ORDER_ALREADY_EXPORTED • ORDER_ALREADY_FAILED • ORDER_ALREADY_REPLACED • ORDER_CONTAINS_GC • ORDER_NOT_CANCELLED • ORDER_NOT_FAILED • ORDER_NOT_PLACED • Constructor Details • OrderProcessStatusCodes()",
       "preview": "- [dw.order.OrderProcessStatusCodes](dw.order.OrderProcessStatusCodes.md)"
+    },
+    {
+      "id": "dw.order.OrderTransitionResult",
+      "title": "Class OrderTransitionResult",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.OrderTransitionResult.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.OrderTransitionResult.md",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • REASON_ORDER_NOT_CREATED • STEP_FRAUD • STEP_GIFT_CARD • STEP_PAYMENT • Property Details • basket • completed • error • executed • final • reason • remaining • step • Method Details • getBasket() • getCompleted() • getExecuted() • getReason() • getRemaining() • getStep() • isError() • isFinal()",
+      "preview": "- [dw.order.OrderTransitionResult](dw.order.OrderTransitionResult.md)"
     },
     {
       "id": "dw.order.PaymentCard",
@@ -2755,7 +2870,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.PaymentTransaction.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.PaymentTransaction.md",
-      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class ExtensibleObject • Methods inherited from class PersistentObject • Methods inherited from class Object • Constant Details • TYPE_AUTH • TYPE_AUTH_REVERSAL • TYPE_CAPTURE • TYPE_CREDIT • Property Details • accountID • accountType • amount • paymentInstrument • paymentProcessor • transactionID • type • Method Details • getAccountID() • getAccountType() • getAmount() • getPaymentInstrument() • getPaymentProcessor() • getTransactionID() • getType() • setAccountID(String) • setAccountType(String) • setAmount(Money) • setPaymentProcessor(PaymentProcessor) • setTransactionID(String) • setType(String)",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class ExtensibleObject • Methods inherited from class PersistentObject • Methods inherited from class Object • Constant Details • POST_AUTH_FRAUD_DECISION_GUARANTEED • POST_AUTH_FRAUD_DECISION_NOT_GUARANTEED • POST_AUTH_FRAUD_DECISION_NOT_REVIEWED • POST_AUTH_FRAUD_DECISION_PENDING • PRE_AUTH_FRAUD_DECISION_APPROVED • PRE_AUTH_FRAUD_DECISION_CHALLENGE • PRE_AUTH_FRAUD_DECISION_DECLINED • PRE_AUTH_FRAUD_DECISION_NOT_REVIEWED • STATUS_AUTHORIZATIONVOIDED • STATUS_AUTHORIZED • STATUS_CAPTURED • STATUS_CAPTUREVOIDED • STATUS_CREATED • STATUS_MARKED • STATUS_PARTCAPTURED • STATUS_PENDING • STATUS_SETTLED • TYPE_AUTH • TYPE_AUTH_REVERSAL • TYPE_CAPTURE • TYPE_CREDIT • Property Details • accountID • accountType • amount • paymentInstrument • paymentProcessor • postAuthFraudDecision • preAuthFraudDecision • status • transactionDetails • transactionID • type • Method Details • getAccountID() • getAccountType() • getAmount() • getPaymentInstrument() • getPaymentProcessor() • getPostAuthFraudDecision() • getPreAuthFraudDecision() • getStatus() • getTransactionDetails() • getTransactionID() • getType() • setAccountID(String) • setAccountType(String) • setAmount(Money) • setPaymentProcessor(PaymentProcessor) • setPostAuthFraudDecision(String) • setPreAuthFraudDecision(String) • setStatus(Number) • setTransactionDetails(SalesforceTransactionDetails) • setTransactionID(String) • setType(String)",
       "preview": "- [dw.object.PersistentObject](dw.object.PersistentObject.md)"
     },
     {
@@ -3533,7 +3648,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.system.Session.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.system.Session.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Property Details • clickStream • currency • custom • customer • customerAuthenticated • customerExternallyAuthenticated • forms • lastReceivedSourceCodeInfo • privacy • sessionID • sourceCodeInfo • trackingAllowed • userAuthenticated • userName • Method Details • generateGuestSessionSignature() • generateRegisteredSessionSignature() • getClickStream() • getCurrency() • getCustom() • getCustomer() • getForms() • getLastReceivedSourceCodeInfo() • getPrivacy() • getSessionID() • getSourceCodeInfo() • getUserName() • isCustomerAuthenticated() • isCustomerExternallyAuthenticated() • isTrackingAllowed() • isUserAuthenticated() • setCurrency(Currency) • setSourceCode(String) • setTrackingAllowed(Boolean)",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Property Details • clickStream • currency • custom • customer • customerAuthenticated • customerExternallyAuthenticated • forms • lastReceivedSourceCodeInfo • privacy • sessionID • sourceCodeInfo • trackingAllowed • userAuthenticated • userName • Method Details • agentSessionInit(String) • generateGuestSessionSignature() • generateRegisteredSessionSignature() • getClickStream() • getCurrency() • getCustom() • getCustomer() • getForms() • getLastReceivedSourceCodeInfo() • getPrivacy() • getSessionID() • getSourceCodeInfo() • getUserName() • isCustomerAuthenticated() • isCustomerExternallyAuthenticated() • isTrackingAllowed() • isUserAuthenticated() • setCurrency(Currency) • setSourceCode(String) • setTrackingAllowed(Boolean)",
       "preview": "- [dw.system.Session](dw.system.Session.md)"
     },
     {
@@ -3578,7 +3693,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.system.System.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.system.System.md",
-      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • DEVELOPMENT_SYSTEM • PRODUCTION_SYSTEM • STAGING_SYSTEM • Property Details • calendar • compatibilityMode • instanceHostname • instanceTimeZone • instanceType • preferences • Method Details • getCalendar() • getCompatibilityMode() • getInstanceHostname() • getInstanceTimeZone() • getInstanceType() • getPreferences()",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • DEVELOPMENT_SYSTEM • PRODUCTION_SYSTEM • STAGING_SYSTEM • Property Details • calendar • compatibilityMode • instanceHostname • instanceTimeZone • instanceType • preferences • salesforceMyDomain • Method Details • getCalendar() • getCompatibilityMode() • getInstanceHostname() • getInstanceTimeZone() • getInstanceType() • getPreferences() • getSalesforceMyDomain()",
       "preview": "- [dw.system.System](dw.system.System.md)"
     },
     {
@@ -4262,7 +4377,7 @@
     },
     {
       "id": "index",
-      "title": "B2C Commerce Script API 26.8",
+      "title": "B2C Commerce Script API 26.10",
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/index.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/index.md",

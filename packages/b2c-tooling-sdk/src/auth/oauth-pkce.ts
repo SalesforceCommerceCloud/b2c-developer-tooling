@@ -152,6 +152,7 @@ async function openBrowserDefault(url: string): Promise<void> {
  * Tokens may include a refresh_token (depends on client registration in Account Manager).
  */
 export class PkceOAuthStrategy implements AuthStrategy {
+  readonly authMethod = 'user' as const;
   private accountManagerHost: string;
   private localPort: number;
   private redirectUri: string;
@@ -649,7 +650,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
         }
 
         res.writeHead(200, {'Content-Type': 'text/plain'});
-        res.end('Authentication successful! You may close this browser window and return to your terminal.');
+        res.end('Authorization received. Completing authentication in the application...');
         settleAfterClose(() => resolve(code));
       });
 

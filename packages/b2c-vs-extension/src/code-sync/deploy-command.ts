@@ -3,16 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {
-  uploadCartridges,
-  getActiveCodeVersion,
-  activateCodeVersion,
-  reloadCodeVersion,
-} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {reloadCodeVersion, uploadCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {findCartridgesSafe} from '../workspace-discovery.js';
 import {getPostDeployActions} from './code-version-actions.js';
+import {createScriptsBackendFromExtension} from './scripts-backend.js';
 
 export function createDeployCommand(
   configProvider: B2CExtensionConfig,
@@ -25,20 +21,22 @@ export function createDeployCommand(
       return;
     }
 
-    // Resolve code version
+    // Resolve code version through the configured Scripts backend (SCAPI or OCAPI)
+    const scriptsBackend = createScriptsBackendFromExtension(instance);
     let codeVersion = instance.config.codeVersion;
+    // Discover the active version through the configured backend (SCAPI or
+    // OCAPI). Captured unconditionally so the post-deploy action list can tell
+    // whether the target is already active.
     let activeCodeVersionId: string | undefined;
     try {
-      const active = await getActiveCodeVersion(instance);
+      const active = await scriptsBackend.getActiveCodeVersion();
       activeCodeVersionId = active?.id;
-      if (!codeVersion) {
-        if (active?.id) {
-          codeVersion = active.id;
-          instance.config.codeVersion = codeVersion;
-        }
+      if (!codeVersion && active?.id) {
+        codeVersion = active.id;
+        instance.config.codeVersion = codeVersion;
       }
     } catch {
-      // The configured version can still be deployed when OCAPI discovery is unavailable.
+      // The configured version can still be deployed when discovery is unavailable.
     }
     if (!codeVersion) {
       vscode.window.showErrorMessage(
@@ -98,7 +96,7 @@ export function createDeployCommand(
 
           if (actionPick.action === 'activate') {
             progress.report({message: 'Activating code version...'});
-            const activation = await activateCodeVersion(instance, codeVersion);
+            const activation = await scriptsBackend.activateCodeVersion(codeVersion);
             outputChannel.appendLine(
               activation.alreadyActive
                 ? `Code version "${codeVersion}" is already active; activation skipped`
@@ -106,7 +104,7 @@ export function createDeployCommand(
             );
           } else if (actionPick.action === 'reload') {
             progress.report({message: 'Reloading code version...'});
-            await reloadCodeVersion(instance, codeVersion);
+            await reloadCodeVersion(scriptsBackend, codeVersion);
             outputChannel.appendLine(`Code version "${codeVersion}" reloaded`);
           }
 
@@ -161,7 +159,7 @@ export function createDeployOneCommand(
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await getActiveCodeVersion(instance);
+        const active = await createScriptsBackendFromExtension(instance).getActiveCodeVersion();
         if (active?.id) {
           codeVersion = active.id;
           instance.config.codeVersion = codeVersion;

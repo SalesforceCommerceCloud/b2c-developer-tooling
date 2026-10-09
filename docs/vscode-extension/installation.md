@@ -1,5 +1,5 @@
 ---
-description: Install the official Salesforce B2C Commerce VS Code Extension from the Visual Studio Marketplace, the Open VSX Registry, or a .vsix release artifact.
+description: Install the official Salesforce B2C Commerce IDE Extension from the Visual Studio Marketplace, the Open VSX Registry, or a .vsix release artifact.
 ---
 
 <script setup>
@@ -67,7 +67,7 @@ We couldn't find a published build right now. Head over to the [releases page]({
 
 ### Install it
 
-Once you've got the file, install it from the command line or from the Extensions view in VS Code.
+Once you've got the file, install it from the command line or from your editor's Extensions view.
 
 ::: code-group
 

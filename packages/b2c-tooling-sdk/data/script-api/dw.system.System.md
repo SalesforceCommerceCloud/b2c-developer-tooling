@@ -27,6 +27,7 @@ Represents the Commerce Cloud Digital server instance. An application server ins
 | [instanceTimeZone](#instancetimezone): [String](TopLevel.String.md) `(read-only)` | Returns the instance time zone. |
 | [instanceType](#instancetype): [Number](TopLevel.Number.md) `(read-only)` | Returns the type of the instance. |
 | [preferences](#preferences): [OrganizationPreferences](dw.system.OrganizationPreferences.md) `(read-only)` | This method returns a container of all global preferences of this  organization (instance). |
+| [salesforceMyDomain](#salesforcemydomain): [URL](dw.web.URL.md) `(read-only)` | Returns the Salesforce My Domain URL configured for the Salesforce organization connected to  this B2C Commerce instance, for example `https://mycompany.my.salesforce.com`. |
 
 ## Constructor Summary
 
@@ -41,6 +42,7 @@ This class does not have a constructor, so you cannot create it directly.
 | static [getInstanceTimeZone](dw.system.System.md#getinstancetimezone)() | Returns the instance time zone. |
 | static [getInstanceType](dw.system.System.md#getinstancetype)() | Returns the type of the instance. |
 | static [getPreferences](dw.system.System.md#getpreferences)() | This method returns a container of all global preferences of this  organization (instance). |
+| static [getSalesforceMyDomain](dw.system.System.md#getsalesforcemydomain)() | Returns the Salesforce My Domain URL configured for the Salesforce organization connected to  this B2C Commerce instance, for example `https://mycompany.my.salesforce.com`. |
 
 ### Methods inherited from class Object
 
@@ -134,6 +136,17 @@ This class does not have a constructor, so you cannot create it directly.
 
 ---
 
+### salesforceMyDomain
+- salesforceMyDomain: [URL](dw.web.URL.md) `(read-only)`
+  - : Returns the Salesforce My Domain URL configured for the Salesforce organization connected to
+      this B2C Commerce instance, for example `https://mycompany.my.salesforce.com`. The
+      returned value is the complete URL, not only the My Domain name or hostname. Its host reflects
+      the connected Salesforce organization's environment.
+
+
+
+---
+
 ## Method Details
 
 ### getCalendar()
@@ -216,6 +229,22 @@ This class does not have a constructor, so you cannot create it directly.
     **Returns:**
     - a preferences object containing all global system and custom
               preferences of this instance
+
+
+
+---
+
+### getSalesforceMyDomain()
+- static getSalesforceMyDomain(): [URL](dw.web.URL.md)
+  - : Returns the Salesforce My Domain URL configured for the Salesforce organization connected to
+      this B2C Commerce instance, for example `https://mycompany.my.salesforce.com`. The
+      returned value is the complete URL, not only the My Domain name or hostname. Its host reflects
+      the connected Salesforce organization's environment.
+
+
+    **Returns:**
+    - the Salesforce My Domain URL, or `null` if no Salesforce organization is
+              connected or its URL is unavailable
 
 
 

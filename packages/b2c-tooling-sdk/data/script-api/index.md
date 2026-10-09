@@ -1,10 +1,11 @@
-# B2C Commerce Script API 26.8
+# B2C Commerce Script API 26.10
 
 ## Packages
 | Package | Description |
 | --- | --- |
 | [TopLevel](TopLevel.md) | Contains top-level language classes such as Array, Number and String. |
 | [dw.alert](dw.alert.md) |  |
+| [dw.apps.checkout.hooks](dw.apps.checkout.hooks.md) |  |
 | [dw.campaign](dw.campaign.md) | Contains classes that allow you to interact with promotions and campaigns. |
 | [dw.catalog](dw.catalog.md) | Contains classes that allow you to interact with Products. |
 | [dw.commerceapps](dw.commerceapps.md) |  |
@@ -15,6 +16,7 @@
 | [dw.customer.consent](dw.customer.consent.md) |  |
 | [dw.customer.oauth](dw.customer.oauth.md) |  |
 | [dw.customer.shoppercontext](dw.customer.shoppercontext.md) |  |
+| [dw.event](dw.event.md) |  |
 | [dw.experience](dw.experience.md) |  |
 | [dw.experience.cms](dw.experience.cms.md) |  |
 | [dw.experience.image](dw.experience.image.md) |  |

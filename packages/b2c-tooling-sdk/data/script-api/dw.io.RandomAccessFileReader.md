@@ -159,7 +159,7 @@ getPosition method and set by the setPosition method.
 
     **Throws:**
     - IOException - if an I/O error occurs.
-    - IllegalArgumentException - if numBytes< 0 or numBytes > MAX\_READ\_BYTES.
+    - IllegalArgumentException - if numBytes&lt; 0 or numBytes &gt; MAX\_READ\_BYTES.
 
 
 ---

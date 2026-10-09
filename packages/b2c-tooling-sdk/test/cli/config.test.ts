@@ -14,6 +14,10 @@ import {
   type ParsedFlags,
 } from '@salesforce/b2c-tooling-sdk/cli';
 import type {ConfigSource, ConfigLoadResult, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 /**
  * Mock config source for testing.
@@ -180,6 +184,149 @@ describe('cli/config', () => {
       const config = await loadConfig(flags, {}, pluginSources);
       expect(config).to.be.an('object');
     });
+
+    describe('Storefront Next environment fallbacks', () => {
+      beforeEach(() => {
+        isolateConfig();
+      });
+
+      afterEach(() => {
+        restoreConfig();
+      });
+
+      it('loads Storefront Next B2C and SLAS variables', async () => {
+        process.env.PUBLIC__app__commerce__api__clientId = 'storefront-slas-client';
+        process.env.PUBLIC__app__commerce__api__organizationId = 'f_ecom_bjgk_005';
+        process.env.PUBLIC__app__commerce__api__shortCode = 'storefront-short-code';
+        process.env.COMMERCE_API_SLAS_SECRET = 'storefront-slas-secret';
+        process.env.PUBLIC__app__defaultSiteId = 'RefArchGlobal';
+
+        const config = await loadConfig();
+
+        expect(config.values.slasClientId).to.equal('storefront-slas-client');
+        expect(config.values.tenantId).to.equal('bjgk_005');
+        expect(config.values.shortCode).to.equal('storefront-short-code');
+        expect(config.values.slasClientSecret).to.equal('storefront-slas-secret');
+        expect(config.values.siteId).to.equal('RefArchGlobal');
+      });
+
+      it('keeps parsed canonical environment values above Storefront Next fallbacks', async () => {
+        process.env.PUBLIC__app__commerce__api__clientId = 'storefront-slas-client';
+        process.env.PUBLIC__app__commerce__api__organizationId = 'f_ecom_storefront_001';
+        process.env.PUBLIC__app__commerce__api__shortCode = 'storefront-short-code';
+        process.env.COMMERCE_API_SLAS_SECRET = 'storefront-slas-secret';
+        process.env.PUBLIC__app__defaultSiteId = 'StorefrontSite';
+
+        const config = await loadConfig({
+          slasClientId: 'canonical-slas-client',
+          tenantId: 'canonical_001',
+          shortCode: 'canonical-short-code',
+          slasClientSecret: 'canonical-slas-secret',
+          siteId: 'CanonicalSite',
+        });
+
+        expect(config.values.slasClientId).to.equal('canonical-slas-client');
+        expect(config.values.tenantId).to.equal('canonical_001');
+        expect(config.values.shortCode).to.equal('canonical-short-code');
+        expect(config.values.slasClientSecret).to.equal('canonical-slas-secret');
+        expect(config.values.siteId).to.equal('CanonicalSite');
+      });
+
+      describe('with dw.json and env file', () => {
+        let tempDir: string;
+
+        beforeEach(() => {
+          tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'load-config-sfn-'));
+          fs.writeFileSync(
+            path.join(tempDir, 'dw.json'),
+            JSON.stringify({
+              configs: [
+                {name: 'dev', active: true, hostname: 'dev.example.com', 'short-code': 'devshort'},
+                {
+                  name: 'stg',
+                  hostname: 'stg.example.com',
+                  'short-code': 'stgshort',
+                  'tenant-id': 'bbbb_002',
+                  'slas-client-id': 'stg-slas',
+                  'slas-client-secret': 'stg-secret',
+                },
+              ],
+            }),
+          );
+          fs.writeFileSync(
+            path.join(tempDir, '.env'),
+            [
+              'PUBLIC__app__commerce__api__clientId=sfn-slas',
+              'PUBLIC__app__commerce__api__organizationId=f_ecom_zzzz_001',
+              'PUBLIC__app__commerce__api__shortCode=sfnshort',
+              'PUBLIC__app__defaultSiteId=RefArch',
+            ].join('\n'),
+          );
+        });
+
+        afterEach(() => {
+          fs.rmSync(tempDir, {recursive: true, force: true});
+        });
+
+        it('keeps an explicitly selected instance above Storefront Next variables', async () => {
+          const envFile = path.join(tempDir, '.env');
+          const config = await loadConfig({}, {instance: 'stg', projectDirectory: tempDir, envFile});
+
+          expect(config.values.hostname).to.equal('stg.example.com');
+          expect(config.values.shortCode).to.equal('stgshort');
+          expect(config.values.tenantId).to.equal('bbbb_002');
+          expect(config.values.slasClientId).to.equal('stg-slas');
+          expect(config.values.slasClientSecret).to.equal('stg-secret');
+          expect(config.values.siteId).to.equal('RefArch');
+          expect(config.warnings).to.be.empty;
+
+          const fallback = config.sources.find((source) => source.name === 'StorefrontNextEnvSource');
+          expect(fallback?.location).to.equal(envFile);
+          expect(fallback?.fieldsIgnored).to.include.members(['slasClientId', 'tenantId', 'shortCode']);
+        });
+
+        it('labels Storefront Next values from the shell as environment variables', async () => {
+          process.env.PUBLIC__app__defaultSiteId = 'ShellSite';
+          const config = await loadConfig({}, {projectDirectory: tempDir, envFile: path.join(tempDir, '.env')});
+
+          expect(config.values.siteId).to.equal('ShellSite');
+          const fallback = config.sources.find((source) => source.name === 'StorefrontNextEnvSource');
+          expect(fallback?.location).to.equal('environment variables');
+        });
+
+        it('uses only an explicit config path, without the global default', async () => {
+          const globalPath = path.join(tempDir, 'global-dw.json');
+          fs.writeFileSync(globalPath, JSON.stringify({name: 'global', hostname: 'global.example.com'}));
+          const explicitPath = path.join(tempDir, 'explicit.json');
+          fs.writeFileSync(explicitPath, JSON.stringify({hostname: 'explicit.example.com'}));
+
+          const config = await loadConfig({}, {configPath: explicitPath, defaultConfigPath: globalPath});
+
+          expect(config.values.hostname).to.equal('explicit.example.com');
+          const catalog = config.sources.flatMap((source) => source.instanceCatalog ?? []);
+          expect(catalog.map((file) => file.location)).to.deep.equal([explicitPath]);
+        });
+
+        it('supplements a discovered dw.json with the global default', async () => {
+          const globalPath = path.join(tempDir, 'global-dw.json');
+          fs.writeFileSync(globalPath, JSON.stringify({name: 'global', hostname: 'global.example.com'}));
+
+          const config = await loadConfig(
+            {},
+            {instance: 'global', projectDirectory: tempDir, defaultConfigPath: globalPath},
+          );
+
+          expect(config.values.hostname).to.equal('global.example.com');
+        });
+
+        it('loads no dw.json for an empty config path', async () => {
+          const config = await loadConfig({}, {configPath: '', projectDirectory: tempDir});
+
+          expect(config.values.hostname).to.be.undefined;
+          expect(config.sources.map((source) => source.name)).to.not.include('DwJsonSource');
+        });
+      });
+    });
   });
 
   describe('extractOAuthFlags', () => {
@@ -190,6 +337,7 @@ describe('cli/config', () => {
         'short-code': 'abc123',
         'tenant-id': 'my-tenant_001',
         'account-manager-host': 'account.demandware.com',
+        'client-auth-method': 'body',
         'auth-scope': ['sfcc.products', 'sfcc.orders'],
       };
 
@@ -200,6 +348,7 @@ describe('cli/config', () => {
       expect(result.shortCode).to.equal('abc123');
       expect(result.tenantId).to.equal('my-tenant_001');
       expect(result.accountManagerHost).to.equal('account.demandware.com');
+      expect(result.clientAuthMethod).to.equal('body');
       expect(result.scopes).to.deep.equal(['sfcc.products', 'sfcc.orders']);
     });
 

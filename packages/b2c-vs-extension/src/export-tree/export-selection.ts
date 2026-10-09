@@ -14,7 +14,14 @@ import type {
  * Categories whose members are plain IDs (no nested flags). Each maps directly
  * to a `Record<id, true>` field of {@link ExportDataUnitsConfiguration}.
  */
-export type SimpleCategory = 'catalogs' | 'libraries' | 'price_books' | 'customer_lists' | 'inventory_lists';
+export type SimpleCategory =
+  | 'assignments'
+  | 'catalogs'
+  | 'libraries'
+  | 'price_books'
+  | 'customer_lists'
+  | 'inventory_lists'
+  | 'storefronts';
 
 /**
  * Per-category metadata: the matching {@link ExportDataUnitsConfiguration} key,
@@ -22,8 +29,10 @@ export type SimpleCategory = 'catalogs' | 'libraries' | 'price_books' | 'custome
  * entered manually because OCAPI has no list-all endpoint for them).
  */
 export const SIMPLE_CATEGORIES: ReadonlyArray<{key: SimpleCategory; label: string; discoverable: boolean}> = [
+  {key: 'storefronts', label: 'Storefronts', discoverable: false},
   {key: 'catalogs', label: 'Catalogs', discoverable: true},
   {key: 'inventory_lists', label: 'Inventory Lists', discoverable: true},
+  {key: 'assignments', label: 'Assignments', discoverable: false},
   {key: 'libraries', label: 'Libraries', discoverable: false},
   {key: 'price_books', label: 'Price Books', discoverable: false},
   {key: 'customer_lists', label: 'Customer Lists', discoverable: false},
@@ -38,6 +47,7 @@ const SITE_FLAG_MAP: Record<Exclude<keyof ExportSitesConfiguration, 'all'>, true
   active_data_feeds: true,
   cache_settings: true,
   campaigns_and_promotions: true,
+  channels: true,
   commerce_feature_states: true,
   content: true,
   coupons: true,
@@ -50,6 +60,7 @@ const SITE_FLAG_MAP: Record<Exclude<keyof ExportSitesConfiguration, 'all'>, true
   ocapi_settings: true,
   payment_methods: true,
   payment_processors: true,
+  point_of_sale_channels: true,
   redirect_urls: true,
   search_settings: true,
   shipping: true,
@@ -72,6 +83,7 @@ const GLOBAL_FLAG_MAP: Record<Exclude<keyof ExportGlobalDataConfiguration, 'all'
   custom_preference_groups: true,
   custom_quota_settings: true,
   custom_types: true,
+  event_routing: true,
   geolocations: true,
   global_custom_objects: true,
   job_schedules: true,
@@ -138,6 +150,11 @@ export class ExportSelection {
       this.simple.set(category, set);
     }
     if (checked) {
+      // B2C Commerce accepts at most one composable storefront per export.
+      // Keep the selector valid by replacing the prior storefront selection.
+      if (category === 'storefronts') {
+        set.clear();
+      }
       set.add(id);
     } else {
       set.delete(id);

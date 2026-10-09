@@ -9,11 +9,16 @@ import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from './cartridges.js';
-import {activateCodeVersion, reloadCodeVersion} from './versions.js';
+import {reloadCodeVersion} from './scripts-backend.js';
+import {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
+import type {ScriptsBackend} from './scripts-types.js';
 import {UNZIP_TIMEOUT_MS} from './constants.js';
 import {NetworkError, describeNetworkErrorKind} from '../../errors/network-error.js';
 
 const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
+
+/** Directory names never archived into the cartridge deploy zip (mirrors the cartridge discovery ignore list). */
+const ARCHIVE_IGNORE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.cache', 'tmp', 'temp']);
 
 /**
  * Options for deploying cartridges.
@@ -35,6 +40,8 @@ export interface UploadOptions {
 }
 
 export interface DeployOptions extends FindCartridgesOptions {
+  /** Explicit code-version backend. Defaults to OCAPI for SDK compatibility. */
+  scriptsBackend?: ScriptsBackend;
   /** Activate the code version after deploy */
   activate?: boolean;
   /** Reload (toggle activation to force reload) the code version after deploy */
@@ -70,6 +77,7 @@ async function addDirectoryToZip(zip: JSZip, dirPath: string, zipPath: string): 
     const entryZipPath = path.join(zipPath, entry.name);
 
     if (entry.isDirectory()) {
+      if (ARCHIVE_IGNORE_DIRS.has(entry.name)) continue;
       await addDirectoryToZip(zip, fullPath, entryZipPath);
     } else if (entry.isFile()) {
       const content = await fs.promises.readFile(fullPath);
@@ -315,6 +323,7 @@ export async function findAndDeployCartridges(
 ): Promise<DeployResult> {
   const logger = getLogger();
   const codeVersion = instance.config.codeVersion;
+  const scriptsBackend = options.scriptsBackend ?? new OcapiScriptsBackend(instance);
 
   if (!codeVersion) {
     throw new Error('Code version required for deployment');
@@ -348,11 +357,11 @@ export async function findAndDeployCartridges(
   let reloaded = false;
   if (options.activate) {
     logger.debug('Activating code version...');
-    await activateCodeVersion(instance, codeVersion);
+    await scriptsBackend.activateCodeVersion(codeVersion);
     activated = true;
   } else if (options.reload) {
     logger.debug('Reloading code version...');
-    await reloadCodeVersion(instance, codeVersion);
+    await reloadCodeVersion(scriptsBackend, codeVersion);
     activated = true;
     reloaded = true;
   }

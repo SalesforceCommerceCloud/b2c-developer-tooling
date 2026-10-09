@@ -58,6 +58,27 @@ suite('extension activation', () => {
     assert.ok(ext?.isActive, 'extension should be active after suiteSetup activate()');
   });
 
+  test('API Browser setup help opens the bundled guide without credentials', async () => {
+    const ext = vscode.extensions.getExtension(EXTENSION_ID)!;
+    const guide = vscode.Uri.joinPath(ext.extensionUri, 'resources', 'api-browser-setup.md');
+    const document = await vscode.workspace.openTextDocument(guide);
+    assert.ok(document.getText().includes('"slas-client-id"'));
+    await vscode.commands.executeCommand('b2c-dx.apiBrowser.help');
+    // The Markdown command can resolve before the workbench reports its tab.
+    const hasHelpTab = () =>
+      vscode.window.tabGroups.all.some((group) =>
+        group.tabs.some(
+          (tab) => tab.input instanceof vscode.TabInputWebview && /api-browser-setup|API Browser Setup/.test(tab.label),
+        ),
+      );
+    const deadline = Date.now() + 5000;
+    while (!hasHelpTab() && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.ok(
+      hasHelpTab(),
+      `Expected help preview; open tabs: ${vscode.window.tabGroups.all.flatMap((g) => g.tabs.map((t) => t.label)).join(', ')}`,
+    );
+  });
+
   test('nested dw.json files activate the extension', () => {
     assert.ok(
       pkg.activationEvents.includes('workspaceContains:**/dw.json'),

@@ -9,11 +9,11 @@ ProductSearchHit is the result of a executed search query and wraps the actual p
 The method [getRepresentedProducts()](dw.catalog.ProductSearchHit.md#getrepresentedproducts) returns the actual products that is conforming the query and is represented by the search hit.
 Depending on the hit typ, [getRepresentedProducts()](dw.catalog.ProductSearchHit.md#getrepresentedproducts) returns:
  
-- [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-- [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation product
-- [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product part of set
-- [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product part of a bundle
-- [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-> a variation product
+- [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+- [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation product
+- [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product part of set
+- [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product part of a bundle
+- [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt; a variation product
 
 
 The ProductSearchHit type can be retrieved by method [getHitType()](dw.catalog.ProductSearchHit.md#gethittype) and contains the following types:
@@ -27,11 +27,11 @@ The ProductSearchHit type can be retrieved by method [getHitType()](dw.catalog.P
 
 The method [getProduct()](dw.catalog.ProductSearchHit.md#getproduct) returns the presentation product corresponding to the [ProductSearchHit](dw.catalog.ProductSearchHit.md) type.
 
-- [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-- [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation master product
-- [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product set
-- [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product bundle
-- [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)->a variation group
+- [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+- [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation master product
+- [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product set
+- [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product bundle
+- [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt;a variation group
 
 
 Example:
@@ -313,11 +313,11 @@ Please use [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_va
 - product: [Product](dw.catalog.Product.md) `(read-only)`
   - : Returns the presentation product of this ProductSearchHit corresponding to the [ProductSearchHit](dw.catalog.ProductSearchHit.md) type.
       
-      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation master product
-      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product set
-      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product bundle
-      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)->a variation group
+      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation master product
+      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product set
+      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product bundle
+      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt;a variation group
       
       
       To retrieve the product(s) actually hit by the search use [getRepresentedProducts()](dw.catalog.ProductSearchHit.md#getrepresentedproducts).
@@ -333,11 +333,11 @@ Please use [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_va
 - productID: [String](TopLevel.String.md) `(read-only)`
   - : Returns the ID of the presentation product of this ProductSearchHit corresponding to the [ProductSearchHit](dw.catalog.ProductSearchHit.md) type.
       
-      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation master product
-      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product set
-      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product bundle
-      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)->a variation group
+      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation master product
+      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product set
+      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product bundle
+      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt;a variation group
       
       
       To retrieve the ID of the product actually hit by the search use [getFirstRepresentedProductID()](dw.catalog.ProductSearchHit.md#getfirstrepresentedproductid) or [getLastRepresentedProductID()](dw.catalog.ProductSearchHit.md#getlastrepresentedproductid).
@@ -354,11 +354,11 @@ Please use [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_va
   - : The method returns the actual ID of the product that is conforming the query and is represented by the search hit.
       Depending on the hit typ, it returns the ID of:
        
-      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation product
-      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product part of set
-      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product part of a bundle
-      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)->a variation product
+      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation product
+      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product part of set
+      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product part of a bundle
+      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt;a variation product
       
       
       If the method returns multiple products, the product with the highest
@@ -379,11 +379,11 @@ Please use [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_va
   - : The method returns the actual product that is conforming the query and is represented by the search hit.
       Depending on the hit typ, [getRepresentedProducts()](dw.catalog.ProductSearchHit.md#getrepresentedproducts) returns:
        
-      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation product
-      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product part of set
-      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product part of a bundle
-      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)->a variation product
+      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation product
+      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product part of set
+      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product part of a bundle
+      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt;a variation product
       
       
       If the method returns multiple products, the product with the highest
@@ -555,11 +555,11 @@ Please use [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_va
 - getProduct(): [Product](dw.catalog.Product.md)
   - : Returns the presentation product of this ProductSearchHit corresponding to the [ProductSearchHit](dw.catalog.ProductSearchHit.md) type.
       
-      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation master product
-      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product set
-      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product bundle
-      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)->a variation group
+      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation master product
+      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product set
+      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product bundle
+      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt;a variation group
       
       
       To retrieve the product(s) actually hit by the search use [getRepresentedProducts()](dw.catalog.ProductSearchHit.md#getrepresentedproducts).
@@ -581,11 +581,11 @@ Please use [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_va
 - getProductID(): [String](TopLevel.String.md)
   - : Returns the ID of the presentation product of this ProductSearchHit corresponding to the [ProductSearchHit](dw.catalog.ProductSearchHit.md) type.
       
-      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation master product
-      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product set
-      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product bundle
-      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)->a variation group
+      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation master product
+      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product set
+      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product bundle
+      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt;a variation group
       
       
       To retrieve the ID of the product actually hit by the search use [getFirstRepresentedProductID()](dw.catalog.ProductSearchHit.md#getfirstrepresentedproductid) or [getLastRepresentedProductID()](dw.catalog.ProductSearchHit.md#getlastrepresentedproductid).
@@ -607,11 +607,11 @@ Please use [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_va
   - : The method returns the actual ID of the product that is conforming the query and is represented by the search hit.
       Depending on the hit typ, it returns the ID of:
        
-      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation product
-      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product part of set
-      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product part of a bundle
-      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)->a variation product
+      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation product
+      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product part of set
+      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product part of a bundle
+      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt;a variation product
       
       
       If the method returns multiple products, the product with the highest
@@ -635,11 +635,11 @@ Please use [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_va
   - : The method returns the actual product that is conforming the query and is represented by the search hit.
       Depending on the hit typ, [getRepresentedProducts()](dw.catalog.ProductSearchHit.md#getrepresentedproducts) returns:
        
-      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-> a simple product 
-      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-> a variation product
-      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-> a product part of set
-      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-> a product part of a bundle
-      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)->a variation product
+      - [HIT_TYPE_SIMPLE](dw.catalog.ProductSearchHit.md#hit_type_simple)-&gt; a simple product 
+      - [HIT_TYPE_PRODUCT_MASTER](dw.catalog.ProductSearchHit.md#hit_type_product_master)-&gt; a variation product
+      - [HIT_TYPE_PRODUCT_SET](dw.catalog.ProductSearchHit.md#hit_type_product_set)-&gt; a product part of set
+      - [HIT_TYPE_PRODUCT_BUNDLE](dw.catalog.ProductSearchHit.md#hit_type_product_bundle)-&gt; a product part of a bundle
+      - [HIT_TYPE_VARIATION_GROUP](dw.catalog.ProductSearchHit.md#hit_type_variation_group)-&gt;a variation product
       
       
       If the method returns multiple products, the product with the highest

@@ -38,7 +38,9 @@ describe('slas client open', () => {
     stubParse(command, {'tenant-id': 'abcd_123'}, {clientId: 'my-client'});
     await command.init();
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: undefined}}));
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {shortCode: undefined, tenantId: 'abcd_123', slasClientId: 'my-client'}}));
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -50,20 +52,22 @@ describe('slas client open', () => {
     }
   });
 
-  it('builds URL using short code from resolved config and returns it', async () => {
+  it('builds the URL using the configured client ID and short code', async () => {
     const command: any = new SlasClientOpen([], config);
 
-    stubParse(command, {'tenant-id': 'abcd_123'}, {clientId: 'my-client'});
+    stubParse(command, {'tenant-id': 'abcd_123'}, {});
     await command.init();
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}}));
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'abcd_123', slasClientId: 'configured-client'}}));
 
     const logStub = sinon.stub(command, 'log').returns(void 0);
 
     const result = await command.run();
 
     expect(result.url).to.include('kv7kzm78.api.commercecloud.salesforce.com');
-    expect(result.url).to.include('clientId=my-client');
+    expect(result.url).to.include('clientId=configured-client');
     expect(result.url).to.include('tenantId=abcd_123');
     expect(logStub.called).to.equal(true);
   });
@@ -74,11 +78,14 @@ describe('slas client open', () => {
     stubParse(command, {'tenant-id': 'abcd_123', 'short-code': 'flagcode'}, {clientId: 'my-client'});
     await command.init();
 
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78'}}));
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'abcd_123', slasClientId: 'configured-client'}}));
 
     sinon.stub(command, 'log').returns(void 0);
 
     const result = await command.run();
     expect(result.url).to.include('flagcode.api.commercecloud.salesforce.com');
+    expect(result.url).to.include('clientId=my-client');
   });
 });

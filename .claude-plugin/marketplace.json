@@ -17,7 +17,7 @@
       "source": "./skills/b2c-cli",
       "category": "productivity",
       "strict": false,
-      "version": "1.8.4"
+      "version": "1.12.0"
     },
     {
       "name": "b2c",
@@ -29,11 +29,23 @@
       "source": "./skills/b2c",
       "category": "productivity",
       "strict": false,
-      "version": "1.8.4"
+      "version": "1.12.0"
+    },
+    {
+      "name": "b2c-ops",
+      "description": "B2C Commerce operator and administrator runbooks for job health, checkout failures, edge traffic and bots, and incident triage.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./skills/b2c-ops",
+      "category": "productivity",
+      "strict": false,
+      "version": "1.12.0"
     },
     {
       "name": "b2c-dx-mcp",
-      "description": "MCP server for AI-assisted Salesforce B2C Commerce development with project-aware tooling for common workflows.",
+      "description": "Build, debug, and deploy Salesforce B2C Commerce with your AI assistant. Includes documentation, workflow skills, and Salesforce Commerce API tools.",
       "author": {
         "name": "Salesforce"
       },
@@ -41,7 +53,7 @@
       "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
       "strict": false,
-      "version": "2.1.1"
+      "version": "3.5.0"
     },
     {
       "name": "storefront-next",
@@ -53,7 +65,7 @@
       "source": "./skills/storefront-next",
       "category": "productivity",
       "strict": false,
-      "version": "1.8.4"
+      "version": "1.12.0"
     },
     {
       "name": "storefront-next-figma",
@@ -75,6 +87,18 @@
       },
       "license": "Apache-2.0",
       "source": "./skills/figma-to-sfnext-pagedesigner",
+      "category": "productivity",
+      "strict": false,
+      "version": "0.1.0"
+    },
+    {
+      "name": "b2c-python-sdk",
+      "description": "Consuming the salesforce-b2c-tooling-sdk Python SDK — authenticate to B2C Commerce, resolve dw.json config, and call OCAPI/SCAPI/WebDAV clients and operations from scripts or notebooks.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./skills/b2c-python-sdk",
       "category": "productivity",
       "strict": false,
       "version": "0.1.0"

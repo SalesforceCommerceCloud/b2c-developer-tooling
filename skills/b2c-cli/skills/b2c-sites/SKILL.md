@@ -11,9 +11,9 @@ Use the `b2c` CLI plugin to list and manage storefront sites on Salesforce B2C C
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected.
+The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Commands
 
@@ -75,16 +75,18 @@ When OCAPI direct permissions for `/sites/*/cartridges` are unavailable, cartrid
 
 **Key flags (inherited from InstanceCommand):**
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--server` | `-s` | B2C instance hostname (env: `SFCC_SERVER`) |
-| `--json` | | Output full site data as JSON |
-| `--instance` | | Named instance from config |
-| `--debug` | | Enable debug logging |
+| Flag         | Short | Description                                |
+| ------------ | ----- | ------------------------------------------ |
+| `--server`   | `-s`  | B2C instance hostname (env: `SFCC_SERVER`) |
+| `--json`     |       | Output full site data as JSON              |
+| `--instance` |       | Named instance from config                 |
+| `--debug`    |       | Enable debug logging                       |
 
 **Output columns:** ID, Display Name, Status (storefront_status).
 
-**JSON output** returns the full OCAPI sites response including all site properties (useful for extracting channel IDs, custom preferences, and other site metadata not shown in the table).
+**JSON output** returns the full site objects including all properties (useful for extracting channel IDs, custom preferences, and other site metadata not shown in the table).
+
+Site reads and cartridge-path writes run over SCAPI (the `site/sites` API) when `shortCode`, `tenantId`, and the `sfcc.sites` / `sfcc.sites.rw` scopes are configured. `auto` temporarily falls back to deprecated OCAPI on safe SCAPI rejections, and writes can fall back again to site archive import when direct APIs are unavailable.
 
 ## Common Use Cases
 
@@ -93,7 +95,7 @@ When OCAPI direct permissions for `/sites/*/cartridges` are unavailable, cartrid
 ```bash
 b2c sites list
 # then use the ID in other commands
-b2c site-import upload --site RefArch ...
+b2c job export --site RefArch --site-data content,site_preferences
 ```
 
 **Checking site status:** The status column shows the storefront status (online/offline) for each site, useful for verifying deployment state.

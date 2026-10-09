@@ -242,20 +242,20 @@ This class does not have a constructor, so you cannot create it directly.
       By raw attribute value we denote the unprocessed value as provided for the attribute
       driven by the type of the respective attribute definition:
       
-      - `boolean`-> boolean
-      - `category`-> string representing a catalog category ID
-      - `custom`-> [Map](dw.util.Map.md)that originates from a stringified curly brackets {} JSON object
-      - `cms_record`-> [Map](dw.util.Map.md)that originates from a stringified curly brackets {} JSON object whose entries must adhere to the `cmsrecord.json`schema
-      - `enum`-> either string or integer
-      - `file`-> string representing a file path within a library
-      - `image`-> [Map](dw.util.Map.md)that originates from a stringified curly brackets {} JSON object whose entries must adhere to the `content/schema/image.json`schema
-      - `integer`-> integer
-      - `markup`-> string representing HTML markup
-      - `page`-> string representing a page ID
-      - `product`-> string representing a product SKU
-      - `string`-> string
-      - `text`-> string
-      - `url`-> string representing a URL
+      - `boolean`-&gt; boolean
+      - `category`-&gt; string representing a catalog category ID
+      - `custom`-&gt; [Map](dw.util.Map.md)that originates from a stringified curly brackets {} JSON object
+      - `cms_record`-&gt; [Map](dw.util.Map.md)that originates from a stringified curly brackets {} JSON object whose entries must adhere to the `cmsrecord.json`schema
+      - `enum`-&gt; either string or integer
+      - `file`-&gt; string representing a file path within a library
+      - `image`-&gt; [Map](dw.util.Map.md)that originates from a stringified curly brackets {} JSON object whose entries must adhere to the `content/schema/image.json`schema
+      - `integer`-&gt; integer
+      - `markup`-&gt; string representing HTML markup
+      - `page`-&gt; string representing a page ID
+      - `product`-&gt; string representing a product SKU
+      - `string`-&gt; string
+      - `text`-&gt; string
+      - `url`-&gt; string representing a URL
       
       
       

@@ -222,7 +222,9 @@ export class MrtLogWatchRegistry {
   getWatchOrThrow(watchId: string): MrtLogWatchEntry {
     const w = this.watches.get(watchId);
     if (!w) {
-      throw new Error(`No MRT log watch found with id "${watchId}". Use mrt_logs_watch_list to see active watches.`);
+      throw new Error(
+        `No MRT log watch found with id "${watchId}". Use mrt_logs_watch(action: list) to see active watches.`,
+      );
     }
     w.lastActivityAt = Date.now();
     return w;
@@ -260,7 +262,7 @@ export class MrtLogWatchRegistry {
     if (existing) {
       throw new Error(
         `An MRT log watch already exists for ${project}/${environment} (watch_id: "${existing.watchId}"). ` +
-          `Stop it with mrt_logs_watch_stop first, or poll the existing watch.`,
+          `Stop it with mrt_logs_watch(action: stop) first, or poll the existing watch.`,
       );
     }
 

@@ -57,7 +57,7 @@ export const STEP_CATALOG: Record<string, StepDefinition> = {
     markdown: 'media/walkthrough/dw-json-setup.md',
     actions: [
       {label: 'Set up connection', command: 'b2c-dx.setup.connection', primary: true},
-      {label: 'Inspect resolved config', command: 'b2c-dx.walkthrough.inspectSetup'},
+      {label: 'Inspect resolved config', command: 'b2c-dx.instance.inspect'},
       {label: 'Open dw.json', command: 'workbench.action.quickOpen', args: ['dw.json']},
     ],
   },
@@ -68,7 +68,7 @@ export const STEP_CATALOG: Record<string, StepDefinition> = {
     markdown: 'media/walkthrough/oauth-setup.md',
     actions: [
       {label: 'Set up OAuth', command: 'b2c-dx.setup.oauth', primary: true},
-      {label: 'Inspect resolved config', command: 'b2c-dx.walkthrough.inspectSetup'},
+      {label: 'Inspect resolved config', command: 'b2c-dx.instance.inspect'},
     ],
   },
   'explore-webdav': {
@@ -79,7 +79,7 @@ export const STEP_CATALOG: Record<string, StepDefinition> = {
     actions: [
       {label: 'Set up WebDAV credentials', command: 'b2c-dx.setup.webdav', primary: true},
       {label: 'Open WebDAV Browser', command: 'b2c-dx.listWebDav'},
-      {label: 'Inspect resolved config', command: 'b2c-dx.walkthrough.inspectSetup'},
+      {label: 'Inspect resolved config', command: 'b2c-dx.instance.inspect'},
     ],
   },
   'setup-cartridges': {
@@ -91,7 +91,7 @@ export const STEP_CATALOG: Record<string, StepDefinition> = {
       {label: 'Create New Cartridge', command: 'b2c-dx.scaffold.generate', primary: true},
       {label: 'Set up SCAPI (short-code, tenant-id)', command: 'b2c-dx.setup.scapi'},
       {label: 'Refresh Cartridge List', command: 'b2c-dx.codeSync.refreshCartridges'},
-      {label: 'Inspect resolved config', command: 'b2c-dx.walkthrough.inspectSetup'},
+      {label: 'Inspect resolved config', command: 'b2c-dx.instance.inspect'},
     ],
   },
   'deploy-code': {

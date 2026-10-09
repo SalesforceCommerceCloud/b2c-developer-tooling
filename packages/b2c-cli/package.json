@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "1.23.1",
+  "version": "2.5.1",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -57,6 +57,7 @@
   },
   "files": [
     "./bin",
+    "./content",
     "./dist",
     "./oclif.manifest.json"
   ],
@@ -80,6 +81,7 @@
     "bin": "b2c",
     "dirname": "b2c",
     "commands": "./dist/commands",
+    "helpClass": "./dist/help",
     "telemetry": {
       "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
     },
@@ -137,7 +139,10 @@
         "description": "Run CIP analytics SQL and curated reports\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.html"
       },
       "docs": {
-        "description": "Search and read Script API documentation"
+        "description": "Search and read B2C Commerce documentation (Script API, SCAPI/OCAPI, guides, job steps)"
+      },
+      "commands": {
+        "description": "Search CLI commands by task or keyword (use \"docs search\" for documentation)"
       },
       "job": {
         "description": "Run jobs and import/export site archives\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs.html"
@@ -174,6 +179,15 @@
       },
       "mrt:project:notification": {
         "description": "Configure email notifications for deployment events (start, success, failure)\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-notification-commands"
+      },
+      "mrt:storefront": {
+        "description": "Alias for 'mrt project' commands.\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-commands"
+      },
+      "mrt:storefront:member": {
+        "description": "Alias for 'mrt project member' commands.\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-member-commands"
+      },
+      "mrt:storefront:notification": {
+        "description": "Alias for 'mrt project notification' commands.\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-notification-commands"
       },
       "mrt:env:access-control": {
         "description": "Configure access control headers for environment security\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#access-control-commands"
@@ -370,7 +384,7 @@
   },
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "scripts": {
-    "build": "shx rm -rf dist && tsc -p tsconfig.build.json && shx mkdir -p dist/script-types/node_modules/@salesforce/b2c-script-types && shx cp -r ../b2c-script-types/types dist/script-types/node_modules/@salesforce/b2c-script-types/types && shx cp -r ../b2c-script-types/plugin dist/script-types/node_modules/@salesforce/b2c-script-types/plugin && shx cp ../b2c-script-types/package.json dist/script-types/node_modules/@salesforce/b2c-script-types/package.json",
+    "build": "pnpm run generate:guidance && shx rm -rf dist && tsc -p tsconfig.build.json && shx mkdir -p dist/script-types/node_modules/@salesforce/b2c-script-types && shx cp -r ../b2c-script-types/types dist/script-types/node_modules/@salesforce/b2c-script-types/types && shx cp -r ../b2c-script-types/plugin dist/script-types/node_modules/@salesforce/b2c-script-types/plugin && shx cp ../b2c-script-types/package.json dist/script-types/node_modules/@salesforce/b2c-script-types/package.json",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc --noEmit -p test --pretty false",
@@ -379,7 +393,8 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest --no-jit && oclif readme",
-    "pretest": "tsc --noEmit -p test",
+    "generate:guidance": "tsx --conditions=development scripts/generate-guidance.ts",
+    "pretest": "pnpm run generate:guidance && tsc --noEmit -p test",
     "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:ci:win": "c8 --check-coverage=false env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",

@@ -12,9 +12,12 @@
  * @module cli/config
  */
 import type {AuthMethod} from '../auth/types.js';
+import type {ClientAuthMethod} from '../auth/client-credentials.js';
 import {ALL_AUTH_METHODS} from '../auth/types.js';
 import {resolveConfig, type NormalizedConfig, type ConfigSource, type ResolvedB2CConfig} from '../config/index.js';
 import {findDwJson} from '../config/dw-json.js';
+import {readEnvFile} from '../config/project-environment.js';
+import {STOREFRONT_NEXT_ENV_VAR_MAP, StorefrontNextEnvSource} from '../config/sources/env-source.js';
 import {getLogger} from '../logging/logger.js';
 
 // Re-export for convenience
@@ -65,6 +68,7 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
     tenantId: flags['tenant-id'] as string | undefined,
     authMethods,
     accountManagerHost: flags['account-manager-host'] as string | undefined,
+    clientAuthMethod: flags['client-auth-method'] as ClientAuthMethod | undefined,
     scopes: scopes && scopes.length > 0 ? scopes : undefined,
     // JWT Bearer auth flags
     jwtCertPath: flags['jwt-cert'] as string | undefined,
@@ -117,6 +121,8 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,
     selfSigned: (flags.selfsigned as boolean) || !(flags.verify as boolean),
+    // API backend
+    apiBackend: flags['api-backend'] as NormalizedConfig['apiBackend'],
     // Include OAuth flags (instance operations often need OAuth too)
     ...extractOAuthFlags(flags),
   };
@@ -163,6 +169,7 @@ export function extractMrtFlags(flags: ParsedFlags): ExtractedMrtFlags {
       mrtProject: flags.project as string | undefined,
       mrtEnvironment: flags.environment as string | undefined,
       mrtOrigin: cloudOrigin,
+      mrtBackend: flags['mrt-backend'] as NormalizedConfig['mrtBackend'],
     },
     options: {
       cloudOrigin,
@@ -191,6 +198,15 @@ export interface LoadConfigOptions {
   credentialsFile?: string;
   /** Account Manager hostname for OAuth (passed to plugins for host-specific config) */
   accountManagerHost?: string;
+  /**
+   * Env file in effect for this command (see {@link resolveEnvFilePath}).
+   *
+   * Its Storefront Next variables fill settings left unset by flags, toolkit
+   * variables and dw.json. Toolkit variables (`SFCC_*`, `MRT_*`) from the file
+   * are expected to be loaded into the environment already (see {@link applyEnvFile}),
+   * so they resolve like shell variables.
+   */
+  envFile?: string;
 }
 
 /**
@@ -214,7 +230,7 @@ export interface PluginSources {
 }
 
 /**
- * Loads configuration with precedence: CLI flags/env vars > dw.json > ~/.mobify
+ * Loads configuration with precedence: CLI flags/env vars > dw.json > Storefront Next variables > ~/.mobify
  *
  * OCLIF handles environment variables automatically via flag `env` properties.
  * The flags parameter already contains resolved env var values.
@@ -267,7 +283,7 @@ export async function loadConfig(
     credentialsFile: options.credentialsFile,
     accountManagerHost: options.accountManagerHost,
     sourcesBefore: pluginSources.before,
-    sourcesAfter: pluginSources.after,
+    sourcesAfter: [...(pluginSources.after ?? []), createStorefrontNextSource(options.envFile)],
   });
 
   // Log warnings (at warn level so users can see configuration issues)
@@ -276,4 +292,18 @@ export async function loadConfig(
   }
 
   return resolved;
+}
+
+/**
+ * Creates the Storefront Next fallback source from the environment, labelled
+ * with the env file when every value it provides came from that file.
+ */
+function createStorefrontNextSource(envFile?: string): StorefrontNextEnvSource {
+  const fileValues = envFile ? readEnvFile(envFile) : {};
+  const env = {...fileValues, ...process.env};
+  const used = Object.keys(STOREFRONT_NEXT_ENV_VAR_MAP).filter((key) => env[key]);
+  const fromFile = envFile !== undefined && used.length > 0 && used.every((key) => fileValues[key] === env[key]);
+  return fromFile
+    ? new StorefrontNextEnvSource(env, {location: envFile, envFile})
+    : new StorefrontNextEnvSource(env, {location: 'environment variables'});
 }

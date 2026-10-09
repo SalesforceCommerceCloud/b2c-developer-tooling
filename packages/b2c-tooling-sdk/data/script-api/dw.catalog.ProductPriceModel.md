@@ -87,7 +87,7 @@ product prices in specific price books by name and quantity. See
 | [minPricePerUnit](#minpriceperunit): [Money](dw.value.Money.md) `(read-only)` | Calculates and returns the minimum price-book price per unit of all variants (for  master products) or set-products (for product sets) for base quantity  1.00. |
 | [price](#price): [Money](dw.value.Money.md) `(read-only)` | Returns the active price of a product, calculated based on base price quantity  1.00. |
 | [priceInfo](#priceinfo): [ProductPriceInfo](dw.catalog.ProductPriceInfo.md) `(read-only)` | Returns the active price info of a product, calculated based on base price  quantity 1.00. |
-| [priceInfos](#priceinfos): [Collection](dw.util.Collection.md) `(read-only)` | Returns all the eligible `</>ProductPriceInfo`</>(s), calculated based  on base price quantity 1.00. |
+| [priceInfos](#priceinfos): [Collection](dw.util.Collection.md) `(read-only)` | Returns all the eligible `</>ProductPriceInfo`&lt;/&gt;(s), calculated based  on base price quantity 1.00. |
 | [pricePerUnit](#priceperunit): [Money](dw.value.Money.md) `(read-only)` | Returns the sales price per unit of a product, calculated based on base price  quantity 1.00. |
 | [priceRange](#pricerange): [Boolean](TopLevel.Boolean.md) `(read-only)` | Returns true if this product is a master product (or product set) and the  collection of online variants (or set products respectively) contains  products of different prices. |
 | [priceTable](#pricetable): [ProductPriceTable](dw.catalog.ProductPriceTable.md) `(read-only)` | Returns the product price table object. |
@@ -118,7 +118,7 @@ This class does not have a constructor, so you cannot create it directly.
 | [getPriceBookPricePerUnit](dw.catalog.ProductPriceModel.md#getpricebookpriceperunitstring-quantity)([String](TopLevel.String.md), [Quantity](dw.value.Quantity.md)) | Returns the active price per unit of the product in the specified price book for  the specified quantity. |
 | [getPriceInfo](dw.catalog.ProductPriceModel.md#getpriceinfo)() | Returns the active price info of a product, calculated based on base price  quantity 1.00. |
 | [getPriceInfo](dw.catalog.ProductPriceModel.md#getpriceinfoquantity)([Quantity](dw.value.Quantity.md)) | Returns the active price info of a product, calculated based on the passed order  quantity. |
-| [getPriceInfos](dw.catalog.ProductPriceModel.md#getpriceinfos)() | Returns all the eligible `</>ProductPriceInfo`</>(s), calculated based  on base price quantity 1.00. |
+| [getPriceInfos](dw.catalog.ProductPriceModel.md#getpriceinfos)() | Returns all the eligible `</>ProductPriceInfo`&lt;/&gt;(s), calculated based  on base price quantity 1.00. |
 | [getPricePerUnit](dw.catalog.ProductPriceModel.md#getpriceperunit)() | Returns the sales price per unit of a product, calculated based on base price  quantity 1.00. |
 | [getPricePerUnit](dw.catalog.ProductPriceModel.md#getpriceperunitquantity)([Quantity](dw.value.Quantity.md)) | Returns the sales price per unit of a product, calculated based on the passed  order quantity. |
 | ~~[getPricePercentage](dw.catalog.ProductPriceModel.md#getpricepercentagemoney-money)([Money](dw.value.Money.md), [Money](dw.value.Money.md))~~ | Calculates and returns the percentage off amount of the passed  comparePrice to the passed basePrice. |
@@ -276,7 +276,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 ### priceInfos
 - priceInfos: [Collection](dw.util.Collection.md) `(read-only)`
-  - : Returns all the eligible `</>ProductPriceInfo`</>(s), calculated based
+  - : Returns all the eligible `</>ProductPriceInfo`&lt;/&gt;(s), calculated based
       on base price quantity 1.00. This will return an empty list if getPriceInfo() would return null, and if there is
       only one price info in the collection it will be the same price info as getPriceInfo(). Two or more price infos
       indicate that there are that many price books that meet the criteria for returning the price shown in the
@@ -600,7 +600,7 @@ This class does not have a constructor, so you cannot create it directly.
       initialized with an option model.
       
       
-      If passed order quantity < 1 (and greater than zero), price for quantity
+      If passed order quantity &lt; 1 (and greater than zero), price for quantity
       1 is returned.
       
       
@@ -835,7 +835,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 ### getPriceInfos()
 - getPriceInfos(): [Collection](dw.util.Collection.md)
-  - : Returns all the eligible `</>ProductPriceInfo`</>(s), calculated based
+  - : Returns all the eligible `</>ProductPriceInfo`&lt;/&gt;(s), calculated based
       on base price quantity 1.00. This will return an empty list if getPriceInfo() would return null, and if there is
       only one price info in the collection it will be the same price info as getPriceInfo(). Two or more price infos
       indicate that there are that many price books that meet the criteria for returning the price shown in the

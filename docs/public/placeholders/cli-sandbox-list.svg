@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="250" viewBox="0 0 760 250">
+  <title>B2C CLI screenshot placeholder</title>
+  <desc>View your sandboxes. A compact overview of sandbox states. A real capture will replace this placeholder.</desc>
+  <rect x="0.5" y="0.5" width="759" height="249" rx="12" fill="#f7f9fb" stroke="#c9d3df"/>
+  <rect x="16" y="16" width="728" height="218" rx="6" fill="none" stroke="#c9d3df" stroke-dasharray="5 6"/>
+  <g font-family="Salesforce Sans, sans-serif" text-anchor="middle">
+    <text x="380" y="81" font-size="18" fill="#526477">B2C CLI</text>
+    <text x="380" y="119" font-size="28" font-weight="600" fill="#032d60">View your sandboxes</text>
+    <text x="380" y="152" font-size="18" fill="#526477">A compact overview of sandbox states</text>
+    <text x="380" y="215" font-size="14" letter-spacing="1.5" fill="#526477">SCREENSHOT PLACEHOLDER</text>
+  </g>
+</svg>

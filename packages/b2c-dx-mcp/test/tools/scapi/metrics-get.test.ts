@@ -45,12 +45,11 @@ describe('tools/scapi/metrics-get', () => {
     restore();
   });
 
-  it('creates tool with correct metadata (SCAPI toolset, non-GA, from/to/window schema)', () => {
+  it('creates tool with correct metadata (SCAPI toolset, from/to/window schema)', () => {
     const tool = createMetricsGetTool(() => services);
 
     expect(tool.name).to.equal('metrics_get');
     expect(tool.toolsets).to.deep.equal(['SCAPI']);
-    expect(tool.isGA).to.equal(false);
     expect(tool.description).to.include('CLOSED BETA');
     expect(tool.description).to.include('sfcc.metrics');
     // Time bounds mirror the API's from/to params, plus a window helper.

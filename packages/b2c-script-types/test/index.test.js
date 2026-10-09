@@ -6,7 +6,6 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const {describe, it} = require('node:test');
 
 const ts = require('typescript');
 
@@ -211,9 +210,12 @@ describe('create() proxy — usage inference wiring', () => {
     const versions = {'/types.d.ts': 0, '/helper.js': 0};
     let projectVersion = 1;
     const host = createFixtureHost(files);
-    // createFixtureHost's getScriptVersion is a constant '0' — override it
-    // here so this test can simulate a real edit bumping a file's version.
-    host.getScriptVersion = (fileName) => String(versions[fileName] ?? 0);
+    // Prefix createFixtureHost's content-derived version with an edit counter
+    // so this test can simulate a real edit bumping a file's version, while
+    // the content part keeps the shared DocumentRegistry from ever serving
+    // another test's parse of the same in-memory path.
+    const origGetScriptVersion = host.getScriptVersion;
+    host.getScriptVersion = (fileName) => `${versions[fileName] ?? 0}:${origGetScriptVersion(fileName)}`;
     const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({

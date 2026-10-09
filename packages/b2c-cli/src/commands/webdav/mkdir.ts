@@ -53,13 +53,15 @@ export default class WebDavMkdir extends WebDavCommand<typeof WebDavMkdir> {
 
   /**
    * Creates all directories in the path, similar to `mkdir -p`.
+   * The WebDAV root itself is skipped: it always exists, and some roots
+   * (e.g. Dynamic, Libraries, Catalogs) reject MKCOL with 403.
    */
   private async createDirectoryPath(fullPath: string): Promise<void> {
-    const parts = fullPath.split('/').filter(Boolean);
+    const parts = fullPath.slice(this.rootPath.length).split('/').filter(Boolean);
 
-    let currentPath = '';
+    let currentPath = this.rootPath;
     for (const part of parts) {
-      currentPath = currentPath ? `${currentPath}/${part}` : part;
+      currentPath = `${currentPath}/${part}`;
       // eslint-disable-next-line no-await-in-loop
       await this.instance.webdav.mkcol(currentPath);
     }

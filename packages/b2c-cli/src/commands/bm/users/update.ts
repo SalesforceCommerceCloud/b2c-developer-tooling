@@ -4,11 +4,11 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {updateBmUser, type BmUser, type UpdateBmUserChanges} from '@salesforce/b2c-tooling-sdk/operations/bm-users';
+import {BmCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {type UserInfo, type UpdateUserChanges} from '@salesforce/b2c-tooling-sdk/operations/bm-users';
 import {t} from '../../../i18n/index.js';
 
-export default class BmUsersUpdate extends InstanceCommand<typeof BmUsersUpdate> {
+export default class BmUsersUpdate extends BmCommand<typeof BmUsersUpdate> {
   static args = {
     login: Args.string({
       description: 'User login (email)',
@@ -56,21 +56,21 @@ export default class BmUsersUpdate extends InstanceCommand<typeof BmUsersUpdate>
     }),
   };
 
-  async run(): Promise<BmUser> {
+  async run(): Promise<UserInfo> {
     this.requireOAuthCredentials();
 
     const {login} = this.args;
     const flags = this.flags;
     const hostname = this.resolvedConfig.values.hostname!;
 
-    const changes: UpdateBmUserChanges = {};
+    const changes: UpdateUserChanges = {};
     if (flags.disabled !== undefined) changes.disabled = flags.disabled;
-    if (flags['first-name'] !== undefined) changes.first_name = flags['first-name'];
-    if (flags['last-name'] !== undefined) changes.last_name = flags['last-name'];
+    if (flags['first-name'] !== undefined) changes.firstName = flags['first-name'];
+    if (flags['last-name'] !== undefined) changes.lastName = flags['last-name'];
     if (flags.email !== undefined) changes.email = flags.email;
-    if (flags['external-id'] !== undefined) changes.external_id = flags['external-id'];
-    if (flags['preferred-ui-locale'] !== undefined) changes.preferred_ui_locale = flags['preferred-ui-locale'];
-    if (flags['preferred-data-locale'] !== undefined) changes.preferred_data_locale = flags['preferred-data-locale'];
+    if (flags['external-id'] !== undefined) changes.externalId = flags['external-id'];
+    if (flags['preferred-ui-locale'] !== undefined) changes.preferredUiLocale = flags['preferred-ui-locale'];
+    if (flags['preferred-data-locale'] !== undefined) changes.preferredDataLocale = flags['preferred-data-locale'];
 
     if (Object.keys(changes).length === 0) {
       this.error(
@@ -81,9 +81,12 @@ export default class BmUsersUpdate extends InstanceCommand<typeof BmUsersUpdate>
       );
     }
 
+    const backend = this.createUsersBackend();
+    this.logger.debug(`Using ${backend.name} backend for users update`);
+
     this.log(t('commands.bm.users.update.updating', 'Updating user {{login}} on {{hostname}}...', {login, hostname}));
 
-    const user = await updateBmUser(this.instance, login, changes);
+    const user = await backend.updateUser(login, changes);
 
     if (this.jsonEnabled()) {
       return user;

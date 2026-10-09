@@ -369,6 +369,33 @@ describe('clients/middleware', () => {
   });
 
   describe('createExtraParamsMiddleware', () => {
+    it('preserves redirect, credentials, abort signal, and body through request modifications', async () => {
+      const controller = new AbortController();
+      const middleware = createExtraParamsMiddleware({
+        headers: {'x-mobify': 'true'},
+        query: {diagnostic: 'true'},
+        body: {extra: 'value'},
+      });
+      type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];
+      const request = new Request('https://example.com/login', {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({original: 'value'}),
+        redirect: 'manual',
+        credentials: 'include',
+        signal: controller.signal,
+      });
+      const result = await middleware.onRequest!({request} as unknown as OnRequestParams);
+      if (!(result instanceof Request)) throw new Error('Expected a Request');
+      expect(result.redirect).to.equal('manual');
+      expect(result.credentials).to.equal('include');
+      expect(result.headers.get('x-mobify')).to.equal('true');
+      expect(new URL(result.url).searchParams.get('diagnostic')).to.equal('true');
+      expect(await result.json()).to.deep.equal({original: 'value', extra: 'value'});
+      controller.abort();
+      expect(result.signal.aborted).to.equal(true);
+    });
+
     it('adds extra query params without overriding explicit query params', async () => {
       const middleware = createExtraParamsMiddleware({query: {debug: true}});
       type OnRequestParams = Parameters<NonNullable<typeof middleware.onRequest>>[0];

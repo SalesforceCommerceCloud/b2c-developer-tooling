@@ -1,6 +1,6 @@
 ---
 name: b2c-docs
-description: Search and read B2C Commerce documentation using the b2c CLI. Covers Script API reference (dw.* classes/modules), Developer Center guides (Commerce API, PWA Kit, SFRA, Storefront Next, B2C Commerce), Salesforce Help (Business Manager administration and merchandising), tooling documentation (CLI/MCP/SDK), standard job steps, and XSD schemas. Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context — even if they just say "how do I implement passwordless login" or "what methods does Basket have" or "how do I deploy a PWA Kit bundle" or "how do I import a site archive" or "what SCAPI endpoints are available for checkout".
+description: Search and read B2C Commerce documentation using the b2c CLI. Covers Script API reference (dw.* classes/modules), Developer Center guides (Commerce API, PWA Kit, SFRA, Storefront Next, B2C Commerce, Commerce Solutions, OCAPI), Salesforce Help (Business Manager administration and merchandising), tooling documentation (CLI/MCP/SDK), standard job steps, and XSD schemas. Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context — even if they just say "how do I implement passwordless login" or "what methods does Basket have" or "how do I deploy a PWA Kit bundle" or "how do I import a site archive" or "what SCAPI endpoints are available for checkout".
 ---
 
 # B2C Docs Skill
@@ -15,9 +15,9 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 
 ## Key Features
 
-- **Multi-corpus search** — Search across Script API, Developer Center guides, Salesforce Help (admin + merchandising), internal tooling docs (guides, CLI reference, MCP, and VS Code extension), job steps, and schemas in a unified index
+- **Multi-corpus search** — Search across Script API, Developer Center guides, OCAPI reference, Salesforce Help (admin + merchandising), internal tooling docs (guides, CLI reference, MCP, and VS Code extension), job steps, and schemas in a unified index
 - **Workspace-aware search** — Auto-detects project type (cartridges, SFRA, PWA Kit, Storefront Next) and boosts relevant documentation while de-boosting competing storefront frameworks
-- **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`, `help-admin`, `help-merchant`)
+- **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`, `help-admin`, `help-merchant`, `help-kb`)
 - **Triage metadata** — Search results include `category`, `summary`, `keywords`, and `url` to help identify the right match without reading full content
 - **Online content with local cache** — Script API, Developer Center guides, and Salesforce Help are fetched online when you read them and cached locally (memory + on-disk, 7-day TTL) so repeat reads avoid the network; graceful offline fallback shows the summary + headings + both URLs
 - **Content-aware ranking** — BM25-style search indexes titles, section headings, summaries, and keywords for better recall on conceptual questions
@@ -53,6 +53,9 @@ b2c docs search "site import export" --category help-admin
 
 # Search Salesforce Help — merchandising (catalogs, promotions, search, pricing)
 b2c docs search "price book assignment" --category help-merchant
+
+# Search Salesforce Help Knowledge Articles — troubleshooting, known issues, how-to answers
+b2c docs search "code upload certificate hyperforce" --category help-kb
 
 # Search tooling documentation
 b2c docs search "authentication setup" --category tooling
@@ -111,7 +114,7 @@ The docs search understands which workspace framework your project uses and auto
 
 **Category boost mapping:**
 
-- Always relevant (any workspace): `b2c-commerce`, `tooling`
+- Always relevant (any workspace): `b2c-commerce`, `commerce-solutions`, `ocapi`, `tooling`
 - `cartridges` → `script-api`, `job-step`
 - `sfra` → `sfra`
 - `pwa-kit-v3` → `pwa-kit-managed-runtime`, `commerce-api`
@@ -153,6 +156,7 @@ b2c docs read pwa-kit-managed-runtime/getting-started
 # Read Salesforce Help articles by namespaced ID
 b2c docs read help-admin/b2c_site_import_export
 b2c docs read help-merchant/b2c_creating_price_books
+b2c docs read help-kb/002772125
 
 # Read tooling guides
 b2c docs read guide-authentication
@@ -235,14 +239,17 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 | `sfra`                    | Storefront Reference Architecture (SFRA) guides                                                                                  | `sfra/controllers-and-routes`                       |
 | `sfnext`                  | Storefront Next guides                                                                                                           | `sfnext/sfnext-get-started`                         |
 | `b2c-commerce`            | General B2C Commerce platform guides                                                                                             | `b2c-commerce/business-manager-overview`            |
+| `commerce-solutions`      | B2C Commerce Solutions — bot management, caching strategies, flash-sale traffic, and industry solutions                          | `commerce-solutions/bot-management`                 |
+| `ocapi`                   | OCAPI reference — usage, hooks, settings, and best practices for the Open Commerce API                                           | `ocapi/ocapisettings`, `ocapi/bestpractices`        |
 | `tooling`                 | B2C CLI reference, guides, MCP docs, SDK guidance, and VS Code extension docs                                                    | `guide-authentication`, `cli-jobs`                  |
 | `job-step`                | Standard (system) job step catalog                                                                                               | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
 | `help-admin`              | Salesforce Help — administration/ops (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) | `help-admin/b2c_site_import_export`                 |
 | `help-merchant`           | Salesforce Help — merchandising (catalogs, products, promotions, search, content, analytics, SEO)                                | `help-merchant/b2c_creating_price_books`            |
+| `help-kb`                 | Salesforce Help Knowledge Articles — troubleshooting, known issues, and how-to answers (keyed by article number)                 | `help-kb/002772125`                                 |
 
-> **URLs:** All categories except `job-step` carry both `url` (human .html page) and `sourceUrl` (machine-readable .md). For `help-admin`/`help-merchant`, `url` is the live help.salesforce.com article and content is read from `sourceUrl`. `job-step` entries have neither (content is bundled inline).
+> **URLs:** All categories except `job-step` carry both `url` (human .html page) and `sourceUrl` (machine-readable .md). For `help-admin`/`help-merchant`/`help-kb`, `url` is the live help.salesforce.com article and content is read from `sourceUrl`. `job-step` entries have neither (content is bundled inline).
 >
-> **Caching:** Content for the online corpora (`script-api`, the guide categories, `help-admin`/`help-merchant`, `tooling`) is fetched on `docs read` and cached locally. Use `b2c docs cache` to inspect it and `b2c docs cache --clear` to purge it (forces a re-fetch).
+> **Caching:** Content for the online corpora (`script-api`, the guide categories, `help-admin`/`help-merchant`/`help-kb`, `tooling`) is fetched on `docs read` and cached locally. Use `b2c docs cache` to inspect it and `b2c docs cache --clear` to purge it (forces a re-fetch).
 
 ## Common Script API Classes
 
@@ -268,6 +275,26 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 | `promotion` | Promotion definitions         |
 | `coupon`    | Coupon codes import/export    |
 | `jobs`      | Job step definitions          |
+
+## Finding CLI Commands
+
+`b2c docs search` searches documentation. To find **which `b2c` command performs a task**, search the CLI's own commands instead:
+
+```bash
+b2c commands search "deploy cartridges"
+b2c commands search "environment variables" --topic mrt --json
+```
+
+## Reading Agent Skills
+
+The CLI bundles its agent skills (workflow guides like this one). Read the skill for a command or topic, or search them, without installing a plugin:
+
+```bash
+b2c docs skill                          # list b2c-cli skills
+b2c docs skill code deploy              # skill covering a command or topic
+b2c docs skill --search "site import"   # search skills
+b2c docs skill --all --search "hooks"   # include b2c, b2c-ops, storefront-next
+```
 
 ## More Commands
 

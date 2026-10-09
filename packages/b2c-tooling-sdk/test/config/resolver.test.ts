@@ -40,6 +40,73 @@ class MockSource implements ConfigSource {
 
 describe('config/resolver', () => {
   describe('ConfigResolver', () => {
+    describe('instance context for credential sources', () => {
+      const scenarios: Array<{
+        name: string;
+        overrides?: Partial<NormalizedConfig>;
+        options?: ResolveConfigOptions;
+        configs: NormalizedConfig[];
+        expectedInstance?: string;
+      }> = [
+        {
+          name: 'preserves an explicit instance selection',
+          options: {instance: 'explicit'},
+          configs: [{instanceName: 'default'}],
+          expectedInstance: 'explicit',
+        },
+        {
+          name: 'seeds the instance from explicit configuration overrides',
+          overrides: {instanceName: 'override'},
+          configs: [{instanceName: 'default'}],
+          expectedInstance: 'override',
+        },
+        {
+          name: 'prefers the explicit instance option over an override name',
+          overrides: {instanceName: 'override'},
+          options: {instance: 'explicit'},
+          configs: [],
+          expectedInstance: 'explicit',
+        },
+        {
+          name: 'keeps the instance name from the highest-priority source',
+          configs: [{instanceName: 'selected'}, {instanceName: 'lower-priority'}],
+          expectedInstance: 'selected',
+        },
+        {
+          name: 'does not use the instance name from a rejected hostname',
+          overrides: {hostname: 'other.example.com'},
+          configs: [{hostname: 'original.example.com', instanceName: 'original'}],
+        },
+        {
+          name: 'leaves unnamed configurations on plugin defaults',
+          configs: [{hostname: 'example.com'}],
+        },
+      ];
+
+      for (const scenario of scenarios) {
+        it(scenario.name, async () => {
+          let receivedInstance: string | undefined;
+          const credentialSource: ConfigSource = {
+            name: 'credentials',
+            load(options) {
+              receivedInstance = options.instance;
+              return {config: {clientId: 'test-client', clientSecret: 'test-secret'}};
+            },
+          };
+          const resolver = new ConfigResolver([
+            ...scenario.configs.map((config, index) => new MockSource(`config-${index}`, config)),
+            credentialSource,
+          ]);
+          const options = {...scenario.options};
+
+          await resolver.resolve(scenario.overrides, options);
+
+          expect(receivedInstance).to.equal(scenario.expectedInstance);
+          expect(options).to.deep.equal(scenario.options ?? {});
+        });
+      }
+    });
+
     describe('resolve', () => {
       it('resolves from a single source', async () => {
         const source = new MockSource('test', {
@@ -69,6 +136,15 @@ describe('config/resolver', () => {
         expect(config.tenantId).to.equal('test_prd');
       });
 
+      it('normalizes a full organization ID from a source to tenantId', async () => {
+        const source = new MockSource('test', {tenantId: 'f_ecom_bjgk_005'});
+        const resolver = new ConfigResolver([source]);
+
+        const {config} = await resolver.resolve();
+
+        expect(config.tenantId).to.equal('bjgk_005');
+      });
+
       it('allows overrides to take precedence for tenantId', async () => {
         const source = new MockSource('test', {
           hostname: 'example.demandware.net',
@@ -79,6 +155,14 @@ describe('config/resolver', () => {
         const {config} = await resolver.resolve({tenantId: 'override_prd'});
 
         expect(config.tenantId).to.equal('override_prd');
+      });
+
+      it('normalizes a full organization ID supplied as an override', async () => {
+        const resolver = new ConfigResolver([]);
+
+        const {config} = await resolver.resolve({tenantId: 'f_ecom_bjgk_005'});
+
+        expect(config.tenantId).to.equal('bjgk_005');
       });
 
       it('applies overrides with highest priority', async () => {
@@ -105,7 +189,7 @@ describe('config/resolver', () => {
           codeVersion: 'v1',
         });
         const source2 = new MockSource('second', {
-          hostname: 'second.demandware.net',
+          hostname: 'first.demandware.net',
           codeVersion: 'v2',
           clientId: 'second-client',
         });
@@ -119,6 +203,35 @@ describe('config/resolver', () => {
         // Second source contributes clientId (not in first source)
         expect(config.clientId).to.equal('second-client');
         expect(sources).to.have.length(2);
+      });
+
+      it('skips a lower-priority source whose hostname differs', async () => {
+        const source1 = new MockSource('first', {hostname: 'first.demandware.net', codeVersion: 'v1'});
+        const source2 = new MockSource('second', {hostname: 'second.demandware.net', clientId: 'second-client'});
+        const source3 = new MockSource('third', {shortCode: 'abc'});
+        const resolver = new ConfigResolver([source1, source2, source3]);
+
+        const {config, sources, warnings} = await resolver.resolve();
+
+        expect(config.hostname).to.equal('first.demandware.net');
+        expect(config.clientId).to.be.undefined;
+        expect(config.shortCode).to.equal('abc');
+        expect(sources[1]).to.include({name: 'second'});
+        expect(sources[1].fields).to.deep.equal([]);
+        expect(sources[1].fieldsIgnored).to.deep.equal(['hostname', 'clientId']);
+        expect(warnings).to.have.length(1);
+        expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
+        expect(warnings[0].message).to.include('first').and.include('second');
+      });
+
+      it('does not apply source hostname mismatch when hostname protection is disabled', async () => {
+        const source1 = new MockSource('first', {hostname: 'first.demandware.net'});
+        const source2 = new MockSource('second', {hostname: 'second.demandware.net', clientId: 'second-client'});
+        const resolver = new ConfigResolver([source1, source2]);
+
+        const {config} = await resolver.resolve({}, {hostnameProtection: false});
+
+        expect(config.clientId).to.equal('second-client');
       });
 
       it('tracks source locations when available', async () => {
@@ -222,6 +335,18 @@ describe('config/resolver', () => {
         expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
       });
 
+      it('treats hostnames differing only in case, scheme, port or trailing slash as the same', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('env', {hostname: 'https://Example.demandware.net:443/'}),
+          new MockSource('dw', {hostname: 'example.demandware.net', clientId: 'dw-client'}),
+        ]);
+
+        const {config, warnings} = await resolver.resolve();
+
+        expect(config.clientId).to.equal('dw-client');
+        expect(warnings).to.be.empty;
+      });
+
       it('creates SOURCE_ERROR warning when source throws', async () => {
         // Create a source that throws an error
         const throwingSource: ConfigSource = {
@@ -297,6 +422,98 @@ describe('config/resolver', () => {
         expect(config.hostname).to.be.undefined;
         expect(config.clientId).to.be.undefined;
         expect(sources).to.have.length(0);
+      });
+    });
+
+    describe('sandbox tenant derivation', () => {
+      it('derives tenantId from a sandbox hostname when none is configured', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {hostname: 'zzpq-013.dx.commercecloud.salesforce.com'}),
+        ]);
+
+        const {config, sources, warnings} = await resolver.resolve();
+
+        expect(config.tenantId).to.equal('zzpq_013');
+        expect(sources.at(-1)).to.deep.include({name: 'SandboxHostname', fields: ['tenantId']});
+        expect(warnings).to.be.empty;
+      });
+
+      it('derives the hostname from a sandbox tenantId when no hostname is configured', async () => {
+        const resolver = new ConfigResolver([new MockSource('env', {tenantId: 'f_ecom_bjgk_005', shortCode: 'abc'})]);
+
+        const {config, sources, warnings} = await resolver.resolve();
+
+        expect(config.hostname).to.equal('bjgk-005.dx.commercecloud.salesforce.com');
+        expect(config.tenantId).to.equal('bjgk_005');
+        expect(sources.at(-1)).to.deep.include({name: 'SandboxTenantId', fields: ['hostname']});
+        expect(sources.map((source) => source.name)).to.not.include('SandboxHostname');
+        expect(warnings).to.be.empty;
+      });
+
+      it('does not derive a hostname from a non-sandbox tenantId or replace a configured hostname', async () => {
+        const production = await new ConfigResolver([new MockSource('env', {tenantId: 'zzxy_prd'})]).resolve();
+        const configured = await new ConfigResolver([
+          new MockSource('dw', {hostname: 'staging-realm-customer.demandware.net'}),
+          new MockSource('env', {tenantId: 'bjgk_005'}),
+        ]).resolve();
+
+        expect(production.config.hostname).to.be.undefined;
+        expect(configured.config.hostname).to.equal('staging-realm-customer.demandware.net');
+        expect(configured.sources.map((source) => source.name)).to.not.include('SandboxTenantId');
+      });
+
+      it('does not derive tenantId from non-sandbox hostnames', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {hostname: 'staging-realm-customer.demandware.net'}),
+        ]);
+
+        const {config, sources} = await resolver.resolve();
+
+        expect(config.tenantId).to.be.undefined;
+        expect(sources.map((source) => source.name)).to.not.include('SandboxHostname');
+      });
+
+      it('keeps a configured tenantId that matches the sandbox hostname', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {hostname: 'zzpq-013.dx.commercecloud.salesforce.com', tenantId: 'f_ecom_zzpq_013'}),
+        ]);
+
+        const {config, warnings} = await resolver.resolve();
+
+        expect(config.tenantId).to.equal('zzpq_013');
+        expect(warnings).to.be.empty;
+      });
+
+      it('warns when a configured tenantId contradicts the sandbox hostname', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {hostname: 'zzpq-013.dx.commercecloud.salesforce.com'}),
+          new MockSource('env', {tenantId: 'bjgk_005'}),
+        ]);
+
+        const {config, warnings} = await resolver.resolve();
+
+        expect(config.tenantId).to.equal('bjgk_005');
+        expect(warnings.map((w) => w.code)).to.deep.equal(['TENANT_MISMATCH']);
+      });
+
+      it('compares the configured tenantId case-insensitively', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {hostname: 'zzpq-013.dx.commercecloud.salesforce.com', tenantId: 'ZZPQ_013'}),
+        ]);
+
+        const {warnings} = await resolver.resolve();
+
+        expect(warnings).to.be.empty;
+      });
+
+      it('never warns for non-sandbox hostnames', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {hostname: 'production-eu01-acme.demandware.net', tenantId: 'bjgk_prd'}),
+        ]);
+
+        const {warnings} = await resolver.resolve();
+
+        expect(warnings).to.be.empty;
       });
     });
 

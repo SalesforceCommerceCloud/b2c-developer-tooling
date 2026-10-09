@@ -4,7 +4,7 @@ description: Commands for creating, updating, and managing Shopper Login and API
 
 # SLAS Commands
 
-Commands for managing Shopper Login and API Security (SLAS) clients.
+Commands for managing Shopper Login and API Access Service (SLAS) clients. For client types, user roles, and shopper authentication flows, see Salesforce's [Authorization for Shopper APIs](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-shopper-apis.html).
 
 ## Global SLAS Flags
 
@@ -52,6 +52,11 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 ## b2c slas token
 
 Get a SLAS shopper access token for testing APIs.
+
+Shopper authorization, login, and token requests use the shared HTTP middleware.
+Custom headers configured through `SFCC_EXTRA_HEADERS` (a JSON object) or
+`--extra-headers` apply to every step of both guest and registered flows.
+Use `--log-level debug` to include SLAS response correlation IDs when diagnosing failures.
 
 ### Usage
 
@@ -124,12 +129,14 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ```json
 {
-  "accessToken": "...",
-  "refreshToken": "...",
-  "expiresIn": 1800,
-  "tokenType": "Bearer",
-  "usid": "...",
-  "customerId": "...",
+  "response": {
+    "accessToken": "...",
+    "refreshToken": "...",
+    "expiresIn": 1800,
+    "tokenType": "Bearer",
+    "usid": "...",
+    "customerId": "..."
+  },
   "clientId": "...",
   "siteId": "RefArch",
   "isGuest": true
@@ -148,6 +155,10 @@ These values can also be set in `dw.json`:
   "site-id": "RefArch"
 }
 ```
+
+### Existing Client Selection
+
+The `get`, `update`, `delete`, and `open` commands use the configured `slasClientId` when their positional `CLIENTID` is omitted. The value can come from `dw.json`, `SFCC_SLAS_CLIENT_ID`, `--slas-client-id`, the active instance, or a configuration plugin. A positional `CLIENTID` takes precedence over every configured source.
 
 ---
 
@@ -270,19 +281,22 @@ Get details of a SLAS client.
 ### Usage
 
 ```bash
-b2c slas client get <CLIENTID> --tenant-id <TENANT_ID>
+b2c slas client get [CLIENTID] --tenant-id <TENANT_ID>
 ```
 
 ### Arguments
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `CLIENTID` | SLAS client ID to retrieve | Yes |
+| `CLIENTID` | SLAS client ID to retrieve. Defaults to the configured `slasClientId` | No |
 
 ### Examples
 
 ```bash
-# Get client details
+# Get details for the configured SLAS client
+b2c slas client get --tenant-id abcd_123
+
+# Override the configured SLAS client ID
 b2c slas client get my-client-id --tenant-id abcd_123
 
 # Output as JSON
@@ -309,14 +323,14 @@ Update an existing SLAS client.
 ### Usage
 
 ```bash
-b2c slas client update <CLIENTID> --tenant-id <TENANT_ID> [FLAGS]
+b2c slas client update [CLIENTID] --tenant-id <TENANT_ID> [FLAGS]
 ```
 
 ### Arguments
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `CLIENTID` | SLAS client ID to update | Yes |
+| `CLIENTID` | SLAS client ID to update. Defaults to the configured `slasClientId` | No |
 
 ### Flags
 
@@ -334,7 +348,10 @@ b2c slas client update <CLIENTID> --tenant-id <TENANT_ID> [FLAGS]
 ### Examples
 
 ```bash
-# Update client name
+# Update the configured client name
+b2c slas client update --tenant-id abcd_123 --name "New Name"
+
+# Override the configured SLAS client ID
 b2c slas client update my-client-id --tenant-id abcd_123 --name "New Name"
 
 # Rotate client secret
@@ -369,19 +386,22 @@ Delete a SLAS client.
 ### Usage
 
 ```bash
-b2c slas client delete <CLIENTID> --tenant-id <TENANT_ID>
+b2c slas client delete [CLIENTID] --tenant-id <TENANT_ID>
 ```
 
 ### Arguments
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `CLIENTID` | SLAS client ID to delete | Yes |
+| `CLIENTID` | SLAS client ID to delete. Defaults to the configured `slasClientId` | No |
 
 ### Examples
 
 ```bash
-# Delete a client
+# Delete the configured client
+b2c slas client delete --tenant-id abcd_123
+
+# Override the configured SLAS client ID
 b2c slas client delete my-client-id --tenant-id abcd_123
 
 # Output as JSON
@@ -402,14 +422,14 @@ Open the SLAS Admin UI for a client in your browser.
 ### Usage
 
 ```bash
-b2c slas client open <CLIENTID> --tenant-id <TENANT_ID>
+b2c slas client open [CLIENTID] --tenant-id <TENANT_ID>
 ```
 
 ### Arguments
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `CLIENTID` | SLAS client ID to open in the admin UI | Yes |
+| `CLIENTID` | SLAS client ID to open in the admin UI. Defaults to the configured `slasClientId` | No |
 
 ### Flags
 
@@ -417,13 +437,17 @@ b2c slas client open <CLIENTID> --tenant-id <TENANT_ID>
 |------|---------------------|-------------|----------|
 | `--tenant-id` | `SFCC_TENANT_ID` | SLAS tenant ID (organization ID) | Yes |
 | `--short-code` | `SFCC_SHORTCODE` | SCAPI short code | Yes* |
+| `--slas-client-id` | `SFCC_SLAS_CLIENT_ID` | Configured SLAS client ID | No |
 
 \* `--short-code` can be set via `SFCC_SHORTCODE` environment variable or `short-code` in `dw.json`.
 
 ### Examples
 
 ```bash
-# Open the SLAS Admin UI for a specific client
+# Open the SLAS Admin UI for the configured client
+b2c slas client open --tenant-id abcd_123
+
+# Override the configured SLAS client ID
 b2c slas client open my-client-id --tenant-id abcd_123
 
 # With explicit short code

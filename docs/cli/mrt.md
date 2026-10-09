@@ -8,43 +8,50 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 
 ## Command Overview
 
-| Topic | Commands | Description |
-|-------|----------|-------------|
-| `mrt org` | `list`, `b2c` | List organizations and B2C connections |
-| `mrt project` | `list`, `create`, `get`, `update`, `delete` | Manage MRT projects |
-| `mrt project member` | `list`, `add`, `get`, `update`, `remove` | Manage project members |
-| `mrt project notification` | `list`, `create`, `get`, `update`, `delete` | Manage deployment notifications |
-| `mrt env` | `list`, `create`, `get`, `update`, `delete`, `invalidate`, `b2c` | Manage environments |
-| `mrt env var` | `list`, `set`, `push`, `delete` | Manage environment variables |
-| `mrt env redirect` | `list`, `create`, `delete`, `clone` | Manage URL redirects |
-| `mrt env access-control` | `list` | Manage access control headers |
-| `mrt bundle` | `deploy`, `list`, `history`, `download` | Manage bundles and deployments |
-| `mrt tail-logs` | | Tail real-time application logs |
-| `mrt save-credentials` | | Save MRT credentials to ~/.mobify |
-| `mrt user` | `profile`, `api-key`, `email-prefs` | Manage user settings |
+| Topic                      | Commands                                                         | Description                            |
+| -------------------------- | ---------------------------------------------------------------- | -------------------------------------- |
+| `mrt org`                  | `list`, `b2c`                                                    | List organizations and B2C connections |
+| `mrt project`              | `list`, `create`, `get`, `update`, `delete`                      | Manage MRT projects                    |
+| `mrt project member`       | `list`, `add`, `get`, `update`, `remove`                         | Manage project members                 |
+| `mrt project notification` | `list`, `create`, `get`, `update`, `delete`                      | Manage deployment notifications        |
+| `mrt env`                  | `list`, `create`, `get`, `update`, `delete`, `invalidate`, `b2c` | Manage environments                    |
+| `mrt env var`              | `list`, `set`, `push`, `delete`                                  | Manage environment variables           |
+| `mrt env redirect`         | `list`, `create`, `delete`, `clone`                              | Manage URL redirects                   |
+| `mrt env access-control`   | `list`                                                           | Manage access control headers          |
+| `mrt bundle`               | `deploy`, `list`, `history`, `download`                          | Manage bundles and deployments         |
+| `mrt tail-logs`            |                                                                  | Tail real-time application logs        |
+| `mrt save-credentials`     |                                                                  | Save MRT credentials to ~/.mobify      |
+| `mrt user`                 | `profile`, `api-key`, `email-prefs`                              | Manage user settings                   |
+
+> **`storefront` alias:** `mrt storefront` is an alias for `mrt project` (including the `member` and `notification` subtopics). For example, `b2c mrt storefront get my-storefront` is identical to `b2c mrt project get my-storefront`. The alias matches the terminology used by the SCAPI MRT API; `mrt project` continues to work unchanged.
 
 ## Global MRT Flags
 
 These flags are available on all MRT commands:
 
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--api-key` | `MRT_API_KEY` | MRT API key |
-| `--project`, `-p` | `MRT_PROJECT` | MRT project slug |
-| `--environment`, `-e` | `MRT_ENVIRONMENT` | Target environment (e.g., staging, production). `MRT_TARGET` also supported. |
+| Flag                  | Environment Variable | Description                                                                                                                                                                                                                                                   |
+| --------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--api-key`           | `MRT_API_KEY`        | MRT API key (legacy MRT Cloud API)                                                                                                                                                                                                                            |
+| `--project`, `-p`     | `MRT_PROJECT`        | MRT project slug — the SCAPI storefront ID (the same value). Aliases: `--storefront`, `-s` (interchangeable on every `mrt` command). `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` also supported. On `mrt project create`, this flag sets the new project's slug. |
+| `--environment`, `-e` | `MRT_ENVIRONMENT`    | Target environment (e.g., staging, production). `MRT_TARGET` also supported.                                                                                                                                                                                  |
+| `--mrt-backend`       | `MRT_BACKEND`        | Backend to use: `legacy` (default), `auto`, or `scapi`. `SFCC_MRT_BACKEND` also supported. See [MRT Backends](#mrt-backends).                                                                                                                                 |
+
+The SCAPI backend also honors the standard OAuth flags (`--client-id`, `--client-secret`, `--short-code`, `--tenant-id`, and the JWT flags). See [MRT Backends](#mrt-backends).
 
 ### Configuration Sources
 
 MRT commands resolve configuration in the following order of precedence:
 
-1. Command-line flags
-2. Environment variables
-3. `dw.json` file (`mrtProject`, `mrtEnvironment` fields)
+1. Command-line flags (`--project` / `--storefront`)
+2. Environment variables (`MRT_PROJECT`, then `SFCC_MRT_PROJECT`, then `MRT_STOREFRONT` / `SFCC_MRT_STOREFRONT` as fallbacks; also `MRT_BACKEND` / `SFCC_MRT_BACKEND`)
+3. `dw.json` file (`mrtProject`, `mrtEnvironment`, `mrtBackend` fields)
 4. `~/.mobify` config file (for `api_key`)
 
 ## Authentication
 
-MRT commands use API key authentication. The API key is configured in the Managed Runtime dashboard.
+MRT commands use API key authentication against the legacy MRT Cloud API. The API key is configured in the Managed Runtime dashboard.
+
+Several commands — `mrt bundle history`, `mrt bundle list`, `mrt bundle deploy` (both the local-build push and deploying an existing `<bundleId>`), and the `mrt env var` family (`list` / `set` / `push` / `delete`) — can also run over the SCAPI MRT backend with OAuth instead of an API key. See [MRT Backends](#mrt-backends) for how the backend is selected and what it requires.
 
 ### Getting an API Key
 
@@ -61,6 +68,86 @@ Provide the API key via one of these methods:
 3. **Environment variable**: `export MRT_API_KEY=your-api-key`
 
 For complete setup instructions, see the [Authentication Guide](/guide/authentication#managed-runtime-api-key).
+
+---
+
+## MRT Backends
+
+MRT is served by two backends:
+
+- **legacy** — the MRT Cloud API (`cloud.mobify.com`), authenticated with a per-user API key (`--api-key` / `~/.mobify`). This is the backend for every MRT command.
+- **scapi** — the SCAPI MRT backend, authenticated with a stateless OAuth flow (client-credentials or JWT Bearer) via Account Manager, reusing the same `--short-code` / `--tenant-id` setup as other SCAPI commands. Each supported command requires the SCAPI scopes for the API it maps to — the bundle commands (`bundle history`, `bundle list`, `bundle deploy`) map to the Storefront Deployments API and need `sfcc.storefront.deployments` / `sfcc.storefront.deployments.rw`, and the `env var` commands need `sfcc.storefront.environments` / `sfcc.storefront.environments.rw` (reads accept either scope; writes require `.rw`).
+
+Select the backend with `--mrt-backend` (or `MRT_BACKEND` / `SFCC_MRT_BACKEND`, or `mrtBackend` in `dw.json`):
+
+| Value              | Behavior                                                                                                                                                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `legacy` (default) | Always use the legacy MRT Cloud API.                                                                                                                                                                                              |
+| `auto`             | Prefer SCAPI when its prerequisites are detected, otherwise use legacy. If a SCAPI request fails on a safe pre-execution error, `auto` falls back to legacy automatically (never for a 409 conflict, 429, 5xx, or network error). |
+| `scapi`            | Always use SCAPI. Errors if the SCAPI prerequisites are missing — never silently falls back to legacy.                                                                                                                            |
+
+### SCAPI-supported commands
+
+These commands implement the SCAPI backend today:
+
+- `b2c mrt bundle history` — list deployments
+- `b2c mrt bundle list` — list bundles
+- `b2c mrt bundle deploy <bundleId>` — deploy an existing bundle
+- `b2c mrt bundle deploy` (no bundle ID) — upload a local build and optionally deploy it
+- `b2c mrt env var list` — list environment variables
+- `b2c mrt env var set` — set/update environment variables (merge)
+- `b2c mrt env var push` — sync a local `.env` file
+- `b2c mrt env var delete` — delete an environment variable
+
+Every other MRT command runs on the legacy MRT Cloud API. On those, `--mrt-backend scapi` errors with an actionable message, and `--mrt-backend auto` warns (only when SCAPI is actually configured) before using legacy.
+
+Over SCAPI, `env var set` / `push` / `delete` use a single merge-PATCH: keys you send are created or replaced, a delete sends a `null` value, and keys you don't mention are left untouched. `env var push` resolves the backend once when it reads the current remote values, then pins every write to that same backend so a push never crosses backends mid-operation.
+
+### Auto-detection criteria
+
+`auto` selects SCAPI only when all of the following are configured:
+
+- `--short-code` (`SFCC_SHORTCODE`)
+- `--tenant-id` (`SFCC_TENANT_ID`)
+- A SCAPI-capable OAuth flow — client-credentials (`--client-id` + `--client-secret`), JWT Bearer (`--client-id` + `--jwt-cert` + `--jwt-key`), or a stored `b2c auth client` session. Browser user auth (`--user-auth`) is not accepted by the SCAPI Admin APIs.
+
+Otherwise `auto` uses legacy. Run a supported command with `-D` / `--debug` to see which prerequisites were satisfied and which backend was chosen.
+
+### JSON output is backend-specific
+
+Under `--json`, the supported commands return the serving backend's **native** response verbatim:
+
+- **legacy** — the raw MRT Cloud API shape (e.g. `history` returns `{count, next, previous, deployments}`; `env var list` returns `{count, variables}`).
+- **scapi** — the serving SCAPI API's native shape (e.g. `history` returns `{limit, offset, total, data}` from Storefront Deployments; `env var list` returns the Storefront Environments map keyed by variable name).
+
+The human-readable table is normalized across both backends, but `--json` is not. Under `--mrt-backend auto` the `--json` shape therefore depends on which backend actually served the request — pin `--mrt-backend legacy` or `--mrt-backend scapi` if a script needs a stable shape.
+
+### Legacy-only flags are ignored on SCAPI
+
+`--api-key`, `--cloud-origin` / `-u`, and `--credentials-file` / `-c` configure only the legacy MRT Cloud API. When the SCAPI backend serves a request — explicit `--mrt-backend scapi`, or `auto` resolving to SCAPI — passing any of these flags prints a warning that they were ignored and suggests `--mrt-backend legacy` if you meant to use them.
+
+---
+
+## Maintenance (Read-Only) Mode
+
+Managed Runtime occasionally enters a read-only maintenance window during which write operations are temporarily disabled. The CLI detects this automatically:
+
+- **Read commands** (e.g. `list`, `get`) keep working and print a non-blocking warning:
+
+  ```
+  › Warning: Managed Runtime is in maintenance mode. Write operations are disabled; read operations (like this one) are unaffected.
+  Status: https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN
+  ```
+
+- **Write commands** (e.g. deploys, bundle uploads, environment changes) are blocked with a clear error instead of a raw API response, and the command does not run:
+
+  ```
+  ✖ Error: Managed Runtime is in maintenance mode. This command was not run.
+  mrt bundle deploy requires write access, which is temporarily disabled. Read commands (list, get) still work.
+  Check status and ETA: https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN
+  ```
+
+Check the [Managed Runtime Admin status page](https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN) for current status and the estimated end of the maintenance window, then re-run your write command once maintenance completes.
 
 ---
 
@@ -100,40 +187,42 @@ b2c mrt project list --json
 
 ### b2c mrt project create
 
-Create a new MRT project.
+Create a new MRT project. The name is a positional argument; the organization is required via `--organization` / `-o`. To choose the new project's slug, pass `--project` / `--storefront` (`-p` / `-s`) — when omitted, MRT auto-generates the slug from the name.
 
 ```bash
 b2c mrt project create "My Storefront" --organization my-org
-b2c mrt project create "My Storefront" -o my-org --slug my-storefront
+b2c mrt project create "My Storefront" -o my-org --storefront my-storefront
+b2c mrt project create "My Storefront" -o my-org -s my-storefront
 b2c mrt project create "My Storefront" -o my-org --region us-east-1
 ```
 
 ### b2c mrt project get
 
-Get details of an MRT project.
+Get details of an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`; `MRT_PROJECT` and `dw.json` also work).
 
 ```bash
 b2c mrt project get my-storefront
-b2c mrt project get my-storefront --json
+b2c mrt project get --project my-storefront
+b2c mrt project get --storefront my-storefront --json
 ```
 
 ### b2c mrt project update
 
-Update an MRT project. The project slug is provided as a positional argument; at least one of `--name`, `--url`, or `--region` must be supplied.
+Update an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`); at least one of `--name`, `--url`, or `--region` must be supplied.
 
 ```bash
 b2c mrt project update my-storefront --name "Updated Name"
-b2c mrt project update my-storefront --region us-east-1
+b2c mrt project update --project my-storefront --region us-east-1
 b2c mrt project update my-storefront --url https://www.example.com
 ```
 
 ### b2c mrt project delete
 
-Delete an MRT project. The project slug is provided as a positional argument.
+Delete an MRT project. Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`).
 
 ```bash
 b2c mrt project delete my-storefront
-b2c mrt project delete my-storefront --force
+b2c mrt project delete --project my-storefront --force
 ```
 
 ---
@@ -160,12 +249,12 @@ b2c mrt project member add user@example.com -p my-storefront --role 1
 
 **Roles:**
 
-| Value | Role |
-|-------|------|
-| `0` | Admin |
-| `1` | Developer |
-| `2` | Marketer |
-| `3` | Read Only |
+| Value | Role      |
+| ----- | --------- |
+| `0`   | Admin     |
+| `1`   | Developer |
+| `2`   | Marketer  |
+| `3`   | Read Only |
 
 ### b2c mrt project member get
 
@@ -208,7 +297,7 @@ b2c mrt project notification list --project my-storefront
 
 ### b2c mrt project notification create
 
-Create a deployment notification.
+Create a deployment notification. The target environment(s) are given with `--target` (repeatable); `--environment` / `-e` are accepted as aliases (a notification's target _is_ an environment). These commands do not take the single-value `--environment` flag that other MRT commands do.
 
 ```bash
 # Notify on deployment failures
@@ -264,11 +353,14 @@ b2c mrt env list -p my-storefront --json
 
 ### b2c mrt env create
 
-Create a new environment.
+Create a new environment. Provide the new environment's slug as a positional argument **or** via `--environment` / `-e` (`MRT_ENVIRONMENT` and `dw.json` also work). An explicit positional wins if both are given.
 
 ```bash
 # Create a staging environment
 b2c mrt env create staging --project my-storefront --name "Staging Environment"
+
+# Slug via the --environment / -e flag instead of the positional
+b2c mrt env create -p my-storefront -e staging --name "Staging Environment"
 
 # Create a production environment in a specific region
 b2c mrt env create production -p my-storefront --name "Production" \
@@ -331,11 +423,14 @@ b2c mrt env update -p my-storefront -e production --allow-cookies
 
 ### b2c mrt env delete
 
-Delete an environment.
+Delete an environment. Provide the environment slug as a positional argument **or** via `--environment` / `-e` (`MRT_ENVIRONMENT` and `dw.json` also work). An explicit positional wins if both are given.
 
 ```bash
 b2c mrt env delete staging --project my-storefront
 b2c mrt env delete old-env -p my-storefront --force
+
+# Slug via the --environment / -e flag instead of the positional
+b2c mrt env delete -p my-storefront -e old-env --force
 ```
 
 ### b2c mrt env clone
@@ -356,16 +451,16 @@ b2c mrt env clone qa -p my-storefront -e staging \
   --external-hostname qa.example.com --certificate-id 123 --wait
 ```
 
-| Flag | Description |
-|------|-------------|
+| Flag                  | Description                                                                |
+| --------------------- | -------------------------------------------------------------------------- |
 | `--environment`, `-e` | Source environment slug (defaults to `mrtEnvironment` / `MRT_ENVIRONMENT`) |
-| `--external-hostname` | Full external hostname (required for non-MRT-managed certificates) |
-| `--external-domain` | External domain for Universal PWA SSR |
-| `--certificate-id` | Certificate ID for custom domain (use `b2c mrt org cert list` to find) |
-| `--clone-redirects` | Clone redirects from the source environment |
-| `--clone-env-vars` | Clone environment variables from the source environment |
-| `--clone-b2c-info` | Clone B2C target info from the source environment |
-| `--wait`, `-w` | Wait for the new environment to reach a terminal state |
+| `--external-hostname` | Full external hostname (required for non-MRT-managed certificates)         |
+| `--external-domain`   | External domain for Universal PWA SSR                                      |
+| `--certificate-id`    | Certificate ID for custom domain (use `b2c mrt org cert list` to find)     |
+| `--clone-redirects`   | Clone redirects from the source environment                                |
+| `--clone-env-vars`    | Clone environment variables from the source environment                    |
+| `--clone-b2c-info`    | Clone B2C target info from the source environment                          |
+| `--wait`, `-w`        | Wait for the new environment to reach a terminal state                     |
 
 ### b2c mrt env invalidate
 
@@ -398,6 +493,8 @@ b2c mrt env b2c -p my-storefront -e production --instance-id aaaa_prd --sites Re
 
 ## Environment Variable Commands
 
+The `mrt env var` commands are [backend-aware](#mrt-backends): they honor `--mrt-backend` and, over SCAPI, use the Storefront Environments API (scopes `sfcc.storefront.environments` / `.rw`). Values are always masked by both backends. Under `--json`, `list` returns the serving backend's native shape (legacy `{count, variables}` vs the SCAPI environment-variables map — see [JSON output is backend-specific](#json-output-is-backend-specific)); `set` and `delete` return the same backend-agnostic summary regardless of backend.
+
 ### b2c mrt env var list
 
 List environment variables.
@@ -405,11 +502,14 @@ List environment variables.
 ```bash
 b2c mrt env var list --project my-storefront --environment production
 b2c mrt env var list -p my-storefront -e staging --json
+
+# Force the SCAPI backend
+b2c mrt env var list -p my-storefront -e staging --mrt-backend scapi
 ```
 
 ### b2c mrt env var set
 
-Set environment variables.
+Set environment variables. Setting is a merge: only the keys you pass are created or updated; other variables are left untouched.
 
 ```bash
 # Set a single variable
@@ -420,17 +520,20 @@ b2c mrt env var set API_KEY=secret DEBUG=true -p my-storefront -e staging
 
 # Set value with spaces
 b2c mrt env var set "MESSAGE=hello world" -p my-storefront -e production
+
+# Force the SCAPI backend
+b2c mrt env var set API_KEY=secret -p my-storefront -e staging --mrt-backend scapi
 ```
 
 ### b2c mrt env var push
 
 Push variables from a local `.env` file to the environment. Diffs the local file against the remote state, prints a summary (added / updated / unchanged / remote-only), and prompts for confirmation before applying. Remote-only variables are **not** deleted.
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--file`, `-f` | Path to the `.env` file to push | `.env` |
-| `--exclude-prefix` | Exclude variables whose keys start with this prefix (repeatable) | `MRT_` |
-| `--yes`, `-y` | Skip confirmation prompt | `false` |
+| Flag               | Description                                                      | Default |
+| ------------------ | ---------------------------------------------------------------- | ------- |
+| `--file`, `-f`     | Path to the `.env` file to push                                  | `.env`  |
+| `--exclude-prefix` | Exclude variables whose keys start with this prefix (repeatable) | `MRT_`  |
+| `--yes`, `-y`      | Skip confirmation prompt                                         | `false` |
 
 ```bash
 # Push variables from ./.env, with confirmation prompt
@@ -441,10 +544,21 @@ b2c mrt env var push -p my-storefront -e staging --file config/.env --yes
 
 # Exclude additional prefixes (MRT_ is always excluded by default)
 b2c mrt env var push -p my-storefront -e staging --exclude-prefix INTERNAL_
+
+# Force the SCAPI backend
+b2c mrt env var push -p my-storefront -e staging --mrt-backend scapi --yes
 ```
 
 ::: tip
 The `MRT_` prefix is excluded by default because those variables (`MRT_PROJECT`, `MRT_ENVIRONMENT`, `MRT_API_KEY`) configure the CLI itself rather than the environment.
+:::
+
+::: tip
+`push` resolves the backend once (from the initial read) and pins every write to it, so a single `push` never crosses backends. Over SCAPI the changed variables are applied as one merge-PATCH rather than one request per key.
+:::
+
+::: tip
+Under `--json`, `push` is non-interactive and emits only the result object on stdout. Pass `--yes` to skip the confirmation prompt — running `--json` without `--yes` when there are changes to apply errors instead of prompting.
 :::
 
 ### b2c mrt env var delete
@@ -453,6 +567,9 @@ Delete an environment variable.
 
 ```bash
 b2c mrt env var delete MY_VAR -p my-storefront -e production
+
+# Force the SCAPI backend
+b2c mrt env var delete MY_VAR -p my-storefront -e production --mrt-backend scapi
 ```
 
 ---
@@ -472,13 +589,13 @@ b2c mrt env redirect list -p my-storefront -e production --limit 50
 
 Create a URL redirect.
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--from` | Source path (required) | — |
-| `--to` | Destination path (required) | — |
-| `--status` | HTTP status code (`301` or `302`) | `301` |
-| `--forward-querystring` | Forward query string parameters | `false` |
-| `--forward-wildcard` | Forward the wildcard portion of the path | `false` |
+| Flag                    | Description                              | Default |
+| ----------------------- | ---------------------------------------- | ------- |
+| `--from`                | Source path (required)                   | —       |
+| `--to`                  | Destination path (required)              | —       |
+| `--status`              | HTTP status code (`301` or `302`)        | `301`   |
+| `--forward-querystring` | Forward query string parameters          | `false` |
+| `--forward-wildcard`    | Forward the wildcard portion of the path | `false` |
 
 ```bash
 # Permanent redirect (default — 301)
@@ -529,6 +646,10 @@ b2c mrt env access-control list -p my-storefront -e staging --json
 
 Push a local build or deploy an existing bundle.
 
+Both paths are [backend-aware](#mrt-backends) — they honor `--mrt-backend`. Deploying an existing bundle (with a bundle ID) uploads nothing and deploys over the selected backend. Pushing a local build (no bundle ID) uploads the bundle — and, when `--environment` is given, deploys it — over SCAPI or the legacy MRT Cloud API. Under `auto`, if the SCAPI upload fails on a safe pre-execution error it falls back to legacy; once a bundle has been uploaded, a later deploy failure is not retried on legacy (so a bundle is never uploaded twice).
+
+When pushing a local build, the SSR configuration is read from `config.server.ts` in the project directory (`--project-directory`, default the current directory), and the project's `package.json` dependencies (`dependencies` + `devDependencies`) are recorded as the bundle's `bundle_metadata` — both best-effort.
+
 ```bash
 # Push local build to project
 b2c mrt bundle deploy --project my-storefront
@@ -547,6 +668,18 @@ b2c mrt bundle deploy 12345 -p my-storefront -e production
 
 # Deploy and wait for completion
 b2c mrt bundle deploy -p my-storefront -e staging --wait
+
+# Deploy an existing bundle via the SCAPI backend and wait for completion
+b2c mrt bundle deploy 12345 -p my-storefront -e production --mrt-backend scapi --wait
+
+# Push a local build and deploy it via the SCAPI backend
+b2c mrt bundle deploy -p my-storefront -e staging --mrt-backend scapi
+
+# Push via SCAPI with a custom v2 archive layout
+b2c mrt bundle deploy -p my-storefront --mrt-backend scapi --root-dir bld --match-mode ignore_missing
+
+# Push via the legacy v2 endpoint (opt in with --v2)
+b2c mrt bundle deploy -p my-storefront --mrt-backend legacy --v2 --match-mode ignore_missing
 ```
 
 **Flags:**
@@ -554,31 +687,90 @@ b2c mrt bundle deploy -p my-storefront -e staging --wait
 |------|-------------|---------|
 | `--message`, `-m` | Bundle message/description | |
 | `--build-dir`, `-b` | Path to build directory | `build` |
+| `--v2` | Use the v2 bundle format/endpoint. SCAPI always uses v2; on legacy this routes the upload through the v2 endpoint instead of v1 | `false` |
 | `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
-| `--node-version`, `-n` | Node.js version for SSR | `22.x` |
+| `--root-dir` | Archive path prefix for built files and the config file (v2 uploads only) | `bld` |
+| `--config-path` | In-archive config file path, relative to `--root-dir` (v2 uploads only) | `.mrt/config.json` |
+| `--match-mode` | How `ssr-only`/`ssr-shared` patterns matching no files are handled — `strict` or `ignore_missing` (v2 uploads only) | `strict` |
+| `--node-version`, `-n` | Node.js version for SSR | `24.x` |
 | `--ssr-param` | SSR parameters (key=value) | |
 | `--wait`, `-w` | Wait for the deployment to complete before returning | `false` |
 | `--poll-interval` | Polling interval in seconds when using `--wait` | `30` |
 | `--timeout` | Maximum time to wait in seconds when using `--wait` (`0` for no timeout) | `600` |
 
+**Bundle format:** SCAPI always uploads the v2 format. The legacy backend defaults to v1; pass `--v2` to upload through the legacy v2 endpoint (upload, then a separate deploy when `--environment` is given). `--root-dir`, `--config-path`, and `--match-mode` only affect a v2 upload — on a legacy v1 push they are ignored and the command prints a warning suggesting `--v2`. `b2c mrt bundle deploy --v2` performs the same v2 upload as `b2c mrt bundle upload-v2`, and can also deploy in one step.
+
+### b2c mrt bundle upload-v2
+
+Build and upload a **v2-format** bundle to Managed Runtime. This is **upload only** — it does not deploy the bundle. Deploy it separately with `b2c mrt bundle deploy <bundleId> --environment <env>`.
+
+> **Note:** `b2c mrt bundle deploy --v2` performs the same v2 upload and can additionally deploy in one step (with `--environment`). Prefer it going forward; `upload-v2` remains for the dedicated upload-only workflow.
+
+The v2 format differs from the default (v1) `deploy` upload: the archive is a gzip tar whose files sit under a root directory (default `bld/`), and the SSR configuration (`ssr-only`, `ssr-shared`, SSR parameters, and bundle metadata) is written **inside** the archive at `{root-dir}/{config-path}` (default `bld/.mrt/config.json`) rather than sent as request fields. It is uploaded as `multipart/form-data` to the v2 endpoint.
+
+**Config resolution:** the SSR configuration is read from the build's on-disk v2 config file at `{build-dir}/{config-path}` (e.g. `build/.mrt/config.json`) when it exists. If there is no v2 config file, the command reads `config.server.ts` from the project directory (`--project-directory`, default the current directory — a compiled `config.server.js`/`config.server.mjs`, or the legacy `build/config.server.js`, is also accepted), and then falls back to built-in defaults. Command flags (`--ssr-only`, `--ssr-shared`, `--ssr-param`, `--node-version`, `--dependencies`, `--cc-override`) override the resolved values **per key**. When the build already emits the v2 config file, it is excluded from the archive and replaced by the resolved config so there is exactly one copy.
+
+`config.server.ts` is evaluated from source (via jiti), so keep any type-only imports as `import type` — they are erased and need not resolve. A `config.server.ts` that exists but fails to import causes the command to error rather than silently falling back to defaults.
+
+**Dependency metadata:** the project's `package.json` dependencies (merged `dependencies` + `devDependencies`) are recorded in the bundle config's `bundleMetadata.dependencies`, matching pwa-kit/storefront-next. An explicit `--dependencies` value, or dependencies already present in the v2 config file, take precedence. Collection is best-effort — a missing or unreadable `package.json` never blocks the upload.
+
+```bash
+# Build and upload from ./build
+b2c mrt bundle upload-v2 --project my-storefront
+
+# Upload from a custom build directory
+b2c mrt bundle upload-v2 -p my-storefront --build-dir ./dist
+
+# Allow SSR patterns that match no files
+b2c mrt bundle upload-v2 -p my-storefront --match-mode ignore_missing
+
+# Provide SSR parameters and bundle metadata
+b2c mrt bundle upload-v2 -p my-storefront --ssr-param EnvBasePath=/mobify --node-version 20.x
+b2c mrt bundle upload-v2 -p my-storefront --dependencies @./deps.json --cc-override plugin-a
+
+# Target a non-default MRT control plane
+b2c mrt bundle upload-v2 -p my-storefront --cloud-origin https://cloud.mobify.com
+```
+
+**Flags:**
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--message`, `-m` | Bundle message/description | |
+| `--build-dir`, `-b` | Path to build directory | `build` |
+| `--root-dir` | Archive path prefix for built files and the config file | `bld` |
+| `--config-path` | In-archive config file path, relative to `--root-dir` | `.mrt/config.json` |
+| `--match-mode` | How `ssr-only`/`ssr-shared` patterns matching no files are handled (`strict` or `ignore_missing`) | `strict` |
+| `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
+| `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
+| `--node-version`, `-n` | Node.js version for SSR | `24.x` |
+| `--ssr-param` | SSR parameters (key=value, repeatable) | |
+| `--dependencies` | Bundle dependencies as inline JSON or a `@path` to a JSON file | |
+| `--cc-override` | Commerce Cloud override identifier (repeatable) | |
+
 ### b2c mrt bundle list
 
-List bundles in a project.
+List bundles in a project. This command is [backend-aware](#mrt-backends): under `--json` it returns the serving backend's native response verbatim.
 
 ```bash
 b2c mrt bundle list --project my-storefront
 b2c mrt bundle list -p my-storefront --limit 10
 b2c mrt bundle list -p my-storefront --json
+
+# Force the SCAPI backend
+b2c mrt bundle list -p my-storefront --mrt-backend scapi
 ```
 
 ### b2c mrt bundle history
 
-View deployment history for an environment.
+View deployment history for an environment. This command is [backend-aware](#mrt-backends): under `--json` it returns the serving backend's native response verbatim.
 
 ```bash
 b2c mrt bundle history -p my-storefront -e production
 b2c mrt bundle history -p my-storefront -e staging --limit 5
+
+# Force the SCAPI backend
+b2c mrt bundle history -p my-storefront -e staging --mrt-backend scapi
 ```
 
 ### b2c mrt bundle download

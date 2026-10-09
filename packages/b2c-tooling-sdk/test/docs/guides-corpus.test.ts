@@ -26,10 +26,12 @@ const GUIDES_INDEX = path.join(packageRoot, 'data/guides/index.json');
 const TOOLING_INDEX = path.join(packageRoot, 'data/tooling/index.json');
 
 const HELP_INDEX = path.join(packageRoot, 'data/help/index.json');
+const HELP_KB_INDEX = path.join(packageRoot, 'data/help-kb/index.json');
 
 const hasGuides = fs.existsSync(GUIDES_INDEX);
 const hasTooling = fs.existsSync(TOOLING_INDEX);
 const hasHelp = fs.existsSync(HELP_INDEX);
+const hasHelpKb = fs.existsSync(HELP_KB_INDEX);
 
 const INTERNAL_TOOLING_DOC_ROOTS = ['guide', 'cli', 'mcp', 'vscode-extension'];
 
@@ -61,9 +63,17 @@ describe('docs: Developer Center guides corpus', function () {
     if (!hasGuides) this.skip();
   });
 
-  it('indexes guides across the five Developer Center categories', () => {
+  it('indexes guides across the Developer Center categories', () => {
     const cats = new Set(listDocs().map((e) => e.category));
-    for (const c of ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce']) {
+    for (const c of [
+      'commerce-api',
+      'pwa-kit-managed-runtime',
+      'sfnext',
+      'sfra',
+      'b2c-commerce',
+      'commerce-solutions',
+      'ocapi',
+    ]) {
       expect(cats.has(c as DocEntry['category']), `missing category ${c}`).to.equal(true);
     }
   });
@@ -81,9 +91,35 @@ describe('docs: Developer Center guides corpus', function () {
     expect(entry.filePath, 'guides are online-only, not bundled').to.equal(undefined);
   });
 
+  it('maps Commerce Solutions guides from the solutions directory to the commerce-solutions URL path', () => {
+    const entry = listDocs('commerce-solutions').find((e) => e.id === 'commerce-solutions/bot-management');
+    expect(entry, 'commerce-solutions/bot-management').to.not.equal(undefined);
+    expect(entry!.url).to.equal(
+      'https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/bot-management.html',
+    );
+    expect(entry!.sourceUrl).to.equal(entry!.url!.replace(/\.html$/, '.md'));
+  });
+
+  it('maps OCAPI prose reference pages to the b2c-commerce-ocapi URL path', () => {
+    const entry = listDocs('ocapi').find((e) => e.id === 'ocapi/ocapisettings');
+    expect(entry, 'ocapi/ocapisettings').to.not.equal(undefined);
+    expect(entry!.url).to.equal(
+      'https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-commerce-ocapi/ocapisettings.html',
+    );
+    expect(entry!.sourceUrl).to.equal(entry!.url!.replace(/\.html$/, '.md'));
+  });
+
   it('preserves immediate Developer Center TOC neighbors as bidirectional related entries', () => {
     const guides = listDocs().filter((entry) =>
-      ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'].includes(entry.category ?? ''),
+      [
+        'commerce-api',
+        'pwa-kit-managed-runtime',
+        'sfnext',
+        'sfra',
+        'b2c-commerce',
+        'commerce-solutions',
+        'ocapi',
+      ].includes(entry.category ?? ''),
     );
     const byId = new Map(guides.map((entry) => [entry.id, entry]));
     const workflow = byId.get('b2c-commerce/developer-workflow');
@@ -137,12 +173,17 @@ describe('docs: Developer Center guides corpus', function () {
     expect(results[0].entry.id).to.contain('passwordless');
   });
 
-  it('boosts a workspace-relevant category to the top of cross-corpus results', () => {
-    // "components" spans several corpora; a Storefront Next workspace should
-    // float an sfnext guide to the top of the mixed result set.
-    const results = searchDocs('components', {workspace: 'storefront-next', limit: 10});
-    expect(results.length).to.be.greaterThan(0);
-    expect(results[0].entry.category).to.equal('sfnext');
+  it('boosts workspace-relevant guides in cross-corpus results', () => {
+    // The boost is soft: shared API guides can outrank framework guides as
+    // their summaries change. Compare the same guide with and without it.
+    const baseline = searchDocs('components', {limit: 100});
+    const results = searchDocs('components', {workspace: 'storefront-next', limit: 100});
+    const guide = baseline.find((result) => result.entry.category === 'sfnext');
+    expect(guide).to.not.equal(undefined);
+    const boosted = results.find((result) => result.entry.id === guide!.entry.id);
+    expect(boosted).to.not.equal(undefined);
+    expect(boosted!.score).to.be.greaterThan(guide!.score);
+    expect(categoriesForWorkspace('storefront-next')).to.include(results[0].entry.category);
   });
 
   it('omits the internal headings field from search and list results (payload hygiene)', () => {
@@ -477,10 +518,25 @@ describe('docs: Salesforce Help corpus', function () {
       'help-admin/b2c_incorporate_third-party_apps',
       'help-merchant/b2c_merchandising_your_site',
       'help-merchant/b2c_multi_currency_sites',
-      'help-merchant/b2c_batch_processing',
     ]) {
       expect(ids.has(id), `missing direct topic from composite map: ${id}`).to.equal(true);
     }
+  });
+
+  it('includes new Help maps and the split batch-processing articles', () => {
+    const helpEntries = [...listDocs('help-admin'), ...listDocs('help-merchant')];
+    const ids = new Set(helpEntries.map((entry) => entry.id));
+    for (const id of [
+      'help-admin/b2c_ai_social_integrations',
+      'help-admin/b2c_product_feed_setup',
+      'help-admin/b2c_google_feed_overview',
+      'help-admin/b2c_commerce_apps',
+      'help-merchant/b2c_batch_processing_catalogs',
+      'help-merchant/b2c_batch_processing_products',
+    ]) {
+      expect(ids.has(id), `missing current Help article: ${id}`).to.equal(true);
+    }
+    expect(ids.has('help-merchant/b2c_batch_processing')).to.equal(false);
   });
 
   it('only emits related entry ids that resolve within the corpus', () => {
@@ -491,5 +547,45 @@ describe('docs: Salesforce Help corpus', function () {
         expect(ids.has(relatedId), `${entry.id} references missing entry ${relatedId}`).to.equal(true);
       }
     }
+  });
+});
+
+describe('docs: Salesforce Help Knowledge Articles corpus', function () {
+  before(function () {
+    if (!hasHelpKb) this.skip();
+  });
+
+  it('keys every entry by article number with public Help and docs-site URLs', () => {
+    const entries = listDocs('help-kb');
+    expect(entries.length).to.be.greaterThan(0);
+    for (const entry of entries) {
+      const number = entry.id.replace(/^help-kb\//, '');
+      expect(number, entry.id).to.match(/^\d+$/);
+      expect(entry.url).to.equal(`https://help.salesforce.com/s/articleView?id=${number}&type=1`);
+      expect(entry.sourceUrl).to.match(new RegExp(`/help/help-kb/${number}\\.md$`));
+    }
+  });
+
+  it('reads article content online from sourceUrl', async () => {
+    const entry = listDocs('help-kb')[0];
+    clearContentCache(true);
+    const originalFetch = globalThis.fetch;
+    let fetchedUrl = '';
+    globalThis.fetch = ((input: Parameters<typeof fetch>[0]) => {
+      fetchedUrl = String(input);
+      return Promise.resolve(new Response('# KB Article\n\nfetched body', {status: 200}));
+    }) as typeof fetch;
+    try {
+      expect(await readEntryContent(entry)).to.equal('# KB Article\n\nfetched body');
+      expect(fetchedUrl).to.equal(entry.sourceUrl);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('is searchable by category', () => {
+    const results = searchDocs('code upload certificate', {category: 'help-kb', limit: 5});
+    expect(results.length).to.be.greaterThan(0);
+    expect(results.every((r) => r.entry.category === 'help-kb')).to.equal(true);
   });
 });

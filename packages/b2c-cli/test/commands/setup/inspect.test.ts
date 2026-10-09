@@ -7,6 +7,9 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {ux} from '@oclif/core';
+import {mkdtempSync, rmSync, writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 
 import SetupInspect from '../../../src/commands/setup/inspect.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -467,6 +470,97 @@ describe('setup inspect', () => {
       await runSilent(() => command.run());
 
       expect(warnings).to.include('Sensitive values are displayed unmasked.');
+    });
+  });
+
+  describe('effective safety policy', () => {
+    let directory: string;
+
+    beforeEach(() => {
+      directory = mkdtempSync(join(tmpdir(), 'inspect-safety-'));
+    });
+
+    afterEach(() => {
+      delete process.env.SFCC_SAFETY_CONFIG;
+      delete process.env.SFCC_SAFETY_LEVEL;
+      delete process.env.SFCC_SAFETY_CONFIRM;
+      rmSync(directory, {recursive: true, force: true});
+    });
+
+    function command(instanceSafety?: NormalizedConfig['safety'], verbose = false) {
+      const inspect = new SetupInspect([], {} as any);
+      (inspect as any).flags = {unmask: false, verbose};
+      stubCommandConfigAndLogger(inspect);
+      (inspect.config as any).configDir = directory;
+      stubJsonEnabled(inspect, false);
+      stubResolvedConfig(
+        inspect,
+        {safety: instanceSafety},
+        instanceSafety ? [{name: 'DwJsonSource', fields: ['safety']}] : [],
+      );
+      return inspect;
+    }
+
+    for (const explicitPath of [false, true]) {
+      it(`includes a global-only policy from ${explicitPath ? 'SFCC_SAFETY_CONFIG' : 'the config directory'}`, async () => {
+        const path = join(directory, explicitPath ? 'selected.json' : 'safety.json');
+        const rules = [{method: 'PUT', path: '/products/*', action: 'confirm'}];
+        writeFileSync(path, JSON.stringify({level: 'READ_ONLY', rules}));
+        if (explicitPath) process.env.SFCC_SAFETY_CONFIG = path;
+        const inspect = command();
+        const stdout = sinon.stub(ux, 'stdout');
+        const result = await inspect.run();
+        const output = stdout.firstCall.args[0] as string;
+        expect(output).to.match(/Level\s+READ_ONLY\s+\[SafetyFile\]/);
+        expect(output).to.match(/Rules\s+1 \(use --verbose to show\)\s+\[SafetyFile\]/);
+        expect(output).not.to.include('Source:');
+        expect(output).not.to.include('/products/*');
+        expect(result.config.safety).to.deep.equal({level: 'READ_ONLY', confirm: false, rules});
+        expect(result.sources).to.deep.include({name: 'SafetyFile', location: path, fields: ['safety']});
+
+        stubJsonEnabled(inspect, true);
+        stdout.resetHistory();
+        expect(await inspect.run()).to.deep.equal(result);
+        expect(stdout.called).to.equal(false);
+      });
+    }
+
+    it('shows the winning level and confirmation sources and preserves instance-first rule order', async () => {
+      const globalRule = {method: 'DELETE', action: 'block'} as const;
+      const instanceRule = {method: 'PUT', path: '/products/*', action: 'confirm'} as const;
+      writeFileSync(join(directory, 'safety.json'), JSON.stringify({level: 'READ_ONLY', rules: [globalRule]}));
+      process.env.SFCC_SAFETY_LEVEL = 'NO_DELETE';
+      process.env.SFCC_SAFETY_CONFIRM = 'true';
+      const inspect = command({level: 'NONE', confirm: false, rules: [instanceRule]}, true);
+      const stdout = sinon.stub(ux, 'stdout');
+      const result = await inspect.run();
+      const output = stdout.firstCall.args[0] as string;
+      expect(output).to.match(/Level\s+READ_ONLY\s+\[SafetyFile\]/);
+      expect(output).to.match(/Level confirmation\s+Enabled\s+\[SafetyEnv\]/);
+      expect(output).to.match(/1\. CONFIRM PUT\s+\[DwJsonSource\]/);
+      expect(output).to.match(/2\. BLOCK DELETE\s+\[SafetyFile\]/);
+      expect(output.indexOf('1. CONFIRM PUT')).to.be.lessThan(output.indexOf('2. BLOCK DELETE'));
+      expect(result.config.safety).to.deep.equal({
+        level: 'READ_ONLY',
+        confirm: true,
+        rules: [instanceRule, globalRule],
+      });
+    });
+
+    it('shows an environment-only policy and its variables', async () => {
+      process.env.SFCC_SAFETY_LEVEL = 'read-only';
+      process.env.SFCC_SAFETY_CONFIRM = '1';
+      const inspect = command();
+      const stdout = sinon.stub(ux, 'stdout');
+      const result = await inspect.run();
+      const output = stdout.firstCall.args[0] as string;
+      expect(output).to.match(/Level\s+READ_ONLY\s+\[SafetyEnv\]/);
+      expect(output).to.match(/Level confirmation\s+Enabled\s+\[SafetyEnv\]/);
+      expect(result.sources).to.deep.include({
+        name: 'SafetyEnv',
+        location: 'SFCC_SAFETY_LEVEL, SFCC_SAFETY_CONFIRM',
+        fields: ['safety'],
+      });
     });
   });
 });

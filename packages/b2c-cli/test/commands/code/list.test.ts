@@ -22,20 +22,34 @@ describe('code list', () => {
     return createTestCommand(CodeList, hooks.getConfig(), flags, {});
   }
 
-  it('returns data in json mode', async () => {
-    const command: any = await createCommand({json: true});
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      listCodeVersions: sinon.stub(),
+      getActiveCodeVersion: sinon.stub(),
+      activateCodeVersion: sinon.stub(),
+      deleteCodeVersion: sinon.stub(),
+      createCodeVersion: sinon.stub(),
+      reloadCodeVersion: sinon.stub(),
+    };
+  }
 
+  function stubCommon(command: any) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
+    const backend = createMockBackend();
+    sinon.stub(command, 'createScriptsBackend').returns(backend);
+    return backend;
+  }
+
+  it('returns data in json mode', async () => {
+    const command: any = await createCommand({json: true});
+    const backend = stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
 
-    const getStub = sinon.stub().resolves({data: {data: [{id: 'v1', active: true}]}, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({
-      ocapi: {
-        GET: getStub,
-      },
-    }));
+    backend.listCodeVersions.resolves([{id: 'v1', active: true}]);
 
     const uxStub = sinon.stub(ux, 'stdout');
 
@@ -47,18 +61,10 @@ describe('code list', () => {
 
   it('prints a message when no code versions are returned in non-json mode', async () => {
     const command: any = await createCommand({});
-
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    const backend = stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(false);
 
-    const getStub = sinon.stub().resolves({data: {data: []}, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({
-      ocapi: {
-        GET: getStub,
-      },
-    }));
+    backend.listCodeVersions.resolves([]);
 
     const uxStub = sinon.stub(ux, 'stdout');
 

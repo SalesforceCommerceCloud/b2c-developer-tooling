@@ -465,7 +465,7 @@ Use [setLogin(String, String)](dw.customer.Credentials.md#setloginstring-string)
       
       - customer is not registered
       - customer is not authenticated
-      - verifyOldPassword=true &&oldPassword is empty
+      - verifyOldPassword=true &amp;&amp;oldPassword is empty
       - verifyOldPassword=true and oldPassword does not match the existing password
       - newPassword is empty
       - newPassword does not meet acceptance criteria

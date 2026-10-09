@@ -1,5 +1,17 @@
 # @salesforce/mrt-utilities
 
+## 0.3.2
+
+### Patch Changes
+
+- [#699](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/699) [`98aa9ae`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/98aa9aecb89164dc6bb709e00b4194e7678ecdc4) - Upgrade `qs` to 6.16.0 to address the reported dependency vulnerability. (Thanks [@kevinxh](https://github.com/kevinxh)!)
+
+## 0.3.1
+
+### Patch Changes
+
+- [#635](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/635) [`a4a87a9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a4a87a9d60552e6fad01a0d0c074fbc7e5ab6264) - Improve streamed response performance by using a runtime-appropriate Brotli quality and periodically flushing compressed output. The Brotli quality and flush threshold can now be tuned via the `MRT_BROTLI_COMPRESSION_QUALITY` (0-11) and `MRT_BROTLI_FLUSH_THRESHOLD_BYTES` (bytes) environment variables, and the periodic flushing behavior can be disabled by setting `MRT_BROTLI_CHUNKING_ENABLED=false`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.0
 
 ### Minor Changes

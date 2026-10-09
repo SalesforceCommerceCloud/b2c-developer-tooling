@@ -11,10 +11,10 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {listBundles, type ListBundlesResult, type MrtBundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {listMrtBundles, type MrtBundleView} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<MrtBundle>> = {
+const COLUMNS: Record<string, ColumnDef<MrtBundleView>> = {
   id: {
     header: 'ID',
     get: (bundle) => bundle.id?.toString() ?? '-',
@@ -33,7 +33,11 @@ const COLUMNS: Record<string, ColumnDef<MrtBundle>> = {
   },
   created: {
     header: 'Created',
-    get: (bundle) => (bundle.created_at ? new Date(bundle.created_at).toLocaleString() : '-'),
+    get: (bundle) => (bundle.created ? new Date(bundle.created).toLocaleString() : '-'),
+  },
+  backend: {
+    header: 'Backend',
+    get: (bundle) => bundle.backend,
   },
 };
 
@@ -55,6 +59,7 @@ export default class MrtBundleList extends MrtCommand<typeof MrtBundleList> {
   static examples = [
     '<%= config.bin %> <%= command.id %> --project my-storefront',
     '<%= config.bin %> <%= command.id %> -p my-storefront --limit 10',
+    '<%= config.bin %> <%= command.id %> -p my-storefront --mrt-backend scapi',
     '<%= config.bin %> <%= command.id %> -p my-storefront --json',
   ];
 
@@ -69,28 +74,36 @@ export default class MrtBundleList extends MrtCommand<typeof MrtBundleList> {
     ...columnFlagsFor(COLUMNS),
   };
 
-  async run(): Promise<ListBundlesResult> {
-    this.requireMrtCredentials();
+  protected operations = {
+    listMrtBundles,
+  };
 
+  async run(): Promise<unknown> {
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
     const {limit, offset} = this.flags;
 
-    this.log(t('commands.mrt.bundle.list.fetching', 'Fetching bundles for {{project}}...', {project}));
+    if (!this.jsonEnabled()) {
+      this.log(t('commands.mrt.bundle.list.fetching', 'Fetching bundles for {{project}}...', {project}));
+    }
 
-    const result = await listBundles(
-      {
-        projectSlug: project,
-        limit,
-        offset,
-        origin: this.resolvedConfig.values.mrtOrigin,
-      },
-      this.getMrtAuth(),
-    );
+    const result = await this.operations.listMrtBundles({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      limit,
+      offset,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Listing bundles via backend'),
+    });
 
     if (!this.jsonEnabled()) {
       if (result.bundles.length === 0) {
@@ -104,6 +117,14 @@ export default class MrtBundleList extends MrtCommand<typeof MrtBundleList> {
       }
     }
 
-    return result;
+    // Under --json, emit the backend's native response verbatim (legacy MRT
+    // Cloud API list shape, or the SCAPI Storefront Deployments response) so the
+    // machine contract stays backend-specific and backward-compatible. The
+    // normalized rows above are for the human table only.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

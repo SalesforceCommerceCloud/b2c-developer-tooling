@@ -52,6 +52,13 @@ const htmlLanguageServiceEsmEntry = path.join(
 // resources/xsd-mappings.json before any bundling happens.
 syncXsd({pkgRoot});
 
+// Bundle the SDK's generated dw.json JSON Schema (package.json#contributes.jsonValidation).
+fs.mkdirSync(path.join(pkgRoot, 'resources', 'schemas'), {recursive: true});
+fs.copyFileSync(
+  path.join(sdkRoot, 'data', 'schemas', 'dw.schema.json'),
+  path.join(pkgRoot, 'resources', 'schemas', 'dw.schema.json'),
+);
+
 // In CJS there is no import.meta; SDK's version.js uses createRequire(import.meta.url). Shim it.
 // Use globalThis so the value is visible inside all module wrappers in the bundle.
 const IMPORT_META_URL_SHIM =
@@ -65,6 +72,13 @@ const SDK_PKG_REQUIRE_RESOLVE_RE =
 // `require('path').join(__dirname, 'package.json')` evaluates at runtime to <extension-dist>/package.json,
 // so `path.dirname(...)` gives the extension's dist/ directory — where SDK data dirs are staged.
 const SDK_PKG_REQUIRE_RESOLVE_REPLACEMENT = "require('path').join(__dirname, 'package.json')";
+
+// The bundled SCAPI contracts (@salesforce/b2c-api-schemas) are staged into dist/data/api-schemas, because the
+// VSIX ships no node_modules. The API Browser reads them when the live Schemas API is unavailable.
+const API_SCHEMAS_RESOLVE_RE =
+  /require\s*\.\s*resolve\s*\(\s*["']@salesforce\/b2c-api-schemas\/manifest\.json["']\s*\)/g;
+const API_SCHEMAS_RESOLVE_REPLACEMENT = "require('path').join(__dirname, 'data', 'api-schemas', 'manifest.json')";
+const apiSchemasRoot = path.join(pkgRoot, '..', '..', 'schemas');
 
 let sdkPkgRequireHits = 0;
 let sdkPkgResolveHits = 0;
@@ -101,9 +115,15 @@ const sdkSourceShimPlugin = {
       const hasResolvePkg = SDK_PKG_REQUIRE_RESOLVE_RE.test(original);
       SDK_PKG_REQUIRE_RESOLVE_RE.lastIndex = 0;
 
-      if (!hasImportMeta && !hasRequirePkg && !hasResolvePkg) return null;
+      const hasApiSchemas = API_SCHEMAS_RESOLVE_RE.test(original);
+      API_SCHEMAS_RESOLVE_RE.lastIndex = 0;
+
+      if (!hasImportMeta && !hasRequirePkg && !hasResolvePkg && !hasApiSchemas) return null;
 
       let contents = original;
+      if (hasApiSchemas) {
+        contents = contents.replace(API_SCHEMAS_RESOLVE_RE, API_SCHEMAS_RESOLVE_REPLACEMENT);
+      }
       if (hasImportMeta) {
         contents = contents.replace(/import\.meta\.url/g, 'globalThis.__import_meta_url');
       }
@@ -157,6 +177,16 @@ function copySdkDataDirs() {
   for (const dir of SDK_DATA_DIRS) {
     copyDir(path.join(sdkRoot, 'data', dir), path.join(pkgRoot, 'dist', 'data', dir));
   }
+}
+
+/** Stage the bundled SCAPI contracts (manifest + scapi/) into dist/data/api-schemas. */
+function copyApiSchemas() {
+  const dest = path.join(pkgRoot, 'dist', 'data', 'api-schemas');
+  fs.rmSync(dest, {recursive: true, force: true});
+  fs.mkdirSync(dest, {recursive: true});
+  fs.copyFileSync(path.join(apiSchemasRoot, 'manifest.json'), path.join(dest, 'manifest.json'));
+  fs.cpSync(path.join(apiSchemasRoot, 'scapi'), path.join(dest, 'scapi'), {recursive: true});
+  console.log('[api-schemas] staged bundled SCAPI contracts to dist/data/api-schemas/');
 }
 
 /** Stage @salesforce/b2c-script-types into the extension's node_modules so the TypeScript Server
@@ -213,6 +243,7 @@ function copySwaggerUiAssets() {
 /** Single helper invoked by both watch and production paths so they ship the same dist/ layout. */
 function syncStaticAssets() {
   copySdkDataDirs();
+  copyApiSchemas();
   copyScriptTypesPlugin();
   copySwaggerUiAssets();
   copyCipStyles();

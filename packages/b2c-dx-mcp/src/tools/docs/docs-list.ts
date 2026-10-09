@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {TOOLSETS} from '../../utils/constants.js';
 import {z} from 'zod';
 import {listDocs, categoriesForWorkspace, type DocCategory, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
@@ -11,14 +12,18 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {categoryEnumValues, enabledCategoriesNote} from './topics.js';
-import {WORKSPACE_VALUES, detectedWorkspaceNote, resolveWorkspace, type WorkspaceParam} from './storefront.js';
+import {
+  workspaceInputSchema,
+  detectedWorkspaceNote,
+  resolveProjectWorkspace,
+  type WorkspaceContextInput,
+} from './storefront.js';
 
 /** Default page size for a filtered listing. Bounds payload size (large corpora hold 500+ entries). */
 const DEFAULT_LIMIT = 100;
 
-interface ListInput {
+interface ListInput extends WorkspaceContextInput {
   category?: DocCategory;
-  workspace?: WorkspaceParam;
   limit?: number;
   offset?: number;
 }
@@ -63,31 +68,36 @@ export function createDocsListTool(
   return createToolAdapter<ListInput, ListOutput>(
     {
       name: 'docs_list',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'List IDs and titles for B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
         'Without a filter, returns category counts. ' +
         'Use docs_search for questions and docs_read for content.' +
         enabledCategoriesNote(enabledCategories) +
         detectedWorkspaceNote(detectedWorkspaces),
-      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: [...TOOLSETS],
       inputSchema: {
+        ...workspaceInputSchema,
         category: z
           .enum(categoryEnumValues(enabledCategories))
           .optional()
           .describe('Restrict the listing to one documentation category.'),
-        workspace: z
-          .enum(WORKSPACE_VALUES)
-          .optional()
-          .describe('Workspace filter. "auto" uses startup workspace; omit for category directory.'),
+        workspace: workspaceInputSchema.workspace.describe(
+          'Filter by storefront; auto detects projectDirectory, all lists categories.',
+        ),
         limit: z.number().int().positive().optional().describe(`Max entries per page. Defaults to ${DEFAULT_LIMIT}.`),
         offset: z.number().int().nonnegative().optional().describe('Number of entries to skip (for pagination).'),
       },
       async execute(args) {
         // Explicit category wins; otherwise a workspace narrows to its relevant categories.
-        const workspace = resolveWorkspace(args.workspace, detectedWorkspaces);
+        const workspace = await resolveProjectWorkspace(args, detectedWorkspaces);
         const filter: DocCategory | DocCategory[] | undefined =
           args.category ??
-          (args.workspace && args.workspace !== 'all' && workspace ? categoriesForWorkspace(workspace) : undefined);
+          ((args.workspace || args.projectDirectory) && args.workspace !== 'all' && workspace
+            ? categoriesForWorkspace(workspace)
+            : undefined);
 
         // No filter at all → return a compact directory of categories + counts,
         // never the whole corpus (which would blow the inline payload budget).

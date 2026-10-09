@@ -39,8 +39,17 @@ export function registerApiBrowser(
     showCollapseAll: true,
   });
 
+  const messageDisposable = treeProvider.onDidChangeMessage((message) => {
+    treeView.message = message;
+  });
+
   const refreshDisposable = registerSafeCommand('b2c-dx.apiBrowser.refresh', () => {
     treeProvider.refresh();
+  });
+
+  const helpDisposable = vscode.commands.registerCommand('b2c-dx.apiBrowser.help', () => {
+    const guide = vscode.Uri.joinPath(context.extensionUri, 'resources', 'api-browser-setup.md');
+    return vscode.commands.executeCommand('markdown.showPreviewToSide', guide);
   });
 
   const openSwaggerDisposable = registerSafeCommand('b2c-dx.apiBrowser.openSwagger', (schema: SchemaEntry) => {
@@ -66,5 +75,13 @@ export function registerApiBrowser(
     treeProvider.refresh();
   });
 
-  context.subscriptions.push(treeView, refreshDisposable, openSwaggerDisposable, scapiAddDisposable, swaggerManager);
+  context.subscriptions.push(
+    treeView,
+    messageDisposable,
+    refreshDisposable,
+    helpDisposable,
+    openSwaggerDisposable,
+    scapiAddDisposable,
+    swaggerManager,
+  );
 }

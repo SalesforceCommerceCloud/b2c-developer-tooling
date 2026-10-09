@@ -8,7 +8,8 @@ import fs from 'node:fs';
 import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
-import {getActiveCodeVersion} from './versions.js';
+import {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
+import type {ScriptsBackend} from './scripts-types.js';
 import {LONG_OPERATION_TIMEOUT_MS} from './constants.js';
 
 const ZIP_BODY = new URLSearchParams({method: 'ZIP'}).toString();
@@ -25,6 +26,8 @@ export interface DownloadProgressInfo {
  * Options for downloading cartridges.
  */
 export interface DownloadOptions {
+  /** Explicit code-version backend. Defaults to OCAPI for SDK compatibility. */
+  scriptsBackend?: ScriptsBackend;
   /** Cartridge names to include (if empty/undefined, all are included) */
   include?: string[];
   /** Cartridge names to exclude */
@@ -63,16 +66,16 @@ function startProgress(
 }
 
 /**
- * Resolves code version from instance config or OCAPI auto-discovery.
+ * Resolves code version from instance config or the explicitly selected backend.
  */
-async function resolveCodeVersion(instance: B2CInstance): Promise<string> {
+async function resolveCodeVersion(instance: B2CInstance, scriptsBackend: ScriptsBackend): Promise<string> {
   const logger = getLogger();
   let codeVersion = instance.config.codeVersion;
 
   if (!codeVersion) {
     logger.debug('No code version configured, attempting to discover active version...');
     try {
-      const activeVersion = await getActiveCodeVersion(instance);
+      const activeVersion = await scriptsBackend.getActiveCodeVersion();
       if (activeVersion?.id) {
         codeVersion = activeVersion.id;
         instance.config.codeVersion = codeVersion;
@@ -287,7 +290,7 @@ export async function downloadCartridges(
   options: DownloadOptions = {},
 ): Promise<DownloadResult> {
   const logger = getLogger();
-  const codeVersion = await resolveCodeVersion(instance);
+  const codeVersion = await resolveCodeVersion(instance, options.scriptsBackend ?? new OcapiScriptsBackend(instance));
   const resolvedOutput = path.resolve(outputDirectory);
   const {include, exclude, mirror, onProgress} = options;
 

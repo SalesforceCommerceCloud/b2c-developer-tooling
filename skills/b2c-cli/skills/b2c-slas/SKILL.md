@@ -7,7 +7,7 @@ description: Create, update, and manage SLAS (Shopper Login and API Access Servi
 
 Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) API clients and credentials.
 
-> **Important:** SLAS is for **shopper** (customer) authentication used by storefronts and headless commerce. For **admin** tokens (OCAPI, Admin APIs), use `b2c auth token` - see [b2c-config skill](../b2c-config/SKILL.md).
+> **Important:** SLAS is for **shopper** (customer) authentication used by storefronts and headless commerce. For **admin** tokens (OCAPI, Admin APIs), use `b2c auth token` - see the `b2c-config` skill.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli slas client list`).
 
@@ -15,7 +15,7 @@ Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) A
 
 Values like `tenantId`, `shortCode`, `slasClientId`, and `slasClientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance / configuration plugins. Examples below show minimal usage; **add flags only to override configured values** — passing these as flags is usually unnecessary. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 Relevant overrides:
 
@@ -23,6 +23,8 @@ Relevant overrides:
 - `--short-code` / `SFCC_SHORTCODE` / `shortCode`
 - `--slas-client-id` / `SFCC_SLAS_CLIENT_ID` / `slasClientId`
 - `--slas-client-secret` / `SFCC_SLAS_CLIENT_SECRET` / `slasClientSecret`
+
+Commands that target an existing client (`get`, `update`, `delete`, and `open`) use the configured `slasClientId` when their positional client ID is omitted. A positional client ID takes precedence over configuration.
 
 ## When to Use
 
@@ -50,7 +52,10 @@ b2c slas client list --tenant-id abcd_123
 ### Get SLAS Client Details
 
 ```bash
-# get details for a specific SLAS client
+# get details for the configured SLAS client
+b2c slas client get
+
+# override the configured client ID
 b2c slas client get my-client-id
 ```
 
@@ -100,6 +105,11 @@ b2c slas client create \
 
 Use `b2c slas token` to obtain a shopper access token for API testing. The `--site-id` is specific to the request and must be provided per call.
 
+The command applies shared HTTP middleware, including headers from `SFCC_EXTRA_HEADERS`
+(a JSON object) or `--extra-headers`, to authorization, login, and token requests.
+JSON output nests token fields under `response` (for example, `.response.accessToken`).
+For authentication failures, use `--log-level debug` to capture HTTP status and the SLAS response correlation ID.
+
 ```bash
 # Guest token with auto-discovery (finds first public SLAS client)
 b2c slas token --site-id RefArch
@@ -126,10 +136,10 @@ b2c slas token --site-id RefArch --slas-client-id my-client --slas-client-secret
 ### Update SLAS Client
 
 ```bash
-# update the display name
-b2c slas client update my-client-id --name "New Name"
+# update the configured client's display name
+b2c slas client update --name "New Name"
 
-# rotate the client secret
+# override the configured client ID and rotate its secret
 b2c slas client update my-client-id --secret new-secret-value
 
 # add scopes (appends to existing by default)
@@ -145,8 +155,21 @@ b2c slas client update my-client-id --channels RefArch,SiteGenesis --replace
 ### Delete SLAS Client
 
 ```bash
-# delete a SLAS client
+# delete the configured SLAS client
+b2c slas client delete
+
+# override the configured client ID
 b2c slas client delete my-client-id
+```
+
+### Open SLAS Client
+
+```bash
+# open the configured SLAS client in the Admin UI
+b2c slas client open
+
+# override the configured client ID
+b2c slas client open my-client-id
 ```
 
 ### More Commands

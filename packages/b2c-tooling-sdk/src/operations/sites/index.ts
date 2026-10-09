@@ -7,10 +7,9 @@
  * Site operations for B2C Commerce instances.
  *
  * This module provides functions for managing site cartridge paths
- * on B2C Commerce instances. Operations work via OCAPI Data API with
- * automatic fallback to site archive import/export when OCAPI permissions
- * are unavailable. Business Manager (Sites-Site) is supported via the
- * import/export mechanism.
+ * on B2C Commerce instances. Operations use SCAPI first, with temporary
+ * OCAPI and site-archive fallbacks. Business Manager (Sites-Site) is
+ * supported via the import/export mechanism.
  *
  * ## Cartridge Path Functions
  *
@@ -41,8 +40,8 @@
  *
  * ## Authentication
  *
- * Cartridge path operations require OAuth authentication. For OCAPI direct updates,
- * grant POST/PUT/DELETE on `/sites/∗/cartridges`. For import/export fallback,
+ * Cartridge path operations require OAuth authentication. For SCAPI direct updates,
+ * grant `sfcc.sites.rw`; for OCAPI grant POST/PUT/DELETE on `/sites/∗/cartridges`. For import/export fallback,
  * grant job execution permissions and WebDAV write access.
  *
  * @module operations/sites
@@ -55,3 +54,10 @@ export type {
   CartridgePosition,
   CartridgeUpdateOptions,
 } from './cartridges.js';
+
+// Site read operations (list/get) — SCAPI with OCAPI fallback
+export {createSitesBackend} from './sites-backend.js';
+export type {SitesBackendConfig} from './sites-backend.js';
+export {ScapiSitesBackend} from './scapi-sites-backend.js';
+export {OcapiSitesBackend} from './ocapi-sites-backend.js';
+export type {SitesBackend, SiteInfo, ListSitesOptions} from './sites-types.js';

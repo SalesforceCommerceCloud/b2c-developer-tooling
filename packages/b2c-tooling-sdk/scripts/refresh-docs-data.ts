@@ -22,7 +22,7 @@
  *   3. Regenerate the job-step dataset + markdown (build:job-steps-dataset,
  *      generate:job-steps-docs) and the search indexes (generate:docs-index).
  *   4. Rebuild the Developer Center guides index (generate:guides-index) from a
- *      local commerce-cloud-docs clone, and the tooling-docs index
+ *      local Developer Center source directory, and the tooling-docs index
  *      (generate:tooling-index) from this repo's own docs/. Guides content is
  *      NOT bundled (fetched online on read); only the metadata index is written.
  *
@@ -32,8 +32,7 @@
  * Options (env vars):
  *   B2C_INSTANCE       forwarded to `b2c docs download --instance <name>` to pick
  *                      a non-default instance.
- *   COMMERCE_DOCS_REPO local commerce-cloud-docs clone for the guides index
- *                      (default ~/code/commerce-cloud-docs). If absent, the
+ *   GUIDES_CONTENT_DIR local Developer Center source directory. If absent, the
  *                      guides step is skipped with a warning.
  *   KEEP_WORKDIR=1     keep the temp download/extract directory for inspection.
  *
@@ -43,7 +42,7 @@
  * refresh has no LLM/API-key dependency.
  *
  * NOT covered here: the Salesforce Help corpus (data/help/) comes from the
- * separate content-commerce-cloud DITA repo, not the DWAPP archive — refresh it
+ * separate Help DITA sources, not the DWAPP archive — refresh it
  * with `generate:help-corpus`. The guides and help indexes each record the
  * upstream git SHA they were built from in their index.json `source` block, so
  * `git log <sha>..HEAD` in the source clone shows the delta before a refresh.
@@ -51,7 +50,7 @@
  * Partial-failure caveat: this is a maintainer script that mutates the committed
  * `data/` corpora in place and is NOT transactional. Each corpus's markdown is
  * replaced before its index is regenerated, so a mid-run failure (auth error,
- * disk full, corrupt commerce-cloud-docs clone) can leave a corpus and its
+ * disk full, invalid guide source directory) can leave a corpus and its
  * index.json out of sync. Always run it in a clean git worktree and, if it
  * fails partway, `git restore packages/b2c-tooling-sdk/data` before retrying so
  * the committed data never ships in a half-refreshed state.
@@ -167,20 +166,14 @@ async function main(): Promise<void> {
     console.log('→ Generating search indexes...');
     run('pnpm', ['exec', 'tsx', 'scripts/generate-docs-index.ts', version], SDK_ROOT);
 
-    // 8. Developer Center guides index (from a local commerce-cloud-docs clone).
+    // 8. Developer Center guides index (from a local Developer Center source directory).
     //    Metadata only — guide content is fetched online at read time.
-    const docsRepo = process.env.COMMERCE_DOCS_REPO;
-    const docsRepoContent = docsRepo
-      ? path.join(path.resolve(docsRepo), 'content', 'en-us')
-      : path.join(os.homedir(), 'code', 'commerce-cloud-docs', 'content', 'en-us');
-    if (fs.existsSync(docsRepoContent)) {
+    const guidesContentDir = process.env.GUIDES_CONTENT_DIR;
+    if (guidesContentDir) {
       console.log('→ Generating Developer Center guides index...');
       run('pnpm', ['exec', 'tsx', 'scripts/generate-guides-index.ts'], SDK_ROOT);
     } else {
-      console.log(
-        `→ Skipping guides index: commerce-cloud-docs not found at ${docsRepoContent} ` +
-          '(set COMMERCE_DOCS_REPO to enable).',
-      );
+      console.log('→ Skipping guides index: set GUIDES_CONTENT_DIR to the local Developer Center source directory.');
     }
 
     // 9. Tooling-docs index (this repo's own conceptual guides).

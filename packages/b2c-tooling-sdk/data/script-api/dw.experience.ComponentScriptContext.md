@@ -67,20 +67,20 @@ This class does not have a constructor, so you cannot create it directly.
       
       1. **expansion**- dynamic placeholders are transformed into actual values, for example url/link placeholders in       markup text are resolved to real URLs
       2. **conversion**- the raw value (see [Component.getAttribute(String)](dw.experience.Component.md#getattributestring)) is resolved into an actual       DWScript object depending on the type of the attribute as specified in its respective attribute definition        
-         - `boolean`-> boolean
-         - `category`-> [Category](dw.catalog.Category.md)
-         - `custom`-> [Map](dw.util.Map.md)
-         - `cms_record`-> [CMSRecord](dw.experience.cms.CMSRecord.md)
-         - `enum`-> either string or integer 
-         - `file`-> [MediaFile](dw.content.MediaFile.md)
-         - `image`-> [Image](dw.experience.image.Image.md)
-         - `integer`-> integer
-         - `markup`-> string
-         - `page`-> string
-         - `product`-> [Product](dw.catalog.Product.md)
-         - `string`-> string
-         - `text`-> string
-         - `url`-> string
+         - `boolean`-&gt; boolean
+         - `category`-&gt; [Category](dw.catalog.Category.md)
+         - `custom`-&gt; [Map](dw.util.Map.md)
+         - `cms_record`-&gt; [CMSRecord](dw.experience.cms.CMSRecord.md)
+         - `enum`-&gt; either string or integer 
+         - `file`-&gt; [MediaFile](dw.content.MediaFile.md)
+         - `image`-&gt; [Image](dw.experience.image.Image.md)
+         - `integer`-&gt; integer
+         - `markup`-&gt; string
+         - `page`-&gt; string
+         - `product`-&gt; [Product](dw.catalog.Product.md)
+         - `string`-&gt; string
+         - `text`-&gt; string
+         - `url`-&gt; string
 
 
 
@@ -123,20 +123,20 @@ This class does not have a constructor, so you cannot create it directly.
       
       1. **expansion**- dynamic placeholders are transformed into actual values, for example url/link placeholders in       markup text are resolved to real URLs
       2. **conversion**- the raw value (see [Component.getAttribute(String)](dw.experience.Component.md#getattributestring)) is resolved into an actual       DWScript object depending on the type of the attribute as specified in its respective attribute definition        
-         - `boolean`-> boolean
-         - `category`-> [Category](dw.catalog.Category.md)
-         - `custom`-> [Map](dw.util.Map.md)
-         - `cms_record`-> [CMSRecord](dw.experience.cms.CMSRecord.md)
-         - `enum`-> either string or integer 
-         - `file`-> [MediaFile](dw.content.MediaFile.md)
-         - `image`-> [Image](dw.experience.image.Image.md)
-         - `integer`-> integer
-         - `markup`-> string
-         - `page`-> string
-         - `product`-> [Product](dw.catalog.Product.md)
-         - `string`-> string
-         - `text`-> string
-         - `url`-> string
+         - `boolean`-&gt; boolean
+         - `category`-&gt; [Category](dw.catalog.Category.md)
+         - `custom`-&gt; [Map](dw.util.Map.md)
+         - `cms_record`-&gt; [CMSRecord](dw.experience.cms.CMSRecord.md)
+         - `enum`-&gt; either string or integer 
+         - `file`-&gt; [MediaFile](dw.content.MediaFile.md)
+         - `image`-&gt; [Image](dw.experience.image.Image.md)
+         - `integer`-&gt; integer
+         - `markup`-&gt; string
+         - `page`-&gt; string
+         - `product`-&gt; [Product](dw.catalog.Product.md)
+         - `string`-&gt; string
+         - `text`-&gt; string
+         - `url`-&gt; string
 
 
     **Returns:**

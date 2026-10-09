@@ -17,6 +17,8 @@ import {t, withDocs} from '../../../../i18n/index.js';
  * Add a member to an MRT project.
  */
 export default class MrtMemberAdd extends MrtCommand<typeof MrtMemberAdd> {
+  static aliases = ['mrt:storefront:member:add'];
+
   static args = {
     email: Args.string({
       description: 'Email address of the user to add',
@@ -53,7 +55,9 @@ export default class MrtMemberAdd extends MrtCommand<typeof MrtMemberAdd> {
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
 
     const {role} = this.flags;
@@ -79,14 +83,12 @@ export default class MrtMemberAdd extends MrtCommand<typeof MrtMemberAdd> {
         this.getMrtAuth(),
       );
 
-      if (!this.jsonEnabled()) {
-        this.log(
-          t('commands.mrt.member.add.success', 'Member {{email}} added with role {{roleName}}.', {
-            email,
-            roleName,
-          }),
-        );
-      }
+      this.log(
+        t('commands.mrt.member.add.success', 'Member {{email}} added with role {{roleName}}.', {
+          email,
+          roleName,
+        }),
+      );
 
       return result;
     } catch (error) {

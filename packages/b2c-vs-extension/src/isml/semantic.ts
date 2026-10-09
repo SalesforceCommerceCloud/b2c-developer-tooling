@@ -35,6 +35,10 @@ export interface IsmlReferenceRange {
   endOffset: number;
 }
 
+// Extensions a cartridge script module can have. `.ds` is the legacy
+// pipeline-era script extension, still resolvable by the platform.
+const SCRIPT_EXTENSIONS = ['.js', '.ts', '.ds'];
+
 const RESOURCE_METHODS: SemanticCompletionEntry[] = [
   {label: 'msg', insertText: 'msg', detail: 'Resource.msg(key, bundle, defaultValue)'},
   {label: 'msgf', insertText: 'msgf', detail: 'Resource.msgf(key, bundle, defaultValue, ...args)'},
@@ -200,9 +204,9 @@ function collectRequireModules(cartridgeRoots: string[]): RequireModuleCompletio
         }
 
         const ext = path.extname(entry.name).toLowerCase();
-        if (ext !== '.js' && ext !== '.ts') continue;
+        if (!SCRIPT_EXTENSIONS.includes(ext)) continue;
 
-        let modulePath = relativePath.replace(/\.(js|ts)$/i, '');
+        let modulePath = relativePath.replace(/\.(js|ts|ds)$/i, '');
         if (modulePath.endsWith('/index')) {
           modulePath = modulePath.slice(0, -'/index'.length);
         }
@@ -532,16 +536,14 @@ function resolveRequireModule(
   if (!normalized) return undefined;
 
   const resolveScriptCandidate = (basePath: string): string | undefined => {
-    if (basePath.endsWith('.js') || basePath.endsWith('.ts')) {
+    if (SCRIPT_EXTENSIONS.some((ext) => basePath.endsWith(ext))) {
       if (isFile(basePath)) return basePath;
       return undefined;
     }
 
     const candidates = [
-      `${basePath}.js`,
-      `${basePath}.ts`,
-      path.join(basePath, 'index.js'),
-      path.join(basePath, 'index.ts'),
+      ...SCRIPT_EXTENSIONS.map((ext) => `${basePath}${ext}`),
+      ...SCRIPT_EXTENSIONS.map((ext) => path.join(basePath, `index${ext}`)),
     ];
     return candidates.find((candidate) => isFile(candidate));
   };
@@ -579,18 +581,9 @@ function resolveController(controllerAction: string, cartridgeRoots: string[]): 
 
   for (const root of cartridgeRoots) {
     const controllerRoot = path.join(root, 'cartridge', 'controllers');
-    const jsCandidate = path.join(controllerRoot, `${controllerName}.js`);
-    try {
-      if (fs.statSync(jsCandidate).isFile()) return jsCandidate;
-    } catch {
-      // continue
-    }
-
-    const tsCandidate = path.join(controllerRoot, `${controllerName}.ts`);
-    try {
-      if (fs.statSync(tsCandidate).isFile()) return tsCandidate;
-    } catch {
-      // continue
+    for (const ext of SCRIPT_EXTENSIONS) {
+      const candidate = path.join(controllerRoot, `${controllerName}${ext}`);
+      if (isFile(candidate)) return candidate;
     }
   }
 

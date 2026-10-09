@@ -83,15 +83,13 @@ export default class MrtOrgMemberAdd extends MrtCommand<typeof MrtOrgMemberAdd> 
       this.getMrtAuth(),
     );
 
-    if (!this.jsonEnabled()) {
-      this.log(
-        t('commands.mrt.org.member.add.success', 'Added {{email}} to {{org}} as {{role}}.', {
-          email,
-          org,
-          role: ORG_ROLES[role],
-        }),
-      );
-    }
+    this.log(
+      t('commands.mrt.org.member.add.success', 'Added {{email}} to {{org}} as {{role}}.', {
+        email,
+        org,
+        role: ORG_ROLES[role],
+      }),
+    );
 
     return result;
   }

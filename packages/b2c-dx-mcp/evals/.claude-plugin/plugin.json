@@ -1,0 +1,8 @@
+{
+  "name": "b2c-dx-mcp",
+  "version": "0.0.0",
+  "description": "Eval-only copy of the b2c-dx-mcp plugin that launches the local MCP build. Not published.",
+  "experimental": {
+    "evals": "cases"
+  }
+}

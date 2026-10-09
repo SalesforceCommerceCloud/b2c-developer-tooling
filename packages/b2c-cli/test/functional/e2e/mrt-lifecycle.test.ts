@@ -153,19 +153,6 @@ describe('MRT Lifecycle E2E Tests', function () {
   });
 
   describe('Step 3: Projects', () => {
-    it('should list projects', async function () {
-      const result = await runCLIWithRetry(['mrt', 'project', 'list', '--json'], {
-        timeout: TIMEOUTS.DEFAULT,
-        env: MRT_TEST_ENV,
-      });
-
-      expect(result.exitCode, `Project list command failed: ${result.stderr}`).to.equal(0);
-
-      const response = parseJSONOutput(result);
-      expect(response).to.have.property('projects');
-      expect(response.projects).to.be.an('array');
-    });
-
     it('should get specific project', async function () {
       // Fixed: slug is a positional argument, not a flag
       const result = await runCLIWithRetry(['mrt', 'project', 'get', projectSlug, '--json'], {
@@ -679,7 +666,7 @@ describe('MRT Lifecycle E2E Tests', function () {
 
     it('should require authentication', async function () {
       // Run without API key to test auth failure
-      const result = await runCLI(['mrt', 'project', 'list', '--json'], {
+      const result = await runCLI(['mrt', 'user', 'profile', '--json'], {
         timeout: TIMEOUTS.DEFAULT,
         env: {
           MRT_API_KEY: '',

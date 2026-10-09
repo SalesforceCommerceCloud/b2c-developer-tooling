@@ -48,19 +48,49 @@
 // Bundle creation
 export {
   createBundle,
+  createBundleV2,
   createGlobFilter,
   getDefaultMessage,
   DEFAULT_SSR_PARAMETERS,
   DEFAULT_SSR_ONLY,
   DEFAULT_SSR_SHARED,
+  DEFAULT_V2_ROOT_DIR,
+  DEFAULT_V2_CONFIG_PATH,
+  DEFAULT_V2_MATCH_MODE,
 } from './bundle.js';
-export type {CreateBundleOptions, Bundle, MrtServerConfig} from './bundle.js';
+export type {
+  CreateBundleOptions,
+  Bundle,
+  MrtServerConfig,
+  CreateBundleV2Options,
+  BundleV2,
+  BundleV2Config,
+  BundleV2Metadata,
+  BundleV2MatchMode,
+} from './bundle.js';
 
 // Push and bundle operations
-export {pushBundle, uploadBundle, listBundles, downloadBundle, deleteBundle, bulkDeleteBundles} from './push.js';
+export {
+  pushBundle,
+  uploadBundle,
+  pushBundleV2,
+  uploadBundleV2,
+  listBundles,
+  downloadBundle,
+  deleteBundle,
+  bulkDeleteBundles,
+  listBundlesScapi,
+  uploadBundleScapi,
+  listMrtBundles,
+  pushMrtBundle,
+  normalizeLegacyBundle,
+  normalizeScapiBundle,
+} from './push.js';
 export type {
   PushOptions,
   PushResult,
+  PushV2Options,
+  PushV2Result,
   ListBundlesOptions,
   ListBundlesResult,
   DownloadBundleOptions,
@@ -70,10 +100,29 @@ export type {
   BulkDeleteBundlesResult,
   BulkDeleteRejectedBundle,
   MrtBundle,
+  MrtBundleView,
+  MrtBundlesView,
+  ListMrtBundlesBackendOptions,
+  UploadBundleScapiResult,
+  PushMrtBundleBackendOptions,
+  MrtPushResultView,
 } from './push.js';
 
 // Environment variable operations
-export {listEnvVars, setEnvVar, setEnvVars, deleteEnvVar} from './env-var.js';
+export {
+  listEnvVars,
+  setEnvVar,
+  setEnvVars,
+  deleteEnvVar,
+  getEnvironmentVariablesScapi,
+  updateEnvironmentVariablesScapi,
+  listEnvVarsWithBackend,
+  setEnvVarWithBackend,
+  setEnvVarsWithBackend,
+  deleteEnvVarWithBackend,
+  normalizeLegacyEnvVar,
+  normalizeEnvVarScapi,
+} from './env-var.js';
 export type {
   EnvVarOptions,
   SetEnvVarOptions,
@@ -81,6 +130,13 @@ export type {
   DeleteEnvVarOptions,
   ListEnvVarsResult,
   EnvironmentVariable,
+  MrtEnvVarView,
+  MrtEnvVarsView,
+  MrtEnvVarWriteResult,
+  EnvVarBackendOptions,
+  SetEnvVarBackendOptions,
+  SetEnvVarsBackendOptions,
+  DeleteEnvVarBackendOptions,
 } from './env-var.js';
 
 // Environment (target) operations
@@ -102,7 +158,18 @@ export type {
 } from './env.js';
 
 // Deployment operations
-export {listDeployments, createDeployment} from './deployment.js';
+export {
+  listDeployments,
+  createDeployment,
+  listDeploymentsScapi,
+  createDeploymentScapi,
+  getDeploymentScapi,
+  waitForDeploymentScapi,
+  listMrtDeployments,
+  deployMrtBundle,
+  normalizeLegacyDeployment,
+  normalizeDeploymentScapi,
+} from './deployment.js';
 export type {
   ListDeploymentsOptions,
   ListDeploymentsResult,
@@ -110,7 +177,26 @@ export type {
   CreateDeploymentResult,
   MrtDeployment,
   MrtDeploymentCreate,
+  MrtDeploymentView,
+  MrtDeploymentsView,
+  MrtDeployResultView,
+  CreateDeploymentScapiResult,
+  DeploymentScapiPollInfo,
+  WaitForDeploymentScapiOptions,
+  ListMrtDeploymentsBackendOptions,
+  DeployMrtBundleBackendOptions,
 } from './deployment.js';
+
+// MRT backend selection and fallback
+export {resolveMrtBackend, runMrtWithFallback, mrtScapiUnavailableMessage} from './mrt-backend.js';
+export type {
+  MrtBackend,
+  MrtBackendPreference,
+  ScapiMrtConnection,
+  MrtBackendBranches,
+  MrtBackendRun,
+  RunMrtWithFallbackOptions,
+} from './mrt-backend.js';
 
 // Organization operations
 export {listOrganizations} from './organization.js';

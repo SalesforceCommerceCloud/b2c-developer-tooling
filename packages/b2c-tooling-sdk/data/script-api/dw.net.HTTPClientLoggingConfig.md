@@ -139,7 +139,7 @@ config.setSensitiveTextPatterns([["password\\s*=\\s*[^\\s&]+"]]);
       
       
       The public constructor should only be called from JavaScript, but cfgAPI uses this constructor for creating the
-      Service instance -> so fill the factory here
+      Service instance -&gt; so fill the factory here
 
 
 

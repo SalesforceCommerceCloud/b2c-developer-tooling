@@ -16,6 +16,7 @@ import type {
   AuthMiddlewareHookOptions,
   AuthMiddlewareHookResult,
 } from './hooks.js';
+import {byPluginName} from './hooks.js';
 import {setLanguage, t} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
 import {createExtraParamsMiddleware, createSafetyMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
@@ -28,12 +29,20 @@ import {
 import {SafetyGuard} from '../safety/safety-guard.js';
 import type {SafetyEvaluation} from '../safety/types.js';
 import {confirm as safetyConfirm} from '../ux/confirm.js';
+import {getAgentContext, isInteractive} from '../ux/agent-context.js';
 import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import {readB2CSettings} from '../config/settings.js';
+import {
+  ENV_FILE_ENV_VAR,
+  loadEnvFileForArgv,
+  takePreloadedEnvFile,
+  type LoadedEnvFile,
+} from '../config/project-environment.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
 import {initializeFileAuthSessionStore} from '../auth/session-store.js';
 import {initializeContentCache} from '../docs/content-cache.js';
+import {initializeScapiSnippetStore} from '../scapi/snippets.js';
 import {setUserAgent} from '../clients/user-agent.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
 
@@ -84,8 +93,38 @@ export function classifyError(err: unknown): ErrorCategory {
 
   const name = (err as {name?: unknown} | undefined)?.name;
   if (name === 'SafetyBlockedError' || name === 'SafetyConfirmationRequired') return 'guardrail';
+  // A destructive command needed confirmation in a non-interactive session
+  // (no TTY or AI agent) and the caller omitted --force/--yes: a usage error.
+  if (name === 'ConfirmationRequiredError') return 'validation';
 
   return 'runtime';
+}
+
+/**
+ * oclif throws `Flag --<name> can only be specified once` when a non-multiple
+ * flag is passed more than once — including when the duplicate arrived through
+ * an alias (e.g. `-p my-store -s other`, where `-s` / `--storefront` are aliases
+ * of `--project`). The bare message names only the canonical flag, so a user who
+ * typed an alias can't tell what collided. When the offending flag has aliases,
+ * rewrite the message to list every long and short form it accepts.
+ */
+export function augmentDuplicateFlagError(message: string, flags: Record<string, unknown>): string {
+  const match = /^Flag --(.+) can only be specified once$/.exec(message);
+  if (!match) return message;
+
+  const flag = flags[match[1]] as {aliases?: string[]; char?: string; charAliases?: string[]} | undefined;
+  if (!flag) return message;
+
+  // Only clarify when the flag actually has aliases; a plain --name/-n pair
+  // needs no explanation.
+  if (!flag.aliases?.length && !flag.charAliases?.length) return message;
+
+  const forms = [
+    ...[match[1], ...(flag.aliases ?? [])].map((name) => `--${name}`),
+    ...[flag.char, ...(flag.charAliases ?? [])].filter((c): c is string => Boolean(c)).map((c) => `-${c}`),
+  ];
+
+  return `${message} (${forms.join(', ')} all refer to the same flag)`;
 }
 
 /**
@@ -143,7 +182,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       helpGroup: 'GLOBAL',
     }),
     config: Flags.string({
-      description: 'Path to config file (in dw.json format; defaults to ./dw.json)',
+      description: 'Path to config file (in dw.json format; defaults to ./dw.json; empty for none)',
       env: 'SFCC_CONFIG',
       helpGroup: 'GLOBAL',
     }),
@@ -151,6 +190,12 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       char: 'i',
       description: 'Instance name from configuration file (i.e. dw.json, etc)',
       env: 'SFCC_INSTANCE',
+      helpGroup: 'GLOBAL',
+    }),
+    // Not named --env-file: Node consumes --env-file anywhere in argv, even after the script name.
+    'dotenv-file': Flags.string({
+      description: 'Path to .env file used instead of ./.env (empty for none)',
+      env: ENV_FILE_ENV_VAR,
       helpGroup: 'GLOBAL',
     }),
     'project-directory': Flags.string({
@@ -191,11 +236,20 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   /** Telemetry instance for tracking command events */
   protected telemetry?: Telemetry;
 
+  /**
+   * Env file loaded for this command, with the variables it applied
+   * (variables already set in the shell are not overridden).
+   */
+  protected envFile?: {keys: string[]; path: string};
+
   /** Start time for command duration tracking */
   private commandStartTime?: number;
 
   public async init(): Promise<void> {
     await super.init();
+
+    // Env file variables must be in place before parsing so env-backed flags see them.
+    this.loadEnvFile();
 
     const {args, flags} = await this.parse({
       flags: this.ctor.flags,
@@ -218,15 +272,19 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Tests may override the path via B2C_TEST_DATA_DIR to isolate the auth-sessions.json
     // file (e.g. per mocha worker) so they don't race on the developer's real session file.
     initializeFileAuthSessionStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
+    initializeScapiSnippetStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
 
     // Point the docs online-content cache at oclif's cacheDir (e.g. ~/.cache/b2c)
     // so cached docs live alongside other CLI cache data and honor oclif dir
     // overrides. Standalone SDK use falls back to an OS-idiomatic path.
     initializeContentCache(process.env.B2C_TEST_DATA_DIR ?? this.config.cacheDir);
 
-    // Set CLI User-Agent (CLI name/version only, without @salesforce/ prefix)
+    // Set CLI User-Agent (CLI name/version only, without @salesforce/ prefix),
+    // with an `agent/<id>` product token when an AI coding agent is detected.
     // This must happen before any API clients are created
-    setUserAgent(`${this.config.name.replace(/^@salesforce\//, '')}/${this.config.version}`);
+    const agent = getAgentContext().harness;
+    const userAgent = `${this.config.name.replace(/^@salesforce\//, '')}/${this.config.version}`;
+    setUserAgent(agent ? `${userAgent} agent/${agent.id}` : userAgent);
 
     // Register extra params middleware (from --extra-query, --extra-body, --extra-headers flags)
     // This must happen before any API clients are created
@@ -405,15 +463,43 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const settings = readB2CSettings({configDirectory: this.config.configDir});
     return {
       instance: this.flags.instance,
-      configPath: this.flags.config,
+      configPath: this.getConfigPathFlag(),
+      envFile: this.envFile?.path,
       defaultConfigPath: settings.defaultConfigPath,
       projectDirectory: this.flags['project-directory'],
       workingDirectory: this.flags['project-directory'],
     };
   }
 
+  /** `--config` / `SFCC_CONFIG`; oclif treats an empty env var as unset, but empty means "no dw.json". */
+  protected getConfigPathFlag(): string | undefined {
+    return this.flags.config ?? (process.env.SFCC_CONFIG === '' ? '' : undefined);
+  }
+
   protected async loadConfiguration(): Promise<ResolvedB2CConfig> {
     return loadConfig({}, this.getBaseConfigOptions());
+  }
+
+  /**
+   * Selects and loads the env file before flags are parsed.
+   *
+   * `--dotenv-file` / `SFCC_DOTENV_FILE` replace the default `<project-directory>/.env`;
+   * an empty value loads no env file. Shell variables always win over file values.
+   */
+  private loadEnvFile(): void {
+    // The executable may already have applied this file; keep its keys for provenance.
+    const preloaded = takePreloadedEnvFile();
+
+    let loaded: LoadedEnvFile | undefined;
+    try {
+      loaded = loadEnvFileForArgv(this.argv);
+    } catch (error) {
+      this.error(error instanceof Error ? error.message : String(error));
+    }
+    if (!loaded) return;
+
+    const keys = preloaded?.path === loaded.path ? [...new Set([...preloaded.keys, ...loaded.keys])] : loaded.keys;
+    this.envFile = {path: loaded.path, keys};
   }
 
   /**
@@ -524,11 +610,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     const hookOptions: ConfigSourcesHookOptions = {
       instance: this.flags.instance,
-      configPath: this.flags.config,
+      configPath: this.getConfigPathFlag(),
       flags,
       resolveOptions: {
         instance: this.flags.instance,
-        configPath: this.flags.config,
+        configPath: this.getConfigPathFlag(),
         accountManagerHost: flags['account-manager-host'] as string | undefined,
       },
     };
@@ -536,7 +622,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const hookResult = await this.config.runHook('b2c:config-sources', hookOptions);
 
     // Collect sources from all plugins and register with global registry
-    for (const success of hookResult.successes) {
+    for (const success of byPluginName(hookResult.successes)) {
       const result = success.result as ConfigSourcesHookResult | undefined;
       if (!result?.sources?.length) continue;
 
@@ -584,7 +670,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const hookResult = await this.config.runHook('b2c:http-middleware', hookOptions);
 
     // Register middleware from all plugins that responded
-    for (const success of hookResult.successes) {
+    for (const success of byPluginName(hookResult.successes)) {
       const result = success.result as HttpMiddlewareHookResult | undefined;
       if (!result?.providers?.length) continue;
 
@@ -619,7 +705,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     const hookResult = await this.config.runHook('b2c:auth-middleware', hookOptions);
 
     // Register middleware from all plugins that responded
-    for (const success of hookResult.successes) {
+    for (const success of byPluginName(hookResult.successes)) {
       const result = success.result as AuthMiddlewareHookResult | undefined;
       if (!result?.providers?.length) continue;
 
@@ -643,6 +729,11 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Sends exception to telemetry if initialized.
    */
   protected async catch(err: Error & {exitCode?: number}): Promise<never> {
+    // Surface flag aliases in oclif's "can only be specified once" error so a
+    // user who passed, e.g., `-p x -s y` learns that `-s`/`--storefront` are the
+    // same flag as `-p`/`--project`.
+    err.message = augmentDuplicateFlagError(err.message, {...this.ctor.baseFlags, ...this.ctor.flags});
+
     const exitCode = err.exitCode ?? 1;
     const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
     const errorCategory = classifyError(err);
@@ -867,14 +958,15 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   /**
    * Require interactive confirmation for a safety-guarded operation.
    *
-   * If stdin is a TTY, prompts the user. Otherwise, blocks with an error message.
+   * If the session is interactive (stdin is a TTY and no AI agent is detected),
+   * prompts the user. Otherwise, blocks with an error message.
    * The error message clearly indicates the block is from the user's own safety configuration.
    *
    * @param evaluation - The safety evaluation that triggered confirmation
    * @throws Error if confirmation is denied or not possible
    */
   protected async confirmOrBlock(evaluation: SafetyEvaluation): Promise<void> {
-    if (!process.stdin.isTTY) {
+    if (!isInteractive()) {
       this.error(
         `Your safety configuration requires confirmation for this operation, ` +
           `but no interactive session is available.\n\n  ${evaluation.reason}\n\n` +

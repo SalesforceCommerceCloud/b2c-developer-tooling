@@ -7,11 +7,14 @@ import {expect} from 'chai';
 import {
   kebabToCamelCase,
   mapDwJsonToNormalizedConfig,
+  mapNormalizedConfigToDwJson,
+  mergeConfigsWithProtection,
   normalizeConfigKeys,
   normalizeOriginUrl,
   resolveLibraryEntries,
   CONFIG_KEY_ALIASES,
 } from '../../src/config/mapping.js';
+import {listConfigKeys} from '../../src/config/config-write.js';
 
 describe('config/mapping', () => {
   describe('kebabToCamelCase', () => {
@@ -87,6 +90,11 @@ describe('config/mapping', () => {
 
     it('maps oauth-scopes to oauthScopes', () => {
       expect(CONFIG_KEY_ALIASES['oauth-scopes']).to.equal('oauthScopes');
+    });
+
+    it('maps api-backend and mrt-backend to their camelCase fields', () => {
+      expect(CONFIG_KEY_ALIASES['api-backend']).to.equal('apiBackend');
+      expect(CONFIG_KEY_ALIASES['mrt-backend']).to.equal('mrtBackend');
     });
   });
 
@@ -210,6 +218,19 @@ describe('config/mapping', () => {
     });
   });
 
+  describe('mapDwJsonToNormalizedConfig - clientAuthMethod', () => {
+    it('passes clientAuthMethod through and back to dw.json', () => {
+      const result = mapDwJsonToNormalizedConfig({clientAuthMethod: 'body'});
+      expect(result.clientAuthMethod).to.equal('body');
+      expect(mapNormalizedConfigToDwJson(result).clientAuthMethod).to.equal('body');
+    });
+
+    it('keeps an override clientAuthMethod when merging', () => {
+      const {config} = mergeConfigsWithProtection({clientAuthMethod: 'body'}, {clientAuthMethod: 'basic'});
+      expect(config.clientAuthMethod).to.equal('body');
+    });
+  });
+
   describe('mapDwJsonToNormalizedConfig - userAuth shorthand', () => {
     it('collapses userAuth=true to authMethods=["user"]', () => {
       const result = mapDwJsonToNormalizedConfig({userAuth: true});
@@ -228,6 +249,48 @@ describe('config/mapping', () => {
 
     it('throws when both userAuth and authMethods are set', () => {
       expect(() => mapDwJsonToNormalizedConfig({userAuth: true, authMethods: ['user']})).to.throw(/mutually exclusive/);
+    });
+  });
+
+  describe('mrtBackend mapping', () => {
+    for (const value of ['auto', 'legacy', 'scapi'] as const) {
+      it(`maps dw.json mrtBackend=${value} through to normalized config`, () => {
+        const result = mapDwJsonToNormalizedConfig({mrtBackend: value});
+        expect(result.mrtBackend).to.equal(value);
+      });
+
+      it(`round-trips mrtBackend=${value} back to dw.json`, () => {
+        const result = mapNormalizedConfigToDwJson({mrtBackend: value});
+        expect(result.mrtBackend).to.equal(value);
+      });
+    }
+
+    it('omits mrtBackend from dw.json when unset', () => {
+      const result = mapNormalizedConfigToDwJson({mrtProject: 'proj'});
+      expect(result.mrtBackend).to.be.undefined;
+      expect('mrtBackend' in result).to.be.false;
+    });
+
+    it('lets an override mrtBackend win over the base value in merge', () => {
+      const {config} = mergeConfigsWithProtection({mrtBackend: 'scapi'}, {mrtBackend: 'legacy'});
+      expect(config.mrtBackend).to.equal('scapi');
+    });
+
+    it('keeps every dw.json field from the base config through merge', () => {
+      const base = Object.fromEntries(listConfigKeys().map(({field}) => [field, `base-${field}`]));
+      const {config} = mergeConfigsWithProtection({}, base);
+      for (const {field} of listConfigKeys()) expect(config[field], field).to.equal(`base-${field}`);
+    });
+
+    it('falls back to the base mrtBackend when no override is given', () => {
+      const {config} = mergeConfigsWithProtection({}, {mrtBackend: 'legacy'});
+      expect(config.mrtBackend).to.equal('legacy');
+    });
+
+    it('keeps mrtBackend and apiBackend independent through merge', () => {
+      const {config} = mergeConfigsWithProtection({mrtBackend: 'scapi'}, {apiBackend: 'ocapi', mrtBackend: 'legacy'});
+      expect(config.mrtBackend).to.equal('scapi');
+      expect(config.apiBackend).to.equal('ocapi');
     });
   });
 

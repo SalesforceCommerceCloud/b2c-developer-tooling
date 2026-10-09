@@ -6,15 +6,21 @@ description: Commands for exporting, listing, and validating Page Designer conte
 
 Commands for working with Page Designer content libraries and metadefinitions.
 
+[![B2C CLI exporting MarketStreet's About Us template from an instance: one page, two components, two content blocks, and one downloaded image.](/terminal/content-export.png)](/terminal/content-export.png)
+
+Export a page from your instance with its nested components, reusable content blocks, and images.
+
 ## Authentication
 
 The `content export` and `content list` commands require OAuth authentication:
 
 | Operation | Auth Required |
 |-----------|--------------|
-| `content export` | OAuth (OCAPI for export job + WebDAV for assets) |
-| `content list` | OAuth (OCAPI for export job) |
+| `content export` | OAuth for the export job and WebDAV access for the archive and assets |
+| `content list` | OAuth for the export job and WebDAV access for the archive |
 | `content validate` | None (local file validation) |
+
+Online exports and listings use SCAPI when configured, requiring `sfcc.jobs.rw` and the tenant scope. `--api-backend ocapi` selects OCAPI explicitly; the default `auto` mode supports OCAPI fallback. See [Job Authentication](./jobs.md#authentication) for setup.
 
 ```bash
 export SFCC_CLIENT_ID=your-client-id
@@ -160,6 +166,10 @@ With `--json`, returns a structured result including the library tree, output pa
 ## b2c content list
 
 List pages and content items in a content library. Useful for discovering page IDs before running an export.
+
+[![B2C CLI displaying a sample library's pages, nested components, and image assets as a tree.](/terminal/content-tree.png)](/terminal/content-tree.png)
+
+Inspect the same page and component structure from an instance or a local library XML file.
 
 ### Usage
 

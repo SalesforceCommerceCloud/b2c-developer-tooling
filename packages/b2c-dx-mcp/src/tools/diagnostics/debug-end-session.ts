@@ -28,16 +28,15 @@ export function createDebugEndSessionTool(
   return createToolAdapter<EndSessionInput, EndSessionOutput>(
     {
       name: 'debug_end_session',
+      effect: 'write',
+      idempotent: true,
+      openWorld: true,
       description:
-        'End a script debugger session and free its slot on the instance. ' +
-        'IMPORTANT: Always call this when finished debugging — leaving sessions open can interfere with other debuggers and consumes a debugger client slot.',
+        'Disconnect and free the instance debugger slot. Always end sessions when finished, including after errors.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        session_id: z.string().describe('Session ID returned by debug_start_session.'),
-        clear_breakpoints: z
-          .boolean()
-          .optional()
-          .describe('If true, delete all breakpoints before disconnecting. Defaults to false.'),
+        session_id: z.string(),
+        clear_breakpoints: z.boolean().optional().describe('Clear breakpoints before disconnecting. Default: false.'),
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);

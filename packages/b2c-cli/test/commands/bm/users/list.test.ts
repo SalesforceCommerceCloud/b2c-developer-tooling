@@ -21,51 +21,62 @@ describe('bm users list', () => {
     return createTestCommand(BmUsersList, hooks.getConfig(), flags);
   }
 
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      listUsers: sinon.stub(),
+      getUser: sinon.stub(),
+      createOrReplaceUser: sinon.stub(),
+      updateUser: sinon.stub(),
+      deleteUser: sinon.stub(),
+    };
+  }
+
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    const backend = createMockBackend();
+    sinon.stub(command, 'createUsersBackend').returns(backend);
+    return backend;
   }
 
   it('returns data in JSON mode', async () => {
     const command: any = await createCommand();
-    stubCommon(command, {jsonEnabled: true});
+    const backend = stubCommon(command, {jsonEnabled: true});
 
-    const mockUsers = {count: 2, total: 2, data: [{login: 'a@x.com'}, {login: 'b@x.com'}]};
-    const ocapiGet = sinon.stub().resolves({data: mockUsers, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    backend.listUsers.resolves({
+      total: 2,
+      start: 0,
+      count: 2,
+      hits: [{login: 'a@x.com'}, {login: 'b@x.com'}],
+    });
 
     const result = await command.run();
     expect(result.count).to.equal(2);
-    expect(result.data).to.have.length(2);
-    expect(ocapiGet.calledOnce).to.equal(true);
-    expect(ocapiGet.firstCall.args[0]).to.equal('/users');
+    expect(result.hits).to.have.length(2);
+    expect(backend.listUsers.calledOnce).to.equal(true);
   });
 
   it('prints "no users" message when empty in non-JSON mode', async () => {
     const command: any = await createCommand();
-    stubCommon(command, {jsonEnabled: false});
+    const backend = stubCommon(command, {jsonEnabled: false});
     const logStub = sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiGet = sinon.stub().resolves({data: {count: 0, total: 0, data: []}, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    backend.listUsers.resolves({total: 0, start: 0, count: 0, hits: []});
 
     const result = await command.run();
-    expect(result.count).to.equal(0);
+    expect(result.total).to.equal(0);
     expect(logStub.calledWith(sinon.match(/No users found/))).to.equal(true);
   });
 
-  it('throws when OCAPI returns error', async () => {
+  it('throws when backend returns error', async () => {
     const command: any = await createCommand();
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    const backend = stubCommon(command, {jsonEnabled: false});
+    sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiGet = sinon.stub().resolves({
-      data: undefined,
-      error: {fault: {message: 'forbidden'}},
-      response: {status: 403, statusText: 'Forbidden'},
-    });
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    backend.listUsers.rejects(new Error('Failed to list users: forbidden'));
 
     await expectError(() => command.run(), 'Failed to list users');
   });

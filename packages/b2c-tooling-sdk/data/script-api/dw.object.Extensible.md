@@ -12,7 +12,7 @@ values themselves.
 
 
 ## All Known Subclasses
-[AbstractItem](dw.order.AbstractItem.md), [AbstractItemCtnr](dw.order.AbstractItemCtnr.md), [Appeasement](dw.order.Appeasement.md), [AppeasementItem](dw.order.AppeasementItem.md), [Invoice](dw.order.Invoice.md), [InvoiceItem](dw.order.InvoiceItem.md), [Return](dw.order.Return.md), [ReturnCase](dw.order.ReturnCase.md), [ReturnCaseItem](dw.order.ReturnCaseItem.md), [ReturnItem](dw.order.ReturnItem.md), [ShippingOrder](dw.order.ShippingOrder.md), [ShippingOrderItem](dw.order.ShippingOrderItem.md), [TrackingInfo](dw.order.TrackingInfo.md)
+[AbstractItem](dw.order.AbstractItem.md), [AbstractItemCtnr](dw.order.AbstractItemCtnr.md), [Appeasement](dw.order.Appeasement.md), [AppeasementItem](dw.order.AppeasementItem.md), [Invoice](dw.order.Invoice.md), [InvoiceItem](dw.order.InvoiceItem.md), [LineItemTax](dw.order.LineItemTax.md), [Return](dw.order.Return.md), [ReturnCase](dw.order.ReturnCase.md), [ReturnCaseItem](dw.order.ReturnCaseItem.md), [ReturnItem](dw.order.ReturnItem.md), [ShippingOrder](dw.order.ShippingOrder.md), [ShippingOrderItem](dw.order.ShippingOrderItem.md), [TrackingInfo](dw.order.TrackingInfo.md)
 ## Property Summary
 
 | Property | Description |

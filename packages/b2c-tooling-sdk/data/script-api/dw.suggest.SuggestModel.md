@@ -58,7 +58,7 @@ regardless of the value of "Search Autocorrections" search preference.
 | [popularSearchPhrases](#popularsearchphrases): [Iterator](dw.util.Iterator.md) `(read-only)` | Use this method to obtain a list of search phrases  that currently are very popular among all users across the Site. |
 | [productSuggestions](#productsuggestions): [ProductSuggestions](dw.suggest.ProductSuggestions.md) `(read-only)` | Returns a [ProductSuggestions](dw.suggest.ProductSuggestions.md) container for the current search phrase. |
 | [recentSearchPhrases](#recentsearchphrases): [Iterator](dw.util.Iterator.md) `(read-only)` | Use this method to obtain a list of personalized search phrases  that the current user entered recently. |
-| [searchMode](#searchmode): [String](TopLevel.String.md) | Returns the search mode that was requested for the next suggestion execution via [setSearchMode(String)](dw.suggest.SuggestModel.md#setsearchmodestring),  or {@code null} if no mode was explicitly requested. |
+| [searchMode](#searchmode): [String](TopLevel.String.md) | Returns the search mode that was requested for the next suggestion execution via [setSearchMode(String)](dw.suggest.SuggestModel.md#setsearchmodestring),  or `null` if no mode was explicitly requested. |
 
 ## Constructor Summary
 
@@ -79,7 +79,7 @@ regardless of the value of "Search Autocorrections" search preference.
 | [getPopularSearchPhrases](dw.suggest.SuggestModel.md#getpopularsearchphrases)() | Use this method to obtain a list of search phrases  that currently are very popular among all users across the Site. |
 | [getProductSuggestions](dw.suggest.SuggestModel.md#getproductsuggestions)() | Returns a [ProductSuggestions](dw.suggest.ProductSuggestions.md) container for the current search phrase. |
 | [getRecentSearchPhrases](dw.suggest.SuggestModel.md#getrecentsearchphrases)() | Use this method to obtain a list of personalized search phrases  that the current user entered recently. |
-| [getSearchMode](dw.suggest.SuggestModel.md#getsearchmode)() | Returns the search mode that was requested for the next suggestion execution via [setSearchMode(String)](dw.suggest.SuggestModel.md#setsearchmodestring),  or {@code null} if no mode was explicitly requested. |
+| [getSearchMode](dw.suggest.SuggestModel.md#getsearchmode)() | Returns the search mode that was requested for the next suggestion execution via [setSearchMode(String)](dw.suggest.SuggestModel.md#setsearchmodestring),  or `null` if no mode was explicitly requested. |
 | [isFilteredByFolder](dw.suggest.SuggestModel.md#isfilteredbyfolder)() | The method returns true, if the search suggestions are filtered by the folder. |
 | [removeRefinementValues](dw.suggest.SuggestModel.md#removerefinementvaluesstring-string)([String](TopLevel.String.md), [String](TopLevel.String.md)) | Removes a refinement. |
 | [setCategoryID](dw.suggest.SuggestModel.md#setcategoryidstring)([String](TopLevel.String.md)) | Apply a category ID to filter product, brand and category suggestions. |
@@ -164,7 +164,7 @@ regardless of the value of "Search Autocorrections" search preference.
 ### effectiveSearchMode
 - effectiveSearchMode: [String](TopLevel.String.md) `(read-only)`
   - : Returns the effective search mode that was used for the last suggestion execution. This reflects the actual
-      matching approach that ran, which may differ from the requested mode if a fallback occurred. Returns {@code null}
+      matching approach that ran, which may differ from the requested mode if a fallback occurred. Returns `null`
       if no suggestions have been executed yet.
 
 
@@ -220,9 +220,9 @@ regardless of the value of "Search Autocorrections" search preference.
 ### searchMode
 - searchMode: [String](TopLevel.String.md)
   - : Returns the search mode that was requested for the next suggestion execution via [setSearchMode(String)](dw.suggest.SuggestModel.md#setsearchmodestring),
-      or {@code null} if no mode was explicitly requested. This reflects the caller's requested preference, not the
-      mode that actually ran — the requested mode is non-authoritative and {@code "semantic"} may still be demoted to
-      {@code "lexical"} by the search router. Use [getEffectiveSearchMode()](dw.suggest.SuggestModel.md#geteffectivesearchmode) to obtain the mode that was
+      or `null` if no mode was explicitly requested. This reflects the caller's requested preference, not the
+      mode that actually ran — the requested mode is non-authoritative and `"semantic"` may still be demoted to
+      `"lexical"` by the search router. Use [getEffectiveSearchMode()](dw.suggest.SuggestModel.md#geteffectivesearchmode) to obtain the mode that was
       actually used.
 
 
@@ -335,13 +335,13 @@ regardless of the value of "Search Autocorrections" search preference.
 ### getEffectiveSearchMode()
 - getEffectiveSearchMode(): [String](TopLevel.String.md)
   - : Returns the effective search mode that was used for the last suggestion execution. This reflects the actual
-      matching approach that ran, which may differ from the requested mode if a fallback occurred. Returns {@code null}
+      matching approach that ran, which may differ from the requested mode if a fallback occurred. Returns `null`
       if no suggestions have been executed yet.
 
 
     **Returns:**
-    - {@code "semantic"} if the query ran against the external search provider, {@code "lexical"} if it ran
-              against the native search, or {@code null} if no suggestions have been executed yet
+    - `"semantic"` if the query ran against the external search provider, `"lexical"` if it ran
+              against the native search, or `null` if no suggestions have been executed yet
 
 
 
@@ -398,14 +398,14 @@ regardless of the value of "Search Autocorrections" search preference.
 ### getSearchMode()
 - getSearchMode(): [String](TopLevel.String.md)
   - : Returns the search mode that was requested for the next suggestion execution via [setSearchMode(String)](dw.suggest.SuggestModel.md#setsearchmodestring),
-      or {@code null} if no mode was explicitly requested. This reflects the caller's requested preference, not the
-      mode that actually ran — the requested mode is non-authoritative and {@code "semantic"} may still be demoted to
-      {@code "lexical"} by the search router. Use [getEffectiveSearchMode()](dw.suggest.SuggestModel.md#geteffectivesearchmode) to obtain the mode that was
+      or `null` if no mode was explicitly requested. This reflects the caller's requested preference, not the
+      mode that actually ran — the requested mode is non-authoritative and `"semantic"` may still be demoted to
+      `"lexical"` by the search router. Use [getEffectiveSearchMode()](dw.suggest.SuggestModel.md#geteffectivesearchmode) to obtain the mode that was
       actually used.
 
 
     **Returns:**
-    - {@code "semantic"} or {@code "lexical"} if a mode was requested, or {@code null} if no mode was requested
+    - `"semantic"` or `"lexical"` if a mode was requested, or `null` if no mode was requested
 
 
 ---
@@ -503,12 +503,12 @@ regardless of the value of "Search Autocorrections" search preference.
 ### setSearchMode(String)
 - setSearchMode(mode: [String](TopLevel.String.md)): void
   - : Sets the search mode for the next suggestion execution. The mode influences the routing decision made by the
-      search router, but is non-authoritative — {@code "semantic"} still runs the full routing cascade and may be
-      demoted to {@code "lexical"} based on availability and query characteristics.
+      search router, but is non-authoritative — `"semantic"` still runs the full routing cascade and may be
+      demoted to `"lexical"` based on availability and query characteristics.
 
 
     **Parameters:**
-    - mode - the search mode to request, either {@code "semantic"} or {@code "lexical"}
+    - mode - the search mode to request, either `"semantic"` or `"lexical"`
 
     **Throws:**
     - IllegalArgumentException - if the mode is not one of the allowed values

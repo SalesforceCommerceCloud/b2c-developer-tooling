@@ -1,0 +1,1367 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Inventory Lists",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/inventory-lists/inventory-lists-oas-v1-public.yaml)\n\n# API Overview\n\nThe Inventory Lists API provides comprehensive management capabilities for product inventory records within inventory lists. Use this API to:\n\n- Retrieve current inventory information for products.\n- Create and update inventory records with allocation and availability data.\n- Manage pre-order and backorder configurations.\n- Track stock levels, turnover, and available-to-sell (ATS) quantities.\n- Configure perpetual stock for always-available products.\n- Handle custom inventory attributes.\n\n## Authentication & Authorization\n\nFor resource access, you must use a client ID and client secret from Account Manager to request an access token. The access token is used as a bearer token and added to the Authorization header of your API request.\n\nThe API client must also have at least one of the following OAuth scopes: `sfcc.inventory-lists` scope for read-only operations and `sfcc.inventory-lists.rw` for modifications.\n\nYou must include the relevant scope(s) in the client ID used to generate the token. For a full list of permissions, see the [Authorization Scopes Catalog.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html)\n\nFor detailed setup instructions, see the [Authorization for Admin APIs guide.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-admin-apis.html)\n\n## Key Concepts\n\n### Product Inventory Record\n\nA product inventory record represents the inventory information for a specific product within an inventory list. Each record contains:\n\n- Product identification: Product ID and name\n- Stock information: Current stock level, ATS quantity, turnover\n- Allocation: Quantity allocated for sale and reset date\n- Availability dates: Expected in-stock dates\n- Pre-order/backorder handling: Configuration for products not currently in stock\n- Custom attributes: Extensible with custom properties (c_* fields)\n\n### Inventory List\n\nAn inventory list is a container for product inventory records. Each inventory list is identified by a unique ID and can contain multiple product inventory records.\n\n### Available to Sell (ATS)\n\nATS represents the quantity of items available for purchase. It is calculated as:\n\n```\nATS = Allocation + PreOrderBackOrderAllocation - InventoryTurnover\n```\n\n### Stock Level\n\nStock level represents the current physical inventory. It is calculated as:\n\n```\nStock Level = Allocation - InventoryTurnover\n```\n\n### Inventory Turnover\n\nInventory turnover is the sum of all inventory transactions (both increments and decrements) recorded since the allocation reset date. This value can be negative if there are more decrements than increments.\n\n### Perpetual Stock\n\nProducts with the perpetual flag set to `true` are treated as always available, regardless of actual stock levels. This is useful for:\n\n- Digital products\n- Made-to-order items\n- Products with unlimited availability\n\n### Pre-order and Backorder Handling\n\nThis API supports three modes for handling products that are not currently in stock:\n\n- **none**: No pre-order or backorder capability\n- **preorder**: Product can be ordered before it becomes available\n- **backorder**: Product can be ordered when temporarily out of stock\n\n## Use Cases\n\n### Availability & Monitoring\n\n- Verify product stock status and calculated fields (such as ATS) before displaying items to shoppers.\n- Monitor current stock levels, allocation, and turnover history to determine replenishment needs.\n\n### Lifecycle Management\n\n- Perform the first-time setup for new products or execute a complete inventory reset/replacement.\n- Modify specific fields—such as in-stock dates, pre-order/backorder settings, or perpetual stock flags—without affecting the rest of the record.\n- Adjust specific allocation amounts dynamically as stock moves.\n- Permanently remove records for discontinued products or obsolete entries during list reorganization.\n\n## Best Practices\n\n### Inventory Updates\n\n1. Use PATCH for partial updates: When only updating specific fields, use PATCH to avoid accidentally clearing other data.\n2. Monitor concurrent updates: Handle 409 Conflict responses appropriately when multiple systems update the same record.\n3. Validate allocations: Ensure allocation amounts are non-negative.\n4. Reset dates: Update the allocation reset date when resetting inventory to accurately track turnover.\n\n### Stock Management\n\n1. Regular synchronization: Keep inventory records synchronized with your inventory management system.\n2. ATS monitoring: Monitor ATS values to ensure products don't oversell.\n3. Turnover tracking: Use turnover data to understand inventory movement patterns.\n4. Perpetual stock usage: Use perpetual stock flag only for appropriate product types.\n\n### Pre-order and Backorder\n\n1. Clear handling mode: Set appropriate pre-order/backorder handling based on product availability strategy.\n2. Allocation planning: Use preOrderBackOrderAllocation to control how many pre-orders or backorders are accepted.\n3. In-stock dates: Provide accurate in-stock dates for pre-order items to set customer expectations.\n\n### Security and Access Control\n\n1. Read vs. Write access: Use `sfcc.inventory-lists` scope for read-only operations and `sfcc.inventory-lists.rw` for modifications.\n2. Organization context: Scope all operations to an organization to ensure proper data isolation.\n3. Global scope: Perform inventory operations at the global level, not site level.\n\n## Custom Attributes\n\nThe Product Inventory Record schema supports custom attributes using the `c_*` naming convention. These attributes allow you to extend the standard inventory model with custom business logic and data.\n\n**Example custom attributes:**\n- `c_supplierCode`: Track supplier information.\n- `c_warehouseLocation`: Store warehouse location data.\n- `c_minimumOrderQuantity`: Define minimum order quantities.\n- `c_leadTime`: Track expected lead times.\n\n## Rate Limiting\n\nFor load shedding and rate limiting information, see [Load Shedding and Rate Limiting.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/throttle-rates.html)\n\n## Related APIs\n\n- Products API: Manage product catalog information.\n- Inventory Availability API: Query real-time inventory availability across locations.\n- Inventory Reservation API: Reserve inventory for orders.\n- Orders API: Process orders with inventory allocation.",
+    "version": "1.1.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Product"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/product/inventory-lists/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/inventory-lists/{inventoryListId}/product-inventory-records/{productId}": {
+      "get": {
+        "summary": "Get a product inventory record.",
+        "description": "Get a product inventory record by product ID and inventory list ID.\n\nOnly product inventory records that exist are returned. The response includes:\n- Current stock levels and availability (ATS)\n- Allocation information\n- Pre-order and backorder handling configuration\n- Custom attributes\n",
+        "operationId": "getProductInventoryRecord",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "description": "The inventory list ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "inventory-list-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "The product ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            },
+            "examples": {
+              "select": {
+                "value": "(**)"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product inventory record retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInventoryRecord"
+                },
+                "examples": {
+                  "ProductInventoryRecordResponse": {
+                    "$ref": "#/components/examples/ProductInventoryRecordResponse"
+                  },
+                  "ProductInventoryRecordPerpetual": {
+                    "$ref": "#/components/examples/ProductInventoryRecordPerpetual"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified product inventory record or inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ProductInventoryRecordNotFound": {
+                    "$ref": "#/components/examples/ProductInventoryRecordNotFound"
+                  },
+                  "InventoryListNotFound": {
+                    "$ref": "#/components/examples/InventoryListNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists",
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "summary": "Create or replace a product inventory record.",
+        "description": "Create a new product inventory record or replace an existing one using the information provided.\n\nWhen replacing an existing record, the record is replaced with the information provided in the request.\n\nThe `preOrderBackOrderHandling` parameter defaults to \"none\" if not specified.\n",
+        "operationId": "createOrUpdateProductInventoryRecord",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "description": "The inventory list ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "inventory-list-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "The product ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The product inventory record",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInventoryRecord"
+              },
+              "examples": {
+                "CreateProductInventoryRecordRequest": {
+                  "$ref": "#/components/examples/CreateProductInventoryRecordRequest"
+                },
+                "EnablePerpetualStock": {
+                  "$ref": "#/components/examples/EnablePerpetualStock"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Product inventory record updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInventoryRecord"
+                },
+                "examples": {
+                  "ProductInventoryRecordUpdated": {
+                    "$ref": "#/components/examples/ProductInventoryRecordUpdated"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Product inventory record created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInventoryRecord"
+                },
+                "examples": {
+                  "ProductInventoryRecordCreated": {
+                    "$ref": "#/components/examples/ProductInventoryRecordCreated"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InventoryListNotFound": {
+                    "$ref": "#/components/examples/InventoryListNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete a product inventory record.",
+        "description": "Delete a product inventory record by product ID and inventory list ID.\n\nThis operation permanently removes the inventory record. Once deleted, the record cannot be recovered\nunless recreated using the PUT operation.\n",
+        "operationId": "deleteProductInventoryRecord",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "description": "The inventory list ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "inventory-list-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "The product ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Product inventory record deleted successfully. No content returned."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified product inventory record or inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ProductInventoryRecordNotFound": {
+                    "$ref": "#/components/examples/ProductInventoryRecordNotFound"
+                  },
+                  "InventoryListNotFound": {
+                    "$ref": "#/components/examples/InventoryListNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update a product inventory record.",
+        "description": "Update the product inventory record with the specified information.\n\nOnly the fields provided in the request body are updated. All other fields are unchanged.\nThis is useful for partial updates such as adjusting allocation or changing pre-order/backorder handling.\n",
+        "operationId": "updateProductInventoryRecord",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "description": "The inventory list ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "inventory-list-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "The product ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ProductId"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The product inventory record to be updated and the fields to update",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInventoryRecord"
+              },
+              "examples": {
+                "UpdateProductInventoryRecordRequest": {
+                  "$ref": "#/components/examples/UpdateProductInventoryRecordRequest"
+                },
+                "UpdateAllocationOnly": {
+                  "$ref": "#/components/examples/UpdateAllocationOnly"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Product inventory record updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInventoryRecord"
+                },
+                "examples": {
+                  "ProductInventoryRecordUpdated": {
+                    "$ref": "#/components/examples/ProductInventoryRecordUpdated"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified product inventory record or inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ProductInventoryRecordNotFound": {
+                    "$ref": "#/components/examples/ProductInventoryRecordNotFound"
+                  },
+                  "InventoryListNotFound": {
+                    "$ref": "#/components/examples/InventoryListNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/inventory-lists/{inventoryListId}": {
+      "get": {
+        "summary": "Get an inventory list.",
+        "description": "Get an inventory list by ID.\n\nReturns the inventory list configuration including:\n- Description\n- Default in-stock behavior\n- Bundle inventory settings\n- On-order inventory settings\n- Creation and last modified dates\n- Assigned sites (computed)\n",
+        "operationId": "getInventoryList",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "description": "The inventory list ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "inventory-list-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            },
+            "examples": {
+              "select": {
+                "value": "(**)"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inventory list retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryList"
+                },
+                "examples": {
+                  "InventoryListResponse": {
+                    "$ref": "#/components/examples/InventoryListResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InventoryListNotFound": {
+                    "$ref": "#/components/examples/InventoryListNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists",
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "summary": "Create or replace an inventory list.",
+        "description": "Create a new inventory list or replace an existing one using the information provided.\n\nWhen replacing an existing list, the list is replaced with the information provided in the request.\n",
+        "operationId": "createOrUpdateInventoryList",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "description": "The inventory list ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "inventory-list-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The inventory list",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryList"
+              },
+              "examples": {
+                "CreateInventoryListRequest": {
+                  "$ref": "#/components/examples/CreateInventoryListRequest"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Inventory list updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryList"
+                },
+                "examples": {
+                  "InventoryListUpdated": {
+                    "$ref": "#/components/examples/InventoryListUpdated"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Inventory list created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryList"
+                },
+                "examples": {
+                  "InventoryListCreated": {
+                    "$ref": "#/components/examples/InventoryListCreated"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete an inventory list.",
+        "description": "Delete an inventory list by ID.\n\nThis operation permanently removes the inventory list. Once deleted, the list cannot be recovered\nunless recreated using the PUT operation.\n",
+        "operationId": "deleteInventoryList",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "description": "The inventory list ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "inventory-list-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Inventory list deleted successfully. No content returned."
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InventoryListNotFound": {
+                    "$ref": "#/components/examples/InventoryListNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update an inventory list.",
+        "description": "Update the inventory list with the specified information.\n\nOnly the fields provided in the request body are updated. All other fields are unchanged.\nThis is useful for partial updates such as changing default in-stock behavior or enabling on-order inventory.\n",
+        "operationId": "updateInventoryList",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "inventoryListId",
+            "in": "path",
+            "description": "The inventory list ID",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "inventory-list-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The inventory list fields to update",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryList"
+              },
+              "examples": {
+                "UpdateInventoryListRequest": {
+                  "$ref": "#/components/examples/UpdateInventoryListRequest"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Inventory list updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryList"
+                },
+                "examples": {
+                  "InventoryListUpdated": {
+                    "$ref": "#/components/examples/InventoryListUpdated"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Not Found. The specified inventory list does not exist.\n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InventoryListNotFound": {
+                    "$ref": "#/components/examples/InventoryListNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.inventory-lists.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "ProductId": {
+        "type": "string",
+        "description": "The id (SKU) of the product.",
+        "example": "apple-ipod-classic",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "Select": {
+        "type": "string",
+        "description": "The property selector declaring which fields are included into the response payload. You can specify a single field name, a comma-separated list of names or work with wildcards. You can also specify array operations and filter expressions. The actual selector value must be enclosed within parentheses. For more information, please read the documentation about property selectors [here](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html).",
+        "example": "(name,id,variationAttributes.(**))",
+        "minLength": 1,
+        "pattern": "^[(].*[)]$"
+      },
+      "ProductInventoryRecordAllocation": {
+        "type": "object",
+        "description": "Product inventory record allocation",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double",
+            "description": "The allocation quantity that is currently set. The quantity unit matches the product unit.",
+            "example": 100,
+            "minimum": 0
+          },
+          "resetDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the allocation quantity was initialized or reset.",
+            "example": "2024-01-15T10:00:00Z"
+          }
+        }
+      },
+      "PreorderBackorderHandling": {
+        "type": "string",
+        "description": "The enum holding the records' configuration before backorder handling. Possible values are:\n- `none` - No pre-order or backorder handling\n- `preorder` - Product available for pre-order\n- `backorder` - Product available for backorder\n",
+        "enum": [
+          "none",
+          "preorder",
+          "backorder"
+        ],
+        "example": "none"
+      },
+      "ProductInventoryRecord": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Product inventory record",
+        "properties": {
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "productName": {
+            "type": "string",
+            "description": "The name of the product",
+            "example": "Sample Product",
+            "maxLength": 256
+          },
+          "inventoryListId": {
+            "type": "string",
+            "description": "The user-supplied ID of the inventory list.",
+            "example": "inventory-list-001",
+            "maxLength": 256
+          },
+          "perpetualFlag": {
+            "type": "boolean",
+            "description": "The flag that determines if the product is perpetually in stock.",
+            "example": false
+          },
+          "allocation": {
+            "$ref": "#/components/schemas/ProductInventoryRecordAllocation"
+          },
+          "inStockDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date that the item is expected to be in stock.",
+            "example": "2024-02-01T00:00:00Z"
+          },
+          "ats": {
+            "type": "number",
+            "format": "double",
+            "description": "The quantity of items available to sell (ATS). This is calculated as the allocation plus the preorderBackorderAllocation minus the turnover.",
+            "example": 95,
+            "readOnly": true
+          },
+          "stockLevel": {
+            "type": "number",
+            "format": "double",
+            "description": "The current stock level. This is calculated as the allocation minus the turnover.",
+            "example": 95,
+            "readOnly": true
+          },
+          "quantityOnOrder": {
+            "type": "number",
+            "format": "double",
+            "description": "The on order quantity, which is the quantity of all transactions for this record since the allocation reset date.",
+            "example": 5,
+            "readOnly": true
+          },
+          "inventoryTurnover": {
+            "type": "number",
+            "format": "double",
+            "description": "The sum of all inventory transactions (decrements and increments) that have been recorded subsequent to the allocation reset date. The value can be negative in the case of a higher quantity of inventory decrements than increments.",
+            "example": 5,
+            "readOnly": true
+          },
+          "preOrderBackOrderHandling": {
+            "$ref": "#/components/schemas/PreorderBackorderHandling"
+          },
+          "preOrderBackOrderAllocation": {
+            "type": "number",
+            "format": "double",
+            "description": "The quantity of items that are allocated for sale, beyond the initial stock allocation.",
+            "example": 0
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "InventoryList": {
+        "type": "object",
+        "description": "Inventory list resource",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The user-supplied ID of the inventory list.",
+            "example": "inventory-list-001",
+            "maxLength": 256
+          },
+          "description": {
+            "type": "string",
+            "description": "The user-supplied description of this inventory list.",
+            "example": "Main inventory list for warehouse A",
+            "maxLength": 4000
+          },
+          "defaultInStock": {
+            "type": "boolean",
+            "description": "True if the default for products in the inventory list is to be in stock. The default value is false if not specified.",
+            "example": false
+          },
+          "useBundleInventoryOnly": {
+            "type": "boolean",
+            "description": "True if the inventory list is used in bundle inventory only. The default value is false if not specified.",
+            "example": false
+          },
+          "onOrderInventoryEnabled": {
+            "type": "boolean",
+            "description": "True if the on-order flag is enabled. The default value is false if not specified.",
+            "example": false
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time the inventory list was created.",
+            "example": "2024-01-10T08:00:00Z",
+            "readOnly": true
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time the inventory list was last modified.",
+            "example": "2024-01-15T10:30:00Z",
+            "readOnly": true
+          },
+          "assignedSites": {
+            "type": "array",
+            "description": "The list of site display names or site Ids this inventory list is assigned to. This is a computed attribute and cannot be directly modified.",
+            "example": [
+              "SiteGenesis",
+              "SiteGenesis US"
+            ],
+            "items": {
+              "type": "string",
+              "example": "SiteGenesis",
+              "maxLength": 256
+            },
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        },
+        "example": "f_ecom_zzxy_prd"
+      },
+      "inventoryListId": {
+        "name": "inventoryListId",
+        "in": "path",
+        "description": "The inventory list ID",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "inventory-list-001",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      },
+      "productId": {
+        "name": "productId",
+        "in": "path",
+        "description": "The product ID",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/ProductId"
+        }
+      },
+      "select": {
+        "name": "select",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/Select"
+        },
+        "examples": {
+          "select": {
+            "value": "(**)"
+          }
+        }
+      }
+    },
+    "examples": {
+      "ProductInventoryRecordResponse": {
+        "summary": "Product inventory record retrieved successfully.",
+        "description": "Example of a successful product inventory record retrieval",
+        "value": {
+          "productId": "P1234567890",
+          "productName": "Sample Product",
+          "inventoryListId": "inventory-list-001",
+          "perpetualFlag": false,
+          "allocation": {
+            "amount": 100,
+            "resetDate": "2024-01-15T10:00:00.000Z"
+          },
+          "inStockDate": "2024-02-01T00:00:00.000Z",
+          "ats": 95,
+          "stockLevel": 95,
+          "quantityOnOrder": 5,
+          "inventoryTurnover": 5,
+          "preOrderBackOrderHandling": "none",
+          "preOrderBackOrderAllocation": 0,
+          "c_customField": "custom value"
+        }
+      },
+      "ProductInventoryRecordPerpetual": {
+        "summary": "Product inventory record with perpetual stock",
+        "description": "Example of a product inventory record set to always be in stock",
+        "value": {
+          "productId": "P9999999999",
+          "productName": "Always Available Product",
+          "inventoryListId": "inventory-list-001",
+          "perpetualFlag": true,
+          "ats": 999999,
+          "stockLevel": 999999,
+          "quantityOnOrder": 0,
+          "inventoryTurnover": 0,
+          "preOrderBackOrderHandling": "none",
+          "preOrderBackOrderAllocation": 0
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Your access token is invalid or expired and can’t be used to identify a user."
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Your access token is valid, but you don’t have the required permissions to access the resource."
+        }
+      },
+      "ProductInventoryRecordNotFound": {
+        "summary": "Product Inventory Record Not Found",
+        "description": "The specified product inventory record does not exist.",
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/product-inventory-record-not-found",
+          "title": "Product Inventory Record Not Found",
+          "detail": "Product inventory record with product ID 'P1234567890' in inventory list 'inventory-list-001' was not found.",
+          "productId": "P1234567890",
+          "inventoryListId": "inventory-list-001"
+        }
+      },
+      "InventoryListNotFound": {
+        "summary": "Inventory List Not Found",
+        "description": "The specified inventory list does not exist.",
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/inventory-list-not-found",
+          "title": "Inventory List Not Found",
+          "detail": "Inventory list with ID 'inventory-list-001' was not found.",
+          "inventoryListId": "inventory-list-001"
+        }
+      },
+      "CreateProductInventoryRecordRequest": {
+        "summary": "Create a new product inventory record.",
+        "description": "Example of creating a new product inventory record with allocation",
+        "value": {
+          "productId": "P1234567890",
+          "inventoryListId": "inventory-list-001",
+          "perpetualFlag": false,
+          "allocation": {
+            "amount": 100,
+            "resetDate": "2024-01-15T10:00:00.000Z"
+          },
+          "inStockDate": "2024-02-01T00:00:00.000Z",
+          "preOrderBackOrderHandling": "none",
+          "preOrderBackOrderAllocation": 0
+        }
+      },
+      "EnablePerpetualStock": {
+        "summary": "Enable perpetual stock.",
+        "description": "Example of setting a product to always be in stock",
+        "value": {
+          "productId": "P1234567890",
+          "perpetualFlag": true
+        }
+      },
+      "ProductInventoryRecordUpdated": {
+        "summary": "Product inventory record updated successfully.",
+        "description": "Example of a successfully updated product inventory record",
+        "value": {
+          "productId": "P1234567890",
+          "productName": "Sample Product",
+          "inventoryListId": "inventory-list-001",
+          "perpetualFlag": false,
+          "allocation": {
+            "amount": 150,
+            "resetDate": "2024-01-20T10:00:00.000Z"
+          },
+          "inStockDate": "2024-02-15T00:00:00.000Z",
+          "ats": 145,
+          "stockLevel": 145,
+          "quantityOnOrder": 5,
+          "inventoryTurnover": 5,
+          "preOrderBackOrderHandling": "preorder",
+          "preOrderBackOrderAllocation": 50
+        }
+      },
+      "ProductInventoryRecordCreated": {
+        "summary": "Product inventory record created successfully.",
+        "description": "Example of a successfully created product inventory record",
+        "value": {
+          "productId": "P1234567890",
+          "productName": "New Product",
+          "inventoryListId": "inventory-list-001",
+          "perpetualFlag": false,
+          "allocation": {
+            "amount": 100,
+            "resetDate": "2024-01-15T10:00:00.000Z"
+          },
+          "inStockDate": "2024-02-01T00:00:00.000Z",
+          "ats": 100,
+          "stockLevel": 100,
+          "quantityOnOrder": 0,
+          "inventoryTurnover": 0,
+          "preOrderBackOrderHandling": "none",
+          "preOrderBackOrderAllocation": 0
+        }
+      },
+      "UpdateProductInventoryRecordRequest": {
+        "summary": "Update an existing product inventory record.",
+        "description": "Example of updating allocation and stock information",
+        "value": {
+          "productId": "P1234567890",
+          "allocation": {
+            "amount": 150,
+            "resetDate": "2024-01-20T10:00:00.000Z"
+          },
+          "perpetualFlag": false,
+          "inStockDate": "2024-02-15T00:00:00.000Z",
+          "preOrderBackOrderHandling": "preorder",
+          "preOrderBackOrderAllocation": 50
+        }
+      },
+      "UpdateAllocationOnly": {
+        "summary": "Update only the allocation information.",
+        "description": "Example of updating only the allocation amount",
+        "value": {
+          "productId": "P1234567890",
+          "allocation": {
+            "amount": 200
+          }
+        }
+      },
+      "InventoryListResponse": {
+        "summary": "Inventory list retrieved successfully.",
+        "description": "Example of a successful inventory list retrieval",
+        "value": {
+          "id": "inventory-list-001",
+          "description": "Main inventory list for warehouse A",
+          "defaultInStock": false,
+          "useBundleInventoryOnly": false,
+          "onOrderInventoryEnabled": false,
+          "creationDate": "2024-01-10T08:00:00.000Z",
+          "lastModified": "2024-01-15T10:30:00.000Z",
+          "assignedSites": [
+            "SiteGenesis",
+            "SiteGenesis US"
+          ]
+        }
+      },
+      "CreateInventoryListRequest": {
+        "summary": "Create a new inventory list.",
+        "description": "Example of creating a new inventory list with configuration",
+        "value": {
+          "id": "inventory-list-001",
+          "description": "Main inventory list for warehouse A",
+          "defaultInStock": false,
+          "useBundleInventoryOnly": false,
+          "onOrderInventoryEnabled": false
+        }
+      },
+      "InventoryListUpdated": {
+        "summary": "Inventory list updated successfully.",
+        "description": "Example of a successfully updated inventory list",
+        "value": {
+          "id": "inventory-list-001",
+          "description": "Updated inventory list for warehouse A",
+          "defaultInStock": true,
+          "useBundleInventoryOnly": false,
+          "onOrderInventoryEnabled": true,
+          "creationDate": "2024-01-10T08:00:00.000Z",
+          "lastModified": "2024-02-01T14:00:00.000Z",
+          "assignedSites": [
+            "SiteGenesis",
+            "SiteGenesis US"
+          ]
+        }
+      },
+      "InventoryListCreated": {
+        "summary": "Inventory list created successfully.",
+        "description": "Example of a successfully created inventory list",
+        "value": {
+          "id": "inventory-list-001",
+          "description": "Main inventory list for warehouse A",
+          "defaultInStock": false,
+          "useBundleInventoryOnly": false,
+          "onOrderInventoryEnabled": false,
+          "creationDate": "2024-01-10T08:00:00.000Z",
+          "lastModified": "2024-01-10T08:00:00.000Z",
+          "assignedSites": []
+        }
+      },
+      "UpdateInventoryListRequest": {
+        "summary": "Update an existing inventory list.",
+        "description": "Example of updating inventory list configuration",
+        "value": {
+          "id": "inventory-list-001",
+          "description": "Updated inventory list for warehouse A",
+          "defaultInStock": true,
+          "onOrderInventoryEnabled": true
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "description": "Account Manager OAuth 2.0 security scheme for admin APIs.\n\nUse the Account Manager to obtain access tokens for making API calls.\nThe scope determines the level of access to inventory list resources.\n",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dw/oauth2/access_token",
+            "scopes": {
+              "sfcc.inventory-lists": "",
+              "sfcc.inventory-lists.rw": ""
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-sdk-classname": "InventoryListsV1"
+}

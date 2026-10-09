@@ -1,0 +1,409 @@
+openapi: 3.0.3
+info:
+    title: Scripts
+    version: 1.0.0
+    x-api-type: Admin
+    x-api-family: DX
+servers:
+  -     url: "https://{shortCode}.api.commercecloud.salesforce.com/dx/scripts/v1"
+        variables:
+                shortCode:
+                          default: shortCode
+paths:
+    /organizations/{organizationId}/code-versions:
+          get:
+                  operationId: getCodeVersions
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: expand
+                                in: query
+                                required: false
+                                style: form
+                                explode: false
+                                schema:
+                                              type: array
+                                              items:
+                                                              type: string
+                                                              enum: [size]
+                  responses:
+                            200:
+                                        description: List of code versions successfully retrieved.
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/CodeVersionResult"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.scripts, sfcc.scripts.rw]
+    /organizations/{organizationId}/code-versions/{codeVersionId}:
+          get:
+                  operationId: getCodeVersion
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: codeVersionId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                    -           name: expand
+                                in: query
+                                required: false
+                                style: form
+                                explode: false
+                                schema:
+                                              type: array
+                                              items:
+                                                              type: string
+                                                              enum: [size]
+                  responses:
+                            200:
+                                        description: Code version successfully retrieved.
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/CodeVersion"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: Code version not found.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.scripts, sfcc.scripts.rw]
+          put:
+                  operationId: createCodeVersion
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: codeVersionId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            200:
+                                        description: Code version successfully replaced.
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/CodeVersion"
+                            201:
+                                        description: Code version successfully created.
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/CodeVersion"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            409:
+                                        description: A code version with the given ID already exists.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.scripts.rw]
+          delete:
+                  operationId: deleteCodeVersion
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: codeVersionId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            204:
+                                        description: Code version successfully deleted.
+                            400:
+                                        description: The active code version cannot be deleted.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: Code version not found.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.scripts.rw]
+          patch:
+                  operationId: updateCodeVersion
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: codeVersionId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  requestBody:
+                            content:
+                                        application/json:
+                                                      schema:
+                                                                      $ref: "#/components/schemas/CodeVersion"
+                            required: true
+                  responses:
+                            200:
+                                        description: Code version successfully updated.
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/CodeVersion"
+                            400:
+                                        description: The active code version cannot be modified.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: Code version not found.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            409:
+                                        description: A code version with the given ID already exists (when renaming).
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.scripts.rw]
+components:
+    schemas:
+          OrganizationId:
+                  type: string
+                  maxLength: 32
+                  minLength: 1
+          Total:
+                  type: integer
+                  format: int32
+                  default: 0
+                  minimum: 0
+          ResultBase:
+                  type: object
+                  properties:
+                            limit:
+                                        type: integer
+                                        format: int32
+                            total:
+                                        $ref: "#/components/schemas/Total"
+                  required: [limit, total]
+          CodeVersion:
+                  type: object
+                  properties:
+                            id:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            active:
+                                        type: boolean
+                            cartridges:
+                                        type: array
+                                        items:
+                                                      type: string
+                                                      maxLength: 256
+                            compatibilityMode:
+                                        type: string
+                                        maxLength: 100
+                            activationTime:
+                                        type: string
+                                        format: date-time
+                            lastModificationTime:
+                                        type: string
+                                        format: date-time
+                            rollback:
+                                        type: boolean
+                            totalSize:
+                                        type: integer
+                                        format: int64
+                            webDavUrl:
+                                        type: string
+                                        maxLength: 4000
+          CodeVersionResult:
+                  allOf:
+                    -           $ref: "#/components/schemas/ResultBase"
+                  properties:
+                            data:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/CodeVersion"
+                                                      type: string
+          ErrorResponse:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                            title:
+                                        type: string
+                                        maxLength: 256
+                            type:
+                                        type: string
+                                        maxLength: 2048
+                            detail:
+                                        type: string
+                            instance:
+                                        type: string
+                                        maxLength: 2048
+                  required: [detail, title, type]
+    responses:
+          401unauthorized:
+                  description: Your access token is invalid or expired and can’t be used to identify a user.
+                  content:
+                            application/problem+json:
+                                        schema:
+                                                      $ref: "#/components/schemas/ErrorResponse"
+          403forbidden:
+                  description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                  content:
+                            application/problem+json:
+                                        schema:
+                                                      $ref: "#/components/schemas/ErrorResponse"
+    parameters:
+          organizationId:
+                  name: organizationId
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            $ref: "#/components/schemas/OrganizationId"
+          expand:
+                  name: expand
+                  in: query
+                  required: false
+                  style: form
+                  explode: false
+                  schema:
+                            type: array
+                            items:
+                                        type: string
+                                        enum: [size]
+          codeVersionId:
+                  name: codeVersionId
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            type: string
+                            maxLength: 256
+                            minLength: 1
+    securitySchemes:
+          AmOAuth2:
+                  type: oauth2
+                  flows:
+                            clientCredentials:
+                                        tokenUrl: "https://account.demandware.com/dwsso/oauth2/access_token"
+                                        scopes:
+                                                      sfcc.scripts: Scripts API READONLY scope
+                                                      sfcc.scripts.rw: Scripts API scope
+                            authorizationCode:
+                                        authorizationUrl: "https://account.demandware.com/dwsso/oauth2/authorize"
+                                        tokenUrl: "https://account.demandware.com/dwsso/oauth2/access_token"
+                                        scopes:
+                                                      sfcc.scripts: Scripts API READONLY scope
+                                                      sfcc.scripts.rw: Scripts API scope

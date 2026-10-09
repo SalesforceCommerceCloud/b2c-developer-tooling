@@ -5,8 +5,7 @@
  */
 /**
  * Generates the bundled search index for B2C Commerce **Developer Center guides**
- * (conceptual / how-to prose) from a local clone of the `commerce-cloud-docs`
- * content repository.
+ * (conceptual / how-to prose) from a local documentation source directory.
  *
  * Unlike the Script API / job-step corpora, guide *content* is NOT bundled — the
  * index stores only lightweight metadata (title, section headings, category, and
@@ -20,7 +19,9 @@
  *     -> sourceUrl: https://developer.salesforce.com/docs/commerce/{category}/guide/<basename>.md
  * (`guides` -> `guide`, nested dirs flattened, basename preserved verbatim). `url` is the
  * human-facing .html page; `sourceUrl` is the raw .md fetched for content. Basenames are
- * unique within each category, so flattening does not collide.
+ * unique within each category, so flattening does not collide. The `ocapi` category
+ * indexes the OCAPI prose reference the same way from its own directory and TOC; see
+ * `guides-sources.ts` for every source's directory and URL path.
  *
  * IMPORTANT — only TOC-referenced files are indexed. The docs site publishes a
  * page only if it is linked from a guide table-of-contents YAML (e.g.
@@ -41,23 +42,20 @@
  * expanding the entire subtree.
  *
  * Usage:
- *   COMMERCE_DOCS_REPO=/path/to/commerce-cloud-docs \
+ *   GUIDES_CONTENT_DIR=/path/to/guide-content \
  *     pnpm --filter @salesforce/b2c-tooling-sdk run generate:guides-index
  *
- * Defaults to ~/code/commerce-cloud-docs when COMMERCE_DOCS_REPO is unset.
+ * GUIDES_CONTENT_DIR must contain the category directories listed below.
  */
 
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import {load} from 'js-yaml';
 
+import {GUIDES_SOURCES, type GuidesSource} from './guides-sources.js';
 import {captureSourceProvenance, type SourceProvenance} from './source-provenance.js';
-
-/** Developer Center projects (categories) whose guides we index. */
-const CATEGORIES = ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'] as const;
 
 interface DocEntry {
   id: string;
@@ -87,15 +85,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const GUIDES_DIR = path.resolve(__dirname, '../data/guides');
 const ENRICHMENT_PATH = path.join(GUIDES_DIR, 'enrichment.json');
 
-function resolveDocsRepo(): string {
-  const env = process.env.COMMERCE_DOCS_REPO;
-  const repo = env ? path.resolve(env) : path.join(os.homedir(), 'code', 'commerce-cloud-docs');
-  const contentDir = path.join(repo, 'content', 'en-us');
-  if (!fs.existsSync(contentDir)) {
-    throw new Error(
-      `commerce-cloud-docs content not found at ${contentDir}. ` +
-        `Clone the repo and set COMMERCE_DOCS_REPO to its root (default: ~/code/commerce-cloud-docs).`,
-    );
+function resolveContentDir(): string {
+  const configured = process.env.GUIDES_CONTENT_DIR;
+  if (!configured) throw new Error('Set GUIDES_CONTENT_DIR to the local Developer Center source directory.');
+  const contentDir = path.resolve(configured);
+  if (!GUIDES_SOURCES.some((source) => fs.existsSync(path.join(contentDir, source.dir)))) {
+    throw new Error(`Developer Center guide content not found at ${contentDir}. Check GUIDES_CONTENT_DIR.`);
   }
   return contentDir;
 }
@@ -133,11 +128,8 @@ const TOC_MD_LINK = /^\s*(?:link|source):\s*"?([^"\s]+\.md)"?\s*$/;
  * Lines that are commented out (`# link: ...`) are ignored so removed pages don't
  * leak back in.
  */
-function collectTocBasenames(contentDir: string): Set<string> {
+function collectTocBasenames(tocFiles: string[]): Set<string> {
   const basenames = new Set<string>();
-  const tocFiles = walkFiles(contentDir, (name) => name.endsWith('.yml')).filter((f) =>
-    f.includes(`${path.sep}guides${path.sep}`),
-  );
   for (const toc of tocFiles) {
     for (const rawLine of fs.readFileSync(toc, 'utf-8').split('\n')) {
       if (rawLine.trimStart().startsWith('#')) continue;
@@ -146,6 +138,20 @@ function collectTocBasenames(contentDir: string): Set<string> {
     }
   }
   return basenames;
+}
+
+/** Every guide TOC YAML (any `.yml` under a `guides/` directory). */
+function guideTocFiles(contentDir: string): string[] {
+  return walkFiles(contentDir, (name) => name.endsWith('.yml')).filter((f) =>
+    f.includes(`${path.sep}guides${path.sep}`),
+  );
+}
+
+/** The TOC files that decide which of a source's pages are published. */
+function tocFilesFor(contentDir: string, source: GuidesSource, guideTocs: string[]): string[] {
+  if (!source.toc) return guideTocs;
+  const toc = path.join(contentDir, source.toc);
+  return fs.existsSync(toc) ? [toc] : [];
 }
 
 interface TocItem {
@@ -163,18 +169,16 @@ function tocMarkdownLink(item: TocItem): string | null {
 
 function guideIdForTocLink(contentDir: string, tocFile: string, link: string): string | null {
   const file = path.resolve(path.dirname(tocFile), link);
-  const relative = path.relative(contentDir, file);
-  const [category, directory] = relative.split(path.sep);
-  if (!CATEGORIES.includes(category as (typeof CATEGORIES)[number]) || directory !== 'guides') return null;
-  return `${category}/${path.basename(file, '.md')}`;
+  const relative = path.relative(contentDir, file).split(path.sep).join('/');
+  const source = GUIDES_SOURCES.find((s) => relative.startsWith(`${s.dir}/`));
+  return source ? `${source.category}/${path.basename(file, '.md')}` : null;
 }
 
 /** Collects immediate parent/child TOC edges in both directions. */
-function collectTocRelations(contentDir: string): Map<string, Set<string>> {
+function collectTocRelations(contentDir: string, guideTocs: string[]): Map<string, Set<string>> {
   const relations = new Map<string, Set<string>>();
-  const tocFiles = walkFiles(contentDir, (name) => name.endsWith('.yml'))
-    .filter((file) => file.includes(`${path.sep}guides${path.sep}`))
-    .sort();
+  const sourceTocs = GUIDES_SOURCES.flatMap((source) => (source.toc ? tocFilesFor(contentDir, source, []) : []));
+  const tocFiles = [...new Set([...guideTocs, ...sourceTocs])].sort();
 
   const relate = (left: string, right: string): void => {
     if (left === right) return;
@@ -232,12 +236,12 @@ function loadEnrichment(): Map<string, EnrichmentEntry> {
 }
 
 function main(): void {
-  const contentDir = resolveDocsRepo();
-  // contentDir is `<repo>/content/en-us`; capture provenance from the repo root.
-  const source = captureSourceProvenance(path.resolve(contentDir, '..', '..'));
+  const contentDir = resolveContentDir();
+  const source = captureSourceProvenance(contentDir);
   const enrichment = loadEnrichment();
-  const published = collectTocBasenames(contentDir);
-  const tocRelations = collectTocRelations(contentDir);
+  const guideTocs = guideTocFiles(contentDir);
+  const guidePublished = collectTocBasenames(guideTocs);
+  const tocRelations = collectTocRelations(contentDir, guideTocs);
 
   const entries: DocEntry[] = [];
   // Maps an id to the file that first claimed it, so a duplicate warning can
@@ -245,9 +249,10 @@ function main(): void {
   const seen = new Map<string, string>();
   let skippedOrphans = 0;
 
-  for (const category of CATEGORIES) {
-    const guidesDir = path.join(contentDir, category, 'guides');
-    const files = walkMarkdown(guidesDir);
+  for (const source of GUIDES_SOURCES) {
+    const {category} = source;
+    const published = source.toc ? collectTocBasenames(tocFilesFor(contentDir, source, guideTocs)) : guidePublished;
+    const files = walkMarkdown(path.join(contentDir, source.dir));
 
     for (const file of files) {
       const basename = path.basename(file, '.md');
@@ -273,7 +278,7 @@ function main(): void {
       // `url` is the human-facing .html page (durable link); `sourceUrl` is the
       // raw .md that readEntryContent fetches at read time. Both are served at
       // the same path by developer.salesforce.com.
-      const pageBase = `https://developer.salesforce.com/docs/commerce/${category}/guide/${basename}`;
+      const pageBase = `https://developer.salesforce.com/docs/commerce/${source.urlPath}/${basename}`;
       const enr = enrichment.get(id);
 
       entries.push({
@@ -312,7 +317,7 @@ function main(): void {
 
   const enriched = entries.filter((e) => e.summary).length;
   console.log(
-    `Generated guides index: ${entries.length} entries across ${CATEGORIES.length} categories ` +
+    `Generated guides index: ${entries.length} entries across ${GUIDES_SOURCES.length} categories ` +
       `(${enriched} enriched, ${relatedEdges} directed TOC relationships, ` +
       `${skippedOrphans} orphan files skipped as not TOC-referenced) ` +
       `at ${path.join(GUIDES_DIR, 'index.json')}`,

@@ -17,7 +17,7 @@ import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
 import type {SafetyRule} from '../safety/types.js';
 import type {DwJsonConfig} from './dw-json.js';
-import type {LibraryEntry, NormalizedConfig, ConfigWarning} from './types.js';
+import type {CreateB2CInstanceOptions, LibraryEntry, NormalizedConfig, ConfigWarning} from './types.js';
 
 /**
  * Normalizes a URL origin string by ensuring it has an `https://` protocol prefix.
@@ -82,7 +82,10 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   selfsigned: 'selfSigned',
   'oauth-scopes': 'oauthScopes',
   'auth-methods': 'authMethods',
+  'client-auth-method': 'clientAuthMethod',
   'cip-host': 'cipHost',
+  'api-backend': 'apiBackend',
+  'mrt-backend': 'mrtBackend',
 };
 
 /**
@@ -188,9 +191,11 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     assetQuery: json.assetQuery,
     cipHost: json.cipHost,
     docsCategories: json.docsCategories,
+    scapiSchemas: json.scapiSchemas,
     instanceName: json.name,
     authMethods,
     accountManagerHost: json.accountManagerHost,
+    clientAuthMethod: json.clientAuthMethod,
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,
     mrtApiKey: json.mrtApiKey,
@@ -199,6 +204,10 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    // API backend
+    apiBackend: json.apiBackend,
+    // MRT backend
+    mrtBackend: json.mrtBackend,
     // JWT Bearer auth options
     jwtCertPath: json.jwtCertPath,
     jwtKeyPath: json.jwtKeyPath,
@@ -305,6 +314,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   if (config.accountManagerHost !== undefined) {
     result.accountManagerHost = config.accountManagerHost;
   }
+  if (config.clientAuthMethod !== undefined) {
+    result.clientAuthMethod = config.clientAuthMethod;
+  }
   if (config.autoUpload !== undefined) {
     result.autoUpload = config.autoUpload;
   }
@@ -329,6 +341,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   if (config.docsCategories !== undefined) {
     result.docsCategories = config.docsCategories;
   }
+  if (config.scapiSchemas !== undefined) {
+    result.scapiSchemas = config.scapiSchemas;
+  }
   if (config.mrtProject !== undefined) {
     result.mrtProject = config.mrtProject;
   }
@@ -346,6 +361,12 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.apiBackend !== undefined) {
+    result.apiBackend = config.apiBackend;
+  }
+  if (config.mrtBackend !== undefined) {
+    result.mrtBackend = config.mrtBackend;
   }
   if (config.jwtCertPath !== undefined) {
     result.jwtCertPath = config.jwtCertPath;
@@ -437,6 +458,21 @@ export interface MergeConfigResult {
  * // warnings = [{ code: 'HOSTNAME_MISMATCH', ... }]
  * ```
  */
+/**
+ * Whether two hostnames name the same server, ignoring case, an `https://`
+ * scheme, the default port and a trailing slash.
+ */
+export function isSameHostname(a: string, b: string): boolean {
+  const normalize = (hostname: string) =>
+    hostname
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/+$/, '')
+      .replace(/:443$/, '');
+  return normalize(a) === normalize(b);
+}
+
 export function mergeConfigsWithProtection(
   overrides: Partial<NormalizedConfig>,
   base: NormalizedConfig,
@@ -448,7 +484,8 @@ export function mergeConfigsWithProtection(
 
   // Check for hostname mismatch
   const hostnameExplicitlyProvided = Boolean(overrides.hostname);
-  const hostnameMismatch = hostnameExplicitlyProvided && Boolean(base.hostname) && overrides.hostname !== base.hostname;
+  const hostnameMismatch =
+    hostnameExplicitlyProvided && Boolean(base.hostname) && !isSameHostname(overrides.hostname!, base.hostname!);
 
   if (hostnameMismatch && hostnameProtection) {
     warnings.push({
@@ -539,6 +576,7 @@ export function mergeConfigsWithProtection(
       siteId: overrides.siteId ?? base.siteId,
       authMethods: overrides.authMethods ?? base.authMethods,
       accountManagerHost: overrides.accountManagerHost ?? base.accountManagerHost,
+      clientAuthMethod: overrides.clientAuthMethod ?? base.clientAuthMethod,
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
       autoUpload: overrides.autoUpload ?? base.autoUpload,
@@ -548,6 +586,8 @@ export function mergeConfigsWithProtection(
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,
       assetQuery: overrides.assetQuery ?? base.assetQuery,
+      docsCategories: overrides.docsCategories ?? base.docsCategories,
+      scapiSchemas: overrides.scapiSchemas ?? base.scapiSchemas,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       realm: overrides.realm ?? base.realm,
@@ -562,6 +602,10 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      // API backend
+      apiBackend: overrides.apiBackend ?? base.apiBackend,
+      // MRT backend
+      mrtBackend: overrides.mrtBackend ?? base.mrtBackend,
       // JWT Bearer auth options
       jwtCertPath: overrides.jwtCertPath ?? base.jwtCertPath,
       jwtKeyPath: overrides.jwtKeyPath ?? base.jwtKeyPath,
@@ -641,6 +685,10 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
       clientSecret: config.clientSecret,
       scopes: config.scopes,
       accountManagerHost: config.accountManagerHost,
+      clientAuthMethod: config.clientAuthMethod,
+      jwtCertPath: config.jwtCertPath,
+      jwtKeyPath: config.jwtKeyPath,
+      jwtPassphrase: config.jwtPassphrase,
     };
   }
 
@@ -667,10 +715,7 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
  * await instance.webdav.mkcol('Cartridges/v1');
  * ```
  */
-export function createInstanceFromConfig(
-  config: NormalizedConfig,
-  options?: {redirectUri?: string; openBrowser?: (url: string) => Promise<void>},
-): B2CInstance {
+export function createInstanceFromConfig(config: NormalizedConfig, options?: CreateB2CInstanceOptions): B2CInstance {
   if (!config.hostname) {
     throw new Error('Hostname is required. Set in dw.json or provide via overrides.');
   }
@@ -679,6 +724,11 @@ export function createInstanceFromConfig(
     hostname: config.hostname,
     codeVersion: config.codeVersion,
     webdavHostname: config.webdavHostname,
+    // SCAPI coordinates + backend preference so SCAPI operations can be driven
+    // from the instance alone (see B2CInstance.scapiClientConfig).
+    shortCode: config.shortCode,
+    tenantId: config.tenantId,
+    apiBackend: config.apiBackend,
     // Include TLS options if certificate or self-signed mode is configured
     tlsOptions:
       config.certificate || config.selfSigned
@@ -701,5 +751,5 @@ export function createInstanceFromConfig(
     };
   }
 
-  return new B2CInstance(instanceConfig, authConfig);
+  return new B2CInstance(instanceConfig, authConfig, {oauthStrategy: options?.oauthStrategy});
 }

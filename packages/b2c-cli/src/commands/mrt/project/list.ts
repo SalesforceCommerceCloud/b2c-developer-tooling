@@ -45,6 +45,8 @@ const tableRenderer = new TableRenderer(COLUMNS);
  * List MRT projects accessible to the authenticated user.
  */
 export default class MrtProjectList extends MrtCommand<typeof MrtProjectList> {
+  static aliases = ['mrt:storefront:list'];
+
   static description = withDocs(
     t('commands.mrt.project.list.description', 'List Managed Runtime projects'),
     '/cli/mrt.html#b2c-mrt-project-list',

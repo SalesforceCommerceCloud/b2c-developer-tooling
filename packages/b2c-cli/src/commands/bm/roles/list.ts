@@ -4,17 +4,11 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {
-  InstanceCommand,
-  TableRenderer,
-  columnFlagsFor,
-  selectColumns,
-  type ColumnDef,
-} from '@salesforce/b2c-tooling-sdk/cli';
-import {listBmRoles, type BmRole, type BmRoles} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
+import {BmCommand, TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {type RoleInfo, type ListRolesResult} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
 import {t} from '../../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<BmRole>> = {
+const COLUMNS: Record<string, ColumnDef<RoleInfo>> = {
   id: {
     header: 'ID',
     get: (r) => r.id || '-',
@@ -26,11 +20,11 @@ const COLUMNS: Record<string, ColumnDef<BmRole>> = {
   },
   userCount: {
     header: 'Users',
-    get: (r) => r.user_count?.toString() ?? '-',
+    get: (r) => r.userCount?.toString() ?? '-',
   },
   userManager: {
     header: 'User Manager',
-    get: (r) => (r.user_manager ? 'Yes' : 'No'),
+    get: (r) => (r.userManager ? 'Yes' : 'No'),
     extended: true,
   },
 };
@@ -39,7 +33,7 @@ const DEFAULT_COLUMNS = ['id', 'userCount'];
 
 const tableRenderer = new TableRenderer(COLUMNS);
 
-export default class BmRolesList extends InstanceCommand<typeof BmRolesList> {
+export default class BmRolesList extends BmCommand<typeof BmRolesList> {
   static description = t('commands.bm.roles.list.description', 'List Business Manager access roles on an instance');
 
   static enableJsonFlag = true;
@@ -64,37 +58,40 @@ export default class BmRolesList extends InstanceCommand<typeof BmRolesList> {
     ...columnFlagsFor(COLUMNS),
   };
 
-  async run(): Promise<BmRoles> {
+  async run(): Promise<ListRolesResult> {
     this.requireOAuthCredentials();
 
     const hostname = this.resolvedConfig.values.hostname!;
     const {count, start} = this.flags;
 
+    const backend = this.createRolesBackend();
+    this.logger.debug(`Using ${backend.name} backend for roles list`);
+
     this.log(t('commands.bm.roles.list.fetching', 'Fetching roles from {{hostname}}...', {hostname}));
 
-    const roles = await listBmRoles(this.instance, {count, start});
+    const result = await backend.listRoles({count, start});
 
     if (this.jsonEnabled()) {
-      return roles;
+      return result;
     }
 
-    const items = roles.data ?? [];
+    const items = result.hits;
     if (items.length === 0) {
       this.log(t('commands.bm.roles.list.noRoles', 'No roles found.'));
-      return roles;
+      return result;
     }
 
     tableRenderer.render(items, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
-    if (roles.total && roles.total > items.length) {
+    if (result.total && result.total > items.length) {
       this.log(
         t('commands.bm.roles.list.moreRoles', '{{count}} of {{total}} roles shown.', {
           count: items.length,
-          total: roles.total,
+          total: result.total,
         }),
       );
     }
 
-    return roles;
+    return result;
   }
 }

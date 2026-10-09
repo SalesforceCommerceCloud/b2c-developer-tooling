@@ -20,7 +20,7 @@ import {
   DetectionSummary,
   StepDetection,
 } from './stepDetection.js';
-import {listCodeVersions, type CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {createScriptsBackend, type CodeVersionInfo} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {findCartridgesSafe} from '../workspace-discovery.js';
 
@@ -70,7 +70,7 @@ interface ViewState {
 }
 
 type DeployedCartridgesResult =
-  | {kind: 'ok'; names: string[]; source: 'ocapi' | 'webdav'}
+  | {kind: 'ok'; names: string[]; source: 'api' | 'webdav'}
   | {kind: 'no-provider'}
   | {kind: 'no-instance'; reason?: string}
   | {kind: 'no-code-version'}
@@ -509,7 +509,7 @@ export class OnboardingPanel {
 
   /**
    * Fetch the cartridges currently deployed to the active code version.
-   * Tries OCAPI `/code_versions` first (richer data) and falls back to a
+   * Tries the configured SCAPI-first code-version backend and falls back to a
    * WebDAV PROPFIND on `Cartridges/<codeVersion>/` (which is what the deploy
    * command itself uses, so credentials are usually already set up).
    *
@@ -533,22 +533,22 @@ export class OnboardingPanel {
     const cached = this.deployedCartridgesCache.get(cacheKey);
     if (cached && Date.now() - cached.fetchedAt < 30_000) return cached.result;
 
-    let ocapiError: string | undefined;
+    let apiError: string | undefined;
 
-    // 1) Try OCAPI — gives back the canonical list directly.
+    // 1) Try the configured code-version backend (SCAPI-first in auto mode).
     try {
-      const versions: CodeVersion[] = await listCodeVersions(instance);
+      const versions: CodeVersionInfo[] = await createScriptsBackend({instance}).listCodeVersions();
       const target = versions.find((v) => v.id === codeVersion);
       if (target) {
         const names = target.cartridges ?? [];
-        const result: DeployedCartridgesResult = {kind: 'ok', names, source: 'ocapi'};
+        const result: DeployedCartridgesResult = {kind: 'ok', names, source: 'api'};
         this.deployedCartridgesCache.set(cacheKey, {result, fetchedAt: Date.now()});
         return result;
       }
-      ocapiError = `code version "${codeVersion}" not found on instance`;
+      apiError = `code version "${codeVersion}" not found on instance`;
     } catch (err) {
-      ocapiError = err instanceof Error ? err.message : String(err);
-      this.log.appendLine(`[onboarding] OCAPI listCodeVersions failed: ${ocapiError}`);
+      apiError = err instanceof Error ? err.message : String(err);
+      this.log.appendLine(`[onboarding] Code-version discovery failed: ${apiError}`);
     }
 
     // 2) Fallback to WebDAV — same auth path as the deploy command itself.
@@ -563,7 +563,7 @@ export class OnboardingPanel {
     } catch (err) {
       const webdavError = err instanceof Error ? err.message : String(err);
       this.log.appendLine(`[onboarding] WebDAV propfind failed: ${webdavError}`);
-      return {kind: 'error', reason: ocapiError ?? webdavError};
+      return {kind: 'error', reason: apiError ?? webdavError};
     }
   }
 

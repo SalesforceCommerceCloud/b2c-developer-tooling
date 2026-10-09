@@ -1,0 +1,5 @@
+[
+  {"query": "Add a new /shipping-policy page to my Storefront Next project with the standard header and footer", "should_trigger": true},
+  {"query": "My Link to the cart drops the /site/locale prefix in a multi-site storefront, how do I fix navigation?", "should_trigger": true},
+  {"query": "How do I stream non-critical data from a loader and avoid blocking the first byte?", "should_trigger": false}
+]

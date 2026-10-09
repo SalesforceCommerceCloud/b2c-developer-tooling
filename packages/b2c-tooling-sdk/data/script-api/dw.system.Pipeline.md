@@ -35,7 +35,7 @@ let result = pdict.MyReturnValue;
 ```
 
 
-This feature requires an API version >=15.5.
+This feature requires an API version &gt;=15.5.
 
 
 

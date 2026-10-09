@@ -161,7 +161,7 @@ async function main(): Promise<void> {
       console.error(`  ${b.id}\n    ${b.url}\n    ${describe(b)}`);
     }
     console.error(
-      `\nRegenerate the index from an up-to-date commerce-cloud-docs clone ` +
+      `\nRegenerate the index from up-to-date local guide sources ` +
         `(pnpm run generate:guides-index). If a page was removed upstream, this is expected — regeneration drops it.`,
     );
     process.exit(1);

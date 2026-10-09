@@ -7,6 +7,7 @@
 import {expect} from 'chai';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {stub, restore, type SinonStub} from 'sinon';
+import {ScapiLiveSchemaCache} from '@salesforce/b2c-tooling-sdk/scapi';
 import {createScapiSchemasListTool} from '../../../src/tools/scapi/scapi-schemas-list.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
@@ -65,7 +66,6 @@ describe('tools/scapi/scapi-schemas-list', () => {
       expect(tool.inputSchema).to.exist;
       expect(tool.handler).to.be.a('function');
       expect(tool.toolsets).to.deep.equal(['PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
-      expect(tool.isGA).to.be.true;
     });
 
     it('has optional input params: apiFamily, apiName, apiVersion, status, includeSchemas, expandAll', () => {
@@ -210,7 +210,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       expect(first).to.not.have.property('link');
     });
 
-    it('returns error result when list API returns error', async () => {
+    it('falls back to the bundled corpus with a warning when the list API returns an error', async () => {
       mockGet.resolves({
         data: undefined,
         error: {title: 'Unauthorized', detail: 'Invalid token'},
@@ -218,13 +218,33 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
 
       const tool = createScapiSchemasListTool(() => services);
-      const result = await tool.handler({});
+      const result = await tool.handler({apiName: 'shopper-baskets'});
 
-      expect(result.isError).to.be.true;
-      const first = result.content?.[0] as {text?: string};
-      expect(first?.text).to.include('Execution error');
-      expect(first?.text).to.include('Failed to fetch SCAPI schemas');
-      expect(first?.text).to.include('sfcc.scapi-schemas');
+      expect(result.isError).to.be.undefined;
+      const {parsed} = parseResultContent(result);
+      expect(parsed?.source).to.equal('bundled');
+      expect(parsed?.warning).to.include('Failed to fetch SCAPI schemas');
+      expect(parsed?.warning).to.include('sfcc.scapi-schemas');
+      expect(parsed?.warning).to.include('bundled');
+      const names = (parsed?.schemas as Array<{apiName: string}>).map((s) => s.apiName);
+      expect(names).to.not.be.empty;
+      expect(names.every((n) => n === 'shopper-baskets')).to.be.true;
+    });
+
+    it('falls back to the bundled corpus when the client cannot be built (missing configuration)', async () => {
+      (services.getScapiSchemasClient as SinonStub).throws(new Error('SCAPI short code required.'));
+      const tool = createScapiSchemasListTool(() => services);
+      const {parsed} = parseResultContent(await tool.handler({}));
+      expect(parsed?.source).to.equal('bundled');
+      expect(parsed?.warning).to.include('SCAPI short code required');
+    });
+
+    it('marks live results as live', async () => {
+      mockGet.resolves({data: {data: [], total: 0}, error: undefined, response: {status: 200, statusText: 'OK'}});
+      const tool = createScapiSchemasListTool(() => services);
+      const {parsed} = parseResultContent(await tool.handler({}));
+      expect(parsed?.source).to.equal('live');
+      expect(parsed?.warning).to.be.undefined;
     });
   });
 
@@ -269,7 +289,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       });
     });
 
-    it('returns collapsed false when expandAll true', async () => {
+    it('can disable tenant expansion independently of output collapsing', async () => {
       const fullSchema = {openapi: '3.0.0', paths: {}, info: {title: 'Full'}};
       mockGet.resolves({
         data: fullSchema,
@@ -284,11 +304,94 @@ describe('tools/scapi/scapi-schemas-list', () => {
         apiVersion: 'v1',
         includeSchemas: true,
         expandAll: true,
+        expandCustomProperties: false,
       });
 
       const {parsed} = parseResultContent(result);
       expect(parsed?.collapsed).to.be.false;
       expect(parsed?.schema).to.deep.include(fullSchema);
+      expect(mockGet.firstCall.args[1]?.params?.query).to.deep.equal({
+        expand: 'descriptions,examples,external_docs,summaries,tags,titles',
+      });
+    });
+
+    it('requests tenant custom properties by default and preserves their definitions in full schemas', async () => {
+      const fullSchema = {
+        openapi: '3.0.0',
+        paths: {},
+        components: {schemas: {Product: {properties: {c_finish: {type: 'string', enum: ['matte', 'gloss']}}}}},
+      };
+      mockGet.resolves({data: fullSchema, response: {status: 200, statusText: 'OK'}});
+      const tool = createScapiSchemasListTool(() => services);
+      const result = await tool.handler({
+        apiFamily: 'product',
+        apiName: 'products',
+        apiVersion: 'v1',
+        includeSchemas: true,
+        expandAll: true,
+      });
+
+      expect(result.isError).to.be.undefined;
+      expect(mockGet.firstCall.args[1]?.params?.query).to.deep.equal({expand: 'all'});
+      expect(parseResultContent(result).parsed?.schema).to.deep.equal(fullSchema);
+    });
+
+    it('asks the server for only custom properties when the output is collapsed', async () => {
+      mockGet.resolves({data: {openapi: '3.0.0', paths: {}}, response: {status: 200, statusText: 'OK'}});
+      const tool = createScapiSchemasListTool(() => services);
+      const {parsed} = parseResultContent(
+        await tool.handler({apiFamily: 'product', apiName: 'shopper-products', apiVersion: 'v1', includeSchemas: true}),
+      );
+      expect(mockGet.firstCall.args[1]?.params?.query).to.deep.equal({expand: 'custom_properties'});
+      expect(parsed?.source).to.equal('live');
+      expect(parsed?.expand).to.equal('custom_properties');
+    });
+
+    it('lets include choose the server expansion as one comma-joined value', async () => {
+      mockGet.resolves({data: {openapi: '3.0.0', paths: {}}, response: {status: 200, statusText: 'OK'}});
+      const tool = createScapiSchemasListTool(() => services);
+      await tool.handler({
+        apiFamily: 'product',
+        apiName: 'shopper-products',
+        apiVersion: 'v1',
+        includeSchemas: true,
+        expandAll: true,
+        include: ['titles', 'summaries'],
+      });
+      expect(mockGet.firstCall.args[1]?.params?.query).to.deep.equal({expand: 'summaries,titles'});
+    });
+
+    it('falls back to the bundled contract with full prose when the live fetch fails', async () => {
+      mockGet.resolves({
+        data: undefined,
+        error: {title: 'Forbidden', detail: 'no scope'},
+        response: {status: 403, statusText: 'Forbidden'},
+      });
+      const tool = createScapiSchemasListTool(() => services);
+      const result = await tool.handler({
+        apiFamily: 'checkout',
+        apiName: 'shopper-baskets',
+        apiVersion: 'v2',
+        includeSchemas: true,
+        expandAll: true,
+      });
+      const {parsed} = parseResultContent(result);
+      expect(result.isError).to.be.undefined;
+      expect(parsed?.source).to.equal('bundled');
+      expect(parsed?.warning).to.include('sfcc.scapi-schemas');
+      expect(parsed?.expand).to.be.undefined;
+      expect((parsed?.schema as {openapi: string}).openapi).to.match(/^3\./);
+    });
+
+    it('does not cache a contract without custom properties and prose', async () => {
+      const cache = new ScapiLiveSchemaCache();
+      mockGet.resolves({data: {openapi: '3.0.0', paths: {}}, response: {status: 200, statusText: 'OK'}});
+      const tool = createScapiSchemasListTool(() => services, cache);
+      const args = {apiFamily: 'product', apiName: 'shopper-products', apiVersion: 'v1', includeSchemas: true};
+      await tool.handler(args);
+      expect(cache.get('test-shortcode/f_ecom_test_tenant')).to.have.length(0);
+      await tool.handler({...args, expandAll: true});
+      expect(cache.get('test-shortcode/f_ecom_test_tenant')).to.have.length(1);
     });
 
     it('includes warning when status filter provided in fetch mode', async () => {

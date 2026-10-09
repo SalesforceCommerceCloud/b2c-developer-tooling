@@ -5,7 +5,7 @@
  */
 
 import {existsSync, readFileSync} from 'node:fs';
-import {join} from 'node:path';
+import {join, resolve} from 'node:path';
 import {getLogger} from '../logging/logger.js';
 import type {SafetyRule} from './types.js';
 import {isValidSafetyAction} from './types.js';
@@ -170,10 +170,14 @@ export function checkSafetyViolation(method: string, url: string, config: Safety
  * as a warning and the default level is returned.
  *
  * @param defaultLevel - Default level if no environment variable is set or value is invalid
+ * @param environment - Environment snapshot; defaults to the process environment
  * @returns Parsed safety level
  */
-export function getSafetyLevel(defaultLevel: SafetyLevel = 'NONE'): SafetyLevel {
-  const safetyLevelEnv = process.env['SFCC_SAFETY_LEVEL'];
+export function getSafetyLevel(
+  defaultLevel: SafetyLevel = 'NONE',
+  environment: Record<string, string | undefined> = process.env,
+): SafetyLevel {
+  const safetyLevelEnv = environment['SFCC_SAFETY_LEVEL'];
   if (safetyLevelEnv) {
     const parsed = parseSafetyLevelString(safetyLevelEnv);
     if (parsed) return parsed;
@@ -232,14 +236,20 @@ export interface SafetyConfigFragment {
  * ```
  *
  * @param configDir - oclif config directory path (e.g., `this.config.configDir`)
+ * @param environment - Environment snapshot; defaults to the process environment
+ * @param directory - Base for a relative SFCC_SAFETY_CONFIG path
  * @returns Validated safety config fragment, or undefined if no file found
  */
-export function loadGlobalSafetyConfig(configDir?: string): SafetyConfigFragment | undefined {
+export function loadGlobalSafetyConfig(
+  configDir?: string,
+  environment: Record<string, string | undefined> = process.env,
+  directory: string = process.cwd(),
+): SafetyConfigFragment | undefined {
   const logger = getLogger();
 
   // 1. Check SFCC_SAFETY_CONFIG env var
-  const envPath = process.env['SFCC_SAFETY_CONFIG'];
-  const filePath = envPath || (configDir ? join(configDir, 'safety.json') : undefined);
+  const envPath = environment['SFCC_SAFETY_CONFIG'];
+  const filePath = envPath ? resolve(directory, envPath) : configDir ? join(configDir, 'safety.json') : undefined;
 
   if (!filePath || !existsSync(filePath)) {
     return undefined;
@@ -292,14 +302,16 @@ export function loadGlobalSafetyConfig(configDir?: string): SafetyConfigFragment
  *
  * @param instanceSafety - Per-instance safety config from dw.json
  * @param globalSafety - Global safety config from safety.json
+ * @param environment - Environment snapshot; defaults to the process environment
  * @returns Merged SafetyConfig
  */
 export function resolveEffectiveSafetyConfig(
   instanceSafety?: SafetyConfigFragment,
   globalSafety?: SafetyConfigFragment,
+  environment: Record<string, string | undefined> = process.env,
 ): SafetyConfig {
-  const envLevel = getSafetyLevel('NONE');
-  const envConfirm = process.env['SFCC_SAFETY_CONFIRM'] === 'true' || process.env['SFCC_SAFETY_CONFIRM'] === '1';
+  const envLevel = getSafetyLevel('NONE', environment);
+  const envConfirm = environment['SFCC_SAFETY_CONFIRM'] === 'true' || environment['SFCC_SAFETY_CONFIRM'] === '1';
 
   const instanceLevel = instanceSafety?.level ?? 'NONE';
   const globalLevel = globalSafety?.level ?? 'NONE';

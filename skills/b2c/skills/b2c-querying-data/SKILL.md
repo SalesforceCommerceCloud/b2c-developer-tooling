@@ -252,8 +252,8 @@ These APIs hit the database directly and are expensive on high-traffic pages. Re
 
 ## Related Skills
 
-- [b2c-ordering](../b2c-ordering/SKILL.md) — Order lifecycle, status transitions, creation flows
-- [b2c-custom-objects](../b2c-custom-objects/SKILL.md) — Custom object CRUD, OCAPI search queries
+- `b2c-ordering` skill — Order lifecycle, status transitions, creation flows
+- `b2c-custom-objects` skill — Custom object CRUD, OCAPI search queries
 
 ## Best Practices
 

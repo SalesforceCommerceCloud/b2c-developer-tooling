@@ -49,6 +49,13 @@ export interface AuthSession {
   clientId: string;
   /** Which flow produced this session (informational; controls refresh policy). */
   flow: AuthSessionFlow;
+  /**
+   * Whether this implicit session was created after Account Manager rejected
+   * Authorization Code + PKCE for the client. The user-auth fallback uses this
+   * marker, together with `accountManagerHost`, to avoid repeating a PKCE flow
+   * that cannot succeed on later process or extension activations.
+   */
+  pkceUnsupported?: boolean;
   accessToken: string;
   /** Only set for PKCE. Implicit and client-credentials never have a refresh token. */
   refreshToken?: string | null;

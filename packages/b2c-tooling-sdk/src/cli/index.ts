@@ -90,13 +90,21 @@
  * @module cli
  */
 
+// Backend dispatcher — re-exported from `compat/` for CLI ergonomics. The
+// canonical home is `@salesforce/b2c-tooling-sdk/compat`; CLI commands and
+// other interfaces (VSCode, MCP) can import from either location.
+export {BackendDispatcher} from '../compat/dispatcher.js';
+export type {ApiBackendPreference, ResolvedBackend, DispatchBranches} from '../compat/dispatcher.js';
+
 // Base command classes
-export {BaseCommand, ERROR_CODE, classifyError} from './base-command.js';
+export {BaseCommand, ERROR_CODE, augmentDuplicateFlagError, classifyError} from './base-command.js';
 export type {Flags, Args, ErrorCategory} from './base-command.js';
 export {OAuthCommand} from './oauth-command.js';
 export {InstanceCommand} from './instance-command.js';
 export {CartridgeCommand} from './cartridge-command.js';
 export {JobCommand} from './job-command.js';
+export {CodeCommand} from './code-command.js';
+export {BmCommand} from './bm-command.js';
 export {MrtCommand} from './mrt-command.js';
 export {OdsCommand} from './ods-command.js';
 export {AmCommand} from './am-command.js';
@@ -151,3 +159,14 @@ export {columnFlagsFor, selectColumns} from './columns.js';
 export type {ColumnFlags, ColumnFlagsOptions, WarnFn} from './columns.js';
 export {printFieldsBlock} from './details.js';
 export type {DetailField, DetailFieldObject, DetailSection, DetailValue, PrintFieldsBlockOptions} from './details.js';
+
+// Command search
+export {CommandSearchIndex} from './command-search.js';
+export type {
+  CommandSearchOptions,
+  CommandSearchResult,
+  SearchableCommand,
+  SearchableExample,
+  SearchableFlag,
+  SearchableTopic,
+} from './command-search.js';

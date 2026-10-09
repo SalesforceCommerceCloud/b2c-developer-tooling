@@ -8,7 +8,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const {describe, it} = require('node:test');
 
 const ts = require('typescript');
 

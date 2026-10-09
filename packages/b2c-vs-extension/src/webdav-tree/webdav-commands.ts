@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {readFile} from 'fs/promises';
+import {createCatalogsBackend} from '@salesforce/b2c-tooling-sdk';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
@@ -227,16 +228,14 @@ export function registerWebDavCommands(
   const addCatalog = registerSafeCommand('b2c-dx.webdav.addCatalog', async () => {
     const instance = configProvider.getInstance();
 
-    // Try OCAPI discovery first
+    // Try SCAPI-first discovery, with OCAPI compatibility fallback.
     let catalogChoices: string[] | undefined;
     if (instance) {
       try {
-        const {data} = await instance.ocapi.GET('/catalogs', {
-          params: {query: {select: '(**)', count: 200}},
-        });
-        catalogChoices = (data?.data?.map((c) => c.id).filter(Boolean) as string[]) ?? [];
+        const catalogs = await createCatalogsBackend({instance}).listCatalogs();
+        catalogChoices = catalogs.map(({id}) => id);
       } catch {
-        // OCAPI not available (no OAuth) — fall through to input box
+        // API discovery unavailable — preserve manual entry.
       }
     }
 

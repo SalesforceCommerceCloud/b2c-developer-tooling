@@ -5,29 +5,30 @@
   - [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)
     - [dw.extensions.payments.SalesforcePayPalPaymentDetails](dw.extensions.payments.SalesforcePayPalPaymentDetails.md)
 
-
-
-Details to a Salesforce Payments payment of type [SalesforcePayPalOrder.TYPE_PAYPAL](dw.extensions.payments.SalesforcePayPalOrder.md#type_paypal). See Salesforce Payments
-documentation for how to gain access and configure it for use on your sites.
-
+Details to a payment of type [SalesforcePaymentDetails.TYPE_PAYPAL](dw.extensions.payments.SalesforcePaymentDetails.md#type_paypal).
 
 
 ## Property Summary
 
 | Property | Description |
 | --- | --- |
-| [captureID](#captureid): [String](TopLevel.String.md) `(read-only)` | Returns the ID of the capture against the PayPal order, or `null` if not known. |
-| [payerEmailAddress](#payeremailaddress): [String](TopLevel.String.md) `(read-only)` | Returns the email address of the payer for the PayPal order, or `null` if not known. |
+| [captureID](#captureid): [String](TopLevel.String.md) | Returns the ID of the capture against the PayPal order, or `null` if not known. |
+| [payerEmailAddress](#payeremailaddress): [String](TopLevel.String.md) | Returns the email address of the payer for the PayPal order, or `null` if not known. |
 
 ## Constructor Summary
 
-This class does not have a constructor, so you cannot create it directly.
+| Constructor | Description |
+| --- | --- |
+| [SalesforcePayPalPaymentDetails](#salesforcepaypalpaymentdetails)() | Constructs an empty PayPal payment details object. |
+
 ## Method Summary
 
 | Method | Description |
 | --- | --- |
 | [getCaptureID](dw.extensions.payments.SalesforcePayPalPaymentDetails.md#getcaptureid)() | Returns the ID of the capture against the PayPal order, or `null` if not known. |
 | [getPayerEmailAddress](dw.extensions.payments.SalesforcePayPalPaymentDetails.md#getpayeremailaddress)() | Returns the email address of the payer for the PayPal order, or `null` if not known. |
+| [setCaptureID](dw.extensions.payments.SalesforcePayPalPaymentDetails.md#setcaptureidstring)([String](TopLevel.String.md)) | Sets the ID of the capture against the PayPal order. |
+| [setPayerEmailAddress](dw.extensions.payments.SalesforcePayPalPaymentDetails.md#setpayeremailaddressstring)([String](TopLevel.String.md)) | Sets the email address of the payer for the PayPal order. |
 
 ### Methods inherited from class SalesforcePaymentDetails
 
@@ -38,21 +39,24 @@ This class does not have a constructor, so you cannot create it directly.
 ## Property Details
 
 ### captureID
-- captureID: [String](TopLevel.String.md) `(read-only)`
+- captureID: [String](TopLevel.String.md)
   - : Returns the ID of the capture against the PayPal order, or `null` if not known.
-
-    **See Also:**
-    - [SalesforcePayPalOrder.getCaptureID()](dw.extensions.payments.SalesforcePayPalOrder.md#getcaptureid)
 
 
 ---
 
 ### payerEmailAddress
-- payerEmailAddress: [String](TopLevel.String.md) `(read-only)`
+- payerEmailAddress: [String](TopLevel.String.md)
   - : Returns the email address of the payer for the PayPal order, or `null` if not known.
 
-    **See Also:**
-    - [SalesforcePayPalOrderPayer.getEmailAddress()](dw.extensions.payments.SalesforcePayPalOrderPayer.md#getemailaddress)
+
+---
+
+## Constructor Details
+
+### SalesforcePayPalPaymentDetails()
+- SalesforcePayPalPaymentDetails()
+  - : Constructs an empty PayPal payment details object.
 
 
 ---
@@ -66,9 +70,6 @@ This class does not have a constructor, so you cannot create it directly.
     **Returns:**
     - PayPal order capture ID
 
-    **See Also:**
-    - [SalesforcePayPalOrder.getCaptureID()](dw.extensions.payments.SalesforcePayPalOrder.md#getcaptureid)
-
 
 ---
 
@@ -79,8 +80,25 @@ This class does not have a constructor, so you cannot create it directly.
     **Returns:**
     - payer email address
 
-    **See Also:**
-    - [SalesforcePayPalOrderPayer.getEmailAddress()](dw.extensions.payments.SalesforcePayPalOrderPayer.md#getemailaddress)
+
+---
+
+### setCaptureID(String)
+- setCaptureID(captureID: [String](TopLevel.String.md)): void
+  - : Sets the ID of the capture against the PayPal order.
+
+    **Parameters:**
+    - captureID - PayPal order capture ID
+
+
+---
+
+### setPayerEmailAddress(String)
+- setPayerEmailAddress(payerEmailAddress: [String](TopLevel.String.md)): void
+  - : Sets the email address of the payer for the PayPal order.
+
+    **Parameters:**
+    - payerEmailAddress - payer email address
 
 
 ---

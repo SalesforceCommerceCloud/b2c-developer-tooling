@@ -1,0 +1,2477 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Metrics",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/metrics/metrics-oas-v1-public.yaml)\n\n# API Overview\n\nThe Metrics API provides programmatic access to time-series operational metrics for Salesforce Commerce Cloud organizations. It exposes the same metrics available in the LogCenter UI, organized by functional category, so that data can be ingested into third-party BI and monitoring tools (such as Tableau or Grafana) and into agentic-observability workflows.\n\nThis is an Admin API: it is intended for operators, SRE teams, and machine clients (BI tools, monitoring agents) acting on behalf of a customer organization, not for storefront shoppers.\n\n> **Note:** The Metrics API is currently in a closed beta. To request access, please contact your account manager.\n\n## Endpoints\n\nThe API exposes nine pre-aggregated metric categories, each accessible through its own typed path:\n\n- **`/metrics/overall`** — Overall application performance metrics\n- **`/metrics/sales`** — Sales and commerce metrics\n- **`/metrics/ecdn`** — eCDN performance and caching metrics\n- **`/metrics/third-party`** — Third-party service integration metrics\n- **`/metrics/scapi`** — SCAPI request and performance metrics\n- **`/metrics/scapi-hooks`** — SCAPI hooks execution metrics\n- **`/metrics/mrt`** — Managed Runtime metrics\n- **`/metrics/controller`** — Controller and pipeline metrics\n- **`/metrics/ocapi`** — OCAPI request and performance metrics\n\nEach request returns a single time-series document for the requested category, organization, and time window.\n\n## Key Features\n\n- **Time-series data retrieval** with Unix epoch time-range parameters (in seconds)\n- **Multiple metric categories** covering all aspects of Commerce Cloud performance\n- **Organization-scoped access** with proper authentication and authorization\n- **Filtering capabilities** for specific APIs, services, and OCAPI sub-categories\n- **Standardized response format** with comprehensive metadata\n\n## Authentication & Authorization\n\nThis API uses standard SCAPI authentication mechanisms:\n\n- **OAuth 2.0** (`AmOAuth2`) with the SCAPI gateway\n- **Organization-scoped access** — callers can only retrieve metrics for organizations they are authorized to access\n\nRequired OAuth scope:\n\n- `sfcc.metrics` — read access to metrics\n\n## Time-Range Constraints\n\nTwo backend-enforced constraints bound every request:\n\n- **Maximum lookback:** `from` must not resolve to a time more than 30 days ago. This matches the configured retention of the underlying metrics store; older data is not retained.\n- **Maximum window:** `to - from` must not exceed 1 day. Requests that exceed this return `400 Bad Request`.\n\n## Use Cases\n\n### Overall application monitoring\nMonitor total platform requests, sessions, and response times.\n\n```\nGET /organizations/{orgId}/metrics/overall?from=1672531200&to=1672534800\n```\n\n### Sales performance tracking\nTrack order creation and basket activity.\n\n```\nGET /organizations/{orgId}/metrics/sales?from=1672488000&to=1672531200\n```\n\n### eCDN performance analysis\nMonitor CDN performance, cache hit rates, and bandwidth usage.\n\n```\nGET /organizations/{orgId}/metrics/ecdn?from=1672509600&to=1672531200\n```\n\n### SCAPI performance monitoring\nMonitor SCAPI request latency and response counts, optionally filtered by API family and / or API name.\n\n```\nGET /organizations/{orgId}/metrics/scapi?from=1672527600&to=1672531200&apiFamily=shopper&apiName=products\n```\n\n### Third-party service monitoring\nTrack third-party service call performance and error rates, optionally filtered to a single named service.\n\n```\nGET /organizations/{orgId}/metrics/third-party?from=1672488000&to=1672531200&thirdPartyServiceId=apple-pay-gateway.apple.com\n```\n\n### SCAPI Hooks performance monitoring\nTrack SCAPI hook execution time and error rates.\n\n```\nGET /organizations/{orgId}/metrics/scapi-hooks?from=1672527600&to=1672531200\n```\n\n### Managed Runtime monitoring\nMonitor MRT request volume, cache hit rates, error rates, and Lambda invocations.\n\n```\nGET /organizations/{orgId}/metrics/mrt?from=1672488000&to=1672531200\n```\n\n### Controller performance monitoring\nTrack controller invocation volume and processing duration.\n\n```\nGET /organizations/{orgId}/metrics/controller?from=1672527600&to=1672531200\n```\n\n### OCAPI performance monitoring\nMonitor OCAPI metrics, optionally filtered by OCAPI category and / or OCAPI API endpoint.\n\n```\nGET /organizations/{orgId}/metrics/ocapi?from=1672527600&to=1672531200&ocapiCategory=shop&ocapiApi=baskets\n```\n\n## Metric Categories\n\n### Overall Application\n- Total Platform Requests — Overall request volume\n- Storefront Requests — Customer-facing request volume\n- Sessions — Active user sessions\n- Response Time — Average response latency\n- Emails Sent — Email delivery volume\n- System Workload — Overall system utilization\n\n### Sales\n- Orders — Order creation rate\n- Basket Creations — Shopping basket creation rate\n- Basket Updates — Basket modification rate\n\n### eCDN\n- Success and Errors — Request success / failure rates\n- Cache Hit Percentage — CDN cache effectiveness\n- Total Requests — Overall CDN request volume\n- Total Bandwidth — Data-transfer volume\n- Total Pageviews — Page view metrics\n- Unique Visitors — Unique visitor tracking\n\n### Third-Party Services\n- Call Counts — API call volume to external services\n- Call Duration p95 — 95th-percentile response times\n- Remote Exceptions — Error rates from external services\n\n### SCAPI\n- Request Latency — API response times\n- Response Count — SCAPI response volume by API family and HTTP status class (2xx/3xx/4xx/5xx)\n- Cache Hit Statistics — API-level caching metrics\n\n### SCAPI Hooks\n- Hook Execution Times — Hook processing duration\n- Hook Errors — Hook execution error rates\n\n### Managed Runtime\n- Request Count — MRT request volume\n- Cache Hit Rates — MRT caching performance\n- Error Rates — MRT error percentages\n- Lambda Invocations — Serverless function executions\n- Request Times — MRT processing duration\n\n### Controller\n- Total Calls — Controller invocation count\n- Average Duration — Controller processing time\n\n### OCAPI\n- Total Calls — OCAPI request volume\n- Average Duration — OCAPI response times\n- Total Errors — OCAPI error counts",
+    "version": "1.0.2",
+    "x-api-type": "Admin",
+    "x-api-family": "Observability"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/observability/metrics/v1",
+      "variables": {
+        "shortCode": {
+          "description": "Tenant-specific short code",
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/metrics/overall": {
+      "get": {
+        "tags": [
+          "Overall Application"
+        ],
+        "summary": "Get Overall Application metrics",
+        "description": "Retrieve time series data for all overall application performance metrics including total platform requests, storefront requests, sessions, response time, emails sent, and system workload.",
+        "operationId": "getOverallMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672531200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672534800,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OverallMetricsResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestTimeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CategoryNotFoundResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableResponse"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/sales": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Get Sales metrics",
+        "description": "Retrieve time series data for all sales metrics including orders, basket creations, and basket updates.",
+        "operationId": "getSalesMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672531200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672534800,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SalesMetricsResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestTimeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CategoryNotFoundResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableResponse"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/ecdn": {
+      "get": {
+        "tags": [
+          "eCDN"
+        ],
+        "summary": "Get eCDN metrics",
+        "description": "Retrieve time series data for all eCDN metrics including success and errors, cache hit percentage, total requests, total bandwidth, total pageviews, and unique visitors.",
+        "operationId": "getEcdnMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672531200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672534800,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EcdnMetricsResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestTimeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CategoryNotFoundResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableResponse"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/third-party": {
+      "get": {
+        "tags": [
+          "Third Party Services"
+        ],
+        "summary": "Get Third Party Service metrics",
+        "description": "Retrieve time series data for all third party service metrics including call counts, call duration percentiles, and remote exceptions.",
+        "operationId": "getThirdPartyMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672531200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672534800,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "thirdPartyServiceId",
+            "in": "query",
+            "description": "Filter by a specific third party service identifier (typically a hostname,\ne.g. `apple-pay-gateway.apple.com`). The list of services is customer-configured;\nomit this parameter to get one data series per (realm, third party service).\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/ThirdPartyServiceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ThirdPartyMetricsResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestThirdPartyResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CategoryNotFoundResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableResponse"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/scapi": {
+      "get": {
+        "tags": [
+          "SCAPI"
+        ],
+        "summary": "Get SCAPI metrics",
+        "description": "Retrieve time series data for all SCAPI metrics including request latency, response counts, and cache hit statistics.",
+        "operationId": "getScapiMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672531200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672534800,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "apiFamily",
+            "in": "query",
+            "description": "Filter by SCAPI family name",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "shopper",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "apiName",
+            "in": "query",
+            "description": "Filter by specific SCAPI name",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "products",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ScapiMetricsResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestScapiResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CategoryNotFoundResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableResponse"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/scapi-hooks": {
+      "get": {
+        "tags": [
+          "SCAPI Hooks"
+        ],
+        "summary": "Get SCAPI Hooks metrics",
+        "description": "Retrieve time series data for all SCAPI hooks metrics including hook execution times and hook errors.",
+        "operationId": "getScapiHooksMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672531200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672534800,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ScapiHooksMetricsResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestTimeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CategoryNotFoundResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableResponse"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/mrt": {
+      "get": {
+        "tags": [
+          "Managed Runtime"
+        ],
+        "summary": "Get Managed Runtime metrics",
+        "description": "Retrieve time series data for all Managed Runtime metrics including request counts, cache hit rates, error rates, Lambda invocations, and request times.",
+        "operationId": "getMrtMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672531200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672534800,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MrtMetricsResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestTimeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CategoryNotFoundResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableResponse"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/controller": {
+      "get": {
+        "tags": [
+          "Controller"
+        ],
+        "summary": "Get Controller metrics",
+        "description": "Retrieve time series data for all controller/pipeline metrics including total calls and average duration.",
+        "operationId": "getControllerMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672531200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672534800,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ControllerMetricsResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestTimeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CategoryNotFoundResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableResponse"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/ocapi": {
+      "get": {
+        "tags": [
+          "OCAPI"
+        ],
+        "summary": "Get OCAPI metrics",
+        "description": "Retrieve time series data for all Open Commerce API metrics including total calls, average duration, and total errors.",
+        "operationId": "getOcapiMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672531200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1672534800,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "ocapiCategory",
+            "in": "query",
+            "description": "Filter by Open Commerce API category. Common values include `shop`, `data` and `mercury`.\nQueries with values that don't match any series return 200 with empty data.\n",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "shop",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "ocapiApi",
+            "in": "query",
+            "description": "Filter by specific Open Commerce API endpoint (e.g. `baskets`).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "baskets",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OcapiMetricsResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestOcapiResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CategoryNotFoundResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableResponse"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "MetricId": {
+        "type": "string",
+        "description": "Unique identifier for a metric type",
+        "example": "totalCalls",
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[a-zA-Z0-9_-]+$"
+      },
+      "DataSeriesId": {
+        "type": "string",
+        "description": "Unique identifier for a data series within a metric",
+        "example": "realm1.totalCalls",
+        "maxLength": 200,
+        "minLength": 1
+      },
+      "DataPoint": {
+        "type": "object",
+        "description": "A single time series data point",
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "description": "Unix timestamp of the data point",
+            "example": 1640995200,
+            "minimum": 0
+          },
+          "value": {
+            "type": "number",
+            "description": "Metric value at the timestamp",
+            "example": 1250.5
+          }
+        },
+        "required": [
+          "timestamp",
+          "value"
+        ]
+      },
+      "DataSeries": {
+        "type": "object",
+        "description": "Time series data for a specific realm/filter combination",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/DataSeriesId"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name of the data series",
+            "example": "realm1 Total Calls",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "data": {
+            "type": "array",
+            "description": "Array of time series data points",
+            "items": {
+              "$ref": "#/components/schemas/DataPoint"
+            }
+          }
+        },
+        "required": [
+          "data",
+          "id",
+          "name"
+        ]
+      },
+      "Metric": {
+        "type": "object",
+        "description": "A single metric with its metadata and time series data",
+        "properties": {
+          "metricId": {
+            "$ref": "#/components/schemas/MetricId"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title of the metric",
+            "example": "Total Platform Requests",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this metric measures",
+            "example": "Total number of platform requests per minute.",
+            "maxLength": 500,
+            "minLength": 1
+          },
+          "unit": {
+            "type": "string",
+            "description": "Unit of measurement for the metric values. Optional: omitted (or empty) when the unit is implied by the metric title (e.g. \"Number of Calls\", \"Storefront Requests\" — count metrics).\n",
+            "example": "requests/min",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "dataSeries": {
+            "type": "array",
+            "description": "Data series for this metric across different realms/filters",
+            "items": {
+              "$ref": "#/components/schemas/DataSeries"
+            }
+          }
+        },
+        "required": [
+          "dataSeries",
+          "description",
+          "metricId",
+          "title"
+        ]
+      },
+      "MetricsDataResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Response containing metrics data for a requested category",
+        "example": {
+          "data": [
+            {
+              "metricId": "totalCalls",
+              "title": "Total Platform Requests",
+              "description": "Total number of platform requests per minute.",
+              "unit": "requests/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.totalCalls",
+                  "name": "realm1 Total Calls",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 1250.5
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Array of metrics for the requested category",
+            "items": {
+              "$ref": "#/components/schemas/Metric"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "InvalidTimeParameterErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when an invalid time parameter format is provided",
+        "properties": {
+          "parameter": {
+            "type": "string",
+            "description": "The invalid parameter name that caused the error",
+            "example": "from",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "parameter"
+        ]
+      },
+      "InvalidTimeRangeErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the from parameter is later than the to parameter",
+        "properties": {
+          "fromValue": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The from parameter value that caused the error",
+            "example": 1672534800
+          },
+          "toValue": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The to parameter value that caused the error",
+            "example": 1672531200
+          }
+        },
+        "required": [
+          "fromValue",
+          "toValue"
+        ]
+      },
+      "CategoryNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when a metrics category is not found or not available",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "The requested category that was not found",
+            "example": "unknown-category",
+            "maxLength": 50
+          },
+          "organizationId": {
+            "$ref": "#/components/schemas/OrganizationId"
+          }
+        }
+      },
+      "MetricsNotAvailableErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when metrics data is temporarily unavailable",
+        "properties": {
+          "organizationId": {
+            "$ref": "#/components/schemas/OrganizationId"
+          }
+        }
+      },
+      "ThirdPartyServiceId": {
+        "type": "string",
+        "description": "Third party service identifier, typically a hostname (e.g. `apple-pay-gateway.apple.com`).\nThe list of services is customer-configured.\n",
+        "example": "apple-pay-gateway.apple.com",
+        "maxLength": 255,
+        "minLength": 1
+      },
+      "InvalidThirdPartyServiceErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when an invalid third party service filter is provided",
+        "properties": {
+          "thirdPartyServiceId": {
+            "$ref": "#/components/schemas/ThirdPartyServiceId"
+          },
+          "organizationId": {
+            "$ref": "#/components/schemas/OrganizationId"
+          }
+        },
+        "required": [
+          "organizationId",
+          "thirdPartyServiceId"
+        ]
+      },
+      "InvalidApiFilterErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when an invalid SCAPI or OCAPI filter value is provided (apiFamily, apiName, ocapiApi)",
+        "properties": {
+          "filterName": {
+            "type": "string",
+            "description": "The filter parameter name that received an invalid value",
+            "example": "apiFamily",
+            "maxLength": 100
+          },
+          "filterValue": {
+            "type": "string",
+            "description": "The invalid value provided for the filter",
+            "example": "invalid-family",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "filterName",
+          "filterValue"
+        ]
+      }
+    },
+    "responses": {
+      "OverallMetricsResponse": {
+        "description": "Successfully retrieved overall application metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            },
+            "examples": {
+              "OverallMetricsResponseExample": {
+                "$ref": "#/components/examples/OverallMetricsResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "BadRequestTimeResponse": {
+        "description": "Bad request — invalid time parameters",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "InvalidTimeParameterExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid time parameter 'from'. Must be a Unix epoch timestamp in seconds (e.g., 1672531200).",
+                  "parameter": "from"
+                }
+              },
+              "InvalidTimeRangeExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid time range: 'from' (1672534800) must be earlier than 'to' (1672531200).",
+                  "fromValue": 1672534800,
+                  "toValue": 1672531200
+                }
+              },
+              "InvalidTimeParameterErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidTimeParameterErrorResponseExample"
+              },
+              "InvalidTimeRangeErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidTimeRangeErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
+            }
+          }
+        }
+      },
+      "CategoryNotFoundResponse": {
+        "description": "Metrics category not available for the organization",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+            },
+            "examples": {
+              "CategoryNotFoundExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/not-found",
+                  "title": "Not Found",
+                  "detail": "Metrics category 'unknown-category' not found or not available for organization 'f_ecom_zzxy_prd'.",
+                  "category": "unknown-category",
+                  "organizationId": "f_ecom_zzxy_prd"
+                }
+              },
+              "CategoryNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/CategoryNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "ServiceUnavailableResponse": {
+        "description": "Metrics data temporarily unavailable",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+            },
+            "examples": {
+              "MetricsUnavailableExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/service-unavailable",
+                  "title": "Service Unavailable",
+                  "detail": "Metrics data is temporarily unavailable for organization 'f_ecom_zzxy_prd'. Please try again later.",
+                  "organizationId": "f_ecom_zzxy_prd"
+                }
+              },
+              "MetricsNotAvailableErrorResponseExample": {
+                "$ref": "#/components/examples/MetricsNotAvailableErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "SalesMetricsResponse": {
+        "description": "Successfully retrieved sales metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            },
+            "examples": {
+              "SalesMetricsResponseExample": {
+                "$ref": "#/components/examples/SalesMetricsResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "EcdnMetricsResponse": {
+        "description": "Successfully retrieved eCDN metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            },
+            "examples": {
+              "EcdnMetricsResponseExample": {
+                "$ref": "#/components/examples/EcdnMetricsResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "ThirdPartyMetricsResponse": {
+        "description": "Successfully retrieved third party service metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            },
+            "examples": {
+              "ThirdPartyMetricsResponseExample": {
+                "$ref": "#/components/examples/ThirdPartyMetricsResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "BadRequestThirdPartyResponse": {
+        "description": "Bad request — invalid time parameters or third party service filter",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidThirdPartyServiceErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "InvalidTimeParameterExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid time parameter 'from'. Must be a Unix epoch timestamp in seconds (e.g., 1672531200).",
+                  "parameter": "from"
+                }
+              },
+              "InvalidTimeRangeExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid time range: 'from' (1672534800) must be earlier than 'to' (1672531200).",
+                  "fromValue": 1672534800,
+                  "toValue": 1672531200
+                }
+              },
+              "InvalidThirdPartyServiceExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Third party service 'unknown-service.example.com' not found for organization 'f_ecom_zzxy_prd'.",
+                  "thirdPartyServiceId": "unknown-service.example.com",
+                  "organizationId": "f_ecom_zzxy_prd"
+                }
+              },
+              "InvalidTimeParameterErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidTimeParameterErrorResponseExample"
+              },
+              "InvalidTimeRangeErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidTimeRangeErrorResponseExample"
+              },
+              "InvalidThirdPartyServiceErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidThirdPartyServiceErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "ScapiMetricsResponse": {
+        "description": "Successfully retrieved SCAPI metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            },
+            "examples": {
+              "ScapiMetricsResponseExample": {
+                "$ref": "#/components/examples/ScapiMetricsResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "BadRequestScapiResponse": {
+        "description": "Bad request — invalid time parameters or SCAPI filter value",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidApiFilterErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "InvalidTimeParameterExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid time parameter 'from'. Must be a Unix epoch timestamp in seconds (e.g., 1672531200).",
+                  "parameter": "from"
+                }
+              },
+              "InvalidTimeRangeExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid time range: 'from' (1672534800) must be earlier than 'to' (1672531200).",
+                  "fromValue": 1672534800,
+                  "toValue": 1672531200
+                }
+              },
+              "InvalidApiFamilyExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid value 'invalid-family' for filter 'apiFamily'.",
+                  "filterName": "apiFamily",
+                  "filterValue": "invalid-family"
+                }
+              },
+              "InvalidApiNameExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid value 'unknown-api' for filter 'apiName'.",
+                  "filterName": "apiName",
+                  "filterValue": "unknown-api"
+                }
+              },
+              "InvalidTimeParameterErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidTimeParameterErrorResponseExample"
+              },
+              "InvalidTimeRangeErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidTimeRangeErrorResponseExample"
+              },
+              "InvalidApiFilterErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidApiFilterErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "ScapiHooksMetricsResponse": {
+        "description": "Successfully retrieved SCAPI hooks metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            },
+            "examples": {
+              "ScapiHooksMetricsResponseExample": {
+                "$ref": "#/components/examples/ScapiHooksMetricsResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "MrtMetricsResponse": {
+        "description": "Successfully retrieved Managed Runtime metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            },
+            "examples": {
+              "MrtMetricsResponseExample": {
+                "$ref": "#/components/examples/MrtMetricsResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "ControllerMetricsResponse": {
+        "description": "Successfully retrieved controller metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            },
+            "examples": {
+              "ControllerMetricsResponseExample": {
+                "$ref": "#/components/examples/ControllerMetricsResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "OcapiMetricsResponse": {
+        "description": "Successfully retrieved OCAPI metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            },
+            "examples": {
+              "OcapiMetricsResponseExample": {
+                "$ref": "#/components/examples/OcapiMetricsResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "BadRequestOcapiResponse": {
+        "description": "Bad request — invalid time parameters or OCAPI filter value",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidApiFilterErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "InvalidTimeParameterExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid time parameter 'from'. Must be a Unix epoch timestamp in seconds (e.g., 1672531200).",
+                  "parameter": "from"
+                }
+              },
+              "InvalidTimeRangeExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid time range: 'from' (1672534800) must be earlier than 'to' (1672531200).",
+                  "fromValue": 1672534800,
+                  "toValue": 1672531200
+                }
+              },
+              "InvalidOcapiApiExample": {
+                "value": {
+                  "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+                  "title": "Bad Request",
+                  "detail": "Invalid value 'unknown-api' for filter 'ocapiApi'.",
+                  "filterName": "ocapiApi",
+                  "filterValue": "unknown-api"
+                }
+              },
+              "InvalidTimeParameterErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidTimeParameterErrorResponseExample"
+              },
+              "InvalidTimeRangeErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidTimeRangeErrorResponseExample"
+              },
+              "InvalidApiFilterErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidApiFilterErrorResponseExample"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        },
+        "example": "f_ecom_zzxy_prd"
+      },
+      "from": {
+        "name": "from",
+        "in": "query",
+        "description": "Start time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to one hour before `to`.\n\nConstraints:\n- `from` must not resolve to a time more than 30 days before the request (matches the configured retention of the underlying metrics store).\n- `to` minus `from` must not exceed 1 day.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "example": 1672531200,
+          "minimum": 1
+        }
+      },
+      "to": {
+        "name": "to",
+        "in": "query",
+        "description": "End time for the query window, expressed as a Unix epoch timestamp in seconds.\n\nIf not specified, defaults to the current time (now).\n\nConstraints:\n- `to` minus `from` must not exceed 1 day.\n- `from` must not resolve to a time more than 30 days before the request.\n\nRequests violating either constraint return `400 Bad Request`.\n",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "example": 1672534800,
+          "minimum": 1
+        }
+      },
+      "thirdPartyServiceId": {
+        "name": "thirdPartyServiceId",
+        "in": "query",
+        "description": "Filter by a specific third party service identifier (typically a hostname,\ne.g. `apple-pay-gateway.apple.com`). The list of services is customer-configured;\nomit this parameter to get one data series per (realm, third party service).\n",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/ThirdPartyServiceId"
+        }
+      },
+      "apiFamily": {
+        "name": "apiFamily",
+        "in": "query",
+        "description": "Filter by SCAPI family name",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "example": "shopper",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      },
+      "apiName": {
+        "name": "apiName",
+        "in": "query",
+        "description": "Filter by specific SCAPI name",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "example": "products",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      },
+      "ocapiCategory": {
+        "name": "ocapiCategory",
+        "in": "query",
+        "description": "Filter by Open Commerce API category. Common values include `shop`, `data` and `mercury`.\nQueries with values that don't match any series return 200 with empty data.\n",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "example": "shop",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      },
+      "ocapiApi": {
+        "name": "ocapiApi",
+        "in": "query",
+        "description": "Filter by specific Open Commerce API endpoint (e.g. `baskets`).",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "example": "baskets",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      }
+    },
+    "examples": {
+      "OverallMetricsResponseExample": {
+        "summary": "Overall Application metrics response",
+        "value": {
+          "data": [
+            {
+              "metricId": "totalCalls",
+              "title": "Total Platform Requests",
+              "description": "Total number of platform requests per minute.",
+              "unit": "requests/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.totalCalls",
+                  "name": "realm1 Total Calls",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 1250.5
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 1275.2
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 1201.8
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "sessions",
+              "title": "Sessions",
+              "description": "Number of active sessions across all sites per minute.",
+              "unit": "sessions/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.sessions",
+                  "name": "realm1 Sessions",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 45.2
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 47.1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 44.8
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "responseTime",
+              "title": "Response Time",
+              "description": "Average response time across all requests.",
+              "unit": "ms",
+              "dataSeries": [
+                {
+                  "id": "realm1.responseTime",
+                  "name": "realm1 Response Time",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 156.3
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 148.7
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 162.1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Unauthorized request"
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Access to requested resource forbidden"
+        }
+      },
+      "SalesMetricsResponseExample": {
+        "summary": "Sales metrics response",
+        "value": {
+          "data": [
+            {
+              "metricId": "orders",
+              "title": "Orders",
+              "description": "Number of orders created across all sites per minute.",
+              "unit": "orders/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.orders",
+                  "name": "realm1 Orders",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 25.3
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 27.1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 23.8
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "basketCreations",
+              "title": "Basket Creations",
+              "description": "Number of baskets created across all sites per minute.",
+              "unit": "baskets/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.basketCreations",
+                  "name": "realm1 Basket Creations",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 85.2
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 89.1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 82.5
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "basketUpdates",
+              "title": "Basket Updates",
+              "description": "Number of basket updates across all sites per minute.",
+              "unit": "updates/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.basketUpdates",
+                  "name": "realm1 Basket Updates",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 142.7
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 138.9
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 156.3
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "EcdnMetricsResponseExample": {
+        "summary": "eCDN metrics response",
+        "value": {
+          "data": [
+            {
+              "metricId": "successAndError",
+              "title": "Success and Errors",
+              "description": "Total success and error requests per minute.",
+              "unit": "requests/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.successAndError",
+                  "name": "realm1 Success and Errors",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 8945.2
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 9103.7
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 8876.1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "cacheHits",
+              "title": "Cache Hit Percentage",
+              "description": "Percentage of requests served from cache.",
+              "unit": "percentage",
+              "dataSeries": [
+                {
+                  "id": "realm1.cacheHits",
+                  "name": "realm1 Cache Hit Percentage",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 87.3
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 89.1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 85.7
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "totalBandwidth",
+              "title": "Total Bandwidth",
+              "description": "Total bandwidth usage per minute.",
+              "unit": "bytes/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.totalBandwidth",
+                  "name": "realm1 Total Bandwidth",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 2048576000
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 2156789123
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 1987654321
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ThirdPartyMetricsResponseExample": {
+        "summary": "Third Party Services metrics response",
+        "value": {
+          "data": [
+            {
+              "metricId": "callCounts",
+              "title": "Call Counts",
+              "description": "Number of calls to third party services per minute.",
+              "unit": "calls/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.apple-pay-gateway.apple.com",
+                  "name": "realm1 apple-pay-gateway.apple.com Call Counts",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 156
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 163
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 149
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "callDurationP95",
+              "title": "Call Duration P95",
+              "description": "95th percentile of call duration to third party services.",
+              "unit": "ms",
+              "dataSeries": [
+                {
+                  "id": "realm1.apple-pay-gateway.apple.com",
+                  "name": "realm1 apple-pay-gateway.apple.com Call Duration P95",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 425.7
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 398.2
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 467.3
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "remoteExceptions",
+              "title": "Remote Exceptions",
+              "description": "Number of exceptions from third party services per minute.",
+              "unit": "exceptions/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.apple-pay-gateway.apple.com",
+                  "name": "realm1 apple-pay-gateway.apple.com Remote Exceptions",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 2
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 3
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ScapiMetricsResponseExample": {
+        "summary": "SCAPI metrics response with filters",
+        "value": {
+          "data": [
+            {
+              "metricId": "requestLatency",
+              "title": "Request Latency",
+              "description": "Average request latency for SCAPI calls.",
+              "unit": "ms",
+              "dataSeries": [
+                {
+                  "id": "realm1.shopper.products.requestLatency",
+                  "name": "realm1 Shopper Products Request Latency",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 245.7
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 231.2
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 267.8
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "responseCount",
+              "title": "Response Count",
+              "description": "Number of SCAPI responses per minute.",
+              "unit": "responses/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.shopper.products.responseCount",
+                  "name": "realm1 Shopper Products Response Count",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 1456
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 1523
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 1389
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ScapiHooksMetricsResponseExample": {
+        "summary": "SCAPI Hooks metrics response",
+        "value": {
+          "data": [
+            {
+              "metricId": "hookExecutionTimes",
+              "title": "Hook Execution Times",
+              "description": "Average execution time for SCAPI hooks.",
+              "unit": "ms",
+              "dataSeries": [
+                {
+                  "id": "realm1.hookExecutionTimes",
+                  "name": "realm1 Hook Execution Times",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 45.3
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 52.1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 38.7
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "hookErrors",
+              "title": "Hook Errors",
+              "description": "Number of hook execution errors per minute.",
+              "unit": "errors/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.hookErrors",
+                  "name": "realm1 Hook Errors",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 0.5
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "MrtMetricsResponseExample": {
+        "summary": "Managed Runtime metrics response",
+        "value": {
+          "data": [
+            {
+              "metricId": "requestCount",
+              "title": "Request Count",
+              "description": "Number of MRT requests per minute.",
+              "unit": "requests/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.requestCount",
+                  "name": "realm1 Request Count",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 789.2
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 823.4
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 756.1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "cacheHitRates",
+              "title": "Cache Hit Rates",
+              "description": "Percentage of requests served from MRT cache.",
+              "unit": "percentage",
+              "dataSeries": [
+                {
+                  "id": "realm1.cacheHitRates",
+                  "name": "realm1 Cache Hit Rates",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 92.3
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 94.1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 89.7
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "errorRates",
+              "title": "Error Rates",
+              "description": "Percentage of MRT requests that resulted in errors.",
+              "unit": "percentage",
+              "dataSeries": [
+                {
+                  "id": "realm1.errorRates",
+                  "name": "realm1 Error Rates",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 0.8
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 1.2
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 0.5
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "lambdaInvocations",
+              "title": "Lambda Invocations",
+              "description": "Number of Lambda function invocations per minute.",
+              "unit": "invocations/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.lambdaInvocations",
+                  "name": "realm1 Lambda Invocations",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 234
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 267
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 201
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "requestTimes",
+              "title": "Request Times",
+              "description": "Average request processing time in MRT.",
+              "unit": "ms",
+              "dataSeries": [
+                {
+                  "id": "realm1.requestTimes",
+                  "name": "realm1 Request Times",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 123.4
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 118.7
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 134.2
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ControllerMetricsResponseExample": {
+        "summary": "Controller metrics response",
+        "value": {
+          "data": [
+            {
+              "metricId": "totalCalls",
+              "title": "Total Calls",
+              "description": "Number of controller invocations per minute.",
+              "unit": "calls/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.totalCalls",
+                  "name": "realm1 Total Calls",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 456.3
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 489.1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 423.7
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "averageDuration",
+              "title": "Average Duration",
+              "description": "Average controller processing time.",
+              "unit": "ms",
+              "dataSeries": [
+                {
+                  "id": "realm1.averageDuration",
+                  "name": "realm1 Average Duration",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 67.8
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 72.3
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 61.4
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "OcapiMetricsResponseExample": {
+        "summary": "OCAPI metrics response with filters",
+        "value": {
+          "data": [
+            {
+              "metricId": "totalCalls",
+              "title": "Total Calls",
+              "description": "Number of OCAPI calls per minute.",
+              "unit": "calls/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.shop.baskets.totalCalls",
+                  "name": "realm1 Shop Baskets Total Calls",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 234.5
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 251.2
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 218.9
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "averageDuration",
+              "title": "Average Duration",
+              "description": "Average OCAPI response time.",
+              "unit": "ms",
+              "dataSeries": [
+                {
+                  "id": "realm1.shop.baskets.averageDuration",
+                  "name": "realm1 Shop Baskets Average Duration",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 89.3
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 94.7
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 82.1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "metricId": "totalErrors",
+              "title": "Total Errors",
+              "description": "Number of OCAPI errors per minute.",
+              "unit": "errors/min",
+              "dataSeries": [
+                {
+                  "id": "realm1.shop.baskets.totalErrors",
+                  "name": "realm1 Shop Baskets Total Errors",
+                  "data": [
+                    {
+                      "timestamp": 1640995200,
+                      "value": 3.2
+                    },
+                    {
+                      "timestamp": 1640995260,
+                      "value": 4.1
+                    },
+                    {
+                      "timestamp": 1640995320,
+                      "value": 2.7
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "InvalidTimeParameterErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-time-parameter",
+          "detail": "Invalid time parameter 'from'. Must be a Unix epoch timestamp in seconds (e.g., 1672531200).",
+          "title": "Invalid Time Parameter"
+        }
+      },
+      "InvalidTimeRangeErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-time-range",
+          "detail": "Invalid time range: 'from' (1672534800) must be earlier than 'to' (1672531200).",
+          "title": "Invalid Time Range"
+        }
+      },
+      "CategoryNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/category-not-found",
+          "detail": "Metrics category 'unknown-category' not found or not available for organization 'f_ecom_zzxy_prd'.",
+          "title": "Category Not Found"
+        }
+      },
+      "MetricsNotAvailableErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/metrics-not-available",
+          "detail": "Metrics data is temporarily unavailable for organization 'f_ecom_zzxy_prd'. Please try again later.",
+          "title": "Metrics Not Available"
+        }
+      },
+      "InvalidThirdPartyServiceErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-third-party-service",
+          "detail": "Third party service 'apple-pay-gateway.apple.com' not found for organization 'f_ecom_zzxy_prd'.",
+          "title": "Invalid Third Party Service"
+        }
+      },
+      "InvalidApiFilterErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-api-filter",
+          "detail": "Invalid value 'invalid-family' for filter 'apiFamily'.",
+          "title": "Invalid Api Filter"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "description": "AccountManager OAuth 2.0 bearer token Authentication.",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.metrics": "metrics READONLY"
+            }
+          }
+        }
+      }
+    }
+  }
+}

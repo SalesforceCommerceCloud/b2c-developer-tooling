@@ -1,0 +1,5 @@
+[
+  {"query": "Re-skin my Storefront Next storefront: change the primary color to a deep green, swap the font to Inter, and make the header dark.", "should_trigger": true},
+  {"query": "Make the cards and buttons rounded with a soft shadow across the whole site. Where do I change that?", "should_trigger": true},
+  {"query": "Create a new ProductBadge component with CVA variants and a Storybook story that passes the snapshot tests.", "should_trigger": false}
+]

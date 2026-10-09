@@ -14,11 +14,14 @@ From the monorepo root:
 
 ```bash
 pnpm install
-pnpm --filter b2c-vs-extension run build
+# Same as: pnpm --filter @salesforce/b2c-tooling-sdk --filter @salesforce/b2c-script-types --filter b2c-vs-extension run build
+pnpm --filter b2c-vs-extension... run build
 pnpm --filter b2c-vs-extension run lint
 pnpm --filter b2c-vs-extension run format
 pnpm --filter b2c-vs-extension run test
 ```
+
+The trailing `...` on the build filter selects the extension **and its workspace dependencies**. The production build, type-check, and tests consume those packages from compiled `dist/` (or `plugin/`), not from TypeScript sources, so building the extension on its own against a stale or absent SDK `dist/` fails with esbuild `No matching export ... for import` errors naming SDK symbols. Running `pnpm -r run build` from the repo root works too, and is what CI does.
 
 ### Tests
 
@@ -68,7 +71,7 @@ The **Run Extension** launch configuration performs a production build as a pre-
    - Tune `b2c-dx.jobs.discoveryExecutionScanLimit` to scan more executions and discover additional job IDs.
    - Optionally define `b2c-dx.jobs.knownJobIds` to provide quick-pick suggestions before history is populated.
 4. Expand a job and verify its execution history and step-level details.
-5. Run **Run Job**, **Re-Run Job**, and **Stop Execution** from the view context menu.
+5. Run **Run Job** and **Re-Run Job** from the view context menu.
 6. Run **Create Job Scaffold** and verify that it creates `jobs.xml`, `README.md`, and a script stub under `b2c-jobs/<job-id>/`.
 7. Run **Deploy Job Scaffold**, select the generated `jobs.xml`, confirm the target instance, and verify that deployment completes.
 8. Open **Business Manager Jobs** from the success prompt and confirm that the new job definition is present and disabled by default.

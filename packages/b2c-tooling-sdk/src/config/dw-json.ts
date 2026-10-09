@@ -13,10 +13,11 @@
  */
 import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
+import type {ClientAuthMethod} from '../auth/client-credentials.js';
 import type {AuthMethod} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
 import type {LibraryEntry} from './types.js';
-import {normalizeConfigKeys} from './mapping.js';
+import {CONFIG_KEY_ALIASES, kebabToCamelCase, normalizeConfigKeys} from './mapping.js';
 
 /**
  * Configuration structure for dw.json after key normalization.
@@ -70,6 +71,8 @@ export interface DwJsonConfig {
   userAuth?: boolean;
   /** Account Manager hostname for OAuth */
   accountManagerHost?: string;
+  /** How client credentials are sent to Account Manager */
+  clientAuthMethod?: ClientAuthMethod;
   /** MRT project slug */
   mrtProject?: string;
   /** MRT environment name (e.g., staging, production) */
@@ -108,12 +111,18 @@ export interface DwJsonConfig {
   cipHost?: string;
   /** Documentation categories to expose (allowlist); dw.json key `docs-categories` */
   docsCategories?: string[];
+  /** Local SCAPI OpenAPI contracts (files, directories or http(s) URLs) for MCP code mode; dw.json key `scapi-schemas` */
+  scapiSchemas?: string[];
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
   certificate?: string;
   /** Passphrase for the certificate */
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /** API backend preference for operations that support both OCAPI and SCAPI */
+  apiBackend?: 'ocapi' | 'scapi' | 'auto';
+  /** MRT backend preference: legacy MRT Cloud API vs SCAPI MRT deployments API */
+  mrtBackend?: 'auto' | 'legacy' | 'scapi';
   /** Path to JWT certificate file (cert.pem) for JWT authentication */
   jwtCertPath?: string;
   /** Path to JWT private key file (key.pem) for JWT authentication */
@@ -514,6 +523,75 @@ export async function setActiveInstance(name: string, options: SetActiveInstance
   }
 
   await saveDwJson(existing, dwJsonPath);
+}
+
+/**
+ * Options for updating an instance's config in dw.json.
+ */
+export interface UpdateInstanceConfigOptions {
+  /** Path to dw.json (defaults to ./dw.json in projectDirectory or cwd) */
+  path?: string;
+  /** Starting directory for search */
+  projectDirectory?: string;
+  /** Instance name to update; defaults to the active config, then the root config */
+  instance?: string;
+}
+
+function camelToKebabCase(str: string): string {
+  return str.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+}
+
+/**
+ * Updates fields of an existing instance config in dw.json.
+ *
+ * Fields are written in kebab-case (e.g. `webdav-hostname`). Any existing key
+ * that resolves to the same field — a camelCase or legacy alias such as
+ * `webdav-server` or `passphrase` — is replaced so the new value takes effect.
+ * Fields set to `undefined` are removed.
+ *
+ * @param patch - Fields to set, using canonical camelCase names
+ * @param options - dw.json location and target instance
+ * @returns The path of the updated dw.json and the name of the updated instance
+ * @throws Error if dw.json doesn't exist or the instance is not found
+ */
+export async function updateInstanceConfig(
+  patch: Partial<DwJsonConfig>,
+  options: UpdateInstanceConfigOptions = {},
+): Promise<{name?: string; path: string}> {
+  const dwJsonPath = options.path ?? path.join(options.projectDirectory || process.cwd(), 'dw.json');
+
+  let content: string;
+  try {
+    content = await fsp.readFile(dwJsonPath, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error('No dw.json file found');
+    }
+    throw error;
+  }
+
+  const existing = JSON.parse(content) as DwJsonMultiConfig;
+  const target = selectConfig(existing, options.instance) as Record<string, unknown> | undefined;
+  if (!target) {
+    throw new Error(`Instance "${options.instance}" not found`);
+  }
+
+  // Rebuild the entry so a replaced key keeps its position in the file.
+  const entries = Object.entries(target);
+  for (const [field, value] of Object.entries(patch)) {
+    const matches = (key: string) => (CONFIG_KEY_ALIASES[key] ?? kebabToCamelCase(key)) === field;
+    const position = entries.findIndex(([key]) => matches(key));
+    const remaining = entries.filter(([key]) => !matches(key));
+    if (value !== undefined) {
+      remaining.splice(position === -1 ? remaining.length : position, 0, [camelToKebabCase(field), value]);
+    }
+    entries.splice(0, entries.length, ...remaining);
+  }
+  for (const key of Object.keys(target)) delete target[key];
+  Object.assign(target, Object.fromEntries(entries));
+
+  await saveDwJson(existing, dwJsonPath);
+  return {name: target.name as string | undefined, path: dwJsonPath};
 }
 
 /**

@@ -53,6 +53,8 @@ describe('operations/cip', () => {
       expect(sql, `sql for ${report.name} has unresolved placeholder`).to.not.match(/<[A-Z_]+>/u);
       // No bare reserved word `method` (must be double-quoted when referenced).
       expect(sql, `sql for ${report.name} references bare reserved word`).to.not.match(/[^."]\bmethod\b/u);
+      const referencedTables = [...new Set(sql.match(/\bccdw_[a-z_]+\b/g))];
+      expect(report.tablesUsed, `warehouse dependencies for ${report.name}`).to.have.members(referencedTables);
     }
   });
 
@@ -121,6 +123,17 @@ describe('operations/cip', () => {
     });
     expect(result.sql).to.include('ccdw_aggr_sales_summary');
     expect(result.sql).to.include("'Sites-RefArch-Site'");
+  });
+
+  it('guards averages with NULLIF for zero-count sales, promotion and payment groups', () => {
+    const params = {siteId: 'Sites-RefArch-Site', from: '2026-01-01', to: '2026-01-31'};
+    const sales = buildCipReportSql('sales-analytics', params).sql;
+    expect(sales).to.include('SUM(std_revenue) / NULLIF(SUM(num_orders), 0)');
+    expect(sales).to.include('SUM(num_units) / NULLIF(SUM(num_orders), 0)');
+    const promotion = buildCipReportSql('promotion-discount-analysis', {from: params.from, to: params.to}).sql;
+    expect(promotion).to.include('p.std_total_discount / NULLIF(p.promotion_orders, 0)');
+    const payment = buildCipReportSql('payment-method-performance', params).sql;
+    expect(payment).to.include('SUM(pss.std_captured_amount) / NULLIF(SUM(pss.num_payments), 0)');
   });
 
   it('rejects unknown parameters', () => {

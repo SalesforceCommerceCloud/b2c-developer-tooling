@@ -1,5 +1,178 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.5.0
+
+### Minor Changes
+
+- [#750](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/750) [`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e) - SCAPI code mode adds `spec.search()`, a ranked, typo-tolerant search over operation summaries, descriptions, tags, ids and paths, so assistants can find less familiar APIs by describing the task instead of guessing a regex. `scapi_execute` programs now get the same `spec` as `scapi_search` (it was previously empty there), so discovery and calls can share one run. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e), [`2900483`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/290048322a3d26f227d6e925d4012a658074a27e)]:
+  - @salesforce/b2c-tooling-sdk@2.6.0
+
+## 3.4.1
+
+### Patch Changes
+
+- [`dc9a691`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/dc9a6914439ec5009249bb0a03efef7d81d21c57) - The B2C DX MCP plugin now starts a newly released server even when npm's `min-release-age` is set, instead of failing to connect for the first days after a release. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 3.4.0
+
+### Minor Changes
+
+- [`0d6b966`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0d6b966d3aa944cf9ab78385d3a2ce0587a11b30) - Docs tools now guide agents to cite online documentation links instead of internal doc IDs (IDs or Markdown links still available on request). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Local SCAPI contracts for MCP code mode can now be set in project configuration (dw.json `scapi-schemas` or `SFCC_SCAPI_SCHEMAS` in the project `.env`), so MCP plugin users can add beta APIs without changing the server's launch arguments. Relative paths resolve from the project directory; the `--scapi-schemas` flag still takes precedence. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#741](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/741) [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e) - SCAPI code mode and `scapi_schemas_list` now see operation summaries, descriptions and examples (the bundled corpus grows to 61 APIs), so agents can search by what an operation does, not just its ID; `scapi_schemas_list` also falls back to the bundled contracts with a warning when the live Schemas API is unavailable. `scapi_search` returns a compact outline by default (nested descriptions and examples dropped to fit the 24 KB result cap); pass `detail: "full"` for all prose. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#745](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/745) [`c534797`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c5347970fc247f412b84c34c41d4df4965e2c710) - SCAPI schema overrides (`scapi-schemas`, `SFCC_SCAPI_SCHEMAS`, `--scapi-schemas`) now accept http(s) URLs, so you can share a beta contract with a config-only change. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Agents now cite documentation by its online link rather than internal doc IDs: `docs_search` results always include each page's `url`, and both docs tools return a citation rule alongside their results. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#744](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/744) [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da) - Fixed the search-index job examples (`{"site_scope":["Site"]}`, not an object), documented system-job request bodies for CLI and MCP code mode, and stopped `--api-backend auto` from retrying SCAPI 400 (invalid request) errors over OCAPI, which hid the real error. When a fallback does happen and OCAPI also fails, both errors are reported. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#747](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/747) [`f3b9974`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f3b997487f2094a1c9f1c7a846147e303c2db422) - New `b2c-edge-traffic-triage` operations runbook for reviewing bot and abusive eCDN traffic against your firewall, WAF and rate-limiting rules, and SCAPI code mode now points agents to the operations runbooks. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#746](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/746) [`163138e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/163138eb8ff1c045a64f3be246c1d1c2f37815f6) - `scapi_search` now accepts an API family or family/name for `api` (for example `cdn` or `cdn/zones`), and an unknown id suggests close matches. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`f3b9974`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f3b997487f2094a1c9f1c7a846147e303c2db422), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e), [`c45c5fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c45c5fac903c5bf77eecfc4a4befd259712aa84e), [`c534797`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c5347970fc247f412b84c34c41d4df4965e2c710), [`163138e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/163138eb8ff1c045a64f3be246c1d1c2f37815f6), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da), [`3964752`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3964752a63665b1b6005be14a47f70ccd80349da)]:
+  - @salesforce/b2c-tooling-sdk@2.5.0
+  - @salesforce/b2c-agent-plugins@1.12.0
+
+## 3.3.0
+
+### Minor Changes
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - Added `--dotenv-file` / `SFCC_DOTENV_FILE` to use another env file (such as `.env.staging`) instead of `.env`. An empty `--dotenv-file ""` or `--config ""` now means no env file or no `dw.json`. With `--project-directory`, the `.env` is now read from that directory instead of the current one. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#737](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/737) [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835) - Fixed an explicit `--config` / `SFCC_CONFIG` path (or MCP `configPath`) also pulling in instances from the global default `dw.json`; the explicit file is now used on its own, and a missing file is reported. If you relied on instances from the global file, remove the explicit path or add those instances to the explicit file. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#733](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/733) [`5220490`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/52204901a68467980e86d6c399869c93a26ed64a) - Add `--scapi-schemas` (`SFCC_SCAPI_SCHEMAS`) so SCAPI code mode can use local OpenAPI contracts for beta and pre-release APIs. A local contract replaces the bundled or live contract for the same API, or adds a new one. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - Assistants that support the MCP Skills extension can now list and load the server's skills directly. MCP skills are renamed with a `b2c-mcp-` prefix (for example `skill://mcp/b2c-mcp-scapi/SKILL.md`), and the server skill now opens with an index of which skill covers each task. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#731](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/731) [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4) - Documentation search now includes the B2C Commerce Solutions guides (bot management, caching strategies, flash-sale traffic, and industry solutions) in a new `commerce-solutions` category. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#730](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/730) [`9cca45e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9cca45e02cfaf40b8ad45ddf76e3468a1ae0f9f8) - Agents asking what's needed before a first cartridge deploy are now pointed to the configuration and authentication guidance, instead of answering from general knowledge. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#730](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/730) [`9cca45e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9cca45e02cfaf40b8ad45ddf76e3468a1ae0f9f8) - Agents now read the SCAPI and CIP skills before calling `scapi_search`, `scapi_execute` or `cip_query`, instead of being rejected and retrying. `skillRead` is now a required argument, and the SCAPI tool descriptions are shorter, with code-mode details moved into the SCAPI skill. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835), [`86d42bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/86d42bc53c58020ca301df3e38d3cfa7ab0d4b04), [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4), [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835), [`285bd55`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/285bd55bcbad048d343b3778eac4e1ef9b94cf97), [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835), [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4), [`5220490`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/52204901a68467980e86d6c399869c93a26ed64a), [`bea5bdc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bea5bdc81ae9353848b38258de4e5a32a76da9ae), [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835), [`9cca45e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9cca45e02cfaf40b8ad45ddf76e3468a1ae0f9f8), [`f692182`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f69218247ce92a7af0dbbb49ca9d696f4ca4a3a4), [`78df45a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/78df45adae187b3ce3149b22c88456ba0583c835), [`1c73738`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1c73738ce3c395738307653755692ffc357463c4)]:
+  - @salesforce/b2c-tooling-sdk@2.4.0
+  - @salesforce/b2c-agent-plugins@1.11.0
+
+## 3.2.1
+
+### Patch Changes
+
+- [#724](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/724) [`fe853db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fe853db0f916ae9f92fa225881a68bd961ea88c4) - SCAPI Safety Mode approvals now use the client's own Accept/Decline buttons instead of an extra "Approve this request only" checkbox, so clicking Accept in GUI clients such as the ChatGPT Work app no longer declines the request. Dismissing the prompt now reports `SCAPI_APPROVAL_CANCELLED`, separate from a decline. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 3.2.0
+
+### Minor Changes
+
+- [#723](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/723) [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e) - `scapi_search` can now search your instance's live SCAPI schemas with `schemas: "live"`, including your custom attributes, custom APIs, and APIs newer than the bundled reference. `scapi_execute` can then call what it found on the same instance. Offline search is still the default. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#723](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/723) [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e) - `scapi_execute` can now call Shopper APIs as a guest shopper using your SLAS client, so any Storefront Next project works out of the box. The guest session persists across executions, so baskets carry over. Registered-shopper-only operations are not yet supported. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#720](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/720) [`c1b0c17`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c1b0c17e286a69a4945c9d66c0209c87b5441709) - Docs search now includes the OCAPI reference from B2C Commerce Developer Center (usage, hooks, settings, and best practices), available under the new `ocapi` category (45 articles). (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`c1b0c17`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c1b0c17e286a69a4945c9d66c0209c87b5441709), [`55da7a5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55da7a54be090007ea6aac64df36d53b7a4b5ffa), [`55da7a5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/55da7a54be090007ea6aac64df36d53b7a4b5ffa), [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e), [`3172e1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3172e1bff2e6bbb3246a87092c489a8f866b696e)]:
+  - @salesforce/b2c-tooling-sdk@2.3.0
+  - @salesforce/b2c-agent-plugins@1.10.3
+
+## 3.1.2
+
+### Patch Changes
+
+- Updated dependencies [[`443fa0b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/443fa0b9bd0abdd360077c51b692784eaa1827dd)]:
+  - @salesforce/b2c-agent-plugins@1.10.2
+
+## 3.1.1
+
+### Patch Changes
+
+- [#713](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/713) [`b9972c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b9972c9b9db69b2b2b7c2229250d9aa9b4c665e3) - Added Salesforce Help Knowledge Articles for B2C Commerce — troubleshooting, known issues, and how-to answers (administration: 135, developer support: 92, merchandising: 89, operations and security: 29, performance: 20, Composable Storefront: 16) — as a new `help-kb` docs category, available in the `b2c docs` CLI and MCP docs tools. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#708](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/708) [`ce3ed28`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ce3ed2816a5a84f363206079803f73fbd05f530f) - Changes to project and instance safety policies now take effect on the next MCP tool call, including cartridge deployments, without restarting the server. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b9972c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b9972c9b9db69b2b2b7c2229250d9aa9b4c665e3), [`c6ed31d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c6ed31d3f71553e1fb921c7e4106fb81086afb7d), [`ce3ed28`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ce3ed2816a5a84f363206079803f73fbd05f530f), [`c6ed31d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c6ed31d3f71553e1fb921c7e4106fb81086afb7d), [`61e3438`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/61e3438164ab2a74067d4444f87c2831b5c72bfc)]:
+  - @salesforce/b2c-tooling-sdk@2.2.0
+  - @salesforce/b2c-agent-plugins@1.10.1
+
+## 3.1.0
+
+### Minor Changes
+
+- [#705](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/705) [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6) - SCAPI Code Mode can now ask you to approve changes in supported assistant apps, with short request previews, cancellation, and no server time limit for answering. Approved tasks continue where they paused without repeating earlier changes; apps that cannot show approval prompts block those actions. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Add product approval examples and a shared SCAPI policy, with clearer Safety Mode guidance across the CLI, IDE Extension, and AI assistants, plus easier-to-browse MCP tool documentation.
+
+### Patch Changes
+
+- [#705](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/705) [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6) - Keep internal release-status and workspace-ranking metadata out of skill discovery responses and the MCP output schema. Public collection results contain only IDs and titles. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`f9110ac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f9110ace279f3f3290ceaac9104e6436d71d2688), [`ae2b79e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ae2b79e522125bd515e39ec538bba7ab569179e9), [`df4f24c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/df4f24c963c050facea179013fc69db129ade5ea), [`09e5a0a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/09e5a0a3f3d96380dc29e9a83c5a075c8cc8eb9b), [`5e2a955`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5e2a955d281536978aba914c3a4f3f64447e4618), [`f9110ac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f9110ace279f3f3290ceaac9104e6436d71d2688), [`d076982`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d0769822c484bf52cc8d897d503840a95522e36d), [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6), [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6), [`66c599d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/66c599da0664563f3aaeb529a749b9d5f8f0bfc6), [`ee1ed01`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee1ed01b42e0b31dfbbd874b50a1ce6f165f4a91), [`643d0c0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/643d0c055eb2101bb5bbce24d5bf5a9701610220), [`880d25a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/880d25a42a841e41202dab3d428a3433a7350ebd), [`3fe3a10`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fe3a10f6ea0a1e7c1e8824d387efac45b7e6e7f)]:
+  - @salesforce/b2c-tooling-sdk@2.1.0
+  - @salesforce/b2c-agent-plugins@1.10.0
+
+## 3.0.1
+
+### Patch Changes
+
+- [#684](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/684) [`d3da83c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d3da83c6f918e70bc3df2166a9f025a88d97f745) - Restore `--allow-non-ga-tools` as a deprecated no-op so existing MCP configurations continue to start after upgrading. The server logs a warning that the flag can be removed; tool availability is unchanged. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 3.0.0
+
+### Major Changes
+
+- [#670](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/670) [`407075c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/407075c8d6b69647afbc31ac15004941be84957a) - Add embedded Commerce skills through MCP resources and searchable `skills_read`, with focused configuration, authentication, and workflow guidance and consistent CLI/MCP recommendations. Enable all toolsets by default, streamline debugging and logging, identify tool effects for client approval controls, and support MCP 2026-07-28 alongside earlier clients. Include concise installation, capabilities, configuration, and security documentation. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Update explicit tool selections to use `debug_control`, `debug_inspect`, `logs_watch`, and `mrt_logs_watch`; remove `pwakit_get_guidelines` and `scapi_custom_api_generate_scaffold`. Remove `--allow-non-ga-tools` from launch commands. Use `--toolsets` or `--tools` to customize the catalog and `b2c scaffold generate custom-api` for local scaffolding.
+
+### Minor Changes
+
+- [#672](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/672) [`304f0eb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/304f0eba3188b6dc62974ba2e63dea4fa9aaf84f) - Add b2c-ops runbooks for job health, checkout and failed-order investigation, and incident triage, available as a skills plugin, through CLI installation, and included in the MCP. Add an Operations guide with example requests, recovery checks, and handoffs to administrators, developers, providers, or Salesforce Support. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#680](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/680) [`6503d81`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6503d815fd4f942b74f494633cd430b680f33c05) - Analyze B2C Commerce sales, merchandising, and technical trends directly through MCP with CIP report discovery and SQL queries. Includes analytics skills, shared configuration and Safety Mode support, and bounded, cancellable queries without a separate CLI installation. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Report discovery includes source tables and sales metric definitions. Sales, payment, and promotion reports return unavailable averages for zero-count groups instead of failing on division by zero.
+
+- [#680](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/680) [`6503d81`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6503d815fd4f942b74f494633cd430b680f33c05) - Add MCP tools to browse instance files, read exact logs, and upload or download files without a separate CLI. Cartridge deployment now supports selected files and explicit code versions, with clearer reporting when uploads succeed but reload or cleanup fails. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#670](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/670) [`407075c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/407075c8d6b69647afbc31ac15004941be84957a) - Add SCAPI code mode with offline discovery of 594 Admin and Shopper operations and standard or custom Admin API execution using automatic authentication and SDK Safety Mode. Compose requests and return focused results through `scapi_search` and `scapi_execute`, with bounded execution and actionable access errors. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Discover tenant custom API contracts live and execute their declared Admin operations. Live schema reads include custom-property definitions by default; known custom fields work directly in standard Admin requests. Bundled schemas remain tenant-independent.
+
+  Reuse built-in workflows for product creation with optional category assignment, campaign/promotion inspection, and failed-job triage, or save reviewed workflows for later use. Export Account Manager and SLAS tokens when an external client needs them; normal SCAPI requests authenticate automatically. Code mode restricts local filesystem/process APIs to keep programs focused on API workflows; use terminal and file tools for local development.
+
+### Patch Changes
+
+- [#680](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/680) [`6503d81`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6503d815fd4f942b74f494633cd430b680f33c05) - Add reusable workflows for job history, execution steps, code versions, and site cartridge paths. Update MCP task guidance and operational runbooks to use these workflows and exact job-log reads with less reliance on the CLI. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#683](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/683) [`5741d42`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5741d42beae402a664282738aa883e1d9fb8d903) - Clarify how assistants discover tools and read bundled MCP skills, distinguishing resource reads from native assistant skill commands. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`304f0eb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/304f0eba3188b6dc62974ba2e63dea4fa9aaf84f), [`46ab439`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46ab439b4b306809f161a110669d9fce9376c8d5), [`6503d81`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6503d815fd4f942b74f494633cd430b680f33c05), [`6c8bd53`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6c8bd53064a5ebcc51c9d40b464121bf68539ab5), [`3751091`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3751091325208907e5a79932a621e2020e3a0014), [`304f0eb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/304f0eba3188b6dc62974ba2e63dea4fa9aaf84f), [`f208d0c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f208d0c0be40f9b597f8bcba8636feb3be011ff2), [`407075c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/407075c8d6b69647afbc31ac15004941be84957a), [`6503d81`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6503d815fd4f942b74f494633cd430b680f33c05), [`6503d81`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6503d815fd4f942b74f494633cd430b680f33c05), [`5741d42`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5741d42beae402a664282738aa883e1d9fb8d903), [`2f92310`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2f923102522bb83006b43e9adf6fb0e777c43701), [`2f92310`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2f923102522bb83006b43e9adf6fb0e777c43701), [`c9cf71f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c9cf71fad0981e6a580581735062b171c70ba5d6), [`2924738`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/29247384d95e37ab8b8e739a191621ab3e1bd0d2), [`2dbbf72`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2dbbf72c60579fa314a4a8db64e178d8fc83978b), [`2f92310`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2f923102522bb83006b43e9adf6fb0e777c43701), [`2924738`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/29247384d95e37ab8b8e739a191621ab3e1bd0d2), [`1b6bdf8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b6bdf87c0670e0ecc955d0acaa672859ca0c73e), [`407075c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/407075c8d6b69647afbc31ac15004941be84957a), [`3773648`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/37736482722f91bca319a1b20887c01571e97663), [`3773648`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/37736482722f91bca319a1b20887c01571e97663), [`a0214e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a0214e43c1d3a6f148634af1741f7cee0785551b), [`b2b026c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b2b026c109c6d3aad219ddd9603bfe59d426e8ec), [`b2b026c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b2b026c109c6d3aad219ddd9603bfe59d426e8ec), [`de36e4a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/de36e4a5f99a38ad102b8314d14ec515602ce16d), [`304f0eb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/304f0eba3188b6dc62974ba2e63dea4fa9aaf84f)]:
+  - @salesforce/b2c-agent-plugins@1.9.0
+  - @salesforce/b2c-tooling-sdk@2.0.0
+
+## 2.1.2
+
+### Patch Changes
+
+- [#638](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/638) [`5d48cfc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d48cfc0122158625d24dd039d8066e1fa1c37f2) - Keep debugger server-affinity guidance as a rare PIG-only troubleshooting note instead of prompting users and agents to use `dwsid` during routine debugging. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`5d48cfc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d48cfc0122158625d24dd039d8066e1fa1c37f2), [`4dee938`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4dee938cd4c2d5fd48c6ebc85ee99abf432529ff)]:
+  - @salesforce/b2c-tooling-sdk@1.24.2
+
 ## 2.1.1
 
 ### Patch Changes

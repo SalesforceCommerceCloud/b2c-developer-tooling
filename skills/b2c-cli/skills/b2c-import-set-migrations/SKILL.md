@@ -14,7 +14,7 @@ Use `b2c job import-set` to apply site import/export archives from discovered ca
 
 ## Configuration & Authentication
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
+The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
 `job import-set` requires both OAuth and WebDAV credentials. Run `b2c setup inspect` to confirm the resolved configuration; see the `b2c-cli:b2c-config` skill for precedence rules and troubleshooting.
 

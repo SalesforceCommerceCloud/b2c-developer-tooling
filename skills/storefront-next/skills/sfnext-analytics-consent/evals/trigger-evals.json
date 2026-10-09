@@ -1,0 +1,5 @@
+[
+  {"query": "Add a custom analytics adapter that sends view_product events to our own endpoint, but only when the shopper accepted marketing consent", "should_trigger": true},
+  {"query": "Einstein events are not firing after I enabled the consent banner - how do I debug engagement.adapters and consentCategories?", "should_trigger": true},
+  {"query": "Add a Content-Security-Policy nonce so my third-party analytics script is allowed to load", "should_trigger": false}
+]

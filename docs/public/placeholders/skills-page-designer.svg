@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="330" viewBox="0 0 760 330">
+  <title>Storefront Next skills screenshot placeholder</title>
+  <desc>Build an editable component. Page Designer result and assistant summary. A real capture will replace this placeholder.</desc>
+  <rect x="0.5" y="0.5" width="759" height="329" rx="12" fill="#f7f9fb" stroke="#c9d3df"/>
+  <rect x="16" y="16" width="728" height="298" rx="6" fill="none" stroke="#c9d3df" stroke-dasharray="5 6"/>
+  <g font-family="Salesforce Sans, sans-serif" text-anchor="middle">
+    <text x="380" y="121" font-size="18" fill="#526477">Storefront Next skills</text>
+    <text x="380" y="159" font-size="28" font-weight="600" fill="#032d60">Build an editable component</text>
+    <text x="380" y="192" font-size="18" fill="#526477">Page Designer result and assistant summary</text>
+    <text x="380" y="295" font-size="14" letter-spacing="1.5" fill="#526477">SCREENSHOT PLACEHOLDER</text>
+  </g>
+</svg>

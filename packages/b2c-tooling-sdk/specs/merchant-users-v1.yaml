@@ -1,0 +1,398 @@
+openapi: 3.0.3
+info:
+    title: Users
+    version: 1.0.0
+    x-api-type: Admin
+    x-api-family: Merchant
+servers:
+  -     url: "https://{shortCode}.api.commercecloud.salesforce.com/merchant/users/v1"
+        variables:
+                shortCode:
+                          default: 123456gf
+paths:
+    /organizations/{organizationId}/users:
+          get:
+                  operationId: getUsers
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: select
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              $ref: "#/components/schemas/Select"
+                    -           name: limit
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              type: integer
+                                              format: int32
+                                              default: 25
+                                              maximum: 200
+                                              minimum: 1
+                    -           name: offset
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              type: integer
+                                              format: int32
+                                              default: 0
+                                              minimum: 0
+                  responses:
+                            200:
+                                        description: Returns the collection of users
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/UserSearch"
+                  security:
+                    -           AmOAuth2: [sfcc.users, sfcc.users.rw]
+    /organizations/{organizationId}/users/{login}:
+          get:
+                  operationId: getUser
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: login
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            200:
+                                        description: Returns the user details
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/User"
+                            404:
+                                        description: User not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.users, sfcc.users.rw]
+          put:
+                  operationId: createOrReplaceUser
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: login
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  requestBody:
+                            content:
+                                        application/json:
+                                                      schema:
+                                                                      $ref: "#/components/schemas/User"
+                            required: true
+                  responses:
+                            200:
+                                        description: The user was successfully updated
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/User"
+                            201:
+                                        description: The user was successfully created
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/User"
+                            400:
+                                        description: Bad Request - Invalid user request
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.users.rw]
+          delete:
+                  operationId: deleteUser
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: login
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            204:
+                                        description: The user was successfully deleted
+                            404:
+                                        description: User not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.users.rw]
+          patch:
+                  operationId: updateUser
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: login
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  requestBody:
+                            content:
+                                        application/json:
+                                                      schema:
+                                                                      $ref: "#/components/schemas/UserUpdateRequest"
+                            required: true
+                  responses:
+                            200:
+                                        description: The user was successfully updated
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/User"
+                            400:
+                                        description: Bad Request - Invalid user update request
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: User not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.users.rw]
+components:
+    schemas:
+          OrganizationId:
+                  type: string
+                  maxLength: 32
+                  minLength: 1
+          Select:
+                  type: string
+                  minLength: 1
+                  pattern: ^[(].*[)]$
+          Total:
+                  type: integer
+                  format: int32
+                  default: 0
+                  minimum: 0
+          ResultBase:
+                  type: object
+                  properties:
+                            limit:
+                                        type: integer
+                                        format: int32
+                            total:
+                                        $ref: "#/components/schemas/Total"
+                  required: [limit, total]
+          Offset:
+                  type: integer
+                  format: int32
+                  default: 0
+                  minimum: 0
+          PaginatedResultBase:
+                  allOf:
+                    -           $ref: "#/components/schemas/ResultBase"
+                  properties:
+                            offset:
+                                        $ref: "#/components/schemas/Offset"
+                  required: [limit, offset, total]
+          LanguageCountry:
+                  type: string
+                  pattern: ^[a-z][a-z]-[A-Z][A-Z]$
+          LanguageCode:
+                  type: string
+                  pattern: ^[a-z][a-z]$
+          DefaultFallback:
+                  type: string
+                  default: default
+                  pattern: ^default$
+          LocaleCode:
+                  oneOf:
+                    -           $ref: "#/components/schemas/LanguageCountry"
+                    -           $ref: "#/components/schemas/LanguageCode"
+                    -           $ref: "#/components/schemas/DefaultFallback"
+          User:
+                  type: object
+                  properties:
+                            login:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            password:
+                                        type: string
+                                        maxLength: 256
+                            email:
+                                        type: string
+                                        maxLength: 256
+                            firstName:
+                                        type: string
+                                        maxLength: 256
+                            lastName:
+                                        type: string
+                                        maxLength: 256
+                            externalId:
+                                        type: string
+                                        maxLength: 256
+                            disabled:
+                                        type: boolean
+                            locked:
+                                        type: boolean
+                            lastLoginDate:
+                                        type: string
+                                        format: date
+                            passwordExpirationDate:
+                                        type: string
+                                        format: date-time
+                            passwordModificationDate:
+                                        type: string
+                                        format: date-time
+                            preferredDataLocale:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/LocaleCode"
+                            preferredUiLocale:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/LocaleCode"
+                            roles:
+                                        type: array
+                                        items:
+                                                      type: string
+                                                      maxLength: 256
+                  required: [email, login]
+          UserSearch:
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedResultBase"
+                  properties:
+                            data:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/User"
+                                                      type: string
+                  required: [data]
+          ErrorResponse:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                            title:
+                                        type: string
+                                        maxLength: 256
+                            type:
+                                        type: string
+                                        maxLength: 2048
+                            detail:
+                                        type: string
+                            instance:
+                                        type: string
+                                        maxLength: 2048
+                  required: [detail, title, type]
+          UserUpdateRequest:
+                  type: object
+                  properties:
+                            email:
+                                        type: string
+                                        maxLength: 256
+                            firstName:
+                                        type: string
+                                        maxLength: 256
+                            lastName:
+                                        type: string
+                                        maxLength: 256
+                            externalId:
+                                        type: string
+                                        maxLength: 256
+                            preferredDataLocale:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/LocaleCode"
+                            preferredUiLocale:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/LocaleCode"
+    parameters:
+          organizationId:
+                  name: organizationId
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            $ref: "#/components/schemas/OrganizationId"
+          select:
+                  name: select
+                  in: query
+                  required: false
+                  style: form
+                  explode: true
+                  schema:
+                            $ref: "#/components/schemas/Select"
+          login:
+                  name: login
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            type: string
+                            maxLength: 256
+                            minLength: 1
+    securitySchemes:
+          AmOAuth2:
+                  type: oauth2
+                  flows:
+                            clientCredentials:
+                                        tokenUrl: "https://account.demandware.com/dw/oauth2/access_token"
+                                        scopes:
+                                                      sfcc.users: Read access to user resources
+                                                      sfcc.users.rw: Read and write access to user resources

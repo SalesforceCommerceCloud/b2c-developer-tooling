@@ -886,7 +886,7 @@ Under some conditions this method allowed a non-Base64 encrypted value for the s
       
       
       To import a private or public key into the Digital keystore, navigate to
-      **Administration > Operations > Private Keys and Certificates**
+      **Administration &gt; Operations &gt; Private Keys and Certificates**
       Use a .p12 file to import a private key and a \*.crt to import a public key.
       
       
@@ -1077,7 +1077,7 @@ Requires Base64-encryption for the salt parameter.
       
       
       To import a private or public key into the Digital keystore, navigate to
-      **Administration > Operations > Private Keys and Certificates**
+      **Administration &gt; Operations &gt; Private Keys and Certificates**
       Use a .p12 file to import a private key and a \*.crt to import a public key.
       
       

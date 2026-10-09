@@ -5,6 +5,9 @@
  */
 
 import {expect} from 'chai';
+import {mkdtempSync, mkdirSync, writeFileSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import {createDocsSearchTool} from '../../../src/tools/docs/docs-search.js';
@@ -34,6 +37,74 @@ function makeServices(): Services {
 
 describe('tools/docs', () => {
   const loadServices = () => makeServices();
+
+  describe('per-call project context', () => {
+    let root: string;
+    let next: string;
+    let pwa: string;
+
+    before(() => {
+      root = mkdtempSync(join(tmpdir(), 'b2c-docs-projects-'));
+      next = join(root, 'next');
+      pwa = join(root, 'pwa');
+      mkdirSync(next);
+      mkdirSync(pwa);
+      writeFileSync(
+        join(next, 'package.json'),
+        JSON.stringify({name: 'storefront-next-example', dependencies: {'@salesforce/storefront-next-dev': '1'}}),
+      );
+      writeFileSync(join(pwa, 'package.json'), JSON.stringify({dependencies: {'@salesforce/pwa-kit-react-sdk': '1'}}));
+    });
+
+    after(() => rmSync(root, {recursive: true, force: true}));
+
+    it('detects the supplied project independently for each search', async () => {
+      const search = createDocsSearchTool(loadServices);
+      const first = getResultJson<{workspace: string[]}>(
+        await search.handler({query: 'components', projectDirectory: next}),
+      );
+      const second = getResultJson<{workspace: string[]}>(
+        await search.handler({query: 'components', projectDirectory: pwa}),
+      );
+      const unscoped = getResultJson<{workspace?: string[]}>(await search.handler({query: 'components'}));
+      expect(first.workspace).to.deep.equal(['storefront-next']);
+      expect(second.workspace).to.deep.equal(['pwa-kit-v3']);
+      expect(unscoped.workspace).to.equal(undefined);
+    });
+
+    it('honors an explicit workspace preference and rejects relative project paths', async () => {
+      const search = createDocsSearchTool(loadServices);
+      const selected = getResultJson<{workspace: string[]}>(
+        await search.handler({query: 'components', projectDirectory: next, workspace: 'cartridges'}),
+      );
+      expect(selected.workspace).to.deep.equal(['cartridges']);
+      const unbiased = getResultJson<{workspace?: string[]}>(
+        await search.handler({query: 'components', projectDirectory: next, workspace: 'all'}),
+      );
+      expect(unbiased.workspace).to.equal(undefined);
+      expect((await search.handler({query: 'components', projectDirectory: './project'})).isError).to.equal(true);
+    });
+
+    it('keeps fuzzy reads aligned with search and preserves explicit category restrictions', async () => {
+      const search = createDocsSearchTool(loadServices);
+      const read = createDocsReadTool(loadServices);
+      const found = getResultJson<{results: {id: string}[]}>(
+        await search.handler({query: 'seo', projectDirectory: pwa, limit: 1}),
+      );
+      const content = getResultJson<{entry: {id: string}}>(
+        await read.handler({query: 'seo', projectDirectory: pwa, maxLength: 1}),
+      );
+      expect(content.entry.id).to.equal(found.results[0].id);
+      const list = createDocsListTool(loadServices, [], ['sfnext']);
+      const page = getResultJson<{entries: {category: string}[]}>(
+        await list.handler({projectDirectory: next, limit: 5}),
+      );
+      expect(page.entries.length).to.be.greaterThan(0);
+      expect(page.entries.every((entry) => entry.category === 'sfnext')).to.equal(true);
+      const restricted = getResultJson<{entries: unknown[]}>(await list.handler({projectDirectory: pwa, limit: 5}));
+      expect(restricted.entries).to.have.length(0);
+    });
+  });
 
   // Online-only guide entries (Developer Center corpus) are read via a live
   // fetch. Unit tests must never touch the network: an unbounded fetch to a
@@ -66,7 +137,15 @@ describe('tools/docs', () => {
 
     it('registers tools to all toolsets', () => {
       const [search] = createDocsTools(loadServices);
-      expect(search.toolsets).to.have.members(['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
+      expect(search.toolsets).to.have.members([
+        'CARTRIDGES',
+        'DIAGNOSTICS',
+        'MRT',
+        'PWAV3',
+        'SCAPI',
+        'STOREFRONTNEXT',
+        'CIP',
+      ]);
     });
 
     it('keeps every tool description concise even with all workspaces detected', () => {
@@ -132,21 +211,23 @@ describe('tools/docs', () => {
       expect(json.results.some((r) => r.id.includes('ProductMgr'))).to.be.true;
     });
 
-    it('returns lean results without keywords/url by default, verbose adds them', async () => {
+    it('returns lean results with url but without keywords/sourceUrl by default, verbose adds them', async () => {
       const tool = createDocsSearchTool(loadServices);
-      const lean = getResultJson<{results: Array<Record<string, unknown>>}>(
+      const lean = getResultJson<{citation: string; results: Array<Record<string, unknown>>}>(
         await tool.handler({query: 'passwordless login', limit: 3}),
       );
       expect(lean.results.length).to.be.greaterThan(0);
-      expect(lean.results.every((r) => !('keywords' in r) && !('url' in r))).to.be.true;
-      // Every result carries the triage fields.
+      expect(lean.results.every((r) => !('keywords' in r) && !('sourceUrl' in r))).to.be.true;
+      // Every result carries the triage fields, and a url to cite instead of the id.
       expect(lean.results.every((r) => 'id' in r && 'title' in r && 'score' in r)).to.be.true;
+      expect(lean.results.some((r) => typeof r.url === 'string')).to.be.true;
+      expect(lean.citation).to.match(/Never show doc ids/);
 
       const verbose = getResultJson<{results: Array<Record<string, unknown>>}>(
         await tool.handler({query: 'passwordless login', limit: 3, verbose: true}),
       );
-      // At least one verbose result exposes keywords or url (metadata present in the corpus).
-      expect(verbose.results.some((r) => 'keywords' in r || 'url' in r)).to.be.true;
+      // At least one verbose result exposes keywords or sourceUrl (metadata present in the corpus).
+      expect(verbose.results.some((r) => 'keywords' in r || 'sourceUrl' in r)).to.be.true;
     });
 
     it('defaults to a small result set when limit is omitted', async () => {
@@ -224,8 +305,9 @@ describe('tools/docs', () => {
       const tool = createDocsReadTool(loadServices);
       const result = await tool.handler({query: 'dw.catalog.ProductMgr'});
       expect(result.isError).to.be.undefined;
-      const json = getResultJson<{entry: {id: string}; content: string; totalLength: number}>(result);
+      const json = getResultJson<{citation: string; entry: {id: string}; content: string; totalLength: number}>(result);
       expect(json.entry.id).to.match(/ProductMgr/);
+      expect(json.citation).to.match(/Never show doc ids/);
       expect(json.content).to.be.a('string').and.have.length.greaterThan(0);
       expect(json.totalLength).to.be.a('number');
     });

@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {TOOLSETS} from '../../utils/constants.js';
 import {z} from 'zod';
 import {readSchemaByQuery, type SchemaEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool} from '../../utils/index.js';
@@ -24,10 +25,13 @@ export function createDocsSchemaReadTool(loadServices: () => Promise<Services> |
   return createToolAdapter<ReadInput, null | ReadOutput>(
     {
       name: 'docs_schema_read',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
       description:
         'Read a bundled B2C Commerce (SFCC/Demandware) XSD schema as XML by ID or fuzzy query. ' +
         'Use docs_schema_search to find IDs.',
-      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
+      toolsets: [...TOOLSETS],
       inputSchema: {
         query: z.string().min(1).describe('Schema name or partial match.'),
       },

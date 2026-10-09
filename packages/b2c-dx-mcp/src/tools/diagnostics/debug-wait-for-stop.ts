@@ -25,13 +25,7 @@ interface WaitForStopOutput {
   timed_out?: boolean;
   thread_id?: number;
   location?: MappedLocation;
-  hint?: string;
 }
-
-const TIMEOUT_HINT =
-  'Breakpoint not hit. First confirm the request actually exercised this code path and the breakpoint line is reachable. ' +
-  'In some production instance group configurations (which can run multiple app servers — this never applies to sandboxes), a breakpoint may be missed because the request landed on a different app server than the one holding the debug session. ' +
-  'Only in that specific case, retrieve session_cookie from debug_list_sessions and resend the triggering request with that cookie (Cookie: <name>=<value>) to pin it to the app server holding the session.';
 
 export function createDebugWaitForStopTool(
   loadServices: () => Promise<Services> | Services,
@@ -40,25 +34,28 @@ export function createDebugWaitForStopTool(
   return createToolAdapter<WaitForStopInput, WaitForStopOutput>(
     {
       name: 'debug_wait_for_stop',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'Wait for a debugger thread to halt. Returns immediately if already halted; otherwise blocks until a halt or timeout.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        session_id: z.string().describe('Session ID returned by debug_start_session.'),
+        session_id: z.string(),
         timeout_ms: z
           .number()
           .int()
           .positive()
           .max(MAX_TIMEOUT_MS)
           .optional()
-          .describe(`Timeout in milliseconds (default: ${DEFAULT_TIMEOUT_MS}, max: ${MAX_TIMEOUT_MS}).`),
+          .describe(`Wait timeout in milliseconds. Default: ${DEFAULT_TIMEOUT_MS}; max: ${MAX_TIMEOUT_MS}.`),
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);
         const timeout = Math.min(args.timeout_ms ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
 
         const thread = await getRegistry(context).waitForHalt(entry, timeout);
-        if (!thread) return {halted: false, timed_out: true, hint: TIMEOUT_HINT};
+        if (!thread) return {halted: false, timed_out: true};
 
         const location = projectThreadLocation(thread, entry.sourceMapper);
         return {

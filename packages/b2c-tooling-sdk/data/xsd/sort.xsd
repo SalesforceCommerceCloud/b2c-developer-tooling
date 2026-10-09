@@ -191,7 +191,15 @@
             <xsd:element name="description" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
         </xsd:sequence>
         <xsd:attribute name="option-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="search-type" type="SearchType" use="optional" />
     </xsd:complexType>
+
+    <xsd:simpleType name="SearchType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="standard" />
+            <xsd:enumeration value="agentic" />
+        </xsd:restriction>
+    </xsd:simpleType>
 
     <xsd:simpleType name="SortingDirection">
         <xsd:restriction base="xsd:string">
@@ -268,9 +276,18 @@
         </xsd:restriction>
     </xsd:simpleType>
 
+    <!-- Owning system object type for a boostable attribute. -->
+    <xsd:simpleType name="BoostableObjectType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="Product" />
+            <xsd:enumeration value="ProductActiveData" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
     <xsd:complexType name="BoostableAttribute">
         <xsd:attribute name="attribute-id" type="Generic.NonEmptyString.256" use="required" />
         <xsd:attribute name="system" type="xsd:boolean" use="required" />
+        <xsd:attribute name="object-type" type="BoostableObjectType" use="optional" default="Product" />
         <xsd:attribute name="mode" type="ImportMode" use="optional" />
     </xsd:complexType>
 

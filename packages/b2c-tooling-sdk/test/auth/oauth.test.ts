@@ -54,6 +54,30 @@ describe('auth/oauth', () => {
   });
 
   describe('OAuthStrategy', () => {
+    it('propagates request cancellation through token acquisition', async () => {
+      const controller = new AbortController();
+      let apiCalls = 0;
+      server.use(
+        http.post(AM_URL, () => {
+          controller.abort(new Error('cancel token acquisition'));
+          return HttpResponse.json({access_token: 'late-token', token_type: 'Bearer', expires_in: 3600});
+        }),
+        http.get(TEST_API_URL, () => {
+          apiCalls++;
+          return HttpResponse.json({ok: true});
+        }),
+      );
+      const strategy = new OAuthStrategy({clientId: 'test-client', clientSecret: 'test-secret'});
+      let error;
+      try {
+        await strategy.fetch(TEST_API_URL, {signal: controller.signal});
+      } catch (caught) {
+        error = caught;
+      }
+      expect(error).to.be.instanceOf(Error);
+      expect(apiCalls).to.equal(0);
+    });
+
     describe('constructor', () => {
       it('should create strategy with default account manager host', () => {
         const strategy = new OAuthStrategy({
@@ -121,6 +145,50 @@ describe('auth/oauth', () => {
 
         const expected = `Basic ${Buffer.from('client%2Bid:Xy9%2BKq2z').toString('base64')}`;
         expect(capturedAuth).to.equal(expected);
+      });
+
+      it('sends a sandbox credential placeholder in an unencoded Basic header', async () => {
+        const clientSecret = 'openshell:resolve:env:v1_SFCC_CLIENT_SECRET';
+        let capturedAuth: null | string = null;
+
+        server.use(
+          http.post(AM_URL, ({request}) => {
+            capturedAuth = request.headers.get('Authorization');
+            return HttpResponse.json({access_token: createMockJWT({sub: 'test-client'}), expires_in: 1800});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({clientId: 'test-client', clientSecret});
+        await strategy.getTokenResponse();
+
+        expect(capturedAuth).to.equal(`Basic ${Buffer.from(`test-client:${clientSecret}`).toString('base64')}`);
+      });
+
+      it('sends credentials in the body when clientAuthMethod is body', async () => {
+        let capturedAuth: null | string = 'unset';
+        let capturedBody: URLSearchParams | undefined;
+
+        server.use(
+          http.post(AM_URL, async ({request}) => {
+            capturedAuth = request.headers.get('Authorization');
+            capturedBody = new URLSearchParams(await request.text());
+            return HttpResponse.json({access_token: createMockJWT({sub: 'test-client-body'}), expires_in: 1800});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-body',
+          clientSecret: 'Xy9+Kq2z',
+          scopes: ['sfcc.products'],
+          clientAuthMethod: 'body',
+        });
+        await strategy.getTokenResponse();
+
+        expect(capturedAuth).to.equal(null);
+        expect(capturedBody?.get('grant_type')).to.equal('client_credentials');
+        expect(capturedBody?.get('client_id')).to.equal('test-client-body');
+        expect(capturedBody?.get('client_secret')).to.equal('Xy9+Kq2z');
+        expect(capturedBody?.get('scope')).to.equal('sfcc.products');
       });
 
       it('should handle token request without scopes', async () => {
@@ -479,6 +547,191 @@ describe('auth/oauth', () => {
         // The new strategy should preserve the custom host
         // We can't directly access private fields, but we can verify it's a valid strategy
         expect(extended).to.be.instanceOf(OAuthStrategy);
+      });
+    });
+
+    describe('getAccessTokenForCascade', () => {
+      it('returns the first candidate that AM accepts', async () => {
+        const mockToken = createMockJWT({sub: 'test-client-cascade-1'});
+        let lastRequestedScope: string | null = null;
+
+        server.use(
+          http.post(AM_URL, async ({request}) => {
+            const body = await request.text();
+            const params = new URLSearchParams(body);
+            lastRequestedScope = params.get('scope');
+            // Reject anything containing the rw scope; accept the read-only
+            // candidate.
+            if (lastRequestedScope?.includes('sfcc.jobs.rw')) {
+              return HttpResponse.json({error: 'invalid_scope'}, {status: 400});
+            }
+            return HttpResponse.json({
+              access_token: mockToken,
+              expires_in: 1800,
+              scope: lastRequestedScope ?? '',
+            });
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-1',
+          clientSecret: 'test-secret',
+        });
+
+        const token = await strategy.getAccessTokenForCascade([['sfcc.jobs.rw'], ['sfcc.jobs']]);
+
+        expect(token).to.equal(mockToken);
+        // Last successful AM call should have used the read-only candidate.
+        expect(lastRequestedScope).to.equal('sfcc.jobs');
+      });
+
+      it('returns a cached broader-scope token without hitting AM', async () => {
+        // Pre-warm: first call grants rw.
+        const rwToken = createMockJWT({sub: 'test-client-cascade-2'});
+        let amCallCount = 0;
+
+        server.use(
+          http.post(AM_URL, async () => {
+            amCallCount++;
+            return HttpResponse.json({
+              access_token: rwToken,
+              expires_in: 1800,
+              scope: 'sfcc.jobs.rw',
+            });
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-2',
+          clientSecret: 'test-secret',
+        });
+
+        // First request: cascade tries rw, AM grants it. amCallCount = 1.
+        await strategy.getAccessTokenForCascade([['sfcc.jobs.rw']]);
+        expect(amCallCount).to.equal(1);
+
+        // Second request: read-only cascade. The cached rw token's scopes
+        // include 'sfcc.jobs.rw' — should it satisfy a request for ['sfcc.jobs']?
+        // Per design: the satisfies-check looks for tokens whose scopes ⊇
+        // the requested set. 'sfcc.jobs' is NOT in the rw token's scopes,
+        // so it does not satisfy. AM gets called again. This test confirms
+        // that hierarchical scope semantics are NOT inferred — caches are
+        // exact-set matches.
+        await strategy.getAccessTokenForCascade([['sfcc.jobs']]);
+        expect(amCallCount).to.equal(2);
+      });
+
+      it('reuses cached token when a candidate exactly matches', async () => {
+        const mockToken = createMockJWT({sub: 'test-client-cascade-3'});
+        let amCallCount = 0;
+
+        server.use(
+          http.post(AM_URL, async () => {
+            amCallCount++;
+            return HttpResponse.json({
+              access_token: mockToken,
+              expires_in: 1800,
+              scope: 'sfcc.jobs',
+            });
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-3',
+          clientSecret: 'test-secret',
+        });
+
+        await strategy.getAccessTokenForCascade([['sfcc.jobs']]);
+        await strategy.getAccessTokenForCascade([['sfcc.jobs']]);
+
+        // Second call should hit cache.
+        expect(amCallCount).to.equal(1);
+      });
+
+      it('throws the last invalid_scope when all candidates fail', async () => {
+        server.use(
+          http.post(AM_URL, async () => {
+            return HttpResponse.json({error: 'invalid_scope'}, {status: 400});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-4',
+          clientSecret: 'test-secret',
+        });
+
+        try {
+          await strategy.getAccessTokenForCascade([['sfcc.jobs.rw'], ['sfcc.jobs']]);
+          expect.fail('should have thrown');
+        } catch (error) {
+          expect((error as Error).message).to.include('invalid_scope');
+        }
+      });
+
+      it('rethrows non-invalid_scope errors without trying further candidates', async () => {
+        let amCallCount = 0;
+        server.use(
+          http.post(AM_URL, async () => {
+            amCallCount++;
+            return HttpResponse.json({error: 'invalid_client'}, {status: 401});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-5',
+          clientSecret: 'test-secret',
+        });
+
+        try {
+          await strategy.getAccessTokenForCascade([['sfcc.jobs.rw'], ['sfcc.jobs']]);
+          expect.fail('should have thrown');
+        } catch {
+          // expected
+        }
+        // Should not have tried the second candidate.
+        expect(amCallCount).to.equal(1);
+      });
+
+      // Regression: invalidateToken() must evict cascade tokens (cached under a
+      // MERGED-scope key), not just the strategy's base-scope key. Otherwise a
+      // 401 retry re-uses the rejected token from the cascade cache scan.
+      it('invalidateToken() evicts a merged cascade token so the next request re-fetches', async () => {
+        const tokenA = createMockJWT({sub: 'cascade-invalidate', v: 'A'});
+        const tokenB = createMockJWT({sub: 'cascade-invalidate', v: 'B'});
+        let amCallCount = 0;
+
+        server.use(
+          http.post(AM_URL, async () => {
+            amCallCount++;
+            return HttpResponse.json({
+              access_token: amCallCount === 1 ? tokenA : tokenB,
+              expires_in: 1800,
+              scope: 'sfcc.jobs.rw',
+            });
+          }),
+        );
+
+        // Base scopes are the tenant scope only; the cascade merges in the rw
+        // scope, so the resulting token is cached under a DIFFERENT key than
+        // the strategy's base cacheKey.
+        const strategy = new OAuthStrategy({
+          clientId: 'cascade-invalidate',
+          clientSecret: 'test-secret',
+          scopes: ['SALESFORCE_COMMERCE_API:zzxy_prd'],
+        });
+
+        const first = await strategy.getAccessTokenForCascade([['sfcc.jobs.rw']]);
+        expect(first).to.equal(tokenA);
+        expect(amCallCount).to.equal(1);
+
+        // Simulate the middleware's 401 handling.
+        strategy.invalidateToken();
+
+        // The retry must NOT reuse tokenA from the cache scan — it must re-hit AM.
+        const second = await strategy.getAccessTokenForCascade([['sfcc.jobs.rw']]);
+        expect(amCallCount).to.equal(2);
+        expect(second).to.equal(tokenB);
+        expect(second).to.not.equal(first);
       });
     });
   });

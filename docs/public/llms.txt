@@ -1,0 +1,202 @@
+# Agentic B2C Developer Toolkit
+
+> Official Salesforce B2C Commerce CLI, MCP server, IDE extension, and agent skills for building storefronts, debugging, deploying, and managing sites.
+
+## Install or run the CLI
+
+Run without a global installation:
+
+```sh
+npx --yes @salesforce/b2c-cli@latest --help
+npx --yes @salesforce/b2c-cli@latest docs search "cartridge deployment" --limit 5
+```
+
+For a persistent installation:
+
+```sh
+npm install -g @salesforce/b2c-cli@latest
+b2c --help
+```
+
+Use the installed `b2c` command when available; otherwise prefix commands with
+`npx --yes @salesforce/b2c-cli@latest`. Read `<command> --help` for current flags.
+Use `--json` where supported for structured output. Follow existing project
+version constraints; use `@latest` for a new installation rather than a memorized version.
+
+## Connect the MCP
+
+Use the existing B2C MCP connection when available. For a new connection, prefer
+the plugin on compatible clients:
+
+- Marketplace source: `SalesforceCommerceCloud/b2c-developer-tooling`
+- Marketplace name: `b2c-developer-tooling`
+- Plugin: `b2c-dx-mcp`
+
+The plugins use the open [Agent Plugins standard](https://agent-plugins.org/).
+For manual setup, configure a local stdio MCP server with:
+
+```json
+{
+  "command": "npx",
+  "args": ["-y", "@salesforce/b2c-dx-mcp@latest"]
+}
+```
+
+The default server includes all toolsets. It provides documentation and skills,
+cartridge and Managed Runtime deployment, debugging, logs, and SCAPI code mode
+for B2C Commerce data and operations. See [MCP setup](mcp/index.md) for installation.
+
+## Configuration
+
+The CLI, MCP, and IDE extension share `dw.json` and `.env` configuration.
+Both a regular single-instance `dw.json` and named multi-instance configurations
+are supported.
+Inspect existing settings with `b2c setup inspect --json` or MCP `config_inspect`;
+secrets are masked by default. Use configured values rather than guessing targets.
+If the intended instance or required settings cannot be determined, ask the user.
+If they want to save configuration, guide them through `b2c setup instance create`
+or creating a project `dw.json` or `.env` using the examples below and the
+[Configuration guide](guide/configuration.md).
+Use the [Authentication guide](guide/authentication.md) and its official setup
+links to help the user obtain and configure credentials, roles, and scopes in
+Business Manager and Account Manager, or through supported
+[CLI commands](cli/account-manager.md).
+
+A regular project `dw.json` uses instance settings at the top level. These examples
+use illustrative instance hostnames, short codes, and tenant IDs; replace them and
+the credential placeholders with the user's actual values:
+
+```json
+{
+  "hostname": "abcd-001.dx.commercecloud.salesforce.com",
+  "codeVersion": "version1",
+  "username": "username@example.com",
+  "password": "your-webdav-access-key",
+  "clientId": "your-client-id",
+  "clientSecret": "your-client-secret",
+  "shortCode": "abcd1234",
+  "tenantId": "abcd_001"
+}
+```
+
+For multiple instances, use a `configs` array of complete named entries:
+
+```json
+{
+  "configs": [
+    {
+      "name": "sandbox",
+      "active": true,
+      "hostname": "abcd-001.dx.commercecloud.salesforce.com",
+      "codeVersion": "version1",
+      "username": "username@example.com",
+      "password": "your-webdav-access-key",
+      "clientId": "your-client-id",
+      "clientSecret": "your-client-secret",
+      "shortCode": "abcd1234",
+      "tenantId": "abcd_001"
+    },
+    {
+      "name": "dev",
+      "hostname": "development-eu01-example.demandware.net",
+      "codeVersion": "version1",
+      "clientId": "your-client-id",
+      "clientSecret": "your-client-secret",
+      "shortCode": "abcd1234",
+      "tenantId": "abcd_dev"
+    }
+  ]
+}
+```
+
+The sandbox examples include WebDAV user access and OAuth. `password` is usually
+a WebDAV access key; see [WebDAV Access](guide/authentication.md#webdav-access).
+The `dev` entry demonstrates OAuth-only access.
+
+`active: true` makes `sandbox` the default. Select `dev` per CLI command with `-i dev`,
+or per configuration-aware MCP call with `instanceName: "dev"`. Run CLI commands
+from the project; pass its absolute `projectDirectory` to project-aware MCP tools.
+
+Alternatively, the equivalent settings for the `sandbox` target in a project `.env` are:
+
+```dotenv
+SFCC_SERVER=abcd-001.dx.commercecloud.salesforce.com
+SFCC_CODE_VERSION=version1
+SFCC_USERNAME=username@example.com
+SFCC_PASSWORD=your-webdav-access-key
+SFCC_CLIENT_ID=your-client-id
+SFCC_CLIENT_SECRET=your-client-secret
+SFCC_SHORTCODE=abcd1234
+SFCC_TENANT_ID=abcd_001
+```
+
+For named-instance selection through `.env`, use `SFCC_INSTANCE=dev` with
+`dw.json` instead of setting target values individually. Explicit `SFCC_*` values
+override the selected entry. Keep credential files out of version control.
+See [Configuration](guide/configuration.md) for multi-instance selection, global
+defaults, and precedence; [Authentication](guide/authentication.md) covers scopes,
+WebDAV credentials, SLAS, and Managed Runtime access.
+
+Share instances across projects with a [global dw.json](guide/configuration.md#global-default-configuration),
+set using `b2c setup default-config set /path/to/dw.json`.
+CLI configuration plugins support [macOS Keychain](guide/third-party-plugins.md#macos-keychain-plugin)
+and [GPG-encrypted pass](guide/third-party-plugins.md#password-store-plugin)
+as alternatives to storing credentials in plaintext files.
+
+## Use the installed tools
+
+- Documentation: CLI `b2c docs search`, `b2c docs read`, and `b2c docs schema`;
+  MCP `docs_search`, `docs_read`, and `docs_schema_*`. Search platform references,
+  guides, Salesforce Help, and toolkit docs; read relevant results as needed.
+- Skills: MCP `skills_read` finds and reads B2C Commerce, B2C CLI, b2c-ops runbooks, Storefront Next,
+  and MCP workflow guidance. Read applicable MCP skills before complex tool use.
+- B2C Commerce APIs: prefer a dedicated MCP tool when one covers the task.
+  Otherwise, `scapi_search` and `scapi_execute` support Admin API workflows across
+  nearly 600 discoverable Admin and Shopper operations. Shopper APIs are currently
+  reference-only. Follow the SCAPI skill for discovery, execution, and compact results.
+
+Documentation and skills need no B2C Commerce credentials. Connected operations
+use existing project configuration, account permissions, and Safety Mode settings.
+See configuration and authentication references before requesting missing setup.
+
+## Install skills directly
+
+The MCP exposes guidance from `b2c`, `b2c-cli`, and `storefront-next` through
+`skills_read`; no separate skills installation is needed. These collections can
+also be installed as skills plugins alongside the MCP or on their own. Use the
+same marketplace and choose the collection's plugin name.
+
+For assistants that read `.agents/skills/`, install into the project with:
+
+```sh
+npx --yes @salesforce/b2c-cli@latest setup skills b2c --ide manual
+npx --yes @salesforce/b2c-cli@latest setup skills b2c-cli --ide manual
+# Optional for Storefront Next projects:
+npx --yes @salesforce/b2c-cli@latest setup skills storefront-next --ide manual
+```
+
+Manually installed skills do not auto-update. Rerun with `--update` to refresh.
+
+## Markdown references
+
+Prefer the Markdown versions linked here. For other pages, replace `.html` with
+`.md`; directory pages use `index.md` (for example, `mcp/` becomes `mcp/index.md`).
+Each page also exposes a "View as Markdown" link and an HTML
+`rel="alternate"` link with `type="text/markdown"`. Links below are relative to
+this file, so they stay within the current documentation version.
+
+- [CLI installation](guide/installation.md): Requirements and package-manager setup.
+- [CLI commands](cli/index.md): Available command groups.
+- [Documentation commands](cli/docs.md): Search, read, and schema lookup.
+- [Configuration](guide/configuration.md): Single- and multi-instance dw.json files, environment variables, and shared defaults.
+- [Authentication](guide/authentication.md): WebDAV, OAuth scopes, SLAS, and Managed Runtime access.
+- [Safety Mode](guide/safety.md): Restrict operations and configure exceptions.
+- [MCP setup](mcp/index.md): Capabilities and installation options.
+- [MCP tools](mcp/toolsets.md): Tool names, capabilities, access, and current limits.
+- [MCP configuration](mcp/configuration.md): Tool selection and server-specific settings.
+- [MCP security](mcp/security.md): Approvals, credentials, data handling, and code mode access.
+- [Agent Skills](guide/agent-skills.md): Collections and standalone installation.
+- [Operations](guide/operations.md): Job health, checkout incidents, and administrator/developer/Support handoffs; use the b2c-ops runbooks for these tasks.
+- [Task guides](guide/workflows.md): Development, administration, and merchandising workflows.
+- [IDE Extension](vscode-extension/index.md): VS Code-compatible editors and installation links.
+- [TypeScript SDK](api/index.md): Build new tooling and inspect the shared behavior behind the official CLI, MCP, and IDE extension.

@@ -9,6 +9,6 @@ export const config: MrtServerConfig = {
   ssrOnly: ['ssr.js', 'loader.js', 'package.json', 'views/layout.html'],
   ssrShared: [],
   ssrParameters: {
-    ssrFunctionNodeVersion: '24.x',
+    SSRFunctionNodeVersion: '24.x',
   },
 };

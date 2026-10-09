@@ -4,7 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {B2CInstance} from '../../instance/index.js';
-import {getApiErrorMessage, type OcapiComponents} from '../../clients/index.js';
+import {type OcapiComponents} from '../../clients/index.js';
+import {throwOcapiError} from '../../clients/error-utils.js';
+import {SCAPI_SCRIPTS_READ_SCOPES, SCAPI_SCRIPTS_RW_SCOPES} from '../../clients/scapi-scripts.js';
 import {getLogger} from '../../logging/logger.js';
 
 /** Code version type from OCAPI */
@@ -52,10 +54,13 @@ function isAlreadyActiveFault(error: unknown, status: number, codeVersionId: str
  * ```
  */
 export async function listCodeVersions(instance: B2CInstance): Promise<CodeVersion[]> {
-  const {data, error} = await instance.ocapi.GET('/code_versions', {});
+  const {data, error, response} = await instance.ocapi.GET('/code_versions', {});
 
   if (error) {
-    throw new Error('Failed to list code versions', {cause: error});
+    throwOcapiError(error, response, 'Failed to list code versions', [
+      ...SCAPI_SCRIPTS_READ_SCOPES,
+      ...SCAPI_SCRIPTS_RW_SCOPES,
+    ]);
   }
 
   return (data as CodeVersionResult).data ?? [];
@@ -109,65 +114,18 @@ export async function activateCodeVersion(
   });
 
   if (error) {
+    // Activating the current active version is an idempotent success.
     if (isAlreadyActiveFault(error, response.status, codeVersionId)) {
       logger.debug({codeVersionId}, `Code version ${codeVersionId} is already active`);
       return {alreadyActive: true};
     }
-    throw new Error(`Could not activate code version "${codeVersionId}": ${getApiErrorMessage(error, response)}`, {
-      cause: error,
-    });
+    // Deprecation-aware: names the SCAPI scope on OCAPI-disabled instances,
+    // otherwise throws a rich message via getApiErrorMessage.
+    throwOcapiError(error, response, `Could not activate code version "${codeVersionId}"`, SCAPI_SCRIPTS_RW_SCOPES);
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} activated`);
   return {alreadyActive: false};
-}
-
-/**
- * Reloads (re-activates) the current code version.
- *
- * This performs a "toggle" activation - first activating a different code version,
- * then re-activating the target version. This forces the instance to reload the code.
- *
- * @param instance - B2C instance
- * @param codeVersionId - Code version to reload (defaults to current active)
- * @throws Error if reload fails or no alternate version is available
- *
- * @example
- * ```typescript
- * // Reload the currently active code version
- * await reloadCodeVersion(instance);
- *
- * // Reload a specific code version
- * await reloadCodeVersion(instance, 'v1');
- * ```
- */
-export async function reloadCodeVersion(instance: B2CInstance, codeVersionId?: string): Promise<void> {
-  const logger = getLogger();
-  const versions = await listCodeVersions(instance);
-
-  const activeVersion = versions.find((v) => v.active);
-  const targetVersion = codeVersionId ?? activeVersion?.id;
-
-  if (!targetVersion) {
-    throw new Error('No code version specified and no active version found');
-  }
-
-  logger.debug({codeVersionId: targetVersion}, `Reloading code version ${targetVersion}`);
-
-  // If the target is already active, we need to toggle to another version first
-  if (activeVersion?.id === targetVersion) {
-    const alternateVersion = versions.find((v) => v.id !== targetVersion);
-    if (!alternateVersion) {
-      throw new Error('Cannot reload: no alternate code version available for toggle');
-    }
-
-    logger.debug({codeVersionId: alternateVersion.id}, `Temporarily activating ${alternateVersion.id}`);
-    await activateCodeVersion(instance, alternateVersion.id!);
-  }
-
-  // Now activate the target version
-  await activateCodeVersion(instance, targetVersion);
-  logger.debug({codeVersionId: targetVersion}, `Code version ${targetVersion} reloaded`);
 }
 
 /**
@@ -188,12 +146,12 @@ export async function deleteCodeVersion(instance: B2CInstance, codeVersionId: st
   const logger = getLogger();
   logger.debug({codeVersionId}, `Deleting code version ${codeVersionId}`);
 
-  const {error} = await instance.ocapi.DELETE('/code_versions/{code_version_id}', {
+  const {error, response} = await instance.ocapi.DELETE('/code_versions/{code_version_id}', {
     params: {path: {code_version_id: codeVersionId}},
   });
 
   if (error) {
-    throw new Error('Failed to delete code version', {cause: error});
+    throwOcapiError(error, response, 'Failed to delete code version', SCAPI_SCRIPTS_RW_SCOPES);
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} deleted`);
@@ -217,12 +175,12 @@ export async function createCodeVersion(instance: B2CInstance, codeVersionId: st
   const logger = getLogger();
   logger.debug({codeVersionId}, `Creating code version ${codeVersionId}`);
 
-  const {error} = await instance.ocapi.PUT('/code_versions/{code_version_id}', {
+  const {error, response} = await instance.ocapi.PUT('/code_versions/{code_version_id}', {
     params: {path: {code_version_id: codeVersionId}},
   });
 
   if (error) {
-    throw new Error('Failed to create code version', {cause: error});
+    throwOcapiError(error, response, 'Failed to create code version', SCAPI_SCRIPTS_RW_SCOPES);
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} created`);

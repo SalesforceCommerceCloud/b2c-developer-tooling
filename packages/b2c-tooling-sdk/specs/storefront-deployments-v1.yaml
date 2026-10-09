@@ -1,0 +1,630 @@
+openapi: "3.0.3"
+# ---------------------------------------------------------------------------
+# SCAPI MRT Storefront Deployments API (v1) — self-contained bundle.
+#
+# Source of truth: git.soma.salesforce.com/cc-mercury-api/storefront-oas
+#   deployments-oas/v1/api_spec/src/deployments.yaml  (info.version 1.0.5)
+#
+# The upstream source is a multi-file spec whose $refs resolve component files
+# under src/components/ plus a build-time `dependencies/commerce-cloud-standards-oas`
+# folder (populated by the redocly/maven build, not committed to git). That tree
+# is not directly consumable by openapi-typescript, and every other spec in this
+# repo is a single self-contained file, so this file inlines the referenced
+# components: the standard SCAPI `organizationId` parameter, `PaginatedResultBase`,
+# and the RFC 7807 `ErrorResponse` envelope. Vendored `examples` were dropped
+# (they don't affect generated types). When bumping to a newer upstream version,
+# re-bundle from the same source path.
+#
+# Modified from upstream: upstream declares list pagination via the
+# `x-scapi-pagination` vendor extension, which openapi-typescript ignores. To get
+# typed `limit`/`offset` query params on the generated client, that extension is
+# materialized here into explicit `limit`/`offset` parameters (same bounds:
+# maxLimit 200, defaultSize 25) — matching how the other SCAPI specs in this repo
+# are vendored (e.g. merchant-roles-v1.yaml).
+# ---------------------------------------------------------------------------
+info:
+  x-api-type: Admin
+  x-api-family: Storefront
+  title: Deployments
+  version: 1.0.5
+  description: >-
+    SCAPI Managed Runtime Storefront Deployments API. List and upload bundles for
+    a storefront, and list, create, and track deployments to an environment.
+servers:
+  - url: "https://{shortCode}.api.commercecloud.salesforce.com/storefront/deployments/v1"
+    variables:
+      shortCode:
+        default: "123456gf"
+paths:
+  /organizations/{organizationId}/storefronts/{storefrontId}/bundles:
+    get:
+      summary: Get bundles for a storefront.
+      description: Retrieves a paginated list of bundles uploaded to the specified storefront.
+      operationId: getBundlesForStorefront
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: List of bundles successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BundleResult"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.deployments"
+            - "sfcc.storefront.deployments.rw"
+    post:
+      summary: Upload a bundle for a storefront.
+      description: >-
+        Uploads a bundle archive (uncompressed or gzip-compressed .tar file), which
+        must not exceed 400 MB. Bundle configuration is derived from a configuration
+        file inside the archive. Sent as `multipart/form-data`: the archive travels in
+        the `bundle` part, with the remaining request metadata as sibling form fields.
+      operationId: uploadBundleForStorefront
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/BundleUploadRequest"
+      responses:
+        "201":
+          description: Bundle successfully uploaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BundleUploadResponse"
+        "400":
+          $ref: "#/components/responses/400BadRequest"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.deployments.rw"
+  /organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/deployments:
+    get:
+      summary: Get deployments for an environment.
+      description: Retrieves a paginated list of deployments for the specified environment.
+      operationId: getDeploymentsForEnvironment
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/environmentId"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: List of deployments successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentResult"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.deployments"
+            - "sfcc.storefront.deployments.rw"
+    post:
+      summary: Create a deployment for an environment.
+      description: >-
+        Triggers a new deployment of a bundle to the specified environment. Returns
+        immediately with a deployment resource in a queued status. Poll the deployment
+        by ID to track progress.
+      operationId: createDeploymentForEnvironment
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/environmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeploymentCreateRequest"
+      responses:
+        "202":
+          description: Deployment successfully queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          $ref: "#/components/responses/400BadRequest"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+        "409":
+          $ref: "#/components/responses/409Conflict"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.deployments.rw"
+  /organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/deployments/{deploymentId}:
+    get:
+      summary: Get a deployment by ID.
+      description: Retrieves the details of a specific deployment, including its current status and progress.
+      operationId: getDeploymentById
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/environmentId"
+        - $ref: "#/components/parameters/deploymentId"
+      responses:
+        "200":
+          description: Deployment successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.deployments"
+            - "sfcc.storefront.deployments.rw"
+components:
+  securitySchemes:
+    AmOAuth2:
+      type: oauth2
+      description: AccountManager OAuth 2.0 bearer token Authentication.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            sfcc.storefront.deployments: Read-only access to the Deployments API.
+            sfcc.storefront.deployments.rw: Read and write access to the Deployments API.
+        authorizationCode:
+          authorizationUrl: https://account.demandware.com/dwsso/oauth2/authorize
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            sfcc.storefront.deployments: Read-only access to the Deployments API.
+            sfcc.storefront.deployments.rw: Read and write access to the Deployments API.
+  parameters:
+    # Standard SCAPI organization identifier (inlined from
+    # commerce-cloud-standards-oas). For B2C Commerce this is `f_ecom_<tenant>`.
+    organizationId:
+      name: organizationId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      description: The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 32
+    storefrontId:
+      name: storefrontId
+      in: path
+      required: true
+      description: >-
+        The storefront identifier. Must consist only of lowercase letters,
+        numbers, and hyphens, with no leading or trailing hyphens.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 20
+        pattern: "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+    environmentId:
+      name: environmentId
+      in: path
+      required: true
+      description: >-
+        The environment identifier. Must consist only of lowercase letters,
+        numbers, and hyphens, with no leading or trailing hyphens.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 19
+        pattern: "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+    deploymentId:
+      name: deploymentId
+      in: path
+      required: true
+      description: The deployment identifier.
+      schema:
+        type: string
+        format: uuid
+    # Added (not in upstream): explicit limit/offset query params materialized
+    # from the upstream `x-scapi-pagination` extension so openapi-typescript emits
+    # typed pagination params. See the modification note in the file header.
+    limit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of results to return per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 200
+        default: 25
+    offset:
+      name: offset
+      in: query
+      required: false
+      description: Number of results to skip before returning the page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+  responses:
+    401Unauthorized:
+      description: Your access token is invalid or expired and can't be used to identify a user.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    403Forbidden:
+      description: You aren't authorized to perform this action.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    400BadRequest:
+      description: The request was malformed or failed validation.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    404NotFound:
+      description: The requested resource was not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    409Conflict:
+      description: The request conflicts with the current state of the resource.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    # Standard SCAPI paginated result base (inlined from commerce-cloud-standards-oas).
+    PaginatedResultBase:
+      type: object
+      properties:
+        limit:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+        total:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      required:
+        - limit
+        - offset
+        - total
+    # Standard SCAPI RFC 7807 error envelope (inlined from commerce-cloud-standards-oas).
+    ErrorResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        title:
+          type: string
+          maxLength: 256
+        type:
+          type: string
+          maxLength: 2048
+        detail:
+          type: string
+        instance:
+          type: string
+          maxLength: 2048
+      required:
+        - detail
+        - title
+        - type
+    Bundle:
+      description: A versioned build artifact (SSR application package) uploaded to a storefront.
+      type: object
+      properties:
+        bundleId:
+          type: integer
+          format: int32
+          description: The unique identifier of the bundle.
+          example: 170
+        description:
+          type: string
+          description: A user-provided message describing the bundle.
+          maxLength: 2048
+          example: "my bundle"
+        status:
+          type: string
+          description: The processing status of the bundle.
+          enum:
+            - ok
+            - broken
+            - preparing
+          example: "ok"
+        lifecycleStatus:
+          type: string
+          description: The lifecycle status of the bundle.
+          enum:
+            - active
+            - cleanup_requested
+            - cleanup_in_progress
+            - cleanup_complete
+            - cleanup_failed
+          example: "active"
+        createdBy:
+          type: string
+          nullable: true
+          description: The email address of the user who uploaded the bundle. Null if no user is associated.
+          maxLength: 254
+          example: "dev@example.com"
+        creationDate:
+          type: string
+          format: date-time
+          description: The timestamp when the bundle was created.
+          example: "2026-04-08T21:47:28.188965Z"
+        lastModified:
+          type: string
+          format: date-time
+          description: The timestamp when the bundle was last modified.
+          example: "2026-04-08T21:47:31.307595Z"
+        type:
+          type: string
+          description: The bundle type.
+          enum:
+            - ssr
+            - legacy
+          example: "ssr"
+        ssrParameters:
+          type: object
+          nullable: true
+          description: SSR configuration parameters for this bundle. Null for non-SSR bundles.
+          properties:
+            runtime:
+              type: string
+              description: The Node.js runtime version used by this bundle.
+              maxLength: 256
+              example: "24.x"
+            runtimeDescription:
+              type: string
+              description: Human-readable description of the runtime version.
+              maxLength: 256
+              example: "NodeJS 24.x"
+            envBasePath:
+              type: string
+              description: The base path for the environment associated with this bundle.
+              maxLength: 256
+              example: "ca"
+        inUseBy:
+          type: array
+          description: List of environment identifiers where this bundle is currently deployed.
+          items:
+            type: string
+            maxLength: 256
+            example: "production"
+          example: ["production"]
+        streamingEnabled:
+          type: boolean
+          description: Whether streaming is enabled for this bundle.
+          example: false
+    BundleResult:
+      description: Paginated result containing a list of bundles.
+      allOf:
+        - $ref: "#/components/schemas/PaginatedResultBase"
+      required:
+        - data
+      properties:
+        data:
+          description: List of bundles.
+          type: array
+          items:
+            $ref: "#/components/schemas/Bundle"
+    BundleUploadResponse:
+      description: Response returned after a successful bundle upload.
+      type: object
+      properties:
+        bundleId:
+          type: integer
+          format: int32
+          description: The unique identifier of the uploaded bundle.
+          example: 170
+        warnings:
+          type: array
+          description: List of warnings generated during bundle processing.
+          items:
+            type: string
+            maxLength: 4000
+            example: "Deprecated runtime version detected"
+          example: []
+        matches:
+          type: object
+          description: File matching results from bundle analysis.
+          properties:
+            ssrOnly:
+              type: array
+              description: Files matched as SSR-only (server-side only).
+              items:
+                type: string
+                maxLength: 640
+                example: "ssr.js"
+              example: ["ssr.js"]
+            ssrShared:
+              type: array
+              description: Files matched as SSR-shared (used by both server and client).
+              items:
+                type: string
+                maxLength: 640
+                example: "shared.js"
+              example: ["shared.js"]
+    Deployment:
+      description: A deployment action that publishes a bundle to an environment.
+      type: object
+      properties:
+        deploymentId:
+          type: string
+          description: The unique identifier of the deployment, in UUID format.
+          minLength: 36
+          maxLength: 36
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          example: "b035a4d7-ec6b-4dcd-af8f-3a847b10fed8"
+        status:
+          type: string
+          description: The current status of the deployment.
+          enum:
+            - queued
+            - in_progress
+            - failed
+            - finished
+          example: "finished"
+        deploymentType:
+          type: string
+          description: The type of deployment.
+          enum:
+            - publish
+            - reset_bundle
+            - push
+            - deploy_settings
+            - redeploy
+          example: "publish"
+        creationDate:
+          type: string
+          format: date-time
+          description: The timestamp when the deployment was created.
+          example: "2026-04-08T21:47:31.322339Z"
+        lastModified:
+          type: string
+          format: date-time
+          description: The timestamp when the deployment was last modified.
+          example: "2026-04-08T21:51:55.692688Z"
+        duration:
+          type: number
+          format: double
+          nullable: true
+          description: The duration of the deployment in seconds. Null if the deployment has not finished.
+          example: 76.867967
+        createdBy:
+          type: string
+          nullable: true
+          description: The email address of the user who triggered the deployment. Null if no user is associated.
+          maxLength: 254
+          example: "dev@example.com"
+        statusMessage:
+          type: string
+          description: A human-readable message about the deployment's current state.
+          maxLength: 4096
+          example: "Queueing Bundle"
+        progress:
+          type: object
+          nullable: true
+          description: Progress information for the deployment. Null unless an external publish is in progress.
+          properties:
+            description:
+              type: string
+              nullable: true
+              description: A human-readable description of the current deployment stage.
+              maxLength: 128
+              example: "Updating CDN"
+            percentage:
+              type: integer
+              nullable: true
+              format: int32
+              description: Percentage of deployment completion.
+              minimum: 0
+              maximum: 100
+              example: 0
+        bundle:
+          $ref: "#/components/schemas/Bundle"
+    DeploymentResult:
+      description: Paginated result containing a list of deployments.
+      allOf:
+        - $ref: "#/components/schemas/PaginatedResultBase"
+      required:
+        - data
+      properties:
+        data:
+          description: List of deployments.
+          type: array
+          items:
+            $ref: "#/components/schemas/Deployment"
+    DeploymentCreateRequest:
+      description: Request body to create a new deployment.
+      type: object
+      required:
+        - bundleId
+      properties:
+        bundleId:
+          type: integer
+          format: int32
+          description: The identifier of the bundle to deploy.
+          example: 170
+    BundleUploadRequest:
+      description: >-
+        Request body to upload a bundle, sent as `multipart/form-data`. The archive
+        travels in the `bundle` part, with the remaining request metadata as sibling
+        form fields.
+      type: object
+      required:
+        - bundle
+      properties:
+        bundle:
+          type: string
+          format: binary
+          description: >-
+            Bundle archive (uncompressed or gzip-compressed .tar file). The uploaded
+            archive must not exceed 400 MB.
+        message:
+          type: string
+          maxLength: 2048
+          description: Bundle description (optional metadata).
+          example: "Release 2.1.0"
+        rootDir:
+          type: string
+          maxLength: 256
+          default: "bld"
+          description: >-
+            Root directory within bundle archive. Files in this directory are used for
+            server-side rendering, published as static assets, or both. Any files in the
+            bundle archive outside of this directory are ignored.
+          example: "bld"
+        configPath:
+          type: string
+          maxLength: 256
+          default: ".mrt/config.json"
+          description: Path (relative to root directory) of bundle configuration file.
+          example: ".mrt/config.json"
+        matchMode:
+          type: string
+          enum:
+            - strict
+            - ignore_missing
+          default: strict
+          description: >-
+            Determines how files in the bundle configuration are matched. If `strict`, all
+            files listed in `ssrOnly` and `ssrShared` fields in the bundle configuration must
+            be present. If `ignore_missing`, missing files in the `ssrOnly` and `ssrShared`
+            fields are ignored.
+          example: strict

@@ -13,10 +13,8 @@ import {ServerContext} from '../../../src/server-context.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import {createLogsListFilesTool} from '../../../src/tools/diagnostics/logs-list-files.js';
 import {createLogsGetRecentTool} from '../../../src/tools/diagnostics/logs-get-recent.js';
-import {createLogsWatchStartTool} from '../../../src/tools/diagnostics/logs-watch-start.js';
+import {createLogsWatchTool} from '../../../src/tools/diagnostics/logs-watch.js';
 import {createLogsWatchPollTool} from '../../../src/tools/diagnostics/logs-watch-poll.js';
-import {createLogsWatchStopTool} from '../../../src/tools/diagnostics/logs-watch-stop.js';
-import {createLogsWatchListTool} from '../../../src/tools/diagnostics/logs-watch-list.js';
 import type {ToolResult} from '../../../src/utils/index.js';
 
 function getResultJson<T>(result: ToolResult): T {
@@ -140,23 +138,23 @@ describe('tools/diagnostics/logs', () => {
     });
   });
 
-  describe('logs_watch_start / poll / stop / list', () => {
+  describe('logs_watch(action: start) / poll / stop / list', () => {
     /* eslint-disable camelcase */
-    it('logs_watch_start returns watch id and rejects duplicate', async () => {
+    it('logs_watch(action: start) returns watch id and rejects duplicate', async () => {
       const options: TailLogsOptions[] = [];
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         options.push(opts);
         return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
       });
 
-      const tool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      const result = await tool.handler({prefixes: ['error']});
+      const tool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const result = await tool.handler({action: 'start', prefixes: ['error']});
       expect(result.isError).to.be.undefined;
       const json = getResultJson<{hostname: string; watch_id: string}>(result);
       expect(json.hostname).to.equal('test.example.com');
       expect(json.watch_id).to.match(/^[\da-f-]{36}$/);
 
-      const dup = await tool.handler({});
+      const dup = await tool.handler({action: 'start'});
       expect(dup.isError).to.be.true;
       expect(getResultText(dup)).to.include('already exists');
     });
@@ -167,8 +165,8 @@ describe('tools/diagnostics/logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
       });
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      const startRes = await startTool.handler({});
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const startRes = await startTool.handler({action: 'start'});
       const {watch_id} = getResultJson<{watch_id: string}>(startRes);
 
       // Simulate the tail emitting an entry
@@ -188,8 +186,8 @@ describe('tools/diagnostics/logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
       });
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
       const pollTool = createLogsWatchPollTool(loadServices, serverContext);
       const pollPromise = pollTool.handler({watch_id, timeout_ms: 5000});
@@ -207,8 +205,8 @@ describe('tools/diagnostics/logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
       });
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
       onEntry!(makeEntry({message: 'a'}));
       onEntry!(makeEntry({message: 'b'}));
@@ -227,9 +225,9 @@ describe('tools/diagnostics/logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
       });
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
       const {watch_id} = getResultJson<{watch_id: string}>(
-        await startTool.handler({level: ['ERROR'], search: 'OrderMgr'}),
+        await startTool.handler({action: 'start', level: ['ERROR'], search: 'OrderMgr'}),
       );
 
       onEntry!(makeEntry({level: 'WARN', message: 'OrderMgr slow'})); // dropped (level)
@@ -243,32 +241,32 @@ describe('tools/diagnostics/logs', () => {
       expect(json.entries[0].message).to.equal('OrderMgr failed');
     });
 
-    it('logs_watch_stop calls stop and removes the watch', async () => {
+    it('logs_watch(action: stop) calls stop and removes the watch', async () => {
       const stop = sinon.stub().resolves();
       const tailLogsStub = sinon.stub().resolves({stop, files: [], entries: [], done: Promise.resolve()});
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
-      const stopTool = createLogsWatchStopTool(loadServices, serverContext);
-      const result = await stopTool.handler({watch_id});
+      const stopTool = createLogsWatchTool(loadServices, serverContext);
+      const result = await stopTool.handler({action: 'stop', watch_id});
       expect(result.isError).to.be.undefined;
       expect(stop.calledOnce).to.be.true;
       expect(serverContext.logWatches.getWatch(watch_id)).to.be.undefined;
     });
 
-    it('logs_watch_stop is idempotent (second stop returns success, not error)', async () => {
+    it('logs_watch(action: stop) is idempotent (second stop returns success, not error)', async () => {
       const stop = sinon.stub().resolves();
       const tailLogsStub = sinon.stub().resolves({stop, files: [], entries: [], done: Promise.resolve()});
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
-      const stopTool = createLogsWatchStopTool(loadServices, serverContext);
-      const first = await stopTool.handler({watch_id});
+      const stopTool = createLogsWatchTool(loadServices, serverContext);
+      const first = await stopTool.handler({action: 'stop', watch_id});
       expect(first.isError).to.be.undefined;
 
       // Second stop on an already-removed watch must NOT throw — the tool
       // documents idempotency, so it returns a success payload with stopped_at.
-      const second = await stopTool.handler({watch_id});
+      const second = await stopTool.handler({action: 'stop', watch_id});
       expect(second.isError).to.be.undefined;
       const json = getResultJson<{stopped_at: string; total_entries_seen: number; watch_id: string}>(second);
       expect(json.watch_id).to.equal(watch_id);
@@ -276,19 +274,19 @@ describe('tools/diagnostics/logs', () => {
       expect(stop.calledOnce).to.be.true; // underlying tail stopped only once
     });
 
-    it('logs_watch_start defaults last_entries to 0 (captures only new entries)', async () => {
+    it('logs_watch(action: start) defaults last_entries to 0 (captures only new entries)', async () => {
       const options: TailLogsOptions[] = [];
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         options.push(opts);
         return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
       });
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      await startTool.handler({});
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      await startTool.handler({action: 'start'});
       expect(options[0].lastEntries).to.equal(0);
 
       // Explicit value is still honored.
       await serverContext.logWatches.destroyAll();
-      await startTool.handler({last_entries: 5});
+      await startTool.handler({action: 'start', last_entries: 5});
       expect(options[1].lastEntries).to.equal(5);
     });
 
@@ -300,8 +298,8 @@ describe('tools/diagnostics/logs', () => {
         onFileRotated = opts.onFileRotated;
         return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
       });
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
       onError!(new Error('tail blew up'));
       onFileRotated!(makeFile('error-rotated.log'));
@@ -329,8 +327,8 @@ describe('tools/diagnostics/logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
       });
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({}));
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
       // Force eviction by overflowing the buffer cap.
       const watch = serverContext.logWatches.getWatch(watch_id)!;
@@ -347,7 +345,7 @@ describe('tools/diagnostics/logs', () => {
       expect(second.dropped_entries).to.equal(0);
     });
 
-    it('logs_watch_start stops the orphaned tail if registration loses a hostname race', async () => {
+    it('logs_watch(action: start) stops the orphaned tail if registration loses a hostname race', async () => {
       // Simulate a concurrent start winning the race DURING the tailLogs await:
       // the stub registers a competing watch for the same hostname before it
       // resolves, so the early findByHostname check passes but registerWatch
@@ -361,8 +359,8 @@ describe('tools/diagnostics/logs', () => {
         });
         return Promise.resolve({stop: racedStop, files: [], entries: [], done: Promise.resolve()});
       });
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      const result = await startTool.handler({});
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const result = await startTool.handler({action: 'start'});
 
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('already exists');
@@ -370,15 +368,15 @@ describe('tools/diagnostics/logs', () => {
       expect(racedStop.calledOnce).to.be.true;
     });
 
-    it('logs_watch_list returns active watches', async () => {
+    it('logs_watch(action: list) returns active watches', async () => {
       const tailLogsStub = sinon
         .stub()
         .resolves({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
-      const startTool = createLogsWatchStartTool(loadServices, serverContext, {tailLogs: tailLogsStub});
-      await startTool.handler({prefixes: ['error']});
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      await startTool.handler({action: 'start', prefixes: ['error']});
 
-      const listTool = createLogsWatchListTool(loadServices, serverContext);
-      const result = await listTool.handler({});
+      const listTool = createLogsWatchTool(loadServices, serverContext);
+      const result = await listTool.handler({action: 'list'});
       const json = getResultJson<{
         watches: Array<{
           hostname: string;

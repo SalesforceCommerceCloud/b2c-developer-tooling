@@ -48,6 +48,7 @@ describe('cli/webdav-command', () => {
       expect(WEBDAV_ROOTS.CATALOGS).to.equal('Catalogs');
       expect(WEBDAV_ROOTS.LIBRARIES).to.equal('Libraries');
       expect(WEBDAV_ROOTS.STATIC).to.equal('Static');
+      expect(WEBDAV_ROOTS.DYNAMIC).to.equal('Dynamic');
       expect(WEBDAV_ROOTS.LOGS).to.equal('Logs');
       expect(WEBDAV_ROOTS.SECURITYLOGS).to.equal('Securitylogs');
     });
@@ -71,6 +72,15 @@ describe('cli/webdav-command', () => {
     });
 
     describe('buildPath', () => {
+      it('accepts --root=dynamic and preserves the site ID in the remote path', async () => {
+        command = new TestWebDavCommand(['--root=dynamic'], config);
+        await command.init();
+
+        expect(command.testBuildPath('MySite/mockData/mock.vm')).to.equal('Dynamic/MySite/mockData/mock.vm');
+        expect(command.testBuildPath('/MySite/mockData/')).to.equal('Dynamic/MySite/mockData/');
+        expect(command.testRootPath()).to.equal('Dynamic');
+      });
+
       it('builds path with default root (IMPEX)', async () => {
         const cmd = command as MockableWebDavCommand;
         const originalParse = cmd.parse.bind(command);
@@ -160,6 +170,7 @@ describe('cli/webdav-command', () => {
           'CATALOGS',
           'LIBRARIES',
           'STATIC',
+          'DYNAMIC',
           'LOGS',
           'SECURITYLOGS',
         ];

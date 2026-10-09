@@ -14,4 +14,5 @@
 // TypeScript resolves .js → .ts at compile time, but the compiled
 // output needs .js extensions to work at runtime with Node.js ESM.
 export * from './constants.js';
+export * from './tool-effects.js';
 export * from './types.js';

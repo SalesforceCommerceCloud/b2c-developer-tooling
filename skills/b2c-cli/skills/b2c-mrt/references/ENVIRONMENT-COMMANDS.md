@@ -30,7 +30,12 @@ b2c mrt env create prod -p my-storefront --name "Production" \
 # With cookie forwarding and source maps
 b2c mrt env create dev -p my-storefront --name "Development" \
   --allow-cookies --enable-source-maps
+
+# The new environment's slug may be given as the positional OR via --environment / -e
+b2c mrt env create -p my-storefront -e staging --name "Staging Environment"
 ```
+
+> **Slug as positional or flag:** the environment slug can be supplied as the positional argument **or** via `-e` / `--environment` (also honoring `MRT_ENVIRONMENT` / `dw.json`). An explicit positional wins if both are given.
 
 **Flags:**
 | Flag | Description |
@@ -64,7 +69,12 @@ b2c mrt env update -p my-storefront -e dev --no-enable-source-maps
 ```bash
 b2c mrt env delete staging --project my-storefront
 b2c mrt env delete old-env -p my-storefront --force
+
+# The env slug may be given as the positional OR via --environment / -e
+b2c mrt env delete -p my-storefront -e old-env --force
 ```
+
+> **Slug as positional or flag:** the environment slug can be supplied as the positional argument **or** via `-e` / `--environment` (also honoring `MRT_ENVIRONMENT` / `dw.json`). An explicit positional wins if both are given.
 
 ### Invalidate Cache
 
@@ -100,11 +110,16 @@ b2c mrt env b2c -p my-storefront -e production --clear-sites
 
 ## Environment Variables
 
+The `mrt env var` commands (`list` / `set` / `push` / `delete`) are backend-aware: they honor `--mrt-backend` (`auto` / `legacy` / `scapi`) and, over SCAPI, use the Storefront Environments API (scopes `sfcc.storefront.environments` for reads, `sfcc.storefront.environments.rw` for writes). See the [MRT Backends](../SKILL.md#mrt-backends-legacy-vs-scapi) section for backend selection. Values are always masked by both backends. `set` and `delete` apply a merge-PATCH — only the keys you pass change (`delete` sends the key with a `null` value); other variables are preserved. Under `--json`, each command returns the serving backend's native shape.
+
 ### List Variables
 
 ```bash
 b2c mrt env var list --project my-storefront --environment production
 b2c mrt env var list -p my-storefront -e staging --json
+
+# Force the SCAPI backend
+b2c mrt env var list -p my-storefront -e staging --mrt-backend scapi
 ```
 
 ### Set Variables
@@ -120,6 +135,9 @@ b2c mrt env var set API_KEY=secret DEBUG=true FEATURE_FLAG=enabled \
 # Value with spaces (use quotes)
 b2c mrt env var set "MESSAGE=hello world" -p my-storefront -e production
 
+# Force the SCAPI backend
+b2c mrt env var set API_KEY=secret -p my-storefront -e staging --mrt-backend scapi
+
 # Using environment variables for auth
 export MRT_API_KEY=your-api-key
 export MRT_PROJECT=my-storefront
@@ -127,10 +145,25 @@ export MRT_ENVIRONMENT=staging
 b2c mrt env var set MY_VAR=value
 ```
 
+### Push Variables from a .env File
+
+Diff a local `.env` file against the remote environment and apply the additions/updates (remote-only variables are not deleted). `push` resolves the backend once from its initial read and pins every write to it; over SCAPI the changes are applied as a single merge-PATCH.
+
+```bash
+# Push ./.env, with confirmation prompt
+b2c mrt env var push -p my-storefront -e production
+
+# Push a custom file, skipping confirmation, over SCAPI
+b2c mrt env var push -p my-storefront -e staging --file config/.env --yes --mrt-backend scapi
+```
+
 ### Delete Variable
 
 ```bash
 b2c mrt env var delete MY_VAR -p my-storefront -e production
+
+# Force the SCAPI backend
+b2c mrt env var delete MY_VAR -p my-storefront -e production --mrt-backend scapi
 ```
 
 ## URL Redirects

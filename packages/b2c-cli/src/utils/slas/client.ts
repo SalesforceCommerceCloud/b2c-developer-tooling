@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Command, ux} from '@oclif/core';
+import {Command, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
-import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {OAuthCommand, loadConfig, extractOAuthFlags} from '@salesforce/b2c-tooling-sdk/cli';
+import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {
   createSlasClient,
   getApiErrorMessage,
@@ -248,5 +249,43 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
 
     const oauthStrategy = this.getOAuthStrategy();
     return createSlasClient({shortCode}, oauthStrategy);
+  }
+}
+
+/**
+ * Base command for operations that target an existing SLAS client.
+ * Resolves the client ID from an explicit positional argument first, then configuration.
+ */
+export abstract class ExistingSlasClientCommand<T extends typeof Command> extends SlasClientCommand<T> {
+  static baseFlags = {
+    ...SlasClientCommand.baseFlags,
+    'slas-client-id': Flags.string({
+      description: 'SLAS client ID (positional argument takes precedence)',
+      env: 'SFCC_SLAS_CLIENT_ID',
+    }),
+  };
+
+  protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
+    const flags = this.flags as Record<string, unknown>;
+    return loadConfig(
+      {
+        ...extractOAuthFlags(flags),
+        slasClientId: flags['slas-client-id'] as string | undefined,
+      },
+      this.getBaseConfigOptions(),
+    );
+  }
+
+  protected requireSlasClientId(clientId?: string): string {
+    const resolvedClientId = clientId ?? this.resolvedConfig.values.slasClientId;
+    if (!resolvedClientId) {
+      this.error(
+        t(
+          'commands.slas.client.clientIdRequired',
+          'SLAS client ID is required. Provide it as an argument, use --slas-client-id, set SFCC_SLAS_CLIENT_ID, or configure slasClientId in dw.json.',
+        ),
+      );
+    }
+    return resolvedClientId;
   }
 }

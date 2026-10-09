@@ -1517,6 +1517,111 @@
         }
       }
     },
+    "/api/v2/projects/{project_slug}/bundles/": {
+      "post": {
+        "operationId": "projects_bundles_upload_v2",
+        "description": "Upload a v2-format bundle archive (uncompressed or gzip-compressed .tar file) as multipart/form-data.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "description": "Request body to upload a bundle, sent as `multipart/form-data`. The archive travels in the `bundle` part, with the remaining request metadata as sibling form fields.",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bundle": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Bundle archive (uncompressed or gzip-compressed .tar file). The uploaded archive must not exceed 400 MB."
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "Bundle description (optional metadata)."
+                  },
+                  "rootDir": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "default": "bld",
+                    "description": "Root directory within bundle archive. Files in this directory are used for server-side rendering, published as static assets, or both. Any files in the bundle archive outside of this directory are ignored."
+                  },
+                  "configPath": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "default": ".mrt/config.json",
+                    "description": "Path (relative to root directory) of bundle configuration file."
+                  },
+                  "matchMode": {
+                    "type": "string",
+                    "enum": [
+                      "strict",
+                      "ignore_missing"
+                    ],
+                    "default": "strict",
+                    "description": "Determines how files in the bundle configuration are matched. If `strict`, all files listed in `ssrOnly` and `ssrShared` fields in the bundle configuration must be present. If `ignore_missing`, missing files in the `ssrOnly` and `ssrShared` fields are ignored."
+                  }
+                },
+                "required": [
+                  "bundle"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "The bundle ID assigned by MRT."
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Non-blocking warnings returned by MRT."
+                    },
+                    "matches": {
+                      "type": "object",
+                      "additionalProperties": {},
+                      "description": "Server-computed ssrOnly/ssrShared file matches."
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/projects/{project_slug}/bundles/": {
       "get": {
         "operationId": "projects_bundles_list",

@@ -25,8 +25,25 @@ Available roots:
 - `catalogs` - Product catalogs
 - `libraries` - Content libraries
 - `static` - Static resources
+- `dynamic` - Site-specific files, including Velocity templates
 - `logs` - Log files
 - `securitylogs` - Security log files
+
+### Dynamic Site Files
+
+Use `--root=dynamic` to manage files under `Sites/Dynamic/<site-id>/`, independently
+of code deployments. Include the site ID as the first segment of the remote path:
+
+```bash
+b2c webdav ls --root=dynamic MySite/
+b2c webdav mkdir --root=dynamic MySite/mockData
+b2c webdav put --root=dynamic ./mock.vm MySite/mockData/
+b2c webdav get --root=dynamic MySite/mockData/mock.vm -o ./mock.vm
+```
+
+The site ID directory is managed by the instance and must match an existing site.
+The same path format works with `rm`, `zip`, and `unzip`. This location is used by
+`dw.template.Velocity.renderTemplate()` for site-specific Velocity templates.
 
 ## Authentication
 
@@ -77,6 +94,8 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 ## b2c webdav ls
 
 List files and directories in a WebDAV location.
+
+[![B2C CLI listing import and export archives in WebDAV with their file sizes.](/terminal/webdav-list.png)](/terminal/webdav-list.png)
 
 ### Usage
 
@@ -204,7 +223,7 @@ b2c webdav put ./file.tar.gz / --root=temp
 ### Notes
 
 - If `REMOTE` ends with `/` or is `/`, the source filename is used
-- Parent directories must exist (use `webdav mkdir` to create them)
+- Missing parent directories under the root are created automatically
 
 ---
 

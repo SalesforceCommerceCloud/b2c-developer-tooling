@@ -5,7 +5,7 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {type CartridgePathResult, BM_SITE_ID, getCartridgePath} from '@salesforce/b2c-tooling-sdk/operations/sites';
+import {type CartridgePathResult, BM_SITE_ID, createSitesBackend} from '@salesforce/b2c-tooling-sdk/operations/sites';
 import {t, withDocs} from '../../../i18n/index.js';
 
 export default class SitesCartridgesList extends InstanceCommand<typeof SitesCartridgesList> {
@@ -48,7 +48,16 @@ export default class SitesCartridgesList extends InstanceCommand<typeof SitesCar
       }),
     );
 
-    const result = await getCartridgePath(this.instance, siteId);
+    const backend = createSitesBackend({instance: this.instance});
+    this.logger.debug(`Using ${backend.name} backend for cartridge path read`);
+
+    const site = await backend.getSite(siteId);
+    const cartridges = (site.cartridges ?? '').trim();
+    const result: CartridgePathResult = {
+      siteId,
+      cartridges,
+      cartridgeList: cartridges ? cartridges.split(':') : [],
+    };
 
     if (this.jsonEnabled()) {
       return result;

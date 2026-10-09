@@ -5,29 +5,30 @@
   - [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)
     - [dw.extensions.payments.SalesforceBancontactPaymentDetails](dw.extensions.payments.SalesforceBancontactPaymentDetails.md)
 
-
-
-Details to a Salesforce Payments payment of type [SalesforcePaymentMethod.TYPE_BANCONTACT](dw.extensions.payments.SalesforcePaymentMethod.md#type_bancontact). See Salesforce Payments
-documentation for how to gain access and configure it for use on your sites.
-
+Details to a payment of type [SalesforcePaymentDetails.TYPE_BANCONTACT](dw.extensions.payments.SalesforcePaymentDetails.md#type_bancontact).
 
 
 ## Property Summary
 
 | Property | Description |
 | --- | --- |
-| [bankName](#bankname): [String](TopLevel.String.md) `(read-only)` | Returns the bank name, or `null` if not known. |
-| [last4](#last4): [String](TopLevel.String.md) `(read-only)` | Returns the last 4 digits of the account number, or `null` if not known. |
+| [bankName](#bankname): [String](TopLevel.String.md) | Returns the bank name, or `null` if not known. |
+| [last4](#last4): [String](TopLevel.String.md) | Returns the last 4 digits of the account number, or `null` if not known. |
 
 ## Constructor Summary
 
-This class does not have a constructor, so you cannot create it directly.
+| Constructor | Description |
+| --- | --- |
+| [SalesforceBancontactPaymentDetails](#salesforcebancontactpaymentdetails)() | Constructs an empty Bancontact payment details object. |
+
 ## Method Summary
 
 | Method | Description |
 | --- | --- |
 | [getBankName](dw.extensions.payments.SalesforceBancontactPaymentDetails.md#getbankname)() | Returns the bank name, or `null` if not known. |
 | [getLast4](dw.extensions.payments.SalesforceBancontactPaymentDetails.md#getlast4)() | Returns the last 4 digits of the account number, or `null` if not known. |
+| [setBankName](dw.extensions.payments.SalesforceBancontactPaymentDetails.md#setbanknamestring)([String](TopLevel.String.md)) | Sets the bank name. |
+| [setLast4](dw.extensions.payments.SalesforceBancontactPaymentDetails.md#setlast4string)([String](TopLevel.String.md)) | Sets the last 4 digits of the account number. |
 
 ### Methods inherited from class SalesforcePaymentDetails
 
@@ -38,21 +39,24 @@ This class does not have a constructor, so you cannot create it directly.
 ## Property Details
 
 ### bankName
-- bankName: [String](TopLevel.String.md) `(read-only)`
+- bankName: [String](TopLevel.String.md)
   - : Returns the bank name, or `null` if not known.
-
-    **See Also:**
-    - [SalesforcePaymentMethod.getBankName()](dw.extensions.payments.SalesforcePaymentMethod.md#getbankname)
 
 
 ---
 
 ### last4
-- last4: [String](TopLevel.String.md) `(read-only)`
+- last4: [String](TopLevel.String.md)
   - : Returns the last 4 digits of the account number, or `null` if not known.
 
-    **See Also:**
-    - [SalesforcePaymentMethod.getLast4()](dw.extensions.payments.SalesforcePaymentMethod.md#getlast4)
+
+---
+
+## Constructor Details
+
+### SalesforceBancontactPaymentDetails()
+- SalesforceBancontactPaymentDetails()
+  - : Constructs an empty Bancontact payment details object.
 
 
 ---
@@ -66,9 +70,6 @@ This class does not have a constructor, so you cannot create it directly.
     **Returns:**
     - bank name
 
-    **See Also:**
-    - [SalesforcePaymentMethod.getBankName()](dw.extensions.payments.SalesforcePaymentMethod.md#getbankname)
-
 
 ---
 
@@ -79,8 +80,25 @@ This class does not have a constructor, so you cannot create it directly.
     **Returns:**
     - last 4 digits of the account number
 
-    **See Also:**
-    - [SalesforcePaymentMethod.getLast4()](dw.extensions.payments.SalesforcePaymentMethod.md#getlast4)
+
+---
+
+### setBankName(String)
+- setBankName(bankName: [String](TopLevel.String.md)): void
+  - : Sets the bank name.
+
+    **Parameters:**
+    - bankName - bank name
+
+
+---
+
+### setLast4(String)
+- setLast4(last4: [String](TopLevel.String.md)): void
+  - : Sets the last 4 digits of the account number.
+
+    **Parameters:**
+    - last4 - last 4 digits of the account number
 
 
 ---

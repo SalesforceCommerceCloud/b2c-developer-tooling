@@ -6,7 +6,7 @@
 import headerPlugin from 'eslint-plugin-header';
 import tseslint from 'typescript-eslint';
 
-import {copyrightHeader, sharedRules, prettierPlugin} from '../../eslint.config.mjs';
+import {copyrightHeader, sharedRules, chaiTestRules, prettierPlugin} from '../../eslint.config.mjs';
 
 headerPlugin.rules.header.meta.schema = false;
 
@@ -17,7 +17,7 @@ export default [
   ...tseslint.configs.recommended,
   prettierPlugin,
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'test/**/*.ts'],
     plugins: {
       header: headerPlugin,
     },
@@ -30,9 +30,13 @@ export default [
     },
   },
   {
-    // Tests run directly via `node --test` (no bundler/loader), so they're
-    // plain CommonJS .js files using require() rather than the src/ package's
-    // ESM-style import syntax.
+    files: ['test/**/*.ts'],
+    rules: chaiTestRules,
+  },
+  {
+    // The usage-inference suites are plain CommonJS .js files that exercise
+    // the compiled plugin/ output directly, so they use require() rather than
+    // the src/ package's ESM-style import syntax.
     files: ['test/**/*.js'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',

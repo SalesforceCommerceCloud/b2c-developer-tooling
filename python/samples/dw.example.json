@@ -1,0 +1,14 @@
+{
+  "hostname": "your-instance.sandbox.us01.dx.commercecloud.salesforce.com",
+  "clientId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "clientSecret": "your-account-manager-api-client-secret",
+  "username": "your-webdav-user",
+  "password": "your-webdav-access-key",
+  "accountManagerHost": "account.demandware.com",
+  "shortCode": "kv7kzm78",
+  "tenantId": "zzsa_012",
+  "siteId": "RefArchGlobal",
+  "organizationId": "f_ecom_zzsa_012",
+  "slasClientId": "02402e18-687c-48f7-b6f7-118b80c652be",
+  "slasRedirectUri": "http://localhost:3000/callback"
+}

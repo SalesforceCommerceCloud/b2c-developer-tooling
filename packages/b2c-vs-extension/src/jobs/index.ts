@@ -20,7 +20,7 @@ const AUTO_REFRESH_CONTEXT_KEY = 'b2c-dx.jobs.autoRefreshEnabled';
  * the Cartridges right-click menu, and the heavy React webview was removed.
  *
  * Loading model: the view starts empty and waits for an explicit Refresh —
- * fetching job history hits OCAPI and can be slow on instances with thousands
+ * fetching job history hits the configured jobs API and can be slow on instances with thousands
  * of executions, so we don't pay that cost for users who only opened the side
  * panel to see Cartridges. Auto-Refresh remains a separate opt-in toggle for
  * users who want continuous polling once they've loaded the view.
@@ -64,7 +64,7 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
 
   // Loading is manual by default — the user must click Refresh (or enable
   // Auto-Refresh) to populate the view. This trades one extra click for a
-  // guarantee that opening the side panel never blocks on OCAPI.
+  // guarantee that opening the side panel never blocks on a jobs API request.
   //
   // Auto-refresh setting: if the user has explicitly opted into continuous
   // polling, treat that as the explicit load signal too — start polling

@@ -6,6 +6,8 @@ description: Commands for managing eCDN (embedded Content Delivery Network) zone
 
 Commands for managing eCDN (embedded Content Delivery Network) for B2C Commerce storefronts.
 
+For zone setup, DNS, and certificate requirements, see Salesforce's [CDN Zones guide](https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones.html).
+
 ## Global Flags
 
 All eCDN commands support these flags:
@@ -315,7 +317,7 @@ b2c ecdn certificates list --zone my-zone
 Add a certificate to a zone.
 
 ```bash
-b2c ecdn certificates add --zone my-zone --hostname www.example.com --certificate-file ./cert.pem --private-key-file ./key.pem
+b2c ecdn certificates add --zone my-zone --hostname www.example.com --type custom --certificate-file ./cert.pem --private-key-file ./key.pem
 ```
 
 #### Flags
@@ -806,6 +808,8 @@ b2c ecdn page-shield scripts get --zone my-zone --script-id abc123
 
 ## MRT Rules
 
+For the routing sequence and Business Manager options, see [eCDN Rules for a Phased Headless Rollout](https://developer.salesforce.com/docs/commerce/commerce-api/guide/ecdn-rules-for-phased-headless-rollout.html).
+
 ### b2c ecdn mrt-rules get
 
 Get MRT ruleset for a zone.
@@ -878,31 +882,100 @@ b2c ecdn mrt-rules rules delete --zone my-zone --ruleset-id abc123 --rule-id def
 
 ## mTLS Certificates (Organization Level)
 
+Code upload certificates enable two-factor (mTLS) code upload to staging instances. Two kinds of certificate are involved:
+
+- **A CA**, registered with eCDN for your staging tenant. It only signs client certificates and is never used to connect.
+- **Client certificates** (`.p12`) signed by that CA, one for each CI pipeline or developer. The CLI sends these on code upload.
+
+These commands require a staging tenant (`_stg`). Most users only need `create --generate` (or the guided `setup`) once, then `issue` for each additional pipeline or developer. For the complete step-by-step workflow, see [Set Up Two-Factor Code Upload](/guide/hyperforce#set-up-two-factor-code-upload).
+
 ### b2c ecdn mtls list
 
-List mTLS certificates.
+List mTLS certificates, including their expiry and associated code upload hostname.
 
 ```bash
-b2c ecdn mtls list --tenant-id zzxy_prd
+b2c ecdn mtls list --tenant-id zzxy_stg
 ```
 
 ---
 
 ### b2c ecdn mtls create
 
-Create an mTLS certificate for code upload authentication.
+Register a CA certificate for code upload. With `--generate`, this is the main way to set up two-factor code upload. It generates a CA, registers it, and issues a first client certificate (named by `--client-name`) from it. With `--certificate-file` and `--private-key-file`, it registers a CA you already have.
 
 ```bash
-b2c ecdn mtls create --tenant-id zzxy_prd --name "Build Server" --certificate-file ./cert.pem --private-key-file ./key.pem
+# Generate a CA, upload it, and issue a first client certificate
+b2c ecdn mtls create --tenant-id zzxy_stg --name code-upload --generate
+
+# Generate into a specific directory with a named client certificate
+b2c ecdn mtls create --tenant-id zzxy_stg --name code-upload --generate --out-dir ./certs --client-name jsmith
+
+# Upload an existing CA
+b2c ecdn mtls create --tenant-id zzxy_stg --name code-upload --certificate-file ./ca.pem --private-key-file ./ca.key
+```
+
+With `--generate`, the command writes `ca.pem`, `ca.key`, `<client-name>.p12`, and a `.gitignore` to the output directory (owner-only permissions), uploads the CA, and prints the `dw.json` settings for code upload. The CA files are written before the upload, so if the upload fails you can retry with `--certificate-file` and `--private-key-file`.
+
+Uploaded CA certificates must be CA certificates valid for at most 1 year; the CLI checks this before uploading.
+
+#### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--name` | Name (label) for the registered CA (required) | |
+| `--certificate-file` | Path to PEM-encoded CA certificate file | |
+| `--private-key-file` | Path to PEM-encoded CA private key file | |
+| `--generate` | Generate a new CA, register it, and issue a first client certificate from it | `false` |
+| `--out-dir` | Directory for generated files | `mtls-certs` |
+| `--client-name` | Name of the client certificate (`.p12`) issued from the new CA; this is the certificate used for code upload (for example the pipeline name, such as `github-actions`, or a Business Manager username) | `<name>-client` |
+| `--p12-passphrase` | Passphrase for the generated `.p12` (env: `SFCC_MTLS_P12_PASSPHRASE`) | Random |
+| `--ca-common-name` | Common name for the generated CA | Staging hostname if configured, else `<name> CA` |
+| `--ca-days` | CA validity in days (maximum 365) | `365` |
+| `--client-days` | Client certificate validity in days (capped at the CA expiry) | `365` |
+| `--force` | Overwrite existing generated files | `false` |
+
+Provide either `--generate` or both `--certificate-file` and `--private-key-file`.
+
+---
+
+### b2c ecdn mtls setup
+
+A guided version of `create --generate`. It lists existing CAs, then prompts for the CA name (a label), the client certificate name, and the output directory, with a default for each. It generates and registers the CA and issues the client certificate from it. Finally, it offers to write the client certificate path and passphrase to `dw.json`, for uploading from this machine. Requires an interactive terminal.
+
+```bash
+b2c ecdn mtls setup --tenant-id zzxy_stg
 ```
 
 #### Flags
 
-| Flag | Description | Required |
-|------|-------------|----------|
-| `--name` | Certificate name | Yes |
-| `--certificate-file` | Path to PEM-encoded certificate file | Yes |
-| `--private-key-file` | Path to PEM-encoded private key file | Yes |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--p12-passphrase` | Passphrase for the generated `.p12` (env: `SFCC_MTLS_P12_PASSPHRASE`) | Random |
+
+The wizard updates the instance selected by `--instance` (or the active instance) in the `dw.json` given by `--config` (or `./dw.json`).
+
+---
+
+### b2c ecdn mtls issue
+
+Issue a client certificate (`.p12`) signed by an existing CA, for a CI pipeline or developer. Runs locally; no API call or authentication is needed.
+
+```bash
+b2c ecdn mtls issue --ca-cert-file ./mtls-certs/ca.pem --ca-key-file ./mtls-certs/ca.key --name jsmith
+b2c ecdn mtls issue --ca-cert-file ca.pem --ca-key-file ca.key --name github-actions --output ./ci.p12 --days 90
+```
+
+#### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--ca-cert-file` | Path to PEM-encoded CA certificate file (required) | |
+| `--ca-key-file` | Path to PEM-encoded CA private key file (required) | |
+| `--name` | Common name identifying the client (required; Business Manager username or API client ID recommended) | |
+| `--output`, `-o` | Output path for the `.p12` | `<name>.p12` next to the CA |
+| `--p12-passphrase` | Passphrase for the `.p12` (env: `SFCC_MTLS_P12_PASSPHRASE`) | Random |
+| `--days` | Validity in days (capped at the CA expiry) | `365` |
+| `--force` | Overwrite an existing output file | `false` |
 
 ---
 
@@ -911,17 +984,17 @@ b2c ecdn mtls create --tenant-id zzxy_prd --name "Build Server" --certificate-fi
 Get mTLS certificate details.
 
 ```bash
-b2c ecdn mtls get --tenant-id zzxy_prd --certificate-id abc123
+b2c ecdn mtls get --tenant-id zzxy_stg --certificate-id abc123
 ```
 
 ---
 
 ### b2c ecdn mtls delete
 
-Delete an mTLS certificate.
+Delete an mTLS certificate and its associated code upload hostname. Client certificates issued by the deleted CA stop working.
 
 ```bash
-b2c ecdn mtls delete --tenant-id zzxy_prd --certificate-id abc123
+b2c ecdn mtls delete --tenant-id zzxy_stg --certificate-id abc123
 ```
 
 ---
@@ -960,6 +1033,8 @@ b2c ecdn cipher-suites update --zone my-zone --suite-type Custom --ciphers "ECDH
 ---
 
 ## Origin Headers
+
+For setting the matching header in MRT and forwarding it from eCDN, follow [Send the Access Control Header from eCDN to the MRT Origin](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.html#send-the-access-control-header-from-ecdn-to-the-mrt-origin).
 
 ### b2c ecdn origin-headers get
 

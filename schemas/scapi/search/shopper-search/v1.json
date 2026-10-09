@@ -1,0 +1,3430 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Shopper Search",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/shopper-search/shopper-search-oas-v1-public.yaml)\n\n# API Overview\n\nUse the Shopper Search API for search functionality that lets shoppers search for products using keywords and refinement. The search results can be products or suggestions based on the endpoint you choose in the API.\n\n## Authentication & Authorization\n\nThe client requesting the API must have access to the product search and search suggestion resources. \n\nThe Shopper Search API requires a JWT acquired via the Shopper Customers endpoint:\n\n```\nhttps://{shortCode}.api.commercecloud.salesforce.com/customer/shopper-customers/v1/organizations/{organizationId}/customers/actions/login\n```\n\nYou must include the relevant scopes in the client ID used to generate the SLAS token. For a full list of permissions, see the [Authorization Scopes Catalog.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html)\n\n## Customization\n\n### Custom Properties\n\nThis API supports custom properties (prefixed with `c_`). For details, see [Custom Properties.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/custom-properties.html)\n\n### Hooks\n\nFor details on working with hooks, see [Extensibility with Hooks.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/extensibility_via_hooks.html)\n\n## Request Details\n\n### Property Selection\n\nThis API supports the `select` query parameter for filtering response properties. For details, see [Property Selection.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html)\n\n### URL Encoding\n\nIf resource identifiers in request parameters contain commas (`,`) or percent signs (`%`), they must be URL encoded. For details, see [Encode URL Special Characters.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/url-encode.html)\n\n## Response Details\n\n### Personalization\n\nResponses from this API can be personalized using the [Shopper Context API.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/shopper-context-api.html) By setting context attributes such as customer group, source code, or store ID, you can retrieve personalized promotions, pricing, and shipping methods. For details on how personalization interacts with caching, see [Personalized Caching.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html#personalized-caching)\n\n### Caching\n\nCaching is provided for this API. For details, see [Server-Side Web-Tier Caching.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html)\n\n### Timeouts\n\nShopper API requests must respond within 10 seconds, including any hook execution. If a response exceeds this threshold, an HTTP 504 status code is returned. For details, see [Timeouts and Limits.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/timeouts-limits.html)\n\n### Error Handling\n\nError responses follow the [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) problem detail format. To trace errors, include a `correlation-id` header in your request — the response returns it as `x-correlation-id`. For details, see [HTTP Status Codes and Errors.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/error-response-codes.html)\n\n## Use Cases\n\n### Search for Products\n\nSearch for products by keyword. Replace `{access_token}` with a valid SLAS token.\n\n```sh\ncurl \"https://{shortCode}.api.commercecloud.salesforce.com/search/shopper-search/v1/organizations/{organizationId}/product-search?q=dress&siteId=RefArch&limit=5\" \\\n  -H \"Authorization: Bearer {access_token}\"\n```\n\n\n### Provide Search Suggestions\n\nUse the Shopper Search API to provide search suggestions as a shopper searches.\n\nFor example, a developer who is building a shopping app using the Salesforce Commerce API would like to provide product, brand, and category suggestions. When a shopper types in a search phrase that exceeds a definable minimum length and the GET Search Suggestion endpoint is requested, the platform delivers a set of suggestions with products (name, ID), brands (name), and categories (name, ID). Shoppers can reach their desired search results more quickly using the suggested completion and correction.\n\n### Provide Search Results\n\nUse the Shopper Search API to gather product results for a shoppers search query.\n\nFor example, a developer who is building a shopping app using the Salesforce Commerce API would like to implement a product search functionality. When a shopper enters a search phrase and the GET Product Search endpoint is requested, the platform performs a keyword search and a sorted search result is returned. The sorted search result can be refined according to given values (for example, a price range).\nThe product search result contains a definable number of product search hits. A product search hit describes a matching product with its ID and name. Furthermore, the search hit contains product images, prices, represented products, and variations. In addition to the search hits, the search results also deliver refinement and sorting options.\n\n### Retrieve Promotion Information\n\nNote: This only applies if `promotions` expand is provided in the query parameter.\n\nPromotions provide discounts to shoppers when they meet certain purchase requirements.\n\nPromotion information is described in detail in [Promotion Details](https://developer.salesforce.com/docs/commerce/commerce-api/guide/promotion-details.html), but the following list provides several key points:\n\n- Pricing discounts for basket and shipping promotions are NEVER returned by the 'getProduct' or 'getProducts' endpoint.\n- Promotional pricing is ONLY returned for products that are included with non-conditional promotions.\n- Callout messages are ALWAYS returned by the 'getProduct' and 'getProducts' endpoints.\n\nBy default, 'getProduct' and 'getProducts' return promotion information for a queried product. Promotion information includes both pricing and callout message information. However, the specific pricing and callout information that is fetched is determined by:\n\n- Promotion Type\n- Product Type\n- Product Purchase Requirements\n\nSome promotions can be displayed on a Product Data Page (PDP) or Product Listing page (PLP), while other promotions are displayed in the context of a basket, such as an order level promotion: \"add the product to your basket to view price information\". It is important to understand what is included in the response when designing a PDP or PLP on top of SCAPI to ensure your design aligns with implementable features.\n\nNote: When you search for a variant product, the Product Search API returns the master or main product as the primary search hit. When promotion data (productPromotion) is returned, it does not contain pricing information because the returned product is the main product. To retrieve pricing information, pass the query string `allVariationProperties=true` with the `promotions` expand parameter, which returns pricing data for variant products if the promotion is unconditional. The `allVariationProperties` flag specifies the variation properties to be included in the result.\n\n### Filter Products by Promotion Role\n\nYou can filter products by their role in a promotion using the `pmid` (promotion ID) and `pmpt` (promotion product type) refinement parameters together. This allows you to find specific types of products within a promotion:\n\n- `pmid`: Specifies the promotion ID to filter by\n- `pmpt`: Specifies the type of products to return within that promotion:\n  - `all`: Returns all products related to the promotion (default behavior)\n  - `qualifying`: Returns only products that qualify for the promotion but don't receive the discount/bonus\n  - `discounted`: Returns only products that receive a discount in the promotion  \n  - `bonus`: Returns only products that are given as bonuses in the promotion\n\nExample Usage:\n```\nGET /organizations/{organizationId}/product-search?refine=pmid=summer-sale&refine=pmpt=discounted\n```\n\nThis would return only the products that receive discounts in the \"summer-sale\" promotion.\n\n**Note:** The `pmpt` parameter only has an effect when used with `pmid`. If `pmpt` is specified without `pmid`, it will be ignored and all products will be returned.\n\n### Shopper Personalization\nThe SCAPI response can be personalized using the Shopper Context API or hooks. By setting specific values in the Shopper Context API, you can modify the response of the 'getProduct' or 'getProducts' endpoint based on the shopper's context. For instance, you can offer a 5% discount or free shipping to shoppers using mobile devices.\n\n## JWA Caching\n\nThe response is cached in JWA, which means promotion data contained in the response is also cached based on the TTL (Time to Live) specified in the Business Manager [Feature Switches](https://help.salesforce.com/s/articleView?id=cc.b2c_feature_switches.htm&type=5) configuration.\nWhen the shopper context value is updated, a check is conducted to see if the updated shopper context affects the retrieval of product-promotion data. If it does, then the response is fetched from the source and cached in the JWA.\n\nFor details, see [Server-Side Web-Tier Caching.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html)\n\n## Best Practices\n\nThese best practices refer to features that are generally available with B2C Commerce 24.3.\n\nFor better performance, when you call the GET Product Search endpoint, we recommend that you:\n\n- Use the `select` query parameter to filter the response of a specified field or set of fields, and remove default outputs that you don't need. For example, filter the response to return only the relevant product names, ids, variants, and product IDs of the variants.\n- Limit API requests to the GET Product Search endpoint instead of calling both the GET Product Search and GET Products endpoints to show information on a product listing page (PLP). Use these features to provide the additional product information needed to render product tiles:\n    - **Allowable value:** `promotions` value in the `expand` query parameter\n    - **Query parameters:** `perPricebook`, `allImages`, and `allVariationProperties`\n    - **Responses:** `productPromotions`, `imageGroups`, `priceRanges`, `tieredPrices`, `variants`, and `variationGroups`\n- Pass in only the `expand` values and query parameters that you consider necessary to meet your PLP requirements. Requesting large amounts of information can increase the latency, especially if there's a lot of data to be returned (for example, many imageGroups and variants).",
+    "version": "1.15.2",
+    "x-api-type": "Shopper",
+    "x-api-family": "Search"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/search/shopper-search/v1",
+      "variables": {
+        "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/product-search": {
+      "get": {
+        "summary": "Provides keyword and refinement-based search for products, returning only product ID, link, and name. Results \nare limited to products that are online and part of the site catalog.",
+        "description": "Provide keyword and refinement search functionality for products. Only returns the product ID, link, and name in\nthe product search hit. The search result only contains products that are online and assigned to the site \ncatalog.",
+        "operationId": "productSearch",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "description": "The property selector declaring which fields are included in the product search response payload. For details, see [Property Selection.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html)",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/Select"
+            },
+            "example": "(hits.(**), refinements, sortingOptions.(id))"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "The query phrase to search for. For example to search for a product \"shirt\", type q=shirt. **Note:** - Lexical search queries are limited to a maximum of 50 characters.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "shirt",
+              "maxLength": 500,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "refine",
+            "in": "query",
+            "description": "Parameter that represents a refinement attribute or values pair. Refinement attribute ID and values are separated by '='.<br> \nMultiple values are supported by a subset of refinement attributes and can be provided by separating them using a pipe (URL encoded = \\\"|\\\"), for example: refine=c_refinementColor=red|green|blue.<br> \nValue ranges can be specified like this: refine=price=(100..500).<br> \nMultiple refine parameters can be provided by using the refine as the key, for example: refine=price=(0..10)&refine=c_refinementColor=green.<br> \nThe refinements can be a collection of custom defined attributes IDs and the system defined attributes IDs but the search can only accept a total of 9 refinements at a time.<br>            \n\nThe following system refinement attribute ids are supported:<br>\n`cgid`: Allows refinement per single category ID. Multiple category IDs are not supported.<br>\n`cgslug`: Allows refinement by a category URL slug (for example, `mens/clothing`). The server resolves the slug to a category ID using the site's storefront URL mapping. If the slug can't be resolved to a category, the API returns a 400 error. This parameter is mutually exclusive with `cgid`. If both are provided, `cgid` takes priority and `cgslug` is ignored.<br>\n`price`: Allows refinement per single price range. Multiple price ranges are not supported.<br>\n`htype`: Allow refinement by including only the provided hit types. Accepted types are 'product', 'master', 'set', 'bundle', 'slicing_group' (deprecated), 'variation_group'.<br>\n`orderable_only`: Unavailable products are excluded from the search results if true is set. Multiple refinement values are not supported.<br>\n`ilids`: Allows refining by inventory list IDs. Supports up to 10 inventory list IDs per request.<br>\n`pmid`: Allows refinement on the supplied promotion ID(s). When used with `pmpt`, filters products by their role in the promotion.<br>\n`pmpt`: Allows refinement per promotion product type. Must be used with `pmid` to filter products by their role in the promotion. Valid values are:\n  - `all`: Returns all products related to the promotion (default)\n  - `qualifying`: Returns only products that qualify for the promotion but don't receive the discount/bonus\n  - `discounted`: Returns only products that receive a discount in the promotion\n  - `bonus`: Returns only products that are given as bonuses in the promotion\n\n**Note:** To refine a search using multiple promotion filters—for example, to find products in both the spring and summer campaigns—see [Refining by Multiple Promotions](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-promotions-for-developers.html#refining-by-multiple-promotions).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "example": "price=(0..10)",
+                "maxLength": 4000
+              },
+              "maxItems": 9
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "The ID of the sorting option to sort the search hits.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "brand",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "searchMode",
+            "in": "query",
+            "description": "A hint for the search matching approach the platform should use for this request. `semantic` selects meaning-based matching; `lexical` selects keyword/token-based matching.\n\nThe hint is non-authoritative and applies only to this request: the platform runs its full routing cascade and may demote a `semantic` request to `lexical` (for example when the semantic index is unavailable). Always read the resolved `effectiveSearchMode` field in the response rather than assuming the requested mode was honored. When omitted, the platform's configured default applies.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "semantic",
+                "lexical"
+              ],
+              "example": "semantic"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/CurrencyCode"
+            },
+            "examples": {
+              "CurrencyCode": {
+                "value": "USD"
+              }
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "description": "A comma-separated list with allowed values - `availability`, `images`, `prices`, `represented_products`, `variations`, `promotions`, `custom_properties`, `slug`. \nBy default, the expand parameter includes `availability, images, prices, represented_products, variations`. \nUse none to disable all expand options.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "availability",
+                  "images",
+                  "prices",
+                  "represented_products",
+                  "variations",
+                  "promotions",
+                  "custom_properties",
+                  "page_meta_tags",
+                  "slug"
+                ],
+                "example": "prices"
+              }
+            }
+          },
+          {
+            "name": "allImages",
+            "in": "query",
+            "description": "When the `images` expand parameter is used with this flag, the response includes the `imageGroups` property, which contains an image model.\nIf this flag is true, the full image model is returned and you can combine with `imgTypes` to filter image types and counts. If false, only matching images are included.\nIf no flag is passed, the `imageGroups` property is omitted from the response.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "example": true
+            }
+          },
+          {
+            "name": "imgTypes",
+            "in": "query",
+            "description": "Filters product images by type with optional count limits per type. This parameter requires both the `images` expand parameter and `allImages=true`.\nWhen used, the response includes the `imageGroups` property filtered by the specified image types.\nThe format is a comma-separated list of image types with optional counts: `<imageType>:<count>,<imageType>:<count>`.\nIf the count is omitted, all images of that type are returned. If specified, the count limits the number of images returned for that type.\nFor example, `imgTypes=large:2,small:1` returns up to 2 large images and 1 small image per product in the imageGroups.\nIf `imgTypes` is used without `allImages=true`, it is ignored and imageGroups aren't included in the response.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "large:2,small:1",
+              "maxLength": 50
+            }
+          },
+          {
+            "name": "perPricebook",
+            "in": "query",
+            "description": "When this flag is set to `true` and is used with the `prices` expand parameter, the response includes per PriceBook prices and tiered prices (if available).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "example": true
+            }
+          },
+          {
+            "name": "allVariationProperties",
+            "in": "query",
+            "description": "The flag that determines which variation properties are included in the result. When set to `true` with the `variations` expand parameter, all variation properties (`variationAttributes`, `variationGroups`, `variants`) are returned. When set to false, only the default property `variationAttributes` is returned.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "example": false
+            }
+          },
+          {
+            "name": "includedCustomVariationProperties",
+            "in": "query",
+            "description": "A comma-separated list of custom property ids to be returned for variant products. The `variants` expand parameter and `allVariationProperties` query parameter are required for these properties to be returned.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "example": "c_batteryLife",
+                "maxLength": 256,
+                "pattern": "^c_.*"
+              },
+              "maxItems": 5
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 25.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ],
+              "example": "none"
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product search successfully returned results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSearchResult"
+                },
+                "examples": {
+                  "ProductSearchResultExample": {
+                    "$ref": "#/components/examples/ProductSearchResultExample"
+                  },
+                  "ProductSearchWithPromotionFilterExample": {
+                    "$ref": "#/components/examples/ProductSearchWithPromotionFilterExample"
+                  },
+                  "ProductSearchResultWithCustomVariationPropertiesExample": {
+                    "$ref": "#/components/examples/ProductSearchResultWithCustomVariationPropertiesExample"
+                  },
+                  "ProductSearchWithProcessedQueryExample": {
+                    "$ref": "#/components/examples/ProductSearchWithProcessedQueryExample"
+                  },
+                  "ProductSearchWithFallbackModeExample": {
+                    "$ref": "#/components/examples/ProductSearchWithFallbackModeExample"
+                  },
+                  "ProductSearchWithConfiguredModeExample": {
+                    "$ref": "#/components/examples/ProductSearchWithConfiguredModeExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedSelectorGetProductsSearchForSelect": {
+                    "$ref": "#/components/examples/MalformedSelectorGetProductsSearchForSelect"
+                  },
+                  "TooManyCustomVariationAttributes": {
+                    "$ref": "#/components/examples/TooManyCustomVariationAttributes"
+                  },
+                  "InvalidCategorySlugRefinement": {
+                    "$ref": "#/components/examples/InvalidCategorySlugRefinement"
+                  },
+                  "InvalidSearchMode": {
+                    "$ref": "#/components/examples/InvalidSearchMode"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-product-search",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-product-search",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/search-suggestions": {
+      "get": {
+        "summary": "Provides keyword-based search suggestions for products, categories, and brands. Returns suggested items for each \nbased on the search phrase.",
+        "description": "Provide keyword search functionality for products, categories, and brands suggestions. Returns suggested \nproducts, suggested categories, and suggested brands for the given search phrase.",
+        "operationId": "getSearchSuggestions",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "The search phrase (q) for which suggestions are evaluated. Search suggestions are determined when the search phrase input is at least three (default) characters long. The value is configurable in the Business Manager.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "sho",
+              "maxLength": 50,
+              "minLength": 3
+            }
+          },
+          {
+            "name": "searchMode",
+            "in": "query",
+            "description": "A hint for the search matching approach the platform should use for this request. `semantic` selects meaning-based matching; `lexical` selects keyword/token-based matching.\n\nThe hint is non-authoritative and applies only to this request: the platform runs its full routing cascade and may demote a `semantic` request to `lexical` (for example when the semantic index is unavailable). Always read the resolved `effectiveSearchMode` field in the response rather than assuming the requested mode was honored. When omitted, the platform's configured default applies.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "semantic",
+                "lexical"
+              ],
+              "example": "semantic"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The maximum number of suggestions made per request. If no value is defined, by default five suggestions per suggestion type are evaluated. This affects all types of suggestions (category, product, brand, and custom suggestions).",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "example": 5,
+              "maximum": 10,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/CurrencyCode"
+            },
+            "examples": {
+              "CurrencyCode": {
+                "value": "USD"
+              }
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/LocaleCode"
+            },
+            "examples": {
+              "LanguageCountry": {
+                "value": "en-US"
+              },
+              "CountryCode": {
+                "value": "US"
+              }
+            }
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "description": "A comma-separated list of the values `images`, `prices`, `custom_product_properties`, and `slug`.\nBy default, the expand parameter includes `prices`.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "images",
+                  "prices",
+                  "custom_product_properties",
+                  "slug"
+                ],
+                "example": "prices"
+              }
+            }
+          },
+          {
+            "name": "includedCustomProductProperties",
+            "in": "query",
+            "description": "A comma-separated list of custom property ids to be returned for product suggestions. The `custom_product_properties` expand parameter is required for these properties to be returned.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "example": "c_batteryLife",
+                "maxLength": 256,
+                "pattern": "^c_.*"
+              },
+              "maxItems": 5
+            }
+          },
+          {
+            "name": "includeEinsteinSuggestedPhrases",
+            "in": "query",
+            "description": "The flag that determines whether or not to show recent and popular suggested phrases from Einstein.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "example": false
+            }
+          },
+          {
+            "name": "sfdc_usid",
+            "in": "header",
+            "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "550e8400-e29b-41d4-a716-446655440000"
+            }
+          },
+          {
+            "name": "personalized",
+            "in": "query",
+            "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none"
+              ],
+              "example": "none"
+            }
+          },
+          {
+            "name": "sfdc_shopper_context",
+            "in": "header",
+            "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
+            "required": false,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search suggestions successfully returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionResult"
+                },
+                "examples": {
+                  "SearchSuggestionResultExample": {
+                    "$ref": "#/components/examples/SearchSuggestionResultExample"
+                  },
+                  "SearchSuggestionResultWithCustomProductPropertiesExample": {
+                    "$ref": "#/components/examples/SearchSuggestionResultWithCustomProductPropertiesExample"
+                  },
+                  "SearchSuggestionWithFallbackModeExample": {
+                    "$ref": "#/components/examples/SearchSuggestionWithFallbackModeExample"
+                  },
+                  "SearchSuggestionWithConfiguredModeExample": {
+                    "$ref": "#/components/examples/SearchSuggestionWithConfiguredModeExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Returned when a query parameter or its value is unknown, or when a maximum or minimum constraint is violated.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "StringConstraintViolation": {
+                    "$ref": "#/components/examples/StringConstraintViolation"
+                  },
+                  "TooManyCustomProductAttributes": {
+                    "$ref": "#/components/examples/TooManyCustomProductAttributes"
+                  },
+                  "InvalidExpandParameter": {
+                    "$ref": "#/components/examples/InvalidExpandParameter"
+                  },
+                  "InvalidSearchMode": {
+                    "$ref": "#/components/examples/InvalidSearchMode"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ShopperToken": [
+              "sfcc.shopper-product-search",
+              "sfcc.shopper-standard"
+            ]
+          },
+          {
+            "ShopperClientContextToken": [
+              "sfcc.shopper-product-search",
+              "sfcc.shopper-standard"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "Select": {
+        "type": "string",
+        "description": "The property selector declaring which fields are included into the response payload. You can specify a single field name, a comma-separated list of names or work with wildcards. You can also specify array operations and filter expressions. The actual selector value must be enclosed within parentheses. For more information, please read the documentation about property selectors [here](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html).",
+        "example": "(name,id,variationAttributes.(**))",
+        "minLength": 1,
+        "pattern": "^[(].*[)]$"
+      },
+      "SiteId": {
+        "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
+        "example": "USD",
+        "pattern": "^([A-Z][A-Z][A-Z]|N/A)$"
+      },
+      "LanguageCountry": {
+        "type": "string",
+        "description": "A concatenated version of the standard Language and Country codes, combined with a hyphen '`-`'.",
+        "example": "en-US",
+        "pattern": "^[a-z][a-z]-[A-Z][A-Z]$"
+      },
+      "LanguageCode": {
+        "type": "string",
+        "description": "A two letter lowercase language code conforming to the [ISO 639-1](https://www.iso.org/iso-639-language-codes.html) standard. Additionally, this may be used to submit requests with the header parameter `Accept-Language`, following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766).",
+        "example": "en",
+        "pattern": "^[a-z][a-z]$"
+      },
+      "DefaultFallback": {
+        "type": "string",
+        "default": "default",
+        "description": "A specialized value indicating the system default values for locales.",
+        "example": "default",
+        "pattern": "^default$"
+      },
+      "LocaleCode": {
+        "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/LanguageCountry"
+          },
+          {
+            "$ref": "#/components/schemas/LanguageCode"
+          },
+          {
+            "$ref": "#/components/schemas/DefaultFallback"
+          }
+        ]
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "Image": {
+        "type": "object",
+        "properties": {
+          "alt": {
+            "type": "string",
+            "example": "The White Dress Shirt",
+            "maxLength": 4000
+          },
+          "disBaseLink": {
+            "type": "string",
+            "example": "https://edge.disstg.commercecloud.salesforce.com/dw/image/v2/ZZEU_006/on/demandware.static/-/Sites-apparel-catalog/default/dw9368b001/images/large/70284588_100_0.jpg",
+            "maxLength": 4000
+          },
+          "link": {
+            "type": "string",
+            "example": "https://zzeu-006.sandbox.us01.dx.commercecloud.salesforce.com/on/demandware.static/-/Sites-apparel-catalog/default/dw9368b001/images/large/70284588_100_0.jpg",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "The White Dress Shirt",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "link"
+        ]
+      },
+      "ProductType": {
+        "type": "object",
+        "description": "Document representing a product type.",
+        "properties": {
+          "bundle": {
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a bundle.",
+            "example": true
+          },
+          "item": {
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a standard item.",
+            "example": true
+          },
+          "master": {
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a master.",
+            "example": true
+          },
+          "option": {
+            "type": "boolean",
+            "description": "A flag indicating whether the product is an option.",
+            "example": true
+          },
+          "set": {
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a set.",
+            "example": true
+          },
+          "variant": {
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a variant.",
+            "example": true
+          },
+          "variationGroup": {
+            "type": "boolean",
+            "description": "A flag indicating whether the product is a variation group.",
+            "example": true
+          }
+        }
+      },
+      "ProductRef": {
+        "type": "object",
+        "description": "Document representing a product reference.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the product reference.",
+            "example": "74974310",
+            "maxLength": 100,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "VariationAttributeValue": {
+        "type": "object",
+        "description": "Document representing a variation attribute value.",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "The localized description of the variation value.",
+            "example": "Size 15R",
+            "maxLength": 4000
+          },
+          "image": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The first product image for the configured viewtype and this variation value."
+          },
+          "imageSwatch": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The first product image for the configured viewtype and this variation value. Typically the swatch image."
+          },
+          "name": {
+            "type": "string",
+            "description": "The localized display name of the variation value.",
+            "example": "15R",
+            "maxLength": 4000
+          },
+          "orderable": {
+            "type": "boolean",
+            "description": "A flag indicating whether at least one variant with this variation attribute value is available to sell.",
+            "example": true
+          },
+          "value": {
+            "type": "string",
+            "description": "The actual variation value.",
+            "example": "15R",
+            "maxLength": 4000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "VariationAttribute": {
+        "type": "object",
+        "description": "Document representing a variation attribute.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the variation attribute.",
+            "example": "size",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "The localized display name of the variation attribute.",
+            "example": "size",
+            "maxLength": 4000
+          },
+          "values": {
+            "type": "array",
+            "description": "The sorted array of variation values. This array can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/VariationAttributeValue"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ImageGroup": {
+        "type": "object",
+        "description": "Document representing an image group containing a list of images for a particular view type and an optional variation value.",
+        "properties": {
+          "images": {
+            "type": "array",
+            "description": "The images of the image group.",
+            "items": {
+              "$ref": "#/components/schemas/Image"
+            },
+            "minLength": 1
+          },
+          "variationAttributes": {
+            "type": "array",
+            "description": "Returns a list of variation attributes applying to this image group.",
+            "items": {
+              "$ref": "#/components/schemas/VariationAttribute"
+            }
+          },
+          "viewType": {
+            "type": "string",
+            "description": "The image view type.",
+            "example": "hi-res",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "images",
+          "viewType"
+        ]
+      },
+      "PriceRange": {
+        "type": "object",
+        "description": "Document representing price ranges for a product which happens to be a master product (per Pricebook)",
+        "properties": {
+          "maxPrice": {
+            "type": "number",
+            "format": "double",
+            "description": "Maximum price for the given pricebook (usually for a master Product would be the price for the Variant which has the highest price out of all Variants in that pricebook)",
+            "example": 10.89
+          },
+          "minPrice": {
+            "type": "number",
+            "format": "double",
+            "description": "Minimum price for the given pricebook (usually for a master Product would be the price for the Variant which has the least price out of all Variants in that pricebook)",
+            "example": 10.89
+          },
+          "pricebook": {
+            "type": "string",
+            "description": "The active pricebook from which the min and the max prices are calculated. The pricebook is based on the site context of the request as defined in ECOM.",
+            "example": "usd-list-pricebook",
+            "maxLength": 256
+          }
+        }
+      },
+      "ProductPromotion": {
+        "type": "object",
+        "description": "Document representing a product promotion.",
+        "properties": {
+          "calloutMsg": {
+            "type": "string",
+            "description": "The localized call-out message of the promotion.",
+            "example": "Fantastic promotion",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "promotionId": {
+            "type": "string",
+            "description": "The unique ID of the promotion.",
+            "example": "summerSale",
+            "maxLength": 260,
+            "minLength": 1
+          },
+          "promotionalPrice": {
+            "type": "number",
+            "format": "double",
+            "description": "The promotional price for this product.",
+            "example": 12.99,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "calloutMsg",
+          "promotionId",
+          "promotionalPrice"
+        ]
+      },
+      "ProductPriceTable": {
+        "type": "object",
+        "description": "Tiered Price Level Object",
+        "properties": {
+          "price": {
+            "type": "number",
+            "format": "double",
+            "description": "Price for the product for the specified tier for the specified pricebook",
+            "example": 12.99
+          },
+          "pricebook": {
+            "type": "string",
+            "description": "The active pricebook for which this price is defined",
+            "example": "usd-list-pricebook",
+            "maxLength": 256
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double",
+            "description": "Quantity tier for which the price is defined.",
+            "example": 1
+          }
+        }
+      },
+      "Variant": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "A product which is a variation within a master product that describes different colors, sizes, or other variation attributes. *Has a SKU.*",
+        "properties": {
+          "orderable": {
+            "type": "boolean",
+            "description": "A flag indicating whether the variant is orderable.",
+            "example": true
+          },
+          "price": {
+            "type": "number",
+            "format": "double",
+            "description": "The sales price of the variant.",
+            "example": 25.99
+          },
+          "productId": {
+            "type": "string",
+            "description": "The ID (SKU) of the variant.",
+            "example": "8W4756834",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "tieredPrices": {
+            "type": "array",
+            "description": "List of tiered prices if the product is a variant",
+            "items": {
+              "$ref": "#/components/schemas/ProductPriceTable"
+            }
+          },
+          "variationValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "example": "Beige",
+              "maxLength": 4000
+            },
+            "description": "The actual variation attribute ID - value pairs."
+          },
+          "productPromotions": {
+            "type": "array",
+            "description": "The array of active customer product promotions for this product. This array can be empty.\n Coupon promotions are not returned in this array.",
+            "items": {
+              "$ref": "#/components/schemas/ProductPromotion"
+            }
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "VariationGroup": {
+        "type": "object",
+        "description": "Representation of a group of variant products by an attribute. This can't be purchased by a shopper. It provides inheritable attributes for its product variants and is used for navigation. A VariationGroup doesn't have a SKU.",
+        "properties": {
+          "orderable": {
+            "type": "boolean",
+            "description": "A flag indicating whether the variation group is orderable.",
+            "example": false,
+            "minLength": 1
+          },
+          "price": {
+            "type": "number",
+            "format": "double",
+            "description": "The sales price of the variation group.",
+            "example": 24.99,
+            "minLength": 1
+          },
+          "productId": {
+            "type": "string",
+            "description": "The ID (SKU) of the variation group.",
+            "example": "49345VG",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "variationValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "example": "Beige",
+              "maxLength": 4000
+            },
+            "description": "The actual variation attribute ID - value pairs.",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "orderable",
+          "price",
+          "productId",
+          "variationValues"
+        ]
+      },
+      "ProductSearchHit": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a product search hit.",
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "hitType": {
+            "type": "string",
+            "description": "The type information for the search hit.",
+            "example": "product",
+            "maxLength": 256
+          },
+          "image": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Image"
+              }
+            ],
+            "description": "The first image of the product hit for the configured viewtype."
+          },
+          "orderable": {
+            "type": "boolean",
+            "description": "A flag indicating whether the product is orderable.",
+            "example": true
+          },
+          "price": {
+            "type": "number",
+            "format": "double",
+            "description": "The sales price of the product. In complex products, like master or set, this is the minimum price of\n related child products.",
+            "example": 135
+          },
+          "priceMax": {
+            "type": "number",
+            "format": "double",
+            "description": "The maximum sales of related child products in complex products like master or set.",
+            "example": 150
+          },
+          "productId": {
+            "type": "string",
+            "description": "The ID (SKU) of the product.",
+            "example": "74974310",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "productName": {
+            "type": "string",
+            "description": "The localized name of the product.",
+            "example": "Modern Dress Shirt",
+            "maxLength": 4000
+          },
+          "productType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductType"
+              }
+            ],
+            "description": "The type information for the product."
+          },
+          "representedProduct": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductRef"
+              }
+            ],
+            "description": "The first represented product."
+          },
+          "representedProducts": {
+            "type": "array",
+            "description": "All the represented products.",
+            "items": {
+              "$ref": "#/components/schemas/ProductRef"
+            }
+          },
+          "variationAttributes": {
+            "type": "array",
+            "description": "The array of represented variation attributes, for the master product only. This array can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/VariationAttribute"
+            }
+          },
+          "imageGroups": {
+            "type": "array",
+            "description": "The array of product image groups.",
+            "items": {
+              "$ref": "#/components/schemas/ImageGroup"
+            }
+          },
+          "priceRanges": {
+            "type": "array",
+            "description": "Array of one or more price range objects representing one or more Pricebooks in context for the site.",
+            "items": {
+              "$ref": "#/components/schemas/PriceRange"
+            }
+          },
+          "productPromotions": {
+            "type": "array",
+            "description": "The array of active customer product promotions for this product. This array can be empty.\n Coupon promotions are not returned in this array.",
+            "items": {
+              "$ref": "#/components/schemas/ProductPromotion"
+            }
+          },
+          "tieredPrices": {
+            "type": "array",
+            "description": "The document represents list of tiered prices if the product is a variant",
+            "items": {
+              "$ref": "#/components/schemas/ProductPriceTable"
+            }
+          },
+          "variants": {
+            "type": "array",
+            "description": "The array of actual variants. Only for master, variation group, and variant types. This array can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            }
+          },
+          "variationGroups": {
+            "type": "array",
+            "description": "The array of actual variation groups. Only for master, variation group, and variant types. This array can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/VariationGroup"
+            }
+          },
+          "slug": {
+            "type": "string",
+            "description": "SEO-friendly slug for the product, derived from the site's configured product URL rule.\nThis is the slug segment only, not a full URL. Returned only when `expand=slug` is requested.\nUse the slug to construct user-friendly product detail page URLs (for example,\n/products/{slug}/{productId}).",
+            "example": "modern-dress-shirt",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "PageMetaTag": {
+        "type": "object",
+        "description": "Document representing a Page Meta Tag object.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the Page Meta Tag.",
+            "example": "title",
+            "maxLength": 100
+          },
+          "value": {
+            "type": "string",
+            "description": "Locale-specific value of the Page Meta Tag, evaluated by resolving the rule set for the given Business Manager ID.",
+            "example": "Buy the Long Sleeve Covered Placket Blouse for USD 61.99."
+          },
+          "type": {
+            "type": "string",
+            "description": "The kind of Page Meta Tag, indicating how the storefront should render the value.\nDocumented values are `name`, `property`, `title`, and `jsonld`:\n  * `name` — render as `<meta name=\"...\">`.\n  * `property` — render as `<meta property=\"...\">` (e.g. Open Graph tags).\n  * `title` — render as the HTML `<title>` element.\n  * `jsonld` — JSON-LD structured data, intended for rendering inside `<script type=\"application/ld+json\">`.\nThe field may be absent when the kind cannot be determined. Clients should treat unknown values as opaque so additional kinds can be introduced without breaking the contract.",
+            "example": "name",
+            "maxLength": 64
+          }
+        }
+      },
+      "SearchMode": {
+        "type": "string",
+        "description": "A search matching approach. `semantic` is meaning-based matching; `lexical` is keyword/token-based matching.",
+        "enum": [
+          "semantic",
+          "lexical"
+        ],
+        "example": "semantic"
+      },
+      "query": {
+        "type": "string",
+        "description": "The query string that was searched for.",
+        "example": "dresses",
+        "maxLength": 50
+      },
+      "AppliedProcessor": {
+        "type": "object",
+        "description": "The result of a processor execution.",
+        "properties": {
+          "processorName": {
+            "type": "string",
+            "description": "The name of the processor.",
+            "example": "Attribute Aware Search",
+            "maxLength": 256
+          },
+          "result": {
+            "$ref": "#/components/schemas/query"
+          },
+          "refinements": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "example": "Beige",
+              "maxLength": 256
+            },
+            "description": "The refinements that were applied to the query."
+          }
+        }
+      },
+      "ProcessedQuery": {
+        "type": "object",
+        "description": "The result of query processing.",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/query"
+          },
+          "appliedProcessors": {
+            "type": "array",
+            "description": "The processors that were executed for the search query and their results.",
+            "items": {
+              "$ref": "#/components/schemas/AppliedProcessor"
+            },
+            "maxItems": 5
+          }
+        }
+      },
+      "ProductSearchRefinementValue": {
+        "type": "object",
+        "description": "Document representing a product search refinement value.",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "The localized description of the refinement value.",
+            "example": "The Beige objects",
+            "maxLength": 4000
+          },
+          "hitCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of search hits when selecting the refinement value. Can be 0.",
+            "example": 3,
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "description": "The localized label of the refinement value.",
+            "example": "Beige",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "presentationId": {
+            "type": "string",
+            "description": "The optional presentation ID associated with the refinement value.\n The presentation ID can be used, for example, to associate an ID with\n an HTML widget.",
+            "example": "beige",
+            "maxLength": 256
+          },
+          "value": {
+            "type": "string",
+            "description": "The refinement value. In the case of an attribute refinement, this is the bucket, the attribute value, or a \nvalue range. In the case of a category refinement, this is the category ID. In the case of a price \nrefinement, this is the price range. Ranges are enclosed by parentheses and delimited by \"..\"; for example, \n\"(100..999)\" and \"(Aa..Fa)\" are valid ranges.",
+            "example": "Beige",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "values": {
+            "type": "array",
+            "description": "The array of hierarchical refinement values. This array can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchRefinementValue"
+            }
+          }
+        },
+        "required": [
+          "hitCount",
+          "label",
+          "value"
+        ]
+      },
+      "ProductSearchRefinement": {
+        "type": "object",
+        "description": "Document representing a product search refinement attribute.",
+        "properties": {
+          "attributeId": {
+            "type": "string",
+            "description": "The ID of the search refinement attribute. In the case of an attribute refinement, this is the attribute ID.\n Custom attributes are marked by the prefix \"c_\" (for example, \"c_refinementColor\"). In the case of a\n category refinement, the ID must be \"cgid\". In the case of a price refinement, the ID must be \"price\".",
+            "example": "refinementColor",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "description": "The localized label of the refinement.",
+            "example": "Color",
+            "maxLength": 256
+          },
+          "values": {
+            "type": "array",
+            "description": "The sorted array of refinement values. This array can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchRefinementValue"
+            }
+          }
+        },
+        "required": [
+          "attributeId"
+        ]
+      },
+      "SuggestedPhrase": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a suggested search phrase.",
+        "properties": {
+          "exactMatch": {
+            "type": "boolean",
+            "description": "Returns whether this suggested phrase exactly matches the user input search phrase.",
+            "example": true,
+            "minLength": 1
+          },
+          "phrase": {
+            "type": "string",
+            "description": "Returns the suggested search phrase.",
+            "example": "sony",
+            "maxLength": 50,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "exactMatch",
+          "phrase"
+        ]
+      },
+      "SuggestedTerm": {
+        "type": "object",
+        "description": "Document representing a suggested term.",
+        "properties": {
+          "completed": {
+            "type": "boolean",
+            "description": "Returns whether this term value is a completion match.",
+            "example": true,
+            "minLength": 1
+          },
+          "corrected": {
+            "type": "boolean",
+            "description": "Returns whether this term value is a correction match.",
+            "example": false,
+            "minLength": 1
+          },
+          "exactMatch": {
+            "type": "boolean",
+            "description": "Returns whether this term value is a exact match.",
+            "example": false,
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "description": "Returns the term value.",
+            "example": "sony",
+            "maxLength": 50,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "completed",
+          "corrected",
+          "exactMatch",
+          "value"
+        ]
+      },
+      "SuggestedTerms": {
+        "type": "object",
+        "description": "Document representing a list of suggested terms for each term of a search phrase.",
+        "properties": {
+          "originalTerm": {
+            "type": "string",
+            "description": "Returns the original term that the suggested terms relates to.",
+            "example": "son",
+            "maxLength": 50,
+            "minLength": 1
+          },
+          "terms": {
+            "type": "array",
+            "description": "Returns the suggested terms.",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedTerm"
+            }
+          }
+        },
+        "required": [
+          "originalTerm"
+        ]
+      },
+      "Suggestion": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a suggestion.",
+        "properties": {
+          "suggestedPhrases": {
+            "type": "array",
+            "description": "A list of suggested phrases. This list can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedPhrase"
+            }
+          },
+          "suggestedTerms": {
+            "type": "array",
+            "description": "A list of suggested terms. This list can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedTerms"
+            },
+            "minLength": 1
+          }
+        },
+        "required": [
+          "suggestedTerms"
+        ]
+      },
+      "ProductSearchSortingOption": {
+        "type": "object",
+        "description": "Document representing a product search sorting option.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the sorting option.",
+            "example": "best-matches",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "description": "The localized label of the sorting option.",
+            "example": "Best Matches",
+            "maxLength": 4000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ]
+      },
+      "ProductSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Document representing a product search result.",
+        "properties": {
+          "hits": {
+            "type": "array",
+            "description": "A sorted array of search hits (`ProductSearchHit` objects). The array can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchHit"
+            },
+            "minLength": 1
+          },
+          "pageMetaTags": {
+            "type": "array",
+            "description": "Page Meta tags associated with the search result.",
+            "items": {
+              "$ref": "#/components/schemas/PageMetaTag"
+            }
+          },
+          "query": {
+            "type": "string",
+            "description": "The query string that was searched for.",
+            "example": "dresses",
+            "maxLength": 50
+          },
+          "searchMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMode"
+              }
+            ],
+            "description": "The search matching approach the client requested for this search, echoed back from the `searchMode` query parameter. Omitted when the request did not supply one. This is the requested hint, not necessarily the mode that served the result — see `effectiveSearchMode`."
+          },
+          "effectiveSearchMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMode"
+              }
+            ],
+            "description": "The search matching approach the platform actually used to serve this result. May differ from the requested `searchMode` when the platform demoted the mode (for example when the semantic index is unavailable)."
+          },
+          "processedQuery": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProcessedQuery"
+              }
+            ],
+            "description": "The result of query processing."
+          },
+          "refinements": {
+            "type": "array",
+            "description": "The sorted array of search refinements. This array can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchRefinement"
+            },
+            "minLength": 1
+          },
+          "searchPhraseSuggestions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Suggestion"
+              }
+            ],
+            "description": "The suggestion given by the system for the submitted search phrase.",
+            "minLength": 1
+          },
+          "selectedRefinements": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "example": "Beige",
+              "maxLength": 4000
+            },
+            "description": "A map of selected refinement attribute ID or value pairs. The sorting order is the same as in request URL."
+          },
+          "selectedSortingOption": {
+            "type": "string",
+            "description": "The ID of the applied sorting option.",
+            "example": "best-matches",
+            "maxLength": 4000
+          },
+          "sortingOptions": {
+            "type": "array",
+            "description": "The sorted array of search sorting options. This array can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/ProductSearchSortingOption"
+            },
+            "minLength": 1
+          }
+        },
+        "required": [
+          "hits",
+          "limit",
+          "offset",
+          "query",
+          "refinements",
+          "searchPhraseSuggestions",
+          "sortingOptions",
+          "total"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "BrandSuggestions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Suggestion"
+          }
+        ],
+        "description": "The suggested brand names are listed in suggested phrases. If this list is empty, no brand suggestion for a given search phrase was found."
+      },
+      "SuggestedCategory": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the category.",
+            "example": "womens-clothing-dresses",
+            "maxLength": 260,
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "The localized name of the category.",
+            "example": "Dresses",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "parentCategoryName": {
+            "type": "string",
+            "description": "The name of the parent category.",
+            "example": "Clothing",
+            "maxLength": 4000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "parentCategoryName"
+        ]
+      },
+      "CategorySuggestions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Suggestion"
+          }
+        ],
+        "properties": {
+          "categories": {
+            "type": "array",
+            "description": "The sorted list of suggested categories. This list can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedCategory"
+            }
+          }
+        }
+      },
+      "SuggestedProduct": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "This type supports additional properties passed along with the defined properties of this API.\nTo indicate that the properties were defined and expected to be handled as additional properties, they are expected to be prefixed with a `c_`.\nThe type will reject any property that does not fit this pattern, only allowing additional properties beginning with the known prefix.",
+          "example": "c_trackingId",
+          "title": "Additional Property Support"
+        },
+        "description": "Document representing a product search hit.",
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "price": {
+            "type": "number",
+            "format": "double",
+            "description": "The sales price of the product. In the case of complex products like a master or a set, this is the minimum price of\n related child products.",
+            "example": 300,
+            "minLength": 1
+          },
+          "productId": {
+            "type": "string",
+            "description": "The ID (SKU) of the product.",
+            "example": "sony-ps3-bundle",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "productName": {
+            "type": "string",
+            "description": "The localized name of the product.",
+            "example": "Playstation 3 Bundle",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "slug": {
+            "type": "string",
+            "description": "SEO-friendly slug for the product, derived from the site's configured product URL rule.\nThis is the slug segment only, not a full URL. Returned only when `expand=slug` is requested.\nUse the slug to construct user-friendly product detail page URLs (for example,\n/products/{slug}/{productId}).",
+            "example": "modern-dress-shirt",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "currency",
+          "price",
+          "productId",
+          "productName"
+        ]
+      },
+      "ProductSuggestions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Suggestion"
+          }
+        ],
+        "properties": {
+          "products": {
+            "type": "array",
+            "description": "The sorted list of suggested products. This list can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedProduct"
+            }
+          }
+        }
+      },
+      "CustomSuggestions": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Suggestion"
+          }
+        ],
+        "description": "The custom suggestions are listed in suggested phrases. If this list is empty, no custom suggestion for the given search phrase was found.",
+        "properties": {
+          "customSuggestion": {
+            "type": "string",
+            "example": "Try searching for budget shoes."
+          }
+        }
+      },
+      "EinsteinSuggestedPhrases": {
+        "type": "object",
+        "description": "Einstein-suggested phrases containing popular and recent search phrases.",
+        "properties": {
+          "popularSearchPhrases": {
+            "type": "array",
+            "description": "A list of popular search phrases suggested by Einstein. This list can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedPhrase"
+            },
+            "maxLength": 10
+          },
+          "recentSearchPhrases": {
+            "type": "array",
+            "description": "A list of recent search phrases suggested by Einstein. This list can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedPhrase"
+            },
+            "maxLength": 10
+          }
+        }
+      },
+      "SuggestionResult": {
+        "type": "object",
+        "description": "Document representing a search suggestion result.",
+        "properties": {
+          "brandSuggestions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrandSuggestions"
+              }
+            ],
+            "description": "Returns the suggested brands."
+          },
+          "categorySuggestions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategorySuggestions"
+              }
+            ],
+            "description": "Returns the suggested categories."
+          },
+          "productSuggestions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductSuggestions"
+              }
+            ],
+            "description": "Returns the suggested products."
+          },
+          "customSuggestion": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomSuggestions"
+              }
+            ],
+            "description": "Returns custom suggestions."
+          },
+          "einsteinSuggestedPhrases": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EinsteinSuggestedPhrases"
+              }
+            ],
+            "description": "Returns Einstein suggested phrases containing popular and recent search phrases."
+          },
+          "searchPhrase": {
+            "type": "string",
+            "description": "The query phrase (q) for which suggestions where made.",
+            "example": "dresses",
+            "maxLength": 50,
+            "minLength": 3
+          },
+          "searchMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMode"
+              }
+            ],
+            "description": "The search matching approach the client requested for these suggestions, echoed back from the `searchMode` query parameter. Omitted when the request did not supply one. This is the requested hint, not necessarily the mode that served the suggestions — see `effectiveSearchMode`."
+          },
+          "effectiveSearchMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMode"
+              }
+            ],
+            "description": "The search matching approach the platform actually used to serve these suggestions. May differ from the requested `searchMode` when the platform demoted the mode (for example when the semantic index is unavailable)."
+          }
+        },
+        "required": [
+          "searchPhrase"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        },
+        "example": "f_ecom_zzxy_prd"
+      },
+      "productSearchSelect": {
+        "name": "select",
+        "in": "query",
+        "description": "The property selector declaring which fields are included in the product search response payload. For details, see [Property Selection.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-property-selection.html)",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/Select"
+        },
+        "example": "(hits.(**), refinements, sortingOptions.(id))"
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        },
+        "examples": {
+          "SiteId": {
+            "value": "RefArch"
+          }
+        }
+      },
+      "qProductSearch": {
+        "name": "q",
+        "in": "query",
+        "description": "The query phrase to search for. For example to search for a product \"shirt\", type q=shirt. **Note:** - Lexical search queries are limited to a maximum of 50 characters.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "example": "shirt",
+          "maxLength": 500,
+          "minLength": 1
+        }
+      },
+      "refine": {
+        "name": "refine",
+        "in": "query",
+        "description": "Parameter that represents a refinement attribute or values pair. Refinement attribute ID and values are separated by '='.<br> \nMultiple values are supported by a subset of refinement attributes and can be provided by separating them using a pipe (URL encoded = \\\"|\\\"), for example: refine=c_refinementColor=red|green|blue.<br> \nValue ranges can be specified like this: refine=price=(100..500).<br> \nMultiple refine parameters can be provided by using the refine as the key, for example: refine=price=(0..10)&refine=c_refinementColor=green.<br> \nThe refinements can be a collection of custom defined attributes IDs and the system defined attributes IDs but the search can only accept a total of 9 refinements at a time.<br>            \n\nThe following system refinement attribute ids are supported:<br>\n`cgid`: Allows refinement per single category ID. Multiple category IDs are not supported.<br>\n`cgslug`: Allows refinement by a category URL slug (for example, `mens/clothing`). The server resolves the slug to a category ID using the site's storefront URL mapping. If the slug can't be resolved to a category, the API returns a 400 error. This parameter is mutually exclusive with `cgid`. If both are provided, `cgid` takes priority and `cgslug` is ignored.<br>\n`price`: Allows refinement per single price range. Multiple price ranges are not supported.<br>\n`htype`: Allow refinement by including only the provided hit types. Accepted types are 'product', 'master', 'set', 'bundle', 'slicing_group' (deprecated), 'variation_group'.<br>\n`orderable_only`: Unavailable products are excluded from the search results if true is set. Multiple refinement values are not supported.<br>\n`ilids`: Allows refining by inventory list IDs. Supports up to 10 inventory list IDs per request.<br>\n`pmid`: Allows refinement on the supplied promotion ID(s). When used with `pmpt`, filters products by their role in the promotion.<br>\n`pmpt`: Allows refinement per promotion product type. Must be used with `pmid` to filter products by their role in the promotion. Valid values are:\n  - `all`: Returns all products related to the promotion (default)\n  - `qualifying`: Returns only products that qualify for the promotion but don't receive the discount/bonus\n  - `discounted`: Returns only products that receive a discount in the promotion\n  - `bonus`: Returns only products that are given as bonuses in the promotion\n\n**Note:** To refine a search using multiple promotion filters—for example, to find products in both the spring and summer campaigns—see [Refining by Multiple Promotions](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-promotions-for-developers.html#refining-by-multiple-promotions).",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "example": "price=(0..10)",
+            "maxLength": 4000
+          },
+          "maxItems": 9
+        }
+      },
+      "sort": {
+        "name": "sort",
+        "in": "query",
+        "description": "The ID of the sorting option to sort the search hits.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "example": "brand",
+          "maxLength": 256
+        }
+      },
+      "searchMode": {
+        "name": "searchMode",
+        "in": "query",
+        "description": "A hint for the search matching approach the platform should use for this request. `semantic` selects meaning-based matching; `lexical` selects keyword/token-based matching.\n\nThe hint is non-authoritative and applies only to this request: the platform runs its full routing cascade and may demote a `semantic` request to `lexical` (for example when the semantic index is unavailable). Always read the resolved `effectiveSearchMode` field in the response rather than assuming the requested mode was honored. When omitted, the platform's configured default applies.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "semantic",
+            "lexical"
+          ],
+          "example": "semantic"
+        }
+      },
+      "currency": {
+        "name": "currency",
+        "in": "query",
+        "description": "A three letter uppercase currency code conforming to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard, or the string `N/A` indicating that a currency is not applicable.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/CurrencyCode"
+        },
+        "examples": {
+          "CurrencyCode": {
+            "value": "USD"
+          }
+        }
+      },
+      "locale": {
+        "name": "locale",
+        "in": "query",
+        "description": "A descriptor for a geographical region by both a language and country code. By combining these two, regional differences in a language can be addressed, such as with the request header parameter `Accept-Language` following [RFC 2616](https://tools.ietf.org/html/rfc2616) & [RFC 1766](https://tools.ietf.org/html/rfc1766). This can also just refer to a language code, also RFC 2616/1766 compliant, as a default if there is no specific match for a country. Finally, can also be used to define default behavior if there is no locale specified.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/LocaleCode"
+        },
+        "examples": {
+          "LanguageCountry": {
+            "value": "en-US"
+          },
+          "CountryCode": {
+            "value": "US"
+          }
+        }
+      },
+      "expandProductSearch": {
+        "name": "expand",
+        "in": "query",
+        "description": "A comma-separated list with allowed values - `availability`, `images`, `prices`, `represented_products`, `variations`, `promotions`, `custom_properties`, `slug`. \nBy default, the expand parameter includes `availability, images, prices, represented_products, variations`. \nUse none to disable all expand options.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "none",
+              "availability",
+              "images",
+              "prices",
+              "represented_products",
+              "variations",
+              "promotions",
+              "custom_properties",
+              "page_meta_tags",
+              "slug"
+            ],
+            "example": "prices"
+          }
+        }
+      },
+      "allImages": {
+        "name": "allImages",
+        "in": "query",
+        "description": "When the `images` expand parameter is used with this flag, the response includes the `imageGroups` property, which contains an image model.\nIf this flag is true, the full image model is returned and you can combine with `imgTypes` to filter image types and counts. If false, only matching images are included.\nIf no flag is passed, the `imageGroups` property is omitted from the response.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean",
+          "example": true
+        }
+      },
+      "imgTypes": {
+        "name": "imgTypes",
+        "in": "query",
+        "description": "Filters product images by type with optional count limits per type. This parameter requires both the `images` expand parameter and `allImages=true`.\nWhen used, the response includes the `imageGroups` property filtered by the specified image types.\nThe format is a comma-separated list of image types with optional counts: `<imageType>:<count>,<imageType>:<count>`.\nIf the count is omitted, all images of that type are returned. If specified, the count limits the number of images returned for that type.\nFor example, `imgTypes=large:2,small:1` returns up to 2 large images and 1 small image per product in the imageGroups.\nIf `imgTypes` is used without `allImages=true`, it is ignored and imageGroups aren't included in the response.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "example": "large:2,small:1",
+          "maxLength": 50
+        }
+      },
+      "perPricebook": {
+        "name": "perPricebook",
+        "in": "query",
+        "description": "When this flag is set to `true` and is used with the `prices` expand parameter, the response includes per PriceBook prices and tiered prices (if available).",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean",
+          "example": true
+        }
+      },
+      "allVariationProperties": {
+        "name": "allVariationProperties",
+        "in": "query",
+        "description": "The flag that determines which variation properties are included in the result. When set to `true` with the `variations` expand parameter, all variation properties (`variationAttributes`, `variationGroups`, `variants`) are returned. When set to false, only the default property `variationAttributes` is returned.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean",
+          "example": false
+        }
+      },
+      "includedCustomVariationProperties": {
+        "name": "includedCustomVariationProperties",
+        "in": "query",
+        "description": "A comma-separated list of custom property ids to be returned for variant products. The `variants` expand parameter and `allVariationProperties` query parameter are required for these properties to be returned.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "example": "c_batteryLife",
+            "maxLength": 256,
+            "pattern": "^c_.*"
+          },
+          "maxItems": 5
+        }
+      },
+      "qSearchSuggestion": {
+        "name": "q",
+        "in": "query",
+        "description": "The search phrase (q) for which suggestions are evaluated. Search suggestions are determined when the search phrase input is at least three (default) characters long. The value is configurable in the Business Manager.",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "example": "sho",
+          "maxLength": 50,
+          "minLength": 3
+        }
+      },
+      "limitSearchSuggestion": {
+        "name": "limit",
+        "in": "query",
+        "description": "The maximum number of suggestions made per request. If no value is defined, by default five suggestions per suggestion type are evaluated. This affects all types of suggestions (category, product, brand, and custom suggestions).",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "integer",
+          "default": 5,
+          "example": 5,
+          "maximum": 10,
+          "minimum": 1
+        }
+      },
+      "expandSearchSuggestion": {
+        "name": "expand",
+        "in": "query",
+        "description": "A comma-separated list of the values `images`, `prices`, `custom_product_properties`, and `slug`.\nBy default, the expand parameter includes `prices`.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "images",
+              "prices",
+              "custom_product_properties",
+              "slug"
+            ],
+            "example": "prices"
+          }
+        }
+      },
+      "includedCustomProductProperties": {
+        "name": "includedCustomProductProperties",
+        "in": "query",
+        "description": "A comma-separated list of custom property ids to be returned for product suggestions. The `custom_product_properties` expand parameter is required for these properties to be returned.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "example": "c_batteryLife",
+            "maxLength": 256,
+            "pattern": "^c_.*"
+          },
+          "maxItems": 5
+        }
+      },
+      "includeEinsteinSuggestedPhrases": {
+        "name": "includeEinsteinSuggestedPhrases",
+        "in": "query",
+        "description": "The flag that determines whether or not to show recent and popular suggested phrases from Einstein.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean",
+          "example": false
+        }
+      },
+      "sfdcUsid": {
+        "name": "sfdc_usid",
+        "in": "header",
+        "description": "A unique shopper identifier (USID) for tracking client context.\nUsed with endpoints secured with ShopperClientContextToken.\nThis header is required for all endpoints secured with ShopperClientContextToken.",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      },
+      "personalized": {
+        "name": "personalized",
+        "in": "query",
+        "description": "Controls whether personalization is applied to the response. When set to `none`, the server skips applying personalization to the response.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "none"
+          ],
+          "example": "none"
+        }
+      },
+      "sfdcShopperContext": {
+        "name": "sfdc_shopper_context",
+        "in": "header",
+        "description": "Shopper context information (for example clientIP, sourceCode, and customQualifiers)\npassed in from a trusted backend application.",
+        "required": false,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "examples": {
+      "ProductSearchResultExample": {
+        "value": {
+          "limit": 3,
+          "hits": [
+            {
+              "currency": "USD",
+              "hitType": "master",
+              "image": {
+                "alt": "Modern Dress Shirt, , large",
+                "disBaseLink": "https://edge.disstg.commercecloud.salesforce.com/dw/image/v2/ZZEU_006/on/demandware.static/-/Sites-apparel-catalog/default/dw7671b929/images/large/B0174501_GY9_0.jpg",
+                "link": "https://zzeu-006.sandbox.us01.dx.commercecloud.salesforce.com/on/demandware.static/-/Sites-apparel-catalog/default/dw7671b929/images/large/B0174501_GY9_0.jpg",
+                "title": "Modern Dress Shirt, "
+              },
+              "orderable": true,
+              "price": 135,
+              "productId": "74974310",
+              "productName": "Modern Dress Shirt",
+              "productType": {
+                "master": true
+              },
+              "representedProduct": {
+                "id": "74974310-1"
+              },
+              "representedProducts": [
+                {
+                  "id": "74974310-1"
+                },
+                {
+                  "id": "74974310-2"
+                },
+                {
+                  "id": "74974310-3"
+                },
+                {
+                  "id": "74974310-4"
+                }
+              ],
+              "variationAttributes": [
+                {
+                  "id": "color",
+                  "name": "color",
+                  "values": [
+                    {
+                      "name": "Blue",
+                      "orderable": true,
+                      "value": "002"
+                    }
+                  ]
+                },
+                {
+                  "id": "size",
+                  "name": "size",
+                  "values": [
+                    {
+                      "name": "15R",
+                      "orderable": true,
+                      "value": "15R"
+                    },
+                    {
+                      "name": "15L",
+                      "orderable": true,
+                      "value": "15L"
+                    },
+                    {
+                      "name": "16L",
+                      "orderable": true,
+                      "value": "16L"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "currency": "USD",
+              "hitType": "master",
+              "image": {
+                "alt": "The White Dress Shirt, , large",
+                "disBaseLink": "https://edge.disstg.commercecloud.salesforce.com/dw/image/v2/ZZEU_006/on/demandware.static/-/Sites-apparel-catalog/default/dw9368b001/images/large/70284588_100_0.jpg",
+                "link": "https://zzeu-006.sandbox.us01.dx.commercecloud.salesforce.com/on/demandware.static/-/Sites-apparel-catalog/default/dw9368b001/images/large/70284588_100_0.jpg",
+                "title": "The White Dress Shirt, "
+              },
+              "orderable": true,
+              "price": 135,
+              "productId": "78916783",
+              "productName": "The White Dress Shirt",
+              "productType": {
+                "master": true
+              },
+              "representedProduct": {
+                "id": "78916783-1"
+              },
+              "representedProducts": [
+                {
+                  "id": "78916783-1"
+                },
+                {
+                  "id": "78916783-2"
+                },
+                {
+                  "id": "78916783-3"
+                },
+                {
+                  "id": "78916783-4"
+                }
+              ],
+              "variationAttributes": [
+                {
+                  "id": "color",
+                  "name": "Color",
+                  "values": [
+                    {
+                      "name": "White",
+                      "orderable": true,
+                      "value": "white"
+                    }
+                  ]
+                },
+                {
+                  "id": "size",
+                  "name": "size",
+                  "values": [
+                    {
+                      "name": "15L",
+                      "orderable": true,
+                      "value": "15L"
+                    },
+                    {
+                      "name": "15R",
+                      "orderable": true,
+                      "value": "15R"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "currency": "USD",
+              "hitType": "master",
+              "image": {
+                "alt": "Striped Shirt, , large",
+                "disBaseLink": "https://edge.disstg.commercecloud.salesforce.com/dw/image/v2/ZZEU_006/on/demandware.static/-/Sites-apparel-catalog/default/dw83b22281/images/large/PG.10213135.JJ9VSA5.PZ.jpg",
+                "link": "https://zzeu-006.sandbox.us01.dx.commercecloud.salesforce.com/on/demandware.static/-/Sites-apparel-catalog/default/dw83b22281/images/large/PG.10213135.JJ9VSA5.PZ.jpg",
+                "title": "Striped Shirt, "
+              },
+              "orderable": true,
+              "price": 40.99,
+              "productId": "25518484",
+              "productName": "Striped Shirt",
+              "productType": {
+                "master": true
+              },
+              "representedProduct": {
+                "id": "701642854760"
+              },
+              "representedProducts": [
+                {
+                  "id": "701642854760"
+                },
+                {
+                  "id": "701642854784"
+                },
+                {
+                  "id": "701642854791"
+                },
+                {
+                  "id": "701642854777"
+                }
+              ],
+              "variationAttributes": [
+                {
+                  "id": "color",
+                  "name": "Color",
+                  "values": [
+                    {
+                      "name": "Royal Multi",
+                      "orderable": true,
+                      "value": "JJ9VSA5"
+                    }
+                  ]
+                },
+                {
+                  "id": "size",
+                  "name": "Size",
+                  "values": [
+                    {
+                      "name": "S",
+                      "orderable": true,
+                      "value": "9SM"
+                    },
+                    {
+                      "name": "M",
+                      "orderable": true,
+                      "value": "9MD"
+                    },
+                    {
+                      "name": "L",
+                      "orderable": true,
+                      "value": "9LG"
+                    },
+                    {
+                      "name": "XL",
+                      "orderable": true,
+                      "value": "9XL"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "pageMetaTags": [
+            {
+              "id": "description",
+              "value": "Browse our latest selection of shirts. Free shipping on orders over $50.",
+              "type": "name"
+            },
+            {
+              "id": "robots",
+              "value": "index,follow",
+              "type": "name"
+            },
+            {
+              "id": "title",
+              "value": "Find amazing products in Storefront Catalog - EN' today",
+              "type": "title"
+            },
+            {
+              "id": "og:title",
+              "value": "Shirts - Storefront Catalog",
+              "type": "property"
+            },
+            {
+              "id": "itemList",
+              "value": "{\"@context\":\"https://schema.org/\",\"@type\":\"ItemList\",\"name\":\"Shirts\",\"numberOfItems\":4}",
+              "type": "jsonld"
+            }
+          ],
+          "query": "shirt",
+          "searchMode": "semantic",
+          "effectiveSearchMode": "semantic",
+          "refinements": [
+            {
+              "attributeId": "cgid",
+              "label": "Category",
+              "values": [
+                {
+                  "hitCount": 4,
+                  "label": "New Arrivals",
+                  "value": "newarrivals"
+                }
+              ]
+            },
+            {
+              "attributeId": "c_refinementColor",
+              "label": "Color",
+              "values": [
+                {
+                  "hitCount": 0,
+                  "label": "Beige",
+                  "presentationId": "beige",
+                  "value": "Beige"
+                },
+                {
+                  "hitCount": 0,
+                  "label": "Yellow",
+                  "presentationId": "yellow",
+                  "value": "Yellow"
+                },
+                {
+                  "hitCount": 7,
+                  "label": "Miscellaneous",
+                  "presentationId": "miscellaneous",
+                  "value": "Miscellaneous"
+                }
+              ]
+            },
+            {
+              "attributeId": "price",
+              "label": "Price",
+              "values": [
+                {
+                  "hitCount": 14,
+                  "label": "$20 - $49.99",
+                  "value": "(20..50)"
+                },
+                {
+                  "hitCount": 26,
+                  "label": "$50 - $99.99",
+                  "value": "(50..100)"
+                },
+                {
+                  "hitCount": 6,
+                  "label": "$100 - $499.99",
+                  "value": "(100..500)"
+                }
+              ]
+            },
+            {
+              "attributeId": "c_isNew",
+              "label": "New Arrival",
+              "values": [
+                {
+                  "hitCount": 1,
+                  "label": "true",
+                  "value": "true"
+                }
+              ]
+            },
+            {
+              "attributeId": "brand",
+              "label": "brand",
+              "values": [
+                {
+                  "hitCount": 1,
+                  "label": "Lacy-S",
+                  "value": "Lacy-S"
+                }
+              ]
+            }
+          ],
+          "searchPhraseSuggestions": {
+            "suggestedPhrases": [
+              {
+                "exactMatch": true,
+                "phrase": "shirt"
+              }
+            ],
+            "suggestedTerms": [
+              {
+                "originalTerm": "shirt",
+                "terms": [
+                  {
+                    "completed": false,
+                    "corrected": false,
+                    "exactMatch": true,
+                    "value": "shirt"
+                  }
+                ]
+              }
+            ]
+          },
+          "sortingOptions": [
+            {
+              "id": "best-matches",
+              "label": "Best Matches"
+            },
+            {
+              "id": "price-low-to-high",
+              "label": "Price Low To High"
+            }
+          ],
+          "offset": 0,
+          "total": 46
+        }
+      },
+      "ProductSearchWithPromotionFilterExample": {
+        "summary": "Product search with promotion filtering using pmid and pmpt",
+        "description": "Example showing how to filter products by their role in a promotion using pmid and pmpt parameters",
+        "value": {
+          "limit": 1,
+          "hits": [
+            {
+              "currency": "USD",
+              "hitType": "master",
+              "image": {
+                "alt": "Platinum Red Stripes Easy Care Fitted Shirt, , large",
+                "disBaseLink": "https://image.demandware.com/dw/image/v2/zzzz_s01/on/demandware.static/-/Sites-apparel-catalog/default/dw8c838411/images/large/PG.10123426.JJ8WXXX.PZ.jpg",
+                "link": "https://localhost/on/demandware.static/-/Sites-apparel-catalog/default/dw8c838411/images/large/PG.10123426.JJ8WXXX.PZ.jpg",
+                "title": "Platinum Red Stripes Easy Care Fitted Shirt, "
+              },
+              "orderable": true,
+              "price": 75,
+              "pricePerUnit": 75,
+              "productId": "25050730",
+              "productName": "Platinum Red Stripes Easy Care Fitted Shirt",
+              "productType": {
+                "master": true
+              },
+              "representedProduct": {
+                "id": "008884304108"
+              },
+              "representedProducts": [
+                {
+                  "id": "008884304108"
+                }
+              ],
+              "variationAttributes": [
+                {
+                  "id": "color",
+                  "name": "Color",
+                  "values": [
+                    {
+                      "name": "White",
+                      "orderable": true,
+                      "value": "JJ8WXXX"
+                    }
+                  ]
+                },
+                {
+                  "id": "size",
+                  "name": "Size",
+                  "values": [
+                    {
+                      "name": "6",
+                      "orderable": true,
+                      "value": "006"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "query": "shirts",
+          "refinements": [
+            {
+              "attributeId": "cgid",
+              "label": "Category",
+              "values": [
+                {
+                  "hitCount": 1,
+                  "label": "Womens",
+                  "value": "womens",
+                  "values": [
+                    {
+                      "hitCount": 1,
+                      "label": "Clothing",
+                      "value": "womens-clothing",
+                      "values": [
+                        {
+                          "hitCount": 1,
+                          "label": "Tops",
+                          "value": "womens-clothing-tops"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "attributeId": "c_refinementColor",
+              "label": "Color",
+              "values": [
+                {
+                  "hitCount": 0,
+                  "label": "Beige",
+                  "presentationId": "beige",
+                  "value": "Beige"
+                },
+                {
+                  "hitCount": 0,
+                  "label": "White",
+                  "presentationId": "white",
+                  "value": "White"
+                }
+              ]
+            },
+            {
+              "attributeId": "c_isNew",
+              "label": "New Arrival"
+            },
+            {
+              "attributeId": "c_topType",
+              "label": "Type | Use"
+            },
+            {
+              "attributeId": "c_size",
+              "label": "Size",
+              "values": [
+                {
+                  "hitCount": 0,
+                  "label": "4",
+                  "value": "4"
+                },
+                {
+                  "hitCount": 1,
+                  "label": "6",
+                  "value": "6"
+                },
+                {
+                  "hitCount": 0,
+                  "label": "8",
+                  "value": "8"
+                }
+              ]
+            },
+            {
+              "attributeId": "price",
+              "label": "Price",
+              "values": [
+                {
+                  "hitCount": 1,
+                  "label": "$50 - $99.99",
+                  "value": "(50..100)"
+                }
+              ]
+            }
+          ],
+          "searchPhraseSuggestions": {
+            "suggestedPhrases": [
+              {
+                "exactMatch": true,
+                "phrase": "shirts"
+              }
+            ],
+            "suggestedTerms": [
+              {
+                "originalTerm": "shirts",
+                "terms": [
+                  {
+                    "completed": false,
+                    "corrected": false,
+                    "exactMatch": true,
+                    "value": "shirts"
+                  }
+                ]
+              }
+            ]
+          },
+          "selectedRefinements": {
+            "pmid": "BonusProductOnOrderOfAmountABove250",
+            "pmpt": "bonus"
+          },
+          "sortingOptions": [
+            {
+              "id": "best-matches",
+              "label": "Best Matches"
+            },
+            {
+              "id": "price-low-to-high",
+              "label": "Price Low To High"
+            },
+            {
+              "id": "price-high-to-low",
+              "label": "Price High to Low"
+            },
+            {
+              "id": "product-name-ascending",
+              "label": "Product Name A - Z"
+            },
+            {
+              "id": "product-name-descending",
+              "label": "Product Name Z - A"
+            },
+            {
+              "id": "brand",
+              "label": "Brand"
+            },
+            {
+              "id": "most-popular",
+              "label": "Most Popular"
+            },
+            {
+              "id": "top-sellers",
+              "label": "Top Sellers"
+            }
+          ],
+          "offset": 0,
+          "total": 1
+        }
+      },
+      "ProductSearchResultWithCustomVariationPropertiesExample": {
+        "summary": "Product search result demonstrating custom variation properties on product variants.",
+        "value": {
+          "limit": 1,
+          "hits": [
+            {
+              "hitType": "master",
+              "productId": "portable-media-player",
+              "productName": "Portable Media Player",
+              "productType": {
+                "master": true
+              },
+              "representedProduct": {
+                "id": "media-player-purple-8gb"
+              },
+              "variants": [
+                {
+                  "productId": "media-player-silver-8gb",
+                  "variationValues": {
+                    "color": "Silver",
+                    "memorySize": "8 GB"
+                  },
+                  "c_badges": [
+                    "Popular"
+                  ],
+                  "c_mediaFormat": [
+                    "0020",
+                    "0050"
+                  ],
+                  "c_musicStorage": "2,000 songs"
+                },
+                {
+                  "productId": "media-player-purple-8gb",
+                  "variationValues": {
+                    "color": "Purple",
+                    "memorySize": "8 GB"
+                  },
+                  "c_badges": [
+                    "Best Seller"
+                  ],
+                  "c_mediaFormat": [
+                    "0010",
+                    "0020",
+                    "0030"
+                  ],
+                  "c_musicStorage": "2,000 songs"
+                }
+              ]
+            }
+          ],
+          "query": "media player purple",
+          "refinements": [],
+          "searchPhraseSuggestions": {
+            "suggestedPhrases": [],
+            "suggestedTerms": []
+          },
+          "sortingOptions": [
+            {
+              "id": "best-matches",
+              "label": "Best Matches"
+            }
+          ],
+          "offset": 0,
+          "total": 1
+        }
+      },
+      "ProductSearchWithProcessedQueryExample": {
+        "summary": "Product search result demonstrating processors being executed on the search query.",
+        "value": {
+          "limit": 1,
+          "hits": [
+            {
+              "hitType": "master",
+              "productId": "portable-media-player",
+              "productName": "Portable Media Player",
+              "productType": {
+                "master": true
+              },
+              "representedProduct": {
+                "id": "media-player-purple-8gb"
+              },
+              "variants": [
+                {
+                  "productId": "media-player-silver-8gb",
+                  "variationValues": {
+                    "color": "Silver",
+                    "memorySize": "8 GB"
+                  },
+                  "c_badges": [
+                    "Popular"
+                  ],
+                  "c_mediaFormat": [
+                    "0020",
+                    "0050"
+                  ],
+                  "c_musicStorage": "2,000 songs"
+                },
+                {
+                  "productId": "media-player-purple-8gb",
+                  "variationValues": {
+                    "color": "Purple",
+                    "memorySize": "8 GB"
+                  },
+                  "c_badges": [
+                    "Best Seller"
+                  ],
+                  "c_mediaFormat": [
+                    "0010",
+                    "0020",
+                    "0030"
+                  ],
+                  "c_musicStorage": "2,000 songs"
+                }
+              ]
+            }
+          ],
+          "processedQuery": {
+            "appliedProcessors": [
+              {
+                "processorName": "Attribute Aware Search",
+                "refinements": {
+                  "price": "(..200)"
+                },
+                "result": "media player purple"
+              }
+            ],
+            "query": "media player purple"
+          },
+          "query": "media player purple under 200",
+          "refinements": [],
+          "searchPhraseSuggestions": {
+            "suggestedPhrases": [],
+            "suggestedTerms": []
+          },
+          "sortingOptions": [
+            {
+              "id": "best-matches",
+              "label": "Best Matches"
+            }
+          ],
+          "offset": 0,
+          "total": 1
+        }
+      },
+      "ProductSearchWithFallbackModeExample": {
+        "summary": "Product search where a semantic request was demoted to lexical.",
+        "description": "The caller requested `searchMode=semantic`, but the platform could not serve semantically (for example a single-token SKU lookup) and demoted to `lexical`. The response echoes the requested `searchMode` and reports the mode actually used in `effectiveSearchMode`, which a client reads to detect that the requested mode was not honored.",
+        "value": {
+          "limit": 25,
+          "hits": [
+            {
+              "currency": "USD",
+              "hitType": "product",
+              "orderable": true,
+              "price": 19.99,
+              "productId": "ABC-12345",
+              "productName": "Classic Cotton Crew Sock",
+              "productType": {
+                "item": true
+              },
+              "representedProduct": {
+                "id": "ABC-12345"
+              }
+            },
+            {
+              "currency": "USD",
+              "hitType": "product",
+              "orderable": true,
+              "price": 24.99,
+              "productId": "ABC-12346",
+              "productName": "Ribbed Wool Blend Sock",
+              "productType": {
+                "item": true
+              },
+              "representedProduct": {
+                "id": "ABC-12346"
+              }
+            }
+          ],
+          "query": "ABC-12345",
+          "searchMode": "semantic",
+          "effectiveSearchMode": "lexical",
+          "refinements": [],
+          "searchPhraseSuggestions": {
+            "suggestedPhrases": [],
+            "suggestedTerms": []
+          },
+          "sortingOptions": [
+            {
+              "id": "best-matches",
+              "label": "Best Matches"
+            }
+          ],
+          "offset": 0,
+          "total": 2
+        }
+      },
+      "ProductSearchWithConfiguredModeExample": {
+        "summary": "Product search with no requested mode, resolved by the platform's configured default.",
+        "description": "The request omitted `searchMode`, so the response omits the echoed hint and the platform's configured default selected the mode reported in `effectiveSearchMode`.",
+        "value": {
+          "limit": 25,
+          "hits": [
+            {
+              "currency": "USD",
+              "hitType": "master",
+              "orderable": true,
+              "price": 39.99,
+              "productId": "74974310",
+              "productName": "Modern Dress Shirt",
+              "productType": {
+                "master": true
+              },
+              "representedProduct": {
+                "id": "74974310-1"
+              }
+            },
+            {
+              "currency": "USD",
+              "hitType": "master",
+              "orderable": true,
+              "price": 44.99,
+              "productId": "78916783",
+              "productName": "The White Dress Shirt",
+              "productType": {
+                "master": true
+              },
+              "representedProduct": {
+                "id": "78916783-1"
+              }
+            }
+          ],
+          "query": "shirt",
+          "effectiveSearchMode": "semantic",
+          "refinements": [],
+          "searchPhraseSuggestions": {
+            "suggestedPhrases": [],
+            "suggestedTerms": []
+          },
+          "sortingOptions": [
+            {
+              "id": "best-matches",
+              "label": "Best Matches"
+            }
+          ],
+          "offset": 0,
+          "total": 2
+        }
+      },
+      "MalformedSelectorGetProductsSearchForSelect": {
+        "value": {
+          "title": "Malformed Selector",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/malformed-selector",
+          "detail": "The property selector '(hits.(currency, hitType,image.(**))' is malformed.",
+          "selector": "(hits.(currency, hitType,image.(**))"
+        }
+      },
+      "TooManyCustomVariationAttributes": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "'includedCustomVariationProperties' violates the value constraint. The expected value is between '(0..5)'.",
+          "parameter": "includedCustomVariationProperties",
+          "expected": "(0..5)"
+        }
+      },
+      "InvalidCategorySlugRefinement": {
+        "value": {
+          "title": "Invalid Category Slug Refinement",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-category-slug-refinement",
+          "detail": "The category slug refinement 'i-dont-exist' could not be resolved to a category.",
+          "categorySlug": "i-dont-exist"
+        }
+      },
+      "InvalidSearchMode": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "'searchMode' violates the value constraint. The expected value is one of '[semantic, lexical]'.",
+          "parameter": "searchMode",
+          "expected": "[semantic, lexical]"
+        }
+      },
+      "SearchSuggestionResultExample": {
+        "value": {
+          "brandSuggestions": {
+            "suggestedPhrases": [
+              {
+                "exactMatch": false,
+                "phrase": "Sony"
+              }
+            ],
+            "suggestedTerms": [
+              {
+                "originalTerm": "son",
+                "terms": [
+                  {
+                    "completed": true,
+                    "corrected": false,
+                    "exactMatch": false,
+                    "value": "sony"
+                  }
+                ]
+              }
+            ]
+          },
+          "categorySuggestions": {
+            "suggestedTerms": [
+              {
+                "originalTerm": "son"
+              }
+            ]
+          },
+          "productSuggestions": {
+            "products": [
+              {
+                "currency": "EUR",
+                "price": 300,
+                "productId": "sony-ps3-bundle",
+                "productName": "Playstation 3 Bundle"
+              },
+              {
+                "currency": "EUR",
+                "price": 310,
+                "productId": "sony-alpha350-wlen",
+                "productName": "Sony Alpha 350 Digital SLR Camera w/18-70mm Lens"
+              },
+              {
+                "currency": "EUR",
+                "price": 10,
+                "productId": "sony-alpha900-body",
+                "productName": "Sony Alpha 900 Digital SLR Camera (body only)"
+              },
+              {
+                "currency": "EUR",
+                "price": 50,
+                "productId": "sony-warhawk-ps3",
+                "productName": "Warhawk (for Sony PS3)"
+              },
+              {
+                "currency": "EUR",
+                "price": 280,
+                "productId": "sony-psp-console",
+                "productName": "Sony PSP® Game Console"
+              }
+            ],
+            "suggestedPhrases": [
+              {
+                "exactMatch": false,
+                "phrase": "sony"
+              }
+            ],
+            "suggestedTerms": [
+              {
+                "originalTerm": "son",
+                "terms": [
+                  {
+                    "completed": true,
+                    "corrected": false,
+                    "exactMatch": false,
+                    "value": "sony"
+                  },
+                  {
+                    "completed": true,
+                    "corrected": false,
+                    "exactMatch": false,
+                    "value": "sonyalpha"
+                  }
+                ]
+              }
+            ]
+          },
+          "einsteinSuggestedPhrases": {
+            "popularSearchPhrases": [
+              {
+                "exactMatch": false,
+                "phrase": "sony"
+              },
+              {
+                "exactMatch": false,
+                "phrase": "sony alpha"
+              }
+            ],
+            "recentSearchPhrases": [
+              {
+                "exactMatch": false,
+                "phrase": "sony alpha"
+              },
+              {
+                "exactMatch": false,
+                "phrase": "sony alpha 900 body"
+              }
+            ]
+          },
+          "searchPhrase": "son",
+          "searchMode": "semantic",
+          "effectiveSearchMode": "semantic"
+        }
+      },
+      "SearchSuggestionResultWithCustomProductPropertiesExample": {
+        "summary": "Search suggestions with custom product properties.",
+        "value": {
+          "brandSuggestions": {
+            "suggestedPhrases": [
+              {
+                "exactMatch": false,
+                "phrase": "Media Player"
+              }
+            ],
+            "suggestedTerms": [
+              {
+                "originalTerm": "player",
+                "terms": [
+                  {
+                    "completed": true,
+                    "corrected": false,
+                    "exactMatch": false,
+                    "value": "media"
+                  }
+                ]
+              }
+            ]
+          },
+          "categorySuggestions": {
+            "suggestedTerms": [
+              {
+                "originalTerm": "player"
+              }
+            ]
+          },
+          "productSuggestions": {
+            "products": [
+              {
+                "currency": "USD",
+                "price": 229,
+                "productId": "portable-media-player",
+                "productName": "Portable Media Player",
+                "c_badges": [],
+                "c_mediaFormat": [
+                  "0020",
+                  "0030"
+                ],
+                "c_musicStorage": "1,000 songs"
+              }
+            ],
+            "suggestedPhrases": [
+              {
+                "exactMatch": false,
+                "phrase": "media player"
+              }
+            ],
+            "suggestedTerms": [
+              {
+                "originalTerm": "player",
+                "terms": [
+                  {
+                    "completed": true,
+                    "corrected": false,
+                    "exactMatch": true,
+                    "value": "player"
+                  },
+                  {
+                    "completed": true,
+                    "corrected": false,
+                    "exactMatch": false,
+                    "value": "media player"
+                  }
+                ]
+              }
+            ]
+          },
+          "searchPhrase": "player"
+        }
+      },
+      "SearchSuggestionWithFallbackModeExample": {
+        "summary": "Search suggestions where a semantic request was demoted to lexical.",
+        "description": "The caller requested `searchMode=semantic` for type-ahead, but the platform demoted to `lexical`. The response echoes the requested `searchMode` and reports the mode actually used in `effectiveSearchMode`.",
+        "value": {
+          "searchPhrase": "abc12345",
+          "searchMode": "semantic",
+          "effectiveSearchMode": "lexical"
+        }
+      },
+      "SearchSuggestionWithConfiguredModeExample": {
+        "summary": "Search suggestions with no requested mode, resolved by the platform's configured default.",
+        "description": "The request omitted `searchMode`, so the response omits the echoed hint and the platform's configured default selected the mode reported in `effectiveSearchMode`.",
+        "value": {
+          "searchPhrase": "sho",
+          "effectiveSearchMode": "semantic"
+        }
+      },
+      "StringConstraintViolation": {
+        "value": {
+          "title": "String Constraint Violation",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/string-constraint-violation",
+          "detail": "The string length constraint was violated by 'q'. The expected length is '(3..50)'.",
+          "expected": "(3..50)",
+          "parameter": "q"
+        }
+      },
+      "TooManyCustomProductAttributes": {
+        "value": {
+          "title": "Bad Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request",
+          "detail": "'includedCustomProductProperties' violates the value constraint. The expected value is between '(0..5)'.",
+          "parameter": "includedCustomProductProperties",
+          "expected": "(0..5)"
+        }
+      },
+      "InvalidExpandParameter": {
+        "value": {
+          "title": "Invalid Expand Parameter",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-expand-parameter",
+          "detail": "An invalid expand parameter 'invalidParameter' was found.",
+          "param": "invalidParameter"
+        }
+      }
+    },
+    "securitySchemes": {
+      "ShopperToken": {
+        "type": "oauth2",
+        "description": "ShopperToken authentication follows the authorization code grant flow, as defined by the OAuth 2.1 standard. Depending on the type of OAuth client (public or private), this authorization flow has further requirements. \nFor a detailed description of the authorization flow, see the [SLAS overview](https://developer.salesforce.com/docs/commerce/commerce-api/references?meta=shopper-login:Summary).\nA shopper token allows you to access the Shopper API endpoints of both the Open Commerce API (OCAPI) and the B2C Commerce API. These endpoints can be used to build headless storefronts and other applications.\nThe `ShopperToken` security scheme is a parent of other security schemes, such as `ShopperTokenTsob`. A Shopper API endpoint can require a specific child scheme (`ShopperTokenTsob`, for example) that cannot be accessed with a regular shopper token.\n",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-product-search": "Allows read operations on shopper search."
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/authorize",
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token",
+            "scopes": {
+              "sfcc.shopper-product-search": "Allows read operations on shopper search."
+            }
+          }
+        }
+      },
+      "ShopperClientContextToken": {
+        "type": "oauth2",
+        "description": "ShopperClientContextToken is a separate security scheme used to track and validate client context information.\nIt is valid for Guest shoppers flows only using SLAS private clients. For registered shoppers, use existing ShopperToken flows.\nFor authentication details, see the [SLAS overview](https://developer.salesforce.com/docs/commerce/commerce-api/references?meta=shopper-login:Summary).\nThis token allows access to Shopper API endpoints for guest shoppers only.\n",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token?hint=client_context",
+            "scopes": {
+              "sfcc.shopper-product-search": "Allows read operations on shopper search."
+            }
+          }
+        }
+      }
+    }
+  }
+}

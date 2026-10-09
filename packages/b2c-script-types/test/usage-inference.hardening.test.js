@@ -6,7 +6,6 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const {describe, it} = require('node:test');
 
 const ts = require('typescript');
 
@@ -240,7 +239,7 @@ describe('usage-inference hardening', () => {
       const versions = Object.fromEntries(Object.keys(fixture.files).map((f) => [f, 0]));
       let projectVersion = 1;
       const origGetScriptVersion = host.getScriptVersion;
-      host.getScriptVersion = (f) => String(versions[f] ?? origGetScriptVersion(f));
+      host.getScriptVersion = (f) => `${versions[f] ?? 0}:${origGetScriptVersion(f)}`;
       const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
       const proxy = create({
         languageService,

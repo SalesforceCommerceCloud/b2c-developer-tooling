@@ -5,12 +5,18 @@ on:
     paths:
       - 'action.yml'
       - 'actions/**'
+      - '.github/scripts/validate-action-release.mjs'
+      - '.github/workflows/release-actions.yml'
       - '.github/workflows/test-actions.yml'
   push:
     branches: [main]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
     paths:
       - 'action.yml'
       - 'actions/**'
+      - '.github/scripts/validate-action-release.mjs'
+      - '.github/workflows/release-actions.yml'
       - '.github/workflows/test-actions.yml'
 
 env:
@@ -18,6 +24,15 @@ env:
   SFCC_LOG_LEVEL: trace
 
 jobs:
+  action-metadata:
+    name: 'Action release metadata'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate version defaults and internal references
+        run: node .github/scripts/validate-action-release.mjs
+
   # Smoke test: install CLI and verify
   setup-latest:
     name: 'Setup (latest)'
@@ -45,6 +60,20 @@ jobs:
           [ "$NO_COLOR" = "1" ] || (echo "NO_COLOR not set" && exit 1)
           echo "All environment variables verified"
 
+  setup-v1:
+    name: 'Setup (CLI 1.x compatibility)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run setup action with CLI 1.x
+        uses: ./actions/setup
+        with:
+          version: '1'
+
+      - name: Verify CLI 1.x installed
+        run: b2c --version | grep -q '@salesforce/b2c-cli/1\.'
+
   # Regression test for W-23178876: credentials containing shell-significant
   # sequences ($WORD, $$, $(...), backticks, quotes) must reach $GITHUB_ENV
   # byte-for-byte. The old `echo "VAR=${{ inputs.* }}"` pattern let bash re-expand
@@ -59,6 +88,7 @@ jobs:
       - name: Run setup action with shell-significant credentials
         uses: ./actions/setup
         with:
+          version: '1'
           # All single-quoted YAML scalars → passed to the action verbatim.
           # short-code and tenant-id are included so the renamed-input mapping
           # (short-code → SFCC_SHORTCODE) is exercised, not just same-name inputs.
@@ -104,6 +134,43 @@ jobs:
           [ "$fail" -eq 0 ] || { echo "Credential corruption detected"; exit 1; }
           echo "All credentials preserved verbatim"
 
+  # certificate-base64 is decoded to an owner-only file and exported as
+  # SFCC_CERTIFICATE. The fixture is line-wrapped like default `base64` output.
+  setup-certificate-base64:
+    name: 'Setup (certificate-base64)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run setup action with a base64 certificate
+        uses: ./actions/setup
+        with:
+          version: '2'
+          certificate-base64: |
+            YjJjIGNsaWVudCBjZXJ0aWZpY2F0ZSBmaXh0dXJlIHRoYXQgc3BhbnMgbW9yZSB0aGFuIG9uZSBs
+            aW5lIG9mIGJhc2U2NCBvdXRwdXQ=
+
+      - name: Verify certificate decoded
+        env:
+          EXPECTED: 'b2c client certificate fixture that spans more than one line of base64 output'
+        run: |
+          [ -f "$SFCC_CERTIFICATE" ] || { echo "SFCC_CERTIFICATE is not a file: $SFCC_CERTIFICATE"; exit 1; }
+          [ "$(cat "$SFCC_CERTIFICATE")" = "$EXPECTED" ] || { echo "Decoded certificate mismatch"; exit 1; }
+          [ "$(stat -c %a "$SFCC_CERTIFICATE")" = "600" ] || { echo "Certificate file is not owner-only"; exit 1; }
+          echo "certificate-base64 decoded to $SFCC_CERTIFICATE"
+
+      - name: Run setup action with invalid base64
+        id: invalid
+        continue-on-error: true
+        uses: ./actions/setup
+        with:
+          version: '2'
+          skip-if-present: 'true'
+          certificate-base64: 'not base64!!'
+
+      - name: Verify invalid base64 is rejected
+        run: '[ "${{ steps.invalid.outcome }}" = "failure" ] || { echo "Invalid base64 was accepted"; exit 1; }'
+
   setup-nightly:
     name: 'Setup (nightly)'
     runs-on: ubuntu-latest
@@ -121,6 +188,7 @@ jobs:
   # Root action: setup + command
   root-action:
     name: 'Root action'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -140,6 +208,7 @@ jobs:
   # Root action: setup only (no command)
   root-setup-only:
     name: 'Root action (setup only)'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -166,6 +235,8 @@ jobs:
 
       - name: Setup
         uses: ./actions/setup
+        with:
+          version: nightly
 
       - name: Run help command
         id: run
@@ -187,6 +258,8 @@ jobs:
 
       - name: Setup
         uses: ./actions/setup
+        with:
+          version: nightly
 
       - name: Test code deploy help
         uses: ./actions/run
@@ -202,6 +275,8 @@ jobs:
 
       - name: Setup
         uses: ./actions/setup
+        with:
+          version: nightly
 
       - name: Test mrt bundle deploy help
         uses: ./actions/run
@@ -217,6 +292,8 @@ jobs:
 
       - name: Setup
         uses: ./actions/setup
+        with:
+          version: nightly
 
       - name: Test job run help
         uses: ./actions/run
@@ -232,6 +309,8 @@ jobs:
 
       - name: Setup
         uses: ./actions/setup
+        with:
+          version: nightly
 
       - name: Test job import help
         uses: ./actions/run
@@ -247,6 +326,8 @@ jobs:
 
       - name: Setup
         uses: ./actions/setup
+        with:
+          version: nightly
 
       - name: Test webdav put help
         uses: ./actions/run

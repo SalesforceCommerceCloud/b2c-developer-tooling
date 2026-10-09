@@ -5,15 +5,34 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {createJobsCompatibilityBackend, type JobsCompatibilityBackend} from '@salesforce/b2c-tooling-sdk/compat';
 import {
   siteArchiveImport,
   siteArchiveImportSplit,
   JobExecutionError,
+  getJobLog,
+  type JobExecution,
   type SiteArchiveImportResult,
   type WaitForJobOptions,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import type {B2COperationContext} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
+
+const STOREFRONT_SETUP_JOB_ID = 'sfcc-post-import-setup-storefront';
+const STOREFRONT_DISCOVERY_POLL_INTERVAL_SECONDS = 2;
+const STOREFRONT_DISCOVERY_TIMEOUT_SECONDS = 60;
+
+interface StorefrontWaitContext {
+  backend: JobsCompatibilityBackend;
+  knownExecutionIds: Set<string>;
+}
+
+interface StorefrontImportResult {
+  importResult: SiteArchiveImportResult | SiteArchiveImportResult[];
+  storefrontSetupExecution: JobExecution;
+}
+
+type JobImportResult = SiteArchiveImportResult | SiteArchiveImportResult[] | StorefrontImportResult;
 
 /**
  * Parses a human-friendly size string into bytes. A bare number is interpreted
@@ -66,6 +85,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     "<%= config.bin %> <%= command.id %> ./my-site-data 'libraries/**'",
     '<%= config.bin %> <%= command.id %> ./big-site-data --split',
     '<%= config.bin %> <%= command.id %> ./big-site-data --split --max-size 150mb',
+    '<%= config.bin %> <%= command.id %> ./storefront-export.zip --wait-for-storefront',
   ];
 
   static flags = {
@@ -106,6 +126,11 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       default: 3,
       dependsOn: ['wait'],
     }),
+    'wait-for-storefront': Flags.boolean({
+      description: `Wait for ${STOREFRONT_SETUP_JOB_ID} after a successful import`,
+      default: false,
+      dependsOn: ['wait'],
+    }),
     'show-log': Flags.boolean({
       description: 'Show job log on failure',
       default: true,
@@ -117,11 +142,17 @@ export default class JobImport extends JobCommand<typeof JobImport> {
   static strict = false;
 
   protected operations = {
+    createJobsCompatibilityBackend,
+    getJobLog,
     siteArchiveImport,
     siteArchiveImportSplit,
+    sleep: async (milliseconds: number): Promise<void> =>
+      new Promise((resolve) => {
+        setTimeout(resolve, milliseconds);
+      }),
   };
 
-  async run(): Promise<SiteArchiveImportResult | SiteArchiveImportResult[]> {
+  async run(): Promise<JobImportResult> {
     this.requireOAuthCredentials();
     this.requireWebDavCredentials();
 
@@ -139,10 +170,11 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       'max-size': maxSizeRaw,
       timeout,
       'poll-interval': pollInterval,
+      'wait-for-storefront': waitForStorefront,
       'show-log': showLog = true,
     } = this.flags;
 
-    const maxBytes = this.validateFlags({remote, split, wait, extraPaths, maxSizeRaw});
+    const maxBytes = this.validateFlags({remote, split, wait, waitForStorefront, extraPaths, maxSizeRaw});
 
     const hostname = this.resolvedConfig.values.hostname!;
 
@@ -165,6 +197,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       paths: extraPaths.length > 0 ? extraPaths : undefined,
       split,
       maxBytes: split ? maxBytes : undefined,
+      waitForStorefront,
     });
 
     // Run beforeOperation hooks - check for skip
@@ -222,8 +255,10 @@ export default class JobImport extends JobCommand<typeof JobImport> {
         },
       };
 
+      const storefrontWait = waitForStorefront ? await this.prepareStorefrontWait() : undefined;
+
       if (split) {
-        return await this.runSplitImport({context, target, maxBytes, keepArchive, waitOptions});
+        return await this.runSplitImport({context, target, maxBytes, keepArchive, waitOptions, storefrontWait});
       }
 
       return await this.runSingleImport({
@@ -235,6 +270,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
         maxBytes,
         paths: extraPaths.length > 0 ? extraPaths : undefined,
         waitOptions,
+        storefrontWait,
       });
     } catch (error) {
       // Run afterOperation hooks with failure
@@ -268,6 +304,119 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     }
   }
 
+  /** Waits for the delayed post-import job to appear, then for it to finish. */
+  private async addStorefrontSetupResult(
+    importResult: SiteArchiveImportResult | SiteArchiveImportResult[],
+    storefrontWait: StorefrontWaitContext | undefined,
+    waitOptions: WaitForJobOptions,
+  ): Promise<JobImportResult> {
+    if (!storefrontWait) {
+      return importResult;
+    }
+
+    this.log(t('commands.job.import.storefrontDiscovering', `Waiting for ${STOREFRONT_SETUP_JOB_ID} to start...`));
+
+    const maxSearches =
+      Math.ceil(STOREFRONT_DISCOVERY_TIMEOUT_SECONDS / STOREFRONT_DISCOVERY_POLL_INTERVAL_SECONDS) + 1;
+    const findNewExecution = async (attempt: number): Promise<JobExecution | undefined> => {
+      const executions = await storefrontWait.backend.searchJobExecutions({
+        jobId: STOREFRONT_SETUP_JOB_ID,
+        count: 25,
+      });
+      const storefrontExecution = executions.hits.find(
+        (execution) => execution.id !== undefined && !storefrontWait.knownExecutionIds.has(execution.id),
+      );
+      if (storefrontExecution?.id) {
+        return storefrontExecution;
+      }
+      if (attempt >= maxSearches - 1) {
+        return undefined;
+      }
+      await this.operations.sleep(STOREFRONT_DISCOVERY_POLL_INTERVAL_SECONDS * 1000);
+      return findNewExecution(attempt + 1);
+    };
+
+    const storefrontExecution = await findNewExecution(0);
+
+    if (!storefrontExecution?.id) {
+      const dataErrors = await this.getImportDataErrors(importResult);
+      throw new Error(
+        `${STOREFRONT_SETUP_JOB_ID} did not start within ${STOREFRONT_DISCOVERY_TIMEOUT_SECONDS} seconds after the import completed${dataErrors}`,
+      );
+    }
+
+    const completedExecution = await storefrontWait.backend.waitForJob(
+      STOREFRONT_SETUP_JOB_ID,
+      storefrontExecution.id,
+      {
+        ...waitOptions,
+        onPoll: (info) => {
+          if (!this.jsonEnabled()) {
+            this.log(
+              t('commands.job.import.storefrontProgress', '  Storefront setup: {{status}} ({{elapsed}}s elapsed)', {
+                status: info.status,
+                elapsed: String(info.elapsedSeconds),
+              }),
+            );
+          }
+        },
+      },
+    );
+
+    this.log(
+      t('commands.job.import.storefrontCompleted', 'Storefront setup completed: {{status}}', {
+        status: completedExecution.exit_status?.code || completedExecution.execution_status,
+      }),
+    );
+
+    return {importResult, storefrontSetupExecution: completedExecution};
+  }
+
+  /** Reads import diagnostics only after storefront setup discovery times out. */
+  private async getImportDataErrors(
+    importResult: SiteArchiveImportResult | SiteArchiveImportResult[],
+  ): Promise<string> {
+    if (this.flags['show-log'] === false) return '';
+
+    const diagnostics: string[] = [];
+    for (const {execution} of Array.isArray(importResult) ? importResult : [importResult]) {
+      if (!execution.is_log_file_existing || !execution.log_file_path) continue;
+      try {
+        // Read split-import logs sequentially to avoid downloading many large logs at once.
+        // eslint-disable-next-line no-await-in-loop
+        const log = await this.operations.getJobLog(this.instance, execution);
+        const errors = log.split(/\r?\n/).flatMap((line) => {
+          const index = line.indexOf('[DATAERROR]');
+          return index === -1 ? [] : [line.slice(index).trim()];
+        });
+        if (errors.length > 0) {
+          diagnostics.push(
+            t('commands.job.import.dataErrors', 'Import execution {{executionId}} data errors:\n{{errors}}', {
+              executionId: execution.id ?? 'unknown',
+              errors: errors.join('\n'),
+            }),
+          );
+        }
+      } catch {
+        // Best-effort diagnostics must not replace the original discovery timeout.
+      }
+    }
+    return diagnostics.length > 0 ? `\n${diagnostics.join('\n')}` : '';
+  }
+
+  /**
+   * Captures existing storefront setup executions before importing so the
+   * follow-up wait cannot attach to a stale run.
+   */
+  private async prepareStorefrontWait(): Promise<StorefrontWaitContext> {
+    const backend = this.operations.createJobsCompatibilityBackend(this.instance);
+    const executions = await backend.searchJobExecutions({jobId: STOREFRONT_SETUP_JOB_ID, count: 100});
+    const knownExecutionIds = new Set(
+      executions.hits.map((execution) => execution.id).filter((id): id is string => id !== undefined),
+    );
+    return {backend, knownExecutionIds};
+  }
+
   /**
    * Runs a single-archive import, wiring an oversize callback that recommends
    * `--split` when the assembled archive exceeds the size ceiling.
@@ -281,8 +430,9 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     maxBytes: number;
     paths: string[] | undefined;
     waitOptions: WaitForJobOptions;
-  }): Promise<SiteArchiveImportResult> {
-    const {context, target, remote, wait, keepArchive, maxBytes, paths, waitOptions} = opts;
+    storefrontWait: StorefrontWaitContext | undefined;
+  }): Promise<JobImportResult> {
+    const {context, target, remote, wait, keepArchive, maxBytes, paths, waitOptions, storefrontWait} = opts;
     const importTarget = remote ? {remoteFilename: target} : target;
 
     const result = await this.operations.siteArchiveImport(this.instance, importTarget, {
@@ -334,13 +484,15 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       );
     }
 
+    const finalResult = await this.addStorefrontSetupResult(result, storefrontWait, waitOptions);
+
     await this.runAfterHooks(context, {
       success: true,
       duration: Date.now() - context.startTime,
-      data: result,
+      data: finalResult,
     });
 
-    return result;
+    return finalResult;
   }
 
   /**
@@ -354,8 +506,9 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     maxBytes: number;
     keepArchive: boolean;
     waitOptions: WaitForJobOptions;
-  }): Promise<SiteArchiveImportResult[]> {
-    const {context, target, maxBytes, keepArchive, waitOptions} = opts;
+    storefrontWait: StorefrontWaitContext | undefined;
+  }): Promise<JobImportResult> {
+    const {context, target, maxBytes, keepArchive, waitOptions, storefrontWait} = opts;
     const results = await this.operations.siteArchiveImportSplit(this.instance, target, {
       maxBytes,
       keepArchive,
@@ -402,13 +555,15 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       }),
     );
 
+    const finalResult = await this.addStorefrontSetupResult(results, storefrontWait, waitOptions);
+
     await this.runAfterHooks(context, {
       success: true,
       duration: Date.now() - context.startTime,
-      data: results,
+      data: finalResult,
     });
 
-    return results;
+    return finalResult;
   }
 
   /**
@@ -419,10 +574,11 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     remote: boolean;
     split: boolean;
     wait: boolean;
+    waitForStorefront: boolean;
     extraPaths: string[];
     maxSizeRaw: string | undefined;
   }): number {
-    const {remote, split, wait, extraPaths, maxSizeRaw} = opts;
+    const {remote, split, wait, waitForStorefront, extraPaths, maxSizeRaw} = opts;
 
     if (extraPaths.length > 0 && remote) {
       this.error('Path arguments are not supported with --remote.');
@@ -435,6 +591,9 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     }
     if (split && !wait) {
       this.error('--split requires waiting for each part; it cannot be combined with --no-wait.');
+    }
+    if (waitForStorefront && !wait) {
+      this.error('--wait-for-storefront requires --wait; it cannot be combined with --no-wait.');
     }
 
     try {

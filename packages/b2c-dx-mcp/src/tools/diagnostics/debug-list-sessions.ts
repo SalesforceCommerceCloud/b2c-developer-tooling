@@ -32,9 +32,10 @@ export function createDebugListSessionsTool(
   return createToolAdapter<Record<string, never>, ListSessionsOutput>(
     {
       name: 'debug_list_sessions',
-      description:
-        'List active script debugger sessions with their breakpoints and any halted threads. ' +
-        'Use this to discover orphaned sessions, check whether breakpoints are armed, and poll for halted threads in the non-blocking debug workflow.',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
+      description: 'List debugger sessions, breakpoints, and known halted threads.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {},
       async execute(_args, context) {

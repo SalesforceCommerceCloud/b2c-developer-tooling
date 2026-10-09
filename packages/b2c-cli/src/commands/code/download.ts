@@ -6,7 +6,7 @@
 import {Flags} from '@oclif/core';
 import {
   downloadCartridges,
-  getActiveCodeVersion,
+  createScriptsBackend,
   type DownloadResult,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
@@ -54,7 +54,10 @@ export default class CodeDownload extends CartridgeCommand<typeof CodeDownload> 
 
   protected operations = {
     downloadCartridges,
-    getActiveCodeVersion,
+    // Active-version discovery goes through the dual backend (SCAPI with OCAPI
+    // fallback) so SCAPI-only instances can auto-discover without OCAPI.
+    getActiveCodeVersion: (instance: import('@salesforce/b2c-tooling-sdk/instance').B2CInstance) =>
+      createScriptsBackend({instance}).getActiveCodeVersion(),
   };
 
   async run(): Promise<DownloadResult> {
@@ -150,6 +153,7 @@ export default class CodeDownload extends CartridgeCommand<typeof CodeDownload> 
       };
 
       const result = await this.operations.downloadCartridges(this.instance, this.flags.output ?? 'cartridges', {
+        scriptsBackend: createScriptsBackend({instance: this.instance}),
         include: this.cartridgeOptions.include,
         exclude: this.cartridgeOptions.exclude,
         mirror,

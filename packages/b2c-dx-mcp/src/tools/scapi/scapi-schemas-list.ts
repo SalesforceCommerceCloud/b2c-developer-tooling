@@ -21,6 +21,19 @@ import type {McpTool} from '../../utils/index.js';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
 import {collapseOpenApiSchema, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
+import {
+  SCAPI_SCHEMA_EXPANSIONS,
+  SCAPI_STANDARD_SCHEMA_EXPAND,
+  createLiveScapiDocument,
+  fetchScapiSchemaWithFallback,
+  isFullScapiExpand,
+  listScapiSchemasWithFallback,
+  normalizeScapiSchemaExpand,
+  scapiSchemaExpandFor,
+  scapiTenantKey,
+  type ScapiLiveSchemaCache,
+  type ScapiSchemaSource,
+} from '@salesforce/b2c-tooling-sdk/scapi';
 
 /**
  * Builds the base URL for a SCAPI API endpoint.
@@ -68,6 +81,20 @@ interface SchemasListInput {
   includeSchemas?: boolean;
   /** If true, return full schema without collapsing (only works when includeSchemas=true) */
   expandAll?: boolean;
+  expandCustomProperties?: boolean;
+  /** Explicit Schemas API `expand` sections; overrides the sections otherwise derived from the other options. */
+  include?: Array<(typeof SCAPI_SCHEMA_EXPANSIONS)[number]>;
+}
+
+/**
+ * Smallest Schemas API `expand` for the request: collapsed output drops operation bodies, so it never needs
+ * prose; expandAll returns the whole contract. An explicit `include` wins.
+ */
+function resolveExpand(args: SchemasListInput): string | undefined {
+  if (args.include?.length) return normalizeScapiSchemaExpand(args.include);
+  const customProperties = args.expandCustomProperties !== false;
+  if (args.expandAll) return customProperties ? scapiSchemaExpandFor({full: true}) : SCAPI_STANDARD_SCHEMA_EXPAND;
+  return scapiSchemaExpandFor({customProperties});
 }
 
 /**
@@ -96,6 +123,10 @@ interface SchemasListOutput {
   availableVersions?: string[];
   /** Helpful message when no schemas found or to explain results */
   message?: string;
+  /** `bundled` when the live listing failed and the offline corpus is shown instead */
+  source: ScapiSchemaSource;
+  /** Why the bundled corpus is shown, and what it lacks */
+  warning?: string;
 }
 
 /**
@@ -114,8 +145,12 @@ interface SchemaGetOutput {
   timestamp: string;
   /** Whether this is a collapsed schema */
   collapsed: boolean;
-  /** Warning message if invalid parameter combinations were provided */
+  /** Warning message if invalid parameter combinations were provided, or the bundled contract was used */
   warning?: string;
+  /** `bundled` when the live fetch failed and the offline contract is shown instead */
+  source: ScapiSchemaSource;
+  /** Schemas API `expand` sections requested (live source only) */
+  expand?: string;
   /** Base URL for calling the actual SCAPI API */
   baseUrl?: string;
 }
@@ -124,61 +159,92 @@ interface SchemaGetOutput {
  * Fetches a specific schema from the SCAPI Schemas API.
  *
  * @param params - Fetch parameters
- * @param params.client - SCAPI Schemas client
- * @param params.organizationId - Organization ID
+ * @param params.svc - Services (client, organization and short code are resolved inside the live fetch)
  * @param params.args - Input arguments with API identifiers
- * @param params.shortCode - Optional short code for building base URL
+ * @param params.schemaCache - Optional live contract cache shared with SCAPI code mode
  * @returns Schema fetch output
  */
 async function fetchSpecificSchema(params: {
-  client: ReturnType<Services['getScapiSchemasClient']>;
-  organizationId: string;
+  svc: Services;
   args: SchemasListInput;
-  shortCode?: string;
+  schemaCache?: ScapiLiveSchemaCache;
 }): Promise<SchemaGetOutput> {
-  const {client, organizationId, args, shortCode} = params;
+  const {svc, args, schemaCache} = params;
   const {apiFamily, apiName, apiVersion, expandAll, status} = args;
+  const expand = resolveExpand(args);
 
   // Warn if status filter was provided (it's ignored in fetch mode)
-  const warning = status
+  const statusWarning = status
     ? `Note: 'status' filter is ignored when fetching a specific schema. The API endpoint for retrieving a specific schema (${apiFamily}/${apiName}/${apiVersion}) does not support status filtering - you're already specifying the exact version. Use discovery mode (omit one or more of apiFamily/apiName/apiVersion) to filter by status.`
     : undefined;
 
-  const {data, error, response} = await client.GET(
-    '/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}',
-    {
-      params: {
-        path: {organizationId, apiFamily: apiFamily!, apiName: apiName!, apiVersion: apiVersion!},
+  const identity = {apiFamily: apiFamily!, apiName: apiName!, apiVersion: apiVersion!};
+  // Shared by the live fetch and the cache below; a missing shortCode or credentials throws inside the fetch.
+  let live: undefined | {shortCode: string | undefined; organizationId: string};
+  const result = await fetchScapiSchemaWithFallback(identity, async () => {
+    const client = svc.getScapiSchemasClient();
+    const organizationId = svc.getOrganizationId();
+    let shortCode: string | undefined;
+    try {
+      shortCode = svc.getShortCode();
+    } catch {
+      // Continue without shortCode if not available
+    }
+    const {data, error, response} = await client.GET(
+      '/organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}',
+      {
+        params: {
+          path: {organizationId, ...identity},
+          // One comma-joined value: the API rejects a repeated expand parameter.
+          query: expand ? {expand} : undefined,
+        },
       },
-    },
-  );
-
-  if (error) {
-    throw new Error(
-      `Failed to fetch schema for ${apiFamily}/${apiName}/${apiVersion}: ${getSchemasApiError(error, response)}`,
     );
+    if (error)
+      throw new Error(
+        `Failed to fetch schema for ${identity.apiFamily}/${identity.apiName}/${identity.apiVersion}: ${getSchemasApiError(error, response)}`,
+      );
+    live = {shortCode, organizationId};
+    return data as Record<string, unknown>;
+  });
+
+  // Contracts carrying custom properties and prose become searchable and executable in SCAPI code mode.
+  if (
+    result.source === 'live' &&
+    schemaCache &&
+    live?.shortCode &&
+    (isFullScapiExpand(expand) || apiFamily === 'custom')
+  ) {
+    try {
+      schemaCache.put(
+        scapiTenantKey(live.shortCode, live.organizationId),
+        createLiveScapiDocument(identity, result.schema),
+      );
+    } catch {
+      // Not a usable OpenAPI contract; still return it to the caller.
+    }
   }
 
   // Apply collapsing unless expandAll is requested
   const collapsed = !expandAll;
   const processedSchema: Record<string, unknown> = collapsed
-    ? (collapseOpenApiSchema(data as OpenApiSchemaInput) as Record<string, unknown>)
-    : (data as Record<string, unknown>);
+    ? (collapseOpenApiSchema(result.schema as OpenApiSchemaInput) as Record<string, unknown>)
+    : result.schema;
 
   // Build base URL for the SCAPI API (where to call the API)
-  const baseUrl =
-    shortCode && apiFamily && apiName && apiVersion
-      ? buildScapiApiUrl(shortCode, apiFamily, apiName, apiVersion)
-      : undefined;
+  const baseUrl = live?.shortCode
+    ? buildScapiApiUrl(live.shortCode, identity.apiFamily, identity.apiName, identity.apiVersion)
+    : undefined;
+  const warning = [statusWarning, result.warning].filter(Boolean).join(' ') || undefined;
 
   return {
-    apiFamily: apiFamily!,
-    apiName: apiName!,
-    apiVersion: apiVersion!,
+    ...identity,
     schema: processedSchema,
     timestamp: new Date().toISOString(),
     collapsed,
     warning,
+    source: result.source,
+    ...(result.source === 'live' && expand ? {expand} : {}),
     baseUrl,
   };
 }
@@ -187,37 +253,41 @@ async function fetchSpecificSchema(params: {
  * Fetches and filters schemas list from the SCAPI Schemas API.
  *
  * @param params - Fetch parameters
- * @param params.client - SCAPI Schemas client
- * @param params.organizationId - Organization ID
+ * @param params.svc - Services (client, organization and short code are resolved inside the live fetch)
  * @param params.args - Input parameters
- * @param params.shortCode - Optional short code for building base URLs
  * @returns Discovery mode output
  */
-async function fetchSchemasList(params: {
-  client: ReturnType<Services['getScapiSchemasClient']>;
-  organizationId: string;
-  args: SchemasListInput;
-  shortCode?: string;
-}): Promise<SchemasListOutput> {
-  const {client, organizationId, args, shortCode} = params;
-  const {data, error, response} = await client.GET('/organizations/{organizationId}/schemas', {
-    params: {
-      path: {organizationId},
-      query: {
-        apiFamily: args.apiFamily,
-        apiName: args.apiName,
-        apiVersion: args.apiVersion,
-        status: args.status,
-      },
+async function fetchSchemasList(params: {svc: Services; args: SchemasListInput}): Promise<SchemasListOutput> {
+  const {svc, args} = params;
+  let shortCode: string | undefined;
+  const result = await listScapiSchemasWithFallback(
+    {apiFamily: args.apiFamily, apiName: args.apiName, apiVersion: args.apiVersion, status: args.status},
+    async () => {
+      const client = svc.getScapiSchemasClient();
+      const organizationId = svc.getOrganizationId();
+      try {
+        shortCode = svc.getShortCode();
+      } catch {
+        // Continue without shortCode if not available
+      }
+      const {data, error, response} = await client.GET('/organizations/{organizationId}/schemas', {
+        params: {
+          path: {organizationId},
+          query: {
+            apiFamily: args.apiFamily,
+            apiName: args.apiName,
+            apiVersion: args.apiVersion,
+            status: args.status,
+          },
+        },
+      });
+      if (error) throw new Error(`Failed to fetch SCAPI schemas: ${getSchemasApiError(error, response)}`);
+      const schemas = data?.data ?? [];
+      return {schemas, total: data?.total ?? schemas.length};
     },
-  });
+  );
 
-  if (error) {
-    throw new Error(`Failed to fetch SCAPI schemas: ${getSchemasApiError(error, response)}`);
-  }
-
-  const schemas = data?.data ?? [];
-
+  const {schemas} = result;
   const filteredSchemas = prepareSchemaListForConsumer(schemas, shortCode);
   const discoveryMetadata = getAvailableFilters(schemas);
 
@@ -226,10 +296,12 @@ async function fetchSchemasList(params: {
 
   return {
     schemas: filteredSchemas,
-    total: data?.total ?? schemas.length,
+    total: result.total,
     timestamp: new Date().toISOString(),
     ...discoveryMetadata,
     message,
+    source: result.source,
+    warning: result.warning,
   };
 }
 
@@ -298,16 +370,22 @@ function getAvailableFilters(schemas: SchemaListItem[]): {
  * Lists or fetches SCAPI schema specifications; includes standard SCAPI and custom API as schema types.
  *
  * @param loadServices - Function that loads configuration and returns Services instance
+ * @param schemaCache - Optional live contract cache shared with SCAPI code mode
  * @returns MCP tool for listing/fetching SCAPI schemas
  */
-export function createScapiSchemasListTool(loadServices: () => Promise<Services> | Services): McpTool {
+export function createScapiSchemasListTool(
+  loadServices: () => Promise<Services> | Services,
+  schemaCache?: ScapiLiveSchemaCache,
+): McpTool {
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'List SCAPI schema metadata or fetch an OpenAPI schema. Fetch requires includeSchemas, apiFamily, apiName, and apiVersion. Use scapi_custom_apis_get_status for endpoint status.',
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
-      isGA: true,
       requiresInstance: false, // SCAPI uses OAuth directly, doesn't need B2CInstance (hostname)
       usesConfigurationContext: true,
       inputSchema: {
@@ -326,20 +404,18 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
           .boolean()
           .default(false)
           .describe('Return full uncompressed schema. Only when includeSchemas=true. Default: false.'),
+        expandCustomProperties: z
+          .boolean()
+          .default(true)
+          .describe('Include tenant custom property definitions when fetching a schema.'),
+        include: z
+          .array(z.enum(SCAPI_SCHEMA_EXPANSIONS))
+          .optional()
+          .describe(
+            'Schemas API expand sections (e.g. summaries, examples, all). Overrides expandAll/expandCustomProperties.',
+          ),
       },
       async execute(args, {services: svc}) {
-        // Get client and organization ID
-        const client = svc.getScapiSchemasClient();
-        const organizationId = svc.getOrganizationId();
-
-        // Get shortCode for building base URLs (optional)
-        let shortCode: string | undefined;
-        try {
-          shortCode = svc.getShortCode();
-        } catch {
-          // Continue without shortCode if not available
-        }
-
         // Determine operation mode
         const hasAllIdentifiers = Boolean(args.apiFamily && args.apiName && args.apiVersion);
         const isFetchMode = hasAllIdentifiers && args.includeSchemas;
@@ -352,12 +428,13 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
           );
         }
 
-        // Execute appropriate mode
+        // Execute appropriate mode. Live access is attempted inside, so missing configuration, credentials or
+        // network falls back to the bundled corpus with a warning.
         if (isFetchMode) {
-          return fetchSpecificSchema({client, organizationId, args, shortCode});
+          return fetchSpecificSchema({svc, args, schemaCache});
         }
 
-        return fetchSchemasList({client, organizationId, args, shortCode});
+        return fetchSchemasList({svc, args});
       },
       formatOutput: (output) => jsonResult(output),
     },

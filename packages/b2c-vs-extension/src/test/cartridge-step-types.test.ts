@@ -148,6 +148,35 @@ suite('cartridge-tree-provider — custom step types', () => {
       assert.strictEqual(resolved, moduleAbs);
     });
 
+    test('resolves a legacy .ds module', async () => {
+      const root = await mkTmpDir();
+      const cartridgeRoot = path.join(root, 'app_custom_core');
+      const moduleAbs = path.join(cartridgeRoot, 'cartridge', 'scripts', 'jobsteps', 'legacyStep.ds');
+      await writeFile(moduleAbs, '// legacy step');
+
+      const resolved = await resolveStepTypeModule(
+        'app_custom_core/cartridge/scripts/jobsteps/legacyStep',
+        cartridgeRoot,
+        [],
+      );
+      assert.strictEqual(resolved, moduleAbs);
+    });
+
+    test('prefers .js over .ds when both exist', async () => {
+      const root = await mkTmpDir();
+      const cartridgeRoot = path.join(root, 'app_custom_core');
+      const jsAbs = path.join(cartridgeRoot, 'cartridge', 'scripts', 'jobsteps', 'bothStep.js');
+      await writeFile(jsAbs);
+      await writeFile(path.join(cartridgeRoot, 'cartridge', 'scripts', 'jobsteps', 'bothStep.ds'));
+
+      const resolved = await resolveStepTypeModule(
+        'app_custom_core/cartridge/scripts/jobsteps/bothStep',
+        cartridgeRoot,
+        [],
+      );
+      assert.strictEqual(resolved, jsAbs);
+    });
+
     test('resolves legacy module reference without the cartridge prefix', async () => {
       const root = await mkTmpDir();
       const cartridgeRoot = path.join(root, 'legacy_cartridge');

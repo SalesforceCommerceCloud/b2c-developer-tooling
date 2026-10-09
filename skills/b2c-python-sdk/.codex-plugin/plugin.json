@@ -1,0 +1,41 @@
+{
+  "name": "b2c-python-sdk",
+  "version": "0.1.0",
+  "description": "Consuming the salesforce-b2c-tooling-sdk Python SDK — authenticate to B2C Commerce, resolve dw.json config, and call OCAPI/SCAPI/WebDAV clients and operations from scripts or notebooks.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "python",
+    "sdk",
+    "scapi",
+    "ocapi"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "B2C Python SDK",
+    "shortDescription": "Use the Salesforce B2C Commerce Python tooling SDK from your AI assistant.",
+    "longDescription": "Skills for consuming the salesforce-b2c-tooling-sdk Python SDK from scripts and Jupyter notebooks — install and import it, choose an authentication mechanism, resolve config from dw.json, and call the OCAPI/SCAPI/WebDAV clients and higher-level operations (code deploy, jobs, sites, catalogs, sandboxes, metrics, logs, SLAS shopper tokens).",
+    "developerName": "Salesforce",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "logo": "./assets/logo.svg",
+    "composerIcon": "./assets/logo.svg",
+    "brandColor": "#0D9DDA",
+    "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+    "defaultPrompt": [
+      "Write a Python script that deploys the cartridges in ./cartridges using the B2C tooling SDK",
+      "Use the Python SDK to authenticate from my dw.json and run a job",
+      "Show me how to mint a SLAS guest shopper token with the Python SDK",
+      "Read the latest error logs from my instance with the Python tooling SDK"
+    ]
+  }
+}

@@ -45,7 +45,7 @@ describe('mrt project notification update', () => {
       {
         json: true,
         project: 'my-project',
-        target: ['staging', 'production'],
+        environment: ['staging', 'production'],
         recipient: ['team@example.com'],
         'on-start': true,
         'on-success': false,
@@ -93,7 +93,7 @@ describe('mrt project notification update', () => {
       {
         json: true,
         project: 'my-project',
-        target: ['production'],
+        environment: ['production'],
       },
       {id: 'notif-123'},
     );

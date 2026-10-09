@@ -1,0 +1,2260 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Jobs",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/jobs/jobs-oas-v1-public.yaml)\n\n# API Overview\n\nThe Jobs API provides endpoints for managing and monitoring job executions within Salesforce Commerce Cloud.\n\n## Overview\n\nThis API allows administrators to search for job executions, trigger new job runs, retrieve execution details, and abort running jobs. Jobs represent scheduled or on-demand tasks that perform operations such as data import/export, indexing, and cleanup.\n\n## Key Features\n\n- **Job Execution Search**: Use complex queries to search for job executions by various attributes\n- **Job Triggering**: Create new job executions to run jobs on demand\n- **Execution Monitoring**: Retrieve detailed information about job executions including step-level details\n- **Job Abort**: Delete or abort running job executions\n\n## Searchable Attributes\n\nThe following attributes can be used in search queries:\n\n- `id`: The unique identifier of the job execution (String)\n- `jobId`: The identifier of the job (String)\n- `status`: The execution status (String)\n- `startTime`: The start time of the execution (DateTime)\n- `endTime`: The end time of the execution (DateTime)\n\n## Sortable Attributes\n\nSearch results can be sorted by:\n\n- `id`: Sort by execution identifier\n- `jobId`: Sort by job identifier\n- `status`: Sort by execution status\n- `startTime`: Sort by start time\n- `endTime`: Sort by end time\n\n## Use Cases\n\n- **Monitoring**: Track job execution status and progress\n- **Troubleshooting**: Investigate failed job executions and review step details\n- **Automation**: Trigger job executions programmatically\n- **Reporting**: Generate reports on job execution history and performance\n\n## Authentication\n\nThis API requires OAuth 2.0 authentication with the appropriate scopes:\n- `sfcc.jobs` - Read access to job resources\n- `sfcc.jobs.rw` - Read and write access to job resources\n\n## Best Practices\n\n1. Use specific search queries to find job executions efficiently\n2. Monitor long-running jobs by polling the get execution endpoint\n3. Use pagination for large result sets when searching executions\n4. Check execution status before attempting to abort a job\n5. Review step execution details for debugging failed jobs",
+    "version": "1.0.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Operation"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/operation/jobs/v1",
+      "variables": {
+        "shortCode": {
+          "default": "123456gf"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/job-execution-search": {
+      "post": {
+        "summary": "Search Job Executions",
+        "description": "Searches for job executions.\n\nThe query attribute specifies a complex query that can be used to narrow down the search. This is the list of\nsearchable attributes:\n\n- id - String\n- jobId - String\n- status - String\n- startTime - DateTime\n- endTime - DateTime\n\nThe output of the query can also be sorted. These are the list of sortable attributes:\n\n- id - String\n- jobId - String\n- status - String\n- startTime - DateTime\n- endTime - DateTime\n",
+        "operationId": "searchJobExecutions",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          }
+        ],
+        "requestBody": {
+          "description": "The search request document for job executions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobExecutionSearchRequest"
+              },
+              "examples": {
+                "SearchByJobId": {
+                  "$ref": "#/components/examples/SearchByJobId"
+                },
+                "SearchByStatus": {
+                  "$ref": "#/components/examples/SearchByStatus"
+                },
+                "SearchByStartTime": {
+                  "$ref": "#/components/examples/SearchByStartTime"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Returns job execution search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobExecutionSearchResult"
+                },
+                "examples": {
+                  "JobExecutionSearchResultSuccess": {
+                    "$ref": "#/components/examples/JobExecutionSearchResultSuccess"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Malformed search query or invalid parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "MalformedSearchParameter": {
+                    "$ref": "#/components/examples/MalformedSearchParameter"
+                  },
+                  "UnqueryableField": {
+                    "$ref": "#/components/examples/UnqueryableField"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.jobs",
+              "sfcc.jobs.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/jobs/{jobId}/executions": {
+      "post": {
+        "summary": "Create Job Execution",
+        "description": "Creates a new execution for the specified job. This effectively triggers the job to run.\nThe response contains the details of the newly created job execution.\n",
+        "operationId": "createJobExecution",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "jobId",
+            "in": "path",
+            "description": "The identifier of the job.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-custom-job",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Optional request body to provide execution parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobExecutionRequest"
+              },
+              "examples": {
+                "CreateJobExecution": {
+                  "$ref": "#/components/examples/CreateJobExecution"
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "The job execution was successfully created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobExecution"
+                },
+                "examples": {
+                  "JobExecutionCreated": {
+                    "$ref": "#/components/examples/JobExecutionCreated"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid job execution request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "InvalidJobExecutionRequest": {
+                    "$ref": "#/components/examples/InvalidJobExecutionRequest"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "JobNotFound": {
+                    "$ref": "#/components/examples/JobNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.jobs.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/jobs/{jobId}/executions/{executionId}": {
+      "get": {
+        "summary": "Get Job Execution",
+        "description": "Retrieves the details of a specific job execution identified by its execution ID.\n",
+        "operationId": "getJobExecution",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "jobId",
+            "in": "path",
+            "description": "The identifier of the job.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-custom-job",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "executionId",
+            "in": "path",
+            "description": "The identifier of the job execution.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "exec-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the job execution details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobExecution"
+                },
+                "examples": {
+                  "JobExecutionDetails": {
+                    "$ref": "#/components/examples/JobExecutionDetails"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Job execution not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "JobExecutionNotFound": {
+                    "$ref": "#/components/examples/JobExecutionNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.jobs",
+              "sfcc.jobs.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete Job Execution",
+        "description": "Aborts and deletes a specific job execution. This operation can only be performed on\nexecutions that are currently in a running or pending state.\n",
+        "operationId": "deleteJobExecution",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the organization the request is being made by",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "jobId",
+            "in": "path",
+            "description": "The identifier of the job.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "my-custom-job",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "executionId",
+            "in": "path",
+            "description": "The identifier of the job execution.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "example": "exec-001",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The job execution was successfully deleted"
+          },
+          "401": {
+            "$ref": "#/components/responses/401unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/403forbidden"
+          },
+          "404": {
+            "description": "Job execution not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "JobExecutionNotFound": {
+                    "$ref": "#/components/examples/JobExecutionNotFound"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.jobs.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "description": "An identifier for the organization the request is being made by",
+        "example": "f_ecom_zzxy_prd",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Query": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A set of objects that define criteria used to select records. A query can contain one of the following:\n* `MatchAllQuery`\n - Matches all documents.\n* `TermQuery`\n - Matches one or more documents against one or more document fields.\n* `TextQuery`\n - Matches text against one or more fields.\n* `BoolQuery`\n - Allows construction of a logical expression of multiple queries.\n* `FilteredQuery`\n - Allows a filter to be applied to a query.\n* `NestedQuery`\n - Allows you to query on nested documents.\n - _Only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation._",
+        "example": {
+          "filteredQuery": {
+            "query": {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "disabled"
+              }
+            },
+            "filter": {
+              "termFilter": {
+                "field": "enabled",
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          }
+        },
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolQuery": {
+            "$ref": "#/components/schemas/BoolQuery"
+          },
+          "filteredQuery": {
+            "$ref": "#/components/schemas/FilteredQuery"
+          },
+          "matchAllQuery": {
+            "$ref": "#/components/schemas/MatchAllQuery"
+          },
+          "nestedQuery": {
+            "$ref": "#/components/schemas/NestedQuery"
+          },
+          "termQuery": {
+            "$ref": "#/components/schemas/TermQuery"
+          },
+          "textQuery": {
+            "$ref": "#/components/schemas/TextQuery"
+          }
+        }
+      },
+      "BoolQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A boolean query allows construction of full logical expression trees that are composed of other queries (usually term queries and text queries). A boolean query has three sets of clauses:\n  \n  - `must`, which combines as an `AND` operator.\n  - `should`, which combines as an `OR` operator.\n  - `must_not`, which combines as a `NOT` operator.\n  \nIf `must`, `mustNot`, or `should` appear in the same boolean query, they are combined logically using the `AND` operator. For example:\n\n    (must-1 AND must-1 AND ...)\n      AND (should-1 OR should-2 OR ...)\n      AND NOT (must_not-1 OR must_not-2 OR ...)\n",
+        "example": {
+          "value": {
+            "must": [
+              {
+                "textQuery": {
+                  "fields": [
+                    "couponId"
+                  ],
+                  "searchPhrase": "DEAL"
+                }
+              },
+              {
+                "textQuery": {
+                  "fields": [
+                    "description"
+                  ],
+                  "searchPhrase": "Big bargain deal"
+                }
+              }
+            ],
+            "mustNot": [
+              {
+                "termQuery": {
+                  "fields": [
+                    "enabled"
+                  ],
+                  "operator": "is",
+                  "values": [
+                    false
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "properties": {
+          "must": {
+            "type": "array",
+            "description": "List of queries to be evaluated as an `AND` operator.",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "mustNot": {
+            "type": "array",
+            "description": "List of queries to be evaluated as a `NOT` operator.",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "should": {
+            "type": "array",
+            "description": "List of queries to be evaluated as an `OR` operator.",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Contains a set of objects that define criteria used to select records. A filter can contain one of the following:\n  * `TermFilter`\n   - Matches records where a field (or fields) exactly matches some simple value (including `null`).\n  * `RangeFilter`\n   - Matches records where a field value lies within a specified range.\n  * `Range2Filter`\n   - Matches records in a specified range across fields.\n  * `QueryFilter`\n   - Matches records based on a query.\n  * `BoolFilter`\n   - Provides filtering of records using a set of filters combined using a logical operator.",
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolFilter": {
+            "$ref": "#/components/schemas/BoolFilter"
+          },
+          "queryFilter": {
+            "$ref": "#/components/schemas/QueryFilter"
+          },
+          "range2Filter": {
+            "$ref": "#/components/schemas/Range2Filter"
+          },
+          "rangeFilter": {
+            "$ref": "#/components/schemas/RangeFilter"
+          },
+          "termFilter": {
+            "$ref": "#/components/schemas/TermFilter"
+          }
+        }
+      },
+      "BoolFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to combine other filters into (possibly recursive) logical expression trees. A boolean filter is composed of a logical operator (`AND`, `OR`, `NOT`) and a list of filters that the operator relates to. Multiple filters can be negated with a single `NOT` operator, even when the filters are combined with the `AND` operator.",
+        "example": {
+          "value": {
+            "operator": "and",
+            "filters": [
+              {
+                "termFilter": {
+                  "field": "id",
+                  "operator": "is",
+                  "values": [
+                    "myId"
+                  ]
+                }
+              },
+              {
+                "termFilter": {
+                  "field": "couponId",
+                  "operator": "is",
+                  "values": [
+                    "couponOne"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "properties": {
+          "filters": {
+            "type": "array",
+            "description": "A list of filters that are logically combined by an operator.",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            }
+          },
+          "operator": {
+            "type": "string",
+            "description": "The logical operator that is used to combine the filters.",
+            "enum": [
+              "and",
+              "or",
+              "not"
+            ],
+            "example": "and"
+          }
+        },
+        "required": [
+          "operator"
+        ]
+      },
+      "QueryFilter": {
+        "type": "object",
+        "description": "Wraps any query and allows it to be used as a filter.",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Field": {
+        "type": "string",
+        "description": "Name of the field. Might be a custom field name prefixed with c_.",
+        "example": "couponId",
+        "maxLength": 260
+      },
+      "Range2Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits where a range defined by specified attributes has a certain relationship to a specified range.\n\nThe first range (R1) is defined by a pair of attributes (`fromField` and `toField`) that specify the extent of a range, such as attributes `validFrom` and `validTo`.\n\nThe second range (R2) is defined by `fromValue` and `toValue`.\n\nThe filter mode specifies the method used to compare the two ranges:\n\n* `overlap`: R1 overlaps fully or partially with R2.\n* `containing`: R1 contains R2.\n* `contained`: R1 is contained in R2.\n\nThe range filter supports several value types, and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range 2 filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "example": {
+          "fromField": "validFrom",
+          "toField": "validTo",
+          "filterMode": "overlap",
+          "fromValue": "2007-01-01T00:00:00.000Z",
+          "toValue": "2017-01-01T00:00:00.000Z"
+        },
+        "properties": {
+          "filterMode": {
+            "type": "string",
+            "default": "overlap",
+            "description": "Compare mode: overlap, containing, or contained.",
+            "enum": [
+              "overlap",
+              "containing",
+              "contained"
+            ],
+            "example": "overlap"
+          },
+          "fromField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The field name of the field that starts the first range.",
+            "example": "validFrom"
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the lower bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
+          },
+          "fromValue": {
+            "description": "The lower bound of the second range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "example": "2007-01-01T00:00:00.000Z"
+          },
+          "toField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The field name of the field that ends the first range.",
+            "example": "validTo"
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the upper bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
+          },
+          "toValue": {
+            "description": "The upper bound of the second range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "example": "2017-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "fromField",
+          "toField"
+        ]
+      },
+      "RangeFilter": {
+        "type": "object",
+        "description": "Allows you to restrict a search result to hits that have values for a given attribute that fall within a given value range. The range filter supports several value types and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The search field.",
+            "example": "validFrom"
+          },
+          "from": {
+            "description": "The lower bound of the filter range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "example": "2007-01-01T00:00:00Z"
+              },
+              {
+                "type": "integer",
+                "example": 1
+              },
+              {
+                "type": "number",
+                "example": 1
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the lower bound of the range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
+          },
+          "to": {
+            "description": "The upper bound of the filter range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "example": "2007-01-02T00:00:00Z"
+              },
+              {
+                "type": "integer",
+                "example": 2
+              },
+              {
+                "type": "number",
+                "example": 2
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the upper bound of the range is inclusive. To make the upper bound exclusive, set to `false`.",
+            "example": true
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "TermFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits that match exactly one of the values configured for the filter. A term filter is useful for general restrictions that can be shared between searches. Use term filters whenever the criteria you filter on is a shared property of multiple searches (for example, like filtering by an order status). Use term filters for fields that have a discrete and small set of values only.",
+        "example": {
+          "field": "id",
+          "operator": "is",
+          "values": [
+            "myId"
+          ]
+        },
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The filter field."
+          },
+          "operator": {
+            "type": "string",
+            "description": "The operator used to compare the field's values with the given values.",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ],
+            "example": "is"
+          },
+          "values": {
+            "type": "array",
+            "description": "The filter values.",
+            "items": {
+              "type": "string",
+              "example": "myId"
+            }
+          }
+        },
+        "required": [
+          "field",
+          "operator"
+        ]
+      },
+      "FilteredQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows to filter the result of a possibly complex query using a possibly complex filter.",
+        "example": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "couponId"
+              ],
+              "searchPhrase": "disabled"
+            }
+          },
+          "filter": {
+            "termFilter": {
+              "field": "enabled",
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          }
+        },
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/Filter"
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "filter",
+          "query"
+        ]
+      },
+      "MatchAllQuery": {
+        "type": "object",
+        "description": "Matches all documents (namespace and document type). This query comes in handy if you just want to filter a search result or really do not have any constraints."
+      },
+      "NestedQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to query nested documents that are part of a larger document. Say, for example, that you have a main product with variations in one big document, and you want to constrain a search to main products that have variations that match multiple constraints. \n\nA `NestedQuery` is only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation.\n",
+        "example": {
+          "path": "order.shippingAddresses",
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.firstName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "John"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.lastName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "Doe"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "scoreMode": "avg"
+        },
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The path to the nested document.",
+            "example": "order.shippingAddresses",
+            "maxLength": 2048
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "scoreMode": {
+            "type": "string",
+            "description": "Indicates how scores for matching child objects affect the root parent document’s relevance score.",
+            "enum": [
+              "avg",
+              "total",
+              "max",
+              "none"
+            ],
+            "example": "avg"
+          }
+        },
+        "required": [
+          "path",
+          "query"
+        ]
+      },
+      "TermQuery": {
+        "type": "object",
+        "description": "A term query matches one or more values against one or more document fields. A document is considered a hit if one of the values matches exactly with at least one of the given fields. The operator `is` can only take one value, while `one_of` can take multiple values. If multiple fields are specified, they are combined using a logical `OR` operator.\n\n**Limitations:**\n\n* The `greater` and `less` operators are not supported under certain conditions. Both operators are permitted unless the API documentation states otherwise.\n* A subset of Commerce APIs handle queries with multiple fields differently. If the query has multiple fields, the query is internally handled as a logical `OR` of `DisjointMaxQueries` (with the dismax matching a value against all fields). The dismax makes sure that a document carrying a single term in multiple fields does not get higher scores than a document matching multiple terms in multiple fields.",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "description": "The document fields that the values are matched against, combined with the operator.",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "operator": {
+            "type": "string",
+            "description": "Returns the operator to use for the term query.",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ],
+            "example": "is"
+          },
+          "values": {
+            "type": "array",
+            "description": "The values that the fields are compared against, combined with the operator.",
+            "items": {
+              "example": "myCouponId",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "example": "myCouponId"
+                },
+                {
+                  "type": "number",
+                  "example": 1
+                },
+                {
+                  "type": "boolean",
+                  "example": true
+                },
+                {
+                  "type": "integer",
+                  "example": 1
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "fields",
+          "operator"
+        ]
+      },
+      "TextQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A text query is used to match some text (for example, a search phrase possibly consisting of multiple terms) against one or more fields. When multiple fields are provided, the phrase conceptually forms a logical `OR` over the fields. In this case, the terms of the phrase basically have to match within the text, that would result in concatenating all given fields.",
+        "example": {
+          "fields": [
+            "couponId"
+          ],
+          "searchPhrase": "limit"
+        },
+        "properties": {
+          "fields": {
+            "type": "array",
+            "description": "The document fields that the search phrase matches against.",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "searchPhrase": {
+            "type": "string",
+            "description": "A search phrase, which can include multiple terms separated by spaces.",
+            "example": "campaign summer"
+          }
+        },
+        "required": [
+          "fields",
+          "searchPhrase"
+        ]
+      },
+      "Sort": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Document representing a sort request. Each API has a different default sort configuration that can be modified in the request.",
+        "example": {
+          "field": "couponId",
+          "sortOrder": "desc"
+        },
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "The name of the field to sort on.",
+            "example": "couponId",
+            "maxLength": 256
+          },
+          "sortOrder": {
+            "type": "string",
+            "default": "asc",
+            "description": "The sort order to be applied when sorting. When omitted, the default sort order (asc) is used.",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "example": "asc"
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
+        "minimum": 0
+      },
+      "SearchRequest": {
+        "type": "object",
+        "description": "Document representing a search request for retrieving items within the Data API. The query is a potentially complex set of expressions. The fields and expands that each query supports are defined within the search resource.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request, not to exceed 200.",
+            "example": 10,
+            "maximum": 200,
+            "minimum": 1
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "description": "The list of sort clauses configured for the search request. Sort clauses are optional. See the description of the search endpoint for details on the default sorting behavior that is used when explicit sorts are not passed.",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "JobExecutionSearchRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SearchRequest"
+          }
+        ],
+        "description": "Document representing a search request for retrieving job executions. The query is a potentially complex set of expressions.\n\nSearchable attributes:\n- id - String\n- jobId - String\n- status - String\n- startTime - DateTime\n- endTime - DateTime\n\nSortable attributes:\n- id - String\n- jobId - String\n- status - String\n- startTime - DateTime\n- endTime - DateTime\n"
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "PaginatedSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Document representing a generic search result. Each search resource should extend this to define what is returned in the `hits`.",
+        "example": {
+          "limit": 1,
+          "hits": [
+            {
+              "couponId": "coupon1",
+              "creationDate": "2019-10-20T12:00:00Z",
+              "description": "This coupon is used to give 10% off stuff.",
+              "enabled": false,
+              "exportedCodeCount": 0,
+              "lastModified": "2019-10-30T04:23:59Z",
+              "redemptionCount": 3,
+              "redemptionLimits": {
+                "limitPerCode": 1,
+                "limitPerCustomer": 1,
+                "limitPerTimeFrame": {
+                  "limit": 2,
+                  "redemptionTimeFrame": 24
+                }
+              },
+              "singleCode": "MyCode",
+              "systemCodesConfig": {
+                "codePrefix": "SG",
+                "numberOfCodes": 500000
+              },
+              "totalCodesCount": 50,
+              "type": "single_code"
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "stuff"
+            }
+          },
+          "sorts": [
+            {
+              "field": "couponId",
+              "sortOrder": "desc"
+            }
+          ],
+          "offset": 2,
+          "total": 8
+        },
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "description": "The sorting that was applied to the result.",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "hits": {
+            "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "ExecutionStatus": {
+        "type": "string",
+        "description": "The execution lifecycle status of a job or step execution.",
+        "enum": [
+          "pending",
+          "running",
+          "pausing",
+          "paused",
+          "resuming",
+          "resumed",
+          "restarting",
+          "restarted",
+          "retrying",
+          "retried",
+          "aborting",
+          "aborted",
+          "finished",
+          "unknown"
+        ],
+        "example": "finished"
+      },
+      "ExitStatus": {
+        "type": "object",
+        "description": "Document representing the exit status of a job or step execution.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The exit status code.",
+            "example": "OK",
+            "maxLength": 256
+          },
+          "message": {
+            "type": "string",
+            "description": "The exit status message providing additional details.",
+            "example": "Job completed successfully",
+            "maxLength": 4000
+          },
+          "status": {
+            "type": "string",
+            "description": "The exit status value.",
+            "enum": [
+              "ok",
+              "error"
+            ],
+            "example": "ok"
+          }
+        }
+      },
+      "StatusMetadata": {
+        "type": "object",
+        "description": "Document representing metadata associated with the status of a job execution.",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "The client ID responsible for the status.",
+            "example": "scapi",
+            "maxLength": 256
+          },
+          "reason": {
+            "type": "string",
+            "description": "The reason for the status.",
+            "example": "Job aborted by user",
+            "maxLength": 4000
+          },
+          "userLogin": {
+            "type": "string",
+            "description": "The user login responsible for the status.",
+            "example": "admin",
+            "maxLength": 256
+          }
+        }
+      },
+      "JobParameter": {
+        "type": "object",
+        "description": "Document representing a single job parameter as a name-value pair.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the job parameter.",
+            "example": "param1",
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "\\S|(\\S(.*)\\S)"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value of the job parameter.",
+            "example": "value1",
+            "maxLength": 1000,
+            "minLength": 0,
+            "pattern": "\\S|(\\S(.*)\\S)"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      },
+      "JobExecutionRetryInformation": {
+        "type": "object",
+        "description": "Document representing retry information for a previous failed job execution.",
+        "properties": {
+          "currentRetryAttempt": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The current attempt to retry the previous failed job execution.",
+            "example": 1
+          },
+          "maxRetries": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The maximum number of retries.",
+            "example": 3
+          }
+        }
+      },
+      "JobExecutionContinueInformation": {
+        "type": "object",
+        "description": "Document representing continuation information for a job execution.",
+        "properties": {
+          "isPending": {
+            "type": "boolean",
+            "description": "True if the continuation of this job execution is pending and will be started soon, false otherwise.",
+            "example": true
+          },
+          "continueStatus": {
+            "type": "string",
+            "description": "The status this job execution will get on continuation if continuation is pending.",
+            "example": "OK",
+            "maxLength": 256
+          }
+        }
+      },
+      "JobStepExecution": {
+        "type": "object",
+        "description": "Document representing a step execution within a job execution.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the step execution.",
+            "example": "4",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "stepId": {
+            "type": "string",
+            "description": "The ID of the step.",
+            "example": "Step1",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "stepDescription": {
+            "type": "string",
+            "description": "The description of the step.",
+            "example": "A step that executes a pipeline that can be configured via a parameter",
+            "maxLength": 4000
+          },
+          "stepTypeId": {
+            "type": "string",
+            "description": "The type identifier of the step.",
+            "example": "ExecutePipeline",
+            "maxLength": 256
+          },
+          "stepTypeInfo": {
+            "type": "string",
+            "description": "Additional type information about the step.",
+            "example": "TestWAPIJobPipeline-StartEnd",
+            "maxLength": 4000
+          },
+          "executionScope": {
+            "type": "string",
+            "description": "The execution scope of the step.",
+            "example": "Organization",
+            "maxLength": 256
+          },
+          "executionStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionStatus"
+              }
+            ],
+            "description": "The execution lifecycle status of the step."
+          },
+          "status": {
+            "type": "string",
+            "description": "The exit status of the step execution.",
+            "example": "OK",
+            "maxLength": 256
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the step execution started.",
+            "example": "2024-10-14T10:00:00Z"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the step execution ended.",
+            "example": "2024-10-14T10:05:00Z"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The duration of the step execution in milliseconds.",
+            "example": 21
+          },
+          "modificationTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the step execution was last modified.",
+            "example": "2024-10-14T10:05:00Z"
+          },
+          "statusMetadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatusMetadata"
+              }
+            ],
+            "description": "Metadata associated with the current status of the step execution."
+          },
+          "exitStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExitStatus"
+              }
+            ],
+            "description": "The exit status of the step execution."
+          },
+          "includeStepsFromJobId": {
+            "type": "string",
+            "description": "The ID of the job whose steps are included in this step execution.",
+            "example": "JobExecutionTestJob2",
+            "maxLength": 256
+          },
+          "isChunkOriented": {
+            "type": "boolean",
+            "description": "Indicates whether the step execution is chunk-oriented.",
+            "example": false
+          },
+          "chunkSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The chunk size used during step execution.",
+            "example": 100
+          },
+          "itemFilterCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of items filtered during step execution.",
+            "example": 0
+          },
+          "itemWriteCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of items written during step execution.",
+            "example": 500
+          },
+          "totalItemCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The total number of items to process during step execution.",
+            "example": 500
+          }
+        }
+      },
+      "JobExecution": {
+        "type": "object",
+        "description": "Document representing a job execution.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the job execution.",
+            "example": "1",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "jobId": {
+            "type": "string",
+            "description": "The ID of the job.",
+            "example": "JobExecutionTestJob1",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "jobDescription": {
+            "type": "string",
+            "description": "The description of the job.",
+            "example": "Test job for WAPI",
+            "maxLength": 4000
+          },
+          "clientId": {
+            "type": "string",
+            "description": "The client ID that triggered the job execution.",
+            "example": "scapi",
+            "maxLength": 256
+          },
+          "userLogin": {
+            "type": "string",
+            "description": "The login of the user who started the job execution, if started by a registered user.",
+            "example": "admin",
+            "maxLength": 256
+          },
+          "executionStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionStatus"
+              }
+            ],
+            "description": "The execution lifecycle status of the job."
+          },
+          "status": {
+            "type": "string",
+            "description": "The exit status of the job execution.",
+            "example": "OK",
+            "maxLength": 256
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the job execution started.",
+            "example": "2024-10-14T10:00:00Z"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the job execution ended.",
+            "example": "2024-10-14T10:10:00Z"
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the job execution was created.",
+            "example": "2024-10-14T10:00:00Z"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The duration of the job execution in milliseconds.",
+            "example": 171
+          },
+          "effectiveDuration": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The effective duration of the job execution in milliseconds, excluding any paused time.",
+            "example": 92
+          },
+          "modificationTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the job execution was last modified.",
+            "example": "2024-10-14T10:10:00Z"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the job execution was last modified (alias).",
+            "example": "2024-10-14T10:10:00Z"
+          },
+          "executedServerId": {
+            "type": "string",
+            "description": "The ID of the server that executed the job.",
+            "example": "192.168.1.2-0",
+            "maxLength": 256
+          },
+          "exitStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExitStatus"
+              }
+            ],
+            "description": "The exit status of the job execution."
+          },
+          "statusMetadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatusMetadata"
+              }
+            ],
+            "description": "Metadata associated with the current status of the job execution."
+          },
+          "isLogFileExisting": {
+            "type": "boolean",
+            "description": "Indicates whether a log file exists for the job execution.",
+            "example": true
+          },
+          "isRestart": {
+            "type": "boolean",
+            "description": "Indicates whether the job execution is a restart of a previous execution.",
+            "example": false
+          },
+          "logFilePath": {
+            "type": "string",
+            "description": "The full WebDAV path of the log file associated with the job execution.",
+            "example": "/Sites/LOGS/jobs/JobExecutionTestJob1/Job-JobExecutionTestJob1-02c585c2a242c8eee74bd1ba51.log",
+            "maxLength": 4000
+          },
+          "parameters": {
+            "type": "array",
+            "description": "The parameters used for the job execution.",
+            "items": {
+              "$ref": "#/components/schemas/JobParameter"
+            }
+          },
+          "executionScopes": {
+            "type": "array",
+            "description": "The scopes for which the job was executed.",
+            "items": {
+              "type": "string",
+              "example": "Organization",
+              "maxLength": 256
+            }
+          },
+          "retryInformation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobExecutionRetryInformation"
+              }
+            ],
+            "description": "The retry information of this execution if available."
+          },
+          "continueInformation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobExecutionContinueInformation"
+              }
+            ],
+            "description": "The continuation information of this execution if available."
+          },
+          "stepExecutions": {
+            "type": "array",
+            "description": "The step executions that are part of this job execution.",
+            "items": {
+              "$ref": "#/components/schemas/JobStepExecution"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "jobId",
+          "status"
+        ]
+      },
+      "JobExecutionSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "description": "Document representing a job execution search result. This includes the query, hits (array of JobExecution objects), and pagination information.",
+        "properties": {
+          "hits": {
+            "type": "array",
+            "description": "The sorted array of search hits (JobExecution objects). Can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/JobExecution"
+            }
+          }
+        },
+        "required": [
+          "hits",
+          "query"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "JobExecutionRequest": {
+        "type": "object",
+        "description": "Document representing a request to create a job execution. Optional parameters\ncan be provided to configure the execution.\n",
+        "properties": {
+          "parameters": {
+            "type": "array",
+            "description": "The parameters for the job execution.",
+            "items": {
+              "$ref": "#/components/schemas/JobParameter"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "UnauthorizedExample": {
+                "$ref": "#/components/examples/UnauthorizedExample"
+              }
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "ForbiddenExample": {
+                "$ref": "#/components/examples/ForbiddenExample"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "description": "An identifier for the organization the request is being made by",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        },
+        "example": "f_ecom_zzxy_prd"
+      },
+      "jobId": {
+        "name": "jobId",
+        "in": "path",
+        "description": "The identifier of the job.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "my-custom-job",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      },
+      "executionId": {
+        "name": "executionId",
+        "in": "path",
+        "description": "The identifier of the job execution.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "example": "exec-001",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      }
+    },
+    "examples": {
+      "SearchByJobId": {
+        "summary": "Search job executions by job ID",
+        "description": "Example of searching for job executions by their job ID using a term query",
+        "value": {
+          "query": {
+            "termQuery": {
+              "fields": [
+                "jobId"
+              ],
+              "operator": "is",
+              "values": [
+                "my-custom-job"
+              ]
+            }
+          },
+          "limit": 10,
+          "offset": 0
+        }
+      },
+      "SearchByStatus": {
+        "summary": "Search job executions by status",
+        "description": "Example of searching for job executions by their execution status",
+        "value": {
+          "query": {
+            "termQuery": {
+              "fields": [
+                "status"
+              ],
+              "operator": "is",
+              "values": [
+                "running"
+              ]
+            }
+          },
+          "limit": 25,
+          "offset": 0,
+          "sorts": [
+            {
+              "field": "startTime",
+              "sortOrder": "desc"
+            }
+          ]
+        }
+      },
+      "SearchByStartTime": {
+        "summary": "Search job executions by start time range",
+        "description": "Example of searching for job executions within a specific start time range using a bool query",
+        "value": {
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "termQuery": {
+                    "fields": [
+                      "status"
+                    ],
+                    "operator": "is",
+                    "values": [
+                      "finished"
+                    ]
+                  }
+                },
+                {
+                  "textQuery": {
+                    "fields": [
+                      "jobId"
+                    ],
+                    "searchPhrase": "export"
+                  }
+                }
+              ]
+            }
+          },
+          "limit": 20,
+          "offset": 0,
+          "sorts": [
+            {
+              "field": "startTime",
+              "sortOrder": "desc"
+            }
+          ]
+        }
+      },
+      "JobExecutionSearchResultSuccess": {
+        "summary": "Successful job execution search result",
+        "description": "Example of a successful job execution search returning multiple results",
+        "value": {
+          "limit": 2,
+          "offset": 0,
+          "total": 2,
+          "query": {
+            "textQuery": {
+              "fields": [
+                "jobId"
+              ],
+              "searchPhrase": "JobExecutionTestJob1"
+            }
+          },
+          "hits": [
+            {
+              "id": "1",
+              "jobId": "JobExecutionTestJob1",
+              "jobDescription": "Test job for WAPI",
+              "clientId": "scapi",
+              "status": "OK",
+              "executionStatus": "finished",
+              "startTime": "2026-02-24T13:47:23.249Z",
+              "endTime": "2026-02-24T13:47:23.420Z",
+              "creationDate": "2026-02-24T13:47:23.000Z",
+              "duration": 171,
+              "effectiveDuration": 92,
+              "modificationTime": "2026-02-24T13:47:23.433Z",
+              "executedServerId": "192.168.1.2-0",
+              "executionScopes": [
+                "Organization",
+                "TestWapi-Customization"
+              ],
+              "exitStatus": {
+                "code": "OK",
+                "status": "ok"
+              },
+              "statusMetadata": {
+                "clientId": "scapi",
+                "reason": "Completed successfully",
+                "userLogin": "admin"
+              },
+              "isLogFileExisting": true,
+              "isRestart": false,
+              "logFilePath": "/Sites/LOGS/jobs/JobExecutionTestJob1/Job-JobExecutionTestJob1-02c585c2a242c8eee74bd1ba51.log",
+              "parameters": [
+                {
+                  "name": "SiteScope",
+                  "value": "{\"all_storefront_sites\":true}"
+                }
+              ],
+              "stepExecutions": [
+                {
+                  "id": "4",
+                  "stepId": "Step1",
+                  "stepDescription": "A step that executes a pipeline that can be configured via a parameter",
+                  "stepTypeId": "ExecutePipeline",
+                  "stepTypeInfo": "TestWAPIJobPipeline-StartEnd",
+                  "executionScope": "Organization",
+                  "executionStatus": "finished",
+                  "status": "OK",
+                  "startTime": "2026-02-24T13:47:23.311Z",
+                  "endTime": "2026-02-24T13:47:23.332Z",
+                  "duration": 21,
+                  "modificationTime": "2026-02-24T13:47:23.332Z",
+                  "isChunkOriented": false,
+                  "exitStatus": {
+                    "code": "OK",
+                    "message": "",
+                    "status": "ok"
+                  }
+                },
+                {
+                  "id": "5",
+                  "stepId": "Step2",
+                  "stepDescription": "A step that executes a script module function that can be configured via a parameter",
+                  "stepTypeId": "ExecuteScriptModule",
+                  "stepTypeInfo": "test_bc_wapi/cartridge/scripts/test/schedulejob/testScriptModuleStep.ds#execute",
+                  "executionScope": "Organization",
+                  "executionStatus": "finished",
+                  "status": "OK",
+                  "startTime": "2026-02-24T13:47:23.337Z",
+                  "endTime": "2026-02-24T13:47:23.359Z",
+                  "duration": 22,
+                  "modificationTime": "2026-02-24T13:47:23.359Z",
+                  "isChunkOriented": false,
+                  "exitStatus": {
+                    "code": "OK",
+                    "message": "",
+                    "status": "ok"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "0",
+              "jobId": "JobExecutionTestJob1",
+              "jobDescription": "Test job for WAPI",
+              "clientId": "scapi",
+              "status": "ERROR",
+              "executionStatus": "finished",
+              "startTime": "2026-02-24T13:46:24.316Z",
+              "endTime": "2026-02-24T13:46:25.084Z",
+              "creationDate": "2026-02-24T13:46:24.000Z",
+              "duration": 768,
+              "effectiveDuration": 143,
+              "modificationTime": "2026-02-24T13:46:25.101Z",
+              "executedServerId": "192.168.1.2-0",
+              "executionScopes": [
+                "Organization"
+              ],
+              "exitStatus": {
+                "code": "ERROR",
+                "message": "Job failed due to an import error.",
+                "status": "error"
+              },
+              "isLogFileExisting": true,
+              "isRestart": false,
+              "logFilePath": "/Sites/LOGS/jobs/JobExecutionTestJob1/Job-JobExecutionTestJob1-21a391164b090c6c12957a292e.log",
+              "retryInformation": {
+                "currentRetryAttempt": 1,
+                "maxRetries": 3
+              },
+              "stepExecutions": [
+                {
+                  "id": "0",
+                  "stepId": "Step1",
+                  "stepDescription": "A step that executes a pipeline that can be configured via a parameter",
+                  "stepTypeId": "ExecutePipeline",
+                  "stepTypeInfo": "TestWAPIJobPipeline-StartEnd",
+                  "executionScope": "Organization",
+                  "executionStatus": "finished",
+                  "status": "ERROR",
+                  "startTime": "2026-02-24T13:46:24.920Z",
+                  "endTime": "2026-02-24T13:46:25.084Z",
+                  "duration": 164,
+                  "modificationTime": "2026-02-24T13:46:25.084Z",
+                  "isChunkOriented": true,
+                  "chunkSize": 100,
+                  "itemWriteCount": 42,
+                  "itemFilterCount": 3,
+                  "totalItemCount": 500,
+                  "statusMetadata": {
+                    "clientId": "scapi",
+                    "reason": "Import file not found",
+                    "userLogin": "admin"
+                  },
+                  "exitStatus": {
+                    "code": "ERROR",
+                    "message": "Import file not found",
+                    "status": "error"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "MalformedSearchParameter": {
+        "summary": "Malformed search query",
+        "description": "Example of an error when the search query is malformed or invalid",
+        "value": {
+          "title": "Malformed Search Parameter",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/malformed-search-parameter",
+          "detail": "The search query contains invalid syntax. Please check the query structure and try again."
+        }
+      },
+      "UnqueryableField": {
+        "summary": "Unqueryable Field",
+        "description": "Example of an error when an invalid field name is used in the search query",
+        "value": {
+          "title": "Unqueryable Field",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unqueryable-field",
+          "detail": "The field 'invalid_field' is not a searchable attribute for job executions. Valid fields are: id, jobId, status, startTime, endTime."
+        }
+      },
+      "UnauthorizedExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/unauthorized",
+          "title": "Unauthorized",
+          "detail": "Your access token is invalid or expired and can’t be used to identify a user."
+        }
+      },
+      "ForbiddenExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/forbidden",
+          "title": "Forbidden",
+          "detail": "Your access token is valid, but you don’t have the required permissions to access the resource."
+        }
+      },
+      "CreateJobExecution": {
+        "summary": "Create a job execution with parameters",
+        "description": "Example of creating a new job execution with custom parameters",
+        "value": {
+          "parameters": [
+            {
+              "name": "exportFormat",
+              "value": "XML"
+            },
+            {
+              "name": "targetFolder",
+              "value": "/export/catalog"
+            }
+          ]
+        }
+      },
+      "JobExecutionCreated": {
+        "summary": "Newly created job execution",
+        "description": "Example of a successfully created job execution (response from POST)",
+        "value": {
+          "id": "3",
+          "jobId": "ScapiParamTest",
+          "jobDescription": "SCAPI parameter test job",
+          "clientId": "scapi",
+          "status": "pending",
+          "executionStatus": "pending",
+          "isLogFileExisting": false,
+          "isRestart": false,
+          "duration": 0,
+          "modificationTime": "2026-02-24T14:04:45.081Z",
+          "startTime": "2026-02-24T14:04:45.081Z",
+          "parameters": [
+            {
+              "name": "GlobalParam1",
+              "value": "OverriddenValue1"
+            }
+          ]
+        }
+      },
+      "InvalidJobExecutionRequest": {
+        "summary": "Invalid job execution request",
+        "description": "Example of an error when the job execution request is invalid",
+        "value": {
+          "title": "Invalid Request",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-request",
+          "detail": "The job execution request is invalid. Please check the request body and try again."
+        }
+      },
+      "JobNotFound": {
+        "summary": "Job not found",
+        "description": "Example of an error when the specified job does not exist",
+        "value": {
+          "title": "Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/not-found",
+          "detail": "The job with ID 'nonexistent-job' was not found."
+        }
+      },
+      "JobExecutionDetails": {
+        "summary": "Job execution with step details",
+        "description": "Example of a completed job execution with step execution details (response from GET)",
+        "value": {
+          "id": "1",
+          "jobId": "JobExecutionTestJob1",
+          "jobDescription": "Test job for WAPI",
+          "clientId": "scapi",
+          "status": "OK",
+          "executionStatus": "finished",
+          "startTime": "2026-02-24T13:47:23.249Z",
+          "endTime": "2026-02-24T13:47:23.420Z",
+          "creationDate": "2026-02-24T13:47:23.000Z",
+          "duration": 171,
+          "effectiveDuration": 92,
+          "modificationTime": "2026-02-24T13:47:23.433Z",
+          "executedServerId": "192.168.1.2-0",
+          "executionScopes": [
+            "Organization",
+            "TestWapi-Customization"
+          ],
+          "exitStatus": {
+            "code": "OK",
+            "status": "ok"
+          },
+          "isLogFileExisting": true,
+          "isRestart": false,
+          "logFilePath": "/Sites/LOGS/jobs/JobExecutionTestJob1/Job-JobExecutionTestJob1-02c585c2a242c8eee74bd1ba51.log",
+          "parameters": [
+            {
+              "name": "SiteScope",
+              "value": "{\"all_storefront_sites\":true}"
+            }
+          ],
+          "stepExecutions": [
+            {
+              "id": "4",
+              "stepId": "Step1",
+              "stepDescription": "A step that executes a pipeline that can be configured via a parameter",
+              "stepTypeId": "ExecutePipeline",
+              "stepTypeInfo": "TestWAPIJobPipeline-StartEnd",
+              "executionScope": "Organization",
+              "executionStatus": "finished",
+              "status": "OK",
+              "startTime": "2026-02-24T13:47:23.311Z",
+              "endTime": "2026-02-24T13:47:23.332Z",
+              "duration": 21,
+              "modificationTime": "2026-02-24T13:47:23.332Z",
+              "isChunkOriented": false,
+              "exitStatus": {
+                "code": "OK",
+                "message": "",
+                "status": "ok"
+              }
+            },
+            {
+              "id": "5",
+              "stepId": "Step2",
+              "stepDescription": "A step that executes a script module function that can be configured via a parameter",
+              "stepTypeId": "ExecuteScriptModule",
+              "stepTypeInfo": "test_bc_wapi/cartridge/scripts/test/schedulejob/testScriptModuleStep.ds#execute",
+              "executionScope": "Organization",
+              "executionStatus": "finished",
+              "status": "OK",
+              "startTime": "2026-02-24T13:47:23.337Z",
+              "endTime": "2026-02-24T13:47:23.359Z",
+              "duration": 22,
+              "modificationTime": "2026-02-24T13:47:23.359Z",
+              "isChunkOriented": false,
+              "exitStatus": {
+                "code": "OK",
+                "message": "",
+                "status": "ok"
+              }
+            },
+            {
+              "id": "6",
+              "stepId": "Step3 - Step1",
+              "stepDescription": "A step that executes a pipeline that can be configured via a parameter",
+              "stepTypeId": "ExecutePipeline",
+              "stepTypeInfo": "TestWAPIJobPipeline-StartEnd",
+              "executionScope": "TestWapi-Customization",
+              "executionStatus": "finished",
+              "status": "OK",
+              "startTime": "2026-02-24T13:47:23.364Z",
+              "endTime": "2026-02-24T13:47:23.387Z",
+              "duration": 23,
+              "modificationTime": "2026-02-24T13:47:23.387Z",
+              "isChunkOriented": false,
+              "includeStepsFromJobId": "JobExecutionTestJob2",
+              "exitStatus": {
+                "code": "OK",
+                "message": "",
+                "status": "ok"
+              }
+            },
+            {
+              "id": "7",
+              "stepId": "Step3 - Step2",
+              "stepDescription": "",
+              "stepTypeId": "ExecuteScriptModule",
+              "stepTypeInfo": "test_bc_wapi/cartridge/scripts/test/schedulejob/testScriptModuleStep.ds#testReturnStatusOkWithCodeAndMessage",
+              "executionScope": "TestWapi-Customization",
+              "executionStatus": "finished",
+              "status": "SUCCESS",
+              "startTime": "2026-02-24T13:47:23.392Z",
+              "endTime": "2026-02-24T13:47:23.418Z",
+              "duration": 26,
+              "modificationTime": "2026-02-24T13:47:23.418Z",
+              "isChunkOriented": false,
+              "includeStepsFromJobId": "JobExecutionTestJob2",
+              "exitStatus": {
+                "code": "SUCCESS",
+                "message": "Step was successful!",
+                "status": "ok"
+              }
+            }
+          ]
+        }
+      },
+      "JobExecutionNotFound": {
+        "summary": "Job execution not found",
+        "description": "Example of an error when the specified job execution does not exist",
+        "value": {
+          "title": "Not Found",
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/not-found",
+          "detail": "The job execution with ID 'nonexistent-exec' for job 'my-custom-job' was not found."
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "description": "OAuth 2.0 security scheme for Admin API access using Account Manager.\nRequires appropriate scopes for job management operations.\n",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dw/oauth2/access_token",
+            "scopes": {
+              "sfcc.jobs": "Read access to job resources",
+              "sfcc.jobs.rw": "Read and write access to job resources"
+            }
+          }
+        }
+      }
+    }
+  }
+}

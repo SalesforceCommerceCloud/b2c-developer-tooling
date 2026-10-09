@@ -23,7 +23,7 @@ _qualifier_ constants which can be passed into the
 [select(Object)](dw.util.FilteringCollection.md#selectobject) method used to _filter_ the elements. Generally
 _qualifiers_ have the prefix _QUALIFIER\__. A second method
 [sort(Object)](dw.util.FilteringCollection.md#sortobject) is used to create a new instance with a different
-element ordering, which takes an _orderB<_ constant. Generally
+element ordering, which takes an _orderB&lt;_ constant. Generally
 _orderBys_ have the prefix ORDERBY\_: examples are
 [ShippingOrder.ORDERBY_ITEMID](dw.order.ShippingOrder.md#orderby_itemid),
 [ShippingOrder.ORDERBY_ITEMPOSITION](dw.order.ShippingOrder.md#orderby_itemposition), and [ORDERBY_REVERSE](dw.util.FilteringCollection.md#orderby_reverse) can

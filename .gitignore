@@ -23,12 +23,13 @@ package-lock.json
 # VitePress
 docs/.vitepress/dist
 docs/.vitepress/cache
+docs/.vitepress/.temp
 
 # TypeDoc generated API docs (regenerated on build)
 docs/api/
 
-# Salesforce Help corpus: the converted .md tree is packed into the committed
-# docs/help-content.tar.gz and extracted into the docs build output at build time
+# Salesforce Help corpora: the converted .md trees are packed into the committed
+# docs/help-content.tar.gz and docs/help-kb-content.tar.gz and extracted into the docs build output at build time
 # (VitePress buildEnd). The generator's staging tree is transient, not committed.
 packages/b2c-tooling-sdk/tmp/
 
@@ -44,3 +45,15 @@ skills/eval/project/.git
 skills/eval/results-*.json
 # Python bytecode
 __pycache__/
+
+# Salesforce CLI local state
+.sf/
+
+# Generated offline guidance; rebuilt from authored skills and MCP guides.
+/packages/b2c-dx-mcp/content/guidance/
+/packages/b2c-cli/content/guidance/
+
+# Release notes: published history refresh and rendered Markdown (seed is committed).
+/docs/.vitepress/releases/live.json*
+/docs/_partials/releases.generated.md
+/docs/public/releases/

@@ -10,6 +10,16 @@ Commands for viewing configuration, setting up the development environment, and 
 
 Display the resolved configuration from all sources, showing which values are set and where they came from. Useful for debugging configuration issues.
 
+The Safety section summarizes the settings in use, including your instance,
+global safety file, and environment variables. Add `--verbose` to see all rules
+in the order they are checked. `--json` always includes the complete settings.
+
+The source column shows where each setting came from. `SafetyFile` refers to the
+global file listed in Sources; `SafetyEnv` refers to environment variables.
+"Level confirmation" controls approval for requests the selected level would
+normally block. Individual `confirm` rules still ask for approval when this
+setting is disabled. See [Safety Mode](../guide/safety).
+
 **Alias:** `b2c setup config`
 
 ### Usage
@@ -23,6 +33,7 @@ b2c setup inspect [FLAGS]
 | Flag                     | Description                                                   | Default                    |
 | ------------------------ | ------------------------------------------------------------- | -------------------------- |
 | `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys) | `false`                    |
+| `--verbose`              | Show the full ordered safety ruleset                          | `false`                    |
 | `--account-manager-host` | Account Manager hostname for OAuth                            | `account.demandware.com`   |
 | `--cloud-origin`         | MRT cloud origin URL                                          | `https://cloud.mobify.com` |
 | `--json`                 | Output results as JSON                                        | `false`                    |
@@ -32,6 +43,9 @@ b2c setup inspect [FLAGS]
 ```bash
 # Display resolved configuration (sensitive values masked)
 b2c setup inspect
+
+# Include the full safety ruleset
+b2c setup inspect --verbose
 
 # Display configuration with sensitive values unmasked
 b2c setup inspect --unmask
@@ -109,15 +123,90 @@ By default, sensitive fields are masked to prevent accidental exposure:
 
 Use `--unmask` to reveal the actual values when needed for debugging.
 
-The Sources section shows both the primary and default `dw.json` files and marks the file that supplied the selected instance with `*`. When the shared default `dw.json` supplies values, fields are annotated with `[default]` and its source row is labeled `(default)`. JSON output includes the same file provenance plus `"scope": "global"` on a selected default source.
+The Sources section lists the project and shared default `dw.json` files. An `*`
+marks the file used for the selected instance. Values from the shared default
+file show `[default]` in the source column. JSON output also identifies that file
+with `"scope": "global"`.
 
 ### See Also
 
 - [Configuration Guide](/guide/configuration) - How to configure the CLI
 
+## b2c setup get / set / unset
+
+Read and change one configuration value without editing files by hand. Each
+command resolves configuration the same way as `b2c setup inspect`, then reads
+or writes the value at the source that supplies it:
+
+- If the value comes from a `dw.json` entry, it's written there: the entry
+  selected with `--instance`, the active instance, or the root config.
+- If it comes from the project `.env` file, it's written there, using the
+  `SFCC_*` environment variable form.
+- If nothing sets it yet, it's written to the source that defines the instance
+  (usually the `dw.json` entry that selected it).
+- Plugin config sources take part when they implement the write methods
+  described in [Extending the CLI](../guide/extending#field-write-methods). That
+  includes credential stores such as a keychain plugin.
+
+A credential pair (client ID and secret, username and password) stays in one
+source, so the secret goes where the client ID is set.
+
+The commands refuse, without writing anything, when:
+
+- the value comes from a source that can't be written (shell environment
+  variables, `~/.mobify`, `package.json`, flags)
+- no instance is selected, for example when `dw.json` has several instances and
+  none is active
+- the value is empty (`b2c setup set code-version=`). Use `b2c setup unset`
+  to remove a value.
+
+Keys use `dw.json` names (`code-version`, `scapi-schemas`, `client-id`); the
+camelCase forms also work. String keys store the value as given. Other keys
+take JSON (`true`, `["a","b"]`, `{"level":"NO_DELETE"}`), and list keys also
+accept comma-separated values. Values are checked against the
+[dw.json schema](../guide/configuration) before writing.
+
+### Usage
+
+```bash
+b2c setup get <KEY> [--unmask]
+b2c setup set <KEY> <VALUE>
+b2c setup set <KEY>=<VALUE>
+b2c setup unset <KEY>
+```
+
+All three accept `--instance`, `--config`, `--project-directory`,
+`--dotenv-file`, and `--json`.
+
+### Examples
+
+```bash
+# Point the MCP server and CLI at local SCAPI schemas for this project
+b2c setup set scapi-schemas=./scapi-schemas
+
+# Change the code version for a named instance
+b2c setup set code-version version2 --instance staging
+
+# Store structured values as JSON
+b2c setup set cartridges '["app_custom","app_storefront_base"]'
+b2c setup set safety '{"level":"NO_DELETE"}'
+
+# Print a value (stdout) and its source (stderr)
+b2c setup get code-version
+
+# Sensitive values are masked unless --unmask
+b2c setup get client-secret --unmask
+
+# Remove a value; reports a lower-priority source that still sets it
+b2c setup unset code-version
+```
+
+`b2c setup get` prints string values as-is and other values as JSON, so the
+output works in scripts. `b2c setup set` never prints sensitive values.
+
 ## Global Default Configuration
 
-Use a global `dw.json` when you want the CLI, MCP server, and B2C DX VS Code extension to share instances across projects. An explicit `--config`, `SFCC_CONFIG`, project `.env` selection, or project-local `dw.json` remains the primary file.
+Use a global `dw.json` when you want the CLI, MCP server, and B2C DX VS Code extension to share instances across projects. A project-local `dw.json` remains the primary file, and the global file adds its instances. An explicit `--config` or `SFCC_CONFIG` path is used on its own, without the global file.
 
 Instances from the primary and global files are shown as one catalog. `--instance` / `-i` searches the primary file first, so a same-name primary instance shadows the global one. Instance fields are not combined across files.
 
@@ -262,7 +351,10 @@ Pass `pluginName` as `name` and `pluginPath` as `location` in your editor's `tss
 
 ## b2c setup instance list
 
-List all configured B2C Commerce instances from dw.json.
+List all configured B2C Commerce instances: those in dw.json, plus any from
+[plugin config sources](../guide/extending#instance-management-methods). The
+`Source` column shows where each instance is stored. `set-active` and `remove`
+act on the source that lists the instance.
 
 ### Usage
 
@@ -303,7 +395,13 @@ development    dev.demandware.net                DwJsonSource
 
 ## b2c setup instance create
 
-Create a new B2C Commerce instance configuration in dw.json.
+Create a new B2C Commerce instance configuration. The instance goes to dw.json
+unless a higher-priority plugin config source can store instances, or you
+choose a source with `--source`.
+
+If a plugin credential store (such as a keychain plugin) declares both halves
+of a credential pair, for example the client ID and secret, that pair is stored
+there instead. `b2c setup instance remove` removes them again.
 
 ### Usage
 
@@ -319,17 +417,21 @@ b2c setup instance create [NAME] [FLAGS]
 
 ### Flags
 
-| Flag               | Description            | Default                   |
-| ------------------ | ---------------------- | ------------------------- |
-| `--hostname`, `-s` | B2C instance hostname  | Prompted                  |
-| `--username`       | WebDAV username        |                           |
-| `--password`       | WebDAV password        | Prompted if username set  |
-| `--client-id`      | OAuth client ID        |                           |
-| `--client-secret`  | OAuth client secret    | Prompted if client-id set |
-| `--code-version`   | Code version           |                           |
-| `--active`         | Set as active instance | `false`                   |
-| `--force`          | Non-interactive mode   | `false`                   |
-| `--json`           | Output results as JSON | `false`                   |
+| Flag               | Description                                                                             | Default                                   |
+| ------------------ | --------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `--hostname`, `-s` | B2C instance hostname                                                                   | Prompted                                  |
+| `--username`       | WebDAV username                                                                         |                                           |
+| `--password`       | WebDAV password                                                                         | Prompted if username set                  |
+| `--client-id`      | OAuth client ID                                                                         |                                           |
+| `--client-secret`  | OAuth client secret                                                                     | Prompted if client-id set                 |
+| `--short-code`     | SCAPI short code (optional; enables SCAPI-first code-version detection)                 |                                           |
+| `--tenant-id`      | SCAPI tenant/organization ID (optional; enables SCAPI-first detection)                  |                                           |
+| `--api-backend`    | Saved API preference: `auto`, `scapi`, or `ocapi`                                       | `auto`                                    |
+| `--code-version`   | Code version                                                                            | Auto-detected or prompted                 |
+| `--active`         | Set as active instance                                                                  | `false`                                   |
+| `--force`          | Non-interactive mode                                                                    | `false`                                   |
+| `--source`         | Config source to store the instance in, by name (`b2c setup instance list` shows names) | Highest-priority source that can store it |
+| `--json`           | Output results as JSON                                                                  | `false`                                   |
 
 ### Examples
 
@@ -355,8 +457,9 @@ When run without `--force`, the command provides an interactive experience:
 2. Prompts for hostname (if not provided)
 3. Prompts for authentication type (Basic, OAuth, Both, or Skip)
 4. Prompts for credentials based on selection
-5. Asks whether to set as active instance
-6. Shows summary and confirms before creating
+5. Tries SCAPI-first/OCAPI-compatible active code-version detection when OAuth is configured, then prompts for manual entry if detection is unavailable
+6. Asks whether to set as active instance
+7. Shows summary and confirms before creating
 
 ## b2c setup instance remove
 
@@ -441,6 +544,67 @@ b2c setup instance set-active staging
 b2c code list              # Uses staging
 b2c code list -i production # Uses production
 ```
+
+With a [plugin config source](../guide/extending#instance-management-methods), each source keeps its own active instance, and the highest-priority source's active instance is the default. If another source's active instance still wins after `set-active`, the command warns and names it.
+
+## b2c setup openshell
+
+::: warning Beta
+The OpenShell integration is in beta, and OpenShell itself is alpha software.
+:::
+
+Create an [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) sandbox for the B2C CLI from your current configuration. Your secrets are stored on the OpenShell gateway, and the sandbox can reach only the B2C Commerce hosts your configuration uses, at your [Safety Mode](../guide/safety) level. Run the command again to apply changes. See [Agent Sandboxing](../guide/agent-sandboxing#openshell).
+
+### Usage
+
+```bash
+b2c setup openshell [FLAGS]
+```
+
+### Flags
+
+| Flag                | Description                                                               | Default                           |
+| ------------------- | ------------------------------------------------------------------------- | --------------------------------- |
+| `--name`            | Sandbox name                                                              | `b2c-<instance>`                  |
+| `--directory`, `-d` | Directory for the generated files                                         | `.openshell/<sandbox>`            |
+| `--safety-level`    | What the sandbox may do on B2C hosts: `READ_ONLY`, `NO_DELETE`, or `NONE` | Your Safety Mode level, or `NONE` |
+| `--allow-host`      | Additional host the sandbox may reach (repeatable)                        |                                   |
+| `--mcp`             | Also install the B2C DX MCP server in the sandbox image                   | `false`                           |
+| `--image`           | Use this container image instead of building one                          |                                   |
+| `--[no-]sandbox`    | Create the sandbox. Use `--no-sandbox` to only store the credentials      | `true`                            |
+| `--recreate`        | Delete and recreate an existing sandbox                                   | `false`                           |
+| `--force`           | Replace an edited `policy.yaml` with a newly generated one                | `false`                           |
+| `--dry-run`         | Write the files and print the commands without running them               | `false`                           |
+| `--json`            | Output results as JSON (never includes secrets)                           | `false`                           |
+
+Instance and authentication flags such as `--instance` select the configuration to use.
+
+### Examples
+
+```bash
+# Create a sandbox for the active instance at your Safety Mode level
+b2c setup openshell
+
+# Read-only sandbox
+b2c setup openshell --safety-level READ_ONLY
+
+# Allow writes but not deletes
+b2c setup openshell --safety-level NO_DELETE
+
+# Create a sandbox for another instance
+b2c setup openshell --instance staging --name b2c-staging
+
+# Include the MCP server in the image
+b2c setup openshell --mcp
+
+# Review the generated files and commands without changing anything
+b2c setup openshell --dry-run
+```
+
+### See Also
+
+- [Agent Sandboxing](../guide/agent-sandboxing)
+- [Safety Mode](../guide/safety)
 
 ## b2c setup skills
 
@@ -570,13 +734,14 @@ Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes
 
 ### Skill Sets
 
-| Skill Set               | Description                                                            |
-| ----------------------- | ---------------------------------------------------------------------- |
-| `b2c`                   | B2C Commerce development patterns and practices                        |
-| `b2c-cli`               | B2C CLI commands and operations                                        |
-| `storefront-next`       | Storefront Next development — routing, components, deployment          |
-| `storefront-next-figma` | Storefront Next Figma design-kit workflows (requires Figma MCP server) |
-| `cap-dev`               | Commerce App Package scaffolding, validation, and submission           |
+| Skill Set               | Description                                                                                                       |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `b2c`                   | B2C Commerce development patterns and practices                                                                   |
+| `b2c-cli`               | B2C CLI commands and operations                                                                                   |
+| `b2c-ops`               | Operator and administrator runbooks for job health, checkout failures, edge traffic and bots, and incident triage |
+| `storefront-next`       | Storefront Next development — routing, components, deployment                                                     |
+| `storefront-next-figma` | Storefront Next Figma design-kit workflows (requires Figma MCP server)                                            |
+| `cap-dev`               | Commerce App Package scaffolding, validation, and submission                                                      |
 
 ### Output
 

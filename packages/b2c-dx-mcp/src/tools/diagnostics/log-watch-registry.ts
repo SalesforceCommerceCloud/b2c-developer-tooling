@@ -42,7 +42,7 @@ export interface LogWatchEntry {
   /** Running byte size of `buffer` (raw + message), used for the byte cap. */
   bufferBytes: number;
   rotations: LogFile[];
-  /** Cumulative deduped list of every file ever discovered (for logs_watch_list). */
+  /** Cumulative deduped list of every file ever discovered (for logs_watch(action: list)). */
   filesDiscovered: LogFile[];
   /** Files discovered since the last poll drain (what logs_watch_poll returns). */
   pendingFilesDiscovered: LogFile[];
@@ -227,7 +227,7 @@ export class LogWatchRegistry {
   getWatchOrThrow(watchId: string): LogWatchEntry {
     const w = this.watches.get(watchId);
     if (!w) {
-      throw new Error(`No log watch found with id "${watchId}". Use logs_watch_list to see active watches.`);
+      throw new Error(`No log watch found with id "${watchId}". Use logs_watch(action: list) to see active watches.`);
     }
     w.lastActivityAt = Date.now();
     return w;
@@ -250,7 +250,7 @@ export class LogWatchRegistry {
     if (existing) {
       throw new Error(
         `A log watch already exists for ${hostname} (watch_id: "${existing.watchId}"). ` +
-          `Stop it with logs_watch_stop first, or poll the existing watch.`,
+          `Stop it with logs_watch(action: stop) first, or poll the existing watch.`,
       );
     }
 

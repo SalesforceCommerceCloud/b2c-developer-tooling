@@ -291,7 +291,12 @@ Hook types: `before<METHOD>`, `after<METHOD>`, `modify<METHOD>Response`, `valida
 | `dw.ocapi.shop.order.modifyPOSTResponse` | `modifyPOSTResponse(order: Order, response): Status` |
 | `dw.ocapi.shop.order.validateOrder` | `validateOrder(response, duringPlace: boolean): Status` |
 
-> **`order.afterPOST` is the headless order-placement hook.** SCAPI creates the order in `CREATED` status; this hook authorizes payment and must call `OrderMgr.placeOrder` (→ `NEW`) or `OrderMgr.failOrder` (→ `FAILED`) **without** a nested `Transaction.wrap` (the hook already runs in a transaction). See the canonical example in [SKILL.md](../SKILL.md#order-afterpost-headless-order-placement).
+> **Prefer the order payment-instrument authorization lifecycle.** SCAPI creates the order in
+> `CREATED` status. Follow it with an order payment-instrument `PATCH`, which invokes
+> `dw.order.payment.authorizeCreditCard` or `dw.order.payment.authorize`. The default order-PI
+> `afterPATCH` implementation places the order after authorized coverage reaches the order total.
+> Use `order.afterPOST` placement as the single-phase Commerce transaction alternative described in
+> [SKILL.md](../SKILL.md#alternative-authorize-and-place-in-orderafterpost).
 
 ### Order Payment Instrument
 
@@ -300,12 +305,20 @@ Hook types: `before<METHOD>`, `after<METHOD>`, `modify<METHOD>Response`, `valida
 | `dw.ocapi.shop.order.payment_instrument.beforePOST` | `beforePOST(order: Order, instrument): Status` |
 | `dw.ocapi.shop.order.payment_instrument.beforePATCH` | `beforePATCH(order: Order, instrument, newInstrument): Status` |
 | `dw.ocapi.shop.order.payment_instrument.beforeDELETE` | `beforeDELETE(order: Order, instrument): Status` |
-| `dw.ocapi.shop.order.payment_instrument.afterPOST` | `afterPOST(order: Order, instrument): Status` |
-| `dw.ocapi.shop.order.payment_instrument.afterPATCH` | `afterPATCH(order: Order, instrument, request): Status` |
+| `dw.ocapi.shop.order.payment_instrument.afterPOST` | `afterPOST(order: Order, instrument: OrderPaymentInstrumentRequest, successfullyAuthorized: boolean): Status` |
+| `dw.ocapi.shop.order.payment_instrument.afterPATCH` | `afterPATCH(order: Order, instrument: OrderPaymentInstrument, newInstrument: OrderPaymentInstrumentRequest, successfullyAuthorized: boolean): Status` |
 | `dw.ocapi.shop.order.payment_instrument.afterDELETE` | `afterDELETE(order: Order, instrumentId: String): Status` |
 | `dw.ocapi.shop.order.payment_instrument.modifyPOSTResponse` | `modifyPOSTResponse(order: Order, response, request): Status` |
 | `dw.ocapi.shop.order.payment_instrument.modifyPATCHResponse` | `modifyPATCHResponse(order: Order, response, instrumentId): Status` |
 | `dw.ocapi.shop.order.payment_instrument.modifyDELETEResponse` | `modifyDELETEResponse(order: Order, response, instrumentId): Status` |
+
+The order PI `POST` and `PATCH` authorize the affected instrument before calling their `after*`
+hook. `successfullyAuthorized` reports whether the selected `dw.order.payment.authorize*` hook
+succeeded. A non-null return ends hook execution; return `undefined` on success when the platform's
+default coverage-based placement implementation must still run. For `CREDIT_CARD`, supply
+payment-card data. A customer payment-instrument ID causes Commerce to copy the customer's PI for
+authorization; otherwise the authorization details come from the request. Request amount and card
+security code remain available to `authorizeCreditCard` in either case.
 
 ### Order Payment Methods
 

@@ -40,25 +40,20 @@ export function createLogsWatchPollTool(
   return createToolAdapter<PollInput, PollOutput>(
     {
       name: 'logs_watch_poll',
-      description:
-        'Drain buffered entries from a log watch. If the buffer is empty, blocks up to timeout_ms waiting for ' +
-        'new entries. Returns immediately if entries are already buffered. Set truncated=true if there are more ' +
-        'entries beyond max_entries — call again to get the rest.',
+      effect: 'read',
+      idempotent: true,
+      openWorld: false,
+      description: 'Drain buffered B2C logs; wait when empty. Repeat if truncated. Includes rotation and error events.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        watch_id: z.string().describe('Watch id from logs_watch_start.'),
+        watch_id: z.string(),
         timeout_ms: z
           .number()
           .int()
           .min(0)
           .optional()
-          .describe('Max time to block waiting for new entries when buffer is empty. Defaults to 5000ms.'),
-        max_entries: z
-          .number()
-          .int()
-          .positive()
-          .optional()
-          .describe('Maximum entries to return per call. Defaults to 200.'),
+          .describe('Wait when empty, in milliseconds. Default: 5000; 0 returns immediately.'),
+        max_entries: z.number().int().positive().optional().describe('Maximum entries. Default: 200.'),
       },
       async execute(args, context) {
         const registry = getLogWatchRegistry(context);

@@ -5,27 +5,27 @@
   - [dw.extensions.payments.SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)
     - [dw.extensions.payments.SalesforceKlarnaPaymentDetails](dw.extensions.payments.SalesforceKlarnaPaymentDetails.md)
 
-
-
-Details to a Salesforce Payments payment of type [SalesforcePaymentMethod.TYPE_KLARNA](dw.extensions.payments.SalesforcePaymentMethod.md#type_klarna). See Salesforce Payments
-documentation for how to gain access and configure it for use on your sites.
-
+Details to a payment of type [SalesforcePaymentDetails.TYPE_KLARNA](dw.extensions.payments.SalesforcePaymentDetails.md#type_klarna).
 
 
 ## Property Summary
 
 | Property | Description |
 | --- | --- |
-| [paymentMethodCategory](#paymentmethodcategory): [String](TopLevel.String.md) `(read-only)` | Returns the payment method category used for the payment, or `null` if not known. |
+| [paymentMethodCategory](#paymentmethodcategory): [String](TopLevel.String.md) | Returns the category of Klarna payment, or `null` if not known. |
 
 ## Constructor Summary
 
-This class does not have a constructor, so you cannot create it directly.
+| Constructor | Description |
+| --- | --- |
+| [SalesforceKlarnaPaymentDetails](#salesforceklarnapaymentdetails)() | Constructs an empty Klarna payment details object. |
+
 ## Method Summary
 
 | Method | Description |
 | --- | --- |
-| [getPaymentMethodCategory](dw.extensions.payments.SalesforceKlarnaPaymentDetails.md#getpaymentmethodcategory)() | Returns the payment method category used for the payment, or `null` if not known. |
+| [getPaymentMethodCategory](dw.extensions.payments.SalesforceKlarnaPaymentDetails.md#getpaymentmethodcategory)() | Returns the category of Klarna payment, or `null` if not known. |
+| [setPaymentMethodCategory](dw.extensions.payments.SalesforceKlarnaPaymentDetails.md#setpaymentmethodcategorystring)([String](TopLevel.String.md)) | Sets the category of Klarna payment. |
 
 ### Methods inherited from class SalesforcePaymentDetails
 
@@ -36,11 +36,17 @@ This class does not have a constructor, so you cannot create it directly.
 ## Property Details
 
 ### paymentMethodCategory
-- paymentMethodCategory: [String](TopLevel.String.md) `(read-only)`
-  - : Returns the payment method category used for the payment, or `null` if not known.
+- paymentMethodCategory: [String](TopLevel.String.md)
+  - : Returns the category of Klarna payment, or `null` if not known.
 
-    **See Also:**
-    - [SalesforcePaymentMethod.getPaymentMethodCategory()](dw.extensions.payments.SalesforcePaymentMethod.md#getpaymentmethodcategory)
+
+---
+
+## Constructor Details
+
+### SalesforceKlarnaPaymentDetails()
+- SalesforceKlarnaPaymentDetails()
+  - : Constructs an empty Klarna payment details object.
 
 
 ---
@@ -49,13 +55,20 @@ This class does not have a constructor, so you cannot create it directly.
 
 ### getPaymentMethodCategory()
 - getPaymentMethodCategory(): [String](TopLevel.String.md)
-  - : Returns the payment method category used for the payment, or `null` if not known.
+  - : Returns the category of Klarna payment, or `null` if not known.
 
     **Returns:**
-    - payment method category
+    - category of Klarna payment, such as `"pay\_later"`
 
-    **See Also:**
-    - [SalesforcePaymentMethod.getPaymentMethodCategory()](dw.extensions.payments.SalesforcePaymentMethod.md#getpaymentmethodcategory)
+
+---
+
+### setPaymentMethodCategory(String)
+- setPaymentMethodCategory(paymentMethodCategory: [String](TopLevel.String.md)): void
+  - : Sets the category of Klarna payment.
+
+    **Parameters:**
+    - paymentMethodCategory - category of Klarna payment, such as `"pay\_later"`
 
 
 ---

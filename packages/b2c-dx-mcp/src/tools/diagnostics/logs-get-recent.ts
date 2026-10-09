@@ -49,6 +49,9 @@ export function createLogsGetRecentTool(
   return createToolAdapter<GetRecentInput, GetRecentOutput>(
     {
       name: 'logs_get_recent',
+      effect: 'read',
+      idempotent: true,
+      openWorld: true,
       description:
         'Fetch recent B2C instance logs. Use for quick lookups; start a log watch before actions whose entries must not be missed.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
@@ -58,7 +61,7 @@ export function createLogsGetRecentTool(
           .array(z.string())
           .optional()
           .describe('Log prefixes. Default: ["error", "customerror"]; paths may include subdirectories.'),
-        count: z.number().int().positive().optional().describe('Maximum number of entries to return. Defaults to 50.'),
+        count: z.number().int().positive().optional().describe('Maximum entries. Default: 50.'),
         since: z
           .string()
           .optional()

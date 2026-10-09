@@ -19,6 +19,14 @@ import type {CartridgeService} from '../cartridges/cartridge-service.js';
  */
 export type CartridgeCategory = 'hooks' | 'jobSteps' | 'stepTypes';
 
+// Extensions a cartridge script module can have. `.ds` is the legacy
+// pipeline-era script extension, still resolvable by the platform.
+const SCRIPT_EXTENSIONS = ['.js', '.ts', '.ds'];
+
+function isScriptFile(name: string): boolean {
+  return SCRIPT_EXTENSIONS.some((ext) => name.endsWith(ext));
+}
+
 export type CartridgeNode =
   | CartridgeItem
   | CartridgeCategoryItem
@@ -320,8 +328,12 @@ async function resolveHookScript(
   const candidates = [
     path.join(cartridgeRoot, rel),
     path.join(hooksJsonDir, rel),
-    `${path.join(cartridgeRoot, rel)}.js`,
-    `${path.join(hooksJsonDir, rel)}.js`,
+    // Extension-major order so a .js hook wins over a .ds one in either
+    // directory, matching how the platform resolves the reference.
+    ...SCRIPT_EXTENSIONS.flatMap((ext) => [
+      `${path.join(cartridgeRoot, rel)}${ext}`,
+      `${path.join(hooksJsonDir, rel)}${ext}`,
+    ]),
   ];
 
   for (const candidate of candidates) {
@@ -338,13 +350,13 @@ async function resolveHookScript(
 async function collectJobStepFiles(cartridgeRoot: string): Promise<string[]> {
   const conventional = path.join(cartridgeRoot, 'cartridge', 'scripts', 'jobsteps');
   if (await pathExists(conventional)) {
-    return findFiles(conventional, (name) => name.endsWith('.js') || name.endsWith('.ts'));
+    return findFiles(conventional, isScriptFile);
   }
 
   // Fallback: any file under cartridge/scripts whose path contains "jobstep".
   const scriptsDir = path.join(cartridgeRoot, 'cartridge', 'scripts');
   if (!(await pathExists(scriptsDir))) return [];
-  const all = await findFiles(scriptsDir, (name) => name.endsWith('.js') || name.endsWith('.ts'));
+  const all = await findFiles(scriptsDir, isScriptFile);
   return all.filter((file) => file.toLowerCase().includes('jobstep'));
 }
 
@@ -439,8 +451,8 @@ export async function resolveStepTypeModule(
   const relWithoutCartridge = rest.length > 0 ? rest.join('/') : firstSegment;
   const declaringCartridgeName = path.basename(cartridgeRoot);
 
-  const withJsExt = (candidate: string): string[] =>
-    candidate.endsWith('.js') ? [candidate] : [candidate, `${candidate}.js`];
+  const withScriptExt = (candidate: string): string[] =>
+    isScriptFile(candidate) ? [candidate] : [candidate, ...SCRIPT_EXTENSIONS.map((ext) => `${candidate}${ext}`)];
 
   const candidateBases: string[] = [];
 
@@ -463,7 +475,7 @@ export async function resolveStepTypeModule(
   }
 
   for (const base of candidateBases) {
-    for (const candidate of withJsExt(base)) {
+    for (const candidate of withScriptExt(base)) {
       if (await pathExists(candidate)) return candidate;
     }
   }

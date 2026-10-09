@@ -1,0 +1,2269 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Coupons",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/coupons/coupons-oas-v1-public.yaml)\n\n# API Overview\n\nUse the Coupons API to create, modify, retrieve, and delete coupons for a given channel. You can also use it to create and retrieve coupon codes using a couponID.\n\nCoupons _must_ be added as a qualifier to a campaign before they can be used.\n\nFor more information, see [Using Coupons as Qualifiers](https://help.salesforce.com/s/articleView?id=cc.b2c_coupons.htm&type=5) in the B2C Commerce documentation.\n\n## Authentication & Authorization\n\nThe client requesting the coupon's information must have access to the Coupon resource. For resource access, you must use a client ID and client secret from Account Manager to request an access token. The access token is used as a bearer token and added to the Authorization header of your API request. The client must first authenticate against Account manager to log in.\n\nYou must include the relevant scope(s) in the client ID used to generate the token. For details, see [Authorization Scopes Catalog.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html)\n\nFor detailed setup instructions, see [Authorization for Admin APIs](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-admin-apis.html).\n\n## Response Details\n\n### Timeouts\n\nAdmin API requests must respond within 60 seconds. If a response exceeds this threshold, an HTTP 504 status code is returned. For details, see [Timeouts and Limits.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/timeouts-limits.html)\n\n### Error Handling\n\nError responses follow the [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) problem detail format. To trace errors, include a `correlation-id` header in your request — the response returns it as `x-correlation-id`. For details, see [HTTP Status Codes and Errors.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/error-response-codes.html)\n\n## Use Cases\n\n### Single-Use Coupon\n\nSingle-use coupons are your standard coupons, which you can only use once per customer.\n\nFor example, use the Coupons API to create a coupon with a single coupon code that can be applied only once per order per customer.\n\n### Multiple-Use Coupon\n\nA multiple-use coupon can be used any number of times by any number of customers.\n\nFor example, use the Coupons API to create a coupon that can be applied once per order and has system-generated codes.\n\n### Search Coupon\n\nUse the Coupons API to search for coupons using simple or complex querying.\n\n### Search Coupon Redemptions\n\nUse the Coupons API to search for coupon redemptions using simple or complex querying.\n\nFor more detail, see [Coupon Redemption](https://help.salesforce.com/s/articleView?id=cc.b2c_coupons.htm&type=5) in the B2C Commerce documentation.\n\n## Related APIs\n\n- [Campaigns](https://developer.salesforce.com/docs/commerce/commerce-api/references/campaigns?meta=Summary) — Manage campaigns that use coupons as qualifiers.",
+    "version": "1.0.44",
+    "x-api-type": "Admin",
+    "x-api-family": "Pricing"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/pricing/coupons/v1",
+      "variables": {
+        "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/coupons": {
+      "post": {
+        "summary": "Search for coupons.",
+        "description": "The Coupon Search document contains a search object that allows filtering on various attributes.\n\nThe following searchable query attributes can be used to narrow the search:\n\n| Attribute | Type |\n|-----------|--------|\n| couponId| String |\n| description | String |\n| type | one of {\"single_code\", \"multiple_codes\", \"system_codes\"} |\n| enabled | Boolean |\n\n Note that only searchable attributes can be used in sorting.",
+        "operationId": "couponsSearch",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon information successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Returned when the query is ill-formed."
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/coupons/redemptions": {
+      "post": {
+        "summary": "Search for coupon redemptions.",
+        "description": "The Coupon Redemption Search document contains a search object that allows filtering on various attributes.\n\n\nThe following searchable query attributes can be used to narrow down the search:\n\n  | Attribute | Type |\n  |-----------|--------|\n  | code| String |\n  | couponId | String |\n  | customerEmail | String |\n  | orderNo | String |\n\nNote that only searchable attributes can be used in sorting.\n\nIf the user role does not have the `View_Coupon_Codes` permission, then the returned coupon codes are masked.",
+        "operationId": "couponRedemptionsSearch",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon redemption information successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponRedemptionSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Returned when the query is ill-formed."
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/coupons/actions/redeem": {
+      "post": {
+        "summary": "Redeem a coupon code for an existing coupon for the specified site.",
+        "description": "The coupon code must be redeemable.\n---\n***Note: Coupon redemptions are evaluated during checkout. A large number of coupon redemptions negatively impacts order creation performance and scale.***\n1. Avoid importing unnecessary coupon redemptions.\n2. Clean up coupon codes and related redemptions when they are no longer required.\n---",
+        "operationId": "redeemCoupon",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponCodeRedemptionRequest"
+              },
+              "examples": {
+                "PostRedeemCoupon": {
+                  "$ref": "#/components/examples/PostRedeemCoupon"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Coupon was successfully redeemed and a redemption record created.\n"
+          },
+          "400": {
+            "description": "Returned when the coupon code can not be redeemed, for example, if it is disabled,\nalready redeemed, if the redemption limit (maximum number or timeframe) is\nexceeded or if it has no assigned active promotion.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdConflict400": {
+                    "$ref": "#/components/examples/CouponCodeNotRedeemable400"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Returned when the site does not contain a coupon, which\ndefines whether the coupon code requested can be redeemed.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "IdConflict400": {
+                    "$ref": "#/components/examples/CouponCodeNotFound404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/coupons/{couponId}": {
+      "get": {
+        "summary": "Return coupon information for the specified coupon ID.",
+        "description": "If the user role does not have the View_Coupon_Codes permission, then the returned coupon codes are masked.",
+        "operationId": "getCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "description": "The ID of the coupon to create.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coupon information for the specified coupon ID successfully returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Coupon"
+                },
+                "examples": {
+                  "GetCoupon": {
+                    "$ref": "#/components/examples/Coupon"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Returned when the coupon does not exist matching the given ID.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "getCoupon404": {
+                    "$ref": "#/components/examples/CouponNotFound404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "summary": "Create a coupon using the information provided. If a coupon with the specified identifier already exists,\n the existing coupon is replaced.",
+        "operationId": "createCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "description": "The ID of the coupon to create.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Coupon"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Coupon"
+                },
+                "examples": {
+                  "CreateCoupon": {
+                    "$ref": "#/components/examples/Coupon"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Returned when the coupon passed is not valid (the argument indicates\n              which field is invalid).\nPossible reasons:\n- The code provided is in use by another coupon.\n- A single code coupon set the coupon code improperly.\n- The ID in the request does not match the ID in the document.\n- A quota for system-generated coupons is violated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CouponCodeDuplicate400": {
+                    "$ref": "#/components/examples/CouponCodeDuplicate400"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Returned when the resource requires global context instead of site-specific context.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "createCoupon403": {
+                    "$ref": "#/components/examples/SiteAccessForbidden403"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete a coupon with a specified ID.",
+        "operationId": "deleteCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "description": "The ID of the coupon to create.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Coupon successfully deleted."
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update a coupon with the specified information.",
+        "operationId": "updateCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "description": "The ID of the coupon to create.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Coupon"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon successfully updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Coupon"
+                },
+                "examples": {
+                  "UpdateCoupon": {
+                    "$ref": "#/components/examples/UpdateCoupon"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Possible reasons:\n- Cannot update certain fields in a coupon after redeeming it or exporting it\n- The code provided is in use by another coupon.\n- A quota for system-generated coupons is violated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "updateCoupon400": {
+                    "$ref": "#/components/examples/CouponCodeDuplicate400"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Returned when trying to update a broken coupon that should be deleted and re-created, or when trying to update a legacy coupon.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "updateCoupon403": {
+                    "$ref": "#/components/examples/LegacyCouponCoupon403"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/coupons/{couponId}/codes": {
+      "get": {
+        "summary": "Get the coupon codes for the given coupon.\n\n If the user role does not have the View_Coupon_Codes permission, then the coupon codes returned are masked.",
+        "operationId": "getCouponCodes",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "description": "The ID of the coupon to create.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 25.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coupon codes successfully retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponCodes"
+                },
+                "examples": {
+                  "GetCouponCodes": {
+                    "$ref": "#/components/examples/GetCouponCodes"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Returned when the coupon does not exist matching the given ID.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CouponNotFound": {
+                    "$ref": "#/components/examples/CouponNotFound404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions",
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "summary": "Add or delete (modify) multiple codes to and from the supplied coupon.",
+        "operationId": "updateCouponCodes",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "description": "The ID of the coupon to create.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "delete",
+            "in": "query",
+            "description": "Pass as true to delete the passed codes.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/SiteId"
+            },
+            "examples": {
+              "SiteId": {
+                "value": "RefArch"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponMultiCodesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Coupon codes successfully updated - this is also returned if we try to add an already existing code or to delete a non-existing code."
+          },
+          "400": {
+            "description": "Returned when the coupon code could not be created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "updateCoupon400": {
+                    "$ref": "#/components/examples/CouponCodeCreate400"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Returned if the coupon does not exist matching the given ID.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CouponNotFound404": {
+                    "$ref": "#/components/examples/CouponNotFound404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.promotions.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "SiteId": {
+        "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "Query": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A set of objects that define criteria used to select records. A query can contain one of the following:\n* `MatchAllQuery`\n - Matches all documents.\n* `TermQuery`\n - Matches one or more documents against one or more document fields.\n* `TextQuery`\n - Matches text against one or more fields.\n* `BoolQuery`\n - Allows construction of a logical expression of multiple queries.\n* `FilteredQuery`\n - Allows a filter to be applied to a query.\n* `NestedQuery`\n - Allows you to query on nested documents.\n - _Only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation._",
+        "example": {
+          "filteredQuery": {
+            "query": {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "disabled"
+              }
+            },
+            "filter": {
+              "termFilter": {
+                "field": "enabled",
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          }
+        },
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolQuery": {
+            "$ref": "#/components/schemas/BoolQuery"
+          },
+          "filteredQuery": {
+            "$ref": "#/components/schemas/FilteredQuery"
+          },
+          "matchAllQuery": {
+            "$ref": "#/components/schemas/MatchAllQuery"
+          },
+          "nestedQuery": {
+            "$ref": "#/components/schemas/NestedQuery"
+          },
+          "termQuery": {
+            "$ref": "#/components/schemas/TermQuery"
+          },
+          "textQuery": {
+            "$ref": "#/components/schemas/TextQuery"
+          }
+        }
+      },
+      "BoolQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A boolean query allows construction of full logical expression trees that are composed of other queries (usually term queries and text queries). A boolean query has three sets of clauses:\n  \n  - `must`, which combines as an `AND` operator.\n  - `should`, which combines as an `OR` operator.\n  - `must_not`, which combines as a `NOT` operator.\n  \nIf `must`, `mustNot`, or `should` appear in the same boolean query, they are combined logically using the `AND` operator. For example:\n\n    (must-1 AND must-1 AND ...)\n      AND (should-1 OR should-2 OR ...)\n      AND NOT (must_not-1 OR must_not-2 OR ...)\n",
+        "example": {
+          "must": [
+            {
+              "textQuery": {
+                "fields": [
+                  "couponId"
+                ],
+                "searchPhrase": "DEAL"
+              }
+            },
+            {
+              "textQuery": {
+                "fields": [
+                  "description"
+                ],
+                "searchPhrase": "Big bargain deal"
+              }
+            }
+          ],
+          "mustNot": [
+            {
+              "termQuery": {
+                "fields": [
+                  "enabled"
+                ],
+                "operator": "is",
+                "values": [
+                  false
+                ]
+              }
+            }
+          ]
+        },
+        "properties": {
+          "must": {
+            "type": "array",
+            "description": "List of queries to be evaluated as an `AND` operator.",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "mustNot": {
+            "type": "array",
+            "description": "List of queries to be evaluated as a `NOT` operator.",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          },
+          "should": {
+            "type": "array",
+            "description": "List of queries to be evaluated as an `OR` operator.",
+            "items": {
+              "$ref": "#/components/schemas/Query"
+            }
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Contains a set of objects that define criteria used to select records. A filter can contain one of the following:\n  * `TermFilter`\n   - Matches records where a field (or fields) exactly matches some simple value (including `null`).\n  * `RangeFilter`\n   - Matches records where a field value lies within a specified range.\n  * `Range2Filter`\n   - Matches records in a specified range across fields.\n  * `QueryFilter`\n   - Matches records based on a query.\n  * `BoolFilter`\n   - Provides filtering of records using a set of filters combined using a logical operator.",
+        "maxProperties": 1,
+        "minProperties": 1,
+        "properties": {
+          "boolFilter": {
+            "$ref": "#/components/schemas/BoolFilter"
+          },
+          "queryFilter": {
+            "$ref": "#/components/schemas/QueryFilter"
+          },
+          "range2Filter": {
+            "$ref": "#/components/schemas/Range2Filter"
+          },
+          "rangeFilter": {
+            "$ref": "#/components/schemas/RangeFilter"
+          },
+          "termFilter": {
+            "$ref": "#/components/schemas/TermFilter"
+          }
+        }
+      },
+      "BoolFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to combine other filters into (possibly recursive) logical expression trees. A boolean filter is composed of a logical operator (`AND`, `OR`, `NOT`) and a list of filters that the operator relates to. Multiple filters can be negated with a single `NOT` operator, even when the filters are combined with the `AND` operator.",
+        "example": {
+          "operator": "and",
+          "filters": [
+            {
+              "termFilter": {
+                "field": "id",
+                "operator": "is",
+                "values": [
+                  "myId"
+                ]
+              }
+            },
+            {
+              "termFilter": {
+                "field": "couponId",
+                "operator": "is",
+                "values": [
+                  "couponOne"
+                ]
+              }
+            }
+          ]
+        },
+        "properties": {
+          "filters": {
+            "type": "array",
+            "description": "A list of filters that are logically combined by an operator.",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            }
+          },
+          "operator": {
+            "type": "string",
+            "description": "The logical operator that is used to combine the filters.",
+            "enum": [
+              "and",
+              "or",
+              "not"
+            ],
+            "example": "and"
+          }
+        },
+        "required": [
+          "operator"
+        ]
+      },
+      "QueryFilter": {
+        "type": "object",
+        "description": "Wraps any query and allows it to be used as a filter.",
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Field": {
+        "type": "string",
+        "description": "Name of the field. Might be a custom field name prefixed with c_.",
+        "example": "couponId",
+        "maxLength": 260
+      },
+      "Range2Filter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits where a range defined by specified attributes has a certain relationship to a specified range.\n\nThe first range (R1) is defined by a pair of attributes (`fromField` and `toField`) that specify the extent of a range, such as attributes `validFrom` and `validTo`.\n\nThe second range (R2) is defined by `fromValue` and `toValue`.\n\nThe filter mode specifies the method used to compare the two ranges:\n\n* `overlap`: R1 overlaps fully or partially with R2.\n* `containing`: R1 contains R2.\n* `contained`: R1 is contained in R2.\n\nThe range filter supports several value types, and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range 2 filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "example": {
+          "fromField": "validFrom",
+          "toField": "validTo",
+          "filterMode": "overlap",
+          "fromValue": "2007-01-01T00:00:00.000Z",
+          "toValue": "2017-01-01T00:00:00.000Z"
+        },
+        "properties": {
+          "filterMode": {
+            "type": "string",
+            "default": "overlap",
+            "description": "Compare mode: overlap, containing, or contained.",
+            "enum": [
+              "overlap",
+              "containing",
+              "contained"
+            ],
+            "example": "overlap"
+          },
+          "fromField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The field name of the field that starts the first range.",
+            "example": "validFrom"
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the lower bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
+          },
+          "fromValue": {
+            "description": "The lower bound of the second range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "example": "2007-01-01T00:00:00.000Z"
+          },
+          "toField": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The field name of the field that ends the first range.",
+            "example": "validTo"
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the upper bound of the second range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
+          },
+          "toValue": {
+            "description": "The upper bound of the second range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "example": "2017-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "fromField",
+          "toField"
+        ]
+      },
+      "RangeFilter": {
+        "type": "object",
+        "description": "Allows you to restrict a search result to hits that have values for a given attribute that fall within a given value range. The range filter supports several value types and relies on the natural sorting of the value type for range interpretation. Value ranges can be open-ended, but only at one end of the range. You can configure whether the lower bounds and upper bounds are inclusive or exclusive.\n\nA range filter is useful for general restrictions that can be shared between searches (like a static date range) because the filter result is cached in memory. Range filters are not appropriate if the range is expected to be different for every query (for example, if the user controls the date range down to the hour via a UI control). Range filters are inclusive by default.",
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The search field.",
+            "example": "validFrom"
+          },
+          "from": {
+            "description": "The lower bound of the filter range. If not specified, the range is open-ended with respect to the lower bound. You can't leave both the lower and upper bounds open-ended.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "example": "2007-01-01T00:00:00Z"
+              },
+              {
+                "type": "integer",
+                "example": 1
+              },
+              {
+                "type": "number",
+                "example": 1
+              }
+            ]
+          },
+          "fromInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the lower bound of the range is inclusive. To make the lower bound exclusive, set to `false`.",
+            "example": true
+          },
+          "to": {
+            "description": "The upper bound of the filter range. If not specified, the range is open-ended with respect to the upper bound. You can't leave both the upper and lower bounds open-ended.",
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "example": "2007-01-02T00:00:00Z"
+              },
+              {
+                "type": "integer",
+                "example": 2
+              },
+              {
+                "type": "number",
+                "example": 2
+              }
+            ]
+          },
+          "toInclusive": {
+            "type": "boolean",
+            "default": true,
+            "description": "A flag indicating if the upper bound of the range is inclusive. To make the upper bound exclusive, set to `false`.",
+            "example": true
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "TermFilter": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to restrict a search result to hits that match exactly one of the values configured for the filter. A term filter is useful for general restrictions that can be shared between searches. Use term filters whenever the criteria you filter on is a shared property of multiple searches (for example, like filtering by an order status). Use term filters for fields that have a discrete and small set of values only.",
+        "example": {
+          "field": "id",
+          "operator": "is",
+          "values": [
+            "myId"
+          ]
+        },
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Field"
+              }
+            ],
+            "description": "The filter field."
+          },
+          "operator": {
+            "type": "string",
+            "description": "The operator used to compare the field's values with the given values.",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ],
+            "example": "is"
+          },
+          "values": {
+            "type": "array",
+            "description": "The filter values.",
+            "items": {
+              "type": "string",
+              "example": "myId"
+            }
+          }
+        },
+        "required": [
+          "field",
+          "operator"
+        ]
+      },
+      "FilteredQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows to filter the result of a possibly complex query using a possibly complex filter.",
+        "example": {
+          "query": {
+            "textQuery": {
+              "fields": [
+                "couponId"
+              ],
+              "searchPhrase": "disabled"
+            }
+          },
+          "filter": {
+            "termFilter": {
+              "field": "enabled",
+              "operator": "is",
+              "values": [
+                false
+              ]
+            }
+          }
+        },
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/Filter"
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "required": [
+          "filter",
+          "query"
+        ]
+      },
+      "MatchAllQuery": {
+        "type": "object",
+        "description": "Matches all documents (namespace and document type). This query comes in handy if you just want to filter a search result or really do not have any constraints."
+      },
+      "NestedQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Allows you to query nested documents that are part of a larger document. Say, for example, that you have a main product with variations in one big document, and you want to constrain a search to main products that have variations that match multiple constraints. \n\nA `NestedQuery` is only supported by some Commerce APIs. For more details, see the endpoint descriptions in the API documentation.\n",
+        "example": {
+          "path": "order.shippingAddresses",
+          "query": {
+            "boolQuery": {
+              "must": [
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.firstName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "John"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "boolQuery": {
+                    "must": [
+                      {
+                        "termQuery": {
+                          "fields": [
+                            "order.shippingAddresses.lastName"
+                          ],
+                          "operator": "is",
+                          "values": [
+                            "Doe"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "scoreMode": "avg"
+        },
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The path to the nested document.",
+            "example": "order.shippingAddresses",
+            "maxLength": 2048
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "scoreMode": {
+            "type": "string",
+            "description": "Indicates how scores for matching child objects affect the root parent document’s relevance score.",
+            "enum": [
+              "avg",
+              "total",
+              "max",
+              "none"
+            ],
+            "example": "avg"
+          }
+        },
+        "required": [
+          "path",
+          "query"
+        ]
+      },
+      "TermQuery": {
+        "type": "object",
+        "description": "A term query matches one or more values against one or more document fields. A document is considered a hit if one of the values matches exactly with at least one of the given fields. The operator `is` can only take one value, while `one_of` can take multiple values. If multiple fields are specified, they are combined using a logical `OR` operator.\n\n**Limitations:**\n\n* The `greater` and `less` operators are not supported under certain conditions. Both operators are permitted unless the API documentation states otherwise.\n* A subset of Commerce APIs handle queries with multiple fields differently. If the query has multiple fields, the query is internally handled as a logical `OR` of `DisjointMaxQueries` (with the dismax matching a value against all fields). The dismax makes sure that a document carrying a single term in multiple fields does not get higher scores than a document matching multiple terms in multiple fields.",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "description": "The document fields that the values are matched against, combined with the operator.",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "operator": {
+            "type": "string",
+            "description": "Returns the operator to use for the term query.",
+            "enum": [
+              "is",
+              "one_of",
+              "is_null",
+              "is_not_null",
+              "less",
+              "greater",
+              "not_in",
+              "neq"
+            ],
+            "example": "is"
+          },
+          "values": {
+            "type": "array",
+            "description": "The values that the fields are compared against, combined with the operator.",
+            "items": {
+              "example": "myCouponId",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "example": "myCouponId"
+                },
+                {
+                  "type": "number",
+                  "example": 1
+                },
+                {
+                  "type": "boolean",
+                  "example": true
+                },
+                {
+                  "type": "integer",
+                  "example": 1
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "fields",
+          "operator"
+        ]
+      },
+      "TextQuery": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A text query is used to match some text (for example, a search phrase possibly consisting of multiple terms) against one or more fields. When multiple fields are provided, the phrase conceptually forms a logical `OR` over the fields. In this case, the terms of the phrase basically have to match within the text, that would result in concatenating all given fields.",
+        "example": {
+          "fields": [
+            "couponId"
+          ],
+          "searchPhrase": "limit"
+        },
+        "properties": {
+          "fields": {
+            "type": "array",
+            "description": "The document fields that the search phrase matches against.",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "minItems": 1
+          },
+          "searchPhrase": {
+            "type": "string",
+            "description": "A search phrase, which can include multiple terms separated by spaces.",
+            "example": "campaign summer"
+          }
+        },
+        "required": [
+          "fields",
+          "searchPhrase"
+        ]
+      },
+      "Sort": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Document representing a sort request. Each API has a different default sort configuration that can be modified in the request.",
+        "example": {
+          "field": "couponId",
+          "sortOrder": "desc"
+        },
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "The name of the field to sort on.",
+            "example": "couponId",
+            "maxLength": 256
+          },
+          "sortOrder": {
+            "type": "string",
+            "default": "asc",
+            "description": "The sort order to be applied when sorting. When omitted, the default sort order (asc) is used.",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "example": "asc"
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
+        "minimum": 0
+      },
+      "SearchRequest": {
+        "type": "object",
+        "description": "Document representing a search request for retrieving items within the Data API. The query is a potentially complex set of expressions. The fields and expands that each query supports are defined within the search resource.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request, not to exceed 200.",
+            "example": 10,
+            "maximum": 200,
+            "minimum": 1
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "description": "The list of sort clauses configured for the search request. Sort clauses are optional. See the description of the search endpoint for details on the default sorting behavior that is used when explicit sorts are not passed.",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "PaginatedSearchResult": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Document representing a generic search result. Each search resource should extend this to define what is returned in the `hits`.",
+        "example": {
+          "limit": 1,
+          "hits": [
+            {
+              "couponId": "coupon1",
+              "creationDate": "2019-10-20T12:00:00Z",
+              "description": "This coupon is used to give 10% off stuff.",
+              "enabled": false,
+              "exportedCodeCount": 0,
+              "lastModified": "2019-10-30T04:23:59Z",
+              "redemptionCount": 3,
+              "redemptionLimits": {
+                "limitPerCode": 1,
+                "limitPerCustomer": 1,
+                "limitPerTimeFrame": {
+                  "limit": 2,
+                  "redemptionTimeFrame": 24
+                }
+              },
+              "singleCode": "MyCode",
+              "systemCodesConfig": {
+                "codePrefix": "SG",
+                "numberOfCodes": 500000
+              },
+              "totalCodesCount": 50,
+              "type": "single_code"
+            }
+          ],
+          "query": {
+            "textQuery": {
+              "fields": [
+                "id",
+                "description"
+              ],
+              "searchPhrase": "stuff"
+            }
+          },
+          "sorts": [
+            {
+              "field": "couponId",
+              "sortOrder": "desc"
+            }
+          ],
+          "offset": 2,
+          "total": 8
+        },
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          },
+          "sorts": {
+            "type": "array",
+            "description": "The sorting that was applied to the result.",
+            "items": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          },
+          "hits": {
+            "type": "array",
+            "description": "The sorted array of search hits. Can be empty.",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "RedemptionLimitPerPeriod": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Document representing a coupon redemption limit.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The limit on the number of times a coupon can be redeemed for a specified redemption time period.",
+            "example": 1,
+            "minimum": 0
+          },
+          "redemptionTimeFrame": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The redemption time period.",
+            "example": 24,
+            "maximum": 999,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "limit",
+          "redemptionTimeFrame"
+        ]
+      },
+      "RedemptionLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Document representing a coupon.",
+        "properties": {
+          "limitPerCode": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The redemption limit per code.",
+            "example": 0,
+            "minimum": 0
+          },
+          "limitPerCustomer": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The redemption limit per customer.",
+            "example": 0,
+            "minimum": 0
+          },
+          "limitPerTimeFrame": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RedemptionLimitPerPeriod"
+              }
+            ],
+            "description": "The redemption limit per time frame.",
+            "example": {
+              "redemptionTimeFrame": 24,
+              "limit": 1
+            }
+          }
+        },
+        "required": [
+          "limitPerCode",
+          "limitPerCustomer",
+          "limitPerTimeFrame"
+        ]
+      },
+      "CouponSystemCodeConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "codePrefix": {
+            "type": "string",
+            "description": "The code prefix for system-generated coupon codes.",
+            "example": "SG"
+          },
+          "numberOfCodes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of system coupon codes that can be issued.",
+            "example": 50000
+          }
+        },
+        "required": [
+          "codePrefix",
+          "numberOfCodes"
+        ]
+      },
+      "Coupon": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Document representing a coupon.",
+        "properties": {
+          "couponId": {
+            "type": "string",
+            "description": "The ID of the coupon.",
+            "example": "MyCoupon",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Returns the value of attribute 'creationDate'.",
+            "example": "2019-10-20T12:00:00Z"
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the coupon.",
+            "example": "This coupon is used to give 10% off stuff.\n",
+            "maxLength": 4000
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "A flag indicating whether the coupon is enabled.",
+            "example": false
+          },
+          "exportedCodeCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of coupon codes attached to the coupon that have been issued (read only).",
+            "example": 0
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Returns the value of attribute 'lastModified'.",
+            "example": "2019-10-30T04:23:59Z"
+          },
+          "redemptionCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of times the coupon has been redeemed (read only). The count is updated once per hour.",
+            "example": 3
+          },
+          "redemptionLimits": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RedemptionLimits"
+              }
+            ],
+            "description": "The redemption limit per coupon code.",
+            "example": {
+              "limitPerCode": 1,
+              "limitPerCustomer": 1,
+              "limitPerTimeFrame": {
+                "limit": 2,
+                "redemptionTimeFrame": 24
+              }
+            }
+          },
+          "singleCode": {
+            "type": "string",
+            "description": "Single coupon code, only valid for Single Code type.",
+            "example": "MyCode",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "systemCodesConfig": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CouponSystemCodeConfig"
+              }
+            ],
+            "description": "The configuration of system coupon codes, including prefix and number of codes.",
+            "example": {
+              "codePrefix": "SG",
+              "numberOfCodes": 500000
+            }
+          },
+          "totalCodesCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The total number of coupon codes associated with this coupon (read only). The count is updated once per hour.",
+            "example": 50
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of coupon code.",
+            "enum": [
+              "single_code",
+              "multiple_codes",
+              "system_codes"
+            ],
+            "example": "single_code"
+          }
+        },
+        "required": [
+          "couponId",
+          "enabled",
+          "type"
+        ]
+      },
+      "CouponSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "description": "Document representing a coupon search result.",
+        "properties": {
+          "hits": {
+            "type": "array",
+            "description": "The sorted array of coupon search hits. Can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/Coupon"
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      },
+      "CouponRedemption": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A redemption record returned from the coupon redemption resources.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The coupon code that was redeemed."
+          },
+          "couponId": {
+            "type": "string",
+            "description": "The coupon id that was redeemed."
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date when the redemption was created."
+          },
+          "customerEmail": {
+            "type": "string",
+            "description": "The customer email that was used to redeem it."
+          },
+          "orderNo": {
+            "type": "string",
+            "description": "The order number where the redemption occurred."
+          },
+          "viewOrderUrl": {
+            "type": "string",
+            "description": "A URL able to access the order."
+          }
+        },
+        "required": [
+          "code",
+          "couponId",
+          "creationDate",
+          "customerEmail",
+          "orderNo",
+          "viewOrderUrl"
+        ]
+      },
+      "CouponRedemptionSearchResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedSearchResult"
+          }
+        ],
+        "description": "The result of the coupon redemption search.",
+        "properties": {
+          "hits": {
+            "type": "array",
+            "description": "The array of coupon redemption search hits. Can be empty.",
+            "items": {
+              "$ref": "#/components/schemas/CouponRedemption"
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      },
+      "CouponCodeRedemptionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Document representing a request to redeem a coupon.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The coupon code to redeem.",
+            "example": "Code1"
+          },
+          "customerEmail": {
+            "type": "string",
+            "description": "The customer email to use on the redemption.",
+            "example": "shopper@salesforce-test.com"
+          },
+          "orderNo": {
+            "type": "string",
+            "description": "The order number to use on the redemption. In case the coupon \nwas redeemed externally and no order number is associated, use \na reference id or custom string to identify the source of the \nredemption.\n",
+            "example": "00023120@store4"
+          }
+        },
+        "required": [
+          "code",
+          "orderNo"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "CouponCode": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A coupon code with accompanying stats for redemptions and issues.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The code used to redeem the coupon.",
+            "example": "MyCode"
+          },
+          "issued": {
+            "type": "boolean",
+            "description": "Flag indicating if the coupon code has been issued.",
+            "example": true
+          },
+          "redemptionCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The count of the number of redemptions associated with the code.",
+            "example": 1
+          }
+        },
+        "required": [
+          "code",
+          "issued",
+          "redemptionCount"
+        ]
+      },
+      "CouponCodes": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Document representing a set of coupon codes.",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "The collection of coupon codes.",
+            "example": [
+              {
+                "code": "Code1",
+                "issued": false,
+                "redemptionCount": 0
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CouponCode"
+            }
+          }
+        },
+        "required": [
+          "data",
+          "total"
+        ]
+      },
+      "CouponMultiCodesRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A request object to add and remove coupon codes from a document.",
+        "properties": {
+          "codes": {
+            "type": "array",
+            "description": "The list of coupon codes to add or delete.",
+            "example": [
+              "CodeA",
+              "CodeB"
+            ],
+            "items": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            },
+            "maxItems": 999
+          }
+        },
+        "required": [
+          "codes"
+        ]
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        },
+        "example": "f_ecom_zzxy_prd"
+      },
+      "siteId": {
+        "name": "siteId",
+        "in": "query",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites.",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/SiteId"
+        },
+        "examples": {
+          "SiteId": {
+            "value": "RefArch"
+          }
+        }
+      },
+      "couponId": {
+        "name": "couponId",
+        "in": "path",
+        "description": "The ID of the coupon to create.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "delete": {
+        "name": "delete",
+        "in": "query",
+        "description": "Pass as true to delete the passed codes.",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "examples": {
+      "PostRedeemCoupon": {
+        "value": {
+          "code": "Code1",
+          "customerEmail": "shopper@salesforce-test.com",
+          "orderNo": "00023120@store4"
+        }
+      },
+      "CouponCodeNotRedeemable400": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/coupon-code-not-redeemable",
+          "title": "Coupon Code Not Redeemable",
+          "detail": "The coupon code 'CODE374' in site 'RefArch' is not redeemable because 'COUPON_DISABLED'.",
+          "errorCode": "COUPON_DISABLED",
+          "couponCode": "CODE374",
+          "siteId": "RefArch"
+        }
+      },
+      "CouponCodeNotFound404": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/coupon-not-found",
+          "title": "Coupon Not Found",
+          "detail": "No coupon for the given coupon code 'CODE374' and site 'RefArch' could be found.",
+          "couponCode": "CODE374",
+          "siteId": "RefArch"
+        }
+      },
+      "Coupon": {
+        "value": {
+          "couponId": "MyCoupon",
+          "creationDate": "2019-10-20T12:00:00Z",
+          "description": "This coupon is used to give 10% off stuff.",
+          "enabled": false,
+          "exportedCodeCount": 0,
+          "lastModified": "2019-10-30T04:23:59Z",
+          "redemptionCount": 3,
+          "redemptionLimits": {
+            "limitPerCode": 0,
+            "limitPerCustomer": 0,
+            "limitPerTimeFrame": {
+              "redemptionTimeFrame": 24,
+              "limit": 1
+            }
+          },
+          "singleCode": "MyCode",
+          "systemCodesConfig": {
+            "codePrefix": "SG",
+            "numberOfCodes": 50000
+          },
+          "totalCodesCount": 50,
+          "type": "single_code"
+        }
+      },
+      "CouponNotFound404": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/coupon-not-found",
+          "title": "Coupon Not Found",
+          "detail": "No coupon with ID 'foo' for site 'RefArch' could be found.",
+          "couponId": "foo",
+          "siteId": "RefArch"
+        }
+      },
+      "CouponCodeDuplicate400": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/coupon-code-duplicate",
+          "title": "Coupon Code Duplicate",
+          "detail": "The coupon code 'bar' is already used in coupon 'foo'. Please make sure the code is unique.",
+          "couponId": "foo",
+          "couponCode": "bar"
+        }
+      },
+      "SiteAccessForbidden403": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/site-access-forbidden",
+          "title": "Site Access Forbidden",
+          "detail": "Site-specific access via '/s/RefArch/' isn't allowed. Organization-specific access is expected via '/s/-/'.",
+          "siteId": "RefArch"
+        }
+      },
+      "UpdateCoupon": {
+        "value": {
+          "couponId": "MyCoupon",
+          "creationDate": "2019-10-20T12:00:00Z",
+          "description": "This coupon is used to give 10% off stuff.",
+          "enabled": false,
+          "exportedCodeCount": 0,
+          "lastModified": "2019-10-30T04:23:59Z",
+          "redemptionCount": 3,
+          "redemptionLimits": {
+            "limitPerCode": 0,
+            "limitPerCustomer": 0,
+            "limitPerTimeFrame": {
+              "redemptionTimeFrame": 24,
+              "limit": 1
+            }
+          },
+          "singleCode": "MyCode",
+          "systemCodesConfig": {
+            "codePrefix": "SG",
+            "numberOfCodes": 50000
+          },
+          "totalCodesCount": 50,
+          "type": "single_code"
+        }
+      },
+      "LegacyCouponCoupon403": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/coupon-legacy-update-forbidden",
+          "title": "Coupon Legacy Update Forbidden",
+          "detail": "The coupon 'foo' can't be modified because it was created before Release 16.7.2. Customers can still redeem this coupon code on the Storefront.",
+          "couponId": "foo"
+        }
+      },
+      "GetCouponCodes": {
+        "value": {
+          "limit": 3,
+          "offset": 0,
+          "total": 50,
+          "data": [
+            {
+              "code": "CodeA",
+              "issued": false,
+              "redemptionCount": 0
+            },
+            {
+              "code": "CodeB",
+              "issued": false,
+              "redemptionCount": 0
+            },
+            {
+              "code": "CodeC",
+              "issued": false,
+              "redemptionCount": 0
+            }
+          ]
+        }
+      },
+      "CouponCodeCreate400": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/coupon-code-create",
+          "title": "Coupon Code Create",
+          "detail": "The coupon code 'bar' couldn't be created. Please make sure the code is valid.",
+          "couponCode": "bar"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "description": "AccountManager OAuth 2.0 bearer token Authentication.",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "sfcc.promotions": "promotions READONLY",
+              "sfcc.promotions.rw": "promotions read/write"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "refreshUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {}
+          }
+        }
+      }
+    }
+  }
+}

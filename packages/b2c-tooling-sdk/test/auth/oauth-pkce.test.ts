@@ -117,6 +117,7 @@ describe('auth/oauth-pkce', () => {
     it('starts the callback listener before invoking the browser opener', async () => {
       const clientId = 'pkce-listener-before-browser';
       const localPort = await getAvailablePort();
+      let callbackMessage = '';
       const strategy = new PkceOAuthStrategy({
         clientId,
         localPort,
@@ -127,7 +128,10 @@ describe('auth/oauth-pkce', () => {
             const request = httpGet(
               `http://localhost:${localPort}/?code=immediate-code&state=${encodeURIComponent(state ?? '')}`,
               (response) => {
-                response.resume();
+                response.setEncoding('utf8');
+                response.on('data', (chunk: string) => {
+                  callbackMessage += chunk;
+                });
                 response.once('end', resolve);
               },
             );
@@ -143,6 +147,8 @@ describe('auth/oauth-pkce', () => {
 
       const token = await strategy.getTokenResponse();
       expect(token.accessToken).to.equal('listener-token');
+      expect(callbackMessage).to.equal('Authorization received. Completing authentication in the application...');
+      expect(callbackMessage).not.to.include('Authentication successful');
       strategy.invalidateToken();
     });
 

@@ -1,5 +1,5 @@
 ---
-description: Connect the Salesforce B2C Commerce VS Code Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference.
+description: Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference.
 ---
 
 # Configuration
@@ -10,7 +10,8 @@ This page covers:
 
 - [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
 - [How the Extension Chooses a Project](#how-the-extension-chooses-a-project) — parent folders and multi-root workspaces.
-- [Switching the Active Instance](#switching-the-active-instance) — single-workspace, multi-instance.
+- [Selecting an Instance](#selecting-an-instance) — workspace-specific and shared defaults.
+- [Safety Mode](#safety-mode) — restrict changes and require confirmation for selected actions.
 - [Settings Reference](#settings-reference) — the `b2c-dx.*` toggles and verbosity controls.
 
 ## Connecting to a B2C Instance
@@ -19,12 +20,13 @@ The extension uses the same configuration resolver as the B2C CLI. Environment v
 
 **A `dw.json` at your project root is the conventional setup** and is the easiest way for the extension to locate a B2C project nested inside a larger workspace. It is not required when another configuration source provides what you need.
 
-For the selected project, the extension loads all variables from its `.env` and supports a relative `.env` `SFCC_CONFIG` path. Process environment variables take priority over project `.env` values. Configuration files are selected in this order:
+For the selected project, the extension loads all variables from the selected env file (the project `.env` by default) and supports a relative `SFCC_CONFIG` path in it. Process environment variables take priority over env file values. Configuration files are selected in this order:
 
 1. Process `SFCC_CONFIG`
-2. Project `.env` `SFCC_CONFIG`
-3. Project-local `dw.json`
-4. The shared global default set with `b2c setup default-config set <path>`
+2. Env file `SFCC_CONFIG`
+3. Project-local `dw.json`, plus the shared global default set with `b2c setup default-config set <path>`
+
+An explicit `SFCC_CONFIG` path is used on its own, without the global default. An empty `SFCC_CONFIG` uses no `dw.json`.
 
 The global default is the same fallback used by the CLI and MCP server. The extension automatically refreshes when that shared setting changes.
 
@@ -34,17 +36,17 @@ The extension's instance picker combines instances from the primary and global f
 
 A summary by feature, regardless of which configuration source provides the values:
 
-| Feature                    | Required configuration                                                                                                      |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter. |
-| **WebDAV Browser**         | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted.                |
-| **Content Libraries**      | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree.                                              |
-| **Cartridge Code Sync**    | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations.                              |
-| **SCAPI API Browser**      | `client-id`, `client-secret`, `short-code`, `tenant-id`.                                                                    |
-| **B2C Script Debugger**    | WebDAV (for source-mapping).                                                                                                |
-| **Log Tailing**            | WebDAV (logs are read from `Logs/`).                                                                                        |
-| **CAP install**            | WebDAV; some apps additionally require OAuth client credentials.                                                            |
-| **Scaffold**               | None — local-only.                                                                                                          |
+| Feature                    | Required configuration                                                                                                                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter.                                                                                              |
+| **WebDAV Browser**         | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted.                                                                                                             |
+| **Content Libraries**      | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree.                                                                                                                                           |
+| **Cartridge Code Sync**    | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations.                                                                                                                           |
+| **SCAPI API Browser**      | Account Manager access, `short-code`, and `tenant-id` to load schemas. Shopper requests also use `slas-client-id` and `site-id`; private clients need `slas-client-secret`. See [API Browser Setup](#api-browser-setup). |
+| **B2C Script Debugger**    | WebDAV (for source-mapping).                                                                                                                                                                                             |
+| **Log Tailing**            | WebDAV (logs are read from `Logs/`).                                                                                                                                                                                     |
+| **CAP install**            | WebDAV; some apps additionally require OAuth client credentials.                                                                                                                                                         |
+| **Scaffold**               | None — local-only.                                                                                                                                                                                                       |
 
 ### Example `dw.json`
 
@@ -71,6 +73,18 @@ A summary by feature, regardless of which configuration source provides the valu
 
 See the [Authentication Setup guide](../guide/authentication) for OAuth scope requirements and Account Manager API client setup.
 
+### API Browser Setup
+
+Use the **Setup Help** question-mark button in the API Browser toolbar or **Setup Help** in an API documentation tab. The guide opens inside the editor and includes an example `dw.json`, access requirements, and troubleshooting.
+
+Loading schemas for either Admin or Shopper families requires Account Manager access with the `sfcc.scapi-schemas` scope and the tenant in the client's tenant filter. Sending Admin requests requires that API's scopes as well.
+
+For Shopper requests, add [SLAS credentials](../guide/configuration#shopper-authentication-slas) to the selected connection. Public clients use `slas-client-id` and `site-id`; private clients also use `slas-client-secret`. The API Browser obtains a guest shopper token. A configured public client must allow the redirect URI `http://localhost:3000/callback`.
+
+The extension handles authentication. Check the token status or use **Refresh Token** after updating credentials. After changing the instance or site, close API tabs, refresh the API list, and reopen the API so its request defaults match your selection. **Try it out** sends real requests to that instance.
+
+If the live Schemas API is unavailable (missing configuration or credentials, no access, or a network error), the API Browser shows the bundled SCAPI schemas read-only with a one-time warning. **Try it out** and token requests are disabled, and custom APIs and tenant custom properties are not shown. When live, it always loads the complete contract, including operation summaries and descriptions, examples and custom properties.
+
 <!-- TODO(screenshot): replace ./images/settings.svg with ./images/settings.png — Settings UI filtered to b2c-dx -->
 
 ## How the Extension Chooses a Project
@@ -87,11 +101,28 @@ If one workspace folder contains more than one B2C project, the project closest 
 
 To keep a particular project directory selected, right-click that folder in Explorer and choose **B2C DX > Use as B2C Commerce Root**. This works for nested folders such as `sfra/` as well as top-level folders in a multi-root workspace. Run **B2C DX: Reset B2C Commerce Root to Auto-Detect** from the Command Palette to return to automatic selection.
 
-## Switching the Active Instance
+## Selecting an Instance
 
-When `dw.json` defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to open a quick pick of the configured instances. Selecting a new one updates the underlying `dw.json` active-instance pointer and refreshes every view.
+When your configuration defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to open a quick pick. Selecting an instance applies it only to the current VS Code workspace and refreshes every extension view. Other VS Code workspaces, the CLI, and MCP continue using their own selection or the shared default.
 
-The same pointer is shared with the CLI: switching here is equivalent to running `b2c setup instance set-active <name>`.
+The picker distinguishes the instance **selected for this workspace** with a check mark and the shared **default instance** with a star. Use the star action on a row—or run **B2C DX: Set Default Instance**—to intentionally change the default used by other consumers. Run **B2C DX: Follow Default Instance** to remove the workspace-specific selection.
+
+Instances from installed [plugin config sources](/guide/extending#custom-configuration-sources) appear in their own section, named after the source. Selecting one pins the workspace to that source and instance, and a same-name `dw.json` entry is not used. Its star marks the source's own active instance, and **Set Default** changes it in that source.
+
+The picker also offers **None** (use no `dw.json` instance). When the project has env files, an **Env File** section in the same picker lets you choose `.env`, another `.env.*` file, or none for this workspace; the selected instance and env file are both checked. Hover over the status bar item to see where each setting comes from, or run **B2C DX: Inspect Resolved Config** for every resolved value and its source.
+
+For named entries, setting the default writes `active: true`; a root configuration without an explicit `active` value remains an implicit default. This is equivalent to running `b2c setup instance set-active <name>` and is separate from selecting an instance only for VS Code.
+
+## Safety Mode
+
+The extension honors the selected instance's `safety` settings in `dw.json`.
+You can block commands such as sandbox deletion or require a modal **Proceed**
+confirmation before stopping a sandbox. Request-level safety restrictions also
+apply; approving a command does not override them.
+
+See [Safety Mode for the IDE extension](../guide/safety#ide-extension) for
+configuration examples, supported confirmations, and shared safety files.
+There is no separate safety-level toggle in VS Code Settings.
 
 ## Settings Reference
 
@@ -131,7 +162,7 @@ Both common workspace conventions are recognized:
 - **Canonical site-archive layout** — `sites/<site-id>/`, `catalogs/<id>/`, `libraries/<id>/`, `customer_lists/<id>/`, `pricebooks/`, `inventory_lists/`, `meta/`.
 - **Exploded `metadata/` workspace layout** — `metadata/sites/<id>/*.xml`, `metadata/catalogs/*.xml`, `metadata/promotions/*.xml`, etc.
 
-Schemas covered include catalog, promotion, slot, customer-group, customer-list, custom-object, inventory, library, payment-method, payment-processor, preference, pricebook, redirect-url, search/search2, shipping, site, sourcecode, store, url-rule, jobs, services, schedules, ab-test (and participants), assignment, cache-settings, commerce-feature-state, coupon (and redemption), csrf-allowlist, customer, customer-cdn-settings, dcext, form, geolocation, gift-certificate, locales, meta (system/custom-objecttype-extensions), oauth-providers, page-meta-tags, price-adjustment-limits, product-list, sitemap-configuration, sorting-rules, storefronts, and tax. The full mapping is at `packages/b2c-vs-extension/resources/xsd-mappings.json`.
+Schemas covered include catalog, promotion, slot, customer-group, customer-list, custom-object, inventory, library, payment-method, payment-processor, preference, pricebook, redirect-url, search/search2, shipping, site, sourcecode, store, url-rule, jobs, services, schedules, ab-test (and participants), assignment, cache-settings, channels, commerce-feature-state, coupon (and redemption), csrf-allowlist, customer, customer-cdn-settings, dcext, form, geolocation, gift-certificate, locales, meta (system/custom-objecttype-extensions), oauth-providers, page-meta-tags, price-adjustment-limits, product-list, sitemap-configuration, sorting-rules, storefronts, and tax. The full mapping is at `packages/b2c-vs-extension/resources/xsd-mappings.json`.
 
 To disable XML validation globally in your workspace, set:
 

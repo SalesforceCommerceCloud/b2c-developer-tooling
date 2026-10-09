@@ -7,23 +7,62 @@ import {
   resolveConfig,
   EnvSource,
   getB2CSettingsPath,
-  mergeProjectEnvironment,
   readB2CSettings,
-  readProjectEnvironment,
+  readEnvFile,
+  resolveEnvFilePath,
+  StorefrontNextEnvSource,
+  STOREFRONT_NEXT_ENV_VAR_MAP,
   type NormalizedConfig,
   type ResolveConfigOptions,
   type ResolvedB2CConfig,
   type CreateOAuthOptions,
 } from '@salesforce/b2c-tooling-sdk/config';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
-import {readFile} from 'fs/promises';
+import {readdir, readFile} from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {isEnvFileCandidate, type EnvFileSelection, type WorkspaceInstanceSelection} from './instance-selection.js';
 import {findWorkspaceDwJson, isUnscannableRoot} from './workspace-discovery.js';
 
 const DW_JSON = 'dw.json';
 const DOT_ENV = '.env';
 const PROJECT_ROOT_KEY = 'b2c-dx.projectRoot';
+const WORKSPACE_INSTANCE_KEY = 'b2c-dx.workspaceInstance';
+const WORKSPACE_INSTANCE_NONE_KEY = 'b2c-dx.workspaceInstanceNone';
+const WORKSPACE_ENV_FILE_KEY = 'b2c-dx.workspaceEnvFile';
+
+/** Matches toolkit (`SFCC_*`) and Storefront Next variable assignments in an env file. */
+const B2C_ENV_LINE = new RegExp(
+  `^(?:export\\s+)?(?:SFCC_|${Object.keys(STOREFRONT_NEXT_ENV_VAR_MAP).join('=|')}=)`,
+  'm',
+);
+
+/** Variables loaded from the selected env file, kept separate from the ambient environment. */
+interface SelectedEnvFile {
+  path?: string;
+  values: Record<string, string | undefined>;
+  /** Why the selected env file could not be used, when resolution fell back. */
+  problem?: string;
+}
+
+/**
+ * Whether a saved selection's file is still one the resolver reads instances
+ * from: the explicit config path, or the project dw.json and the global
+ * default. Entry-level problems (a removed name, a file mid-edit) are reported
+ * by resolution instead, so the selection is not dropped for them.
+ */
+function isInInstanceCatalog(
+  selection: WorkspaceInstanceSelection,
+  options: Pick<ResolveConfigOptions, 'configPath' | 'defaultConfigPath' | 'workingDirectory'>,
+): boolean {
+  // Plugin source selections have no file; resolution reports a missing instance.
+  if (selection.source || !selection.location) return Boolean(selection.source);
+  const target = path.resolve(selection.location);
+  const {configPath, defaultConfigPath, workingDirectory} = options;
+  if (configPath !== undefined) return configPath !== '' && path.resolve(configPath) === target;
+  const candidates = [path.join(workingDirectory || process.cwd(), 'dw.json'), defaultConfigPath];
+  return candidates.some((candidate) => candidate !== undefined && path.resolve(candidate) === target);
+}
 
 /** Async existence check via vscode.workspace.fs (no sync IO on the hot path). */
 async function pathExists(p: string): Promise<boolean> {
@@ -35,12 +74,26 @@ async function pathExists(p: string): Promise<boolean> {
   }
 }
 
+/** List env file candidates (`.env`, `.env.*` excluding templates) in a directory. */
+export async function listEnvFileCandidates(directory: string): Promise<string[]> {
+  if (!directory) return [];
+  try {
+    const entries = await readdir(directory, {withFileTypes: true});
+    return entries
+      .filter((entry) => entry.isFile() && isEnvFileCandidate(entry.name))
+      .map((entry) => path.join(directory, entry.name))
+      .sort((a, b) => (path.basename(a) === DOT_ENV ? -1 : path.basename(b) === DOT_ENV ? 1 : a.localeCompare(b)));
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Detect the best project directory for B2C config resolution.
  *
  * Scans all workspace folders for B2C indicators in priority order:
  * 1. Directory containing dw.json (strongest signal; nested directories included)
- * 2. Folder containing .env with SFCC_* variables
+ * 2. Folder containing an env file (.env or .env.*) with SFCC_* or Storefront Next variables
  * 3. Folder containing package.json with `b2c` key
  * 4. Falls back to first folder (current behavior)
  */
@@ -70,15 +123,18 @@ async function detectWorkingDirectory(log: vscode.OutputChannel): Promise<string
   }
 
   for (const folder of folders) {
-    const envPath = path.join(folder.uri.fsPath, DOT_ENV);
-    try {
-      const content = await readFile(envPath, 'utf-8');
-      if (/^SFCC_/m.test(content)) {
-        log.appendLine(`[Config] Selected workspace folder via .env with SFCC_* vars: ${folder.uri.fsPath}`);
-        return folder.uri.fsPath;
+    for (const envPath of await listEnvFileCandidates(folder.uri.fsPath)) {
+      try {
+        const content = await readFile(envPath, 'utf-8');
+        if (B2C_ENV_LINE.test(content)) {
+          log.appendLine(
+            `[Config] Selected workspace folder via ${path.basename(envPath)} with B2C variables: ${folder.uri.fsPath}`,
+          );
+          return folder.uri.fsPath;
+        }
+      } catch {
+        // Ignore unreadable files
       }
-    } catch {
-      // Ignore missing or unreadable files
     }
   }
 
@@ -118,6 +174,12 @@ export class B2CExtensionConfig implements vscode.Disposable {
   private detectedDirectory = '';
   private pinned = false;
   private resolvedEnvironment: Record<string, string | undefined>;
+  private workspaceInstanceSelection: WorkspaceInstanceSelection | undefined;
+  private workspaceInstanceDisabled: boolean;
+  private envFileSelection: EnvFileSelection;
+  private activeEnvFile: string | undefined;
+  private envFileProblem: string | undefined;
+  private workspaceInstanceWatcher: vscode.FileSystemWatcher | undefined;
 
   private readonly _onDidReset = new vscode.EventEmitter<void>();
   readonly onDidReset = this._onDidReset.event;
@@ -130,11 +192,14 @@ export class B2CExtensionConfig implements vscode.Disposable {
     private readonly ambientEnvironment: NodeJS.ProcessEnv = process.env,
   ) {
     this.resolvedEnvironment = ambientEnvironment;
-    // Watch for dw.json and .env saves made within VS Code (most reliable for in-editor edits)
+    this.workspaceInstanceSelection = workspaceState?.get<WorkspaceInstanceSelection>(WORKSPACE_INSTANCE_KEY);
+    this.workspaceInstanceDisabled = workspaceState?.get<boolean>(WORKSPACE_INSTANCE_NONE_KEY) === true;
+    this.envFileSelection = workspaceState?.get<string | null>(WORKSPACE_ENV_FILE_KEY);
+    // Watch for dw.json and env file saves made within VS Code (most reliable for in-editor edits)
     this.disposables.push(
       vscode.workspace.onDidSaveTextDocument((doc) => {
         const basename = path.basename(doc.fileName);
-        if (basename === DW_JSON || basename === DOT_ENV) {
+        if (basename === DW_JSON || isEnvFileCandidate(basename)) {
           this.log.appendLine(`[Config] ${basename} saved in editor: ${doc.fileName}`);
           this.reset();
         }
@@ -144,7 +209,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     // FileSystemWatcher per workspace folder for external changes and create/delete.
     // RelativePattern is more reliable than a bare glob string on macOS.
     for (const folder of vscode.workspace.workspaceFolders ?? []) {
-      for (const filename of [DW_JSON, DOT_ENV]) {
+      for (const filename of [DW_JSON, `${DOT_ENV}*`]) {
         const pattern = new vscode.RelativePattern(folder, `**/${filename}`);
         const watcher = vscode.workspace.createFileSystemWatcher(pattern);
         watcher.onDidChange((uri) => {
@@ -176,6 +241,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     settingsWatcher.onDidCreate(resetForSettingsChange);
     settingsWatcher.onDidDelete(resetForSettingsChange);
     this.disposables.push(settingsWatcher);
+    this.refreshWorkspaceInstanceWatcher();
   }
 
   getConfig(): ResolvedB2CConfig | null {
@@ -198,25 +264,83 @@ export class B2CExtensionConfig implements vscode.Disposable {
     return this.detectedDirectory;
   }
 
+  /** Return the instance selected only for this VS Code workspace. */
+  getWorkspaceInstanceSelection(): WorkspaceInstanceSelection | undefined {
+    return this.workspaceInstanceSelection ? {...this.workspaceInstanceSelection} : undefined;
+  }
+
+  /** Whether this workspace selected no dw.json instance. */
+  isInstanceDisabled(): boolean {
+    return this.workspaceInstanceDisabled;
+  }
+
+  /** Use no dw.json instance in this workspace (env file and shell variables only). */
+  async selectNoInstanceForWorkspace(): Promise<void> {
+    await this.workspaceState?.update(WORKSPACE_INSTANCE_KEY, undefined);
+    await this.workspaceState?.update(WORKSPACE_INSTANCE_NONE_KEY, true);
+    this.workspaceInstanceSelection = undefined;
+    this.workspaceInstanceDisabled = true;
+    this.log.appendLine('[Config] Selected no instance for this workspace');
+    this.refreshWorkspaceInstanceWatcher();
+    this.reset();
+  }
+
+  /** Return the workspace env file choice: a path, `null` for none, or `undefined` for the default `.env`. */
+  getEnvFileSelection(): EnvFileSelection {
+    return this.envFileSelection;
+  }
+
+  /** Return the env file applied to the current resolution, if any. */
+  getActiveEnvFile(): string | undefined {
+    return this.activeEnvFile;
+  }
+
+  /** Why the selected env file could not be used in the current resolution, if it could not. */
+  getEnvFileProblem(): string | undefined {
+    return this.envFileProblem;
+  }
+
+  /** Select the env file for this workspace: a path, `null` for none, or `undefined` for the default `.env`. */
+  async selectEnvFile(selection: EnvFileSelection): Promise<void> {
+    const normalized = typeof selection === 'string' ? path.resolve(selection) : selection;
+    await this.workspaceState?.update(WORKSPACE_ENV_FILE_KEY, normalized);
+    this.envFileSelection = normalized;
+    this.log.appendLine(
+      `[Config] Env file for this workspace: ${normalized === null ? 'none' : (normalized ?? 'default (.env)')}`,
+    );
+    this.reset();
+  }
+
+  /** Select an exact instance for this VS Code workspace without changing shared active state. */
+  async selectInstanceForWorkspace(selection: WorkspaceInstanceSelection): Promise<void> {
+    const normalized = selection.location ? {...selection, location: path.resolve(selection.location)} : selection;
+    await this.workspaceState?.update(WORKSPACE_INSTANCE_KEY, normalized);
+    await this.workspaceState?.update(WORKSPACE_INSTANCE_NONE_KEY, undefined);
+    this.workspaceInstanceSelection = normalized;
+    this.workspaceInstanceDisabled = false;
+    this.log.appendLine(`[Config] Selected instance for this workspace: ${normalized.name}`);
+    this.refreshWorkspaceInstanceWatcher();
+    this.reset();
+  }
+
+  /** Clear the workspace override and resume following the shared default. */
+  async followDefaultInstance(): Promise<void> {
+    await this.workspaceState?.update(WORKSPACE_INSTANCE_KEY, undefined);
+    await this.workspaceState?.update(WORKSPACE_INSTANCE_NONE_KEY, undefined);
+    this.workspaceInstanceSelection = undefined;
+    this.workspaceInstanceDisabled = false;
+    this.log.appendLine('[Config] Following default instance');
+    this.refreshWorkspaceInstanceWatcher();
+    this.reset();
+  }
+
   /** Return the ordered primary and global files used by instance-management features. */
   getInstanceCatalogOptions(): ResolveConfigOptions {
     const workingDirectory = this.detectedDirectory;
-    let projectConfigPath: string | undefined;
-    try {
-      projectConfigPath = readProjectEnvironment(workingDirectory)?.SFCC_CONFIG;
-    } catch {
-      // Configuration resolution reports malformed project environments separately.
-    }
-    const configPath =
-      this.ambientEnvironment.SFCC_CONFIG ||
-      (projectConfigPath && workingDirectory
-        ? path.isAbsolute(projectConfigPath)
-          ? projectConfigPath
-          : path.resolve(workingDirectory, projectConfigPath)
-        : undefined);
+    const envFile = this.readSelectedEnvFile(workingDirectory);
     return {
       workingDirectory,
-      configPath,
+      configPath: this.selectConfigPath(envFile),
       defaultConfigPath: readB2CSettings({environment: this.ambientEnvironment}).defaultConfigPath,
     };
   }
@@ -267,6 +391,8 @@ export class B2CExtensionConfig implements vscode.Disposable {
     this.detectedDirectory = '';
     this.pinned = false;
     this.resolvedEnvironment = this.ambientEnvironment;
+    this.activeEnvFile = undefined;
+    this.envFileProblem = undefined;
     // Re-resolve asynchronously, then fire the event so listeners get fresh data
     void this.resolveAsync().then(() => {
       this._onDidReset.fire();
@@ -319,9 +445,30 @@ export class B2CExtensionConfig implements vscode.Disposable {
 
   dispose(): void {
     this._onDidReset.dispose();
+    this.workspaceInstanceWatcher?.dispose();
     for (const d of this.disposables) {
       d.dispose();
     }
+  }
+
+  private refreshWorkspaceInstanceWatcher(): void {
+    this.workspaceInstanceWatcher?.dispose();
+    this.workspaceInstanceWatcher = undefined;
+
+    const location = this.workspaceInstanceSelection?.location;
+    if (!location) return;
+
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.file(path.dirname(location)), path.basename(location)),
+    );
+    const resetForSelectionChange = (): void => {
+      this.log.appendLine(`[Config] Selected instance configuration changed: ${location}`);
+      this.reset();
+    };
+    watcher.onDidChange(resetForSelectionChange);
+    watcher.onDidCreate(resetForSelectionChange);
+    watcher.onDidDelete(resetForSelectionChange);
+    this.workspaceInstanceWatcher = watcher;
   }
 
   private async resolveAsync(): Promise<void> {
@@ -358,9 +505,18 @@ export class B2CExtensionConfig implements vscode.Disposable {
       this.detectedDirectory = workingDirectory;
       this.log.appendLine(`[Config] Resolving config from ${workingDirectory || '(no working directory)'}`);
 
-      const {config, environment} = await this.resolveProjectConfiguration(workingDirectory);
+      const {config, environment, envFile, envFileProblem, staleWorkspaceSelection} =
+        await this.resolveProjectConfiguration(workingDirectory);
+      if (staleWorkspaceSelection && staleWorkspaceSelection === this.workspaceInstanceSelection) {
+        // Forget it so the picker and tooltip show that the workspace follows the default.
+        this.workspaceInstanceSelection = undefined;
+        await this.workspaceState?.update(WORKSPACE_INSTANCE_KEY, undefined);
+        this.refreshWorkspaceInstanceWatcher();
+      }
       this.config = config;
       this.resolvedEnvironment = environment;
+      this.activeEnvFile = envFile;
+      this.envFileProblem = envFileProblem;
 
       if (!config.hasB2CInstanceConfig()) {
         this.configError = 'No B2C Commerce instance configured.';
@@ -382,45 +538,137 @@ export class B2CExtensionConfig implements vscode.Disposable {
     }
   }
 
+  /**
+   * Read the env file selected for this workspace (or `<directory>/.env` by default).
+   *
+   * A selected file that no longer exists falls back to the default `.env`, and
+   * an unreadable file contributes nothing; both are reported as `problem`.
+   */
+  private readSelectedEnvFile(workingDirectory: string): SelectedEnvFile {
+    if (this.envFileSelection === null) return {values: {}};
+    const projectDirectory = workingDirectory || undefined;
+
+    let problem: string | undefined;
+    let envFile: string | undefined;
+    try {
+      envFile = resolveEnvFilePath({envFile: this.envFileSelection, projectDirectory});
+    } catch (error) {
+      problem = error instanceof Error ? error.message : String(error);
+      envFile = resolveEnvFilePath({projectDirectory});
+    }
+    // Without a project directory, only an explicit selection applies (never the host's cwd).
+    if (!envFile || (!workingDirectory && (problem || this.envFileSelection === undefined))) {
+      return {values: {}, problem};
+    }
+
+    try {
+      return {path: envFile, values: readEnvFile(envFile), problem};
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {values: {}, problem: `Could not read env file ${envFile}: ${message}`};
+    }
+  }
+
+  /**
+   * Select the dw.json path from `SFCC_CONFIG` (ambient first, then the env file).
+   * An empty value selects no dw.json, matching the CLI. A relative env file
+   * value resolves from the env file's directory.
+   */
+  private selectConfigPath(envFile: SelectedEnvFile): string | undefined {
+    const ambientConfigPath = this.ambientEnvironment.SFCC_CONFIG;
+    if (ambientConfigPath !== undefined) return ambientConfigPath;
+
+    const fileConfigPath = envFile.values.SFCC_CONFIG;
+    if (fileConfigPath === undefined || fileConfigPath === '' || !envFile.path) return fileConfigPath;
+    return path.isAbsolute(fileConfigPath) ? fileConfigPath : path.resolve(path.dirname(envFile.path), fileConfigPath);
+  }
+
   private async resolveProjectConfiguration(
     workingDirectory: string,
     overrides: Partial<NormalizedConfig> = {},
-  ): Promise<{config: ResolvedB2CConfig; environment: Record<string, string | undefined>}> {
-    let projectEnvironment: Record<string, string | undefined> | undefined;
-    if (workingDirectory) {
-      const environmentPath = path.join(workingDirectory, DOT_ENV);
-      try {
-        projectEnvironment = readProjectEnvironment(workingDirectory);
-        if (projectEnvironment) this.log.appendLine(`[Config] Loaded project environment: ${environmentPath}`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        this.log.appendLine(`[Config] Failed to load project environment: ${message}`);
-      }
-    }
+  ): Promise<{
+    config: ResolvedB2CConfig;
+    envFile?: string;
+    envFileProblem?: string;
+    environment: Record<string, string | undefined>;
+    /** Saved workspace selection whose file is no longer in the instance catalog (ignored). */
+    staleWorkspaceSelection?: WorkspaceInstanceSelection;
+  }> {
+    const envFile = this.readSelectedEnvFile(workingDirectory);
+    if (envFile.problem) this.log.appendLine(`[Config] Warning: ${envFile.problem}`);
+    if (envFile.path) this.log.appendLine(`[Config] Loaded env file: ${envFile.path}`);
 
-    const environment = mergeProjectEnvironment(projectEnvironment, this.ambientEnvironment);
-    const processConfigPath = this.ambientEnvironment.SFCC_CONFIG || undefined;
-    const projectConfigPath = projectEnvironment?.SFCC_CONFIG;
-    const configPath =
-      processConfigPath ??
-      (projectConfigPath && workingDirectory
-        ? path.isAbsolute(projectConfigPath)
-          ? projectConfigPath
-          : path.resolve(workingDirectory, projectConfigPath)
-        : undefined);
+    // SFCC_DOTENV_FILE is never honored from inside an env file (no chaining).
+    const fileValues = {...envFile.values};
+    delete fileValues.SFCC_DOTENV_FILE;
+    const environment: Record<string, string | undefined> = {...fileValues, ...this.ambientEnvironment};
+    const configPath = this.selectConfigPath(envFile);
     if (configPath) this.log.appendLine(`[Config] Using explicit config path: ${configPath}`);
+    if (configPath === '') this.log.appendLine('[Config] SFCC_CONFIG is empty; no dw.json is used');
 
     const {defaultConfigPath} = readB2CSettings({environment: this.ambientEnvironment});
     if (defaultConfigPath) {
       this.log.appendLine(`[Config] Global dw.json: ${defaultConfigPath}`);
     }
 
+    const instanceDisabled = this.workspaceInstanceDisabled;
+    let workspaceSelection = instanceDisabled ? undefined : this.workspaceInstanceSelection;
+    let staleWorkspaceSelection: WorkspaceInstanceSelection | undefined;
+    // A saved selection names an absolute file; it only applies while that file is
+    // still in the catalog (for example, not after the global default is unset).
+    if (
+      workspaceSelection &&
+      !isInInstanceCatalog(workspaceSelection, {workingDirectory, configPath, defaultConfigPath})
+    ) {
+      this.log.appendLine(
+        `[Config] Selected instance "${workspaceSelection.name}" is in ${workspaceSelection.location}, which is no longer an instance file for this project; following the default`,
+      );
+      staleWorkspaceSelection = workspaceSelection;
+      workspaceSelection = undefined;
+    }
+    if (instanceDisabled) {
+      this.log.appendLine('[Config] No instance selected for this workspace; dw.json is not used');
+    } else if (workspaceSelection) {
+      this.log.appendLine(`[Config] Applying workspace instance selection: ${workspaceSelection.name}`);
+    }
+
+    const fileOnlyValues = Object.fromEntries(
+      Object.entries(fileValues).filter(([key]) => this.ambientEnvironment[key] === undefined),
+    );
+    const storefrontNextFromAmbient = Object.keys(STOREFRONT_NEXT_ENV_VAR_MAP).some(
+      (key) => this.ambientEnvironment[key] !== undefined,
+    );
     const config = await resolveConfig(overrides, {
       workingDirectory,
-      configPath,
-      defaultConfigPath,
-      sourcesBefore: [new EnvSource(environment)],
+      instance: workspaceSelection?.name,
+      // A plugin source selection owns the instance, so a same-name dw.json entry can't take it over.
+      configPath: instanceDisabled || workspaceSelection?.source ? '' : (workspaceSelection?.location ?? configPath),
+      credentialsFile: environment.MRT_CREDENTIALS_FILE || undefined,
+      // An explicit workspace selection identifies an exact file and name. Do
+      // not fall through to a same-name entry in the global fallback.
+      defaultConfigPath: workspaceSelection || instanceDisabled ? undefined : defaultConfigPath,
+      sourcesBefore: [
+        new EnvSource(this.ambientEnvironment),
+        new EnvSource(fileOnlyValues, {name: 'DotenvFile', location: envFile.path}),
+      ],
+      // Storefront Next variables are borrowed from the app and only fill gaps below dw.json.
+      sourcesAfter: [
+        new StorefrontNextEnvSource(environment, {location: storefrontNextFromAmbient ? undefined : envFile.path}),
+      ],
     });
-    return {config, environment};
+    // A plugin source may not report instanceName; contributing values is enough to show it was used.
+    const usedSelectedSource =
+      workspaceSelection?.source !== undefined &&
+      config.sources.some((source) => source.name === workspaceSelection.source && source.fields.length > 0);
+    if (workspaceSelection && !usedSelectedSource && config.values.instanceName !== workspaceSelection.name) {
+      const mismatch = config.warnings.find(
+        (warning) => warning.code === 'HOSTNAME_MISMATCH' && warning.details?.source === 'DwJsonSource',
+      );
+      if (mismatch) throw new Error(`Selected instance "${workspaceSelection.name}" was not used: ${mismatch.message}`);
+      throw new Error(
+        `Selected instance "${workspaceSelection.name}" is no longer available. Choose another instance or follow the default instance.`,
+      );
+    }
+    return {config, envFile: envFile.path, envFileProblem: envFile.problem, environment, staleWorkspaceSelection};
   }
 }

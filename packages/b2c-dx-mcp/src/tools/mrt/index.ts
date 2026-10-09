@@ -172,10 +172,12 @@ function createMrtBundlePushTool(
   return createToolAdapter<MrtBundlePushInput, MrtBundlePushOutput>(
     {
       name: 'mrt_bundle_push',
+      effect: 'write',
+      idempotent: false,
+      openWorld: true,
       description:
         'Bundle a pre-built PWA Kit or Storefront Next project and push to Managed Runtime. Optionally deploy to a target environment.',
       toolsets: ['MRT', 'PWAV3', 'STOREFRONTNEXT'],
-      isGA: true,
       // MRT operations use ApiKeyStrategy from MRT_API_KEY or ~/.mobify
       requiresMrtAuth: true,
       usesProjectContext: true,

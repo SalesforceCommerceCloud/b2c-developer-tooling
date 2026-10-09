@@ -16,6 +16,7 @@ import path from 'node:path';
 import {AppInsightsClient} from '../../src/telemetry/app-insights-client.js';
 import {Telemetry, createTelemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {resetAgentContext} from '@salesforce/b2c-tooling-sdk/ux';
 
 /**
  * Stop telemetry without waiting for the real 300ms flush delay.
@@ -371,6 +372,52 @@ describe('telemetry/telemetry', () => {
       it('is "true" when a provider-specific var is present (GITHUB_ACTIONS)', async () => {
         process.env.GITHUB_ACTIONS = 'true';
         expect(await isCIForEvent()).to.equal('true');
+      });
+    });
+
+    describe('agent attribution', () => {
+      let savedAgent: string | undefined;
+
+      beforeEach(() => {
+        savedAgent = process.env.SFCC_AGENT;
+      });
+
+      afterEach(() => {
+        if (savedAgent === undefined) delete process.env.SFCC_AGENT;
+        else process.env.SFCC_AGENT = savedAgent;
+        delete process.env.CLAUDE_CODE_SESSION_ID;
+        delete process.env.CLAUDECODE;
+        resetAgentContext();
+      });
+
+      async function propertiesForEvent(): Promise<Record<string, string>> {
+        resetAgentContext();
+        const telemetry = new Telemetry({
+          project: 'test-project',
+          appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
+        });
+        await telemetry.start();
+        telemetry.sendEvent('TEST_EVENT');
+        return trackEventStub.lastCall.args[0].properties;
+      }
+
+      it('marks events as non-agent when detection is disabled', async () => {
+        process.env.SFCC_AGENT = '0';
+        const properties = await propertiesForEvent();
+        expect(properties.isAgent).to.equal('false');
+        expect(properties).to.not.have.property('agent');
+        expect(properties).to.not.have.property('agentSessionKey');
+      });
+
+      it('includes the agent id and a hashed session key, never the raw session id', async () => {
+        delete process.env.SFCC_AGENT;
+        process.env.CLAUDECODE = '1';
+        process.env.CLAUDE_CODE_SESSION_ID = 'raw-session-123';
+        const properties = await propertiesForEvent();
+        expect(properties.isAgent).to.equal('true');
+        expect(properties.agent).to.equal('claude-code');
+        expect(properties.agentSessionKey).to.match(/^[0-9a-f]{32}$/);
+        expect(JSON.stringify(properties)).to.not.include('raw-session-123');
       });
     });
 

@@ -18,7 +18,6 @@
  * |------|--------------|-------------|
  * | `--toolsets` | `SFCC_TOOLSETS` | Comma-separated toolsets to enable (case-insensitive) |
  * | `--tools` | `SFCC_TOOLS` | Comma-separated individual tools to enable (case-insensitive) |
- * | `--allow-non-ga-tools` | `SFCC_ALLOW_NON_GA_TOOLS` | Enable experimental/non-GA tools |
  *
  * ### Environment Variables for Telemetry
  * | Env Variable | Description |
@@ -58,7 +57,6 @@
  *
  * **Note on `--project-directory`**: Many MCP clients (Cursor, Claude Code) spawn servers from the
  * user's home directory (`~`) rather than the project directory. This flag is used for:
- * - Auto-discovery (detecting project type when no `--toolsets` or `--tools` are provided)
  * - Scaffolding tools (creating files in the correct project location)
  * - Any tool that needs to operate on the project directory
  *
@@ -86,40 +84,40 @@
  * ## Toolset Validation
  *
  * - Invalid toolsets are ignored with a warning (server still starts)
- * - If all toolsets are invalid, auto-discovery kicks in
+ * - With no valid selection, all toolsets are enabled
  *
  * @example mcp.json - All toolsets
  * ```json
- * { "args": ["--toolsets", "all", "--allow-non-ga-tools"] }
+ * { "args": ["--toolsets", "all"] }
  * ```
  *
  * @example mcp.json - Specific toolsets
  * ```json
- * { "args": ["--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"] }
+ * { "args": ["--toolsets", "CARTRIDGES,MRT"] }
  * ```
  *
  * @example mcp.json - MRT tools with project, environment, and API key
  * ```json
  * {
- *   "args": ["--toolsets", "MRT", "--project", "my-project", "--environment", "staging", "--allow-non-ga-tools"],
+ *   "args": ["--toolsets", "MRT", "--project", "my-project", "--environment", "staging"],
  *   "env": { "MRT_API_KEY": "your-api-key" }
  * }
  * ```
  *
  * @example mcp.json - MRT tools with staging cloud origin (uses ~/.mobify--cloud-staging.mobify.com)
  * ```json
- * { "args": ["--toolsets", "MRT", "--project", "my-project", "--cloud-origin", "https://cloud-staging.mobify.com", "--allow-non-ga-tools"] }
+ * { "args": ["--toolsets", "MRT", "--project", "my-project", "--cloud-origin", "https://cloud-staging.mobify.com"] }
  * ```
  *
  * @example mcp.json - Cartridge tools with dw.json config
  * ```json
- * { "args": ["--toolsets", "CARTRIDGES", "--config", "/path/to/dw.json", "--allow-non-ga-tools"] }
+ * { "args": ["--toolsets", "CARTRIDGES", "--config", "/path/to/dw.json"] }
  * ```
  *
  * @example mcp.json - Cartridge tools with env vars
  * ```json
  * {
- *   "args": ["--toolsets", "CARTRIDGES", "--allow-non-ga-tools"],
+ *   "args": ["--toolsets", "CARTRIDGES"],
  *   "env": {
  *     "SFCC_HOSTNAME": "your-sandbox.demandware.net",
  *     "SFCC_CLIENT_ID": "your-client-id",
@@ -130,7 +128,7 @@
  *
  * @example mcp.json - Enable debug logging
  * ```json
- * { "args": ["--toolsets", "all", "--allow-non-ga-tools", "--debug"] }
+ * { "args": ["--toolsets", "all", "--debug"] }
  * ```
  */
 
@@ -146,9 +144,13 @@ import {
 } from '@salesforce/b2c-tooling-sdk/cli';
 import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {serveStdio} from '@modelcontextprotocol/server/stdio';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
-// eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
-import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  isRemoteScapiSchema,
+  loadScapiSchemaOverrides,
+  type ScapiSchemaDocument,
+} from '@salesforce/b2c-tooling-sdk/scapi';
 import {B2CDxMcpServer} from '../server.js';
 import {Services, type ServicesResolutionInputs} from '../services.js';
 import {ServerContext} from '../server-context.js';
@@ -175,24 +177,23 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
   static examples = [
     {
       description: 'All toolsets',
-      command: '<%= config.bin %> --toolsets all --allow-non-ga-tools',
+      command: '<%= config.bin %> --toolsets all',
     },
     {
       description: 'MRT tools with project and API key',
-      command: '<%= config.bin %> --toolsets MRT --project my-project --api-key your-api-key --allow-non-ga-tools',
+      command: '<%= config.bin %> --toolsets MRT --project my-project --api-key your-api-key',
     },
     {
       description: 'MRT tools with project, environment, and API key',
-      command:
-        '<%= config.bin %> --toolsets MRT --project my-project --environment staging --api-key your-api-key --allow-non-ga-tools',
+      command: '<%= config.bin %> --toolsets MRT --project my-project --environment staging --api-key your-api-key',
     },
     {
       description: 'Cartridge tools with explicit config',
-      command: '<%= config.bin %> --toolsets CARTRIDGES --config /path/to/dw.json --allow-non-ga-tools',
+      command: '<%= config.bin %> --toolsets CARTRIDGES --config /path/to/dw.json',
     },
     {
       description: 'Debug logging',
-      command: '<%= config.bin %> --toolsets all --allow-non-ga-tools --debug',
+      command: '<%= config.bin %> --toolsets all --debug',
     },
   ];
 
@@ -205,9 +206,14 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     // These provide B2C instance configuration for tools like cartridge_deploy
     ...InstanceCommand.baseFlags,
 
+    'allow-non-ga-tools': Flags.boolean({
+      description: 'Deprecated compatibility flag; has no effect',
+      hidden: true,
+    }),
+
     // MCP-specific toolset selection flags
     toolsets: Flags.string({
-      description: `Toolsets to enable (comma-separated). Options: all, ${TOOLSETS.join(', ')}`,
+      description: `Toolsets to enable (comma-separated; default: all). Options: all, ${TOOLSETS.join(', ')}`,
       env: 'SFCC_TOOLSETS',
       parse: async (input) => input.toUpperCase(),
     }),
@@ -219,22 +225,19 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     'docs-topics': Flags.string({
       description:
         'Limit the documentation exposed by the docs tools to these categories (comma-separated allowlist). ' +
-        'Options: script-api, job-step, commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce, tooling, ' +
-        'help-admin, help-merchant. ' +
+        'Options: script-api, job-step, commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce, commerce-solutions, ocapi, tooling, ' +
+        'help-admin, help-merchant, help-kb. ' +
         'Bounds the whole docs corpus; per-call category/storefront narrow within it. Unknown names are ignored.',
       env: 'SFCC_DOCS_TOPICS',
     }),
-
-    // Feature flags
-    'allow-non-ga-tools': Flags.boolean({
-      description: 'Enable non-GA (experimental) tools',
-      env: 'SFCC_ALLOW_NON_GA_TOOLS',
-      default: false,
+    'scapi-schemas': Flags.string({
+      description:
+        'Local SCAPI OpenAPI contracts for scapi_search and scapi_execute (comma-separated JSON files, directories or http(s) URLs). ' +
+        'Each replaces the bundled or live contract with the same family/name/version from servers[0].url, or adds an API. ' +
+        'Developer option for beta and pre-release APIs. Overrides the project config scapi-schemas (dw.json or project .env).',
+      env: 'SFCC_SCAPI_SCHEMAS',
     }),
   };
-
-  /** Server-scoped persistent state (debug sessions, log watches, etc.) */
-  private serverContext?: ServerContext;
 
   /** Signal that triggered shutdown (if any) - used to exit process after finally() */
   private shutdownSignal?: string;
@@ -276,8 +279,10 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * 1. Per-call configPath
    * 2. Startup --config / SFCC_CONFIG
    * 3. SFCC_CONFIG from the selected project's .env
-   * 4. dw.json in the selected project directory
-   * 5. Shared default dw.json from the tooling settings
+   * 4. dw.json in the selected project directory, plus the shared default
+   *    dw.json from the tooling settings
+   *
+   * An explicit path (1-3) is used on its own; an empty one selects no dw.json.
    *
    * Values are then merged through the normal CLI resolver, including
    * environment, plugin, dw.json, ~/.mobify, and package.json sources.
@@ -296,15 +301,18 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         ? path.resolve(effectiveProjectDirectory ?? process.cwd(), projectContext.configPath)
         : undefined) ??
       baseOptions.configPath ??
-      (projectConfigPath && effectiveProjectDirectory
+      // An empty SFCC_CONFIG selects no dw.json, as in the CLI.
+      (projectConfigPath
         ? path.isAbsolute(projectConfigPath)
           ? projectConfigPath
           : path.resolve(effectiveProjectDirectory, projectConfigPath)
-        : undefined);
+        : projectConfigPath);
     const options: LoadConfigOptions = {
       ...baseOptions,
       ...mrt.options,
       configPath,
+      // The selected project's .env supplies Storefront Next fallbacks below dw.json.
+      envFile: projectEnvironment ? path.join(effectiveProjectDirectory, '.env') : baseOptions.envFile,
       instance: projectContext?.instanceName ?? baseOptions.instance,
       projectDirectory: effectiveProjectDirectory,
       workingDirectory: effectiveProjectDirectory,
@@ -345,17 +353,18 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
         path: path.resolve(effectiveProjectDirectory, projectContext.configPath),
         source: 'argument',
       };
-    } else if (baseOptions.configPath) {
-      primaryConfiguration = {path: path.resolve(baseOptions.configPath), source: 'server'};
-    } else if (projectConfigPath) {
+    } else if (baseOptions.configPath !== undefined) {
+      primaryConfiguration = {path: baseOptions.configPath && path.resolve(baseOptions.configPath), source: 'server'};
+    } else if (projectConfigPath === undefined) {
+      primaryConfiguration = {path: path.join(effectiveProjectDirectory, 'dw.json'), source: 'projectDirectory'};
+    } else {
       primaryConfiguration = {
-        path: path.isAbsolute(projectConfigPath)
-          ? projectConfigPath
-          : path.resolve(effectiveProjectDirectory, projectConfigPath),
+        path:
+          projectConfigPath && !path.isAbsolute(projectConfigPath)
+            ? path.resolve(effectiveProjectDirectory, projectConfigPath)
+            : projectConfigPath,
         source: 'projectEnvironment',
       };
-    } else {
-      primaryConfiguration = {path: path.join(effectiveProjectDirectory, 'dw.json'), source: 'projectDirectory'};
     }
 
     return Services.fromResolvedConfig(config, projectEnvironment, {
@@ -394,20 +403,26 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * These can be exposed to Services if needed for features like telemetry or caching.
    */
   async run(): Promise<void> {
+    if (this.flags['allow-non-ga-tools']) {
+      this.logger.warn(
+        '--allow-non-ga-tools is deprecated and has no effect. You can remove it from your MCP configuration.',
+      );
+    }
+
     // Flags are already parsed by BaseCommand.init()
     // Parse toolsets and tools from comma-separated strings
     // Note: toolsets are uppercased, tools are lowercased by their parse functions
     const startupFlags: StartupFlags = {
       toolsets: this.flags.toolsets ? this.flags.toolsets.split(',').map((s) => s.trim()) : undefined,
       tools: this.flags.tools ? this.flags.tools.split(',').map((s) => s.trim()) : undefined,
-      allowNonGaTools: this.flags['allow-non-ga-tools'],
-      configPath: this.flags.config,
-      // Project directory for auto-discovery. oclif handles flag with env fallback.
+      configPath: this.getConfigPathFlag(),
+      // Default project directory for tool calls. oclif handles the environment fallback.
       projectDirectory: this.flags['project-directory'],
       // Docs topic allowlist (bounds the docs corpus at startup). Flag first
       // (--docs-topics / SFCC_DOCS_TOPICS), else config `docsCategories`
       // (dw.json `docs-categories`, SFCC_DOCS_CATEGORIES, package.json).
       docsTopics: this.flags['docs-topics'] ?? this.resolvedConfig?.values.docsCategories?.join(','),
+      scapiSchemas: await this.loadLocalScapiSchemas(),
     };
 
     // Add toolsets to telemetry attributes
@@ -415,39 +430,57 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       this.telemetry.addAttributes({toolsets: startupFlags.toolsets.join(', ')});
     }
 
-    // Create MCP server with telemetry from BaseCommand
-    const server = new B2CDxMcpServer(
-      {
-        name: this.config.name,
-        version: this.config.version,
-      },
-      {
-        capabilities: {
-          resources: {},
-          tools: {},
-        },
-        telemetry: this.telemetry,
-      },
-    );
-
-    // Create server context for persistent state (debug sessions, log watches)
-    this.serverContext = new ServerContext();
-
-    // Register toolsets with loader function that loads config and creates Services on each tool call
-    // This allows tools to pick up changes to config files (dw.json, ~/.mobify) between invocations
     const loadServices = this.loadServices.bind(this) as ServicesLoader;
-    await registerToolsets(startupFlags, server, loadServices, this.serverContext);
+    let activeServer: B2CDxMcpServer | undefined;
+    const handle = serveStdio(
+      async () => {
+        // A protocol probe may be discarded; each factory instance owns its state.
+        const context = new ServerContext();
+        const server = new B2CDxMcpServer(
+          {
+            name: this.config.name,
+            version: this.config.version,
+          },
+          {
+            capabilities: {
+              resources: {},
+              tools: {},
+            },
+            telemetry: this.telemetry,
+            cleanup: () => context.destroyAll(),
+            cacheHints: {
+              'tools/list': {ttlMs: 300_000, cacheScope: 'private'},
+              'resources/list': {ttlMs: 300_000, cacheScope: 'private'},
+              'resources/templates/list': {ttlMs: 300_000, cacheScope: 'private'},
+              'resources/read': {ttlMs: 300_000, cacheScope: 'private'},
+            },
+            instructions:
+              'Discover tool schemas before calling. Prefer dedicated tools; otherwise scapi_search/scapi_execute for Commerce APIs. ' +
+              'Skills: load them through your client when it lists them; otherwise read skill:// URIs as MCP resources or with skills_read({uri: "<URI>"}). ' +
+              'SCAPI: first read skill://mcp/b2c-mcp-scapi/SKILL.md. ' +
+              'Analytics: cip_discover/cip_query; skill://mcp/b2c-mcp-cip/SKILL.md. ' +
+              'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; ' +
+              'skill index, setup and tool choice skill://mcp/b2c-mcp-server/SKILL.md; full catalog skill://index (b2c-ops runbooks for operations and incidents).',
+          },
+        );
 
-    // Connect to stdio transport
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
+        activeServer = server;
+        await registerToolsets(startupFlags, server, loadServices, context);
+        return server;
+      },
+      {onerror: (error) => this.logger.error({err: error}, 'MCP transport error')},
+    );
 
     // Create promise that resolves when server stops (stdin close or signal)
     // This allows finally() to wait for SERVER_STOPPED before stopping telemetry
     this.stdinClosePromise = new Promise((resolve) => {
+      let stopping = false;
       const sendStopAndResolve = (signal: string): void => {
+        if (stopping) return;
+        stopping = true;
         this.shutdownSignal = signal;
-        const cleanup = this.serverContext?.destroyAll() ?? Promise.resolve();
+        // EOF may already have started SDK teardown; await the same cleanup before telemetry stops.
+        const cleanup = handle.close().then(() => activeServer?.close());
         cleanup
           .catch(() => {})
           .then(() => {
@@ -470,6 +503,29 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     });
 
     this.logger.info({version: this.config.version}, 'MCP Server running on stdio');
+  }
+
+  /** Load --scapi-schemas once at startup; relative paths resolve from the project directory. */
+  private async loadLocalScapiSchemas(): Promise<readonly ScapiSchemaDocument[] | undefined> {
+    const value = this.flags['scapi-schemas'];
+    if (!value) return undefined;
+    const base = this.flags['project-directory'] ?? process.cwd();
+    const paths = value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => (isRemoteScapiSchema(entry) ? entry : path.resolve(base, entry)));
+    let documents: ScapiSchemaDocument[];
+    try {
+      documents = await loadScapiSchemaOverrides(paths);
+    } catch (error) {
+      this.error(error instanceof Error ? error.message : String(error));
+    }
+    this.logger.info(
+      {scapiSchemas: documents.map((document) => document.entry.id)},
+      `Using ${documents.length} local SCAPI contract(s)`,
+    );
+    return documents;
   }
 
   /** Parse a project's .env without mutating the long-lived MCP process environment. */

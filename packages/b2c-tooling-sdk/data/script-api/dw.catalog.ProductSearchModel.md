@@ -65,7 +65,7 @@ search refinement. It also provides utility methods to generate a search URL.
 | [refinedCategorySearch](#refinedcategorysearch): [Boolean](TopLevel.Boolean.md) `(read-only)` | Identifies if this is a category search and is refined with further  criteria, like a brand refinement or an attribute refinement. |
 | [refinementCategory](#refinementcategory): [Category](dw.catalog.Category.md) | Returns the category used to determine possible refinements for the search. |
 | [refinements](#refinements): [ProductSearchRefinements](dw.catalog.ProductSearchRefinements.md) `(read-only)` | Returns the ProductSearchRefinements associated with this search and filtered by session currency. |
-| [searchMode](#searchmode): [String](TopLevel.String.md) | Returns the search mode that was requested for the next search execution via [setSearchMode(String)](dw.catalog.ProductSearchModel.md#setsearchmodestring), or  {@code null} if no mode was explicitly requested. |
+| [searchMode](#searchmode): [String](TopLevel.String.md) | Returns the search mode that was requested for the next search execution via [setSearchMode(String)](dw.catalog.ProductSearchModel.md#setsearchmodestring), or  `null` if no mode was explicitly requested. |
 | [searchPhraseSuggestions](#searchphrasesuggestions): [SearchPhraseSuggestions](dw.suggest.SearchPhraseSuggestions.md) `(read-only)` | Returns search phrase suggestions for the current search phrase. |
 | [searchableImageUploadURL](#searchableimageuploadurl): [String](TopLevel.String.md) `(read-only)` | This method returns the URL of the endpoint where the merchants should upload their image for visual search. |
 | [sortingRule](#sortingrule): [SortingRule](dw.catalog.SortingRule.md) | Returns the sorting rule explicitly set on this model to be used  to order the products in the results of this query, or `null`  if no rule has been explicitly set. |
@@ -108,7 +108,7 @@ search refinement. It also provides utility methods to generate a search URL.
 | [getPromotionProductType](dw.catalog.ProductSearchModel.md#getpromotionproducttype)() | Returns the promotion product type specified in the search query. |
 | [getRefinementCategory](dw.catalog.ProductSearchModel.md#getrefinementcategory)() | Returns the category used to determine possible refinements for the search. |
 | [getRefinements](dw.catalog.ProductSearchModel.md#getrefinements)() | Returns the ProductSearchRefinements associated with this search and filtered by session currency. |
-| [getSearchMode](dw.catalog.ProductSearchModel.md#getsearchmode)() | Returns the search mode that was requested for the next search execution via [setSearchMode(String)](dw.catalog.ProductSearchModel.md#setsearchmodestring), or  {@code null} if no mode was explicitly requested. |
+| [getSearchMode](dw.catalog.ProductSearchModel.md#getsearchmode)() | Returns the search mode that was requested for the next search execution via [setSearchMode(String)](dw.catalog.ProductSearchModel.md#setsearchmodestring), or  `null` if no mode was explicitly requested. |
 | [getSearchPhraseSuggestions](dw.catalog.ProductSearchModel.md#getsearchphrasesuggestions)() | Returns search phrase suggestions for the current search phrase. |
 | [getSearchableImageUploadURL](dw.catalog.ProductSearchModel.md#getsearchableimageuploadurl)() | This method returns the URL of the endpoint where the merchants should upload their image for visual search. |
 | [getSortingRule](dw.catalog.ProductSearchModel.md#getsortingrule)() | Returns the sorting rule explicitly set on this model to be used  to order the products in the results of this query, or `null`  if no rule has been explicitly set. |
@@ -131,6 +131,7 @@ search refinement. It also provides utility methods to generate a search URL.
 | [setEnableTrackingEmptySearches](dw.catalog.ProductSearchModel.md#setenabletrackingemptysearchesboolean)([Boolean](TopLevel.Boolean.md)) | Set a flag indicating whether no-hits search should be tracked for predictive intelligence use. |
 | [setInventoryListIDs](dw.catalog.ProductSearchModel.md#setinventorylistidslist)([List](dw.util.List.md)) | <p>  Specifies multiple inventory list IDs used for the search query. |
 | [setOrderableProductsOnly](dw.catalog.ProductSearchModel.md#setorderableproductsonlyboolean)([Boolean](TopLevel.Boolean.md)) | Set a flag indicating whether unorderable products should be excluded  when the next call to getProducts() is made. |
+| [setPageSize](dw.catalog.ProductSearchModel.md#setpagesizenumber)([Number](TopLevel.Number.md)) | Specifies the maximum number of hits to be returned from the search result. |
 | [setPriceMax](dw.catalog.ProductSearchModel.md#setpricemaxnumber)([Number](TopLevel.Number.md)) | Sets the maximum price by which the search result is to be refined. |
 | [setPriceMin](dw.catalog.ProductSearchModel.md#setpriceminnumber)([Number](TopLevel.Number.md)) | Sets the minimum price by which the search result is to be refined. |
 | ~~[setProductID](dw.catalog.ProductSearchModel.md#setproductidstring)([String](TopLevel.String.md))~~ | Specifies the product id used for the search query. |
@@ -145,6 +146,7 @@ search refinement. It also provides utility methods to generate a search URL.
 | ~~[setSortingCondition](dw.catalog.ProductSearchModel.md#setsortingconditionstring-number)([String](TopLevel.String.md), [Number](TopLevel.Number.md))~~ | Sets or removes a sorting condition for the specified attribute. |
 | [setSortingOption](dw.catalog.ProductSearchModel.md#setsortingoptionsortingoption)([SortingOption](dw.catalog.SortingOption.md)) | Sets the sorting option to be used to order the products in the results of this query. |
 | [setSortingRule](dw.catalog.ProductSearchModel.md#setsortingrulesortingrule)([SortingRule](dw.catalog.SortingRule.md)) | Sets the sorting rule to be used to order the products in the  results of this query. |
+| [setStart](dw.catalog.ProductSearchModel.md#setstartnumber)([Number](TopLevel.Number.md)) | Specifies the zero-based offset into the search result at which the first returned hit starts. |
 | [setStoreInventoryFilter](dw.catalog.ProductSearchModel.md#setstoreinventoryfilterstoreinventoryfilter)([StoreInventoryFilter](dw.catalog.StoreInventoryFilter.md)) | <p>  Filters the search result by one or more inventory list IDs provided by the class [StoreInventoryFilter](dw.catalog.StoreInventoryFilter.md)  which supports a semantic URL parameter like zip, city, store ... |
 | static [urlForCategory](dw.catalog.ProductSearchModel.md#urlforcategoryurl-string)([URL](dw.web.URL.md), [String](TopLevel.String.md)) | Constructs a URL that you can use to execute a query for a specific  Category. |
 | static [urlForCategory](dw.catalog.ProductSearchModel.md#urlforcategorystring-string)([String](TopLevel.String.md), [String](TopLevel.String.md)) | Constructs a URL that you can use to execute a query for a specific  Category. |
@@ -384,7 +386,7 @@ search refinement. It also provides utility methods to generate a search URL.
 ### effectiveSearchMode
 - effectiveSearchMode: [String](TopLevel.String.md) `(read-only)`
   - : Returns the effective search mode that was used for the last search execution. This reflects the actual matching
-      approach that ran, which may differ from the requested mode if a fallback occurred. Returns {@code null} before
+      approach that ran, which may differ from the requested mode if a fallback occurred. Returns `null` before
       [search()](dw.catalog.ProductSearchModel.md#search) has been called.
 
 
@@ -602,9 +604,9 @@ This method should not be used because loading Products for each result of a pro
 ### searchMode
 - searchMode: [String](TopLevel.String.md)
   - : Returns the search mode that was requested for the next search execution via [setSearchMode(String)](dw.catalog.ProductSearchModel.md#setsearchmodestring), or
-      {@code null} if no mode was explicitly requested. This reflects the caller's requested preference, not the mode
-      that actually ran — the requested mode is non-authoritative and {@code "semantic"} may still be demoted to
-      {@code "lexical"} by the search router. Use [getEffectiveSearchMode()](dw.catalog.ProductSearchModel.md#geteffectivesearchmode) to obtain the mode that was
+      `null` if no mode was explicitly requested. This reflects the caller's requested preference, not the mode
+      that actually ran — the requested mode is non-authoritative and `"semantic"` may still be demoted to
+      `"lexical"` by the search router. Use [getEffectiveSearchMode()](dw.catalog.ProductSearchModel.md#geteffectivesearchmode) to obtain the mode that was
       actually used after [search()](dw.catalog.ProductSearchModel.md#search).
 
 
@@ -769,13 +771,13 @@ Please use [getSearchPhraseSuggestions()](dw.catalog.ProductSearchModel.md#getse
 ### getEffectiveSearchMode()
 - getEffectiveSearchMode(): [String](TopLevel.String.md)
   - : Returns the effective search mode that was used for the last search execution. This reflects the actual matching
-      approach that ran, which may differ from the requested mode if a fallback occurred. Returns {@code null} before
+      approach that ran, which may differ from the requested mode if a fallback occurred. Returns `null` before
       [search()](dw.catalog.ProductSearchModel.md#search) has been called.
 
 
     **Returns:**
-    - {@code "semantic"} if the query ran against the external search provider, {@code "lexical"} if it ran
-              against the native search, or {@code null} if no search has been executed yet
+    - `"semantic"` if the query ran against the external search provider, `"lexical"` if it ran
+              against the native search, or `null` if no search has been executed yet
 
 
 
@@ -1035,14 +1037,14 @@ This method should not be used because loading Products for each result of a pro
 ### getSearchMode()
 - getSearchMode(): [String](TopLevel.String.md)
   - : Returns the search mode that was requested for the next search execution via [setSearchMode(String)](dw.catalog.ProductSearchModel.md#setsearchmodestring), or
-      {@code null} if no mode was explicitly requested. This reflects the caller's requested preference, not the mode
-      that actually ran — the requested mode is non-authoritative and {@code "semantic"} may still be demoted to
-      {@code "lexical"} by the search router. Use [getEffectiveSearchMode()](dw.catalog.ProductSearchModel.md#geteffectivesearchmode) to obtain the mode that was
+      `null` if no mode was explicitly requested. This reflects the caller's requested preference, not the mode
+      that actually ran — the requested mode is non-authoritative and `"semantic"` may still be demoted to
+      `"lexical"` by the search router. Use [getEffectiveSearchMode()](dw.catalog.ProductSearchModel.md#geteffectivesearchmode) to obtain the mode that was
       actually used after [search()](dw.catalog.ProductSearchModel.md#search).
 
 
     **Returns:**
-    - {@code "semantic"} or {@code "lexical"} if a mode was requested, or {@code null} if no mode was requested
+    - `"semantic"` or `"lexical"` if a mode was requested, or `null` if no mode was requested
 
 
 ---
@@ -1339,6 +1341,19 @@ Please use [getSearchPhraseSuggestions()](dw.catalog.ProductSearchModel.md#getse
 
 ---
 
+### setPageSize(Number)
+- setPageSize(pageSize: [Number](TopLevel.Number.md)): void
+  - : Specifies the maximum number of hits to be returned from the search result.
+
+    **Parameters:**
+    - pageSize - the maximum number of hits to be returned, must be greater than or equal to 0.
+
+    **Throws:**
+    - IllegalArgumentException - if pageSize is negative.
+
+
+---
+
 ### setPriceMax(Number)
 - setPriceMax(priceMax: [Number](TopLevel.Number.md)): void
   - : Sets the maximum price by which the search result is to be refined.
@@ -1457,12 +1472,12 @@ Please use [setProductIDs(List)](dw.catalog.ProductSearchModel.md#setproductidsl
 ### setSearchMode(String)
 - setSearchMode(mode: [String](TopLevel.String.md)): void
   - : Sets the search mode for the next search execution. The mode influences the routing decision made by the search
-      router, but is non-authoritative — {@code "semantic"} still runs the full routing cascade and may be demoted to
-      {@code "lexical"} based on availability and query characteristics.
+      router, but is non-authoritative — `"semantic"` still runs the full routing cascade and may be demoted to
+      `"lexical"` based on availability and query characteristics.
 
 
     **Parameters:**
-    - mode - the search mode to request, either {@code "semantic"} or {@code "lexical"}
+    - mode - the search mode to request, either `"semantic"` or `"lexical"`
 
     **Throws:**
     - IllegalArgumentException - if the mode is not one of the allowed values
@@ -1533,6 +1548,19 @@ This method is subject to removal. Use [setSortingRule(SortingRule)](dw.catalog.
 
 ---
 
+### setStart(Number)
+- setStart(start: [Number](TopLevel.Number.md)): void
+  - : Specifies the zero-based offset into the search result at which the first returned hit starts.
+
+    **Parameters:**
+    - start - the offset into the search result, must be greater than or equal to 0.
+
+    **Throws:**
+    - IllegalArgumentException - if start is negative.
+
+
+---
+
 ### setStoreInventoryFilter(StoreInventoryFilter)
 - setStoreInventoryFilter(storeInventoryFilter: [StoreInventoryFilter](dw.catalog.StoreInventoryFilter.md)): void
   - : 
@@ -1540,7 +1568,7 @@ This method is subject to removal. Use [setSortingRule(SortingRule)](dw.catalog.
       Filters the search result by one or more inventory list IDs provided by the class [StoreInventoryFilter](dw.catalog.StoreInventoryFilter.md)
       which supports a semantic URL parameter like zip, city, store ... and a list of [StoreInventoryFilterValue](dw.catalog.StoreInventoryFilterValue.md)
       which maps the semantic inventory list id value like Burlington, Boston, ... to a real inventory list id like
-      'Burlington -> inventory1', 'Boston -> inventory2'. The search will filter the result by the real inventory list
+      'Burlington -&gt; inventory1', 'Boston -&gt; inventory2'. The search will filter the result by the real inventory list
       id(s) but will use the semantic URL parameter and semantic inventory list id values for URL generation via all
       URLRefine and URLRelax methods e.g. for [urlRefineCategory(URL, String)](dw.catalog.ProductSearchModel.md#urlrefinecategoryurl-string), [urlRelaxPrice(URL)](dw.catalog.ProductSearchModel.md#urlrelaxpriceurl),
       [SearchModel.urlRefineAttribute(String, String, String)](dw.catalog.SearchModel.md#urlrefineattributestring-string-string).

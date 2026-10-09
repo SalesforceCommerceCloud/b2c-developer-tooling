@@ -2507,7 +2507,7 @@ the individual transactions.
       
       Note it is recommended to use ([setCustomer(Customer)](dw.order.Order.md#setcustomercustomer)) instead of this method. This method
       only sets the customer number and should be used with care as it does _not re-link the order with a customer
-       profile</> object which can lead to an inconsistency! Ensure that the customer number used is not already taken
+       profile&lt;/&gt; object which can lead to an inconsistency! Ensure that the customer number used is not already taken
        by a different customer profile.
 
 

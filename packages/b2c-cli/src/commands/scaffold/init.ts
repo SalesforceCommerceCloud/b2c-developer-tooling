@@ -9,6 +9,7 @@ import path from 'node:path';
 import {Args, Flags} from '@oclif/core';
 import {input, select} from '@inquirer/prompts';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {isInteractive} from '@salesforce/b2c-tooling-sdk/ux';
 import {isValidScaffoldName, type ScaffoldCategory} from '@salesforce/b2c-tooling-sdk/scaffold';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -103,7 +104,7 @@ export default class ScaffoldInit extends BaseCommand<typeof ScaffoldInit> {
 
   async run(): Promise<ScaffoldInitResponse> {
     let scaffoldName = this.args.name;
-    const isTTY = process.stdin.isTTY && process.stdout.isTTY;
+    const isTTY = isInteractive() && Boolean(process.stdout.isTTY);
 
     // Prompt for name if not provided
     if (!scaffoldName && isTTY) {

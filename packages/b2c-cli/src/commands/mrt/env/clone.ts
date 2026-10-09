@@ -111,7 +111,9 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
     const {mrtProject: project, mrtEnvironment: fromSlug} = this.resolvedConfig.values;
 
     if (!project) {
-      this.error('MRT project is required. Provide --project flag, set MRT_PROJECT, or set mrtProject in dw.json.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in dw.json.',
+      );
     }
     if (!fromSlug) {
       this.error(
@@ -170,14 +172,12 @@ export default class MrtEnvClone extends MrtCommand<typeof MrtEnvClone> {
             pollIntervalSeconds: pollInterval,
             timeoutSeconds: timeout,
             onPoll: (info) => {
-              if (!this.jsonEnabled()) {
-                this.log(
-                  t('commands.mrt.env.clone.state', '[{{elapsed}}s] State: {{state}}', {
-                    elapsed: String(info.elapsedSeconds),
-                    state: info.state,
-                  }),
-                );
-              }
+              this.log(
+                t('commands.mrt.env.clone.state', '[{{elapsed}}s] State: {{state}}', {
+                  elapsed: String(info.elapsedSeconds),
+                  state: info.state,
+                }),
+              );
             },
           },
           this.getMrtAuth(),

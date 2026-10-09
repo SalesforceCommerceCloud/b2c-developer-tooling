@@ -4,25 +4,39 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
-import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
+import {
+  McpServer,
+  ProtocolError,
+  ProtocolErrorCode,
+  CLIENT_INFO_META_KEY,
+  PROTOCOL_VERSION_META_KEY,
+  CLIENT_CAPABILITIES_META_KEY,
+} from '@modelcontextprotocol/server';
 import type {
   CallToolResult,
   Implementation,
-  ServerNotification,
-  ServerRequest,
-} from '@modelcontextprotocol/sdk/types.js';
-import type {ServerOptions} from '@modelcontextprotocol/sdk/server/index.js';
-import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
-import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
+  ReadResourceResult,
+  ToolAnnotations,
+  ServerOptions,
+  Transport,
+  ServerContext,
+  ClientCapabilities,
+} from '@modelcontextprotocol/server';
+
 import {z, type ZodRawShape} from 'zod';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import type {McpToolConfig, ToolContext} from './utils/types.js';
+
+/** MCP skills extension identifier (SEP-2640). */
+export const SKILLS_EXTENSION = 'io.modelcontextprotocol/skills';
 
 /**
  * Extended server options.
  */
 export interface B2CDxMcpServerOptions extends ServerOptions {
+  /** Release debugger sessions and log watches owned by this server instance. */
+  cleanup?: () => Promise<void>;
   /**
    * Telemetry instance for tracking server and tool events.
    * If not provided, telemetry is disabled.
@@ -36,6 +50,10 @@ export interface B2CDxMcpServerOptions extends ServerOptions {
  * @augments {McpServer}
  */
 export class B2CDxMcpServer extends McpServer {
+  private readonly cleanup?: () => Promise<void>;
+  private clientLogged = false;
+  private closePromise?: Promise<void>;
+  private readonly resourceReaders = new Map<string, (uri: string) => Promise<ReadResourceResult>>();
   private telemetry?: Telemetry;
 
   /**
@@ -45,12 +63,19 @@ export class B2CDxMcpServer extends McpServer {
    * @param options - Optional server configuration
    */
   public constructor(serverInfo: Implementation, options?: B2CDxMcpServerOptions) {
-    super(serverInfo, options);
-    this.telemetry = options?.telemetry;
+    const {cleanup, telemetry, ...serverOptions} = options ?? {};
+    // The bundled SDK patch supports zero for human-paced approval with no server deadline.
+    super(serverInfo, {
+      ...serverOptions,
+      inputRequired: {maxRounds: 20, roundTimeoutMs: 0, ...serverOptions.inputRequired},
+    });
+    this.cleanup = cleanup;
+    this.telemetry = telemetry;
 
     // Set up oninitialized handler
     this.server.oninitialized = (): void => {
       const clientInfo = this.server.getClientVersion();
+      this.logClient(clientInfo);
       if (clientInfo) {
         this.telemetry?.addAttributes({
           clientName: clientInfo.name,
@@ -58,6 +83,48 @@ export class B2CDxMcpServer extends McpServer {
         });
       }
     };
+  }
+
+  /** Register after resource metadata. Resolve raw URIs before URL dot-segment normalization. */
+  public addResourceReader(prefix: string, read: (uri: string) => Promise<ReadResourceResult>): void {
+    this.resourceReaders.set(prefix, read);
+    this.server.setRequestHandler('resources/read', async (request, context) => {
+      this.logRequestClient(context);
+      const uri = request.params.uri;
+      for (const [registeredPrefix, reader] of this.resourceReaders) {
+        if (uri.startsWith(registeredPrefix)) return reader(uri);
+      }
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Resource URI is not available.');
+    });
+  }
+
+  /**
+   * Serve the MCP skills extension (SEP-2640): `skills/list` and `skills/get`.
+   * Register before connecting. `get` throws a ProtocolError for unknown skills.
+   */
+  public addSkillsExtension(skills: {list: () => unknown[]; get: (uri: string) => unknown}): void {
+    this.server.registerCapabilities({extensions: {[SKILLS_EXTENSION]: {}}});
+    this.server.setRequestHandler(
+      'skills/list',
+      {params: z.object({cursor: z.string().optional()}).loose().optional()},
+      async (params, context) => {
+        this.logRequestClient(context);
+        // One page: an issued cursor never exists, so any cursor is invalid.
+        if (params?.cursor !== undefined) throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Invalid cursor.');
+        const modern = Boolean(
+          (context.mcpReq?.envelope as Record<string, unknown> | undefined)?.[PROTOCOL_VERSION_META_KEY],
+        );
+        return {skills: skills.list(), ...(modern && {ttlMs: 300_000, cacheScope: 'private'})};
+      },
+    );
+    this.server.setRequestHandler(
+      'skills/get',
+      {params: z.object({uri: z.string()}).loose()},
+      async (params, context) => {
+        this.logRequestClient(context);
+        return {skill: skills.get(params.uri)};
+      },
+    );
   }
 
   /**
@@ -74,15 +141,27 @@ export class B2CDxMcpServer extends McpServer {
     name: string,
     description: string,
     inputSchema: ZodRawShape,
-    handler: (args: Record<string, unknown>) => Promise<CallToolResult>,
+    handler: (args: Record<string, unknown>, context?: ToolContext) => Promise<CallToolResult>,
+    metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {annotations?: ToolAnnotations} = {},
   ): void {
-    const wrappedHandler = async (
-      args: Record<string, unknown>,
-      _extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
-    ): Promise<CallToolResult> => {
+    const wrappedHandler = async (args: Record<string, unknown>, context: ServerContext): Promise<CallToolResult> => {
+      const clientInfo = this.logRequestClient(context);
+      if (clientInfo) this.telemetry?.addAttributes({clientName: clientInfo.name, clientVersion: clientInfo.version});
       const startTime = Date.now();
       try {
-        const result = await handler(args);
+        const envelope = context.mcpReq?.envelope as
+          | undefined
+          | {[CLIENT_CAPABILITIES_META_KEY]?: ClientCapabilities; [PROTOCOL_VERSION_META_KEY]?: string};
+        const capabilities = envelope?.[CLIENT_CAPABILITIES_META_KEY] ?? this.server.getClientCapabilities();
+        const elicitation = capabilities?.elicitation;
+        const result = await handler(args, {
+          signal: context.mcpReq?.signal,
+          requestState: context.mcpReq?.requestState?.(),
+          inputResponses: context.mcpReq?.inputResponses,
+          supportsElicitation:
+            elicitation !== undefined && (elicitation.form !== undefined || Object.keys(elicitation).length === 0),
+          keepCancellation: !envelope?.[PROTOCOL_VERSION_META_KEY],
+        });
         const runTimeMs = Date.now() - startTime;
 
         // Extract error message from CallToolResult content when isError is true
@@ -120,7 +199,27 @@ export class B2CDxMcpServer extends McpServer {
     };
 
     // Use the new registerTool API (tool() is deprecated)
-    this.registerTool(name, {description, inputSchema: z.object(inputSchema).strict()}, wrappedHandler);
+    this.registerTool(
+      name,
+      {
+        description,
+        inputSchema: z.object(inputSchema).strict(),
+        ...metadata,
+        outputSchema: metadata.outputSchema ? z.object(metadata.outputSchema) : undefined,
+      },
+      wrappedHandler,
+    );
+  }
+
+  public override close(): Promise<void> {
+    this.closePromise ??= (async () => {
+      try {
+        await this.cleanup?.();
+      } finally {
+        await super.close();
+      }
+    })();
+    return this.closePromise;
   }
 
   /**
@@ -128,6 +227,7 @@ export class B2CDxMcpServer extends McpServer {
    */
   public override async connect(transport: Transport): Promise<void> {
     try {
+      if (this.isConnected()) throw new Error('Already connected to a transport. Create a new server instance.');
       await super.connect(transport);
       const statusPromise = this.isConnected()
         ? this.telemetry?.sendEventAndFlush('SERVER_STATUS', {status: 'started'})
@@ -144,5 +244,30 @@ export class B2CDxMcpServer extends McpServer {
       await (errorPromise ?? Promise.resolve()).catch(() => {});
       throw error;
     }
+  }
+
+  private logClient(clientInfo?: Implementation, protocolVersion?: string): void {
+    if (this.clientLogged) return;
+    getLogger().debug(
+      {
+        protocolEra: protocolVersion ? 'modern' : 'legacy',
+        protocolVersion,
+        clientName: clientInfo?.name,
+        clientVersion: clientInfo?.version,
+      },
+      'MCP client connected',
+    );
+    this.clientLogged = true;
+  }
+
+  private logRequestClient(context: ServerContext): Implementation | undefined {
+    const envelope = context.mcpReq?.envelope as
+      | undefined
+      | {
+          [CLIENT_INFO_META_KEY]?: Implementation;
+          [PROTOCOL_VERSION_META_KEY]?: string;
+        };
+    if (envelope) this.logClient(envelope[CLIENT_INFO_META_KEY], envelope[PROTOCOL_VERSION_META_KEY]);
+    return envelope?.[CLIENT_INFO_META_KEY];
   }
 }

@@ -59,33 +59,33 @@ This class does not have a constructor, so you cannot create it directly.
   - : Applies shipping to the given [Basket](dw.order.Basket.md) using the platform's shipping hook dispatch logic.
       
       
-      This method is intended for use in custom {@code dw.order.calculate} hook implementations (e.g., in SFRA or
+      This method is intended for use in custom `dw.order.calculate` hook implementations (e.g., in SFRA or
       SiteGenesis) that override the default basket calculation. Calling this method instead of directly invoking
-      {@code dw.order.calculateShipping} ensures that Commerce App shipping providers registered via
-      {@code sfcc.app.shipping.calculate} are invoked when available, with automatic fallback to the legacy
-      {@code dw.order.calculateShipping} hook or the platform default shipping calculation.
+      `dw.order.calculateShipping` ensures that Commerce App shipping providers registered via
+      `sfcc.app.shipping.calculate` are invoked when available, with automatic fallback to the legacy
+      `dw.order.calculateShipping` hook or the platform default shipping calculation.
       
       
       
       
-      **WARNING:** Do NOT call this method from within a {@code dw.order.calculateShipping} hook
+      **WARNING:** Do NOT call this method from within a `dw.order.calculateShipping` hook
       implementation, as this will cause infinite recursion. This method is designed to be called from
-      {@code dw.order.calculate} hooks only.
+      `dw.order.calculate` hooks only.
       
       
       
       
       The dispatch precedence is:
       
-      1. {@code sfcc.app.shipping.calculate}— if a Commerce App shipping provider is installed.
-      2. {@code dw.order.calculateShipping}— if registered by the storefront.
+      1. `sfcc.app.shipping.calculate`— if a Commerce App shipping provider is installed.
+      2. `dw.order.calculateShipping`— if registered by the storefront.
       3. Platform default shipping calculation — using product and shipment shipping cost tables.
       
       
       
       
       
-      **Typical usage in a custom {@code dw.order.calculate} hook:**
+      **Typical usage in a custom `dw.order.calculate` hook:**
       
       
       
@@ -106,7 +106,7 @@ This class does not have a constructor, so you cannot create it directly.
     - basket - the basket for which shipping should be calculated.
 
     **Throws:**
-    - NullArgumentException - if {@code basket} is {@code null}.
+    - NullArgumentException - if `basket` is `null`.
 
 
 ---

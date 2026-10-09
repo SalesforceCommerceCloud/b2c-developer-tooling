@@ -21,32 +21,47 @@ describe('bm roles create', () => {
     return createTestCommand(BmRolesCreate, hooks.getConfig(), flags, args);
   }
 
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      listRoles: sinon.stub(),
+      getRole: sinon.stub(),
+      createRole: sinon.stub(),
+      deleteRole: sinon.stub(),
+      getPermissions: sinon.stub(),
+      setPermissions: sinon.stub(),
+      grantRole: sinon.stub(),
+      revokeRole: sinon.stub(),
+    };
+  }
+
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    const backend = createMockBackend();
+    sinon.stub(command, 'createRolesBackend').returns(backend);
+    return backend;
   }
 
   it('creates role and returns in JSON mode', async () => {
     const command: any = await createCommand({description: 'Test role'}, {role: 'TestRole'});
-    stubCommon(command, {jsonEnabled: true});
+    const backend = stubCommon(command, {jsonEnabled: true});
 
-    const mockRole = {id: 'TestRole', description: 'Test role'};
-    const ocapiPut = sinon.stub().resolves({data: mockRole, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {PUT: ocapiPut}}));
+    backend.createRole.resolves({id: 'TestRole', description: 'Test role'});
 
     const result = await command.run();
     expect(result.id).to.equal('TestRole');
-    expect(ocapiPut.calledOnce).to.equal(true);
+    expect(backend.createRole.calledOnce).to.equal(true);
   });
 
   it('logs success in non-JSON mode', async () => {
     const command: any = await createCommand({}, {role: 'TestRole'});
-    stubCommon(command, {jsonEnabled: false});
+    const backend = stubCommon(command, {jsonEnabled: false});
     const logStub = sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiPut = sinon.stub().resolves({data: {id: 'TestRole'}, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {PUT: ocapiPut}}));
+    backend.createRole.resolves({id: 'TestRole'});
 
     await command.run();
     expect(logStub.calledWith(sinon.match('TestRole'))).to.equal(true);
@@ -54,15 +69,10 @@ describe('bm roles create', () => {
 
   it('throws on 403 for reserved roles', async () => {
     const command: any = await createCommand({}, {role: 'Support'});
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    const backend = stubCommon(command, {jsonEnabled: false});
+    sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiPut = sinon.stub().resolves({
-      data: undefined,
-      error: {fault: {message: 'Operation not allowed'}},
-      response: {status: 403, statusText: 'Forbidden'},
-    });
-    sinon.stub(command, 'instance').get(() => ({ocapi: {PUT: ocapiPut}}));
+    backend.createRole.rejects(new Error('Failed to create role Support: Operation not allowed'));
 
     try {
       await command.run();

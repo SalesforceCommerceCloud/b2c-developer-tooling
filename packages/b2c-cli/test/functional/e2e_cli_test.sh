@@ -12,6 +12,7 @@
 # SFCC_SANDBOX_API_HOST     - Sandbox API hostname (default: admin.dx.commercecloud.salesforce.com)
 
 set -e
+export SFCC_LOG_LEVEL="${SFCC_LOG_LEVEL:-debug}"
 
 # Script directory for relative paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,6 +25,30 @@ SITE_ARCHIVE_PATH="$SCRIPT_DIR/fixtures/site_archive"
 # Test configuration
 SITE_ID="TestSite"
 TTL_HOURS=4  # 4 hours in case test fails and needs manual cleanup
+FIRST_ODS_ID=""
+HTTP_DIAGNOSTICS_DIR=$(mktemp -d)
+
+# Keep response bodies on stdout for callers; log status and safe tracing headers on stderr.
+curl_with_diagnostics() {
+    local http_status curl_exit=0
+    : > "$HTTP_DIAGNOSTICS_DIR/headers"
+    : > "$HTTP_DIAGNOSTICS_DIR/body"
+    http_status=$(curl --silent --show-error \
+        --dump-header "$HTTP_DIAGNOSTICS_DIR/headers" \
+        --output "$HTTP_DIAGNOSTICS_DIR/body" \
+        --write-out '%{http_code}' "$@") || curl_exit=$?
+
+    echo "DEBUG: curl exit=$curl_exit HTTP status=$http_status" >&2
+    if [ -f "$HTTP_DIAGNOSTICS_DIR/headers" ]; then
+        # Allowlist diagnostic headers so Set-Cookie and other credentials stay private.
+        awk 'tolower($0) ~ /^(http\/|date:|server:|content-type:|www-authenticate:|[a-z0-9-]*request-id:|[a-z0-9-]*correlation-id:|sfdc_correlation_id:|x-dw-request-base-id:|traceparent:|tracestate:|x-amzn-trace-id:)/' \
+            "$HTTP_DIAGNOSTICS_DIR/headers" >&2
+    fi
+    if [ -f "$HTTP_DIAGNOSTICS_DIR/body" ]; then
+        cat "$HTTP_DIAGNOSTICS_DIR/body"
+    fi
+    return "$curl_exit"
+}
 
 # Cleanup function for error handling
 cleanup() {
@@ -45,6 +70,12 @@ cleanup() {
         $CLI ods delete "$ODS_ID" --force || true
     fi
 
+    if [ -n "$FIRST_ODS_ID" ]; then
+        echo "Deleting first sandbox: $FIRST_ODS_ID"
+        $CLI ods delete "$FIRST_ODS_ID" --force || true
+    fi
+
+    rm -rf "$HTTP_DIAGNOSTICS_DIR"
     exit $exit_code
 }
 
@@ -59,9 +90,17 @@ echo "Short Code: $SFCC_SHORTCODE"
 echo ""
 
 ################################################################################
-# 1. Create On-Demand Sandbox
+# 1. Create On-Demand Sandboxes
 ################################################################################
-echo "Step 1: Creating on-demand sandbox..."
+echo "Step 1: Creating first sandbox to avoid testing on instance 001..."
+
+# Temporary workaround for SLAS 401s on instance 001. Only wait on the second sandbox.
+FIRST_ODS_RESULT=$($CLI ods create --realm "$TEST_REALM" --ttl "$TTL_HOURS" --json)
+FIRST_ODS_ID=$(echo "$FIRST_ODS_RESULT" | jq -er '.id | select(type == "string" and length > 0)')
+echo "First sandbox: $FIRST_ODS_ID"
+sleep 10
+
+echo "Creating and waiting for the second sandbox for testing..."
 
 ODS_CREATE_RESULT=$($CLI ods create \
     --realm "$TEST_REALM" \
@@ -82,10 +121,22 @@ if [ -z "$ODS_ID" ] || [ "$ODS_ID" == "null" ]; then
     exit 1
 fi
 
+# Derive the tenant ID from the hostname used by the CLI
+# (for example, zzzz-006.unified.demandware.net -> zzzz_006) and export it
+# before code/job commands so auto backend selection can use SCAPI.
+SANDBOX_HOST_ID="${SERVER%%.*}"
+if [[ ! "$SANDBOX_HOST_ID" =~ ^([[:alnum:]]{4})-([[:alnum:]]+)$ ]]; then
+    echo "FAILED: Could not derive tenant ID from sandbox hostname: $SERVER"
+    exit 1
+fi
+TENANT_ID="${BASH_REMATCH[1]}_${BASH_REMATCH[2]}"
+export SFCC_TENANT_ID="$TENANT_ID"
+
 echo "SUCCESS: Created sandbox"
 echo "  ID: $ODS_ID"
 echo "  Server: $SERVER"
 echo "  Instance: $INSTANCE_NUM"
+echo "  Tenant ID: $TENANT_ID"
 echo ""
 
 ################################################################################
@@ -116,15 +167,99 @@ echo "Step 3: Deploying code to sandbox..."
 
 $CLI code deploy "$CARTRIDGE_PATH" \
     --server "$SERVER" \
-    --code-version "e2e-test-version" --log-level trace --json
+    --code-version "e2e-test-version" --json
 
 echo "SUCCESS: Code deployed"
 echo ""
 
 ################################################################################
-# 4. Import Site Data
+# 4. WebDAV Operations
 ################################################################################
-echo "Step 4: Importing site data..."
+echo "Step 4: Testing WebDAV operations..."
+
+# Only the roots granted by the sandbox's default client permissions are
+# reachable (DEFAULT_WEBDAV_PERMISSIONS: /impex, /cartridges, /static).
+WEBDAV_TMP=$(mktemp -d)
+WEBDAV_FILE="$WEBDAV_TMP/webdav-e2e.txt"
+echo "webdav e2e $(date +%s)" > "$WEBDAV_FILE"
+
+# Asserts that NAME is (or, with "absent", is not) an entry of DIR on ROOT.
+webdav_expect_entry() {
+    local root="$1" dir="$2" name="$3" mode="${4:-present}" found
+    found=$($CLI webdav ls "$dir" --root "$root" --server "$SERVER" --json \
+        | jq -r --arg name "$name" '[.entries[] | select(.displayName == $name)] | length')
+    if [ "$mode" == "absent" ] && [ "$found" != "0" ]; then
+        echo "FAILED: $root/$dir/$name should not exist"
+        exit 1
+    elif [ "$mode" == "present" ] && { [ -z "$found" ] || [ "$found" == "0" ]; }; then
+        echo "FAILED: $root/$dir/$name not found"
+        exit 1
+    fi
+}
+
+# Asserts that the remote file matches the local test file.
+webdav_expect_content() {
+    local root="$1" path="$2"
+    rm -f "$WEBDAV_TMP/downloaded"
+    $CLI webdav get "$path" --root "$root" --server "$SERVER" -o "$WEBDAV_TMP/downloaded"
+    if ! cmp -s "$WEBDAV_FILE" "$WEBDAV_TMP/downloaded"; then
+        echo "FAILED: Downloaded $root/$path does not match uploaded content"
+        exit 1
+    fi
+}
+
+webdav_roundtrip() {
+    local root="$1" base="$2"
+    local w=(--root "$root" --server "$SERVER")
+    echo "  Root: $root (base: $base)"
+
+    # mkdir -p semantics; repeating on an existing path must succeed
+    $CLI webdav mkdir "$base/a/b" "${w[@]}"
+    $CLI webdav mkdir "$base/a/b" "${w[@]}"
+
+    # put into an existing directory (keeps filename), then overwrite it
+    $CLI webdav put "$WEBDAV_FILE" "$base/a/b/" "${w[@]}"
+    $CLI webdav put "$WEBDAV_FILE" "$base/a/b/" "${w[@]}"
+    webdav_expect_entry "$root" "$base/a/b" "webdav-e2e.txt"
+    webdav_expect_content "$root" "$base/a/b/webdav-e2e.txt"
+
+    # put with missing parent directories and an explicit filename
+    $CLI webdav put "$WEBDAV_FILE" "$base/x/y/renamed.txt" "${w[@]}"
+    webdav_expect_content "$root" "$base/x/y/renamed.txt"
+
+    # leading slash is relative to the root
+    $CLI webdav put "$WEBDAV_FILE" "/$base/lead/" "${w[@]}"
+    webdav_expect_content "$root" "$base/lead/webdav-e2e.txt"
+
+    # zip, remove the source, and restore it with unzip
+    $CLI webdav zip "$base/a" "${w[@]}"
+    webdav_expect_entry "$root" "$base" "a.zip"
+    $CLI webdav rm "$base/a" --force "${w[@]}"
+    webdav_expect_entry "$root" "$base" "a" absent
+    $CLI webdav unzip "$base/a.zip" "${w[@]}"
+    webdav_expect_content "$root" "$base/a/b/webdav-e2e.txt"
+
+    # cleanup
+    local parent
+    parent=$(dirname "$base")
+    [ "$parent" == "." ] && parent="/"
+    $CLI webdav rm "$base" --force "${w[@]}"
+    webdav_expect_entry "$root" "$parent" "$(basename "$base")" absent
+}
+
+WEBDAV_BASE="webdav-e2e-$(date +%s)"
+webdav_roundtrip impex "src/$WEBDAV_BASE"
+webdav_roundtrip cartridges "e2e-test-version/$WEBDAV_BASE"
+webdav_roundtrip static "$WEBDAV_BASE"
+rm -rf "$WEBDAV_TMP"
+
+echo "SUCCESS: WebDAV operations verified"
+echo ""
+
+################################################################################
+# 5. Import Site Data
+################################################################################
+echo "Step 5: Importing site data..."
 
 $CLI job import "$SITE_ARCHIVE_PATH" \
     --server "$SERVER" \
@@ -134,10 +269,10 @@ echo "SUCCESS: Site data imported"
 echo ""
 
 ################################################################################
-# 5. Run Search Index Job
+# 6. Run Search Index Job
 ################################################################################
 sleep 4
-echo "Step 5: Running search index job..."
+echo "Step 6: Running search index job..."
 
 $CLI job run sfcc-search-index-product-full-update \
     --server "$SERVER" \
@@ -149,24 +284,20 @@ echo "SUCCESS: Search index job completed"
 echo ""
 
 ################################################################################
-# 6. Create SLAS Client
+# 7. Create SLAS Client
 ################################################################################
-echo "Step 6: Creating SLAS client..."
-
-# Construct tenant ID from realm and instance number
-TENANT_ID="${TEST_REALM}_${INSTANCE_NUM}"
+echo "Step 7: Creating SLAS client..."
 
 # Let the CLI auto-generate a UUID4 client ID
 SLAS_CREATE_RESULT=$($CLI slas client create \
     --tenant-id "$TENANT_ID" \
     --channels "$SITE_ID" \
     --default-scopes \
-    --log-level trace \
     --redirect-uri "http://localhost:3000/callback" \
     --json)
 
 echo "DEBUG: SLAS create result:"
-echo "$SLAS_CREATE_RESULT" | jq .
+echo "$SLAS_CREATE_RESULT" | jq 'del(.secret)'
 
 # Extract client ID and secret from response
 SLAS_CLIENT_ID=$(echo "$SLAS_CREATE_RESULT" | jq -r '.clientId')
@@ -174,7 +305,7 @@ SLAS_SECRET=$(echo "$SLAS_CREATE_RESULT" | jq -r '.secret')
 
 if [ -z "$SLAS_SECRET" ] || [ "$SLAS_SECRET" == "null" ]; then
     echo "FAILED: Could not create SLAS client"
-    echo "$SLAS_CREATE_RESULT"
+    echo "$SLAS_CREATE_RESULT" | jq 'del(.secret)'
     exit 1
 fi
 
@@ -184,9 +315,9 @@ echo "  Tenant ID: $TENANT_ID"
 echo ""
 
 ################################################################################
-# 7. Test SLAS Guest Login
+# 8. Test SLAS Guest Login
 ################################################################################
-echo "Step 7: Testing SLAS guest login..."
+echo "Step 8: Testing SLAS guest login..."
 
 # Wait a moment for SLAS client to be ready and search index to be available
 sleep 10
@@ -198,25 +329,22 @@ SLAS_BASE="https://${SFCC_SHORTCODE}.api.commercecloud.salesforce.com"
 echo "  ORG ID: $ORG_ID"
 echo "  SLAS Base: $SLAS_BASE"
 
-# Build curl extra headers args if set (newline-separated, e.g. "X-Header: value")
-CURL_HEADER_ARGS=()
-if [ -n "$CURL_EXTRA_HEADERS" ]; then
-    while IFS= read -r header; do
-        [ -n "$header" ] && CURL_HEADER_ARGS+=(-H "$header")
-    done <<< "$CURL_EXTRA_HEADERS"
+# Exercise the CLI's private-client guest flow; keep the secret out of process arguments.
+if ! TOKEN_RESPONSE=$(SFCC_SLAS_CLIENT_SECRET="$SLAS_SECRET" "$CLI" slas token \
+    --slas-client-id "$SLAS_CLIENT_ID" \
+    --tenant-id "$TENANT_ID" \
+    --short-code "$SFCC_SHORTCODE" \
+    --site-id "$SITE_ID" \
+    --json); then
+    echo "FAILED: Could not obtain shopper token"
+    exit 1
 fi
 
-# Get shopper token via client credentials (guest login)
-TOKEN_RESPONSE=$(curl -s "${SLAS_BASE}/shopper/auth/v1/organizations/${ORG_ID}/oauth2/token" \
-    "${CURL_HEADER_ARGS[@]}" \
-    -u "${SLAS_CLIENT_ID}:${SLAS_SECRET}" \
-    -d "grant_type=client_credentials&channel_id=${SITE_ID}")
-
-SHOPPER_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
-
-if [ -z "$SHOPPER_TOKEN" ] || [ "$SHOPPER_TOKEN" == "null" ]; then
-    echo "FAILED: Could not obtain shopper token"
-    echo "$TOKEN_RESPONSE" | jq
+if ! SHOPPER_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -er \
+    --arg clientId "$SLAS_CLIENT_ID" --arg siteId "$SITE_ID" \
+    'select(.isGuest == true and .clientId == $clientId and .siteId == $siteId)
+     | .response.accessToken | select(type == "string" and length > 0)'); then
+    echo "FAILED: SLAS token command did not return a guest token for the requested client and site"
     exit 1
 fi
 
@@ -224,21 +352,27 @@ echo "SUCCESS: Obtained shopper access token"
 echo ""
 
 ################################################################################
-# 8. Test Shopper Search
+# 9. Test Shopper Search
 ################################################################################
-echo "Step 8: Testing shopper product search..."
+echo "Step 9: Testing shopper product search..."
 
-SEARCH_RESPONSE=$(curl -s "${SLAS_BASE}/search/shopper-search/v1/organizations/${ORG_ID}/product-search?siteId=${SITE_ID}&limit=5&q=sample" \
+# Extra curl headers apply only to this direct shopper-search request.
+CURL_HEADER_ARGS=()
+if [ -n "$CURL_EXTRA_HEADERS" ]; then
+    while IFS= read -r header; do
+        [ -n "$header" ] && CURL_HEADER_ARGS+=(-H "$header")
+    done <<< "$CURL_EXTRA_HEADERS"
+fi
+
+SEARCH_RESPONSE=$(curl_with_diagnostics "${SLAS_BASE}/search/shopper-search/v1/organizations/${ORG_ID}/product-search?siteId=${SITE_ID}&limit=5&q=sample" \
     "${CURL_HEADER_ARGS[@]}" \
     -H "Authorization: Bearer ${SHOPPER_TOKEN}")
 
-# Check if we got a valid response (should have a 'hits' array or 'total' field)
-SEARCH_TOTAL=$(echo "$SEARCH_RESPONSE" | jq -r '.total // .hits | length // 0')
-
-if [ "$SEARCH_TOTAL" == "null" ]; then
-    echo "WARNING: Search returned unexpected response format"
+# Require the current Shopper Search response shape; zero results are valid.
+if ! SEARCH_TOTAL=$(echo "$SEARCH_RESPONSE" | jq -er '.total | select(type == "number" and . >= 0)'); then
+    echo "FAILED: Search returned unexpected response format"
     echo "$SEARCH_RESPONSE" | jq
-    # Don't fail - the product might not be indexed yet
+    exit 1
 else
     echo "SUCCESS: Shopper search returned results"
     echo "  Total results: $SEARCH_TOTAL"
@@ -246,9 +380,9 @@ fi
 echo ""
 
 ################################################################################
-# 9. Delete SLAS Client
+# 10. Delete SLAS Client
 ################################################################################
-echo "Step 9: Deleting SLAS client..."
+echo "Step 10: Deleting SLAS client..."
 
 $CLI slas client delete "$SLAS_CLIENT_ID" --tenant-id "$TENANT_ID"
 
@@ -259,16 +393,19 @@ echo "SUCCESS: SLAS client deleted"
 echo ""
 
 ################################################################################
-# 10. Delete Sandbox
+# 11. Delete Sandbox
 ################################################################################
-echo "Step 10: Deleting sandbox..."
+echo "Step 11: Deleting both sandboxes..."
 
 $CLI ods delete "$ODS_ID" --force
 
 # Clear ODS_ID so cleanup doesn't try to delete again
 ODS_ID=""
 
-echo "SUCCESS: Sandbox deleted"
+$CLI ods delete "$FIRST_ODS_ID" --force
+FIRST_ODS_ID=""
+
+echo "SUCCESS: Both sandboxes deleted"
 echo ""
 
 ################################################################################

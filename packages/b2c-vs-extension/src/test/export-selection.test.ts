@@ -27,6 +27,28 @@ suite('ExportSelection', () => {
     });
   });
 
+  test('storefront selection allows exactly one storefront', () => {
+    const sel = new ExportSelection();
+    sel.toggleSimple('storefronts', 'first-storefront', true);
+    sel.toggleSimple('storefronts', 'second-storefront', true);
+
+    assert.strictEqual(sel.isSimpleChecked('storefronts', 'first-storefront'), false);
+    assert.strictEqual(sel.isSimpleChecked('storefronts', 'second-storefront'), true);
+    assert.deepStrictEqual(sel.toDataUnits(), {storefronts: {'second-storefront': true}});
+  });
+
+  test('new platform export units are present in site and global flag selections', () => {
+    const sel = new ExportSelection();
+    sel.toggleSiteFlag('RefArch', 'channels', true);
+    sel.toggleSiteFlag('RefArch', 'point_of_sale_channels', true);
+    sel.toggleGlobalFlag('event_routing', true);
+
+    assert.deepStrictEqual(sel.toDataUnits(), {
+      sites: {RefArch: {channels: true, point_of_sale_channels: true}},
+      global_data: {event_routing: true},
+    });
+  });
+
   test('unchecking a simple id removes it; emptying a category omits the group', () => {
     const sel = new ExportSelection();
     sel.toggleSimple('catalogs', 'c1', true);

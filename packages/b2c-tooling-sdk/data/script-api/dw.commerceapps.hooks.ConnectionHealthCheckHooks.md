@@ -39,8 +39,8 @@ A hook entry has a 'name' and a 'script' property.
 
 
 
-The hook is registered **per app domain** using the {@code sfcc.app.<domain>.checkConnectionHealth}
-convention &mdash; for example, {@code sfcc.app.tax.checkConnectionHealth} for a tax app.
+The hook is registered **per app domain** using the `sfcc.app.&lt;domain&gt;.checkConnectionHealth`
+convention &mdash; for example, `sfcc.app.tax.checkConnectionHealth` for a tax app.
 
 
 **IMPORTANT:** This hook should only be implemented and registered by Commerce Apps (applications
@@ -69,17 +69,17 @@ This class does not have a constructor, so you cannot create it directly.
       timeout, so implementations should be lightweight and time-bounded.
       
       
-      The Business Manager connection-health endpoint that invokes this hook reports {@code unknown} when the hook
-      times out, throws, or returns {@code null}. {@code dw.system.HookMgr#callHook} itself rethrows any exception
-      raised by the hook script &mdash; the {@code unknown} translation is applied by the BM endpoint dispatcher, not
-      by {@code HookMgr}.
+      The Business Manager connection-health endpoint that invokes this hook reports `unknown` when the hook
+      times out, throws, or returns `null`. `dw.system.HookMgr\#callHook` itself rethrows any exception
+      raised by the hook script &mdash; the `unknown` translation is applied by the BM endpoint dispatcher, not
+      by `HookMgr`.
       
       
-      The BM endpoint interprets the returned [Status](dw.system.Status.md) as follows: {@code Status.OK} &rarr; healthy;
-      {@code Status.ERROR} with code [DEGRADED](dw.commerceapps.ConnectionHealthStatusCodes.md#status_code_degraded)
-      &rarr; degraded; {@code Status.ERROR} with code
+      The BM endpoint interprets the returned [Status](dw.system.Status.md) as follows: `Status.OK` &rarr; healthy;
+      `Status.ERROR` with code [DEGRADED](dw.commerceapps.ConnectionHealthStatusCodes.md#status_code_degraded)
+      &rarr; degraded; `Status.ERROR` with code
       [UNHEALTHY](dw.commerceapps.ConnectionHealthStatusCodes.md#status_code_unhealthy) (or any other ERROR code)
-      &rarr; unhealthy. A {@code null} return is treated as {@code unknown}.
+      &rarr; unhealthy. A `null` return is treated as `unknown`.
       
       
       Use [Status.addDetail(String, Object)](dw.system.Status.md#adddetailstring-object) with keys
@@ -90,9 +90,9 @@ This class does not have a constructor, so you cannot create it directly.
       
       
       Both detail values are surfaced verbatim in Business Manager. To localize them for the BM admin's language, look
-      up the strings via {@code dw.web.Resource} from the cartridge's resource bundles (e.g. files under
-      {@code cartridge/templates/resources/}) instead of hard-coding English. The BM endpoint dispatcher invokes the
-      hook in the BM session locale, so {@code Resource.msg(...)} resolves against the admin's language.
+      up the strings via `dw.web.Resource` from the cartridge's resource bundles (e.g. files under
+      `cartridge/templates/resources/`) instead of hard-coding English. The BM endpoint dispatcher invokes the
+      hook in the BM session locale, so `Resource.msg(...)` resolves against the admin's language.
       
       
       ```
@@ -110,7 +110,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 
     **Returns:**
-    - the connection health status. A {@code null} return is treated as {@code unknown} by the BM endpoint.
+    - the connection health status. A `null` return is treated as `unknown` by the BM endpoint.
 
 
 ---

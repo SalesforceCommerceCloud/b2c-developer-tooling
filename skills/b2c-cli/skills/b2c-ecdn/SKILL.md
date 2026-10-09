@@ -7,13 +7,15 @@ description: Manage eCDN zones, security settings, and edge configuration for B2
 
 Use the `b2c` CLI plugin to manage eCDN (embedded Content Delivery Network) zones, certificates, security settings, and more.
 
+To investigate bot or abusive traffic before changing rules (which sources matter, who runs them, which rules cover them), use the `b2c-ops:b2c-edge-traffic-triage` runbook (MCP: `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md`).
+
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli ecdn zones list`).
 
 ## Configuration
 
 Values like `tenantId`, `clientId`, and `clientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance / configuration plugins. Examples below show minimal usage; **add flags only to override configured values** — passing `--client-id`/`--client-secret`/`--tenant-id` is usually unnecessary. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Prerequisites
 
@@ -60,10 +62,10 @@ b2c ecdn cache purge --zone my-zone --tag product-123 --tag category-456
 b2c ecdn certificates list --zone my-zone
 
 # add a new certificate
-b2c ecdn certificates add --zone my-zone --hostname www.example.com --certificate-file ./cert.pem --private-key-file ./key.pem
+b2c ecdn certificates add --zone my-zone --hostname www.example.com --type custom --certificate-file ./cert.pem --private-key-file ./key.pem
 
 # validate a custom hostname
-b2c ecdn certificates validate --zone my-zone --certificate-id abc123
+b2c ecdn certificates validate --zone my-zone --custom-hostname-id abc123
 ```
 
 ### Manage Rate Limiting Rules
@@ -92,7 +94,7 @@ b2c ecdn rate-limit delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701a
 b2c ecdn security get --zone my-zone
 
 # update security settings
-b2c ecdn security update --zone my-zone --ssl-mode full --min-tls-version 1.2 --always-use-https
+b2c ecdn security update --zone my-zone --security-level medium --always-use-https --tls13
 ```
 
 ### Speed Settings
@@ -102,7 +104,7 @@ b2c ecdn security update --zone my-zone --ssl-mode full --min-tls-version 1.2 --
 b2c ecdn speed get --zone my-zone
 
 # update speed settings
-b2c ecdn speed update --zone my-zone --browser-cache-ttl 14400 --auto-minify-html --auto-minify-css
+b2c ecdn speed update --zone my-zone --brotli on --http3 on --webp on
 ```
 
 ## Additional Topics
@@ -125,9 +127,9 @@ The `--zone` flag accepts either:
 
 ### OAuth Scopes
 
-| Operation | Required Scope |
-|-----------|---------------|
-| Read operations | `sfcc.cdn-zones` |
+| Operation        | Required Scope      |
+| ---------------- | ------------------- |
+| Read operations  | `sfcc.cdn-zones`    |
 | Write operations | `sfcc.cdn-zones.rw` |
 
 ### More Commands

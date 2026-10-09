@@ -39,13 +39,32 @@ describe('webdav mkdir', () => {
 
     expect(buildPathStub.calledOnceWithExactly('src/instance/my-folder')).to.equal(true);
 
-    expect(mkcolStub.callCount).to.equal(4);
-    expect(mkcolStub.getCall(0).args[0]).to.equal('Impex');
-    expect(mkcolStub.getCall(1).args[0]).to.equal('Impex/src');
-    expect(mkcolStub.getCall(2).args[0]).to.equal('Impex/src/instance');
-    expect(mkcolStub.getCall(3).args[0]).to.equal('Impex/src/instance/my-folder');
+    // Root itself is skipped
+    expect(mkcolStub.callCount).to.equal(3);
+    expect(mkcolStub.getCall(0).args[0]).to.equal('Impex/src');
+    expect(mkcolStub.getCall(1).args[0]).to.equal('Impex/src/instance');
+    expect(mkcolStub.getCall(2).args[0]).to.equal('Impex/src/instance/my-folder');
 
     expect(result.path).to.equal('Impex/src/instance/my-folder');
     expect(result.created).to.equal(true);
+  });
+
+  it('never sends MKCOL to the WebDAV root (e.g. Dynamic rejects it with 403)', async () => {
+    const command: any = await createCommand({root: 'dynamic'}, {path: 'RefArch/templates'});
+
+    sinon.stub(command, 'ensureWebDavAuth').returns(void 0);
+    sinon.stub(command, 'log').returns(void 0);
+
+    const mkcolStub = sinon.stub().resolves(void 0);
+    sinon.stub(command, 'instance').get(() => ({
+      webdav: {
+        mkcol: mkcolStub,
+      },
+    }));
+
+    const result = await command.run();
+
+    expect(mkcolStub.args.map((a) => a[0])).to.deep.equal(['Dynamic/RefArch', 'Dynamic/RefArch/templates']);
+    expect(result.path).to.equal('Dynamic/RefArch/templates');
   });
 });

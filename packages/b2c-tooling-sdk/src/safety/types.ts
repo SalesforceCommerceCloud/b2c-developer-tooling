@@ -24,7 +24,7 @@ export type SafetyAction = 'allow' | 'block' | 'confirm';
  *
  * Rules support three matcher types, all using glob patterns (via minimatch):
  * - `method` + `path`: Matches HTTP requests by method and URL path
- * - `job`: Matches job execution by job ID (extracted from OCAPI URLs)
+ * - `job`: Matches job execution by job ID (extracted from SCAPI or OCAPI URLs)
  * - `command`: Matches CLI commands by oclif command ID (e.g., "sandbox:delete")
  *
  * @example
@@ -39,7 +39,7 @@ export interface SafetyRule {
   method?: string;
   /** URL path glob pattern (e.g., "/jobs/&#42;/executions"). Matched with minimatch. */
   path?: string;
-  /** Job ID glob pattern. Matches OCAPI job execution URLs by job ID. */
+  /** Job ID glob pattern. Matches SCAPI and OCAPI job execution URLs by job ID. */
   job?: string;
   /** CLI command ID glob pattern (e.g., "sandbox:*", "ecdn:cache:purge"). */
   command?: string;

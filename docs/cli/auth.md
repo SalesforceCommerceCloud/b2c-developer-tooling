@@ -10,7 +10,7 @@ Commands for authentication and token management.
 
 The CLI supports **stateful auth** (session stored on disk) in addition to **stateless auth** (client credentials or one-off browser login):
 
-- **Stateful (browser)**: After you run `b2c auth login`, your access token *and* a long-lived refresh token are stored on disk in the CLI data directory. Subsequent commands silently refresh the access token without re-prompting. If both tokens are missing/expired, the CLI falls back to stateless auth.
+- **Stateful (browser)**: After you run `b2c auth login`, your access token _and_ a long-lived refresh token are stored on disk in the CLI data directory. Subsequent commands silently refresh the access token without re-prompting. If both tokens are missing/expired, the CLI falls back to stateless auth.
 - **Stateful (client credentials)**: Use `b2c auth client` to authenticate with client ID and secret (or user/password) for non-interactive/automation use. Only the access token is persisted — the client secret is never stored. When the access token expires, re-run `b2c auth client` with the same credentials. There is no automatic refresh.
 - **Stateless**: You provide `--client-id` (and optionally `--client-secret`) per run or via environment/config; no session is persisted.
 
@@ -45,11 +45,11 @@ After a successful login, subsequent commands reuse and refresh the stored token
 
 ### Flags
 
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname |
-| `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (can be repeated) |
-| `--auth-methods` | `SFCC_AUTH_METHODS` | Browser-based flow to use: `user` (default — Authorization Code + PKCE) or `implicit` (deprecated) |
+| Flag                     | Environment Variable        | Description                                                                                        |
+| ------------------------ | --------------------------- | -------------------------------------------------------------------------------------------------- |
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname                                                                           |
+| `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                                                          |
+| `--auth-methods`         | `SFCC_AUTH_METHODS`         | Browser-based flow to use: `user` (default — Authorization Code + PKCE) or `implicit` (deprecated) |
 
 ### Choosing a flow
 
@@ -69,7 +69,7 @@ OAuth 2.1 deprecates the implicit flow for public clients. Configure your Accoun
 
 To use the browser-based `user` flow with your own client, create a **public client** in Account Manager (not a confidential client — public clients have no secret, and selecting that type configures the Authorization Code + PKCE grant automatically). A client's type can't be changed after creation, so an existing implicit-only client must be replaced by a newly-created public client, not converted. Add the CLI's redirect URI to the client's allowed redirect URIs — by default `http://localhost:8080` (override the port with `SFCC_OAUTH_LOCAL_PORT` or the whole URI with `SFCC_REDIRECT_URI`).
 
-If a client is still registered as implicit-only, the `user` flow automatically falls back to the implicit flow and logs a deprecation warning. Create a new public client and use it to silence the warning, or set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable the fallback.
+If a client is still registered as implicit-only, the `user` flow automatically falls back to the implicit flow and logs a deprecation warning. After a successful fallback, later sign-ins use the compatible flow directly. Create a new public client and use it to silence the warning, or set `SFCC_DISABLE_PKCE_FALLBACK=1` to force PKCE and surface the failure directly.
 
 ## b2c auth logout
 
@@ -100,19 +100,20 @@ b2c auth client --client-id <id> --client-secret <secret> --grant-type client_cr
 
 ### Flags
 
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--client-id` | `SFCC_CLIENT_ID` | Client ID (required) |
-| `--client-secret` | `SFCC_CLIENT_SECRET` | Client secret (required) |
-| `--grant-type` / `-t` | | Force grant type: `client_credentials` or `password` |
-| `--user` | `SFCC_OAUTH_USER_NAME` | Username for password grant |
-| `--user-password` | `SFCC_OAUTH_USER_PASSWORD` | Password for password grant |
-| `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request |
-| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname |
+| Flag                     | Environment Variable        | Description                                          |
+| ------------------------ | --------------------------- | ---------------------------------------------------- |
+| `--client-id`            | `SFCC_CLIENT_ID`            | Client ID (required)                                 |
+| `--client-secret`        | `SFCC_CLIENT_SECRET`        | Client secret (required)                             |
+| `--grant-type` / `-t`    |                             | Force grant type: `client_credentials` or `password` |
+| `--user`                 | `SFCC_OAUTH_USER_NAME`      | Username for password grant                          |
+| `--user-password`        | `SFCC_OAUTH_USER_PASSWORD`  | Password for password grant                          |
+| `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request                              |
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname                             |
 
 ### Grant type auto-detection
 
 If `--grant-type` is not specified:
+
 - **client_credentials** is used when only `--client-id` and `--client-secret` are provided
 - **password** is used when `--user` and `--user-password` are also provided
 
@@ -176,19 +177,20 @@ b2c auth token
 
 ### Flags
 
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--client-id` | `SFCC_CLIENT_ID` | Client ID for OAuth |
-| `--client-secret` | `SFCC_CLIENT_SECRET` | Client Secret for OAuth |
-| `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (can be repeated) |
-| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com) |
-| `--short-code` | `SFCC_SHORTCODE` | SCAPI short code |
-| `--tenant-id` | `SFCC_TENANT_ID` | Organization/tenant ID |
-| `--auth-methods` | `SFCC_AUTH_METHODS` | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, user, implicit, basic, api-key |
-| `--user-auth` | | Use browser-based user authentication (Authorization Code + PKCE flow) |
-| `--jwt-cert` | `SFCC_JWT_CERT` | Path to JWT certificate file (cert.pem) for JWT Bearer authentication |
-| `--jwt-key` | `SFCC_JWT_KEY` | Path to JWT private key file (key.pem) for JWT Bearer authentication |
-| `--jwt-passphrase` | `SFCC_JWT_PASSPHRASE` | Passphrase for encrypted JWT private key |
+| Flag                     | Environment Variable        | Description                                                                                                       |
+| ------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `--client-id`            | `SFCC_CLIENT_ID`            | Client ID for OAuth                                                                                               |
+| `--client-secret`        | `SFCC_CLIENT_SECRET`        | Client Secret for OAuth                                                                                           |
+| `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                                                                         |
+| `--client-auth-method`   | `SFCC_CLIENT_AUTH_METHOD`   | How client credentials are sent: `basic` (default), `basic-unencoded`, or `body`. See [client authentication method](/guide/configuration#client-authentication-method) |
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com)                                                        |
+| `--short-code`           | `SFCC_SHORTCODE`            | SCAPI short code                                                                                                  |
+| `--tenant-id`            | `SFCC_TENANT_ID`            | Organization/tenant ID                                                                                            |
+| `--auth-methods`         | `SFCC_AUTH_METHODS`         | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, user, implicit, basic, api-key |
+| `--user-auth`            |                             | Use browser-based user authentication (Authorization Code + PKCE flow)                                            |
+| `--jwt-cert`             | `SFCC_JWT_CERT`             | Path to JWT certificate file (cert.pem) for JWT Bearer authentication                                             |
+| `--jwt-key`              | `SFCC_JWT_KEY`              | Path to JWT private key file (key.pem) for JWT Bearer authentication                                              |
+| `--jwt-passphrase`       | `SFCC_JWT_PASSPHRASE`       | Passphrase for encrypted JWT private key                                                                          |
 
 ### Examples
 
@@ -219,7 +221,7 @@ eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 With `--json`:
 
 ```json
-{"token":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...","expires_in":1799}
+{"token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...", "expires_in": 1799}
 ```
 
 ### Use Cases
@@ -257,13 +259,15 @@ For complete authentication setup instructions, see the [Authentication Setup Gu
 
 ### Quick Reference
 
-| Operation | Auth Required |
-|-----------|--------------|
-| [Code](/cli/code) deploy/watch | WebDAV credentials |
-| [Code](/cli/code) list/activate/delete, [Jobs](/cli/jobs), [Sites](/cli/sites) | OAuth + OCAPI configuration |
-| SCAPI commands ([eCDN](/cli/ecdn), [schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis)) | OAuth + SCAPI scopes |
-| [Sandbox](/cli/sandbox), [SLAS](/cli/slas) | OAuth + appropriate roles |
-| [MRT](/cli/mrt) | API Key |
+| Operation                                                                                          | Auth Required                                                                                           |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [Code](/cli/code) deploy/watch                                                                     | WebDAV credentials                                                                                      |
+| [Code](/cli/code) list/activate/delete, [Jobs](/cli/jobs), [BM](/cli/bm) users/roles               | OAuth + SCAPI scopes (OCAPI fallback; OCAPI is [deprecated](/guide/authentication#ocapi-configuration)) |
+| [Sites](/cli/sites) list/cartridge reads                                                           | OAuth + SCAPI scopes (`sfcc.sites`; OCAPI fallback)                                                     |
+| [Sites](/cli/sites) cartridge-path writes                                                          | OAuth + `sfcc.sites.rw` (OCAPI / site-archive fallback)                                                 |
+| SCAPI commands ([eCDN](/cli/ecdn), [schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis)) | System OAuth (client credentials/JWT) + SCAPI scopes; browser PKCE/implicit is rejected                 |
+| [Sandbox](/cli/sandbox), [SLAS](/cli/slas)                                                         | OAuth + appropriate roles                                                                               |
+| [MRT](/cli/mrt)                                                                                    | API Key                                                                                                 |
 
 See [Configuration](/guide/configuration) for setting up credentials via environment variables or config files.
 

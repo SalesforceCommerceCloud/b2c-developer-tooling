@@ -9,11 +9,23 @@ Use the `b2c` CLI to deploy, download, and manage code versions on Salesforce B2
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli code deploy`).
 
+## MCP equivalent
+
+Prefer `cartridge_deploy` for cartridge upload. Set `codeVersion` explicitly when
+needed; `files` selects up to 100 local files (64 MiB total), relative to
+`projectDirectory`, within discovered cartridges. Omit `files` for whole cartridges.
+Matching remote files are overwritten; selected-file mode preserves other files.
+`reload` may activate the target; keep upload success/warnings if reload fails.
+Code mode `builtin/code-version-inspect` reads active/rollback and activation metadata;
+`builtin/site-cartridge-inspect` reads site cartridge order and checks expected names.
+SCAPI `dx/scripts/v1` provides version management; `site/sites/v1` manages site paths.
+Use the CLI for watches, recursive downloads, and extra deployment flags.
+
 ## Configuration & Authentication
 
-The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
+The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
-Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Examples
 
@@ -112,11 +124,19 @@ b2c code activate --reload
 b2c code delete <version-name>
 ```
 
+### API Backend
+
+`code list`, `code activate`, `code delete`, and the active-version discovery / activate / reload steps in `code deploy` run over SCAPI. Configure `shortCode`, `tenantId`, and the `sfcc.scripts` / `sfcc.scripts.rw` scopes and they work out of the box. Read scope (`sfcc.scripts`) covers `code list` / discovery; write scope (`sfcc.scripts.rw`) covers activate, delete, reload, and the `--activate` / `--reload` flags on deploy.
+
+`code deploy` (file upload itself), `code download`, and `code watch` always use WebDAV — only the surrounding code-version operations use SCAPI.
+
+OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back to the OCAPI Data API on safe SCAPI capability/auth/request rejections; force a backend with `--api-backend scapi|ocapi` if needed. The `--reload` flag forces a code cache reload as activate(alternate) + activate(target), using whichever backend the command selected — so it works on OCAPI-disabled instances when SCAPI is configured.
+
 ### More Commands
 
 See `b2c code --help` for a full list of available commands and options in the `code` topic.
 
-> **Note:** `b2c code deploy` uploads cartridge *code* to an instance. To manage which cartridges are *active on a site* (the cartridge path), see the `b2c-cli:b2c-sites` skill for the `b2c sites cartridges` commands.
+> **Note:** `b2c code deploy` uploads cartridge _code_ to an instance. To manage which cartridges are _active on a site_ (the cartridge path), see the `b2c-cli:b2c-sites` skill for the `b2c sites cartridges` commands.
 
 ## Related Skills
 

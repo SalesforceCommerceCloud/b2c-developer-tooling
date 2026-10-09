@@ -45,6 +45,11 @@ const retriedRequests = new WeakSet<Request>();
 // Store cloned request bodies for potential retry (body can only be read once)
 const requestBodies = new WeakMap<Request, ArrayBuffer | null>();
 
+// Remembers the SCAPI scope mode ('read' or 'write') a request was authorized
+// with, so the 401 retry path can re-authorize at the same tier instead of
+// hard-coding write.
+const requestScopeModes = new WeakMap<Request, 'read' | 'write'>();
+
 /**
  * Creates authentication middleware for openapi-fetch.
  *
@@ -129,6 +134,119 @@ export function createAuthMiddleware(auth: AuthStrategy): Middleware {
 
         logger.debug({status: retryResponse.status}, `[AuthMiddleware] Retry response: ${retryResponse.status}`);
 
+        return retryResponse;
+      }
+
+      return response;
+    },
+  };
+}
+
+/**
+ * Scope cascade for a SCAPI domain. The auth middleware picks `read` or
+ * `write` based on the per-operation `scopeMode` hint and walks the chosen
+ * cascade through the auth strategy until one candidate survives at AM.
+ *
+ * Each candidate is an array of scopes; the auth strategy adds any base
+ * scopes (e.g. tenant scope) automatically.
+ */
+export interface ScopeCascade {
+  /** Scope candidates to try for read operations, in order of preference. */
+  read: string[][];
+  /** Scope candidates to try for write operations, in order of preference. */
+  write: string[][];
+}
+
+/**
+ * Internal request header read by {@link createScapiAuthMiddleware} to choose
+ * a cascade tier. Operations attach `'read'` or `'write'`; the header is
+ * stripped before the request leaves the middleware.
+ */
+export const SCOPE_MODE_HEADER = 'x-b2c-scope-mode';
+
+/**
+ * Auth middleware for SCAPI clients with a configured {@link ScopeCascade}.
+ *
+ * Reads the {@link SCOPE_MODE_HEADER} from the request, picks the matching
+ * cascade, and asks the auth strategy to resolve it (cache-first, then AM
+ * with `invalid_scope` fallback). Strips the header before the request is
+ * sent.
+ *
+ * Falls back to `getAuthorizationHeader()` when:
+ *   - the strategy doesn't implement `getAccessTokenForCascade` (e.g.
+ *     stateful sessions, basic auth), or
+ *   - the request didn't supply a `scopeMode` header.
+ *
+ * 401 retry behavior matches {@link createAuthMiddleware}: on a 401 after a
+ * prior success, invalidate the token and retry once.
+ */
+export function createScapiAuthMiddleware(auth: AuthStrategy, cascade: ScopeCascade): Middleware {
+  const logger = getLogger();
+  let hasHadSuccess = false;
+
+  async function authorize(request: Request): Promise<void> {
+    const mode = request.headers.get(SCOPE_MODE_HEADER) as 'read' | 'write' | null;
+    request.headers.delete(SCOPE_MODE_HEADER);
+
+    if (mode && auth.getAccessTokenForCascade) {
+      requestScopeModes.set(request, mode);
+      const candidates = cascade[mode];
+      const token = await auth.getAccessTokenForCascade(candidates);
+      request.headers.set('Authorization', `Bearer ${token}`);
+      return;
+    }
+
+    if (auth.getAuthorizationHeader) {
+      request.headers.set('Authorization', await auth.getAuthorizationHeader());
+    }
+  }
+
+  return {
+    async onRequest({request}) {
+      await authorize(request);
+
+      // Clone body for potential 401 retry (body is single-use).
+      if (request.body && auth.invalidateToken) {
+        const cloned = request.clone();
+        const bodyBuffer = await cloned.arrayBuffer();
+        requestBodies.set(request, bodyBuffer);
+      }
+
+      return request;
+    },
+
+    async onResponse({request, response}) {
+      if (response.status !== 401) {
+        hasHadSuccess = true;
+      }
+
+      if (response.status === 401 && hasHadSuccess && !retriedRequests.has(request) && auth.invalidateToken) {
+        logger.debug('[ScapiAuthMiddleware] Received 401, invalidating token and retrying');
+        retriedRequests.add(request);
+        auth.invalidateToken();
+
+        const newHeaders = new Headers(request.headers);
+        // The original scope-mode header was stripped on the way in. Re-run
+        // the cascade at the same tier the original request used so a
+        // read-only request doesn't get retried as a write (which would fail
+        // for clients that only have the read scope).
+        const retryRequest = new Request(request.url, {
+          method: request.method,
+          headers: newHeaders,
+          body: requestBodies.get(request) ?? undefined,
+          ...(requestBodies.get(request) ? {duplex: 'half'} : {}),
+        } as RequestInit);
+
+        if (auth.getAccessTokenForCascade) {
+          const originalMode = requestScopeModes.get(request) ?? 'write';
+          const token = await auth.getAccessTokenForCascade(cascade[originalMode]);
+          retryRequest.headers.set('Authorization', `Bearer ${token}`);
+        } else if (auth.getAuthorizationHeader) {
+          retryRequest.headers.set('Authorization', await auth.getAuthorizationHeader());
+        }
+
+        const retryResponse = await fetch(retryRequest);
+        logger.debug({status: retryResponse.status}, `[ScapiAuthMiddleware] Retry response: ${retryResponse.status}`);
         return retryResponse;
       }
 
@@ -409,6 +527,8 @@ export interface LoggingMiddlewareConfig {
    * @example ['data', 'password', 'secret']
    */
   maskBodyKeys?: string[];
+  /** Log headers and bodies at trace level. Disable for authentication endpoints. Defaults to true. */
+  logDetails?: boolean;
 }
 
 /**
@@ -450,8 +570,11 @@ function maskBody(body: unknown, keysToMask?: string[]): unknown {
  */
 export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfig): Middleware {
   // Support both string (prefix) and config object for backwards compatibility
-  const {prefix, maskBodyKeys} =
-    typeof config === 'string' ? {prefix: config, maskBodyKeys: undefined} : (config ?? {});
+  const {
+    prefix,
+    maskBodyKeys,
+    logDetails = true,
+  } = typeof config === 'string' ? {prefix: config, maskBodyKeys: undefined} : (config ?? {});
 
   const reqTag = prefix ? `[${prefix} REQ]` : '';
   const respTag = prefix ? `[${prefix} RESP]` : '';
@@ -463,15 +586,27 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
 
       logger.debug({method: request.method, url}, `${reqTag} ${request.method} ${url}`);
 
-      // Read body from the request (already serialized by openapi-fetch)
+      (request as Request & {_startTime?: number})._startTime = Date.now();
+      if (!logDetails) return request;
+
+      // Read body from the request (already serialized by openapi-fetch).
+      // Skip binary/multipart payloads: reading them would buffer the entire
+      // (potentially large) body into memory on every request, and the raw
+      // bytes should never be logged. maskBodyKeys only covers JSON keys, so a
+      // multipart bundle upload would otherwise leak its archive at trace level.
       let body: unknown;
       if (request.body) {
-        const clonedRequest = request.clone();
-        const text = await clonedRequest.text();
-        try {
-          body = JSON.parse(text);
-        } catch {
-          body = text;
+        const contentType = request.headers.get('content-type') ?? '';
+        if (contentType.startsWith('multipart/') || contentType.startsWith('application/octet-stream')) {
+          body = `[${contentType} body omitted]`;
+        } else {
+          const clonedRequest = request.clone();
+          const text = await clonedRequest.text();
+          try {
+            body = JSON.parse(text);
+          } catch {
+            body = text;
+          }
         }
       }
 
@@ -481,8 +616,6 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
         {method: request.method, url, headers: headersToObject(request.headers), body: maskedBody},
         `${reqTag} ${request.method} ${url} body`,
       );
-
-      (request as Request & {_startTime?: number})._startTime = Date.now();
 
       return request;
     },
@@ -494,9 +627,19 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
       const url = request.url;
 
       logger.debug(
-        {method: request.method, url, status: response.status, duration},
+        {
+          method: request.method,
+          url,
+          status: response.status,
+          duration,
+          ...(response.headers.has('sfdc_correlation_id')
+            ? {correlationId: response.headers.get('sfdc_correlation_id')}
+            : {}),
+        },
         `${respTag} ${request.method} ${url} ${response.status} ${duration}ms`,
       );
+
+      if (!logDetails) return response;
 
       const clonedResponse = response.clone();
       let responseBody: unknown;
@@ -636,11 +779,7 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
           newHeaders.set(key, value);
         }
         logger.trace({extraHeaders: config.headers}, '[ExtraParams] Adding extra headers to request');
-        modifiedRequest = new Request(modifiedRequest.url, {
-          method: modifiedRequest.method,
-          headers: newHeaders,
-          ...(canHaveBody && modifiedRequest.body ? {body: modifiedRequest.body, duplex: 'half'} : {}),
-        } as RequestInit);
+        modifiedRequest = new Request(modifiedRequest, {headers: newHeaders});
       }
 
       // Add extra query parameters
@@ -655,11 +794,8 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
           {extraQuery: config.query, originalUrl: modifiedRequest.url, newUrl: url.toString()},
           '[ExtraParams] Adding extra query params to URL',
         );
-        modifiedRequest = new Request(url.toString(), {
-          method: modifiedRequest.method,
-          headers: modifiedRequest.headers,
-          ...(canHaveBody && modifiedRequest.body ? {body: modifiedRequest.body, duplex: 'half'} : {}),
-        } as RequestInit);
+        // Preserve redirect mode and other fetch options when replacing the URL.
+        modifiedRequest = new Request(url, modifiedRequest);
       }
 
       // Merge extra body fields for JSON requests
@@ -675,9 +811,7 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
               {originalBody: parsedBody, extraBody: config.body, mergedBody},
               '[ExtraParams] Merging extra body fields into request',
             );
-            modifiedRequest = new Request(modifiedRequest.url, {
-              method: modifiedRequest.method,
-              headers: modifiedRequest.headers,
+            modifiedRequest = new Request(modifiedRequest, {
               body: JSON.stringify(mergedBody),
             });
           } catch {
@@ -688,8 +822,7 @@ export function createExtraParamsMiddleware(config: ExtraParamsConfig): Middlewa
           logger.trace({body: config.body}, '[ExtraParams] Creating new body with extra fields');
           const headers = new Headers(modifiedRequest.headers);
           headers.set('content-type', 'application/json');
-          modifiedRequest = new Request(modifiedRequest.url, {
-            method: modifiedRequest.method,
+          modifiedRequest = new Request(modifiedRequest, {
             headers,
             body: JSON.stringify(config.body),
           });

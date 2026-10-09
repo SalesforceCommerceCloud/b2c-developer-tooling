@@ -6,11 +6,15 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import {BaseCommand, ERROR_CODE, classifyError} from '@salesforce/b2c-tooling-sdk/cli';
+import {BaseCommand, ERROR_CODE, augmentDuplicateFlagError, classifyError} from '@salesforce/b2c-tooling-sdk/cli';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
+import {preloadEnvFile, takePreloadedEnvFile} from '@salesforce/b2c-tooling-sdk/config';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 // Create a concrete test command class
 class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
@@ -53,6 +57,14 @@ class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
   public testConfigDocsHint() {
     return this.configDocsHint();
   }
+
+  public getEnvFile() {
+    return this.envFile;
+  }
+
+  public testGetBaseConfigOptions() {
+    return this.getBaseConfigOptions();
+  }
 }
 
 describe('cli/base-command', () => {
@@ -70,6 +82,109 @@ describe('cli/base-command', () => {
     restoreConfig();
     // Clean up the global middleware registry between tests
     globalMiddlewareRegistry.clear();
+  });
+
+  describe('env file loading', () => {
+    let tempDir: string;
+
+    beforeEach(() => {
+      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'base-command-dotenv-'));
+      fs.writeFileSync(path.join(tempDir, '.env'), 'SFCC_CODE_VERSION=from-default\nSFCC_CONFIG=dw.custom.json\n');
+      fs.writeFileSync(path.join(tempDir, '.env.staging'), 'SFCC_CODE_VERSION=from-staging\nSFCC_DOTENV_FILE=.env\n');
+      delete process.env.SFCC_DOTENV_FILE;
+      delete process.env.SFCC_CONFIG;
+    });
+
+    afterEach(() => {
+      delete process.env.SFCC_CODE_VERSION;
+      fs.rmSync(tempDir, {recursive: true, force: true});
+    });
+
+    it('loads <project-directory>/.env by default', async () => {
+      const cmd = new TestBaseCommand(['--project-directory', tempDir], config);
+      stubParse(cmd);
+
+      await cmd.init();
+
+      expect(process.env.SFCC_CODE_VERSION).to.equal('from-default');
+      expect(process.env.SFCC_CONFIG).to.equal(path.join(tempDir, 'dw.custom.json'));
+      expect(cmd.getEnvFile()).to.deep.equal({
+        path: path.join(tempDir, '.env'),
+        keys: ['SFCC_CODE_VERSION', 'SFCC_CONFIG'],
+      });
+      expect(cmd.testGetBaseConfigOptions().envFile).to.equal(path.join(tempDir, '.env'));
+    });
+
+    it('replaces .env with --dotenv-file and ignores SFCC_DOTENV_FILE inside it', async () => {
+      const cmd = new TestBaseCommand([`--dotenv-file=${path.join(tempDir, '.env.staging')}`], config);
+      stubParse(cmd);
+
+      await cmd.init();
+
+      expect(process.env.SFCC_CODE_VERSION).to.equal('from-staging');
+      expect(cmd.getEnvFile()?.keys).to.deep.equal(['SFCC_CODE_VERSION']);
+    });
+
+    it('loads no env file for an empty --dotenv-file', async () => {
+      const cmd = new TestBaseCommand(['--project-directory', tempDir, '--dotenv-file', ''], config);
+      stubParse(cmd);
+
+      await cmd.init();
+
+      expect(process.env.SFCC_CODE_VERSION).to.be.undefined;
+      expect(cmd.getEnvFile()).to.be.undefined;
+    });
+
+    it('does not override shell variables', async () => {
+      process.env.SFCC_CODE_VERSION = 'from-shell';
+      const cmd = new TestBaseCommand(['--project-directory', tempDir], config);
+      stubParse(cmd);
+
+      await cmd.init();
+
+      expect(process.env.SFCC_CODE_VERSION).to.equal('from-shell');
+      expect(cmd.getEnvFile()?.keys).to.not.include('SFCC_CODE_VERSION');
+    });
+
+    it('keeps provenance for variables applied by the executable preload', async () => {
+      const argv = ['--project-directory', tempDir];
+      preloadEnvFile(argv);
+      const cmd = new TestBaseCommand(argv, config);
+      stubParse(cmd);
+
+      await cmd.init();
+
+      expect(process.env.SFCC_CODE_VERSION).to.equal('from-default');
+      expect(cmd.getEnvFile()?.keys).to.deep.equal(['SFCC_CODE_VERSION', 'SFCC_CONFIG']);
+      expect(takePreloadedEnvFile()).to.be.undefined;
+    });
+
+    it('defers a missing explicit env file from the preload to the command', () => {
+      expect(() => preloadEnvFile(['--dotenv-file', path.join(tempDir, 'missing.env')])).to.not.throw();
+      expect(takePreloadedEnvFile()).to.be.undefined;
+    });
+
+    it('fails for a missing explicit env file', async () => {
+      const cmd = new TestBaseCommand(['--dotenv-file', path.join(tempDir, 'missing.env')], config);
+      stubParse(cmd);
+
+      try {
+        await cmd.init();
+        expect.fail('Expected init to fail');
+      } catch (error) {
+        expect((error as Error).message).to.include('missing.env');
+      }
+    });
+
+    it('maps an empty SFCC_CONFIG to no dw.json', async () => {
+      process.env.SFCC_CONFIG = '';
+      const cmd = new TestBaseCommand([], config);
+      stubParse(cmd);
+
+      await cmd.init();
+
+      expect(cmd.testGetBaseConfigOptions().configPath).to.equal('');
+    });
   });
 
   describe('getExtraParams', () => {
@@ -520,6 +635,39 @@ describe('cli/base-command', () => {
       it('returns "runtime" for non-error values', () => {
         expect(classifyError(undefined)).to.equal('runtime');
         expect(classifyError('a string')).to.equal('runtime');
+      });
+    });
+
+    describe('augmentDuplicateFlagError()', () => {
+      const projectFlag = {char: 'p', aliases: ['storefront'], charAliases: ['s']};
+
+      it('lists every long and short form for an aliased flag', () => {
+        const out = augmentDuplicateFlagError('Flag --project can only be specified once', {project: projectFlag});
+        expect(out).to.equal(
+          'Flag --project can only be specified once (--project, --storefront, -p, -s all refer to the same flag)',
+        );
+      });
+
+      it('handles a flag with only charAliases (no long aliases)', () => {
+        const out = augmentDuplicateFlagError('Flag --env can only be specified once', {
+          env: {char: 'e', charAliases: ['t']},
+        });
+        expect(out).to.equal('Flag --env can only be specified once (--env, -e, -t all refer to the same flag)');
+      });
+
+      it('leaves the message unchanged when the flag has no aliases', () => {
+        const msg = 'Flag --name can only be specified once';
+        expect(augmentDuplicateFlagError(msg, {name: {char: 'n'}})).to.equal(msg);
+      });
+
+      it('leaves the message unchanged for an unrelated error', () => {
+        const msg = 'Some other error';
+        expect(augmentDuplicateFlagError(msg, {project: projectFlag})).to.equal(msg);
+      });
+
+      it('leaves the message unchanged when the flag is not found', () => {
+        const msg = 'Flag --unknown can only be specified once';
+        expect(augmentDuplicateFlagError(msg, {project: projectFlag})).to.equal(msg);
       });
     });
 

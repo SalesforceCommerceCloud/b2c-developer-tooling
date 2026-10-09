@@ -11,8 +11,9 @@ type GetResult = {data?: unknown; error?: unknown};
 type GetHandler = (path: string, init: {params?: {query?: {start?: number; count?: number}}}) => Promise<GetResult>;
 
 /** Builds a fake B2CInstance whose ocapi.GET is driven by per-path handlers. */
-function fakeInstance(handlers: Record<string, GetHandler>): never {
+function fakeInstance(handlers: Record<string, GetHandler>, apiBackend?: 'auto' | 'ocapi' | 'scapi'): never {
   return {
+    apiBackend,
     ocapi: {
       async GET(path: string, init: {params?: {query?: {start?: number; count?: number}}}) {
         const handler = handlers[path];
@@ -108,6 +109,24 @@ describe('operations/jobs/discover', () => {
       expect(result.catalogs).to.deep.equal(['c1']);
       expect(result.warnings).to.have.lengthOf(1);
       expect(result.warnings[0]).to.include('sites');
+    });
+
+    it('does not contact OCAPI for inventory enumeration in explicit SCAPI mode', async () => {
+      const inventoryGet = async () => {
+        throw new Error('OCAPI must not be called');
+      };
+      const instance = fakeInstance({'/inventory_lists': inventoryGet}, 'scapi');
+
+      const result = await discoverExportableUnits(instance);
+
+      expect(result.inventoryLists).to.deep.equal([]);
+      expect(result.warnings).to.satisfy((warnings: string[]) =>
+        warnings.some((warning) =>
+          warning.includes(
+            'SCAPI does not currently support inventory-list enumeration as of B2C Commerce release 26.8',
+          ),
+        ),
+      );
     });
   });
 });

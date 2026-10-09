@@ -205,6 +205,7 @@ suite('ISML: semantic definitions', () => {
     fs.mkdirSync(path.join(cartA, 'cartridge', 'scripts', 'util'), {recursive: true});
     fs.mkdirSync(path.join(cartB, 'cartridge', 'scripts', 'util'), {recursive: true});
     fs.mkdirSync(path.join(cartB, 'cartridge', 'scripts', 'shared'), {recursive: true});
+    fs.mkdirSync(path.join(cartB, 'cartridge', 'scripts', 'legacy'), {recursive: true});
 
     fs.writeFileSync(path.join(cartA, 'cartridge', 'templates', 'default', 'common', 'header.isml'), '<header/>');
     fs.writeFileSync(path.join(cartA, 'cartridge', 'templates', 'resources', 'messages.properties'), 'hello=Hello');
@@ -213,6 +214,7 @@ suite('ISML: semantic definitions', () => {
     fs.writeFileSync(path.join(cartA, 'cartridge', 'scripts', 'util', 'foo.js'), 'module.exports = {};');
     fs.writeFileSync(path.join(cartB, 'cartridge', 'scripts', 'util', 'foo.ts'), 'export {};');
     fs.writeFileSync(path.join(cartB, 'cartridge', 'scripts', 'shared', 'index.ts'), 'export {};');
+    fs.writeFileSync(path.join(cartB, 'cartridge', 'scripts', 'legacy', 'old.ds'), 'module.exports = {};');
   });
 
   teardown(() => {
@@ -335,6 +337,25 @@ suite('ISML: semantic definitions', () => {
     const target = findIsmlDefinitionTarget(text, offset, [cartA, cartB]);
     assert.ok(target);
     assert.strictEqual(target?.targetPath, path.join(cartA, 'cartridge', 'scripts', 'util', 'foo.js'));
+  });
+
+  test('resolves a require pointing at a legacy .ds script', () => {
+    const text = "<isscript>\nvar old = require('*/cartridge/scripts/legacy/old');\n</isscript>";
+    const offset = text.indexOf('legacy/old') + 2;
+    const target = findIsmlDefinitionTarget(text, offset, [cartA, cartB]);
+    assert.ok(target);
+    assert.strictEqual(target?.targetPath, path.join(cartB, 'cartridge', 'scripts', 'legacy', 'old.ds'));
+  });
+
+  test('offers legacy .ds scripts as require completions', () => {
+    const entries = getSemanticCompletionEntries(
+      {kind: 'require', partial: '*/cartridge/scripts/legacy/', startOffset: 0},
+      [cartA, cartB],
+      path.join(cartA, 'cartridge', 'templates', 'default', 'common', 'header.isml'),
+    );
+
+    const labels = entries.map((entry) => entry.label);
+    assert.ok(labels.includes('*/cartridge/scripts/legacy/old'));
   });
 
   test('resolves require current cartridge definition target', () => {

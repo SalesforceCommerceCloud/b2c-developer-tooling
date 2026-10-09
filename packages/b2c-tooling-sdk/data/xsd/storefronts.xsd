@@ -24,21 +24,50 @@
     <xsd:complexType name="complexType.Storefront" mixed="false">
         <xsd:sequence>
             <xsd:element name="ecom-site" type="simpleType.Generic.String.48" minOccurs="0" maxOccurs="1"/>
-            <xsd:element name="storefront-type" type="simpleType.StorefrontType" minOccurs="1" maxOccurs="1"/>
-            <xsd:element name="storefront-status" type="simpleType.StorefrontStatus" minOccurs="1" maxOccurs="1"/>
+            <!-- Accepted values (case-insensitive on import): composable, pwa_kit. Export emits lowercase. -->
+            <xsd:element name="storefront-type" type="simpleType.Generic.String.32" minOccurs="1" maxOccurs="1"/>
+            <!--
+                Deprecated. Retained solely for backward compatibility: storefront import validates incoming
+                files against this schema (StorefrontImpexUnit.setSchema), so pre-cleanup export files that still
+                carry <storefront-status> must remain declared here to pass validation. Optional and ignored on
+                import; no longer emitted on export. Do not add new consumers.
+            -->
+            <xsd:element name="storefront-status" type="simpleType.Generic.String.32" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="associated-sites" type="complexType.AssociatedSites" minOccurs="0" maxOccurs="1"/>
-            <xsd:element name="user-id" type="simpleType.Generic.String.48" minOccurs="1" maxOccurs="1"/>
+            <!--
+                Optional. For interactive Business Manager (session-based) imports the importer's authenticated
+                session identity is authoritative and this value is ignored. It supplies the acting identity only for
+                server-to-server (client-credentials) imports, which have no session; such imports are rejected if it
+                is absent or unauthorized. Retained and declared here because storefront import validates incoming
+                files against this schema (StorefrontImpexUnit.setSchema).
+            -->
+            <xsd:element name="user-id" type="simpleType.Generic.String.48" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="org-slug" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
             <xsd:element name="mrt-site" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
             <xsd:element name="scm-repo" type="simpleType.Generic.String.512" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="scm-target" type="simpleType.Generic.String.64" minOccurs="0" maxOccurs="1"/>
+            <!--
+                Deprecated (W-23546554). Retained solely for backward compatibility: storefront import validates
+                incoming files against this schema (StorefrontImpexUnit.setSchema), so pre-cleanup export files that
+                still carry <github-app-installation> must remain declared here to pass validation. Optional and
+                ignored on import; no longer emitted on export. Carrying the source realm's GitHub App installation
+                onto a target would enable a cross-realm credential-leak (spike W-23298074 3.3), so it is dropped on
+                import and the GitHub App must be reconnected manually. Do not add new consumers. This element will be
+                removed in a future schema version once all pre-cleanup export files carrying it have cycled out.
+            -->
             <xsd:element name="github-app-installation" type="complexType.GitHubAppInstallation" minOccurs="0" maxOccurs="1"/>
         </xsd:sequence>
         <xsd:attribute name="storefront-name" type="simpleType.Generic.NonEmptyString.64" use="required"/>
-        <xsd:attribute name="mode" type="simpleType.ImportMode"/>
+        <!--
+            Deprecated. Retained solely for backward compatibility: pre-cleanup delta-export files could carry
+            mode="delete". Optional and ignored on import (the import delete decision is driven by the framework
+            import mode, not this attribute); no longer emitted on export. Do not add new consumers.
+        -->
+        <xsd:attribute name="mode" type="simpleType.Generic.String.32"/>
     </xsd:complexType>
 
-    <!-- GitHub App Installation -->
+    <!-- GitHub App Installation. Deprecated (W-23546554): declared only so legacy files that still carry
+         <github-app-installation> validate on import. Ignored on import, never exported. Do not add new consumers. -->
     <xsd:complexType name="complexType.GitHubAppInstallation" mixed="false">
         <xsd:sequence>
             <xsd:element name="app-id" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
@@ -56,49 +85,6 @@
             <xsd:element name="ecom-site" type="simpleType.Generic.NonEmptyString.48" minOccurs="0" maxOccurs="100"/>
         </xsd:sequence>
     </xsd:complexType>
-
-    <!-- Storefront Type enumeration -->
-    <xsd:simpleType name="simpleType.StorefrontType">
-        <xsd:restriction base="xsd:string">
-            <xsd:enumeration value="composable"/>
-            <xsd:enumeration value="headless"/>
-        </xsd:restriction>
-    </xsd:simpleType>
-
-    <!--
-        Storefront Status enumeration.
-
-        These values must stay in sync with StorefrontSetupStatusEnum (core/internal/storefront).
-        There is no compile-time link between this XSD and the Java enum; drift is caught by
-        comparing the JAXB-generated SimpleTypeStorefrontStatus against StorefrontSetupStatusEnum
-        in _JAXBStorefrontExportHandler (testStorefrontStatusEnumAndXsdInSync).
-
-        Export currently restricts output to SUCCESS storefronts only
-        (JAXBStorefrontExportHandler.mapStorefront). Adding a new exportable status requires:
-          1. Adding the value here
-          2. Adding the enum constant in StorefrontSetupStatusEnum
-          3. Updating the export guard in mapStorefront to allow the new status
-          4. Updating the sync unit test's expected set if needed
-    -->
-    <xsd:simpleType name="simpleType.StorefrontStatus">
-        <xsd:restriction base="xsd:string">
-            <xsd:enumeration value="in_progress"/>
-            <xsd:enumeration value="success"/>
-            <xsd:enumeration value="backfilled"/>
-            <xsd:enumeration value="failed"/>
-            <xsd:enumeration value="delete_in_progress"/>
-            <xsd:enumeration value="delete_failed"/>
-            <xsd:enumeration value="deleted"/>
-            <xsd:enumeration value="unknown"/>
-        </xsd:restriction>
-    </xsd:simpleType>
-
-    <!-- Import Mode -->
-    <xsd:simpleType name="simpleType.ImportMode">
-        <xsd:restriction base="xsd:string">
-            <xsd:enumeration value="delete"/>
-        </xsd:restriction>
-    </xsd:simpleType>
 
     <!-- simple generic types -->
     <xsd:simpleType name="simpleType.Generic.String">

@@ -1,0 +1,1147 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Replications",
+    "description": "[Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/replications/replications-oas-v1-public.yaml)\n\n# API Overview\n\nThe Replications API provides tools for managing content replication and synchronization across your Commerce Cloud instance. Use this API to control replication throughout your commerce infrastructure.\n\nThe API currently supports:\n- Granular Replication: Publishing individual items \n\n## Authentication & Authorization\n\nFor resource access, you must use a client ID and client secret from Account Manager to request an access token. The access token is used as a bearer token and added to the Authorization header of your API request.\n\nThis API uses OAuth 2.0 authentication via Account Manager (AmOAuth2). You must include the relevant scope(s) in the client ID used to generate the token. For details, see the [Authorization Scopes Catalog](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog.html).\n\n- `sfcc.granular-replications.rw` - Enables the triggering of publish processes and access to details about publish processes, for example: monitoring purposes.\n- `sfcc.granular-replications` - Enables access to details about publish processes, for example: monitoring purposes.\n\nFor detailed setup instructions, see the [Authorization for Admin APIs guide](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-admin-apis.html).        \n\n## Response Details\n\n### Timeouts\n\nAdmin API requests must respond within 60 seconds. If a response exceeds this threshold, an HTTP 504 status code is returned. For details, see [Timeouts and Limits.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/timeouts-limits.html)\n\n### Error Handling\n\nError responses follow the [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) problem detail format. To trace errors, include a `correlation-id` header in your request — the response returns it as `x-correlation-id`. For details, see [HTTP Status Codes and Errors.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/error-response-codes.html)\n\n## Use Cases\n\n### Granular Replication\n\nThe granular replication feature addresses the need to make small updates to existing content in production on an as-needed basis. You can make granular data updates for these three replication groups:\n- Products: Update specific products from staging to production.\n- Price Books: Update specific price table entries from staging to production.\n- Content Assets: Update specific content assets from staging to production. Page Designer pages replicate as content assets with all their components.\n\nGranular Replication is meant to complement and enhance existing data replications, not replace it.\n\nAll granular replication related endpoints are available using:\n```\nhttps://{shortCode}.api.commercecloud.salesforce.com/operation/replications/v1/organizations/{organizationId}/granular-processes\n```\n\n#### Publish Items (POST /granular-processes)\nQueues an item, such as products, price tables, and content assets, for the upcoming publish operation.\n\n:::note \nThe published price table is always the table with the continuously valid period.\n:::\n\n#### List Publish Processes (GET /granular-processes)\nRetrieve a list of all publish processes with pagination support.\n\n#### Get Publish Process (GET /granular-processes/{id})\nRetrieve details of a specific publish process using its ID.\n\n### Publish Process Lifecycle\n\nAll publish processes follow this lifecycle:\n\n1. `queued`: Publish process initiated and waiting for publish operation to run.\n2. `in_progress`: Publish operation is running.\n3. `completed`: Publish operation completed and the item was successfully published.\n4. `failed`: The publish operation completed, but an error was detected.",
+    "version": "1.0.8",
+    "x-api-type": "Admin",
+    "x-api-family": "Operation"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/operation/replications/v1",
+      "variables": {
+        "shortCode": {
+          "description": "An eight-character string assigned to a realm for routing purposes. See [Base URL and Request Formation.](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html)",
+          "default": "123456gf"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/granular-processes": {
+      "get": {
+        "summary": "Retrieve a list of all publish processes with pagination support.",
+        "operationId": "listPublishProcesses",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of records to retrieve per request. Must be between 1 (minimum) and 200 (maximum). Defaults to 50.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Used to retrieve the results based on a particular resource offset.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved list of publish processes successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishProcessListResponse"
+                },
+                "examples": {
+                  "listResults": {
+                    "$ref": "#/components/examples/PaginatedResultList"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_GetProcesses"
+          },
+          "403": {
+            "$ref": "#/components/responses/403Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/422UnprocessableContent"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.granular-replications",
+              "sfcc.granular-replications.rw"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "summary": "Queue items for the upcoming publish operation.",
+        "description": "Queues items, such as a products, price tables, and content assets, for the upcoming publish operation. You can have multiple items in the queue, but you must send a separate request for each item.\nPage Designer (PD) pages are replicated as content assets, including all their components.\nNote: The published price table is always the table with the continuously valid period.\n## Publishing Limit\nYou can queue a maximum of 500 items for a single publish operation. Because each request queues one item, this limit applies to the total number of items queued for the upcoming publish operation across all requests, not to an individual API call. The HTTP status code 409 (Conflict) is returned if the limit is exceeded.",
+        "operationId": "publishItems",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishItemRequest"
+              },
+              "examples": {
+                "productExample": {
+                  "$ref": "#/components/examples/PostRequestProduct"
+                },
+                "priceTableExample": {
+                  "$ref": "#/components/examples/PostRequestPriceTable"
+                },
+                "contentAssetExampleSharedLib": {
+                  "$ref": "#/components/examples/PostRequestContentAssetSharedLib"
+                },
+                "contentAssetExamplePrivateLib": {
+                  "$ref": "#/components/examples/PostRequestContentAssetPrivateLib"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "ID of the publish process",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishIdResponse"
+                },
+                "examples": {
+                  "success": {
+                    "$ref": "#/components/examples/PublicationSuccessResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400BadRequest_CreateProcess"
+          },
+          "403": {
+            "$ref": "#/components/responses/403Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_CreateProcess"
+          },
+          "409": {
+            "$ref": "#/components/responses/409Conflict_CreateProcess"
+          },
+          "422": {
+            "$ref": "#/components/responses/422UnprocessableContent_CreateProcess"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.granular-replications.rw"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/granular-processes/{id}": {
+      "get": {
+        "summary": "Retrieve details of a specific publish process using its ID.",
+        "operationId": "getPublishProcess",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            },
+            "example": "f_ecom_zzxy_prd"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Publish process ID of the published item.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Publish process details retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishProcessResponse"
+                },
+                "examples": {
+                  "productProcess": {
+                    "$ref": "#/components/examples/ProductProcessResponse"
+                  },
+                  "priceTableProcess": {
+                    "$ref": "#/components/examples/PriceTableProcessResponse"
+                  },
+                  "contentAssetProcess": {
+                    "$ref": "#/components/examples/ContentAssetProcessResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/403Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/404NotFound_GetProcess"
+          },
+          "422": {
+            "$ref": "#/components/responses/422UnprocessableContent"
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.granular-replications",
+              "sfcc.granular-replications.rw"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "example": "f_ecom_zzxy_prd",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "Total": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are pagenated.",
+        "example": 10,
+        "minimum": 0
+      },
+      "ResultBase": {
+        "type": "object",
+        "description": "Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema. \nAdditionally it needs to be defined what data is returned.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum records to retrieve per request. The limit with its constraints (minimum, maximum, default) is defined by the request parameter `limit` of the endpoint returning this schema.",
+            "example": 10
+          },
+          "total": {
+            "$ref": "#/components/schemas/Total"
+          }
+        },
+        "required": [
+          "limit",
+          "total"
+        ]
+      },
+      "Offset": {
+        "type": "integer",
+        "format": "int32",
+        "default": 0,
+        "description": "The zero-based index of the first hit/data to include in the result.",
+        "example": 0,
+        "minimum": 0
+      },
+      "PaginatedResultBase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResultBase"
+          }
+        ],
+        "description": "Schema defining generic pageable result. Each response schema of a resource requiring pagination should extend this schema. \nIf you use this extend this schema directly, it needs to be defined what data is returned. Allowed names for the data field is `data`.",
+        "properties": {
+          "offset": {
+            "$ref": "#/components/schemas/Offset"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "Publish process ID of the published item",
+        "example": "xmRhi7394HymoeRkfwAAAZeg3WiM",
+        "maxLength": 28
+      },
+      "ProductId": {
+        "type": "string",
+        "description": "The id (SKU) of the product.",
+        "example": "apple-ipod-classic",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "ProductItem": {
+        "type": "object",
+        "description": "Details of the published product (only available if a product was published)",
+        "properties": {
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "PriceTableItem": {
+        "type": "object",
+        "description": "Details of the published price table (only available if a price table was published)",
+        "properties": {
+          "productId": {
+            "$ref": "#/components/schemas/ProductId"
+          },
+          "priceBookId": {
+            "type": "string",
+            "description": "ID of the price book",
+            "example": "USD-Retail-2024",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "priceBookId",
+          "productId"
+        ]
+      },
+      "SiteId": {
+        "type": "string",
+        "description": "The identifier of the site that a request is being made in the context of. Attributes might have site specific values, and some objects may only be assigned to specific sites",
+        "example": "RefArch",
+        "maxLength": 32,
+        "minLength": 1
+      },
+      "ContentAssetItemPrivate": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Details of the published content asset (only available if a content asset was published). Page Designer pages replicate as content assets, including all their components.",
+        "example": {
+          "contentId": "homepage-hero-banner",
+          "type": "private",
+          "siteId": "mySiteId"
+        },
+        "properties": {
+          "contentId": {
+            "type": "string",
+            "description": "ID of the content asset",
+            "example": "homepage-hero-banner",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of library (private) from which the content asset originates.",
+            "enum": [
+              "private"
+            ],
+            "example": "private"
+          },
+          "siteId": {
+            "$ref": "#/components/schemas/SiteId"
+          }
+        },
+        "required": [
+          "contentId",
+          "siteId",
+          "type"
+        ]
+      },
+      "ContentAssetItemShared": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Details of the published content asset (only available if a content asset was published). Page Designer pages replicate as content assets, including all their components.",
+        "example": {
+          "contentId": "homepage-hero-banner",
+          "type": "shared",
+          "libraryId": "myLibrary"
+        },
+        "properties": {
+          "contentId": {
+            "type": "string",
+            "description": "ID of the content asset",
+            "example": "homepage-hero-banner",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of library (shared) from which the content asset originates.",
+            "enum": [
+              "shared"
+            ],
+            "example": "shared"
+          },
+          "libraryId": {
+            "type": "string",
+            "description": "Use the library ID.",
+            "example": "libraryId",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "contentId",
+          "libraryId",
+          "type"
+        ]
+      },
+      "ContentAssetItem": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ContentAssetItemPrivate"
+          },
+          {
+            "$ref": "#/components/schemas/ContentAssetItemShared"
+          }
+        ]
+      },
+      "PublishProcessResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/id"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the publish process",
+            "enum": [
+              "completed",
+              "in_progress",
+              "failed",
+              "queued"
+            ],
+            "example": "completed"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp at which the publish process was started",
+            "example": "2024-03-15T10:30:00Z",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp at which the publish process was completed (only available if the status is \"completed\" or \"failed\")",
+            "example": "2024-03-15T10:30:45Z",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "initiatedBy": {
+            "type": "string",
+            "description": "User or ID of the client application that initiated the publish process",
+            "example": "user@example.com",
+            "maxLength": 256
+          },
+          "productItem": {
+            "$ref": "#/components/schemas/ProductItem"
+          },
+          "priceTableItem": {
+            "$ref": "#/components/schemas/PriceTableItem"
+          },
+          "contentAssetItem": {
+            "$ref": "#/components/schemas/ContentAssetItem"
+          }
+        },
+        "required": [
+          "id",
+          "initiatedBy",
+          "startTime",
+          "status"
+        ]
+      },
+      "PublishProcessListResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaginatedResultBase"
+          }
+        ],
+        "description": "Paginated list of publish processes",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Array of publish processes",
+            "items": {
+              "$ref": "#/components/schemas/PublishProcessResponse"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem\ntype.  It will not change from occurrence to occurrence of the \nproblem, except for purposes of localization\n",
+            "example": "You do not have enough credit",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the\nproblem type (e.g., using HTML [W3C.REC-html5-20141028]).  When\nthis member is not present, its value is assumed to be\n\"about:blank\". It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "NotEnoughMoney",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "example": "Your current balance is 30, but that costs 50"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific\noccurrence of the problem.  It may or may not yield further\ninformation if dereferenced.  It accepts relative URIs; this means\nthat they must be resolved relative to the document's base URI, as\nper [RFC3986], Section 5.\n",
+            "example": "/account/12345/msgs/abc",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "InvalidQueryParameterErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when an invalid query parameter is provided."
+      },
+      "FeatureNotEnabledErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the Granular Replication feature is disabled."
+      },
+      "NotOnStagingInstanceErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the request is sent to a non-staging instance."
+      },
+      "ProductPublishRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "example": {
+          "product": {
+            "productId": "PROD-12345"
+          }
+        },
+        "properties": {
+          "product": {
+            "type": "object",
+            "properties": {
+              "productId": {
+                "$ref": "#/components/schemas/ProductId"
+              }
+            },
+            "required": [
+              "productId"
+            ]
+          }
+        },
+        "required": [
+          "product"
+        ]
+      },
+      "PriceTablePublishRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "example": {
+          "priceTable": {
+            "productId": "PROD-67890",
+            "priceBookId": "USD-Retail-2024"
+          }
+        },
+        "properties": {
+          "priceTable": {
+            "type": "object",
+            "properties": {
+              "productId": {
+                "$ref": "#/components/schemas/ProductId"
+              },
+              "priceBookId": {
+                "type": "string",
+                "description": "ID of the price book",
+                "example": "USD-Retail-2024",
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "priceBookId",
+              "productId"
+            ]
+          }
+        },
+        "required": [
+          "priceTable"
+        ]
+      },
+      "ContentAssetPublishRequest": {
+        "type": "object",
+        "properties": {
+          "contentAsset": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ContentAssetItemPrivate"
+              },
+              {
+                "$ref": "#/components/schemas/ContentAssetItemShared"
+              }
+            ]
+          }
+        },
+        "required": [
+          "contentAsset"
+        ]
+      },
+      "PublishItemRequest": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ProductPublishRequest"
+          },
+          {
+            "$ref": "#/components/schemas/PriceTablePublishRequest"
+          },
+          {
+            "$ref": "#/components/schemas/ContentAssetPublishRequest"
+          }
+        ]
+      },
+      "PublishIdResponse": {
+        "type": "object",
+        "description": "Item successfully queued for publishing",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/id"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "InvalidRequestBodyErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the request body is malformed or contains invalid data."
+      },
+      "ItemNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the specified item (product, price table, or content asset) was not found."
+      },
+      "AlreadyQueuedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when attempting to queue an item that is already queued."
+      },
+      "TooManyQueuedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the maximum number of items (50) queued for publish has been exceeded."
+      },
+      "ReplicationRunningErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when attempting to queue items while a replication is running."
+      },
+      "FeedBasedPriceBookNotSupportedErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when attempting to publish a price table from a feed-based price book."
+      },
+      "PublishProcessNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "description": "Returned when the publish process for given ID was not found.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/id"
+          }
+        }
+      }
+    },
+    "responses": {
+      "400BadRequest_GetProcesses": {
+        "description": "Bad Request. Invalid query parameter.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/InvalidQueryParameterErrorResponse"
+            },
+            "examples": {
+              "InvalidQueryParameterErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidQueryParameterErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "403Forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don't have the required permissions to access the resource,\nor the Granular Replication feature is disabled.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/FeatureNotEnabledErrorResponse"
+            },
+            "examples": {
+              "FeatureNotEnabledErrorResponseExample": {
+                "$ref": "#/components/examples/FeatureNotEnabledErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "422UnprocessableContent": {
+        "description": "If the request was not sent to a staging instance",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/NotOnStagingInstanceErrorResponse"
+            },
+            "examples": {
+              "NotOnStagingInstanceErrorResponseExample": {
+                "$ref": "#/components/examples/NotOnStagingInstanceErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "400BadRequest_CreateProcess": {
+        "description": "Bad Request. The request is malformed or contains invalid data.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/InvalidRequestBodyErrorResponse"
+            },
+            "examples": {
+              "InvalidRequestBodyErrorResponseExample": {
+                "$ref": "#/components/examples/InvalidRequestBodyErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_CreateProcess": {
+        "description": "The specified item was not found.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ItemNotFoundErrorResponse"
+            },
+            "examples": {
+              "ItemNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/ItemNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "409Conflict_CreateProcess": {
+        "description": "The item could not get queued for the upcoming publish operation.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/AlreadyQueuedErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/TooManyQueuedErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/ReplicationRunningErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "AlreadyQueuedErrorResponseExample": {
+                "$ref": "#/components/examples/AlreadyQueuedErrorResponseExample"
+              },
+              "TooManyQueuedErrorResponseExample": {
+                "$ref": "#/components/examples/TooManyQueuedErrorResponseExample"
+              },
+              "ReplicationRunningErrorResponseExample": {
+                "$ref": "#/components/examples/ReplicationRunningErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "422UnprocessableContent_CreateProcess": {
+        "description": "The item could not get processed.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/FeedBasedPriceBookNotSupportedErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/NotOnStagingInstanceErrorResponse"
+                }
+              ]
+            },
+            "examples": {
+              "FeedBasedPriceBookNotSupportedErrorResponseExample": {
+                "$ref": "#/components/examples/FeedBasedPriceBookNotSupportedErrorResponseExample"
+              },
+              "NotOnStagingInstanceErrorResponseExample": {
+                "$ref": "#/components/examples/NotOnStagingInstanceErrorResponseExample"
+              }
+            }
+          }
+        }
+      },
+      "404NotFound_GetProcess": {
+        "description": "The publish process for given ID was not found.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/PublishProcessNotFoundErrorResponse"
+            },
+            "examples": {
+              "PublishProcessNotFoundErrorResponseExample": {
+                "$ref": "#/components/examples/PublishProcessNotFoundErrorResponseExample"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "description": "An identifier for the Salesforce Commerce Cloud organization the request is being made by. It consists of a prefix 'f_ecom_' followed by a 4-character [realm identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#realm-id) and a 3-character [instance type identifier](https://developer.salesforce.com/docs/commerce/commerce-api/guide/base-url.html#instance-id).",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        },
+        "example": "f_ecom_zzxy_prd"
+      },
+      "id": {
+        "name": "id",
+        "in": "path",
+        "description": "Publish process ID of the published item.",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/id"
+        }
+      }
+    },
+    "examples": {
+      "PaginatedResultList": {
+        "summary": "List results example",
+        "value": {
+          "total": 3,
+          "offset": 0,
+          "limit": 50,
+          "data": [
+            {
+              "id": "xmRhi7394HymoeRkfwAAAZeg3WiM",
+              "status": "completed",
+              "startTime": "2024-03-15T10:30:00Z",
+              "endTime": "2024-03-15T10:30:45Z",
+              "initiatedBy": "user@example.com",
+              "productItem": {
+                "productId": "PROD-12345"
+              }
+            },
+            {
+              "id": "xmRhi7394HymoeRkfwAAAZeg3WiN",
+              "status": "completed",
+              "startTime": "2024-03-15T10:35:00Z",
+              "endTime": "2024-03-15T10:35:30Z",
+              "initiatedBy": "user@example.com",
+              "productItem": {
+                "productId": "PROD-67890"
+              }
+            },
+            {
+              "id": "xmRhi7394HymoeRkfwAAAZeg3WiK",
+              "status": "failed",
+              "startTime": "2024-03-15T10:40:00Z",
+              "initiatedBy": "api-client-xyz",
+              "contentAssetItem": {
+                "contentId": "homepage-hero-banner",
+                "type": "shared",
+                "libraryId": "sharedLibrary"
+              }
+            }
+          ]
+        }
+      },
+      "PostRequestProduct": {
+        "summary": "Publish a product",
+        "description": "Example of publishing a product",
+        "value": {
+          "product": {
+            "productId": "PROD-12345"
+          }
+        }
+      },
+      "PostRequestPriceTable": {
+        "summary": "Publish a price table",
+        "description": "Example of publishing a price table for a product.\nNote: The published price table is always the one with the continuously valid period.",
+        "value": {
+          "priceTable": {
+            "productId": "PROD-67890",
+            "priceBookId": "USD-Retail-2024"
+          }
+        }
+      },
+      "PostRequestContentAssetSharedLib": {
+        "summary": "Publish a content asset from a shared library",
+        "description": "Publish a content asset from a shared library",
+        "value": {
+          "contentAsset": {
+            "contentId": "homepage-hero-banner",
+            "type": "shared",
+            "libraryId": "mySharedLibrary"
+          }
+        }
+      },
+      "PostRequestContentAssetPrivateLib": {
+        "summary": "Publish a content asset from a site's private library",
+        "description": "Publish a content asset from a site's private library.",
+        "value": {
+          "contentAsset": {
+            "contentId": "homepage-hero-banner",
+            "type": "private",
+            "siteId": "mySiteID"
+          }
+        }
+      },
+      "PublicationSuccessResponse": {
+        "summary": "Successfully queued response",
+        "value": {
+          "id": "xmRhi7394HymoeRkfwAAAZeg3WiM"
+        }
+      },
+      "ProductProcessResponse": {
+        "summary": "Product publish process",
+        "value": {
+          "id": "xmRhi7394HymoeRkfwAAAZeg3WiM",
+          "status": "completed",
+          "startTime": "2024-03-15T10:30:00Z",
+          "endTime": "2024-03-15T10:30:45Z",
+          "initiatedBy": "user@example.com",
+          "productItem": {
+            "productId": "PROD-12345"
+          }
+        }
+      },
+      "PriceTableProcessResponse": {
+        "summary": "Price table publish process; \nNote: The published price table is always the one with the continuously valid period.",
+        "value": {
+          "id": "xmRhi7394HymoeRkfwAAAZeg3WiN",
+          "status": "completed",
+          "startTime": "2024-03-15T10:35:00Z",
+          "endTime": "2024-03-15T10:35:30Z",
+          "initiatedBy": "1af8e314-60c7-46f0-b7b4-c88aecd3449d",
+          "priceTableItem": {
+            "productId": "PROD-67890",
+            "priceBookId": "USD-Retail-2024"
+          }
+        }
+      },
+      "ContentAssetProcessResponse": {
+        "summary": "Content asset publish process",
+        "value": {
+          "id": "xmRhi7394HymoeRkfwAAAZeg3Wik",
+          "status": "in_progress",
+          "startTime": "2024-03-15T10:40:00Z",
+          "initiatedBy": "api-client-xyz",
+          "contentAssetItem": {
+            "contentId": "homepage-hero-banner",
+            "siteId": "mySiteId",
+            "type": "private"
+          }
+        }
+      },
+      "InvalidQueryParameterErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-query-parameter",
+          "detail": "Invalid query parameter.",
+          "title": "Invalid Query Parameter"
+        }
+      },
+      "FeatureNotEnabledErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/feature-not-enabled",
+          "detail": "The Granular Replication feature is not enabled in your staging and production environments.",
+          "title": "Feature Not Enabled"
+        }
+      },
+      "NotOnStagingInstanceErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/not-on-staging-instance",
+          "detail": "The request was not sent to a staging instance.",
+          "title": "Not On Staging Instance"
+        }
+      },
+      "InvalidRequestBodyErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-request-body",
+          "detail": "Invalid request body. Must provide valid properties for either a product, price table, or content asset.",
+          "title": "Invalid Request Body"
+        }
+      },
+      "ItemNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/item-not-found",
+          "detail": "The specified item was not found.",
+          "title": "Item Not Found"
+        }
+      },
+      "AlreadyQueuedErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/already-queued",
+          "detail": "The item was already queued for the upcoming publish operation.",
+          "title": "Already Queued"
+        }
+      },
+      "TooManyQueuedErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-queued",
+          "detail": "The maximum number of items queued for the upcoming publish operation has been exceeded.",
+          "title": "Too Many Queued"
+        }
+      },
+      "ReplicationRunningErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/replication-running",
+          "detail": "A replication is running. Granular Replication is not possible during a running replication.",
+          "title": "Replication Running"
+        }
+      },
+      "FeedBasedPriceBookNotSupportedErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/feed-based-price-book-not-supported",
+          "detail": "The price table belongs to a feed based price book. Feed based price books are not supported.",
+          "title": "Feed Based Price Book Not Supported"
+        }
+      },
+      "PublishProcessNotFoundErrorResponseExample": {
+        "value": {
+          "type": "https://api.commercecloud.salesforce.com/documentation/error/v1/errors/publish-process-not-found",
+          "detail": "Publish process with ID 'xmRhi7394HymoeRkfwAAAZeg3WiM' was not found.",
+          "title": "Publish Process Not Found"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "description": "AccountManager OAuth 2.0 bearer token Authentication.",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "c_example": "custom scopes must start with c_ used for custom APIs [MAX length of scope 49 characters]",
+              "sfcc.example": "standard salesforce commerce apis scopes must start with \"sfcc.\". Without suffix \".rw\" scopes grants READONLY access. [MAX length of scope 49 characters]",
+              "sfcc.example.rw": "salesforce commerce apis scopes must start with \"sfcc.\". The suffix \".rw\" scopes grants READ and WRITE access. [MAX length of scope 49 characters]"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "c_example": "custom scopes mus start with c_ used for custom APIs [MAX length of scope 49 characters]",
+              "sfcc.example": "standard salesforce commerce apis scopes must start with \"sfcc.\". Without suffix \".rw\" scopes grants READONLY access. [MAX length of scope 49 characters]",
+              "sfcc.example.rw": "salesforce commerce apis scopes must start with \"sfcc.\". The suffix \".rw\" scopes grants READ and WRITE access. [MAX length of scope 49 characters]"
+            }
+          }
+        }
+      }
+    }
+  }
+}

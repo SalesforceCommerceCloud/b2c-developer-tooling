@@ -35,7 +35,7 @@ These flags are available on all SCAPI Schemas commands.
 
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
-| `--config` | `SFCC_CONFIG` | Path to config file (in `dw.json` format; defaults to `./dw.json`) |
+| `--config` | `SFCC_CONFIG` | Path to config file (in `dw.json` format; defaults to `./dw.json`; empty for none) |
 | `-i`, `--instance` | `SFCC_INSTANCE` | Instance name from configuration file (e.g. `dw.json`) |
 | `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Project directory |
 | `-L`, `--lang` | | Language for messages (e.g., `en`, `de`). Also respects `LANGUAGE` env var |
@@ -85,6 +85,8 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 ## b2c scapi schemas list
 
 List available SCAPI schemas with optional filtering.
+
+[![B2C CLI listing checkout API schemas, with Shopper Baskets v2 current and v1 deprecated.](/terminal/scapi-schemas.png)](/terminal/scapi-schemas.png)
 
 ### Usage
 
@@ -179,12 +181,30 @@ b2c scapi schemas get <apiFamily> <apiName> <apiVersion> --tenant-id <TENANT_ID>
 | `--expand-schemas` | Schema names to fully expand (comma-separated) | |
 | `--expand-examples` | Example names to fully expand (comma-separated) | |
 | `--expand-custom-properties` | Expand custom properties (boolean — use `--no-expand-custom-properties` to disable) | `true` |
-| `--expand-all` | Return full schema without collapsing | `false` |
+| `--include` | Sections the Schemas API adds to the contract, comma-separated: `all`, `custom_properties`, `descriptions`, `examples`, `external_docs`, `summaries`, `tags`, `titles`. Overrides the automatic selection | |
+| `--expand-all` | Return full schema without collapsing (also requests every section from the API) | `false` |
 | `--list-paths` | List available paths and exit | `false` |
 | `--list-schemas` | List available schema names and exit | `false` |
 | `--list-examples` | List available example names and exit | `false` |
 | `--yaml` | Output as YAML instead of JSON | `false` |
 | `--json` | Output wrapped JSON with metadata | `false` |
+
+### Server-side expansion
+
+The Schemas API omits operation summaries and descriptions, examples, and tenant custom properties unless you ask for them with its `expand` parameter. The command asks for only what the output needs, so outlines stay small:
+
+| Request | Sections fetched |
+|---------|------------------|
+| Collapsed outline, `--list-paths`, `--list-schemas` | `custom_properties` (none with `--no-expand-custom-properties`) |
+| `--expand-paths` or `--expand-schemas` | `summaries`, `descriptions`, `titles` |
+| `--expand-examples` or `--list-examples` | `examples` |
+| `--expand-all` | `all` (everything, including `external_docs` and `tags`) |
+
+Use `--include` to choose the sections yourself, for example `--include summaries,descriptions` or `--include all`. Several values are sent as one comma-separated value; `;` also works as a separator.
+
+### Offline fallback
+
+If the live fetch fails (missing short code, tenant, or credentials, no access to `sfcc.scapi-schemas`, or a network error), the command prints a warning on stderr and returns the contract bundled with the CLI instead. The bundled corpus holds the standard SCAPI contracts only: no tenant custom properties or custom APIs, and it may be older than your tenant. `list` falls back the same way. With `--json` the output has `source` (`live` or `bundled`) and, when bundled, a `warning`.
 
 ### Schema Collapsing
 
@@ -257,6 +277,8 @@ b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --yaml > 
   "apiFamily": "product",
   "apiName": "shopper-products",
   "apiVersion": "v1",
+  "source": "live",
+  "expand": "custom_properties",
   "schema": { ... }
 }
 ```
@@ -267,3 +289,4 @@ b2c scapi schemas get product shopper-products v1 --tenant-id zzxy_prd --yaml > 
 - Use `--list-paths` to discover available paths before using `--expand-paths`
 - Use `--list-schemas` to discover available schema names before using `--expand-schemas`
 - Custom properties expansion is enabled by default and fetches tenant-specific custom attributes
+- Operation summaries and descriptions are only returned when requested (`--expand-paths`, `--expand-all`, or `--include`)

@@ -3,19 +3,13 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {
-  downloadSingleCartridge,
-  listCodeVersions,
-  getActiveCodeVersion,
-  activateCodeVersion,
-  createCodeVersion,
-  reloadCodeVersion,
-  deleteCodeVersion,
-} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {downloadSingleCartridge, reloadCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {createScriptsBackendFromExtension} from './scripts-backend.js';
 import {
   addCartridge,
   removeCartridge,
   getCartridgePath,
+  createSitesBackend,
   type CartridgePosition,
 } from '@salesforce/b2c-tooling-sdk/operations/sites';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
@@ -57,7 +51,7 @@ function createDownloadCartridgeCommand(
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await getActiveCodeVersion(instance);
+        const active = await createScriptsBackendFromExtension(instance).getActiveCodeVersion();
         if (active?.id) codeVersion = active.id;
       } catch {
         // fall through
@@ -107,15 +101,11 @@ async function pickSite(instance: B2CInstance): Promise<string | undefined> {
   let siteItems: {label: string; siteId: string}[] = [];
 
   try {
-    const {data, error} = await instance.ocapi.GET('/sites', {
-      params: {query: {select: '(**)'}},
-    });
-    if (!error && data) {
-      const sites = (data as {data?: {id?: string}[]}).data ?? [];
-      siteItems = sites
-        .filter((s): s is {id: string} => typeof s.id === 'string')
-        .map((s) => ({label: s.id, siteId: s.id}));
-    }
+    // SCAPI (site/sites) with OCAPI fallback.
+    const sites = await createSitesBackend({instance}).listSites();
+    siteItems = sites
+      .filter((s): s is typeof s & {id: string} => typeof s.id === 'string')
+      .map((s) => ({label: s.id, siteId: s.id}));
   } catch {
     // OAuth not available — fall through to manual input
   }
@@ -234,7 +224,8 @@ function createListCodeVersionsCommand(
     if (!instance) return;
 
     try {
-      const versions = await listCodeVersions(instance);
+      const scriptsBackend = createScriptsBackendFromExtension(instance);
+      const versions = await scriptsBackend.listCodeVersions();
       const items = versions.map((v) => ({
         label: `${v.active ? '$(star-full) ' : ''}${v.id ?? 'unknown'}`,
         description: v.active ? 'Active' : '',
@@ -268,7 +259,7 @@ function createListCodeVersionsCommand(
         await vscode.window.withProgress(
           {location: vscode.ProgressLocation.Notification, title: `Activating "${versionId}"...`},
           async () => {
-            const activation = await activateCodeVersion(instance, versionId);
+            const activation = await scriptsBackend.activateCodeVersion(versionId);
             activationAlreadyActive = activation.alreadyActive;
             treeView.description = `v: ${versionId}`;
           },
@@ -281,7 +272,7 @@ function createListCodeVersionsCommand(
       } else if (actionPick.action === 'reload') {
         await vscode.window.withProgress(
           {location: vscode.ProgressLocation.Notification, title: `Reloading "${versionId}"...`},
-          () => reloadCodeVersion(instance, versionId),
+          () => reloadCodeVersion(scriptsBackend, versionId),
         );
         vscode.window.showInformationMessage(`B2C DX: Code version "${versionId}" reloaded.`);
       } else if (actionPick.action === 'delete') {
@@ -293,7 +284,7 @@ function createListCodeVersionsCommand(
         if (confirm === 'Delete') {
           await vscode.window.withProgress(
             {location: vscode.ProgressLocation.Notification, title: `Deleting "${versionId}"...`},
-            () => deleteCodeVersion(instance, versionId),
+            () => scriptsBackend.deleteCodeVersion(versionId),
           );
           vscode.window.showInformationMessage(`B2C DX: Code version "${versionId}" deleted.`);
         }
@@ -321,7 +312,7 @@ function createCreateCodeVersionCommand(
     if (!name) return;
 
     try {
-      await createCodeVersion(instance, name.trim());
+      await createScriptsBackendFromExtension(instance).createCodeVersion(name.trim());
       outputChannel.appendLine(`[Code Version] Created "${name.trim()}"`);
       vscode.window.showInformationMessage(`B2C DX: Code version "${name.trim()}" created.`);
       treeProvider.refresh();
@@ -341,7 +332,8 @@ function createActivateCodeVersionCommand(
     if (!instance) return;
 
     try {
-      const versions = await listCodeVersions(instance);
+      const scriptsBackend = createScriptsBackendFromExtension(instance);
+      const versions = await scriptsBackend.listCodeVersions();
       const candidates = getActivationCandidates(versions);
       if (candidates.length === 0) {
         const activeVersion = versions.find((version) => version.active)?.id;
@@ -367,7 +359,7 @@ function createActivateCodeVersionCommand(
       await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Activating "${picked.version.id}"...`},
         async () => {
-          const activation = await activateCodeVersion(instance, picked.version.id!);
+          const activation = await scriptsBackend.activateCodeVersion(picked.version.id!);
           activationAlreadyActive = activation.alreadyActive;
           treeView.description = `v: ${picked.version.id}`;
         },
@@ -406,13 +398,13 @@ export async function updateCodeVersionDisplay(
     return;
   }
 
-  // Fall back to OCAPI discovery if available
+  // Fall back to backend discovery (SCAPI or OCAPI based on apiBackend) if available
   if (!instance) {
     treeView.description = '';
     return;
   }
   try {
-    const active = await getActiveCodeVersion(instance);
+    const active = await createScriptsBackendFromExtension(instance).getActiveCodeVersion();
     treeView.description = active?.id ? `v: ${active.id}` : '';
   } catch {
     treeView.description = '';

@@ -23,6 +23,8 @@ describe('Code Lifecycle E2E Tests', function () {
   const CARTRIDGES_DIR = path.resolve(__dirname, '../fixtures/cartridges');
 
   let serverHostname: string;
+  let shortCode: string;
+  let tenantId: string;
   let codeVersionA: string;
   let codeVersionB: string;
   let deletedVersionAId: string;
@@ -34,12 +36,17 @@ describe('Code Lifecycle E2E Tests', function () {
       this.skip();
     }
 
+    shortCode = process.env.SFCC_SHORTCODE ?? '';
+
     if (hasSharedSandbox()) {
       const shared = getSharedContext();
       serverHostname = shared.hostname!;
+      shortCode = shared.shortCode!;
+      tenantId = shared.tenantId!;
       console.log(`Using shared sandbox hostname: ${serverHostname}`);
     } else if (process.env.TEST_INSTANCE_HOSTNAME) {
       serverHostname = process.env.TEST_INSTANCE_HOSTNAME;
+      tenantId = process.env.SFCC_TENANT_ID ?? '';
       console.log(`Using hostname from TEST_INSTANCE_HOSTNAME: ${serverHostname}`);
     } else {
       // Fallback: Create own sandbox
@@ -56,10 +63,17 @@ describe('Code Lifecycle E2E Tests', function () {
       );
 
       expect(result.exitCode, `Failed to create sandbox: ${toString(result.stderr)}`).to.equal(0);
-      const sandbox = parseJSONOutput(result);
+      const sandbox = parseJSONOutput(result) as {hostName: string; id: string; instance: string};
       ownSandboxId = getSandboxId(sandbox);
       serverHostname = getHostname(sandbox);
+      tenantId = `${process.env.TEST_REALM}_${sandbox.instance}`;
       console.log(`  ✓ Created dedicated sandbox ${ownSandboxId} at ${serverHostname}`);
+    }
+
+    if (!shortCode || !tenantId) {
+      throw new Error(
+        'Code lifecycle E2E tests require SFCC_SHORTCODE and a tenant ID. Set SFCC_TENANT_ID when using TEST_INSTANCE_HOSTNAME.',
+      );
     }
   });
 
@@ -170,7 +184,55 @@ describe('Code Lifecycle E2E Tests', function () {
     });
   });
 
-  describe('Step 8: Watch Cartridges', function () {
+  describe('Step 8: Reload Active Code Version with SCAPI', function () {
+    it('should reload version B through the SCAPI backend', async function () {
+      const backendFlags = ['--api-backend', 'scapi', '--short-code', shortCode, '--tenant-id', tenantId];
+      const reloadResult = await runCLIWithRetry([
+        'code',
+        'activate',
+        codeVersionB,
+        '--reload',
+        '--server',
+        serverHostname,
+        ...backendFlags,
+      ]);
+
+      expect(reloadResult.exitCode, `SCAPI reload failed: ${toString(reloadResult.stderr)}`).to.equal(0);
+
+      const listResult = await runCLIWithRetry(['code', 'list', '--server', serverHostname, ...backendFlags, '--json']);
+      expect(listResult.exitCode, `SCAPI list failed: ${toString(listResult.stderr)}`).to.equal(0);
+
+      const response = parseJSONOutput(listResult);
+      const active = response.data.find((v: any) => v.active === true);
+      expect(active.id).to.equal(codeVersionB);
+    });
+  });
+
+  describe('Step 9: Reload Active Code Version with OCAPI', function () {
+    it('should reload version B through the explicitly selected OCAPI backend', async function () {
+      const backendFlags = ['--api-backend', 'ocapi'];
+      const reloadResult = await runCLIWithRetry([
+        'code',
+        'activate',
+        codeVersionB,
+        '--reload',
+        '--server',
+        serverHostname,
+        ...backendFlags,
+      ]);
+
+      expect(reloadResult.exitCode, `OCAPI reload failed: ${toString(reloadResult.stderr)}`).to.equal(0);
+
+      const listResult = await runCLIWithRetry(['code', 'list', '--server', serverHostname, ...backendFlags, '--json']);
+      expect(listResult.exitCode, `OCAPI list failed: ${toString(listResult.stderr)}`).to.equal(0);
+
+      const response = parseJSONOutput(listResult);
+      const active = response.data.find((v: any) => v.active === true);
+      expect(active.id).to.equal(codeVersionB);
+    });
+  });
+
+  describe('Step 10: Watch Cartridges', function () {
     it('should start watching cartridges', async function () {
       this.timeout(120_000);
 
@@ -198,11 +260,11 @@ describe('Code Lifecycle E2E Tests', function () {
     });
   });
 
-  describe('Step 9: Delete Inactive Code Version A', function () {
+  describe('Step 11: Delete Inactive Code Version A', function () {
     it('should delete inactive version A', async function () {
       console.log(`Starting deletion of code version: ${codeVersionA}`);
 
-      // Capture the ID before clearing — Step 10 needs to verify this exact ID is gone.
+      // Capture the ID before clearing — Step 12 needs to verify this exact ID is gone.
       deletedVersionAId = codeVersionA;
 
       const result = await runCLIWithRetry(
@@ -219,9 +281,9 @@ describe('Code Lifecycle E2E Tests', function () {
     });
   });
 
-  describe('Step 10: Verify Code Version A Removed', function () {
+  describe('Step 12: Verify Code Version A Removed', function () {
     it('should not find deleted version A', async function () {
-      expect(deletedVersionAId, 'deletedVersionAId must be captured by Step 9').to.be.a('string').and.not.empty;
+      expect(deletedVersionAId, 'deletedVersionAId must be captured by Step 11').to.be.a('string').and.not.empty;
 
       const result = await runCLIWithRetry(['code', 'list', '--server', serverHostname, '--json']);
       const response = parseJSONOutput(result);

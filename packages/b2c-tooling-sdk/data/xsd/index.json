@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-08-03T18:24:52.137Z",
-  "platformDocVersion": "DWAPP 26.8",
+  "generatedAt": "2026-09-25T17:26:00.050Z",
+  "platformDocVersion": "DWAPP 26.10",
   "entries": [
     {
       "id": "abtest",
@@ -26,6 +26,10 @@
     {
       "id": "catalog",
       "filePath": "catalog.xsd"
+    },
+    {
+      "id": "channels",
+      "filePath": "channels.xsd"
     },
     {
       "id": "commercefeaturestate",

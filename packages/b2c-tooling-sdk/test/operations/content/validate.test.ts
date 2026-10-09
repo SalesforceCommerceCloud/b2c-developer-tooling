@@ -356,7 +356,7 @@ describe('content metadefinition validation', () => {
       expect(result.errors.some((e) => e.message.includes('requires property "component_id"'))).to.equal(true);
     });
 
-    it('fails when embedded is true and arch_type is not headless', () => {
+    it('passes when embedded is true with arch_type controller and component_id set', () => {
       const result = validateMetaDefinition(
         {
           group: 'content',
@@ -368,11 +368,10 @@ describe('content metadefinition validation', () => {
         },
         {type: 'componenttype'},
       );
-      expect(result.valid).to.equal(false);
-      expect(result.errors.some((e) => e.message.includes('headless'))).to.equal(true);
+      expect(result.valid).to.equal(true);
     });
 
-    it('fails when embedded is true and arch_type is missing', () => {
+    it('passes when embedded is true and arch_type is missing', () => {
       const result = validateMetaDefinition(
         {
           group: 'content',
@@ -383,8 +382,7 @@ describe('content metadefinition validation', () => {
         },
         {type: 'componenttype'},
       );
-      expect(result.valid).to.equal(false);
-      expect(result.errors.some((e) => e.message.includes('requires property "arch_type"'))).to.equal(true);
+      expect(result.valid).to.equal(true);
     });
 
     it('passes when embedded is false and component_id is missing', () => {

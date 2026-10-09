@@ -23,6 +23,7 @@ payment methods.
 | [bankAccountNumber](#bankaccountnumber): [String](TopLevel.String.md) `(read-only)` | Returns the account number if the calling context meets  the following criteria: <br/>  <ul>  <li>  If the method call happens in the context of a storefront request and  the current customer is identical to the customer related to the basket  or order, and the current protocol is HTTPS. |
 | [capturedAmount](#capturedamount): [Money](dw.value.Money.md) `(read-only)` | Returns the sum of the captured amounts. |
 | [creditCardNumber](#creditcardnumber): [String](TopLevel.String.md) `(read-only)` | Returns the de-crypted creditcard number if the calling context meets  the following criteria: <br/>  <ul>  <li>  If the method call happens in the context of a storefront request and  the current authenticated customer is referenced by the basket or order, and the current protocol is HTTPS. |
+| [paymentDetails](#paymentdetails): [SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md) | <p>  Returns the payment details for this payment instrument, or `null` if none are available. |
 | [paymentTransaction](#paymenttransaction): [PaymentTransaction](dw.order.PaymentTransaction.md) `(read-only)` | Returns the Payment Transaction for this Payment Instrument or null. |
 | [refundedAmount](#refundedamount): [Money](dw.value.Money.md) `(read-only)` | Returns the sum of the refunded amounts. |
 
@@ -37,8 +38,10 @@ This class does not have a constructor, so you cannot create it directly.
 | [getBankAccountNumber](dw.order.OrderPaymentInstrument.md#getbankaccountnumber)() | Returns the account number if the calling context meets  the following criteria: <br/>  <ul>  <li>  If the method call happens in the context of a storefront request and  the current customer is identical to the customer related to the basket  or order, and the current protocol is HTTPS. |
 | [getCapturedAmount](dw.order.OrderPaymentInstrument.md#getcapturedamount)() | Returns the sum of the captured amounts. |
 | [getCreditCardNumber](dw.order.OrderPaymentInstrument.md#getcreditcardnumber)() | Returns the de-crypted creditcard number if the calling context meets  the following criteria: <br/>  <ul>  <li>  If the method call happens in the context of a storefront request and  the current authenticated customer is referenced by the basket or order, and the current protocol is HTTPS. |
+| [getPaymentDetails](dw.order.OrderPaymentInstrument.md#getpaymentdetails)() | <p>  Returns the payment details for this payment instrument, or `null` if none are available. |
 | [getPaymentTransaction](dw.order.OrderPaymentInstrument.md#getpaymenttransaction)() | Returns the Payment Transaction for this Payment Instrument or null. |
 | [getRefundedAmount](dw.order.OrderPaymentInstrument.md#getrefundedamount)() | Returns the sum of the refunded amounts. |
+| [setPaymentDetails](dw.order.OrderPaymentInstrument.md#setpaymentdetailssalesforcepaymentdetails)([SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)) | <p>  Sets the payment details for this payment instrument. |
 
 ### Methods inherited from class PaymentInstrument
 
@@ -106,6 +109,33 @@ This class does not have a constructor, so you cannot create it directly.
       - If the payment information has not been masked as a result of the data retention security policy  for the site.  
       
       Otherwise, the method returns the masked credit card number.
+
+
+
+---
+
+### paymentDetails
+- paymentDetails: [SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)
+  - : 
+      
+      Returns the payment details for this payment instrument, or `null` if none are available.
+      
+      
+      
+      
+      Payment details are differentiated by their type. Some payment types like
+      [SalesforcePaymentDetails.TYPE_CARD](dw.extensions.payments.SalesforcePaymentDetails.md#type_card) contain additional details like the card brand,
+      or the last 4 digits of the card number. Details to those payments will be of a specific subclass like
+      [SalesforceCardPaymentDetails](dw.extensions.payments.SalesforceCardPaymentDetails.md). Other payment types have no additional information
+      so their details are represented by an object of the base type.
+      
+      
+      
+      
+      Payment details contain information about the method and credentials for a payment before any attempt to
+      authorize or capture a payment amount. Some of that information may be relevant to the payer and is appropriate
+      to present on an order confirmation or order history page, as well as in an order confirmation email. Other
+      information may only be important for auditing or fraud check purposes and need not be presented to the payer.
 
 
 
@@ -205,6 +235,36 @@ This class does not have a constructor, so you cannot create it directly.
 
 ---
 
+### getPaymentDetails()
+- getPaymentDetails(): [SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)
+  - : 
+      
+      Returns the payment details for this payment instrument, or `null` if none are available.
+      
+      
+      
+      
+      Payment details are differentiated by their type. Some payment types like
+      [SalesforcePaymentDetails.TYPE_CARD](dw.extensions.payments.SalesforcePaymentDetails.md#type_card) contain additional details like the card brand,
+      or the last 4 digits of the card number. Details to those payments will be of a specific subclass like
+      [SalesforceCardPaymentDetails](dw.extensions.payments.SalesforceCardPaymentDetails.md). Other payment types have no additional information
+      so their details are represented by an object of the base type.
+      
+      
+      
+      
+      Payment details contain information about the method and credentials for a payment before any attempt to
+      authorize or capture a payment amount. Some of that information may be relevant to the payer and is appropriate
+      to present on an order confirmation or order history page, as well as in an order confirmation email. Other
+      information may only be important for auditing or fraud check purposes and need not be presented to the payer.
+
+
+    **Returns:**
+    - the payment details, or `null` if none are available
+
+
+---
+
 ### getPaymentTransaction()
 - getPaymentTransaction(): [PaymentTransaction](dw.order.PaymentTransaction.md)
   - : Returns the Payment Transaction for this Payment Instrument or null.
@@ -224,6 +284,29 @@ This class does not have a constructor, so you cannot create it directly.
 
     **Returns:**
     - sum of refunded amounts
+
+
+---
+
+### setPaymentDetails(SalesforcePaymentDetails)
+- setPaymentDetails(details: [SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md)): void
+  - : 
+      
+      Sets the payment details for this payment instrument. Set `null` to clear them.
+      
+      
+      
+      
+      Payment details are differentiated by their type. The caller is responsible to set payment details of a type
+      appropriate to the payment method and its credentials. Some payment types like
+      [SalesforcePaymentDetails.TYPE_CARD](dw.extensions.payments.SalesforcePaymentDetails.md#type_card) contain additional details like the card brand,
+      or the last 4 digits of the card number. To set the details to those payments, use a specific subclass like
+      [SalesforceCardPaymentDetails](dw.extensions.payments.SalesforceCardPaymentDetails.md). To set details for other payment types that have no
+      additional information, use the base class [SalesforcePaymentDetails](dw.extensions.payments.SalesforcePaymentDetails.md).
+
+
+    **Parameters:**
+    - details - payment details to set, or `null` to clear them
 
 
 ---

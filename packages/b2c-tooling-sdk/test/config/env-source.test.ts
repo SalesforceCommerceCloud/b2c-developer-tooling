@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {EnvSource, ConfigResolver, DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {EnvSource, ConfigResolver, DwJsonSource, StorefrontNextEnvSource} from '@salesforce/b2c-tooling-sdk/config';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -128,6 +128,12 @@ describe('config/EnvSource', () => {
       expect(result!.config.tenantId).to.equal('abcd_prd');
     });
 
+    it('maps SFCC_SCAPI_SCHEMAS to a scapiSchemas path list', () => {
+      const source = new EnvSource({SFCC_SCAPI_SCHEMAS: 'schemas/a.json, schemas/beta'});
+      const result = source.load({});
+      expect(result!.config.scapiSchemas).to.deep.equal(['schemas/a.json', 'schemas/beta']);
+    });
+
     it('maps SFCC_SITE_ID to siteId', () => {
       const source = new EnvSource({SFCC_SITE_ID: 'RefArch'});
       const result = source.load({});
@@ -162,6 +168,83 @@ describe('config/EnvSource', () => {
       const source = new EnvSource({SFCC_CIP_HOST: 'cip.example.com'});
       const result = source.load({});
       expect(result!.config.cipHost).to.equal('cip.example.com');
+    });
+  });
+
+  describe('apiBackend (SFCC_API_BACKEND)', () => {
+    for (const value of ['auto', 'scapi', 'ocapi']) {
+      it(`maps SFCC_API_BACKEND=${value} to apiBackend`, () => {
+        const source = new EnvSource({SFCC_API_BACKEND: value});
+        const result = source.load({});
+        expect(result!.config.apiBackend).to.equal(value);
+      });
+    }
+
+    it('ignores an invalid SFCC_API_BACKEND value', () => {
+      const source = new EnvSource({SFCC_API_BACKEND: 'bogus'});
+      const result = source.load({});
+      // No valid fields → source contributes nothing.
+      expect(result).to.be.undefined;
+    });
+
+    it('ignores an invalid value but keeps other valid env fields', () => {
+      const source = new EnvSource({SFCC_API_BACKEND: 'bogus', SFCC_SERVER: 'test.demandware.net'});
+      const result = source.load({});
+      expect(result!.config.apiBackend).to.be.undefined;
+      expect(result!.config.hostname).to.equal('test.demandware.net');
+    });
+  });
+
+  describe('clientAuthMethod (SFCC_CLIENT_AUTH_METHOD)', () => {
+    for (const value of ['basic', 'basic-unencoded', 'body']) {
+      it(`maps SFCC_CLIENT_AUTH_METHOD=${value} to clientAuthMethod`, () => {
+        const source = new EnvSource({SFCC_CLIENT_AUTH_METHOD: value});
+        const result = source.load({});
+        expect(result!.config.clientAuthMethod).to.equal(value);
+      });
+    }
+
+    it('ignores an invalid SFCC_CLIENT_AUTH_METHOD value', () => {
+      const source = new EnvSource({SFCC_CLIENT_AUTH_METHOD: 'header'});
+      const result = source.load({});
+      expect(result).to.be.undefined;
+    });
+  });
+
+  describe('mrtBackend (MRT_BACKEND / SFCC_MRT_BACKEND)', () => {
+    for (const value of ['auto', 'legacy', 'scapi']) {
+      it(`maps MRT_BACKEND=${value} to mrtBackend`, () => {
+        const source = new EnvSource({MRT_BACKEND: value});
+        const result = source.load({});
+        expect(result!.config.mrtBackend).to.equal(value);
+      });
+
+      it(`maps SFCC_MRT_BACKEND=${value} to mrtBackend`, () => {
+        const source = new EnvSource({SFCC_MRT_BACKEND: value});
+        const result = source.load({});
+        expect(result!.config.mrtBackend).to.equal(value);
+      });
+    }
+
+    it('MRT_BACKEND takes precedence over SFCC_MRT_BACKEND', () => {
+      const source = new EnvSource({SFCC_MRT_BACKEND: 'legacy', MRT_BACKEND: 'scapi'});
+      const result = source.load({});
+      expect(result!.config.mrtBackend).to.equal('scapi');
+    });
+
+    it('ignores an invalid MRT_BACKEND value', () => {
+      const source = new EnvSource({MRT_BACKEND: 'bogus'});
+      const result = source.load({});
+      // No valid fields → source contributes nothing.
+      expect(result).to.be.undefined;
+    });
+
+    it('rejects an OCAPI/SCAPI apiBackend value (mrtBackend enum is distinct)', () => {
+      // `ocapi` is valid for apiBackend but NOT for mrtBackend.
+      const source = new EnvSource({MRT_BACKEND: 'ocapi', SFCC_MRT_PROJECT: 'my-project'});
+      const result = source.load({});
+      expect(result!.config.mrtBackend).to.be.undefined;
+      expect(result!.config.mrtProject).to.equal('my-project');
     });
   });
 
@@ -253,7 +336,50 @@ describe('config/EnvSource', () => {
     });
   });
 
+  describe('StorefrontNextEnvSource', () => {
+    const variables = {
+      PUBLIC__app__commerce__api__clientId: 'slasClientId',
+      PUBLIC__app__commerce__api__organizationId: 'tenantId',
+      PUBLIC__app__commerce__api__shortCode: 'shortCode',
+      COMMERCE_API_SLAS_SECRET: 'slasClientSecret',
+      PUBLIC__app__defaultSiteId: 'siteId',
+    };
+
+    for (const [variable, field] of Object.entries(variables)) {
+      it(`maps ${variable} to ${field}`, () => {
+        const result = new StorefrontNextEnvSource({[variable]: 'sfn-value'}).load({});
+        expect(result?.config).to.have.property(field, 'sfn-value');
+      });
+
+      it(`is not read by EnvSource (${variable})`, () => {
+        expect(new EnvSource({[variable]: 'sfn-value'}).load({})).to.be.undefined;
+      });
+    }
+
+    it('ignores toolkit variables', () => {
+      expect(new StorefrontNextEnvSource({SFCC_SERVER: 'test.demandware.net'}).load({})).to.be.undefined;
+    });
+
+    it('sits just below dw.json (priority 1)', () => {
+      expect(new StorefrontNextEnvSource({}).priority).to.equal(1);
+    });
+
+    it('reports the configured location', () => {
+      const result = new StorefrontNextEnvSource(
+        {PUBLIC__app__defaultSiteId: 'RefArch'},
+        {location: '/project/.env'},
+      ).load({});
+      expect(result?.location).to.equal('/project/.env');
+    });
+  });
+
   describe('metadata', () => {
+    it('accepts a custom name and location', () => {
+      const source = new EnvSource({SFCC_SERVER: 'test.demandware.net'}, {name: 'DotenvFile', location: '/p/.env'});
+      expect(source.name).to.equal('DotenvFile');
+      expect(source.load({})!.location).to.equal('/p/.env');
+    });
+
     it('has name EnvSource', () => {
       const source = new EnvSource({});
       expect(source.name).to.equal('EnvSource');
@@ -308,13 +434,85 @@ describe('config/EnvSource', () => {
         JSON.stringify({hostname: 'dw.demandware.net', 'code-version': 'v2'}),
       );
 
-      // EnvSource provides only hostname
-      const envSource = new EnvSource({SFCC_SERVER: 'env.demandware.net'});
+      // EnvSource provides only a client ID
+      const envSource = new EnvSource({SFCC_CLIENT_ID: 'env-client'});
       const resolver = new ConfigResolver([envSource, new DwJsonSource()]);
       const {config} = await resolver.resolve();
 
-      expect(config.hostname).to.equal('env.demandware.net');
+      expect(config.hostname).to.equal('dw.demandware.net');
+      expect(config.clientId).to.equal('env-client');
       expect(config.codeVersion).to.equal('v2');
+    });
+
+    it('skips dw.json entirely when EnvSource sets a different hostname', async () => {
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({hostname: 'dw.demandware.net', 'code-version': 'v2', username: 'dw-user'}),
+      );
+
+      const envSource = new EnvSource({SFCC_SERVER: 'env.demandware.net'});
+      const resolver = new ConfigResolver([envSource, new DwJsonSource()]);
+      const {config, warnings, sources} = await resolver.resolve();
+
+      expect(config.hostname).to.equal('env.demandware.net');
+      expect(config.codeVersion).to.be.undefined;
+      expect(config.username).to.be.undefined;
+      expect(warnings.map((w) => w.code)).to.include('HOSTNAME_MISMATCH');
+      expect(sources.find((source) => source.name === 'DwJsonSource')?.fields).to.deep.equal([]);
+    });
+
+    it('keeps the selected dw.json instance above Storefront Next variables', async () => {
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({
+          configs: [
+            {name: 'dev', active: true, hostname: 'dev.example.com', 'tenant-id': 'aaaa_001'},
+            {
+              name: 'stg',
+              hostname: 'stg.example.com',
+              'short-code': 'stgshort',
+              'tenant-id': 'bbbb_002',
+              'slas-client-id': 'stg-slas',
+              'slas-client-secret': 'stg-secret',
+            },
+          ],
+        }),
+      );
+
+      const storefrontNext = new StorefrontNextEnvSource({
+        PUBLIC__app__commerce__api__clientId: 'sfn-slas',
+        PUBLIC__app__commerce__api__organizationId: 'f_ecom_zzzz_001',
+        PUBLIC__app__commerce__api__shortCode: 'sfnshort',
+        COMMERCE_API_SLAS_SECRET: 'sfn-secret',
+        PUBLIC__app__defaultSiteId: 'RefArch',
+      });
+      const resolver = new ConfigResolver([storefrontNext, new DwJsonSource()]);
+      const {config, warnings} = await resolver.resolve({}, {instance: 'stg'});
+
+      expect(config.hostname).to.equal('stg.example.com');
+      expect(config.shortCode).to.equal('stgshort');
+      expect(config.tenantId).to.equal('bbbb_002');
+      expect(config.slasClientId).to.equal('stg-slas');
+      expect(config.slasClientSecret).to.equal('stg-secret');
+      expect(config.siteId).to.equal('RefArch');
+      expect(warnings).to.be.empty;
+    });
+
+    it('lets Storefront Next variables fill an instance without SLAS settings', async () => {
+      fs.writeFileSync(path.join(tempDir, 'dw.json'), JSON.stringify({hostname: 'dw.example.com', username: 'u'}));
+
+      const storefrontNext = new StorefrontNextEnvSource({
+        PUBLIC__app__commerce__api__clientId: 'sfn-slas',
+        COMMERCE_API_SLAS_SECRET: 'sfn-secret',
+        PUBLIC__app__commerce__api__organizationId: 'f_ecom_zzzz_001',
+      });
+      const resolver = new ConfigResolver([storefrontNext, new DwJsonSource()]);
+      const {config} = await resolver.resolve();
+
+      expect(config.hostname).to.equal('dw.example.com');
+      expect(config.slasClientId).to.equal('sfn-slas');
+      expect(config.slasClientSecret).to.equal('sfn-secret');
+      expect(config.tenantId).to.equal('zzzz_001');
     });
   });
 
