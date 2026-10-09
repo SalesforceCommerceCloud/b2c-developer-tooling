@@ -614,6 +614,34 @@ describe('usage-inference — functions handed to declared APIs', () => {
       name: 'entry',
       expected: '',
     },
+    {
+      title: 'an anonymous function a factory returns is handed on wherever the factory’s calls go',
+      types: HANDOFF_TYPES,
+      source: `
+        function listenerFor(name) {
+          return function (container, changed) { return name; };
+        }
+        module.exports = {listenerFor: listenerFor};
+      `,
+      files: {'/listeners.js': "var helper = require('./helper'); onBasketChange('cart', helper.listenerFor('cart'));"},
+      kind: 'param',
+      name: 'container',
+      expected: 'Basket',
+    },
+    {
+      title: 'an anonymous function a factory returns is called wherever the factory’s result is',
+      types: HANDOFF_TYPES,
+      source: `
+        function listenerFor(name) {
+          return function (container) { return name; };
+        }
+        var listener = listenerFor('cart');
+        listener(getBasket());
+      `,
+      kind: 'param',
+      name: 'container',
+      expected: 'Basket',
+    },
   ]);
 });
 

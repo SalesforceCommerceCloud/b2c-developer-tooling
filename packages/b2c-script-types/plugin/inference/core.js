@@ -351,7 +351,7 @@ function resolveIdentifierTypes(ctx, expr, depth, chainHops) {
     // Only a search of another function's call sites costs depth: an anonymous
     // callback's parameter is read off the call it is passed to, in this body.
     if (decl && ts.isParameter(decl)) {
-        return inferParameterType(ctx, decl, (0, value_flow_1.getReferenceNameNode)(decl.parent, ts) ? depth + 1 : depth);
+        return inferParameterType(ctx, decl, (0, value_flow_1.holderOf)(ctx, decl.parent) ? depth + 1 : depth);
     }
     if (decl && ts.isVariableDeclaration(decl))
         return resolveVariableTypes(ctx, decl, depth, chainHops + 1);
@@ -364,13 +364,14 @@ function resolveIdentifierTypes(ctx, expr, depth, chainHops) {
  * `HookMgr.callHook(...)` calls dispatched to it), from the declared APIs it
  * is handed to (`server.get('Show', cache.applyDefaultCache)`), or — for an
  * anonymous callback with no name to search for — from the collection it
- * iterates.
+ * iterates. An anonymous function a factory returns is called wherever the
+ * factory's calls take it (`server.append('Show', responseHandler(map))`).
  */
 function parameterEvidence(ctx, fn, paramIndex, depth) {
-    const nameNode = (0, value_flow_1.getReferenceNameNode)(fn, ctx.ts);
-    if (!nameNode)
+    const holder = (0, value_flow_1.holderOf)(ctx, fn);
+    if (!holder)
         return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
-    const { calls, handoffs } = (0, call_sites_1.collectCallSites)(ctx, nameNode);
+    const { calls, handoffs } = (0, call_sites_1.collectCallSites)(ctx, holder);
     const passed = [...calls, ...(0, hook_calls_1.hookCallSites)(ctx, fn)].flatMap((site) => {
         const arg = site.args[paramIndex];
         return arg ? argumentEvidence(ctx, arg, depth) : [];

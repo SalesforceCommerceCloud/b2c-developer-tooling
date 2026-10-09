@@ -88,14 +88,14 @@ export interface InferenceContext {
   searchBudget: number;
   /**
    * Request-scoped memo of collectCallSites() results, keyed by the searched
-   * name node. Two different parameters of the same function (or two return
+   * name and the role it holds the function in (see ./value-flow). Two different parameters of the same function (or two return
    * paths reaching the same parameter set) otherwise each re-run the exact
    * same reference searches within one request. Reuse is sound because the
    * budgets only ever decrease during a request: a memoized result was
    * computed with at least as much budget as any later call would have had,
    * so it can only be equally or more complete.
    */
-  readonly callSiteMemo: Map<tsserver.Identifier, CallSites>;
+  readonly callSiteMemo: Map<string, CallSites>;
   /**
    * Request-scoped memo of checker.typeToString() results, used by
    * dedupeTypes(). Candidate types propagate up through every recursion

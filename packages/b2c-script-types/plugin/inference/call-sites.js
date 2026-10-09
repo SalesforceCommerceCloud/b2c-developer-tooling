@@ -30,7 +30,7 @@ function isFunctionLocal(ts, name) {
     const isVariable = ts.isVariableDeclaration(declaration) || ts.isBindingElement(declaration);
     return isVariable && (0, value_flow_1.enclosingFunction)(declaration, ts) !== undefined;
 }
-function frontierKey({ name, role }) {
+function holderKey({ name, role }) {
     const sourceFile = name.getSourceFile();
     return `${role}:${sourceFile.fileName}:${name.getStart(sourceFile)}`;
 }
@@ -40,7 +40,7 @@ function frontierKey({ name, role }) {
  * unit of ctx.searchBudget, when it costs one.
  */
 function claimSearch(ctx, next, searched) {
-    const key = frontierKey(next);
+    const key = holderKey(next);
     const charged = !isFunctionLocal(ctx.ts, next.name);
     if (searched.has(key) || (charged && ctx.searchBudget <= 0))
         return false;
@@ -50,8 +50,8 @@ function claimSearch(ctx, next, searched) {
     return true;
 }
 /**
- * Finds actual call sites for `nameNode`, and the handoffs to declared
- * callees, following up to MAX_REFERENCE_HOPS names the function value flows
+ * Finds the actual call sites of the function `holder` holds (see
+ * ./value-flow's holderOf), and the handoffs to declared callees, following up to MAX_REFERENCE_HOPS names the function value flows
  * into (see ./value-flow: require() bindings, exports, aliases, factories
  * returning it, parameters it is passed to) when a reference doesn't sit
  * directly in callee position. Stops early once ctx.referenceBudget (result
@@ -61,13 +61,14 @@ function claimSearch(ctx, next, searched) {
  * on a widely-referenced helper. Results are memoized per name node for the
  * duration of the request.
  */
-function collectCallSites(ctx, nameNode) {
-    const memoized = ctx.callSiteMemo.get(nameNode);
+function collectCallSites(ctx, holder) {
+    const key = holderKey(holder);
+    const memoized = ctx.callSiteMemo.get(key);
     if (memoized)
         return memoized;
     const found = { calls: [], handoffs: [] };
     const searched = new Set();
-    let frontier = [{ name: nameNode, role: 'value' }];
+    let frontier = [holder];
     let localBudget = Math.min(constants_1.MAX_REFERENCES_PER_CALL, ctx.referenceBudget);
     for (let hop = 0; hop <= constants_1.MAX_REFERENCE_HOPS && frontier.length > 0 && localBudget > 0; hop++) {
         const nextFrontier = [];
@@ -80,7 +81,7 @@ function collectCallSites(ctx, nameNode) {
         }
         frontier = nextFrontier;
     }
-    ctx.callSiteMemo.set(nameNode, found);
+    ctx.callSiteMemo.set(key, found);
     return found;
 }
 /**

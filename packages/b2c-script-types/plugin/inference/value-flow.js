@@ -8,6 +8,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getReferenceNameNode = getReferenceNameNode;
 exports.enclosingFunction = enclosingFunction;
 exports.receivingParameter = receivingParameter;
+exports.holderOf = holderOf;
 exports.valueTarget = valueTarget;
 const signatures_1 = require("./signatures");
 /** The name a function declaration, method or class declares itself by. */
@@ -197,6 +198,21 @@ function handedOff(ctx, value) {
         return undefined;
     const argIndex = call.arguments.indexOf(value);
     return argIndex >= 0 ? { kind: 'handoff', handoff: { call, argIndex } } : undefined;
+}
+/**
+ * Where a search for the calls of `fn` starts: the name it is declared or
+ * bound by (see {@link getReferenceNameNode}), or for an anonymous function a
+ * factory returns (`return function (req, res, next) {...}`), the factory,
+ * whose calls evaluate to it.
+ */
+function holderOf(ctx, fn) {
+    const { ts } = ctx;
+    const name = getReferenceNameNode(fn, ts);
+    if (name)
+        return { name, role: 'value' };
+    const anonymous = ts.isFunctionExpression(fn) || ts.isArrowFunction(fn);
+    const factory = anonymous ? returnedBy(ctx, outermostValue(ts, fn)) : undefined;
+    return factory?.kind === 'name' ? factory : undefined;
 }
 /**
  * Where one reference to the function leads. In the `value` role the

@@ -28,13 +28,7 @@ import {valueDeclarationOf} from './member-values';
 import {searchReferences} from './reference-search';
 import {informativeParts} from './type-helpers';
 import {enclosingFunction, valueTarget} from './value-flow';
-import type {CallSites, ReferenceTarget, ValueRole} from './value-flow';
-
-/** A name whose references are searched next, and how it holds the function. */
-interface FrontierName {
-  readonly name: tsserver.Identifier;
-  readonly role: ValueRole;
-}
+import type {CallSites, ReferenceTarget, ValueHolder} from './value-flow';
 
 /**
  * True when `name` declares a parameter or a variable inside a function.
@@ -52,7 +46,7 @@ function isFunctionLocal(ts: typeof tsserver, name: tsserver.Identifier): boolea
   return isVariable && enclosingFunction(declaration, ts) !== undefined;
 }
 
-function frontierKey({name, role}: FrontierName): string {
+function holderKey({name, role}: ValueHolder): string {
   const sourceFile = name.getSourceFile();
   return `${role}:${sourceFile.fileName}:${name.getStart(sourceFile)}`;
 }
@@ -62,8 +56,8 @@ function frontierKey({name, role}: FrontierName): string {
  * and the request can still pay for it. Records the search and spends its
  * unit of ctx.searchBudget, when it costs one.
  */
-function claimSearch(ctx: InferenceContext, next: FrontierName, searched: Set<string>): boolean {
-  const key = frontierKey(next);
+function claimSearch(ctx: InferenceContext, next: ValueHolder, searched: Set<string>): boolean {
+  const key = holderKey(next);
   const charged = !isFunctionLocal(ctx.ts, next.name);
   if (searched.has(key) || (charged && ctx.searchBudget <= 0)) return false;
   searched.add(key);
@@ -72,8 +66,8 @@ function claimSearch(ctx: InferenceContext, next: FrontierName, searched: Set<st
 }
 
 /**
- * Finds actual call sites for `nameNode`, and the handoffs to declared
- * callees, following up to MAX_REFERENCE_HOPS names the function value flows
+ * Finds the actual call sites of the function `holder` holds (see
+ * ./value-flow's holderOf), and the handoffs to declared callees, following up to MAX_REFERENCE_HOPS names the function value flows
  * into (see ./value-flow: require() bindings, exports, aliases, factories
  * returning it, parameters it is passed to) when a reference doesn't sit
  * directly in callee position. Stops early once ctx.referenceBudget (result
@@ -83,16 +77,17 @@ function claimSearch(ctx: InferenceContext, next: FrontierName, searched: Set<st
  * on a widely-referenced helper. Results are memoized per name node for the
  * duration of the request.
  */
-export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): CallSites {
-  const memoized = ctx.callSiteMemo.get(nameNode);
+export function collectCallSites(ctx: InferenceContext, holder: ValueHolder): CallSites {
+  const key = holderKey(holder);
+  const memoized = ctx.callSiteMemo.get(key);
   if (memoized) return memoized;
   const found: CallSites = {calls: [], handoffs: []};
   const searched = new Set<string>();
-  let frontier: FrontierName[] = [{name: nameNode, role: 'value'}];
+  let frontier: ValueHolder[] = [holder];
   let localBudget = Math.min(MAX_REFERENCES_PER_CALL, ctx.referenceBudget);
 
   for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0 && localBudget > 0; hop++) {
-    const nextFrontier: FrontierName[] = [];
+    const nextFrontier: ValueHolder[] = [];
     for (const next of frontier) {
       if (localBudget <= 0) break;
       if (claimSearch(ctx, next, searched)) {
@@ -102,7 +97,7 @@ export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Ident
     frontier = nextFrontier;
   }
 
-  ctx.callSiteMemo.set(nameNode, found);
+  ctx.callSiteMemo.set(key, found);
   return found;
 }
 
@@ -115,9 +110,9 @@ export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Ident
  */
 function collectCallsFromName(
   ctx: InferenceContext,
-  next: FrontierName,
+  next: ValueHolder,
   found: CallSites,
-  nextFrontier: FrontierName[],
+  nextFrontier: ValueHolder[],
   localBudget: number,
 ): number {
   for (const reference of searchReferences(ctx, next.name)) {

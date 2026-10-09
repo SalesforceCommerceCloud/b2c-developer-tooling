@@ -732,6 +732,45 @@ describe('create() proxy — usage inference wiring', () => {
     assert.match(hoverText, /Inferred from usage: Response/);
   });
 
+  it('types the middleware a factory returns from the routes its calls are handed to', () => {
+    const files = {
+      '/c/cartridge/scripts/middleware/jsonResponse.js': `
+        function responseHandler(fieldMap) {
+          return function (req, res, next) {
+            res.json(fieldMap);
+            next();
+          };
+        }
+        module.exports = {responseHandler: responseHandler};
+      `,
+      '/c/cartridge/controllers/Order.js': `
+        var server = require('server');
+        var jsonResponse = require('*/cartridge/scripts/middleware/jsonResponse');
+        server.append('Confirm', jsonResponse.responseHandler({orderNo: 'orderNo'}));
+        module.exports = server.exports();
+      `,
+    };
+    const {proxy} = createPluginProxy({
+      files,
+      config: {
+        enabled: true,
+        autoDiscover: false,
+        cartridges: [
+          {name: 'c', src: '/c/'},
+          {name: 'modules', src: '/modules/'},
+        ],
+        inferUsage: true,
+      },
+    });
+    const middlewareFile = '/c/cartridge/scripts/middleware/jsonResponse.js';
+    const source = files[middlewareFile];
+
+    const hover = proxy.getQuickInfoAtPosition(middlewareFile, source.indexOf('res, next'));
+    const hoverText = [...(hover?.displayParts ?? []), ...(hover?.documentation ?? [])].map((p) => p.text).join('');
+    assert.match(hoverText, /res: Response/);
+    assert.match(hoverText, /Inferred from usage: Response/);
+  });
+
   it("types a route event listener's parameters through the route a middleware step runs on", () => {
     // SFRA calls each middleware step with the route as `this`, so the
     // listeners a step registers with `this.on(...)` are typed by Route.on.

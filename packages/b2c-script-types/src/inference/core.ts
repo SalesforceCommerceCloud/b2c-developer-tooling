@@ -37,7 +37,7 @@ import {
 import type {ArgumentBinding, BoundCallback} from './bindings';
 import {NO_CALLBACK_USES, callbackUses} from './callback-arguments';
 import {collectCallSites, forwardedParameter} from './call-sites';
-import {getReferenceNameNode} from './value-flow';
+import {holderOf} from './value-flow';
 import {frameworkParameterTypes} from './framework-contracts';
 import {genericResultSource} from './generic-calls';
 import {hookCallSites, hookImplementations} from './hook-calls';
@@ -507,7 +507,7 @@ function resolveIdentifierTypes(
   // Only a search of another function's call sites costs depth: an anonymous
   // callback's parameter is read off the call it is passed to, in this body.
   if (decl && ts.isParameter(decl)) {
-    return inferParameterType(ctx, decl, getReferenceNameNode(decl.parent, ts) ? depth + 1 : depth);
+    return inferParameterType(ctx, decl, holderOf(ctx, decl.parent) ? depth + 1 : depth);
   }
   if (decl && ts.isVariableDeclaration(decl)) return resolveVariableTypes(ctx, decl, depth, chainHops + 1);
   return [];
@@ -520,7 +520,8 @@ function resolveIdentifierTypes(
  * `HookMgr.callHook(...)` calls dispatched to it), from the declared APIs it
  * is handed to (`server.get('Show', cache.applyDefaultCache)`), or — for an
  * anonymous callback with no name to search for — from the collection it
- * iterates.
+ * iterates. An anonymous function a factory returns is called wherever the
+ * factory's calls take it (`server.append('Show', responseHandler(map))`).
  */
 function parameterEvidence(
   ctx: InferenceContext,
@@ -528,9 +529,9 @@ function parameterEvidence(
   paramIndex: number,
   depth: number,
 ): tsserver.Type[] {
-  const nameNode = getReferenceNameNode(fn, ctx.ts);
-  if (!nameNode) return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
-  const {calls, handoffs} = collectCallSites(ctx, nameNode);
+  const holder = holderOf(ctx, fn);
+  if (!holder) return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
+  const {calls, handoffs} = collectCallSites(ctx, holder);
   const passed = [...calls, ...hookCallSites(ctx, fn)].flatMap((site) => {
     const arg = site.args[paramIndex];
     return arg ? argumentEvidence(ctx, arg, depth) : [];

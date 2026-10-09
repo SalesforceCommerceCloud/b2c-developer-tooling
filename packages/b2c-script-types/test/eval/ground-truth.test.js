@@ -51,7 +51,7 @@ const ts = require('typescript');
 
 const {discoverCartridgesOnDisk, orderCartridges} = require('../../src/resolver/cartridge-discovery');
 const {collectCallSites} = require('../../src/inference/call-sites');
-const {getReferenceNameNode} = require('../../src/inference/value-flow');
+const {holderOf} = require('../../src/inference/value-flow');
 const {inferTypeForExpression} = require('../../src/inference/core');
 const {createInferenceContext, describeTypes, inferReturnType, inferTypeForNode} = require('../../src/usage-inference');
 const {createPluginProxy} = require('../helpers/plugin-proxy');
@@ -346,13 +346,13 @@ function silentReason(languageService, fileName, position) {
   const request = freshRequest(languageService, fileName);
   const param = request && findNodeAt(request.sourceFile, position, ts.isIdentifier)?.parent;
   if (!param || !ts.isParameter(param)) return 'not-a-parameter';
-  const nameNode = getReferenceNameNode(param.parent, ts);
-  return nameNode ? callSiteSilence(request.ctx, nameNode, param) : 'anonymous-callback';
+  const holder = holderOf(request.ctx, param.parent);
+  return holder ? callSiteSilence(request.ctx, holder, param) : 'anonymous-callback';
 }
 
-/** Classifies a silent parameter of a named function by what its call sites gave. */
-function callSiteSilence(ctx, nameNode, param) {
-  const {calls, handoffs} = collectCallSites(ctx, nameNode);
+/** Classifies a silent parameter of a function whose calls can be searched by what its call sites gave. */
+function callSiteSilence(ctx, holder, param) {
+  const {calls, handoffs} = collectCallSites(ctx, holder);
   const index = param.parent.parameters.indexOf(param);
   const evidence = calls.flatMap((site) => (site.args[index] ? inferTypeForExpression(ctx, site.args[index]) : []));
   if (evidence.length > 0) return 'dropped-by-policy';

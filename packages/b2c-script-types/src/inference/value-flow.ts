@@ -38,6 +38,12 @@ export interface CallSite {
 /** How a searched name holds the function: as the function itself, or as a factory whose calls return it. */
 export type ValueRole = 'factory' | 'value';
 
+/** A name whose references lead to a function's calls, and how it holds the function. */
+export interface ValueHolder {
+  readonly name: tsserver.Identifier;
+  readonly role: ValueRole;
+}
+
 /**
  * A call handing the function as an argument to a callee that is not a
  * project function receiving it in a parameter: a Script API or SFRA
@@ -60,7 +66,7 @@ export interface CallSites {
 export type ReferenceTarget =
   | {readonly kind: 'call'; readonly call: CallSite}
   | {readonly kind: 'handoff'; readonly handoff: Handoff}
-  | {readonly kind: 'name'; readonly name: tsserver.Identifier; readonly role: ValueRole};
+  | ({readonly kind: 'name'} & ValueHolder);
 
 /** A function-like declaration, or the class a constructor is invoked through. */
 type Callable = tsserver.SignatureDeclaration | tsserver.ClassLikeDeclaration;
@@ -269,6 +275,21 @@ function handedOff(ctx: InferenceContext, value: tsserver.Node): ReferenceTarget
   if (!ctx.ts.isCallExpression(call)) return undefined;
   const argIndex = call.arguments.indexOf(value as tsserver.Expression);
   return argIndex >= 0 ? {kind: 'handoff', handoff: {call, argIndex}} : undefined;
+}
+
+/**
+ * Where a search for the calls of `fn` starts: the name it is declared or
+ * bound by (see {@link getReferenceNameNode}), or for an anonymous function a
+ * factory returns (`return function (req, res, next) {...}`), the factory,
+ * whose calls evaluate to it.
+ */
+export function holderOf(ctx: InferenceContext, fn: tsserver.SignatureDeclaration): ValueHolder | undefined {
+  const {ts} = ctx;
+  const name = getReferenceNameNode(fn, ts);
+  if (name) return {name, role: 'value'};
+  const anonymous = ts.isFunctionExpression(fn) || ts.isArrowFunction(fn);
+  const factory = anonymous ? returnedBy(ctx, outermostValue(ts, fn)) : undefined;
+  return factory?.kind === 'name' ? factory : undefined;
 }
 
 /**
