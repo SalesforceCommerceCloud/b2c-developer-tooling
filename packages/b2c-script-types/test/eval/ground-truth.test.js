@@ -338,17 +338,18 @@ function silentReason(languageService, fileName, position) {
   const request = freshRequest(languageService, fileName);
   const param = request && findNodeAt(request.sourceFile, position, ts.isIdentifier)?.parent;
   if (!param || !ts.isParameter(param)) return 'not-a-parameter';
-  const {ctx} = request;
-  const fn = param.parent;
-  const nameNode = getReferenceNameNode(fn, ts);
-  if (!nameNode) return 'anonymous-callback';
+  const nameNode = getReferenceNameNode(param.parent, ts);
+  return nameNode ? callSiteSilence(request.ctx, nameNode, param) : 'anonymous-callback';
+}
+
+/** Classifies a silent parameter of a named function by what its call sites gave. */
+function callSiteSilence(ctx, nameNode, param) {
   const sites = collectCallSites(ctx, nameNode);
-  const exhausted = () => ctx.searchBudget <= 0 || ctx.referenceBudget <= 0;
-  if (sites.length === 0) return exhausted() ? 'budget' : 'no-call-sites';
-  const index = fn.parameters.indexOf(param);
+  const index = param.parent.parameters.indexOf(param);
   const evidence = sites.flatMap((site) => (site.args[index] ? inferTypeForExpression(ctx, site.args[index]) : []));
   if (evidence.length > 0) return 'dropped-by-policy';
-  return exhausted() ? 'budget' : 'no-evidence';
+  if (ctx.searchBudget <= 0 || ctx.referenceBudget <= 0) return 'budget';
+  return sites.length === 0 ? 'no-call-sites' : 'no-evidence';
 }
 
 const SLOWEST_REPORTED = 20;

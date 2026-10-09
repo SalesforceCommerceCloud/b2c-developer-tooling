@@ -8,6 +8,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAmbientClasses = getAmbientClasses;
 exports.ambientClassType = ambientClassType;
 exports.findAmbientClassType = findAmbientClassType;
+exports.builtinValueTypes = builtinValueTypes;
+const constants_1 = require("./constants");
 const classesByFile = new WeakMap();
 const classesByProgram = new WeakMap();
 function indexDeclaration(ctx, statement) {
@@ -63,4 +65,12 @@ function findAmbientClassType(ctx, name) {
     const named = getAmbientClasses(ctx).filter((ambientClass) => ambientClass.name === name);
     const preferred = named.find((ambientClass) => ambientClass.declaration.getSourceFile().fileName.includes('/dw/')) ?? named[0];
     return preferred && ambientClassType(ctx, preferred);
+}
+/** The declared types of the JavaScript built-ins in BUILTIN_VALUE_TYPES (`String`, `Array`, ...). */
+function builtinValueTypes(ctx) {
+    const { ts, checker } = ctx;
+    return constants_1.BUILTIN_VALUE_TYPES.flatMap((name) => {
+        const symbol = checker.resolveName(name, undefined, ts.SymbolFlags.Type, false);
+        return symbol ? [checker.getDeclaredTypeOfSymbol(symbol)] : [];
+    });
 }

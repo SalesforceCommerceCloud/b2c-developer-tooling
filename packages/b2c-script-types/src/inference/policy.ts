@@ -12,28 +12,39 @@
 // 1. Normalize: split unions, widen literals, drop types that say nothing
 //    (`null`, `any`, `T`, `{}`), dedupe by display.
 // 2. Fit: a parameter keeps only candidates exposing every member its body
-//    relies on — members it tests for first (`'ID' in x`) aside — and able
+//    relies on — members it tests for first (`'ID' in x`) aside, and members
+//    no declared type has at all (an API newer than the vendored types,
+//    an expando property), which can't tell candidates apart — and able
 //    to stand wherever the body passes the value to a documented helper, or
 //    a class its body tests for with `instanceof`/`typeof`. A duck-typed view
 //    model, or a wrong argument at one buggy call site, can't masquerade as
 //    the Script API class the body actually needs.
 // 3. Union like IntelliJ: up to MAX_UNION_TYPES, after dropping any candidate
 //    whose superclass is also a candidate (`Variant | Product` is `Product`).
-//    Wider evidence collapses to the closest shared superclass that still
-//    fits, or stays silent.
+//    Wider evidence first reads instantiations of one generic class as the
+//    class (`Collection<Shipment>`, `Collection<Category>` -> `Collection`),
+//    then collapses to the closest shared superclass that still fits, or
+//    stays silent.
 // 4. No usable evidence: the most specific type the value is used as
 //    (`ProductMgr.getProduct(pid)` makes `pid` a `string`), then matching the
 //    usage against every ambient class, with the identifier name as a
-//    tiebreak (see ./naming).
+//    tiebreak (see ./naming). A usage a JavaScript built-in satisfies too
+//    (`msg.replace(...)`) stays silent.
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import {ambientClassType, getAmbientClasses} from './ambient-index';
+import {ambientClassType, builtinValueTypes, getAmbientClasses} from './ambient-index';
 import type {AmbientClass} from './ambient-index';
-import {MAX_UNION_TYPES, MIN_USAGE_SIGNATURE_MEMBERS, UNINFORMATIVE_ANCESTORS, WEAK_USAGE_MEMBERS} from './constants';
+import {
+  GLOBAL_OBJECT_CLASSES,
+  MAX_UNION_TYPES,
+  MIN_USAGE_SIGNATURE_MEMBERS,
+  UNINFORMATIVE_ANCESTORS,
+  WEAK_USAGE_MEMBERS,
+} from './constants';
 import type {InferenceContext} from './context';
 import {pickByName} from './naming';
-import {dedupeTypes, hasAllMembers, informativeParts, typeDisplayString} from './type-helpers';
+import {dedupeTypes, getMemberOfType, hasAllMembers, informativeParts, typeDisplayString} from './type-helpers';
 import type {UsageProfile} from './usage-profile';
 
 const NO_MEMBERS: ReadonlySet<string> = new Set();
@@ -141,7 +152,38 @@ function closestCommonAncestor(
   );
 }
 
-/** Step 3: an IntelliJ-style union of at most MAX_UNION_TYPES, else the closest shared superclass, else silence. */
+/**
+ * The generic class `type` instantiates, when its declared type reads as the
+ * bare class name. Arrays don't: the declared `Array<T>` renders as `T[]`.
+ */
+function genericClassOf(ctx: InferenceContext, type: tsserver.Type): tsserver.InterfaceType | undefined {
+  const generic = classOf(ctx, type);
+  return generic?.typeParameters?.length && !ctx.checker.isArrayType(type) ? generic : undefined;
+}
+
+/**
+ * Reads two or more instantiations of the same generic class as the class
+ * itself: its declared type, whose unbound type parameters render as nothing
+ * (`Collection<ProductLineItem>` and `Collection<Shipment>` -> `Collection`).
+ * A lone instantiation keeps its informative type argument.
+ */
+function mergeInstantiations(ctx: InferenceContext, types: readonly tsserver.Type[]): tsserver.Type[] {
+  const instantiations = new Map<tsserver.InterfaceType, number>();
+  for (const type of types) {
+    const generic = genericClassOf(ctx, type);
+    if (generic) instantiations.set(generic, (instantiations.get(generic) ?? 0) + 1);
+  }
+  const merged = types.map((type) => {
+    const generic = genericClassOf(ctx, type);
+    return generic && (instantiations.get(generic) ?? 0) > 1 ? generic : type;
+  });
+  return dedupeTypes(ctx, merged);
+}
+
+/**
+ * Step 3: an IntelliJ-style union of at most MAX_UNION_TYPES; wider evidence
+ * merged by generic class, else the closest shared superclass, else silence.
+ */
 export function limitUnion(
   ctx: InferenceContext,
   types: readonly tsserver.Type[],
@@ -149,7 +191,9 @@ export function limitUnion(
 ): tsserver.Type[] {
   const general = mostGeneral(ctx, types);
   if (general.length <= MAX_UNION_TYPES) return general;
-  const ancestor = closestCommonAncestor(ctx, general, memberNames);
+  const merged = mostGeneral(ctx, mergeInstantiations(ctx, general));
+  if (merged.length <= MAX_UNION_TYPES) return merged;
+  const ancestor = closestCommonAncestor(ctx, merged, memberNames);
   return ancestor ? [ancestor] : [];
 }
 
@@ -182,12 +226,18 @@ function resolveMatches(ctx: InferenceContext, classes: readonly AmbientClass[])
   return [...bySymbol.values()];
 }
 
+/** True when a JavaScript built-in (`String`, `Array`, ...) has every member in `memberNames`. */
+function fitsBuiltin(ctx: InferenceContext, memberNames: ReadonlySet<string>): boolean {
+  return builtinValueTypes(ctx).some((builtin) => hasAllMembers(ctx.checker, builtin, memberNames));
+}
+
 /**
  * Step 4b: matches a usage signature against every ambient class (see
- * ./ambient-index). Silent when no class has every member; when only
- * ubiquitous members (`.custom`, `.UUID`) were used and several classes fit;
- * and when a single member fits several classes the identifier name can't
- * choose between. A name that denotes a class the usage does *not* fit
+ * ./ambient-index) except those describing one global object (`Module`).
+ * Silent when no class has every member; when only ubiquitous members
+ * (`.custom`, `.UUID`) were used and several classes fit; when a single
+ * member fits several classes the identifier name can't choose between; and
+ * when a JavaScript built-in fits as well and the name doesn't pick a class. A name that denotes a class the usage does *not* fit
  * never falls back to a vaguer reading of the same name
  * (`bonusDiscountLineItem.getQuantity()` is not a ProductLineItem hint), and
  * silences a single-member signature outright: `lineItem.preorderable`
@@ -203,8 +253,10 @@ export function matchAmbientTypesByUsage(
 ): tsserver.Type[] {
   if (memberNames.size === 0) return [];
   const classes = getAmbientClasses(ctx);
-  const fitting = classes.filter((ambientClass) =>
-    [...memberNames].every((name) => ambientClass.memberNames.has(name)),
+  const fitting = classes.filter(
+    (ambientClass) =>
+      !GLOBAL_OBJECT_CLASSES.has(ambientClass.name) &&
+      [...memberNames].every((name) => ambientClass.memberNames.has(name)),
   );
   const onlyWeakMembers = [...memberNames].every((name) => WEAK_USAGE_MEMBERS.has(name));
   if (fitting.length === 0 || (onlyWeakMembers && fitting.length > 1)) return [];
@@ -215,12 +267,33 @@ export function matchAmbientTypesByUsage(
     : identifierName && pickByName(identifierName, matches);
   if (named) return [named.type];
   const thinSignature = memberNames.size < MIN_USAGE_SIGNATURE_MEMBERS;
-  if (thinSignature && (denoted || matches.length > 1)) return [];
+  if ((thinSignature && (denoted || matches.length > 1)) || fitsBuiltin(ctx, memberNames)) return [];
   return limitUnion(
     ctx,
     matches.map((match) => match.type),
     memberNames,
   );
+}
+
+/**
+ * The required members that can tell candidates apart: those some ambient
+ * class, JavaScript built-in or candidate declares. A member nothing declares
+ * (`searchHit.discountedPromotionIDs`, newer than the vendored Script API)
+ * would otherwise drop every candidate, the right one included.
+ */
+function checkableMembers(
+  ctx: InferenceContext,
+  required: ReadonlySet<string>,
+  candidates: readonly tsserver.Type[],
+): ReadonlySet<string> {
+  const {checker} = ctx;
+  const declaredBy = (types: readonly tsserver.Type[], name: string): boolean =>
+    types.some((type) => getMemberOfType(checker, type, name) !== undefined);
+  const declared = (name: string): boolean =>
+    declaredBy(candidates, name) ||
+    getAmbientClasses(ctx).some((ambientClass) => ambientClass.memberNames.has(name)) ||
+    declaredBy(builtinValueTypes(ctx), name);
+  return new Set([...required].filter(declared));
 }
 
 /**
@@ -243,12 +316,13 @@ export function decideType(
   const guardKeys = new Set(guards.map((type) => typeDisplayString(ctx, type)));
   const candidates = normalizeCandidates(ctx, [...evidence, ...guards]);
   const required = requiredMembers(profile);
+  const checkable = checkableMembers(ctx, required, candidates);
   const uses = constrainingUses(ctx, profile);
   const fits = (type: tsserver.Type): boolean =>
     guardKeys.has(typeDisplayString(ctx, type)) ||
-    (hasAllMembers(ctx.checker, type, required) && fitsEveryUse(ctx, type, uses));
+    (hasAllMembers(ctx.checker, type, checkable) && fitsEveryUse(ctx, type, uses));
   const fitting = fitUsage ? candidates.filter(fits) : candidates;
-  if (fitting.length > 0) return limitUnion(ctx, fitting, required);
+  if (fitting.length > 0) return limitUnion(ctx, fitting, checkable);
   const used = mostSpecificUse(ctx, profile, required);
   if (used.length > 0) return used;
   return matchAmbientTypesByUsage(ctx, profile.memberNames, identifierName);

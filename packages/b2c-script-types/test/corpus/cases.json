@@ -525,5 +525,17 @@
     "globals": "  function applyShippingCost(basket: Basket): void;",
     "target": {"file": "/helpers.js", "function": "recalculate", "param": 0},
     "expect": "Basket"
+  },
+  {
+    "id": "sfra-collections-foreach-many-element-types",
+    "source": "SFRA scripts/util/collections.forEach",
+    "description": "Collections of more element types than a union shows read as Collection instead of silence",
+    "dwTypes": ["Collection", "Product", "Category", "Shipment", "ProductLineItem"],
+    "globals": "function getProducts(): Collection<Product>;\nfunction getCategories(): Collection<Category>;\nfunction getShipments(): Collection<Shipment>;\nfunction getLineItems(): Collection<ProductLineItem>;",
+    "files": {
+      "/collections.js": "function forEach(collection, callback, scope) {\n  var iterator = Object.hasOwnProperty.call(collection, 'iterator') ? collection.iterator() : collection;\n  var index = 0;\n  while (iterator.hasNext()) {\n    var item = iterator.next();\n    if (scope) callback.call(scope, item, index++, collection);\n    else callback(item, index++, collection);\n  }\n}\nforEach(getProducts(), function () {});\nforEach(getCategories(), function () {});\nforEach(getShipments(), function () {});\nforEach(getLineItems(), function () {});\nmodule.exports = {forEach: forEach};\n"
+    },
+    "target": {"file": "/collections.js", "function": "forEach", "param": 0},
+    "expect": "Collection"
   }
 ]

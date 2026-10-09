@@ -136,16 +136,23 @@ function classDisplayName(checker, symbol) {
 /**
  * Renders a candidate type for hover text and dedupe keys. A class or
  * interface instantiated only with default type arguments reads as the bare
- * class name (`Product`, `LineItemCtnr`); everything else — real generic
- * arguments (`Collection<Variant>`), primitives, object literals, lib types —
- * is rendered by the checker as TypeScript itself would.
+ * class name (`Product`, `LineItemCtnr`); one with real type arguments
+ * renders them the same way (`Collection<Product>`, not the checker's
+ * `Collection<Product<Product>>`). Everything else — primitives, object
+ * literals, arrays, lib types — is rendered by the checker as TypeScript
+ * itself would.
  */
 function computeTypeDisplayString(ts, checker, type) {
     const symbol = type.getSymbol();
     const isClassOrInterface = symbol !== undefined && (symbol.flags & (ts.SymbolFlags.Class | ts.SymbolFlags.Interface)) !== 0;
-    if (isClassOrInterface && hasOnlyDefaultTypeArguments(ts, checker, type))
+    if (!isClassOrInterface || checker.isArrayType(type))
+        return checker.typeToString(type);
+    if (hasOnlyDefaultTypeArguments(ts, checker, type))
         return classDisplayName(checker, symbol);
-    return checker.typeToString(type);
+    const typeArguments = checker
+        .getTypeArguments(type)
+        .map((argument) => computeTypeDisplayString(ts, checker, argument));
+    return `${classDisplayName(checker, symbol)}<${typeArguments.join(', ')}>`;
 }
 /** computeTypeDisplayString() memoized per request — see InferenceContext.typeDisplayStrings. */
 function typeDisplayString(ctx, type) {

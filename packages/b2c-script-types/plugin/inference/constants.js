@@ -5,7 +5,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.WEAK_USAGE_MEMBERS = exports.UNINFORMATIVE_ANCESTORS = exports.MAX_UNION_TYPES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_DISPLAY_CACHE_ENTRIES = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
+exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.BUILTIN_VALUE_TYPES = exports.GLOBAL_OBJECT_CLASSES = exports.WEAK_USAGE_MEMBERS = exports.UNINFORMATIVE_ANCESTORS = exports.MAX_UNION_TYPES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_DISPLAY_CACHE_ENTRIES = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
 // Tunable limits for the usage-inference engine. They exist so a crafted (or
 // merely huge) cartridge can't make a single hover/completion do unbounded
 // work — every recursive walk and reference search is capped by one of these.
@@ -87,6 +87,23 @@ exports.UNINFORMATIVE_ANCESTORS = new Set(['Object', 'ExtensibleObject', 'Persis
 // They still narrow an ambient match, but a signature made only of these
 // never picks one class out of several.
 exports.WEAK_USAGE_MEMBERS = new Set(['custom', 'UUID', 'toString', 'valueOf']);
+// Script API TopLevel classes that describe one global object (`module`,
+// `arguments`) rather than a kind of value code passes around. Usage matching
+// skips them: `regionDefinition.id` is not a Module.
+exports.GLOBAL_OBJECT_CLASSES = new Set(['Module', 'arguments']);
+// JavaScript built-ins whose members ordinary code uses all the time. A usage
+// signature one of them also satisfies (`msg.replace(...)`, `x.length`) is
+// ambiguous: the value may well be a string or an array, so ambient matching
+// stays silent rather than naming the Script API class that happens to fit.
+exports.BUILTIN_VALUE_TYPES = [
+    'String',
+    'Number',
+    'Boolean',
+    'Array',
+    'Function',
+    'Date',
+    'RegExp',
+];
 // Callee names whose callbacks lead with the collection element
 // (`collections.forEach(coll, function (item) {...})`). Only these get the
 // sibling-collection element-type heuristic; `reduce` (accumulator first)

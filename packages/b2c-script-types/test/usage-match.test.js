@@ -768,3 +768,144 @@ describe('usage-inference — ambient-class index', () => {
     assert.equal(describeTypes(ctx, types), '');
   });
 });
+
+describe('usage-inference — precision guards', () => {
+  const inferFirstParam = (files, fnName) => {
+    const {ctx, fn} = setupInference(files, '/helpers.js', fnName);
+    return describeTypes(ctx, inferParameterType(ctx, fn.parameters[0]));
+  };
+
+  it('never matches a class describing one global object (TopLevel Module for a lone `.id`)', () => {
+    const files = {
+      '/types.d.ts': 'declare class Module { cartridge: string; id: string; exports: any; }\n',
+      '/helpers.js': 'function getRegionId(regionDefinition) {\n  return regionDefinition.id;\n}\n',
+    };
+
+    assert.equal(inferFirstParam(files, 'getRegionId'), '');
+  });
+
+  it('stays silent when a JavaScript built-in has every used member too (`msg.replace` is a string, not XML)', () => {
+    const files = {
+      '/types.d.ts': 'declare class XML { replace(propertyName: any, value: any): XML; copy(): XML; }\n',
+      '/helpers.js': "function filterLogMessage(msg) {\n  return msg.replace(/secret/g, '***');\n}\n",
+    };
+
+    assert.equal(inferFirstParam(files, 'filterLogMessage'), '');
+  });
+
+  it('still lets the identifier name pick a Script API class a built-in also fits (calendar.getTime())', () => {
+    const files = {
+      '/types.d.ts': 'declare class Calendar { getTime(): any; setTimeZone(zone: string): void; }\n',
+      '/helpers.js': 'function toMillis(calendar) {\n  return calendar.getTime();\n}\n',
+    };
+
+    assert.equal(inferFirstParam(files, 'toMillis'), 'Calendar');
+  });
+
+  describe('members no declared type has (vendored API older than the platform, expando properties)', () => {
+    const SEARCH_HIT_TYPES =
+      'declare class SearchHit { productID: string; getProduct(): any; }\ndeclare function getHit(): SearchHit;\n';
+
+    it('keep the call-site type the body otherwise fits (getPromotions(searchHit) shape)', () => {
+      const files = {
+        '/types.d.ts': SEARCH_HIT_TYPES,
+        '/helpers.js': `
+          function getPromotions(searchHit) {
+            return searchHit.discountedPromotionIDs.concat(searchHit.productID);
+          }
+          getPromotions(getHit());
+        `,
+      };
+
+      assert.equal(inferFirstParam(files, 'getPromotions'), 'SearchHit');
+    });
+
+    it('still drop a candidate when another candidate declares the member', () => {
+      const files = {
+        '/types.d.ts': SEARCH_HIT_TYPES,
+        '/helpers.js': `
+          function getPromotions(searchHit) {
+            return searchHit.discountedPromotionIDs.concat(searchHit.productID);
+          }
+          getPromotions(getHit());
+          getPromotions({productID: 'p1', discountedPromotionIDs: []});
+        `,
+      };
+
+      assert.equal(inferFirstParam(files, 'getPromotions'), '{ productID: string; discountedPromotionIDs: never[]; }');
+    });
+
+    it('keep ambient matching strict when there is no call site', () => {
+      const files = {
+        '/types.d.ts': SEARCH_HIT_TYPES,
+        '/helpers.js':
+          'function getPromotions(searchHit) {\n  return searchHit.discountedPromotionIDs.concat(searchHit.productID);\n}\n',
+      };
+
+      assert.equal(inferFirstParam(files, 'getPromotions'), '');
+    });
+  });
+
+  describe('instantiations of one generic class', () => {
+    const COLLECTION_TYPES = realTypesPrelude(
+      ['Collection', 'Product', 'Category', 'Shipment', 'Order'],
+      `
+        function getProducts(): Collection<Product>;
+        function getCategories(): Collection<Category>;
+        function getShipments(): Collection<Shipment>;
+        function getOrders(): Collection<Order>;
+      `,
+    );
+
+    it('read as the class itself when they exceed the union limit (SFRA collections.forEach(collection))', () => {
+      const files = {
+        '/types.d.ts': COLLECTION_TYPES,
+        '/helpers.js': `
+          function forEach(collection, callback) {
+            var iterator = collection.iterator();
+            while (iterator.hasNext()) callback(iterator.next());
+          }
+          forEach(getProducts(), function () {});
+          forEach(getCategories(), function () {});
+          forEach(getShipments(), function () {});
+          forEach(getOrders(), function () {});
+        `,
+      };
+
+      assert.equal(inferFirstParam(files, 'forEach'), 'Collection');
+    });
+
+    it('never merge arrays: the declared Array<T> would read as `T[]`', () => {
+      const files = {
+        '/types.d.ts': '',
+        '/helpers.js': `
+          function wrapList(files) {
+            return {size: function () { return files.length; }};
+          }
+          wrapList([{a: 1}]);
+          wrapList([{b: 'x'}]);
+          wrapList([{c: true}]);
+          wrapList([{d: null, e: 1}]);
+        `,
+      };
+
+      assert.equal(inferFirstParam(files, 'wrapList'), '');
+    });
+
+    it('keep their element types while the union stays small', () => {
+      const files = {
+        '/types.d.ts': COLLECTION_TYPES,
+        '/helpers.js': `
+          function forEach(collection, callback) {
+            var iterator = collection.iterator();
+            while (iterator.hasNext()) callback(iterator.next());
+          }
+          forEach(getProducts(), function () {});
+          forEach(getCategories(), function () {});
+        `,
+      };
+
+      assert.equal(inferFirstParam(files, 'forEach'), 'Collection<Product> | Collection<Category>');
+    });
+  });
+});

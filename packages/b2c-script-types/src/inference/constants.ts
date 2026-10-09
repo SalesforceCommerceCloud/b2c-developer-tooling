@@ -99,6 +99,25 @@ export const UNINFORMATIVE_ANCESTORS: ReadonlySet<string> = new Set(['Object', '
 // never picks one class out of several.
 export const WEAK_USAGE_MEMBERS: ReadonlySet<string> = new Set(['custom', 'UUID', 'toString', 'valueOf']);
 
+// Script API TopLevel classes that describe one global object (`module`,
+// `arguments`) rather than a kind of value code passes around. Usage matching
+// skips them: `regionDefinition.id` is not a Module.
+export const GLOBAL_OBJECT_CLASSES: ReadonlySet<string> = new Set(['Module', 'arguments']);
+
+// JavaScript built-ins whose members ordinary code uses all the time. A usage
+// signature one of them also satisfies (`msg.replace(...)`, `x.length`) is
+// ambiguous: the value may well be a string or an array, so ambient matching
+// stays silent rather than naming the Script API class that happens to fit.
+export const BUILTIN_VALUE_TYPES: readonly string[] = [
+  'String',
+  'Number',
+  'Boolean',
+  'Array',
+  'Function',
+  'Date',
+  'RegExp',
+];
+
 // Callee names whose callbacks lead with the collection element
 // (`collections.forEach(coll, function (item) {...})`). Only these get the
 // sibling-collection element-type heuristic; `reduce` (accumulator first)

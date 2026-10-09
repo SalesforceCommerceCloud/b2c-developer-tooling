@@ -96,12 +96,45 @@ function closestCommonAncestor(ctx, types, memberNames) {
         restAncestors.every((ancestors) => ancestors.includes(ancestor)) &&
         (0, type_helpers_1.hasAllMembers)(ctx.checker, ancestor, memberNames));
 }
-/** Step 3: an IntelliJ-style union of at most MAX_UNION_TYPES, else the closest shared superclass, else silence. */
+/**
+ * The generic class `type` instantiates, when its declared type reads as the
+ * bare class name. Arrays don't: the declared `Array<T>` renders as `T[]`.
+ */
+function genericClassOf(ctx, type) {
+    const generic = classOf(ctx, type);
+    return generic?.typeParameters?.length && !ctx.checker.isArrayType(type) ? generic : undefined;
+}
+/**
+ * Reads two or more instantiations of the same generic class as the class
+ * itself: its declared type, whose unbound type parameters render as nothing
+ * (`Collection<ProductLineItem>` and `Collection<Shipment>` -> `Collection`).
+ * A lone instantiation keeps its informative type argument.
+ */
+function mergeInstantiations(ctx, types) {
+    const instantiations = new Map();
+    for (const type of types) {
+        const generic = genericClassOf(ctx, type);
+        if (generic)
+            instantiations.set(generic, (instantiations.get(generic) ?? 0) + 1);
+    }
+    const merged = types.map((type) => {
+        const generic = genericClassOf(ctx, type);
+        return generic && (instantiations.get(generic) ?? 0) > 1 ? generic : type;
+    });
+    return (0, type_helpers_1.dedupeTypes)(ctx, merged);
+}
+/**
+ * Step 3: an IntelliJ-style union of at most MAX_UNION_TYPES; wider evidence
+ * merged by generic class, else the closest shared superclass, else silence.
+ */
 function limitUnion(ctx, types, memberNames = NO_MEMBERS) {
     const general = mostGeneral(ctx, types);
     if (general.length <= constants_1.MAX_UNION_TYPES)
         return general;
-    const ancestor = closestCommonAncestor(ctx, general, memberNames);
+    const merged = mostGeneral(ctx, mergeInstantiations(ctx, general));
+    if (merged.length <= constants_1.MAX_UNION_TYPES)
+        return merged;
+    const ancestor = closestCommonAncestor(ctx, merged, memberNames);
     return ancestor ? [ancestor] : [];
 }
 /**
@@ -125,12 +158,17 @@ function resolveMatches(ctx, classes) {
     }
     return [...bySymbol.values()];
 }
+/** True when a JavaScript built-in (`String`, `Array`, ...) has every member in `memberNames`. */
+function fitsBuiltin(ctx, memberNames) {
+    return (0, ambient_index_1.builtinValueTypes)(ctx).some((builtin) => (0, type_helpers_1.hasAllMembers)(ctx.checker, builtin, memberNames));
+}
 /**
  * Step 4b: matches a usage signature against every ambient class (see
- * ./ambient-index). Silent when no class has every member; when only
- * ubiquitous members (`.custom`, `.UUID`) were used and several classes fit;
- * and when a single member fits several classes the identifier name can't
- * choose between. A name that denotes a class the usage does *not* fit
+ * ./ambient-index) except those describing one global object (`Module`).
+ * Silent when no class has every member; when only ubiquitous members
+ * (`.custom`, `.UUID`) were used and several classes fit; when a single
+ * member fits several classes the identifier name can't choose between; and
+ * when a JavaScript built-in fits as well and the name doesn't pick a class. A name that denotes a class the usage does *not* fit
  * never falls back to a vaguer reading of the same name
  * (`bonusDiscountLineItem.getQuantity()` is not a ProductLineItem hint), and
  * silences a single-member signature outright: `lineItem.preorderable`
@@ -143,7 +181,8 @@ function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     if (memberNames.size === 0)
         return [];
     const classes = (0, ambient_index_1.getAmbientClasses)(ctx);
-    const fitting = classes.filter((ambientClass) => [...memberNames].every((name) => ambientClass.memberNames.has(name)));
+    const fitting = classes.filter((ambientClass) => !constants_1.GLOBAL_OBJECT_CLASSES.has(ambientClass.name) &&
+        [...memberNames].every((name) => ambientClass.memberNames.has(name)));
     const onlyWeakMembers = [...memberNames].every((name) => constants_1.WEAK_USAGE_MEMBERS.has(name));
     if (fitting.length === 0 || (onlyWeakMembers && fitting.length > 1))
         return [];
@@ -155,9 +194,23 @@ function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     if (named)
         return [named.type];
     const thinSignature = memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS;
-    if (thinSignature && (denoted || matches.length > 1))
+    if ((thinSignature && (denoted || matches.length > 1)) || fitsBuiltin(ctx, memberNames))
         return [];
     return limitUnion(ctx, matches.map((match) => match.type), memberNames);
+}
+/**
+ * The required members that can tell candidates apart: those some ambient
+ * class, JavaScript built-in or candidate declares. A member nothing declares
+ * (`searchHit.discountedPromotionIDs`, newer than the vendored Script API)
+ * would otherwise drop every candidate, the right one included.
+ */
+function checkableMembers(ctx, required, candidates) {
+    const { checker } = ctx;
+    const declaredBy = (types, name) => types.some((type) => (0, type_helpers_1.getMemberOfType)(checker, type, name) !== undefined);
+    const declared = (name) => declaredBy(candidates, name) ||
+        (0, ambient_index_1.getAmbientClasses)(ctx).some((ambientClass) => ambientClass.memberNames.has(name)) ||
+        declaredBy((0, ambient_index_1.builtinValueTypes)(ctx), name);
+    return new Set([...required].filter(declared));
 }
 /**
  * Decides what a parameter or variable holds from the evidence ./core
@@ -173,12 +226,13 @@ function decideType(ctx, evidence, profile, identifierName, fitUsage) {
     const guardKeys = new Set(guards.map((type) => (0, type_helpers_1.typeDisplayString)(ctx, type)));
     const candidates = normalizeCandidates(ctx, [...evidence, ...guards]);
     const required = requiredMembers(profile);
+    const checkable = checkableMembers(ctx, required, candidates);
     const uses = constrainingUses(ctx, profile);
     const fits = (type) => guardKeys.has((0, type_helpers_1.typeDisplayString)(ctx, type)) ||
-        ((0, type_helpers_1.hasAllMembers)(ctx.checker, type, required) && fitsEveryUse(ctx, type, uses));
+        ((0, type_helpers_1.hasAllMembers)(ctx.checker, type, checkable) && fitsEveryUse(ctx, type, uses));
     const fitting = fitUsage ? candidates.filter(fits) : candidates;
     if (fitting.length > 0)
-        return limitUnion(ctx, fitting, required);
+        return limitUnion(ctx, fitting, checkable);
     const used = mostSpecificUse(ctx, profile, required);
     if (used.length > 0)
         return used;

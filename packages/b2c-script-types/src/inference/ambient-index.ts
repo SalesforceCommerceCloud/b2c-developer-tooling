@@ -21,6 +21,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
+import {BUILTIN_VALUE_TYPES} from './constants';
 import type {InferenceContext} from './context';
 
 /** One indexed class or interface. */
@@ -86,4 +87,13 @@ export function findAmbientClassType(ctx: InferenceContext, name: string): tsser
   const preferred =
     named.find((ambientClass) => ambientClass.declaration.getSourceFile().fileName.includes('/dw/')) ?? named[0];
   return preferred && ambientClassType(ctx, preferred);
+}
+
+/** The declared types of the JavaScript built-ins in BUILTIN_VALUE_TYPES (`String`, `Array`, ...). */
+export function builtinValueTypes(ctx: InferenceContext): tsserver.Type[] {
+  const {ts, checker} = ctx;
+  return BUILTIN_VALUE_TYPES.flatMap((name) => {
+    const symbol = checker.resolveName(name, undefined, ts.SymbolFlags.Type, false);
+    return symbol ? [checker.getDeclaredTypeOfSymbol(symbol)] : [];
+  });
 }
