@@ -527,7 +527,7 @@ describe('usage-inference — call-specific returns', () => {
     }
   `;
 
-  // SFRA's collections.find and collections.first, verbatim but for comments.
+  // SFRA's collections.find, first and map, verbatim but for comments.
   const COLLECTIONS = `
     /**
      * @param {dw.util.Collection} collection - Collection subclass instance to find value in
@@ -556,7 +556,28 @@ describe('usage-inference — call-specific returns', () => {
       var iterator = collection.iterator();
       return iterator.hasNext() ? iterator.next() : null;
     }
-    module.exports = {find: find, first: first};
+    /**
+     * @param {dw.util.Collection} collection - Collection subclass instance to map over
+     * @param {Function} callback - Callback function for each item
+     * @param {Object} [scope] - Optional execution scope to pass to callback
+     * @returns {Array} Array of results of map
+     */
+    function map(collection, callback, scope) {
+      var iterator = Object.hasOwnProperty.call(collection, 'iterator')
+        ? collection.iterator()
+        : collection;
+      var index = 0;
+      var item = null;
+      var result = [];
+      while (iterator.hasNext()) {
+        item = iterator.next();
+        result.push(scope ? callback.call(scope, item, index, collection)
+          : callback(item, index, collection));
+        index++;
+      }
+      return result;
+    }
+    module.exports = {find: find, first: first, map: map};
   `;
 
   const callers = (source) => ({
@@ -678,6 +699,104 @@ describe('usage-inference — call-specific returns', () => {
     },
   ]);
 
+  describe('callbacks', () => {
+    // What `callback(item)` returns inside a helper inferred for one call is
+    // what the function that call passes returns, for those arguments.
+    const helpers = (source) => ({'/collections.js': COLLECTIONS, '/helper.js': source});
+
+    runCases([
+      {
+        title: 'collections.map returns an array of what its callback returns for each element',
+        types: COLLECTION_TYPES,
+        files: helpers(`
+          var collections = require('./collections');
+          function addresses(basket) {
+            return collections.map(basket.shipments, function (shipment) { return shipment.shippingAddress; });
+          }
+          addresses(getBasket());
+        `),
+        kind: 'return',
+        name: 'addresses',
+        expected: 'OrderAddress[]',
+      },
+      {
+        title: 'a model constructed in the callback makes an array of that model',
+        types: COLLECTION_TYPES,
+        files: helpers(`
+          var collections = require('./collections');
+          function ShippingModel(shipment) { this.uuid = shipment.UUID; }
+          function shippingModels(basket) {
+            return collections.map(basket.shipments, function (shipment) { return new ShippingModel(shipment); });
+          }
+          shippingModels(getBasket());
+        `),
+        kind: 'return',
+        name: 'shippingModels',
+        expected: 'ShippingModel[]',
+      },
+      {
+        title: 'a callback a wrapper passes on as is is the one called',
+        types: COLLECTION_TYPES,
+        files: helpers(`
+          var collections = require('./collections');
+          function mapShipments(basket, fn) { return collections.map(basket.shipments, fn); }
+          function addresses(basket) {
+            return mapShipments(basket, function (shipment) { return shipment.shippingAddress; });
+          }
+          addresses(getBasket());
+        `),
+        kind: 'return',
+        name: 'addresses',
+        expected: 'OrderAddress[]',
+      },
+      {
+        title: 'the callback’s parameters are what it is called with',
+        types: COLLECTION_TYPES,
+        files: helpers(`
+          function applyTo(value, fn) { return fn(value); }
+          function defaultShipmentOf() {
+            return applyTo(getBasket(), function (basket) { return basket.defaultShipment; });
+          }
+        `),
+        kind: 'return',
+        name: 'defaultShipmentOf',
+        expected: 'Shipment',
+      },
+      {
+        title: 'callback.call(scope, x) passes x, not scope, as the first parameter',
+        types: COLLECTION_TYPES,
+        files: helpers(`
+          function withFirst(collection, fn) {
+            var iterator = collection.iterator();
+            return fn.call(null, iterator.next());
+          }
+          function firstAddress(basket) {
+            return withFirst(basket.shipments, function (shipment) { return shipment.shippingAddress; });
+          }
+          firstAddress(getBasket());
+        `),
+        kind: 'return',
+        name: 'firstAddress',
+        expected: 'OrderAddress',
+      },
+      {
+        title: 'collections.map itself, across all of its callers, stays silent',
+        types: COLLECTION_TYPES,
+        files: helpers(`
+          var collections = require('./collections');
+          function addresses(basket) {
+            return collections.map(basket.shipments, function (shipment) { return shipment.shippingAddress; });
+          }
+          addresses(getBasket());
+        `),
+        file: '/collections.js',
+        kind: 'return',
+        name: 'map',
+        expected: '',
+      },
+    ]);
+  });
+
   it('keeps call-specific results out of the request memo', () => {
     const languageService = createFixtureLanguageService({
       '/types.d.ts': COLLECTION_TYPES,
@@ -693,6 +812,46 @@ describe('usage-inference — call-specific returns', () => {
     assert.equal(returnOf('/collections.js', 'first'), '', 'the general answer is not the first call’s');
     assert.equal(returnOf('/helper.js', 'lineItemByUUID'), 'ProductLineItem');
     assert.equal(ctx.bindings.size, 0, 'bindings are released after each call');
+  });
+
+  it('prefers the call’s own answer to a union across callers that missed it', () => {
+    // SFRA's arrayHelper.find. The reference budget runs out before the
+    // general answer reaches the last caller, so across its callers find
+    // returns `string | number`; the line item call still gets its element.
+    const languageService = createFixtureLanguageService({
+      '/types.d.ts': COLLECTION_TYPES,
+      '/helper.js': `
+        /**
+         * @param {Array} array - Array of elements to find the match in.
+         * @param {Array} matcher - function that returns true if match is found
+         * @return {Object|undefined} element that matches provided testing function or undefined.
+         */
+        function find(array, matcher) {
+          for (var i = 0, l = array.length; i < l; i++) {
+            if (matcher(array[i], i)) {
+              return array[i];
+            }
+          }
+          return undefined;
+        }
+        find(['a'], function (value) { return value === 'a'; });
+        find([1], function (value) { return value === 1; });
+        function lineItemByUUID(uuid) {
+          return find(getBasket().productLineItems.toArray(), function (item) { return item.UUID === uuid; });
+        }
+      `,
+    });
+    const ctx = createInferenceContext(ts, languageService);
+    ctx.referenceBudget = 3;
+
+    assert.equal(
+      describeTypes(ctx, inferReturnType(ctx, findTarget(ctx, '/helper.js', 'return', 'find'))),
+      'string | number',
+    );
+    assert.equal(
+      describeTypes(ctx, inferReturnType(ctx, findTarget(ctx, '/helper.js', 'return', 'lineItemByUUID'))),
+      'ProductLineItem',
+    );
   });
 });
 

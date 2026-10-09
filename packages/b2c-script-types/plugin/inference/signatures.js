@@ -6,6 +6,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resolveCalleeDeclaration = resolveCalleeDeclaration;
+exports.functionOf = functionOf;
 exports.isElementFirstCallbackCall = isElementFirstCallbackCall;
 exports.acceptsArgumentCount = acceptsArgumentCount;
 exports.callbackParameterTypes = callbackParameterTypes;
@@ -24,6 +25,14 @@ function resolveCalleeDeclaration(ctx, call) {
         return decl;
     const sigDecl = checker.getResolvedSignature(call)?.declaration;
     return sigDecl && ts.isFunctionLike(sigDecl) ? sigDecl : undefined;
+}
+/** The function `value` is or names (`function () {...}`, `() => x`, a local function's identifier). */
+function functionOf(ctx, value) {
+    const { ts, checker } = ctx;
+    if (ts.isFunctionExpression(value) || ts.isArrowFunction(value))
+        return value;
+    const declaration = ts.isIdentifier(value) ? checker.getSymbolAtLocation(value)?.valueDeclaration : undefined;
+    return declaration && ts.isFunctionLike(declaration) ? declaration : undefined;
 }
 /** True when `call` invokes one of the {@link ELEMENT_FIRST_CALLBACK_CALLEES} (`collections.forEach(coll, fn)`). */
 function isElementFirstCallbackCall(ctx, call) {

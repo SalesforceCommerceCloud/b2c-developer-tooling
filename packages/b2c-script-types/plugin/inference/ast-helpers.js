@@ -69,13 +69,15 @@ function memberCompletionAccess(sourceFile, ts, position) {
 /**
  * SFRA helpers are often "documented" with a placeholder type that carries no
  * Script API information — `@param {Object}`, `{obj}`, `{*}`, or `{}`, also
- * when nullable or optional (`{Object|null}`, `{?Object}`, `{Object=}`). Those
- * are ubiquitous in real cartridges (and IntelliJ mainly helps when authors
- * write a real `dw.*` JSDoc), so treating them as deliberate annotations would
- * permanently silence usage inference on the exact helpers that need it most.
+ * when nullable or optional (`{Object|null}`, `{?Object}`, `{Object=}`), and
+ * arrays of those (`{Array}`, `{Object[]}`, `{Array.<*>}`), which say nothing
+ * about their elements. Those are ubiquitous in real cartridges (and IntelliJ
+ * mainly helps when authors write a real `dw.*` JSDoc), so treating them as
+ * deliberate annotations would permanently silence usage inference on the
+ * exact helpers that need it most.
  *
  * Deliberate `{any}` / `: any` is *not* weak: that is an author saying "do not
- * pretend you know this type", and we still respect it.
+ * pretend you know this type", and we still respect it (`{any[]}` too).
  */
 function isWeakTypeNode(typeNode, ts) {
     const node = unwrapTypeNode(typeNode, ts);
@@ -84,6 +86,14 @@ function isWeakTypeNode(typeNode, ts) {
         const present = node.types.filter((member) => !isNullishTypeNode(member, ts));
         return present.length > 0 && present.every((member) => isWeakTypeNode(member, ts));
     }
+    if (ts.isArrayTypeNode(node))
+        return isWeakTypeNode(node.elementType, ts);
+    if (isArrayReference(node, ts))
+        return node.typeArguments?.every((element) => isWeakTypeNode(element, ts)) ?? true;
+    return isPlaceholderTypeNode(node, ts);
+}
+/** One placeholder on its own: `{*}`, `{}`, `{object}`, `{Object}` or `{obj}`. */
+function isPlaceholderTypeNode(node, ts) {
     // JSDoc `{*}` — "any value", not a real shape.
     if (node.kind === ts.SyntaxKind.JSDocAllType)
         return true;
@@ -107,6 +117,10 @@ function unwrapTypeNode(typeNode, ts) {
         node = node.type;
     }
     return node;
+}
+/** `Array`, `Array<T>` or JSDoc's `Array.<T>`. */
+function isArrayReference(node, ts) {
+    return ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && node.typeName.text === 'Array';
 }
 /** `null` or `undefined` as a type. */
 function isNullishTypeNode(node, ts) {

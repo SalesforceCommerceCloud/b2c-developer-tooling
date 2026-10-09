@@ -35,6 +35,17 @@ export function resolveCalleeDeclaration(
   return sigDecl && ts.isFunctionLike(sigDecl) ? sigDecl : undefined;
 }
 
+/** The function `value` is or names (`function () {...}`, `() => x`, a local function's identifier). */
+export function functionOf(
+  ctx: InferenceContext,
+  value: tsserver.Expression,
+): tsserver.SignatureDeclaration | undefined {
+  const {ts, checker} = ctx;
+  if (ts.isFunctionExpression(value) || ts.isArrowFunction(value)) return value;
+  const declaration = ts.isIdentifier(value) ? checker.getSymbolAtLocation(value)?.valueDeclaration : undefined;
+  return declaration && ts.isFunctionLike(declaration) ? declaration : undefined;
+}
+
 /** True when `call` invokes one of the {@link ELEMENT_FIRST_CALLBACK_CALLEES} (`collections.forEach(coll, fn)`). */
 export function isElementFirstCallbackCall(ctx: InferenceContext, call: tsserver.CallExpression): boolean {
   const {ts} = ctx;

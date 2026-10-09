@@ -265,15 +265,28 @@ function signatureReturnTypes(ctx, methodType, depth) {
  * What `fn` returns for this `call`. Its return across all callers, unless
  * that says nothing or leaves a choice (`Shipment | ProductLineItem` from a
  * helper handed either collection): then what it returns for the arguments
- * this call passes it (see ./bindings), wherever that is narrower.
+ * this call passes it (see ./bindings), when that says anything. A choice
+ * across callers is the union of what each of them gets, and this call is
+ * one of them, so its own answer is the more precise one, also where the
+ * union missed it (a caller the depth or reference budget left out).
  */
 function calleeReturnTypes(ctx, fn, call, depth) {
     const general = inferReturnType(ctx, fn, depth + 1);
     if (general.length === 1 || (0, ast_helpers_1.hasExplicitReturnType)(fn, ctx.ts))
         return general;
-    const bindings = (0, bindings_1.argumentBindings)(ctx, fn, call, depth);
+    const bindings = (0, bindings_1.argumentBindings)(ctx, fn, call.arguments, depth);
     const specific = bindings ? (0, bindings_1.withBindings)(ctx, bindings, () => inferReturnType(ctx, fn, depth + 1)) : [];
-    return (0, bindings_1.narrows)(ctx, general, specific) ? specific : general;
+    return specific.length > 0 ? specific : general;
+}
+/**
+ * What a call of a bound parameter returns (`callback(item)` inside
+ * `collections.map`, inferred for one call): what the function the call
+ * being resolved passes returns, with its parameters bound to these
+ * arguments.
+ */
+function boundCallbackReturnTypes(ctx, { fn, args }, depth) {
+    const bindings = (0, bindings_1.argumentBindings)(ctx, fn, args, depth) ?? ctx.bindings;
+    return (0, bindings_1.withBindings)(ctx, bindings, () => inferReturnType(ctx, fn, depth + 1));
 }
 /**
  * Resolves an `any` call expression: first by inferring the callee's own
@@ -282,6 +295,9 @@ function calleeReturnTypes(ctx, fn, call, depth) {
  * the receiver's inferred type(s).
  */
 function resolveCallResultTypes(ctx, expr, depth, chainHops) {
+    const callback = ctx.bindings.size > 0 ? (0, bindings_1.boundCallback)(ctx, expr) : undefined;
+    if (callback)
+        return boundCallbackReturnTypes(ctx, callback, depth);
     const calleeFn = (0, signatures_1.resolveCalleeDeclaration)(ctx, expr);
     const inferred = calleeFn ? calleeReturnTypes(ctx, calleeFn, expr, depth) : [];
     if (inferred.length > 0)

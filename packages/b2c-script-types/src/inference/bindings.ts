@@ -10,13 +10,16 @@
 // ProductLineItem for `basket.productLineItems`. Across all of its callers
 // the helper's return says nothing, so ./core infers it once more for the call
 // being resolved, with the helper's parameters bound to that call's
-// arguments. Neither IntelliJ nor the checker substitutes arguments into an
-// undocumented JavaScript function this way.
+// arguments. A callback argument is bound too: `collections.map(collection,
+// callback)` pushes what `callback(item)` returns, which is what the function
+// this call passes returns for that item. Neither IntelliJ nor the checker
+// substitutes arguments into an undocumented JavaScript function this way.
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import type {InferenceContext} from './context';
 import {valueDeclarationOf} from './member-values';
+import {functionOf} from './signatures';
 import {isAnyType} from './type-helpers';
 
 /** One parameter bound to the argument a single call passes it. */
@@ -46,8 +49,14 @@ export function withBindings<T>(ctx: InferenceContext, bindings: Bindings, compu
   }
 }
 
+/** A function a bound parameter holds, called with `args` (`callback(item)`, `callback.call(scope, item)`). */
+export interface BoundCallback {
+  readonly fn: tsserver.SignatureDeclaration;
+  readonly args: readonly tsserver.Expression[];
+}
+
 /**
- * `fn`'s plain parameters bound to the arguments `call` passes them, on top of
+ * `fn`'s plain parameters bound to the arguments `args` of one call, on top of
  * the bindings already in force (a helper nested in a bound function still
  * sees its parameters). Arguments after a spread, rest parameters and
  * destructured parameters are left unbound; `undefined` when nothing binds.
@@ -55,14 +64,14 @@ export function withBindings<T>(ctx: InferenceContext, bindings: Bindings, compu
 export function argumentBindings(
   ctx: InferenceContext,
   fn: tsserver.SignatureDeclaration,
-  call: tsserver.CallExpression,
+  args: readonly tsserver.Expression[],
   depth: number,
 ): Bindings | undefined {
   const {ts} = ctx;
   const outer = ctx.bindings;
   const bindings = new Map(outer);
   for (const [index, parameter] of fn.parameters.entries()) {
-    const argument = call.arguments[index];
+    const argument = args[index];
     if (!argument || ts.isSpreadElement(argument) || parameter.dotDotDotToken) break;
     if (ts.isIdentifier(parameter.name)) bindings.set(parameter, {argument, depth, outer});
   }
@@ -77,6 +86,41 @@ export function boundArgument(ctx: InferenceContext, expr: tsserver.Expression):
   return declaration && ts.isParameter(declaration) ? ctx.bindings.get(declaration) : undefined;
 }
 
+/**
+ * The function the bound parameter `expr` holds: the function its argument
+ * is or names, followed through parameters each enclosing call passes on as
+ * is (`function mapAll(items, fn) { return collections.map(items, fn); }`).
+ * Each step moves to the bindings in force where that call was written,
+ * which hold fewer parameters, so the walk ends.
+ */
+function boundFunction(ctx: InferenceContext, expr: tsserver.Expression): tsserver.SignatureDeclaration | undefined {
+  let binding = boundArgument(ctx, expr);
+  while (binding) {
+    const fn = functionOf(ctx, binding.argument);
+    if (fn) return fn;
+    const {argument, outer} = binding;
+    binding = withBindings(ctx, outer, () => boundArgument(ctx, argument));
+  }
+  return undefined;
+}
+
+/**
+ * `call` read as a call of the function a bound parameter holds, with the
+ * arguments that function receives: `callback(item)`, or `callback.call(scope,
+ * item)` without its `this` argument. A `callback.apply(scope, args)` call
+ * binds none of them.
+ */
+export function boundCallback(ctx: InferenceContext, call: tsserver.CallExpression): BoundCallback | undefined {
+  const {ts} = ctx;
+  const callee = call.expression;
+  const borrowed = ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
+  if (borrowed !== undefined && borrowed !== 'call' && borrowed !== 'apply') return undefined;
+  const fn = boundFunction(ctx, ts.isPropertyAccessExpression(callee) ? callee.expression : callee);
+  if (!fn) return undefined;
+  if (borrowed === 'apply') return {fn, args: []};
+  return {fn, args: borrowed === 'call' ? call.arguments.slice(1) : call.arguments};
+}
+
 /** True when `type` instantiates a generic with `any` (`Collection<any>` of a bare `{dw.util.Collection}`). */
 export function hasAnyTypeArgument(ctx: InferenceContext, type: tsserver.Type): boolean {
   const {ts, checker} = ctx;
@@ -87,10 +131,9 @@ export function hasAnyTypeArgument(ctx: InferenceContext, type: tsserver.Type): 
 
 /**
  * True when `types`, recovered for one call, may stand in for the `general`
- * types the same expression has without it: when those say nothing, or when
- * every recovered type is assignable to one of them (`Collection<Shipment>`
- * for a parameter declared `{dw.util.Collection}`; `Shipment` out of a
- * helper returning `Shipment | ProductLineItem` across its callers).
+ * types the checker gives the same expression without it: when those say
+ * nothing, or when every recovered type is assignable to one of them
+ * (`Collection<Shipment>` for a parameter declared `{dw.util.Collection}`).
  * Anything else is left alone, and TypeScript builds without the public
  * `isTypeAssignableTo` never narrow a type that says something.
  */

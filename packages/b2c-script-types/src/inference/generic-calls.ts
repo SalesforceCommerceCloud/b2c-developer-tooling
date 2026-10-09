@@ -13,6 +13,7 @@
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import type {InferenceContext} from './context';
+import {functionOf} from './signatures';
 
 /** Where a generic call's result comes from: an argument itself, or what a function argument returns. */
 export type GenericResultSource =
@@ -28,14 +29,6 @@ function isTypeParameterReference(ts: typeof tsserver, node: tsserver.TypeNode |
     node.typeName.text === name &&
     node.typeArguments === undefined
   );
-}
-
-/** The function `argument` is or names (`function () {...}`, `() => x`, a local function's identifier). */
-function functionOf(ctx: InferenceContext, argument: tsserver.Expression): tsserver.SignatureDeclaration | undefined {
-  const {ts, checker} = ctx;
-  if (ts.isFunctionExpression(argument) || ts.isArrowFunction(argument)) return argument;
-  const declaration = ts.isIdentifier(argument) ? checker.getSymbolAtLocation(argument)?.valueDeclaration : undefined;
-  return declaration && ts.isFunctionLike(declaration) ? declaration : undefined;
 }
 
 /** The type parameter a generic declaration returns as is (`T` of `wrap<T>(...): T`). */

@@ -687,6 +687,36 @@ module.exports = getLineItems;
       });
     }
 
+    // An array of placeholders says no more about its elements than the
+    // placeholder does; a deliberate `{any[]}` still blocks inference.
+    for (const [annotation, expected] of [
+      ['Array', 'ProductLineItem[]'],
+      ['Object[]', 'ProductLineItem[]'],
+      ['Array.<*>', 'ProductLineItem[]'],
+      ['?Array<Object>', 'ProductLineItem[]'],
+      ['any[]', ''],
+      ['Array<ProductLineItem>', ''],
+    ]) {
+      it(`${expected ? 'infers through' : 'respects'} @param {${annotation}}`, () => {
+        const languageService = createFixtureLanguageService({
+          '/types.d.ts': realTypesPrelude(['ProductLineItem'], '  function getLineItems(): ProductLineItem[];'),
+          '/helper.js': `
+            /**
+             * @param {${annotation}} lineItems
+             */
+            function countItems(lineItems) {
+              return lineItems.length;
+            }
+            countItems(getLineItems());
+          `,
+        });
+        const ctx = createInferenceContext(ts, languageService);
+        const fn = findFunctionDeclaration(ctx.program.getSourceFile('/helper.js'), 'countItems');
+
+        assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), expected);
+      });
+    }
+
     it('still respects a nullable real type mixed with a placeholder (`{Customer|Object|null}`)', () => {
       const languageService = createFixtureLanguageService({
         '/types.d.ts': realTypesPrelude(['Customer'], ''),

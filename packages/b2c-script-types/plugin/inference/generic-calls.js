@@ -6,6 +6,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.genericResultSource = genericResultSource;
+const signatures_1 = require("./signatures");
 /** True when `node` is a bare reference to the type parameter `name` (`T`). */
 function isTypeParameterReference(ts, node, name) {
     return (node !== undefined &&
@@ -13,14 +14,6 @@ function isTypeParameterReference(ts, node, name) {
         ts.isIdentifier(node.typeName) &&
         node.typeName.text === name &&
         node.typeArguments === undefined);
-}
-/** The function `argument` is or names (`function () {...}`, `() => x`, a local function's identifier). */
-function functionOf(ctx, argument) {
-    const { ts, checker } = ctx;
-    if (ts.isFunctionExpression(argument) || ts.isArrowFunction(argument))
-        return argument;
-    const declaration = ts.isIdentifier(argument) ? checker.getSymbolAtLocation(argument)?.valueDeclaration : undefined;
-    return declaration && ts.isFunctionLike(declaration) ? declaration : undefined;
 }
 /** The type parameter a generic declaration returns as is (`T` of `wrap<T>(...): T`). */
 function returnedTypeParameter(ts, declaration) {
@@ -49,7 +42,7 @@ function genericResultSource(ctx, call) {
         if (isTypeParameterReference(ts, type, typeParameter))
             return { kind: 'value', argument };
         const fn = ts.isFunctionTypeNode(type) && isTypeParameterReference(ts, type.type, typeParameter);
-        const callback = fn ? functionOf(ctx, argument) : undefined;
+        const callback = fn ? (0, signatures_1.functionOf)(ctx, argument) : undefined;
         if (callback)
             return { kind: 'return', fn: callback };
     }

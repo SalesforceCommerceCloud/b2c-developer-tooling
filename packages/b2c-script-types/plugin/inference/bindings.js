@@ -9,9 +9,11 @@ exports.NO_BINDINGS = void 0;
 exports.withBindings = withBindings;
 exports.argumentBindings = argumentBindings;
 exports.boundArgument = boundArgument;
+exports.boundCallback = boundCallback;
 exports.hasAnyTypeArgument = hasAnyTypeArgument;
 exports.narrows = narrows;
 const member_values_1 = require("./member-values");
+const signatures_1 = require("./signatures");
 const type_helpers_1 = require("./type-helpers");
 /** No parameter bound: what every inference outside a call-specific retry runs with. */
 exports.NO_BINDINGS = new Map();
@@ -27,17 +29,17 @@ function withBindings(ctx, bindings, compute) {
     }
 }
 /**
- * `fn`'s plain parameters bound to the arguments `call` passes them, on top of
+ * `fn`'s plain parameters bound to the arguments `args` of one call, on top of
  * the bindings already in force (a helper nested in a bound function still
  * sees its parameters). Arguments after a spread, rest parameters and
  * destructured parameters are left unbound; `undefined` when nothing binds.
  */
-function argumentBindings(ctx, fn, call, depth) {
+function argumentBindings(ctx, fn, args, depth) {
     const { ts } = ctx;
     const outer = ctx.bindings;
     const bindings = new Map(outer);
     for (const [index, parameter] of fn.parameters.entries()) {
-        const argument = call.arguments[index];
+        const argument = args[index];
         if (!argument || ts.isSpreadElement(argument) || parameter.dotDotDotToken)
             break;
         if (ts.isIdentifier(parameter.name))
@@ -53,6 +55,43 @@ function boundArgument(ctx, expr) {
     const declaration = (0, member_values_1.valueDeclarationOf)(ctx, expr);
     return declaration && ts.isParameter(declaration) ? ctx.bindings.get(declaration) : undefined;
 }
+/**
+ * The function the bound parameter `expr` holds: the function its argument
+ * is or names, followed through parameters each enclosing call passes on as
+ * is (`function mapAll(items, fn) { return collections.map(items, fn); }`).
+ * Each step moves to the bindings in force where that call was written,
+ * which hold fewer parameters, so the walk ends.
+ */
+function boundFunction(ctx, expr) {
+    let binding = boundArgument(ctx, expr);
+    while (binding) {
+        const fn = (0, signatures_1.functionOf)(ctx, binding.argument);
+        if (fn)
+            return fn;
+        const { argument, outer } = binding;
+        binding = withBindings(ctx, outer, () => boundArgument(ctx, argument));
+    }
+    return undefined;
+}
+/**
+ * `call` read as a call of the function a bound parameter holds, with the
+ * arguments that function receives: `callback(item)`, or `callback.call(scope,
+ * item)` without its `this` argument. A `callback.apply(scope, args)` call
+ * binds none of them.
+ */
+function boundCallback(ctx, call) {
+    const { ts } = ctx;
+    const callee = call.expression;
+    const borrowed = ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
+    if (borrowed !== undefined && borrowed !== 'call' && borrowed !== 'apply')
+        return undefined;
+    const fn = boundFunction(ctx, ts.isPropertyAccessExpression(callee) ? callee.expression : callee);
+    if (!fn)
+        return undefined;
+    if (borrowed === 'apply')
+        return { fn, args: [] };
+    return { fn, args: borrowed === 'call' ? call.arguments.slice(1) : call.arguments };
+}
 /** True when `type` instantiates a generic with `any` (`Collection<any>` of a bare `{dw.util.Collection}`). */
 function hasAnyTypeArgument(ctx, type) {
     const { ts, checker } = ctx;
@@ -64,10 +103,9 @@ function hasAnyTypeArgument(ctx, type) {
 }
 /**
  * True when `types`, recovered for one call, may stand in for the `general`
- * types the same expression has without it: when those say nothing, or when
- * every recovered type is assignable to one of them (`Collection<Shipment>`
- * for a parameter declared `{dw.util.Collection}`; `Shipment` out of a
- * helper returning `Shipment | ProductLineItem` across its callers).
+ * types the checker gives the same expression without it: when those say
+ * nothing, or when every recovered type is assignable to one of them
+ * (`Collection<Shipment>` for a parameter declared `{dw.util.Collection}`).
  * Anything else is left alone, and TypeScript builds without the public
  * `isTypeAssignableTo` never narrow a type that says something.
  */

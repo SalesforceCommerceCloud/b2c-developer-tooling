@@ -70,8 +70,10 @@ to, and the members and `instanceof`/`typeof` checks in the helper's own body.
 Values are followed where they go — into object members, `this.x`, pushed
 arrays, factory returns and `module.exports` — and a generic helper such as
 `collections.find(basket.shipments, ...)` is inferred again for the call at
-hand. Hook scripts registered in a cartridge's `hooks.json` take the arguments
-of the `HookMgr.callHook(...)` calls that reach them, literal or prefixed
+hand, together with the callback it is passed
+(`collections.map(basket.shipments, fn)` is an array of what `fn` returns).
+Hook scripts registered in a cartridge's `hooks.json` take the arguments of
+the `HookMgr.callHook(...)` calls that reach them, literal or prefixed
 (`'app.payment.processor.' + id`), and those calls return what the hooks return
 ([src/resolver/hook-registry.ts](./src/resolver/hook-registry.ts) reads the
 registrations, as JSON only).
