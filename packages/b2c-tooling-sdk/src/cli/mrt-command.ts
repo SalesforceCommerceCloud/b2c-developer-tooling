@@ -276,7 +276,9 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     try {
       auth = this.getOAuthStrategy();
       assertScapiAdminAuthSupported(auth);
-    } catch {
+    } catch (error) {
+      // Usually "no SCAPI-capable credentials"; logged so anything unexpected is visible under -D.
+      this.logger.debug({err: error}, '[MRT] SCAPI auth strategy unavailable');
       return undefined;
     }
 

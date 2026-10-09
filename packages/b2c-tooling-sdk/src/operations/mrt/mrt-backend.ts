@@ -57,15 +57,13 @@ export interface ScapiMrtConnection {
  * Error message for when explicit `--mrt-backend scapi` is requested but the
  * SCAPI MRT prerequisites are missing. Names both reasons the connection can
  * be unavailable — missing coordinates OR an auth flow SCAPI Admin does not
- * accept. Unlike the OCAPI {@link scapiUnavailableMessage}, MRT resolves auth
- * through the shared `getOAuthStrategy()` path, so a stored `b2c auth client`
- * session counts as a supported flow here.
+ * accept.
  */
 export function mrtScapiUnavailableMessage(): string {
   return (
     `The SCAPI MRT backend requires shortCode, tenantId, and an OAuth flow SCAPI Admin accepts ` +
-    `that can request the sfcc.storefront.* scopes — client-credentials or JWT Bearer, configured ` +
-    `directly (--client-id/--client-secret or JWT) or as a stored \`b2c auth client\` session. ` +
+    `that can request the sfcc.storefront.* scopes — client-credentials (--client-id/--client-secret) ` +
+    `or JWT Bearer. ` +
     `Browser user auth (Authorization Code + PKCE or the deprecated implicit flow) is not supported ` +
     `for SCAPI Admin as of B2C Commerce release ${SCAPI_CAPABILITY_BASELINE_RELEASE}. ` +
     `Provide --short-code and --tenant-id with a supported flow, or use --mrt-backend legacy ` +

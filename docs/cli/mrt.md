@@ -109,7 +109,7 @@ Over SCAPI, `env var set` / `push` / `delete` use a single merge-PATCH: keys you
 
 - `--short-code` (`SFCC_SHORTCODE`)
 - `--tenant-id` (`SFCC_TENANT_ID`)
-- A SCAPI-capable OAuth flow — client-credentials (`--client-id` + `--client-secret`), JWT Bearer (`--client-id` + `--jwt-cert` + `--jwt-key`), or a stored `b2c auth client` session. Browser user auth (`--user-auth`) is not accepted by the SCAPI Admin APIs.
+- A SCAPI-capable OAuth flow — client-credentials (`--client-id` + `--client-secret`) or JWT Bearer (`--client-id` + `--jwt-cert` + `--jwt-key`). Browser user auth (`--user-auth`) is not accepted by the SCAPI Admin APIs.
 
 Otherwise `auto` uses legacy. Run a supported command with `-D` / `--debug` to see which prerequisites were satisfied and which backend was chosen.
 

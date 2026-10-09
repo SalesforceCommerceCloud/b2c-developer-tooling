@@ -405,6 +405,16 @@ describe('cli/mrt-command', () => {
       });
     });
 
+    it('accepts scopes from an unsplit SFCC_OAUTH_SCOPES value', async () => {
+      // oclif hands env values for multiple flags through as one string; this used to
+      // throw inside OAuthStrategy and surface as "SCAPI auth missing".
+      stubParse(command, {...SCAPI_FLAGS, 'client-id': 'client', 'client-secret': 'secret', 'auth-scope': 'a,b'});
+      await command.init();
+
+      expect(command.testGetScapiMrtConfig()).to.not.equal(undefined);
+      expect(command.resolvedConfig.values.scopes).to.deep.equal(['a', 'b']);
+    });
+
     describe('returns undefined (not SCAPI eligible)', () => {
       it('when shortCode is missing', async () => {
         stubParse(command, {

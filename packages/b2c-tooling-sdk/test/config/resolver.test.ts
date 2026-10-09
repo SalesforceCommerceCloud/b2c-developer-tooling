@@ -972,5 +972,36 @@ describe('config/resolver', () => {
       expect(warnings).to.have.length(1);
       expect(warnings[0].code).to.equal('HOSTNAME_MISMATCH');
     });
+    it('names the source and override origin in client ID mismatch warnings', async () => {
+      const resolver = new ConfigResolver([
+        new MockSource('password-store', {clientId: 'stored', clientSecret: 'secret'}, 'pass:b2c-cli/_default'),
+      ]);
+
+      const {config, warnings} = await resolver.resolve(
+        {clientId: 'from-env'},
+        {overrideOrigins: {clientId: '.env (SFCC_OAUTH_CLIENT_ID)'}},
+      );
+
+      expect(config.clientSecret).to.be.undefined;
+      expect(warnings).to.have.length(1);
+      expect(warnings[0].message).to.equal(
+        'Client ID "from-env" from .env (SFCC_OAUTH_CLIENT_ID) differs from "stored" in password-store (pass:b2c-cli/_default). ' +
+          'Ignoring the clientSecret from password-store (pass:b2c-cli/_default).',
+      );
+    });
+
+    it('names the source and override origin in early hostname mismatch warnings', async () => {
+      const resolver = new ConfigResolver([new MockSource('dw-json', {hostname: 'prod.example.com'}, '/p/dw.json')]);
+
+      const {warnings} = await resolver.resolve(
+        {hostname: 'staging.example.com'},
+        {overrideOrigins: {hostname: 'environment variable SFCC_SERVER'}},
+      );
+
+      expect(warnings[0].message).to.equal(
+        'Server "staging.example.com" from environment variable SFCC_SERVER differs from "prod.example.com" in ' +
+          'dw-json (/p/dw.json). Ignoring values from dw-json (/p/dw.json).',
+      );
+    });
   });
 });

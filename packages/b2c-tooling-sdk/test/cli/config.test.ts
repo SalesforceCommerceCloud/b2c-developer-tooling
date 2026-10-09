@@ -9,6 +9,7 @@ import {
   extractOAuthFlags,
   extractInstanceFlags,
   extractMrtFlags,
+  listFromEnv,
   type LoadConfigOptions,
   type PluginSources,
   type ParsedFlags,
@@ -294,6 +295,48 @@ describe('cli/config', () => {
           expect(fallback?.location).to.equal('environment variables');
         });
 
+        describe('mismatch warning origins', () => {
+          const storedClient = () =>
+            new MockConfigSource(
+              'password-store',
+              {clientId: 'stored', clientSecret: 'secret'},
+              'pass:b2c-cli/_default',
+            );
+
+          it('names the env file variable and the source of a conflicting client', async () => {
+            const envFile = path.join(tempDir, '.env');
+            fs.appendFileSync(envFile, '\nSFCC_OAUTH_CLIENT_ID=from-env-file\n');
+            process.env.SFCC_OAUTH_CLIENT_ID = 'from-env-file';
+
+            const config = await loadConfig(
+              {clientId: 'from-env-file'},
+              {projectDirectory: tempDir, envFile},
+              {before: [storedClient()]},
+            );
+
+            const warning = config.warnings.find((w) => w.code === 'CLIENT_ID_MISMATCH');
+            expect(warning?.message).to.include('from .env (SFCC_OAUTH_CLIENT_ID)');
+            expect(warning?.message).to.include('in password-store (pass:b2c-cli/_default)');
+          });
+
+          it('names a shell environment variable or a flag', async () => {
+            process.env.SFCC_CLIENT_ID = 'from-shell';
+            const fromShell = await loadConfig(
+              {clientId: 'from-shell'},
+              {projectDirectory: tempDir},
+              {before: [storedClient()]},
+            );
+            expect(fromShell.warnings[0].message).to.include('from environment variable SFCC_CLIENT_ID');
+
+            const fromFlag = await loadConfig(
+              {clientId: 'from-flag'},
+              {projectDirectory: tempDir},
+              {before: [storedClient()]},
+            );
+            expect(fromFlag.warnings[0].message).to.include('from --client-id');
+          });
+        });
+
         it('uses only an explicit config path, without the global default', async () => {
           const globalPath = path.join(tempDir, 'global-dw.json');
           fs.writeFileSync(globalPath, JSON.stringify({name: 'global', hostname: 'global.example.com'}));
@@ -361,6 +404,16 @@ describe('cli/config', () => {
       expect(result.shortCode).to.be.undefined;
       expect(result.tenantId).to.be.undefined;
       expect(result.scopes).to.be.undefined;
+    });
+
+    it('splits comma-separated scope and auth-method strings', () => {
+      const result = extractOAuthFlags({
+        'auth-scope': 'sfcc.storefront.deployments.rw, sfcc.storefront.environments.rw',
+        'auth-methods': 'client-credentials,implicit',
+      });
+
+      expect(result.scopes).to.deep.equal(['sfcc.storefront.deployments.rw', 'sfcc.storefront.environments.rw']);
+      expect(result.authMethods).to.deep.equal(['client-credentials', 'implicit']);
     });
 
     it('parses auth methods from flags', () => {
@@ -484,6 +537,34 @@ describe('cli/config', () => {
       expect(result.config.mrtEnvironment).to.be.undefined;
       expect(result.options.cloudOrigin).to.be.undefined;
       expect(result.options.credentialsFile).to.be.undefined;
+    });
+  });
+
+  describe('listFromEnv', () => {
+    beforeEach(() => isolateConfig());
+    afterEach(() => restoreConfig());
+
+    it('splits and trims a comma-separated variable', async () => {
+      process.env.SFCC_OAUTH_SCOPES = 'a, b,,c';
+      expect(await listFromEnv('SFCC_OAUTH_SCOPES')()).to.deep.equal(['a', 'b', 'c']);
+    });
+
+    it('returns undefined when the variable is unset or blank', async () => {
+      expect(await listFromEnv('SFCC_OAUTH_SCOPES')()).to.be.undefined;
+      process.env.SFCC_OAUTH_SCOPES = ' , ';
+      expect(await listFromEnv('SFCC_OAUTH_SCOPES')()).to.be.undefined;
+    });
+
+    it('rejects values outside the allowed list', async () => {
+      process.env.SFCC_AUTH_METHODS = 'client-credentials,bogus';
+      try {
+        await listFromEnv('SFCC_AUTH_METHODS', ['client-credentials', 'implicit'])();
+        expect.fail('expected an error');
+      } catch (error) {
+        expect((error as Error).message)
+          .to.include('SFCC_AUTH_METHODS')
+          .and.include('bogus');
+      }
     });
   });
 });

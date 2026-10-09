@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {BaseCommand, ERROR_CODE, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
+import {BaseCommand, ERROR_CODE, listFromEnv, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import {ImplicitOAuthStrategy, createUserAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
@@ -44,16 +44,17 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
       helpGroup: 'AUTH',
     }),
     'auth-scope': Flags.string({
-      description: 'OAuth scopes to request (comma-separated)',
-      env: 'SFCC_OAUTH_SCOPES',
+      description: 'OAuth scopes to request (comma-separated; env: SFCC_OAUTH_SCOPES)',
+      default: listFromEnv('SFCC_OAUTH_SCOPES'),
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
       helpGroup: 'AUTH',
     }),
     'auth-methods': Flags.string({
-      description: 'Browser-based auth flow to use. Defaults to "user" (Authorization Code + PKCE).',
-      env: 'SFCC_AUTH_METHODS',
+      description:
+        'Browser-based auth flow to use. Defaults to "user" (Authorization Code + PKCE). Env: SFCC_AUTH_METHODS.',
+      default: listFromEnv('SFCC_AUTH_METHODS'),
       options: [...LOGIN_AUTH_METHODS],
       multiple: true,
       multipleNonGreedy: true,
@@ -66,7 +67,10 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
 
   protected override loadConfiguration() {
     const scopes = this.flags['auth-scope'] as string[] | undefined;
-    const authMethods = this.flags['auth-methods'] as LoginAuthMethod[] | undefined;
+    // SFCC_AUTH_METHODS may list methods for other commands; keep only the browser flows.
+    const authMethods = (this.flags['auth-methods'] as string[] | undefined)?.filter(
+      (method): method is LoginAuthMethod => (LOGIN_AUTH_METHODS as readonly string[]).includes(method),
+    );
     return loadConfig(
       {
         clientId: this.args.clientId ?? process.env.SFCC_CLIENT_ID,

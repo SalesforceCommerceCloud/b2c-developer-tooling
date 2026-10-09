@@ -119,6 +119,7 @@ export {
   extractOAuthFlags,
   extractInstanceFlags,
   extractMrtFlags,
+  listFromEnv,
 } from './config.js';
 export type {LoadConfigOptions, PluginSources, ParsedFlags, ExtractedMrtFlags} from './config.js';
 
