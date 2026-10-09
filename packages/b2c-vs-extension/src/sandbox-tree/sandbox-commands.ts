@@ -170,55 +170,67 @@ export function registerSandboxCommands(
     );
   });
 
-  const sandboxOperation = (operationType: 'start' | 'stop' | 'restart') => async (node: SandboxTreeItem) => {
-    if (!node) return;
+  const sandboxOperation =
+    (operationType: 'start' | 'stop' | 'restart' | 'upgrade') => async (node: SandboxTreeItem) => {
+      if (!node) return;
 
-    if (operationType === 'stop') {
-      const choice = await vscode.window.showWarningMessage(
-        `Stop sandbox "${node.sandbox.id}"? Running processes will be terminated.`,
-        {modal: true},
-        'Stop',
-        'Cancel',
-      );
-      if (choice !== 'Stop') return;
-    }
+      if (operationType === 'stop') {
+        const choice = await vscode.window.showWarningMessage(
+          `Stop sandbox "${node.sandbox.id}"? Running processes will be terminated.`,
+          {modal: true},
+          'Stop',
+          'Cancel',
+        );
+        if (choice !== 'Stop') return;
+      }
 
-    await vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Notification,
-        title: `${operationType.charAt(0).toUpperCase() + operationType.slice(1)}ing sandbox ${node.sandbox.id}...`,
-      },
-      async () => {
-        try {
-          const odsClient = await getOdsClientFromConfig(configProvider);
-          const result = await runWithSafety(
-            () =>
-              odsClient.POST('/sandboxes/{sandboxId}/operations', {
-                params: {path: {sandboxId: node.sandbox.id}},
-                body: {operation: operationType},
-              }),
-            `${operationType.charAt(0).toUpperCase() + operationType.slice(1)} sandbox "${node.sandbox.id}"?`,
-          );
-          if (result.error) {
-            vscode.window.showErrorMessage(
-              `Sandbox ${operationType} failed: ${getApiErrorMessage(result.error, result.response)}`,
+      if (operationType === 'upgrade') {
+        const choice = await vscode.window.showWarningMessage(
+          `Upgrade sandbox "${node.sandbox.id}" to the latest platform version? The sandbox will restart as part of the upgrade.`,
+          {modal: true},
+          'Upgrade',
+          'Cancel',
+        );
+        if (choice !== 'Upgrade') return;
+      }
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: `${operationType.charAt(0).toUpperCase() + operationType.slice(1)}ing sandbox ${node.sandbox.id}...`,
+        },
+        async () => {
+          try {
+            const odsClient = await getOdsClientFromConfig(configProvider);
+            const result = await runWithSafety(
+              () =>
+                odsClient.POST('/sandboxes/{sandboxId}/operations', {
+                  params: {path: {sandboxId: node.sandbox.id}},
+                  body: {operation: operationType},
+                }),
+              `${operationType.charAt(0).toUpperCase() + operationType.slice(1)} sandbox "${node.sandbox.id}"?`,
             );
-            return;
+            if (result.error) {
+              vscode.window.showErrorMessage(
+                `Sandbox ${operationType} failed: ${getApiErrorMessage(result.error, result.response)}`,
+              );
+              return;
+            }
+            vscode.window.showInformationMessage(`Sandbox ${operationType} initiated.`);
+            treeProvider.refreshRealm(node.realm);
+            treeProvider.startPollingRealm(node.realm);
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            vscode.window.showErrorMessage(`Sandbox ${operationType} failed: ${message}`);
           }
-          vscode.window.showInformationMessage(`Sandbox ${operationType} initiated.`);
-          treeProvider.refreshRealm(node.realm);
-          treeProvider.startPollingRealm(node.realm);
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          vscode.window.showErrorMessage(`Sandbox ${operationType} failed: ${message}`);
-        }
-      },
-    );
-  };
+        },
+      );
+    };
 
   const start = registerSafeCommand('b2c-dx.sandbox.start', sandboxOperation('start'));
   const stop = registerSafeCommand('b2c-dx.sandbox.stop', sandboxOperation('stop'));
   const restart = registerSafeCommand('b2c-dx.sandbox.restart', sandboxOperation('restart'));
+  const upgrade = registerSafeCommand('b2c-dx.sandbox.upgrade', sandboxOperation('upgrade'));
 
   const viewDetails = registerSafeCommand('b2c-dx.sandbox.viewDetails', async (node: SandboxTreeItem) => {
     if (!node) return;
@@ -511,6 +523,7 @@ export function registerSandboxCommands(
     start,
     stop,
     restart,
+    upgrade,
     viewDetails,
     openBM,
     extendExpiration,
