@@ -514,3 +514,184 @@ describe('usage-inference — constructors as values', () => {
     assert.equal(ctx.searchBudget, 0, 'only the search for show is charged');
   });
 });
+
+describe('usage-inference — call-specific returns', () => {
+  // `{dw.util.Collection}` the way SFRA's JSDoc writes it: no type argument,
+  // so the checker reads every element as `any`.
+  const COLLECTION_TYPES = `
+    import Basket = require('${REAL_DW_TYPES.Basket}');
+    import DwCollection = require('${REAL_DW_TYPES.Collection}');
+    declare global {
+      namespace dw.util { type Collection<T> = DwCollection<T>; }
+      function getBasket(): Basket;
+    }
+  `;
+
+  // SFRA's collections.find and collections.first, verbatim but for comments.
+  const COLLECTIONS = `
+    /**
+     * @param {dw.util.Collection} collection - Collection subclass instance to find value in
+     * @param {Function} match - Match function
+     * @returns {Object|null} Single item from the collection
+     */
+    function find(collection, match) {
+      var result = null;
+      if (collection) {
+        var iterator = collection.iterator();
+        while (iterator.hasNext()) {
+          var item = iterator.next();
+          if (match(item)) {
+            result = item;
+            break;
+          }
+        }
+      }
+      return result;
+    }
+    /**
+     * @param {dw.util.Collection} collection - Collection subclass instance to work with
+     * @return {Object|null} First element from the collection
+     */
+    function first(collection) {
+      var iterator = collection.iterator();
+      return iterator.hasNext() ? iterator.next() : null;
+    }
+    module.exports = {find: find, first: first};
+  `;
+
+  const callers = (source) => ({
+    '/collections.js': COLLECTIONS,
+    '/helper.js': `
+      var collections = require('./collections');
+      ${source}
+      shipmentByUUID(getBasket(), 'uuid');
+      lineItemByUUID(getBasket(), 'uuid');
+    `,
+  });
+
+  runCases([
+    {
+      title: 'collections.find over basket.shipments returns a Shipment',
+      types: COLLECTION_TYPES,
+      files: callers(`
+        function shipmentByUUID(basket, uuid) {
+          return collections.find(basket.shipments, function (shipment) { return shipment.UUID === uuid; });
+        }
+        function lineItemByUUID(basket, uuid) {
+          return collections.find(basket.productLineItems, function (item) { return item.UUID === uuid; });
+        }
+      `),
+      kind: 'return',
+      name: 'shipmentByUUID',
+      expected: 'Shipment',
+    },
+    {
+      title: 'the same helper over basket.productLineItems returns a ProductLineItem',
+      types: COLLECTION_TYPES,
+      files: callers(`
+        function shipmentByUUID(basket, uuid) {
+          return collections.find(basket.shipments, function (shipment) { return shipment.UUID === uuid; });
+        }
+        function lineItemByUUID(basket, uuid) {
+          return collections.find(basket.productLineItems, function (item) { return item.UUID === uuid; });
+        }
+      `),
+      kind: 'return',
+      name: 'lineItemByUUID',
+      expected: 'ProductLineItem',
+    },
+    {
+      title: 'collections.first returns an element of the collection it is given',
+      types: COLLECTION_TYPES,
+      files: callers(`
+        function shipmentByUUID(basket) { return collections.first(basket.shipments); }
+        function lineItemByUUID(basket) { return collections.first(basket.productLineItems); }
+      `),
+      kind: 'return',
+      name: 'shipmentByUUID',
+      expected: 'Shipment',
+    },
+    {
+      title: 'the helper itself, across all of its callers, stays silent',
+      types: COLLECTION_TYPES,
+      files: callers(`
+        function shipmentByUUID(basket) { return collections.first(basket.shipments); }
+        function lineItemByUUID(basket) { return collections.first(basket.productLineItems); }
+      `),
+      file: '/collections.js',
+      kind: 'return',
+      name: 'first',
+      expected: '',
+    },
+    {
+      title: 'a wrapper passing its own parameter on binds through both calls',
+      types: COLLECTION_TYPES,
+      files: callers(`
+        function findIn(items, uuid) {
+          return collections.find(items, function (item) { return item.UUID === uuid; });
+        }
+        function shipmentByUUID(basket, uuid) { return findIn(basket.shipments, uuid); }
+        function lineItemByUUID(basket, uuid) { return findIn(basket.productLineItems, uuid); }
+      `),
+      kind: 'return',
+      name: 'lineItemByUUID',
+      expected: 'ProductLineItem',
+    },
+    {
+      title: 'the wrapper across its callers is the union of what they pass',
+      types: COLLECTION_TYPES,
+      files: callers(`
+        function findIn(items, uuid) {
+          return collections.find(items, function (item) { return item.UUID === uuid; });
+        }
+        function shipmentByUUID(basket, uuid) { return findIn(basket.shipments, uuid); }
+        function lineItemByUUID(basket, uuid) { return findIn(basket.productLineItems, uuid); }
+      `),
+      kind: 'return',
+      name: 'findIn',
+      expected: 'Shipment | ProductLineItem',
+    },
+    {
+      title: 'a call-specific variable reads as the element it is assigned',
+      types: COLLECTION_TYPES,
+      files: callers(`
+        function shipmentByUUID(basket, uuid) {
+          var shipment = collections.find(basket.shipments, function (s) { return s.UUID === uuid; });
+          return shipment;
+        }
+        function lineItemByUUID() {}
+      `),
+      kind: 'var',
+      name: 'shipment',
+      expected: 'Shipment',
+    },
+    {
+      title: 'an argument the declared parameter type rules out binds nothing',
+      types: COLLECTION_TYPES,
+      files: callers(`
+        function shipmentByUUID(basket) { return collections.first(basket); }
+        function lineItemByUUID() {}
+      `),
+      kind: 'return',
+      name: 'shipmentByUUID',
+      expected: '',
+    },
+  ]);
+
+  it('keeps call-specific results out of the request memo', () => {
+    const languageService = createFixtureLanguageService({
+      '/types.d.ts': COLLECTION_TYPES,
+      ...callers(`
+        function shipmentByUUID(basket) { return collections.first(basket.shipments); }
+        function lineItemByUUID(basket) { return collections.first(basket.productLineItems); }
+      `),
+    });
+    const ctx = createInferenceContext(ts, languageService);
+    const returnOf = (file, name) => describeTypes(ctx, inferReturnType(ctx, findTarget(ctx, file, 'return', name)));
+
+    assert.equal(returnOf('/helper.js', 'shipmentByUUID'), 'Shipment');
+    assert.equal(returnOf('/collections.js', 'first'), '', 'the general answer is not the first call’s');
+    assert.equal(returnOf('/helper.js', 'lineItemByUUID'), 'ProductLineItem');
+    assert.equal(ctx.bindings.size, 0, 'bindings are released after each call');
+  });
+});

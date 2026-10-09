@@ -5,13 +5,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.findSuperModuleFile = findSuperModuleFile;
-exports.collectExportAssignments = collectExportAssignments;
-exports.isConcreteExportAssignment = isConcreteExportAssignment;
 exports.traceSuperModuleAccess = traceSuperModuleAccess;
-exports.superModuleLevels = superModuleLevels;
+exports.resolveSuperModuleTypes = resolveSuperModuleTypes;
+exports.resolveSuperModuleMemberTypes = resolveSuperModuleMemberTypes;
 exports.collectSuperModuleAugmentedMembers = collectSuperModuleAugmentedMembers;
 const constants_1 = require("./constants");
+const context_1 = require("./context");
 const type_helpers_1 = require("./type-helpers");
 /**
  * The SFCC `module.superModule` expression — the runtime handle to the
@@ -56,20 +55,28 @@ function collectExportAssignments(sf, ts) {
     const full = [];
     const members = [];
     for (const stmt of sf.statements) {
-        if (!ts.isExpressionStatement(stmt) || !ts.isBinaryExpression(stmt.expression))
+        const assignment = memberAssignmentOf(stmt, ts);
+        if (!assignment)
             continue;
-        const bin = stmt.expression;
-        if (bin.operatorToken.kind !== ts.SyntaxKind.EqualsToken || !ts.isPropertyAccessExpression(bin.left))
-            continue;
-        const base = bin.left.expression;
-        if (isModuleExports(base, ts))
-            members.push({ name: bin.left.name.text, expr: bin.right });
-        else if (ts.isIdentifier(base) && base.text === 'exports')
-            members.push({ name: bin.left.name.text, expr: bin.right });
-        else if (isModuleExports(bin.left, ts))
-            full.push(bin);
+        const { binary, target } = assignment;
+        if (isExportsObject(target.expression, ts))
+            members.push({ name: target.name.text, expr: binary.right });
+        else if (isModuleExports(target, ts))
+            full.push(binary);
     }
     return { full, members };
+}
+/** The `x.name = value` assignment a statement is, if any. */
+function memberAssignmentOf(stmt, ts) {
+    const binary = ts.isExpressionStatement(stmt) ? stmt.expression : undefined;
+    if (!binary || !ts.isBinaryExpression(binary) || binary.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+        return undefined;
+    }
+    return ts.isPropertyAccessExpression(binary.left) ? { binary, target: binary.left } : undefined;
+}
+/** `module.exports` or the `exports` shorthand: the object a module's members are added to. */
+function isExportsObject(expr, ts) {
+    return isModuleExports(expr, ts) || (ts.isIdentifier(expr) && expr.text === 'exports');
 }
 /** `module.exports`, identified structurally. */
 function isModuleExports(expr, ts) {
@@ -143,6 +150,54 @@ function* superModuleLevels(ctx, superAccess) {
             return;
         fromFileName = superFile.fileName;
     }
+}
+/**
+ * The types one `module.exports = X` assignment of a superModule level
+ * contributes. The checker's type for `module.exports` is used when it is
+ * concrete — it merges the assigned object with later
+ * `module.exports.name = fn` augmentations. A pass-through overlay
+ * (`module.exports = base`, base itself a superModule) is resolved by
+ * recursing into the right-hand side instead, another cartridge down; the
+ * checker sometimes merges such a level into an opaque `typeof base` that
+ * still carries none of the deeper cartridges' members, so a pass-through
+ * right-hand side is recursed into even when the left side looked concrete.
+ */
+function superModuleExportTypes(ctx, assignment, resolve) {
+    const { ts, checker } = ctx;
+    const concrete = isConcreteExportAssignment(ctx, assignment);
+    const types = concrete ? [checker.getTypeAtLocation(assignment.left)] : [];
+    if (!concrete || traceSuperModuleAccess(ts, checker, assignment.right))
+        types.push(...resolve(assignment.right));
+    return types;
+}
+/**
+ * Resolves what `module.superModule` evaluates to: the export type(s) of the
+ * same-subpath module in the next cartridge down the path. Members a
+ * pass-through level *adds* can't be merged into these types; they are
+ * resolved by name in {@link resolveSuperModuleMemberTypes}.
+ */
+function resolveSuperModuleTypes(ctx, expr, resolve) {
+    const superFile = findSuperModuleFile(ctx, expr.getSourceFile().fileName);
+    if (!superFile)
+        return [];
+    // The guard catches overlay cycles from a misconfigured cartridge path.
+    return (0, context_1.withCycleGuard)(ctx, superFile, [], () => (0, type_helpers_1.dedupeTypes)(ctx, collectExportAssignments(superFile, ctx.ts).full.flatMap((assignment) => superModuleExportTypes(ctx, assignment, resolve))));
+}
+/**
+ * Resolves `memberName` from the first superModule level (walking down the
+ * cartridge path) that adds it as an export augmentation
+ * (`module.exports.name = fn`) — the complement to
+ * {@link resolveSuperModuleTypes} for members no export type carries.
+ */
+function resolveSuperModuleMemberTypes(ctx, superAccess, memberName, resolve) {
+    for (const { members } of superModuleLevels(ctx, superAccess)) {
+        const matches = members.filter((member) => member.name === memberName);
+        if (matches.length === 0)
+            continue;
+        const types = matches.flatMap((member) => resolve(member.expr));
+        return (0, type_helpers_1.dedupeTypes)(ctx, types.filter((type) => !(0, type_helpers_1.isAnyType)(ctx.ts, type)));
+    }
+    return [];
 }
 /**
  * Collects every member the superModule chain reachable from `expr`

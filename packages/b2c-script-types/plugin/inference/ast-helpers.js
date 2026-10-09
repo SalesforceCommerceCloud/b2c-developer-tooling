@@ -64,7 +64,8 @@ function memberCompletionAccess(sourceFile, ts, position) {
 }
 /**
  * SFRA helpers are often "documented" with a placeholder type that carries no
- * Script API information — `@param {Object}`, `{obj}`, `{*}`, or `{}`. Those
+ * Script API information — `@param {Object}`, `{obj}`, `{*}`, or `{}`, also
+ * when nullable or optional (`{Object|null}`, `{?Object}`, `{Object=}`). Those
  * are ubiquitous in real cartridges (and IntelliJ mainly helps when authors
  * write a real `dw.*` JSDoc), so treating them as deliberate annotations would
  * permanently silence usage inference on the exact helpers that need it most.
@@ -73,9 +74,12 @@ function memberCompletionAccess(sourceFile, ts, position) {
  * pretend you know this type", and we still respect it.
  */
 function isWeakTypeNode(typeNode, ts) {
-    let node = typeNode;
-    while (ts.isParenthesizedTypeNode(node))
-        node = node.type;
+    const node = unwrapTypeNode(typeNode, ts);
+    // `{Object|null}`, `{Object|undefined}`: a placeholder that may be missing is still a placeholder.
+    if (ts.isUnionTypeNode(node)) {
+        const present = node.types.filter((member) => !isNullishTypeNode(member, ts));
+        return present.length > 0 && present.every((member) => isWeakTypeNode(member, ts));
+    }
     // JSDoc `{*}` — "any value", not a real shape.
     if (node.kind === ts.SyntaxKind.JSDocAllType)
         return true;
@@ -85,19 +89,32 @@ function isWeakTypeNode(typeNode, ts) {
     // Lowercase `object` keyword (TS/JSDoc) — non-primitive bag, not a dw.* class.
     if (node.kind === ts.SyntaxKind.ObjectKeyword)
         return true;
-    const refName = (() => {
-        if (ts.isTypeReferenceNode(node))
-            return node.typeName.getText();
-        if (ts.isExpressionWithTypeArguments(node) && ts.isIdentifier(node.expression)) {
-            return node.expression.text;
-        }
-        return undefined;
-    })();
-    if (!refName)
-        return false;
-    const lower = refName.toLowerCase();
+    const lower = typeReferenceName(node, ts)?.toLowerCase();
     // `Object` / `object` / the SFRA-conventional misspelling `obj`.
     return lower === 'object' || lower === 'obj';
+}
+/** The type `(T)`, `?T`, `!T` and `T=` wrap: parentheses and JSDoc nullability or optionality change no shape. */
+function unwrapTypeNode(typeNode, ts) {
+    let node = typeNode;
+    while (ts.isParenthesizedTypeNode(node) ||
+        ts.isJSDocNullableType(node) ||
+        ts.isJSDocNonNullableType(node) ||
+        ts.isJSDocOptionalType(node)) {
+        node = node.type;
+    }
+    return node;
+}
+/** `null` or `undefined` as a type. */
+function isNullishTypeNode(node, ts) {
+    if (node.kind === ts.SyntaxKind.UndefinedKeyword)
+        return true;
+    return ts.isLiteralTypeNode(node) && node.literal.kind === ts.SyntaxKind.NullKeyword;
+}
+/** The name a type reference names: `Object` in `{Object}` or `extends Object`. */
+function typeReferenceName(node, ts) {
+    if (ts.isTypeReferenceNode(node))
+        return node.typeName.getText();
+    return ts.isExpressionWithTypeArguments(node) && ts.isIdentifier(node.expression) ? node.expression.text : undefined;
 }
 /** True when `typeNode` is a real annotation we must not second-guess (including deliberate `any`). */
 function isStrongTypeNode(typeNode, ts) {

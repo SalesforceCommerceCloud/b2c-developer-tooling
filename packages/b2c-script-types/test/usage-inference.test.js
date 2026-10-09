@@ -663,8 +663,9 @@ module.exports = getLineItems;
   describe('inferParameterType — weak SFRA placeholder JSDoc does not block inference', () => {
     // Real storefronts (and IntelliJ's happy path) often write `@param {Object}`
     // / `{obj}` / `{*}` instead of a real dw.* type. Those placeholders must
-    // not permanently silence usage inference the way a deliberate `{any}` does.
-    for (const annotation of ['Object', 'obj', '*', '{}']) {
+    // not permanently silence usage inference the way a deliberate `{any}` does,
+    // also when they are written nullable or optional.
+    for (const annotation of ['Object', 'obj', '*', '{}', 'Object|null', '?Object', 'Object=', '(obj|undefined)']) {
       it(`infers through @param {${annotation}} on a named customer parameter`, () => {
         const files = {
           '/types.d.ts': realTypesPrelude(['Customer', 'ServiceConfig'], ''),
@@ -685,6 +686,24 @@ module.exports = getLineItems;
         assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), 'Customer');
       });
     }
+
+    it('still respects a nullable real type mixed with a placeholder (`{Customer|Object|null}`)', () => {
+      const languageService = createFixtureLanguageService({
+        '/types.d.ts': realTypesPrelude(['Customer'], ''),
+        '/helper.js': `
+          /**
+           * @param {Customer|Object|null} customer
+           */
+          function getPasswordResetToken(customer) {
+            return customer.profile.credentials.createResetPasswordToken();
+          }
+        `,
+      });
+      const ctx = createInferenceContext(ts, languageService);
+      const fn = findFunctionDeclaration(ctx.program.getSourceFile('/helper.js'), 'getPasswordResetToken');
+
+      assert.deepEqual(inferParameterType(ctx, fn.parameters[0]), []);
+    });
 
     it('still respects a real @param {Customer} annotation (does not second-guess dw.* JSDoc)', () => {
       // If we ignored the Customer annotation we'd chase the Product call site.

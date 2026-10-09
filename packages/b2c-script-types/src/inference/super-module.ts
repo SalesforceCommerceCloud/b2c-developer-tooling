@@ -7,16 +7,20 @@
 // SFCC's `module.superModule` lets a cartridge extend the same-path module in
 // the next cartridge down the path (SFRA plugin overlays). These helpers
 // recognize a superModule access, find the file it points at, and scan a
-// module's `module.exports = ...` / `module.exports.x = ...` assignments.
-// They are all "leaf" operations — they never call back into the recursive
-// inference engine — so the engine (./core) can depend on them safely without
-// creating an import cycle.
+// module's `module.exports = ...` / `module.exports.x = ...` assignments, and
+// resolve what a superModule access evaluates to. Resolving the values an
+// overlay exports needs the recursive engine (./core), which hands its
+// resolver in as an {@link ExpressionResolver} so this module never imports it.
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {MAX_SUPERMODULE_HOPS} from './constants';
+import {withCycleGuard} from './context';
 import type {InferenceContext} from './context';
-import {isAnyType} from './type-helpers';
+import {dedupeTypes, isAnyType} from './type-helpers';
+
+/** The recursive engine's resolver for a value one hop further along the expression being resolved. */
+export type ExpressionResolver = (value: tsserver.Expression) => tsserver.Type[];
 
 /**
  * The SFCC `module.superModule` expression — the runtime handle to the
@@ -36,7 +40,7 @@ function isSuperModuleAccess(expr: tsserver.PropertyAccessExpression, ts: typeof
  * that includes all cartridge files, but not in a bare inferred project
  * where nothing require()s the base file).
  */
-export function findSuperModuleFile(ctx: InferenceContext, fromFileName: string): tsserver.SourceFile | undefined {
+function findSuperModuleFile(ctx: InferenceContext, fromFileName: string): tsserver.SourceFile | undefined {
   const {program} = ctx;
   if (!ctx.resolveSuperModulePath) return undefined;
   const superPath = ctx.resolveSuperModulePath(fromFileName);
@@ -50,7 +54,7 @@ export function findSuperModuleFile(ctx: InferenceContext, fromFileName: string)
 }
 
 /** A module's top-level export assignments — see {@link collectExportAssignments}. */
-export interface ExportAssignments {
+interface ExportAssignments {
   readonly full: readonly tsserver.BinaryExpression[];
   readonly members: ReadonlyArray<{readonly name: string; readonly expr: tsserver.Expression}>;
 }
@@ -62,20 +66,34 @@ export interface ExportAssignments {
  * augmentation, the shape SFRA plugin overlays use to add helpers on top of
  * a re-exported base (`module.exports = base; module.exports.extra = extra;`).
  */
-export function collectExportAssignments(sf: tsserver.SourceFile, ts: typeof tsserver): ExportAssignments {
+function collectExportAssignments(sf: tsserver.SourceFile, ts: typeof tsserver): ExportAssignments {
   const full: tsserver.BinaryExpression[] = [];
   const members: Array<{name: string; expr: tsserver.Expression}> = [];
   for (const stmt of sf.statements) {
-    if (!ts.isExpressionStatement(stmt) || !ts.isBinaryExpression(stmt.expression)) continue;
-    const bin = stmt.expression;
-    if (bin.operatorToken.kind !== ts.SyntaxKind.EqualsToken || !ts.isPropertyAccessExpression(bin.left)) continue;
-    const base = bin.left.expression;
-    if (isModuleExports(base, ts)) members.push({name: bin.left.name.text, expr: bin.right});
-    else if (ts.isIdentifier(base) && base.text === 'exports')
-      members.push({name: bin.left.name.text, expr: bin.right});
-    else if (isModuleExports(bin.left, ts)) full.push(bin);
+    const assignment = memberAssignmentOf(stmt, ts);
+    if (!assignment) continue;
+    const {binary, target} = assignment;
+    if (isExportsObject(target.expression, ts)) members.push({name: target.name.text, expr: binary.right});
+    else if (isModuleExports(target, ts)) full.push(binary);
   }
   return {full, members};
+}
+
+/** The `x.name = value` assignment a statement is, if any. */
+function memberAssignmentOf(
+  stmt: tsserver.Statement,
+  ts: typeof tsserver,
+): {binary: tsserver.BinaryExpression; target: tsserver.PropertyAccessExpression} | undefined {
+  const binary = ts.isExpressionStatement(stmt) ? stmt.expression : undefined;
+  if (!binary || !ts.isBinaryExpression(binary) || binary.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+    return undefined;
+  }
+  return ts.isPropertyAccessExpression(binary.left) ? {binary, target: binary.left} : undefined;
+}
+
+/** `module.exports` or the `exports` shorthand: the object a module's members are added to. */
+function isExportsObject(expr: tsserver.Expression, ts: typeof tsserver): boolean {
+  return isModuleExports(expr, ts) || (ts.isIdentifier(expr) && expr.text === 'exports');
 }
 
 /** `module.exports`, identified structurally. */
@@ -87,6 +105,7 @@ function isModuleExports(expr: tsserver.Expression, ts: typeof tsserver): boolea
     expr.name.text === 'exports'
   );
 }
+
 /**
  * True when a `module.exports = X` assignment gives the checker a genuinely
  * usable exports type: not `any`, and actually exposing members. A
@@ -95,7 +114,7 @@ function isModuleExports(expr: tsserver.Expression, ts: typeof tsserver): boolea
  * reports its exports as `any` or as an opaque, member-less `typeof base` —
  * and must be resolved by recursing down the cartridge chain instead.
  */
-export function isConcreteExportAssignment(ctx: InferenceContext, bin: tsserver.BinaryExpression): boolean {
+function isConcreteExportAssignment(ctx: InferenceContext, bin: tsserver.BinaryExpression): boolean {
   const {ts, checker} = ctx;
   const exportsType = checker.getTypeAtLocation(bin.left);
   if (isAnyType(ts, exportsType)) return false;
@@ -147,7 +166,7 @@ function passesThrough(ctx: InferenceContext, exports: ExportAssignments): boole
  * (`module.exports = base`): a level with a concrete `module.exports`
  * replaces everything below it at runtime, unless it carries the base along.
  */
-export function* superModuleLevels(
+function* superModuleLevels(
   ctx: InferenceContext,
   superAccess: tsserver.PropertyAccessExpression,
 ): Generator<ExportAssignments> {
@@ -162,6 +181,77 @@ export function* superModuleLevels(
     if (!passesThrough(ctx, exports)) return;
     fromFileName = superFile.fileName;
   }
+}
+
+/**
+ * The types one `module.exports = X` assignment of a superModule level
+ * contributes. The checker's type for `module.exports` is used when it is
+ * concrete — it merges the assigned object with later
+ * `module.exports.name = fn` augmentations. A pass-through overlay
+ * (`module.exports = base`, base itself a superModule) is resolved by
+ * recursing into the right-hand side instead, another cartridge down; the
+ * checker sometimes merges such a level into an opaque `typeof base` that
+ * still carries none of the deeper cartridges' members, so a pass-through
+ * right-hand side is recursed into even when the left side looked concrete.
+ */
+function superModuleExportTypes(
+  ctx: InferenceContext,
+  assignment: tsserver.BinaryExpression,
+  resolve: ExpressionResolver,
+): tsserver.Type[] {
+  const {ts, checker} = ctx;
+  const concrete = isConcreteExportAssignment(ctx, assignment);
+  const types = concrete ? [checker.getTypeAtLocation(assignment.left)] : [];
+  if (!concrete || traceSuperModuleAccess(ts, checker, assignment.right)) types.push(...resolve(assignment.right));
+  return types;
+}
+
+/**
+ * Resolves what `module.superModule` evaluates to: the export type(s) of the
+ * same-subpath module in the next cartridge down the path. Members a
+ * pass-through level *adds* can't be merged into these types; they are
+ * resolved by name in {@link resolveSuperModuleMemberTypes}.
+ */
+export function resolveSuperModuleTypes(
+  ctx: InferenceContext,
+  expr: tsserver.PropertyAccessExpression,
+  resolve: ExpressionResolver,
+): tsserver.Type[] {
+  const superFile = findSuperModuleFile(ctx, expr.getSourceFile().fileName);
+  if (!superFile) return [];
+  // The guard catches overlay cycles from a misconfigured cartridge path.
+  return withCycleGuard(ctx, superFile, [], () =>
+    dedupeTypes(
+      ctx,
+      collectExportAssignments(superFile, ctx.ts).full.flatMap((assignment) =>
+        superModuleExportTypes(ctx, assignment, resolve),
+      ),
+    ),
+  );
+}
+
+/**
+ * Resolves `memberName` from the first superModule level (walking down the
+ * cartridge path) that adds it as an export augmentation
+ * (`module.exports.name = fn`) — the complement to
+ * {@link resolveSuperModuleTypes} for members no export type carries.
+ */
+export function resolveSuperModuleMemberTypes(
+  ctx: InferenceContext,
+  superAccess: tsserver.PropertyAccessExpression,
+  memberName: string,
+  resolve: ExpressionResolver,
+): tsserver.Type[] {
+  for (const {members} of superModuleLevels(ctx, superAccess)) {
+    const matches = members.filter((member) => member.name === memberName);
+    if (matches.length === 0) continue;
+    const types = matches.flatMap((member) => resolve(member.expr));
+    return dedupeTypes(
+      ctx,
+      types.filter((type) => !isAnyType(ctx.ts, type)),
+    );
+  }
+  return [];
 }
 
 /**

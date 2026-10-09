@@ -25,6 +25,8 @@ import {
   hasExplicitReturnType,
   hasExplicitVariableType,
 } from './ast-helpers';
+import {NO_BINDINGS, argumentBindings, boundArgument, hasAnyTypeArgument, narrows, withBindings} from './bindings';
+import type {ArgumentBinding} from './bindings';
 import {collectCallSites} from './call-sites';
 import {getReferenceNameNode} from './value-flow';
 import {frameworkParameterTypes} from './framework-contracts';
@@ -32,13 +34,8 @@ import {genericResultSource} from './generic-calls';
 import {localMemberValues, memberValueExpressions, valueDeclarationOf} from './member-values';
 import {decideType, limitUnion, normalizeCandidates} from './policy';
 import {callbackParameterTypes, isElementFirstCallbackCall, resolveCalleeDeclaration} from './signatures';
-import {
-  collectExportAssignments,
-  findSuperModuleFile,
-  isConcreteExportAssignment,
-  superModuleLevels,
-  traceSuperModuleAccess,
-} from './super-module';
+import type {ExpressionResolver} from './super-module';
+import {resolveSuperModuleMemberTypes, resolveSuperModuleTypes, traceSuperModuleAccess} from './super-module';
 import {arrayTypeOf, dedupeTypes, elementTypeOf, getMemberOfType, informativeParts, isAnyType} from './type-helpers';
 import {usageProfileOf} from './usage-profile';
 
@@ -89,6 +86,11 @@ function resolveInitializerTypes(
   return resolveArrayTypes(ctx, [...initializer.elements, ...pushedValues], depth, chainHops);
 }
 
+/** Resolves values one hop further along the expression `depth` and `chainHops` describe. */
+function nextHop(ctx: InferenceContext, depth: number, chainHops: number): ExpressionResolver {
+  return (value) => resolveExpressionTypes(ctx, value, depth, chainHops + 1);
+}
+
 /** The types of several values the same thing can hold, each one hop further along the expression. */
 function resolveValues(
   ctx: InferenceContext,
@@ -97,82 +99,6 @@ function resolveValues(
   chainHops: number,
 ): tsserver.Type[] {
   return values.flatMap((value) => resolveExpressionTypes(ctx, value, depth, chainHops + 1));
-}
-
-/**
- * The types one `module.exports = X` assignment of a superModule level
- * contributes. The checker's type for `module.exports` is used when it is
- * concrete — it merges the assigned object with later
- * `module.exports.name = fn` augmentations. A pass-through overlay
- * (`module.exports = base`, base itself a superModule) is resolved by
- * recursing into the right-hand side instead, another cartridge down; the
- * checker sometimes merges such a level into an opaque `typeof base` that
- * still carries none of the deeper cartridges' members, so a pass-through
- * right-hand side is recursed into even when the left side looked concrete.
- */
-function superModuleExportTypes(
-  ctx: InferenceContext,
-  assignment: tsserver.BinaryExpression,
-  depth: number,
-  chainHops: number,
-): tsserver.Type[] {
-  const {ts, checker} = ctx;
-  const concrete = isConcreteExportAssignment(ctx, assignment);
-  const types = concrete ? [checker.getTypeAtLocation(assignment.left)] : [];
-  if (!concrete || traceSuperModuleAccess(ts, checker, assignment.right)) {
-    types.push(...resolveExpressionTypes(ctx, assignment.right, depth, chainHops + 1));
-  }
-  return types;
-}
-
-/**
- * Resolves what `module.superModule` evaluates to: the export type(s) of the
- * same-subpath module in the next cartridge down the path. Members a
- * pass-through level *adds* can't be merged into these types; they are
- * resolved by name in {@link resolveSuperModuleMemberTypes}.
- */
-function resolveSuperModuleTypes(
-  ctx: InferenceContext,
-  expr: tsserver.PropertyAccessExpression,
-  depth: number,
-  chainHops: number,
-): tsserver.Type[] {
-  const superFile = findSuperModuleFile(ctx, expr.getSourceFile().fileName);
-  if (!superFile) return [];
-  // The guard catches overlay cycles from a misconfigured cartridge path.
-  return withCycleGuard(ctx, superFile, [], () =>
-    dedupeTypes(
-      ctx,
-      collectExportAssignments(superFile, ctx.ts).full.flatMap((assignment) =>
-        superModuleExportTypes(ctx, assignment, depth, chainHops),
-      ),
-    ),
-  );
-}
-
-/**
- * Resolves `memberName` from the first superModule level (walking down the
- * cartridge path) that adds it as an export augmentation
- * (`module.exports.name = fn`) — the complement to
- * {@link resolveSuperModuleTypes} for members no export type carries.
- */
-function resolveSuperModuleMemberTypes(
-  ctx: InferenceContext,
-  superAccess: tsserver.PropertyAccessExpression,
-  memberName: string,
-  depth: number,
-  chainHops: number,
-): tsserver.Type[] {
-  for (const {members} of superModuleLevels(ctx, superAccess)) {
-    const matches = members.filter((member) => member.name === memberName);
-    if (matches.length === 0) continue;
-    const types = matches.flatMap((member) => resolveExpressionTypes(ctx, member.expr, depth, chainHops + 1));
-    return dedupeTypes(
-      ctx,
-      types.filter((type) => !isAnyType(ctx.ts, type)),
-    );
-  }
-  return [];
 }
 
 /**
@@ -236,10 +162,47 @@ function resolveExpressionTypes(
   // expressions is never meaningful — sometimes `any`, sometimes an opaque
   // circular `typeof base` that would pass for informative.
   const superAccess = traceSuperModuleAccess(ts, checker, expr);
-  if (superAccess) return resolveSuperModuleTypes(ctx, superAccess, depth, chainHops);
+  if (superAccess) return resolveSuperModuleTypes(ctx, superAccess, nextHop(ctx, depth, chainHops));
   const direct = informativeParts(ctx, checker.getTypeAtLocation(expr));
+  const bound = ctx.bindings.size > 0 ? resolveBoundTypes(ctx, expr, direct, depth, chainHops) : undefined;
+  if (bound) return bound;
   if (direct.length > 0) return direct;
   return chainHops < MAX_CHAIN_HOPS ? resolveFromParts(ctx, expr, depth, chainHops) : [];
+}
+
+/**
+ * While a call's arguments are bound (see ./bindings): a bound parameter is
+ * what its argument is, and an expression the checker types as an `any`
+ * instantiation (`collection.iterator()` on a bare `{dw.util.Collection}`)
+ * is recovered through its parts, which may reach a bound parameter. Either
+ * stands in for the checker's type only where it narrows it. A bound
+ * parameter whose argument says nothing keeps its general type, resolved
+ * without the bindings (and so served from the memo).
+ */
+function resolveBoundTypes(
+  ctx: InferenceContext,
+  expr: tsserver.Expression,
+  declared: readonly tsserver.Type[],
+  depth: number,
+  chainHops: number,
+): tsserver.Type[] | undefined {
+  const binding = boundArgument(ctx, expr);
+  if (binding) {
+    const types = argumentTypes(ctx, binding);
+    if (narrows(ctx, declared, types)) return types;
+    return withBindings(ctx, NO_BINDINGS, () => resolveExpressionTypes(ctx, expr, depth, chainHops));
+  }
+  if (chainHops >= MAX_CHAIN_HOPS || !declared.some((type) => hasAnyTypeArgument(ctx, type))) return undefined;
+  const narrowed = resolveFromParts(ctx, expr, depth, chainHops);
+  return narrows(ctx, declared, narrowed) ? narrowed : undefined;
+}
+
+/** What a bound argument evaluates to where its call is written, resolved once per binding. */
+function argumentTypes(ctx: InferenceContext, binding: ArgumentBinding): tsserver.Type[] {
+  binding.resolved ??= withBindings(ctx, binding.outer, () =>
+    limitUnion(ctx, normalizeCandidates(ctx, resolveExpressionTypes(ctx, binding.argument, binding.depth))),
+  );
+  return binding.resolved;
 }
 
 /** Recovers `expr`'s type(s) through what it is built from, once the checker's own type said nothing. */
@@ -364,7 +327,9 @@ function memberTypesOfReceiver(
   });
   if (types.length > 0) return types;
   const superAccess = traceSuperModuleAccess(ts, checker, receiver);
-  if (superAccess) return resolveSuperModuleMemberTypes(ctx, superAccess, memberName, depth, chainHops);
+  if (superAccess) {
+    return resolveSuperModuleMemberTypes(ctx, superAccess, memberName, nextHop(ctx, depth, chainHops));
+  }
   const bound = checker.getSymbolAtLocation(name);
   if (bound) return memberTypes(ctx, bound, name, depth, chainHops);
   return resolveValues(ctx, localMemberValues(ctx, receiver, memberName), depth, chainHops);
@@ -406,6 +371,25 @@ function signatureReturnTypes(ctx: InferenceContext, methodType: tsserver.Type, 
 }
 
 /**
+ * What `fn` returns for this `call`. Its return across all callers, unless
+ * that says nothing or leaves a choice (`Shipment | ProductLineItem` from a
+ * helper handed either collection): then what it returns for the arguments
+ * this call passes it (see ./bindings), wherever that is narrower.
+ */
+function calleeReturnTypes(
+  ctx: InferenceContext,
+  fn: tsserver.SignatureDeclaration,
+  call: tsserver.CallExpression,
+  depth: number,
+): tsserver.Type[] {
+  const general = inferReturnType(ctx, fn, depth + 1);
+  if (general.length === 1 || hasExplicitReturnType(fn, ctx.ts)) return general;
+  const bindings = argumentBindings(ctx, fn, call, depth);
+  const specific = bindings ? withBindings(ctx, bindings, () => inferReturnType(ctx, fn, depth + 1)) : [];
+  return narrows(ctx, general, specific) ? specific : general;
+}
+
+/**
  * Resolves an `any` call expression: first by inferring the callee's own
  * return type, then — for a method call on an undocumented receiver
  * (`x.getPriceModel().getPrice()`) — from the method's real signature(s) on
@@ -418,7 +402,7 @@ function resolveCallResultTypes(
   chainHops: number,
 ): tsserver.Type[] {
   const calleeFn = resolveCalleeDeclaration(ctx, expr);
-  const inferred = calleeFn ? inferReturnType(ctx, calleeFn, depth + 1) : [];
+  const inferred = calleeFn ? calleeReturnTypes(ctx, calleeFn, expr, depth) : [];
   if (inferred.length > 0) return inferred;
   const generic = genericResultSource(ctx, expr);
   if (generic) {

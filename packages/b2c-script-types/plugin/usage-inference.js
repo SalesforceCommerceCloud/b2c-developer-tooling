@@ -22,9 +22,10 @@ exports.createUsageInferenceHooks = exports.matchAmbientTypesByUsage = exports.u
 //   inference/signatures          - the function a call invokes and its declared callback types
 //   inference/generic-calls       - generic calls whose result is an argument or a callback's return
 //   inference/member-values       - the values an untyped member is built with
-//   inference/super-module        - module.superModule detection and export scanning
+//   inference/super-module        - module.superModule detection and resolution
 //   inference/this-properties     - constructor arguments kept on `this` and read in prototype methods
 //   inference/usage-profile       - what a value's own scope says about it (members, guards, uses)
+//   inference/bindings            - a helper's parameters bound to one call's arguments
 //   inference/ambient-index       - every ambient class by member names
 //   inference/naming              - identifier-name tiebreak between usage matches
 //   inference/framework-contracts - parameters the platform itself passes (Page Designer)

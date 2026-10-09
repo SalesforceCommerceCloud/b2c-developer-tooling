@@ -8,6 +8,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createInferenceContext = createInferenceContext;
 exports.withCycleGuard = withCycleGuard;
 exports.withInferenceGuards = withInferenceGuards;
+const bindings_1 = require("./bindings");
 const constants_1 = require("./constants");
 /**
  * Builds a fresh inference context for one top-level hover/completion
@@ -30,6 +31,7 @@ function createInferenceContext(ts, languageService, resolveSuperModulePath, tri
         typeDisplayStrings: new Map(),
         profiles: new Map(),
         cycleHits: 0,
+        bindings: bindings_1.NO_BINDINGS,
         resolveSuperModulePath,
         triggerPosition,
     };
@@ -62,10 +64,15 @@ function withCycleGuard(ctx, node, fallback, compute) {
  * reusable however deep the current path is. A result whose computation hit
  * a cycle guard is not memoized: it was cut short by what happened to be on
  * the current call stack, and the same node reached later from outside the
- * cycle could resolve more.
+ * cycle could resolve more. While call-specific bindings are in force
+ * nothing is memoized, since a result for one call's arguments is not the
+ * node's general result; and inside a bound function the memo is not read
+ * either, since its general result is what the bindings are there to
+ * improve on. Anywhere else the general result still holds.
  */
 function withInferenceGuards(ctx, node, depth, compute) {
-    const cached = ctx.memo.get(node);
+    const unbound = ctx.bindings.size === 0;
+    const cached = unbound || !isInBoundFunction(ctx, node) ? ctx.memo.get(node) : undefined;
     if (cached && cached.atDepth <= depth)
         return cached.types;
     if (depth > constants_1.MAX_INFERENCE_DEPTH)
@@ -73,8 +80,18 @@ function withInferenceGuards(ctx, node, depth, compute) {
     return withCycleGuard(ctx, node, [], () => {
         const cycleHitsBefore = ctx.cycleHits;
         const types = compute();
-        if (ctx.cycleHits === cycleHitsBefore)
+        if (unbound && ctx.cycleHits === cycleHitsBefore)
             ctx.memo.set(node, { atDepth: depth, types });
         return types;
     });
+}
+/** True when `node` lies inside a function whose parameters are bound to one call's arguments. */
+function isInBoundFunction(ctx, node) {
+    const file = node.getSourceFile();
+    for (const parameter of ctx.bindings.keys()) {
+        const fn = parameter.parent;
+        if (fn.getSourceFile() === file && node.pos >= fn.pos && node.end <= fn.end)
+            return true;
+    }
+    return false;
 }

@@ -12,6 +12,7 @@ exports.inferTypeForExpression = inferTypeForExpression;
 const constants_1 = require("./constants");
 const context_1 = require("./context");
 const ast_helpers_1 = require("./ast-helpers");
+const bindings_1 = require("./bindings");
 const call_sites_1 = require("./call-sites");
 const value_flow_1 = require("./value-flow");
 const framework_contracts_1 = require("./framework-contracts");
@@ -56,58 +57,13 @@ function resolveInitializerTypes(ctx, initializer, pushedValues, depth, chainHop
     }
     return resolveArrayTypes(ctx, [...initializer.elements, ...pushedValues], depth, chainHops);
 }
+/** Resolves values one hop further along the expression `depth` and `chainHops` describe. */
+function nextHop(ctx, depth, chainHops) {
+    return (value) => resolveExpressionTypes(ctx, value, depth, chainHops + 1);
+}
 /** The types of several values the same thing can hold, each one hop further along the expression. */
 function resolveValues(ctx, values, depth, chainHops) {
     return values.flatMap((value) => resolveExpressionTypes(ctx, value, depth, chainHops + 1));
-}
-/**
- * The types one `module.exports = X` assignment of a superModule level
- * contributes. The checker's type for `module.exports` is used when it is
- * concrete — it merges the assigned object with later
- * `module.exports.name = fn` augmentations. A pass-through overlay
- * (`module.exports = base`, base itself a superModule) is resolved by
- * recursing into the right-hand side instead, another cartridge down; the
- * checker sometimes merges such a level into an opaque `typeof base` that
- * still carries none of the deeper cartridges' members, so a pass-through
- * right-hand side is recursed into even when the left side looked concrete.
- */
-function superModuleExportTypes(ctx, assignment, depth, chainHops) {
-    const { ts, checker } = ctx;
-    const concrete = (0, super_module_1.isConcreteExportAssignment)(ctx, assignment);
-    const types = concrete ? [checker.getTypeAtLocation(assignment.left)] : [];
-    if (!concrete || (0, super_module_1.traceSuperModuleAccess)(ts, checker, assignment.right)) {
-        types.push(...resolveExpressionTypes(ctx, assignment.right, depth, chainHops + 1));
-    }
-    return types;
-}
-/**
- * Resolves what `module.superModule` evaluates to: the export type(s) of the
- * same-subpath module in the next cartridge down the path. Members a
- * pass-through level *adds* can't be merged into these types; they are
- * resolved by name in {@link resolveSuperModuleMemberTypes}.
- */
-function resolveSuperModuleTypes(ctx, expr, depth, chainHops) {
-    const superFile = (0, super_module_1.findSuperModuleFile)(ctx, expr.getSourceFile().fileName);
-    if (!superFile)
-        return [];
-    // The guard catches overlay cycles from a misconfigured cartridge path.
-    return (0, context_1.withCycleGuard)(ctx, superFile, [], () => (0, type_helpers_1.dedupeTypes)(ctx, (0, super_module_1.collectExportAssignments)(superFile, ctx.ts).full.flatMap((assignment) => superModuleExportTypes(ctx, assignment, depth, chainHops))));
-}
-/**
- * Resolves `memberName` from the first superModule level (walking down the
- * cartridge path) that adds it as an export augmentation
- * (`module.exports.name = fn`) — the complement to
- * {@link resolveSuperModuleTypes} for members no export type carries.
- */
-function resolveSuperModuleMemberTypes(ctx, superAccess, memberName, depth, chainHops) {
-    for (const { members } of (0, super_module_1.superModuleLevels)(ctx, superAccess)) {
-        const matches = members.filter((member) => member.name === memberName);
-        if (matches.length === 0)
-            continue;
-        const types = matches.flatMap((member) => resolveExpressionTypes(ctx, member.expr, depth, chainHops + 1));
-        return (0, type_helpers_1.dedupeTypes)(ctx, types.filter((type) => !(0, type_helpers_1.isAnyType)(ctx.ts, type)));
-    }
-    return [];
 }
 /**
  * Infers a callback parameter's type from the call the callback is passed
@@ -156,11 +112,41 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
     // circular `typeof base` that would pass for informative.
     const superAccess = (0, super_module_1.traceSuperModuleAccess)(ts, checker, expr);
     if (superAccess)
-        return resolveSuperModuleTypes(ctx, superAccess, depth, chainHops);
+        return (0, super_module_1.resolveSuperModuleTypes)(ctx, superAccess, nextHop(ctx, depth, chainHops));
     const direct = (0, type_helpers_1.informativeParts)(ctx, checker.getTypeAtLocation(expr));
+    const bound = ctx.bindings.size > 0 ? resolveBoundTypes(ctx, expr, direct, depth, chainHops) : undefined;
+    if (bound)
+        return bound;
     if (direct.length > 0)
         return direct;
     return chainHops < constants_1.MAX_CHAIN_HOPS ? resolveFromParts(ctx, expr, depth, chainHops) : [];
+}
+/**
+ * While a call's arguments are bound (see ./bindings): a bound parameter is
+ * what its argument is, and an expression the checker types as an `any`
+ * instantiation (`collection.iterator()` on a bare `{dw.util.Collection}`)
+ * is recovered through its parts, which may reach a bound parameter. Either
+ * stands in for the checker's type only where it narrows it. A bound
+ * parameter whose argument says nothing keeps its general type, resolved
+ * without the bindings (and so served from the memo).
+ */
+function resolveBoundTypes(ctx, expr, declared, depth, chainHops) {
+    const binding = (0, bindings_1.boundArgument)(ctx, expr);
+    if (binding) {
+        const types = argumentTypes(ctx, binding);
+        if ((0, bindings_1.narrows)(ctx, declared, types))
+            return types;
+        return (0, bindings_1.withBindings)(ctx, bindings_1.NO_BINDINGS, () => resolveExpressionTypes(ctx, expr, depth, chainHops));
+    }
+    if (chainHops >= constants_1.MAX_CHAIN_HOPS || !declared.some((type) => (0, bindings_1.hasAnyTypeArgument)(ctx, type)))
+        return undefined;
+    const narrowed = resolveFromParts(ctx, expr, depth, chainHops);
+    return (0, bindings_1.narrows)(ctx, declared, narrowed) ? narrowed : undefined;
+}
+/** What a bound argument evaluates to where its call is written, resolved once per binding. */
+function argumentTypes(ctx, binding) {
+    binding.resolved ?? (binding.resolved = (0, bindings_1.withBindings)(ctx, binding.outer, () => (0, policy_1.limitUnion)(ctx, (0, policy_1.normalizeCandidates)(ctx, resolveExpressionTypes(ctx, binding.argument, binding.depth)))));
+    return binding.resolved;
 }
 /** Recovers `expr`'s type(s) through what it is built from, once the checker's own type said nothing. */
 function resolveFromParts(ctx, expr, depth, chainHops) {
@@ -242,8 +228,9 @@ function memberTypesOfReceiver(ctx, receiver, name, depth, chainHops) {
     if (types.length > 0)
         return types;
     const superAccess = (0, super_module_1.traceSuperModuleAccess)(ts, checker, receiver);
-    if (superAccess)
-        return resolveSuperModuleMemberTypes(ctx, superAccess, memberName, depth, chainHops);
+    if (superAccess) {
+        return (0, super_module_1.resolveSuperModuleMemberTypes)(ctx, superAccess, memberName, nextHop(ctx, depth, chainHops));
+    }
     const bound = checker.getSymbolAtLocation(name);
     if (bound)
         return memberTypes(ctx, bound, name, depth, chainHops);
@@ -277,6 +264,20 @@ function signatureReturnTypes(ctx, methodType, depth) {
     });
 }
 /**
+ * What `fn` returns for this `call`. Its return across all callers, unless
+ * that says nothing or leaves a choice (`Shipment | ProductLineItem` from a
+ * helper handed either collection): then what it returns for the arguments
+ * this call passes it (see ./bindings), wherever that is narrower.
+ */
+function calleeReturnTypes(ctx, fn, call, depth) {
+    const general = inferReturnType(ctx, fn, depth + 1);
+    if (general.length === 1 || (0, ast_helpers_1.hasExplicitReturnType)(fn, ctx.ts))
+        return general;
+    const bindings = (0, bindings_1.argumentBindings)(ctx, fn, call, depth);
+    const specific = bindings ? (0, bindings_1.withBindings)(ctx, bindings, () => inferReturnType(ctx, fn, depth + 1)) : [];
+    return (0, bindings_1.narrows)(ctx, general, specific) ? specific : general;
+}
+/**
  * Resolves an `any` call expression: first by inferring the callee's own
  * return type, then — for a method call on an undocumented receiver
  * (`x.getPriceModel().getPrice()`) — from the method's real signature(s) on
@@ -284,7 +285,7 @@ function signatureReturnTypes(ctx, methodType, depth) {
  */
 function resolveCallResultTypes(ctx, expr, depth, chainHops) {
     const calleeFn = (0, signatures_1.resolveCalleeDeclaration)(ctx, expr);
-    const inferred = calleeFn ? inferReturnType(ctx, calleeFn, depth + 1) : [];
+    const inferred = calleeFn ? calleeReturnTypes(ctx, calleeFn, expr, depth) : [];
     if (inferred.length > 0)
         return inferred;
     const generic = (0, generic_calls_1.genericResultSource)(ctx, expr);

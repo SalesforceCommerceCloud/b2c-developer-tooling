@@ -12,6 +12,8 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
+import {NO_BINDINGS} from './bindings';
+import type {Bindings} from './bindings';
 import type {CallSite} from './value-flow';
 import {MAX_INFERENCE_DEPTH, MAX_REFERENCES_PER_REQUEST, MAX_SEARCHES_PER_REQUEST} from './constants';
 import type {UsageProfile} from './usage-profile';
@@ -97,6 +99,12 @@ export interface InferenceContext {
    */
   cycleHits: number;
   /**
+   * The parameters bound to one call's arguments while that call's
+   * result is inferred (see ./bindings); empty otherwise. Swapped in and out
+   * as calls nest, never shared between them.
+   */
+  bindings: Bindings;
+  /**
    * Maps a cartridge file to the same-subpath file in the next cartridge
    * down the cartridge path — the module `module.superModule` refers to at
    * runtime. Supplied by the plugin host (which owns the cartridge order);
@@ -145,6 +153,7 @@ export function createInferenceContext(
     typeDisplayStrings: new Map(),
     profiles: new Map(),
     cycleHits: 0,
+    bindings: NO_BINDINGS,
     resolveSuperModulePath,
     triggerPosition,
   };
@@ -178,7 +187,11 @@ export function withCycleGuard<T>(ctx: InferenceContext, node: tsserver.Node, fa
  * reusable however deep the current path is. A result whose computation hit
  * a cycle guard is not memoized: it was cut short by what happened to be on
  * the current call stack, and the same node reached later from outside the
- * cycle could resolve more.
+ * cycle could resolve more. While call-specific bindings are in force
+ * nothing is memoized, since a result for one call's arguments is not the
+ * node's general result; and inside a bound function the memo is not read
+ * either, since its general result is what the bindings are there to
+ * improve on. Anywhere else the general result still holds.
  */
 export function withInferenceGuards(
   ctx: InferenceContext,
@@ -186,13 +199,24 @@ export function withInferenceGuards(
   depth: number,
   compute: () => tsserver.Type[],
 ): tsserver.Type[] {
-  const cached = ctx.memo.get(node);
+  const unbound = ctx.bindings.size === 0;
+  const cached = unbound || !isInBoundFunction(ctx, node) ? ctx.memo.get(node) : undefined;
   if (cached && cached.atDepth <= depth) return cached.types;
   if (depth > MAX_INFERENCE_DEPTH) return [];
   return withCycleGuard(ctx, node, [], () => {
     const cycleHitsBefore = ctx.cycleHits;
     const types = compute();
-    if (ctx.cycleHits === cycleHitsBefore) ctx.memo.set(node, {atDepth: depth, types});
+    if (unbound && ctx.cycleHits === cycleHitsBefore) ctx.memo.set(node, {atDepth: depth, types});
     return types;
   });
+}
+
+/** True when `node` lies inside a function whose parameters are bound to one call's arguments. */
+function isInBoundFunction(ctx: InferenceContext, node: tsserver.Node): boolean {
+  const file = node.getSourceFile();
+  for (const parameter of ctx.bindings.keys()) {
+    const fn = parameter.parent;
+    if (fn.getSourceFile() === file && node.pos >= fn.pos && node.end <= fn.end) return true;
+  }
+  return false;
 }

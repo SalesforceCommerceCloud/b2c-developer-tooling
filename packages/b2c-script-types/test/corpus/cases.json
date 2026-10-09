@@ -575,5 +575,23 @@
       "param": 2
     },
     "expect": "SearchRefinementValue"
+  },
+  {
+    "id": "shipping-collections-find-call-specific",
+    "source": "SFRA scripts/util/collections.find + scripts/checkout/shippingHelpers.getShipmentByUUID shape",
+    "description": "collections.find documents its result as the `{Object|null}` placeholder and its collection as a bare `{dw.util.Collection}` whose elements are `any`; across its callers it returns nothing in particular, but for the call getShipmentByUUID makes with `basket.shipments` it returns a Shipment, so the controller's variable holding that result reads as one",
+    "dwTypes": ["Basket", "Collection"],
+    "globals": "type DwUtilCollection<T> = Collection<T>;\nnamespace dw.util { type Collection<T> = DwUtilCollection<T>; }\nfunction getCurrentBasket(): Basket;",
+    "files": {
+      "/collections.js": "/**\n * Find method for dw.util.Collection subclass instance\n * @param {dw.util.Collection} collection - Collection subclass instance to find value in\n * @param {Function} match - Match function\n * @param {Object} [scope] - Optional execution scope to pass to the match function\n * @returns {Object|null} Single item from the collection\n */\nfunction find(collection, match, scope) {\n  var result = null;\n\n  if (collection) {\n    var iterator = collection.iterator();\n    while (iterator.hasNext()) {\n      var item = iterator.next();\n      if (scope ? match.call(scope, item) : match(item)) {\n        result = item;\n        break;\n      }\n    }\n  }\n\n  return result;\n}\n\nmodule.exports = {find: find};\n",
+      "/shippingHelpers.js": "var collections = require('./collections');\n\nfunction getShipmentByUUID(basket, uuid) {\n  return collections.find(basket.shipments, function (shipment) {\n    return shipment.UUID === uuid;\n  });\n}\n\nfunction getProductLineItemByUUID(basket, uuid) {\n  return collections.find(basket.productLineItems, function (item) {\n    return item.UUID === uuid;\n  });\n}\n\nmodule.exports = {getShipmentByUUID: getShipmentByUUID, getProductLineItemByUUID: getProductLineItemByUUID};\n",
+      "/CheckoutShippingServices.js": "var shippingHelpers = require('./shippingHelpers');\n\nfunction selectShippingMethod(req) {\n  var currentBasket = getCurrentBasket();\n  var shipment = shippingHelpers.getShipmentByUUID(currentBasket, req.form.shipmentUUID);\n  return shipment;\n}\n\nmodule.exports = {selectShippingMethod: selectShippingMethod};\n"
+    },
+    "target": {
+      "file": "/CheckoutShippingServices.js",
+      "kind": "variable",
+      "name": "shipment"
+    },
+    "expect": "Shipment"
   }
 ]
