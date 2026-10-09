@@ -427,6 +427,16 @@ jobs:
           CLI_VERSION: ${{ steps.packages.outputs.version_cli }}
         run: gh workflow run release-actions.yml -f ref="@salesforce/b2c-cli@$CLI_VERSION" -f cli-version="$CLI_VERSION"
 
+      # The b2c-dx-mcp plugin pin moves only after npm serves the new version
+      # (pin-mcp-plugin.yml waits for it); the version PR leaves the plugin on the
+      # previous, installable version. Only `latest` publishes move the pin.
+      - name: Pin MCP plugin
+        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_mcp == 'true' && steps.packages.outputs.tag_mcp == 'latest' && steps.publish-mcp.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MCP_VERSION: ${{ steps.packages.outputs.version_mcp }}
+        run: gh workflow run pin-mcp-plugin.yml -f version="$MCP_VERSION"
+
       - name: Update b2c-vs-extension@latest tag
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
         run: |
