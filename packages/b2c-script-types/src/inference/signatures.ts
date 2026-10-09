@@ -25,7 +25,7 @@ import {typeDisplayString} from './type-helpers';
  */
 export function resolveCalleeDeclaration(
   ctx: InferenceContext,
-  call: tsserver.CallExpression,
+  call: tsserver.CallExpression | tsserver.NewExpression,
 ): tsserver.SignatureDeclaration | undefined {
   const {checker, ts} = ctx;
   const sym = checker.getSymbolAtLocation(call.expression);

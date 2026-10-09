@@ -6,8 +6,12 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.usageProfileOf = usageProfileOf;
+const ast_helpers_1 = require("./ast-helpers");
+const constants_1 = require("./constants");
 const signatures_1 = require("./signatures");
+const this_properties_1 = require("./this-properties");
 const type_helpers_1 = require("./type-helpers");
+const value_flow_1 = require("./value-flow");
 function emptyProfile() {
     return {
         memberNames: new Set(),
@@ -17,6 +21,7 @@ function emptyProfile() {
         assignedValues: [],
         pushedValues: [],
         memberValues: new Map(),
+        forwardedTo: [],
     };
 }
 const EMPTY_PROFILE = emptyProfile();
@@ -142,10 +147,11 @@ function usedAsType(ctx, reference) {
     return isCall && index >= 0 ? argumentType(ctx, call, reference, index) : checker.getContextualType(reference);
 }
 function isReferenceTo(ctx, target, node) {
-    return (ctx.ts.isIdentifier(node) &&
+    const isName = ctx.ts.isIdentifier(node) &&
         node !== target.declarationName &&
         node.text === target.declarationName.text &&
-        ctx.checker.getSymbolAtLocation(node) === target.symbol);
+        ctx.checker.getSymbolAtLocation(node) === target.symbol;
+    return isName || (0, this_properties_1.isStoredMemberRead)(ctx, target.storedIn, node);
 }
 /** True when `condition` tests the value for a member (`'m' in x`, `x.hasOwnProperty('m')`, ...). */
 function testsPresence(ctx, target, condition) {
@@ -294,6 +300,19 @@ function recordAssignment({ ctx, reference }, profile) {
     return assignment !== undefined;
 }
 /**
+ * `helper(x)`, `new Model(x)`, `Base.call(this, x)` with an undocumented
+ * project function: the value is used however that function uses its
+ * parameter. Never the only role a reference plays — the contextual use is
+ * recorded too.
+ */
+function recordForwarding({ ctx, reference, inVariantBranch }, profile) {
+    const parameter = (0, value_flow_1.receivingParameter)(ctx, reference);
+    if (parameter && !(0, ast_helpers_1.hasExplicitParameterType)(parameter, ctx.ts)) {
+        profile.forwardedTo.push({ parameter, optional: inVariantBranch });
+    }
+    return false;
+}
+/**
  * Any other use: the type the code uses the value as. A reference the
  * checker narrowed (inside `if (typeof x === 'string')`) is used as what that
  * one branch holds, which says nothing about every value.
@@ -310,15 +329,14 @@ const REFERENCE_RECORDERS = [
     recordTypeofTest,
     recordInstanceofTest,
     recordAssignment,
+    recordForwarding,
     recordContextualUse,
 ];
 /** Records what one reference to the profiled value says about it: the first role it plays wins. */
 function recordReference(use, profile) {
     REFERENCE_RECORDERS.some((record) => record(use, profile));
 }
-function collectProfile(ctx, symbol, declarationName, scope) {
-    const declaredType = ctx.checker.getTypeOfSymbolAtLocation(symbol, declarationName);
-    const target = { symbol, declarationName, declaredType };
+function collectProfile(ctx, target, scope) {
     const profile = emptyProfile();
     const visit = (node, inVariantBranch) => {
         if (isReferenceTo(ctx, target, node))
@@ -338,25 +356,76 @@ function enclosingFunctionBody(ctx, node) {
     return undefined;
 }
 /**
- * The usage profile of a parameter (scoped to its function body, nested
- * closures included) or a variable (scoped to its enclosing function, or the
- * whole file for a top-level variable). Destructured declarations have no
- * single value to profile and get an empty profile. Memoized per request.
+ * Where a value's uses can be: a parameter's function body (nested closures
+ * included), a variable's enclosing function or file, or — once a parameter
+ * is stored on `this` — the whole file its prototype methods read it in.
  */
-function usageProfileOf(ctx, declaration) {
-    const { ts, checker } = ctx;
-    if (!ts.isIdentifier(declaration.name))
-        return EMPTY_PROFILE;
-    const symbol = checker.getSymbolAtLocation(declaration.name);
-    const scope = ts.isParameter(declaration)
+function profileScope(ctx, declaration, storedIn) {
+    if (storedIn.size > 0)
+        return declaration.getSourceFile();
+    return ctx.ts.isParameter(declaration)
         ? declaration.parent.body
         : (enclosingFunctionBody(ctx, declaration) ?? declaration.getSourceFile());
-    if (!symbol || !scope)
+}
+/**
+ * What the value's own scope says about it, gathered over its
+ * {@link profileScope}; a parameter stored on `this` is also read through
+ * that member (see ./this-properties). Destructured declarations have no
+ * single value to profile and get an empty profile. Memoized per request.
+ */
+function ownProfileOf(ctx, declaration) {
+    const { ts, checker } = ctx;
+    const declarationName = declaration.name;
+    if (!ts.isIdentifier(declarationName))
         return EMPTY_PROFILE;
-    const cached = ctx.profiles.get(symbol);
-    if (cached)
-        return cached;
-    const profile = collectProfile(ctx, symbol, declaration.name, scope);
+    const symbol = checker.getSymbolAtLocation(declarationName);
+    const cached = symbol && ctx.profiles.get(symbol);
+    if (!symbol || cached)
+        return cached ?? EMPTY_PROFILE;
+    const storedIn = ts.isParameter(declaration) ? (0, this_properties_1.thisMembersStoring)(ctx, declaration) : new Set();
+    const scope = profileScope(ctx, declaration, storedIn);
+    if (!scope)
+        return EMPTY_PROFILE;
+    const declaredType = checker.getTypeOfSymbolAtLocation(symbol, declarationName);
+    const profile = collectProfile(ctx, { symbol, declarationName, declaredType, storedIn }, scope);
     ctx.profiles.set(symbol, profile);
     return profile;
+}
+/**
+ * The own profiles of the parameters `profile`'s value is passed on to,
+ * breadth first, up to {@link MAX_USAGE_FORWARDING_HOPS} functions away; a
+ * profile reached through a variant branch anywhere along the way is
+ * optional.
+ */
+function forwardedProfiles(ctx, declaration, profile) {
+    const reached = [];
+    const seen = new Set([declaration]);
+    let frontier = profile.forwardedTo;
+    for (let hop = 0; hop < constants_1.MAX_USAGE_FORWARDING_HOPS && frontier.length > 0; hop++) {
+        const unseen = frontier.filter(({ parameter }) => !seen.has(parameter) && seen.add(parameter));
+        const profiles = unseen.map(({ parameter, optional }) => ({ profile: ownProfileOf(ctx, parameter), optional }));
+        reached.push(...profiles);
+        frontier = profiles.flatMap(({ profile: next, optional }) => next.forwardedTo.map((use) => ({ parameter: use.parameter, optional: optional || use.optional })));
+    }
+    return reached;
+}
+/**
+ * The usage profile of a parameter or a variable: what its own scope says
+ * about it (see {@link ownProfileOf}), plus the members and contextual types
+ * of the parameters it is passed on to unchanged — a wrapper's `x` must
+ * support whatever the `new Model(x)` it forwards to does with it.
+ */
+function usageProfileOf(ctx, declaration) {
+    const own = ownProfileOf(ctx, declaration);
+    if (own.forwardedTo.length === 0)
+        return own;
+    const members = { memberNames: new Set(own.memberNames), optionalMemberNames: new Set(own.optionalMemberNames) };
+    const contextualTypes = [...own.contextualTypes];
+    for (const { profile, optional } of forwardedProfiles(ctx, declaration, own)) {
+        for (const name of profile.memberNames) {
+            recordMember(members, name, optional || profile.optionalMemberNames.has(name));
+        }
+        contextualTypes.push(...profile.contextualTypes);
+    }
+    return { ...own, ...members, contextualTypes };
 }

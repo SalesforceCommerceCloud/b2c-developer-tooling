@@ -14,10 +14,20 @@
 // how deep a cartridge's helper stack goes.
 export const MAX_INFERENCE_DEPTH = 3;
 
-// How many indirection hops (require() binding -> destructuring -> renamed
-// re-export, etc.) collectCallSites() will follow from a reference before
-// giving up on finding an actual call site.
-export const MAX_REFERENCE_HOPS = 2;
+// How many functions a parameter's usage is followed into when the body
+// passes the parameter on unchanged (`new BooleanAttributeValue(search,
+// definition, refinementValue)`): what the receiving parameter's function
+// does with it is usage of this one too. Each hop is one walk of a function
+// (or of its file, for a value stored on `this`) and no reference search.
+export const MAX_USAGE_FORWARDING_HOPS = 3;
+
+// How many names a function value is followed through (see ./value-flow)
+// before collectCallSites() gives up on finding an actual call site. SFRA's
+// refinement models need four: the model -> `module.exports` (its require()
+// calls) -> the factory returning it -> `var Model = factory(...)` -> the
+// `Model` parameter it is passed on to, where `new Model(...)` finally runs.
+// Hops into function-local names cost no project-wide search.
+export const MAX_REFERENCE_HOPS = 4;
 
 // Hard cap on how many reference-search hits collectCallSites() will process
 // across a single top-level inference request (not just one call site) —

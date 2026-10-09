@@ -15,8 +15,13 @@
 //   inference/context             - the per-request scratchpad (program, budgets, memo, guards)
 //   inference/ast-helpers         - pure AST navigation (find node, return exprs, ...)
 //   inference/type-helpers        - Type utilities + hover text / completion entries
+//   inference/value-flow          - where a function value goes: calls, exports, factories, parameters
 //   inference/call-sites          - find where a function is called across the project
+//   inference/signatures          - the function a call invokes and its declared callback types
+//   inference/generic-calls       - generic calls whose result is an argument or a callback's return
+//   inference/member-values       - the values an untyped member is built with
 //   inference/super-module        - module.superModule detection and export scanning
+//   inference/this-properties     - constructor arguments kept on `this` and read in prototype methods
 //   inference/usage-profile       - what a value's own scope says about it (members, guards, uses)
 //   inference/ambient-index       - every ambient class by member names
 //   inference/naming              - identifier-name tiebreak between usage matches

@@ -12,7 +12,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import type {CallSite} from './call-sites';
+import type {CallSite} from './value-flow';
 import {MAX_INFERENCE_DEPTH, MAX_REFERENCES_PER_REQUEST, MAX_SEARCHES_PER_REQUEST} from './constants';
 import type {UsageProfile} from './usage-profile';
 
@@ -81,8 +81,9 @@ export interface InferenceContext {
    */
   readonly typeDisplayStrings: Map<tsserver.Type, string>;
   /**
-   * Request-scoped memo of usage profiles (see ./usage-profile), keyed by the
-   * parameter's or variable's symbol. Every consumer of a profile (the
+   * Request-scoped memo of own usage profiles (see ./usage-profile; the
+   * usage of the parameters a value is passed on to is merged in on top),
+   * keyed by the parameter's or variable's symbol. Every consumer of a profile (the
    * body-usage filter, contextual constraints, ambient matching, reassigned
    * values) reads the same single walk of the declaring scope.
    */

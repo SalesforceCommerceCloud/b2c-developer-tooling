@@ -8,8 +8,9 @@
 // Values that reach a parameter, variable or return through something other
 // than a direct call: arrays built with push() and read back by index or
 // array methods, members written into objects and read later, generic
-// Script API calls such as Transaction.wrap, and downcasts the body makes
-// after testing what it holds.
+// Script API calls such as Transaction.wrap, downcasts the body makes after
+// testing what it holds, and constructors that travel as values (exported,
+// returned by a factory, passed as an argument) before they are called.
 
 const assert = require('node:assert/strict');
 
@@ -69,24 +70,34 @@ const INFER = {
   var: (ctx, node) => inferTypeForNode(ctx, node.name),
 };
 
-/** Infers `kind` (`return`, `param`, `var`) for the first node called `name` in `/helper.js`. */
-function infer(types, source, kind, name) {
-  const languageService = createFixtureLanguageService({'/types.d.ts': types, '/helper.js': source});
-  const ctx = createInferenceContext(ts, languageService);
+/** The first node in `fileName` that `kind`'s finder accepts for `name`. */
+function findTarget(ctx, fileName, kind, name) {
   let target;
   const visit = (node) => {
     if (!target && FINDERS[kind](node, name)) target = node;
     if (!target) ts.forEachChild(node, visit);
   };
-  visit(ctx.program.getSourceFile('/helper.js'));
-  assert.ok(target, `no ${kind} target named ${name}`);
-  return describeTypes(ctx, INFER[kind](ctx, target));
+  visit(ctx.program.getSourceFile(fileName));
+  assert.ok(target, `no ${kind} target named ${name} in ${fileName}`);
+  return target;
+}
+
+/**
+ * Infers `kind` (`return`, `param`, `var`) for the first node called `name`
+ * in `file` (default `/helper.js`), with `source` as `/helper.js` and any
+ * further `files` beside it.
+ */
+function infer({types = CART_TYPES, source, files = {}, file = '/helper.js', kind, name}) {
+  const sources = source === undefined ? files : {'/helper.js': source, ...files};
+  const languageService = createFixtureLanguageService({'/types.d.ts': types, ...sources});
+  const ctx = createInferenceContext(ts, languageService);
+  return describeTypes(ctx, INFER[kind](ctx, findTarget(ctx, file, kind, name)));
 }
 
 function runCases(cases) {
-  for (const {title, types = CART_TYPES, source, kind, name, expected} of cases) {
+  for (const {title, expected, ...target} of cases) {
     it(title, () => {
-      assert.equal(infer(types, source, kind, name), expected);
+      assert.equal(infer(target), expected);
     });
   }
 }
@@ -297,4 +308,209 @@ describe('usage-inference — downcasts in the body', () => {
       expected: 'OrderPaymentInstrument',
     },
   ]);
+});
+
+describe('usage-inference — constructors as values', () => {
+  const REFINEMENT_TYPES = realTypesPrelude(
+    ['Category', 'ProductSearchModel', 'ProductSearchRefinementValue'],
+    `
+    function getSearch(): ProductSearchModel;
+    function getCategory(): Category;
+    function getRefinementValue(): ProductSearchRefinementValue;
+  `,
+  );
+
+  // The shape of SFRA's search refinements: a model keeps its constructor
+  // arguments on `this` and reads them in prototype methods, a wrapper builds
+  // it with `new`, the module exports the wrapper, a factory picks the module
+  // with an unbound `return require(...)`, and the caller passes the chosen
+  // constructor on to the function that finally calls `new Model(...)`.
+  const REFINEMENT_FILES = {
+    '/models/boolean.js': `
+      function BooleanValue(productSearch, refinementValue) {
+        this.productSearch = productSearch;
+        this.refinementValue = refinementValue;
+        this.initialize();
+      }
+      BooleanValue.prototype.initialize = function () {
+        this.hitCount = this.refinementValue.hitCount;
+        this.displayValue = this.refinementValue.displayValue;
+      };
+      function BooleanValueWrapper(productSearch, rawValue) {
+        var value = new BooleanValue(productSearch, rawValue);
+        return {hitCount: value.hitCount, displayValue: value.displayValue};
+      }
+      module.exports = BooleanValueWrapper;
+    `,
+    '/models/category.js': `
+      function CategoryValue(productSearch, category) { this.id = category.ID; }
+      module.exports = CategoryValue;
+    `,
+    '/factory.js': `
+      function getModel(isCategory) {
+        if (isCategory) {
+          return require('./models/category');
+        }
+        return require('./models/boolean');
+      }
+      function createCategoryRefinements(productSearch, Model) {
+        return [new Model(productSearch, productSearch.category)];
+      }
+      function createRefinements(productSearch, isCategory) {
+        var Model = getModel(isCategory);
+        if (isCategory) {
+          return createCategoryRefinements(productSearch, Model);
+        }
+        return [new Model(productSearch, getRefinementValue())];
+      }
+      module.exports = {createRefinements: createRefinements};
+    `,
+    '/search.js': `
+      var factory = require('./factory');
+      factory.createRefinements(getSearch(), false);
+    `,
+  };
+
+  runCases([
+    {
+      title: 'a constructor returned by a factory as an unbound require() is called where the factory result is',
+      types: REFINEMENT_TYPES,
+      files: REFINEMENT_FILES,
+      file: '/models/boolean.js',
+      kind: 'param',
+      name: 'productSearch',
+      expected: 'ProductSearchModel',
+    },
+    {
+      // Category only reaches it through the parameter; the factory may
+      // return either module, so the direct call adds the refinement value.
+      title: 'a constructor passed as an argument is called where the receiving parameter is',
+      types: REFINEMENT_TYPES,
+      files: REFINEMENT_FILES,
+      file: '/models/category.js',
+      kind: 'param',
+      name: 'category',
+      expected: 'ProductSearchRefinementValue | Category',
+    },
+    {
+      title: "members read off this.<stored argument> in prototype methods narrow the model's own parameter",
+      types: REFINEMENT_TYPES,
+      files: REFINEMENT_FILES,
+      file: '/models/boolean.js',
+      kind: 'param',
+      name: 'refinementValue',
+      expected: 'ProductSearchRefinementValue',
+    },
+    {
+      title: 'a wrapper parameter passed on to new Model(x) is narrowed by what Model does with it',
+      types: REFINEMENT_TYPES,
+      files: REFINEMENT_FILES,
+      file: '/models/boolean.js',
+      kind: 'param',
+      name: 'rawValue',
+      expected: 'ProductSearchRefinementValue',
+    },
+    {
+      title: 'exports.name = fn is called through the requiring module',
+      files: {
+        '/helper.js': 'function describeItem(product) { return product.name; } exports.describeItem = describeItem;',
+        '/consumer.js': "var helper = require('./helper'); helper.describeItem(getProduct());",
+      },
+      kind: 'param',
+      name: 'product',
+      expected: 'Product',
+    },
+    {
+      title: 'module.exports = Name is called through every name a require() binds it to',
+      files: {
+        '/helper.js': 'function Item(product) { this.name = product.name; } module.exports = Item;',
+        '/consumer.js': "var LineItemModel = require('./helper'); new LineItemModel(getProduct());",
+      },
+      kind: 'param',
+      name: 'product',
+      expected: 'Product',
+    },
+  ]);
+
+  // Two call sites pass unrelated classes; only what the value is used for,
+  // possibly several functions away, tells them apart.
+  const forwarded = (chain) => `
+    ${chain}
+    first(getRefinementValue());
+    first(getCategory());
+  `;
+
+  runCases([
+    {
+      title: 'without usage, unrelated call-site classes stay a union',
+      types: REFINEMENT_TYPES,
+      source: forwarded('function first(value) { return value; }'),
+      kind: 'param',
+      name: 'value',
+      expected: 'ProductSearchRefinementValue | Category',
+    },
+    {
+      title: 'usage of the parameter it is passed to through Base.call(this, x) narrows a subclass constructor',
+      types: REFINEMENT_TYPES,
+      source: forwarded(`
+        function Base(value) { this.value = value; }
+        Base.prototype.count = function () { return this.value.hitCount; };
+        function first(value) { Base.call(this, value); }
+      `),
+      kind: 'param',
+      name: 'value',
+      expected: 'ProductSearchRefinementValue',
+    },
+    {
+      title: 'usage three functions away still narrows the parameter',
+      types: REFINEMENT_TYPES,
+      source: forwarded(`
+        function first(value) { return second(value); }
+        function second(value) { return third(value); }
+        function third(value) { return fourth(value); }
+        function fourth(value) { return value.hitCount; }
+      `),
+      kind: 'param',
+      name: 'value',
+      expected: 'ProductSearchRefinementValue',
+    },
+    {
+      title: 'usage four functions away is beyond MAX_USAGE_FORWARDING_HOPS',
+      types: REFINEMENT_TYPES,
+      source: forwarded(`
+        function first(value) { return second(value); }
+        function second(value) { return third(value); }
+        function third(value) { return fourth(value); }
+        function fourth(value) { return fifth(value); }
+        function fifth(value) { return value.hitCount; }
+      `),
+      kind: 'param',
+      name: 'value',
+      expected: 'ProductSearchRefinementValue | Category',
+    },
+  ]);
+
+  it('follows a function-local name without spending the project-wide search budget', () => {
+    const languageService = createFixtureLanguageService({
+      '/types.d.ts': CART_TYPES,
+      '/helper.js': `
+        function show(product) { return product.name; }
+        function run() { var render = show; render(getProduct()); }
+      `,
+    });
+    let searches = 0;
+    const getReferencesAtPosition = languageService.getReferencesAtPosition.bind(languageService);
+    languageService.getReferencesAtPosition = (fileName, position) => {
+      searches++;
+      return getReferencesAtPosition(fileName, position);
+    };
+    const ctx = createInferenceContext(ts, languageService);
+    ctx.searchBudget = 1;
+
+    const types = inferParameterType(ctx, findTarget(ctx, '/helper.js', 'param', 'product'));
+
+    assert.equal(describeTypes(ctx, types), 'Product');
+    assert.equal(searches, 2, 'one search for show, one for the local render');
+    assert.equal(ctx.searchBudget, 0, 'only the search for show is charged');
+  });
 });

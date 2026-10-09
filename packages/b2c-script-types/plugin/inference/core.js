@@ -13,6 +13,7 @@ const constants_1 = require("./constants");
 const context_1 = require("./context");
 const ast_helpers_1 = require("./ast-helpers");
 const call_sites_1 = require("./call-sites");
+const value_flow_1 = require("./value-flow");
 const framework_contracts_1 = require("./framework-contracts");
 const generic_calls_1 = require("./generic-calls");
 const member_values_1 = require("./member-values");
@@ -322,7 +323,7 @@ function resolveIdentifierTypes(ctx, expr, depth, chainHops) {
  * search for — from the collection it iterates.
  */
 function parameterEvidence(ctx, fn, paramIndex, depth) {
-    const nameNode = (0, call_sites_1.getReferenceNameNode)(fn, ctx.ts);
+    const nameNode = (0, value_flow_1.getReferenceNameNode)(fn, ctx.ts);
     if (!nameNode)
         return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
     return (0, call_sites_1.collectCallSites)(ctx, nameNode).flatMap((site) => {

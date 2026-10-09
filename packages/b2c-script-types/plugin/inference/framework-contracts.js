@@ -7,7 +7,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.frameworkParameterTypes = frameworkParameterTypes;
 const ambient_index_1 = require("./ambient-index");
-const call_sites_1 = require("./call-sites");
+const value_flow_1 = require("./value-flow");
 const FRAMEWORK_CONTRACTS = [
     {
         directory: '/cartridge/experience/components/',
@@ -22,7 +22,7 @@ const FRAMEWORK_CONTRACTS = [
 ];
 /** The contract-defined type of `fn`'s parameter at `paramIndex`, if `fn` is a platform entry point. */
 function frameworkParameterTypes(ctx, fn, paramIndex) {
-    const functionName = (0, call_sites_1.getReferenceNameNode)(fn, ctx.ts)?.text;
+    const functionName = (0, value_flow_1.getReferenceNameNode)(fn, ctx.ts)?.text;
     if (!functionName)
         return [];
     const fileName = fn.getSourceFile().fileName.replace(/\\/g, '/');

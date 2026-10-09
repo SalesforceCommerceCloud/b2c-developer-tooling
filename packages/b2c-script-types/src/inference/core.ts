@@ -25,7 +25,8 @@ import {
   hasExplicitReturnType,
   hasExplicitVariableType,
 } from './ast-helpers';
-import {collectCallSites, getReferenceNameNode} from './call-sites';
+import {collectCallSites} from './call-sites';
+import {getReferenceNameNode} from './value-flow';
 import {frameworkParameterTypes} from './framework-contracts';
 import {genericResultSource} from './generic-calls';
 import {localMemberValues, memberValueExpressions, valueDeclarationOf} from './member-values';

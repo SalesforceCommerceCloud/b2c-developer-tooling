@@ -554,5 +554,26 @@
       "name": "matching"
     },
     "expect": "ProductLineItem[]"
+  },
+  {
+    "id": "search-refinement-factory-model",
+    "source": "SFRA scripts/factories/searchRefinements + models/search/attributeRefinementValue shape",
+    "description": "A refinement model's wrapper is exported, picked by a factory's unbound `return require(...)`, held in a local `Model`, passed on as an argument and finally called with `new Model(...)`; the model keeps the value on `this` and reads it in a prototype method, which rules out the categories the other branch passes (the API declares the values as SearchRefinementValue)",
+    "dwTypes": ["Category", "Collection", "ProductSearchModel", "ProductSearchRefinementValue"],
+    "globals": "function getSearch(): ProductSearchModel;",
+    "files": {
+      "/collections.js": "function forEach(collection, callback) {\n  var iterator = collection.iterator();\n  while (iterator.hasNext()) {\n    callback(iterator.next());\n  }\n}\nmodule.exports = {forEach: forEach};\n",
+      "/models/boolean.js": "function BooleanAttributeValue(productSearch, refinementDefinition, refinementValue) {\n  this.productSearch = productSearch;\n  this.refinementDefinition = refinementDefinition;\n  this.refinementValue = refinementValue;\n  this.initialize();\n}\n\nBooleanAttributeValue.prototype.initialize = function () {\n  this.hitCount = this.refinementValue.hitCount;\n  this.displayValue = this.refinementValue.displayValue;\n  this.selected = this.productSearch.isRefinedByAttributeValue(\n    this.refinementDefinition.attributeID,\n    this.refinementValue.value\n  );\n};\n\nfunction BooleanRefinementValueWrapper(productSearch, refinementDefinition, refinementValue) {\n  var value = new BooleanAttributeValue(productSearch, refinementDefinition, refinementValue);\n  return {hitCount: value.hitCount, displayValue: value.displayValue, selected: value.selected};\n}\n\nmodule.exports = BooleanRefinementValueWrapper;\n",
+      "/models/category.js": "function CategoryAttributeValue(productSearch, refinementDefinition, category, selected) {\n  this.id = category.ID;\n  this.online = category.online;\n  this.selected = selected;\n  this.subCategories = [];\n}\n\nmodule.exports = CategoryAttributeValue;\n",
+      "/searchRefinements.js": "var collections = require('./collections');\n\nfunction getAttributeRefinementValueModel(refinementDefinition) {\n  if (refinementDefinition.categoryRefinement) {\n    return require('./models/category');\n  }\n  return require('./models/boolean');\n}\n\nfunction createCategorySearchRefinement(productSearch, refinementDefinition, Model) {\n  var currentCategory = productSearch.category;\n  var topCategory = new Model(productSearch, refinementDefinition, currentCategory, true);\n  collections.forEach(currentCategory.subCategories, function (category) {\n    topCategory.subCategories.push(new Model(productSearch, refinementDefinition, category, false));\n  });\n  return [topCategory];\n}\n\nfunction get(productSearch, refinementDefinition, refinementValues) {\n  var Model = getAttributeRefinementValueModel(refinementDefinition);\n  if (refinementDefinition.categoryRefinement) {\n    return createCategorySearchRefinement(productSearch, refinementDefinition, Model);\n  }\n  var tree = [];\n  collections.forEach(refinementValues, function (value) {\n    tree.push(new Model(productSearch, refinementDefinition, value));\n  });\n  return tree;\n}\n\nmodule.exports = {get: get};\n",
+      "/productSearch.js": "var searchRefinementsFactory = require('./searchRefinements');\n\nfunction getRefinements(productSearch, refinements, refinementDefinitions) {\n  return refinementDefinitions.toArray().map(function (definition) {\n    var refinementValues = refinements.getAllRefinementValues(definition);\n    var values = searchRefinementsFactory.get(productSearch, definition, refinementValues);\n    return {displayName: definition.displayName, values: values};\n  });\n}\n\nfunction ProductSearch(productSearch) {\n  this.refinements = getRefinements(\n    productSearch,\n    productSearch.refinements,\n    productSearch.refinements.refinementDefinitions\n  );\n}\n\nmodule.exports = ProductSearch;\n",
+      "/search.js": "var ProductSearch = require('./productSearch');\n\nnew ProductSearch(getSearch());\n"
+    },
+    "target": {
+      "file": "/models/boolean.js",
+      "function": "BooleanRefinementValueWrapper",
+      "param": 2
+    },
+    "expect": "SearchRefinementValue"
   }
 ]

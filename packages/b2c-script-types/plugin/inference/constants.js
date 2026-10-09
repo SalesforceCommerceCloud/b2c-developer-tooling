@@ -5,7 +5,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.BUILTIN_VALUE_TYPES = exports.GLOBAL_OBJECT_CLASSES = exports.WEAK_USAGE_MEMBERS = exports.UNINFORMATIVE_ANCESTORS = exports.MAX_UNION_TYPES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_DISPLAY_CACHE_ENTRIES = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
+exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.BUILTIN_VALUE_TYPES = exports.GLOBAL_OBJECT_CLASSES = exports.WEAK_USAGE_MEMBERS = exports.UNINFORMATIVE_ANCESTORS = exports.MAX_UNION_TYPES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_DISPLAY_CACHE_ENTRIES = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_USAGE_FORWARDING_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
 // Tunable limits for the usage-inference engine. They exist so a crafted (or
 // merely huge) cartridge can't make a single hover/completion do unbounded
 // work — every recursive walk and reference search is capped by one of these.
@@ -14,10 +14,19 @@ exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.BUILTIN_VALUE_TYPES = exports.G
 // helper...) before giving up. Keeps worst-case cost predictable regardless of
 // how deep a cartridge's helper stack goes.
 exports.MAX_INFERENCE_DEPTH = 3;
-// How many indirection hops (require() binding -> destructuring -> renamed
-// re-export, etc.) collectCallSites() will follow from a reference before
-// giving up on finding an actual call site.
-exports.MAX_REFERENCE_HOPS = 2;
+// How many functions a parameter's usage is followed into when the body
+// passes the parameter on unchanged (`new BooleanAttributeValue(search,
+// definition, refinementValue)`): what the receiving parameter's function
+// does with it is usage of this one too. Each hop is one walk of a function
+// (or of its file, for a value stored on `this`) and no reference search.
+exports.MAX_USAGE_FORWARDING_HOPS = 3;
+// How many names a function value is followed through (see ./value-flow)
+// before collectCallSites() gives up on finding an actual call site. SFRA's
+// refinement models need four: the model -> `module.exports` (its require()
+// calls) -> the factory returning it -> `var Model = factory(...)` -> the
+// `Model` parameter it is passed on to, where `new Model(...)` finally runs.
+// Hops into function-local names cost no project-wide search.
+exports.MAX_REFERENCE_HOPS = 4;
 // Hard cap on how many reference-search hits collectCallSites() will process
 // across a single top-level inference request (not just one call site) —
 // bounds worst-case cost for a helper referenced from dozens of places,

@@ -41,6 +41,7 @@ const REAL_DW_TYPES = {
   Basket: dtsPath('dw', 'order', 'Basket'),
   OrderAddress: dtsPath('dw', 'order', 'OrderAddress'),
   ProductSearchModel: dtsPath('dw', 'catalog', 'ProductSearchModel'),
+  ProductSearchRefinementValue: dtsPath('dw', 'catalog', 'ProductSearchRefinementValue'),
   ProductAvailabilityModel: dtsPath('dw', 'catalog', 'ProductAvailabilityModel'),
   OrderPaymentInstrument: dtsPath('dw', 'order', 'OrderPaymentInstrument'),
   ShippingMethod: dtsPath('dw', 'order', 'ShippingMethod'),

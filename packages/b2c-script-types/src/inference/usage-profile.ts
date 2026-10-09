@@ -14,9 +14,23 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
+import {hasExplicitParameterType} from './ast-helpers';
+import {MAX_USAGE_FORWARDING_HOPS} from './constants';
 import type {InferenceContext} from './context';
 import {acceptsArgumentCount} from './signatures';
+import {isStoredMemberRead, thisMembersStoring} from './this-properties';
 import {isOpenForUsageInference} from './type-helpers';
+import {receivingParameter} from './value-flow';
+
+/**
+ * An undocumented parameter of a project function the value is passed to
+ * unchanged; `optional` when only some variants of the value are (see
+ * {@link variantBranches}).
+ */
+export interface ForwardedUse {
+  readonly parameter: tsserver.ParameterDeclaration;
+  readonly optional: boolean;
+}
 
 export interface UsageProfile {
   /**
@@ -43,6 +57,8 @@ export interface UsageProfile {
   readonly pushedValues: readonly tsserver.Expression[];
   /** Values the code writes to its members, by member name: `x.m = v`, `x['m'] = v`. */
   readonly memberValues: ReadonlyMap<string, readonly tsserver.Expression[]>;
+  /** Parameters the value is passed on to (`helper(x)`, `new Model(x)`), whose usage is usage of it too. */
+  readonly forwardedTo: readonly ForwardedUse[];
 }
 
 interface ProfileBuilder {
@@ -53,6 +69,7 @@ interface ProfileBuilder {
   readonly assignedValues: tsserver.Expression[];
   readonly pushedValues: tsserver.Expression[];
   readonly memberValues: Map<string, tsserver.Expression[]>;
+  readonly forwardedTo: ForwardedUse[];
 }
 
 function emptyProfile(): ProfileBuilder {
@@ -64,6 +81,7 @@ function emptyProfile(): ProfileBuilder {
     assignedValues: [],
     pushedValues: [],
     memberValues: new Map(),
+    forwardedTo: [],
   };
 }
 
@@ -106,7 +124,7 @@ function literalText(ctx: InferenceContext, node: tsserver.Node | undefined): st
 }
 
 /** `'m' in x`: the member an `in` test on `reference` names. */
-function inOperatorMember(ctx: InferenceContext, reference: tsserver.Identifier): string | undefined {
+function inOperatorMember(ctx: InferenceContext, reference: tsserver.Expression): string | undefined {
   const {ts} = ctx;
   const test = reference.parent;
   const isInTest =
@@ -115,7 +133,7 @@ function inOperatorMember(ctx: InferenceContext, reference: tsserver.Identifier)
 }
 
 /** `x.hasOwnProperty('m')`: the member an own-property method call on `reference` names. */
-function ownPropertyMethodMember(ctx: InferenceContext, reference: tsserver.Identifier): string | undefined {
+function ownPropertyMethodMember(ctx: InferenceContext, reference: tsserver.Expression): string | undefined {
   const {ts} = ctx;
   const access = reference.parent;
   const isHasOwn =
@@ -127,7 +145,7 @@ function ownPropertyMethodMember(ctx: InferenceContext, reference: tsserver.Iden
 }
 
 /** `Object[.prototype].hasOwnProperty.call(x, 'm')`: the member a borrowed own-property call on `reference` names. */
-function ownPropertyCallMember(ctx: InferenceContext, reference: tsserver.Identifier): string | undefined {
+function ownPropertyCallMember(ctx: InferenceContext, reference: tsserver.Expression): string | undefined {
   const {ts} = ctx;
   const call = reference.parent;
   if (!ts.isCallExpression(call) || call.arguments[0] !== reference) return undefined;
@@ -144,7 +162,7 @@ function ownPropertyCallMember(ctx: InferenceContext, reference: tsserver.Identi
  * The member a presence test on `reference` checks for: `'m' in x`,
  * `x.hasOwnProperty('m')`, or `Object[.prototype].hasOwnProperty.call(x, 'm')`.
  */
-function presenceTestedMember(ctx: InferenceContext, reference: tsserver.Identifier): string | undefined {
+function presenceTestedMember(ctx: InferenceContext, reference: tsserver.Expression): string | undefined {
   return (
     inOperatorMember(ctx, reference) ?? ownPropertyMethodMember(ctx, reference) ?? ownPropertyCallMember(ctx, reference)
   );
@@ -186,7 +204,7 @@ function declaredArgumentType(
 function argumentType(
   ctx: InferenceContext,
   call: tsserver.CallExpression | tsserver.NewExpression,
-  reference: tsserver.Identifier,
+  reference: tsserver.Expression,
   index: number,
 ): tsserver.Type | undefined {
   const {ts, checker} = ctx;
@@ -200,7 +218,7 @@ function argumentType(
 }
 
 /** The type `reference` is used as: what its context expects, or the argument type of the call it is passed to. */
-function usedAsType(ctx: InferenceContext, reference: tsserver.Identifier): tsserver.Type | undefined {
+function usedAsType(ctx: InferenceContext, reference: tsserver.Expression): tsserver.Type | undefined {
   const {ts, checker} = ctx;
   const call = reference.parent;
   const isCall = ts.isCallExpression(call) || ts.isNewExpression(call);
@@ -208,20 +226,25 @@ function usedAsType(ctx: InferenceContext, reference: tsserver.Identifier): tsse
   return isCall && index >= 0 ? argumentType(ctx, call, reference, index) : checker.getContextualType(reference);
 }
 
-/** The value a profile describes: its symbol, the name it is declared by, and its own (unnarrowed) type. */
+/**
+ * The value a profile describes: its symbol, the name it is declared by, its
+ * own (unnarrowed) type, and the members of `this` it is stored in (see
+ * ./this-properties), whose reads are reads of the value.
+ */
 interface ProfileTarget {
   readonly symbol: tsserver.Symbol;
   readonly declarationName: tsserver.Identifier;
   readonly declaredType: tsserver.Type;
+  readonly storedIn: ReadonlySet<tsserver.Symbol>;
 }
 
-function isReferenceTo(ctx: InferenceContext, target: ProfileTarget, node: tsserver.Node): node is tsserver.Identifier {
-  return (
+function isReferenceTo(ctx: InferenceContext, target: ProfileTarget, node: tsserver.Node): node is tsserver.Expression {
+  const isName =
     ctx.ts.isIdentifier(node) &&
     node !== target.declarationName &&
     node.text === target.declarationName.text &&
-    ctx.checker.getSymbolAtLocation(node) === target.symbol
-  );
+    ctx.checker.getSymbolAtLocation(node) === target.symbol;
+  return isName || isStoredMemberRead(ctx, target.storedIn, node);
 }
 
 /** True when `condition` tests the value for a member (`'m' in x`, `x.hasOwnProperty('m')`, ...). */
@@ -286,7 +309,11 @@ function variantBranches(ctx: InferenceContext, target: ProfileTarget, node: tss
 }
 
 /** Records one member the value is accessed by; `optional` when only some variants of the value need it. */
-function recordMember(profile: ProfileBuilder, name: string, optional: boolean): void {
+function recordMember(
+  profile: Pick<ProfileBuilder, 'memberNames' | 'optionalMemberNames'>,
+  name: string,
+  optional: boolean,
+): void {
   profile.memberNames.add(name);
   if (optional) profile.optionalMemberNames.add(name);
 }
@@ -299,14 +326,14 @@ function pushDefined<T>(list: T[], value: T | undefined): void {
 interface ReferenceUse {
   readonly ctx: InferenceContext;
   readonly target: ProfileTarget;
-  readonly reference: tsserver.Identifier;
+  readonly reference: tsserver.Expression;
   readonly inVariantBranch: boolean;
 }
 
 /** The binary expression `reference` is the left operand of, when its operator is `operator`. */
 function leftOperandOf(
   ctx: InferenceContext,
-  reference: tsserver.Identifier,
+  reference: tsserver.Expression,
   operator: tsserver.SyntaxKind,
 ): tsserver.BinaryExpression | undefined {
   const parent = reference.parent;
@@ -410,6 +437,20 @@ function recordAssignment({ctx, reference}: ReferenceUse, profile: ProfileBuilde
 }
 
 /**
+ * `helper(x)`, `new Model(x)`, `Base.call(this, x)` with an undocumented
+ * project function: the value is used however that function uses its
+ * parameter. Never the only role a reference plays — the contextual use is
+ * recorded too.
+ */
+function recordForwarding({ctx, reference, inVariantBranch}: ReferenceUse, profile: ProfileBuilder): boolean {
+  const parameter = receivingParameter(ctx, reference);
+  if (parameter && !hasExplicitParameterType(parameter, ctx.ts)) {
+    profile.forwardedTo.push({parameter, optional: inVariantBranch});
+  }
+  return false;
+}
+
+/**
  * Any other use: the type the code uses the value as. A reference the
  * checker narrowed (inside `if (typeof x === 'string')`) is used as what that
  * one branch holds, which says nothing about every value.
@@ -427,6 +468,7 @@ const REFERENCE_RECORDERS = [
   recordTypeofTest,
   recordInstanceofTest,
   recordAssignment,
+  recordForwarding,
   recordContextualUse,
 ];
 
@@ -435,14 +477,7 @@ function recordReference(use: ReferenceUse, profile: ProfileBuilder): void {
   REFERENCE_RECORDERS.some((record) => record(use, profile));
 }
 
-function collectProfile(
-  ctx: InferenceContext,
-  symbol: tsserver.Symbol,
-  declarationName: tsserver.Identifier,
-  scope: tsserver.Node,
-): UsageProfile {
-  const declaredType = ctx.checker.getTypeOfSymbolAtLocation(symbol, declarationName);
-  const target: ProfileTarget = {symbol, declarationName, declaredType};
+function collectProfile(ctx: InferenceContext, target: ProfileTarget, scope: tsserver.Node): UsageProfile {
   const profile = emptyProfile();
   const visit = (node: tsserver.Node, inVariantBranch: boolean): void => {
     if (isReferenceTo(ctx, target, node)) recordReference({ctx, target, reference: node, inVariantBranch}, profile);
@@ -462,25 +497,90 @@ function enclosingFunctionBody(ctx: InferenceContext, node: tsserver.Node): tsse
 }
 
 /**
- * The usage profile of a parameter (scoped to its function body, nested
- * closures included) or a variable (scoped to its enclosing function, or the
- * whole file for a top-level variable). Destructured declarations have no
+ * Where a value's uses can be: a parameter's function body (nested closures
+ * included), a variable's enclosing function or file, or — once a parameter
+ * is stored on `this` — the whole file its prototype methods read it in.
+ */
+function profileScope(
+  ctx: InferenceContext,
+  declaration: tsserver.ParameterDeclaration | tsserver.VariableDeclaration,
+  storedIn: ReadonlySet<tsserver.Symbol>,
+): tsserver.Node | undefined {
+  if (storedIn.size > 0) return declaration.getSourceFile();
+  return ctx.ts.isParameter(declaration)
+    ? (declaration.parent as tsserver.FunctionLikeDeclaration).body
+    : (enclosingFunctionBody(ctx, declaration) ?? declaration.getSourceFile());
+}
+
+/**
+ * What the value's own scope says about it, gathered over its
+ * {@link profileScope}; a parameter stored on `this` is also read through
+ * that member (see ./this-properties). Destructured declarations have no
  * single value to profile and get an empty profile. Memoized per request.
+ */
+function ownProfileOf(
+  ctx: InferenceContext,
+  declaration: tsserver.ParameterDeclaration | tsserver.VariableDeclaration,
+): UsageProfile {
+  const {ts, checker} = ctx;
+  const declarationName = declaration.name;
+  if (!ts.isIdentifier(declarationName)) return EMPTY_PROFILE;
+  const symbol = checker.getSymbolAtLocation(declarationName);
+  const cached = symbol && ctx.profiles.get(symbol);
+  if (!symbol || cached) return cached ?? EMPTY_PROFILE;
+  const storedIn = ts.isParameter(declaration) ? thisMembersStoring(ctx, declaration) : new Set<tsserver.Symbol>();
+  const scope = profileScope(ctx, declaration, storedIn);
+  if (!scope) return EMPTY_PROFILE;
+  const declaredType = checker.getTypeOfSymbolAtLocation(symbol, declarationName);
+  const profile = collectProfile(ctx, {symbol, declarationName, declaredType, storedIn}, scope);
+  ctx.profiles.set(symbol, profile);
+  return profile;
+}
+
+/**
+ * The own profiles of the parameters `profile`'s value is passed on to,
+ * breadth first, up to {@link MAX_USAGE_FORWARDING_HOPS} functions away; a
+ * profile reached through a variant branch anywhere along the way is
+ * optional.
+ */
+function forwardedProfiles(
+  ctx: InferenceContext,
+  declaration: tsserver.Declaration,
+  profile: UsageProfile,
+): {profile: UsageProfile; optional: boolean}[] {
+  const reached: {profile: UsageProfile; optional: boolean}[] = [];
+  const seen = new Set<tsserver.Node>([declaration]);
+  let frontier = profile.forwardedTo;
+  for (let hop = 0; hop < MAX_USAGE_FORWARDING_HOPS && frontier.length > 0; hop++) {
+    const unseen = frontier.filter(({parameter}) => !seen.has(parameter) && seen.add(parameter));
+    const profiles = unseen.map(({parameter, optional}) => ({profile: ownProfileOf(ctx, parameter), optional}));
+    reached.push(...profiles);
+    frontier = profiles.flatMap(({profile: next, optional}) =>
+      next.forwardedTo.map((use) => ({parameter: use.parameter, optional: optional || use.optional})),
+    );
+  }
+  return reached;
+}
+
+/**
+ * The usage profile of a parameter or a variable: what its own scope says
+ * about it (see {@link ownProfileOf}), plus the members and contextual types
+ * of the parameters it is passed on to unchanged — a wrapper's `x` must
+ * support whatever the `new Model(x)` it forwards to does with it.
  */
 export function usageProfileOf(
   ctx: InferenceContext,
   declaration: tsserver.ParameterDeclaration | tsserver.VariableDeclaration,
 ): UsageProfile {
-  const {ts, checker} = ctx;
-  if (!ts.isIdentifier(declaration.name)) return EMPTY_PROFILE;
-  const symbol = checker.getSymbolAtLocation(declaration.name);
-  const scope = ts.isParameter(declaration)
-    ? (declaration.parent as tsserver.FunctionLikeDeclaration).body
-    : (enclosingFunctionBody(ctx, declaration) ?? declaration.getSourceFile());
-  if (!symbol || !scope) return EMPTY_PROFILE;
-  const cached = ctx.profiles.get(symbol);
-  if (cached) return cached;
-  const profile = collectProfile(ctx, symbol, declaration.name, scope);
-  ctx.profiles.set(symbol, profile);
-  return profile;
+  const own = ownProfileOf(ctx, declaration);
+  if (own.forwardedTo.length === 0) return own;
+  const members = {memberNames: new Set(own.memberNames), optionalMemberNames: new Set(own.optionalMemberNames)};
+  const contextualTypes = [...own.contextualTypes];
+  for (const {profile, optional} of forwardedProfiles(ctx, declaration, own)) {
+    for (const name of profile.memberNames) {
+      recordMember(members, name, optional || profile.optionalMemberNames.has(name));
+    }
+    contextualTypes.push(...profile.contextualTypes);
+  }
+  return {...own, ...members, contextualTypes};
 }

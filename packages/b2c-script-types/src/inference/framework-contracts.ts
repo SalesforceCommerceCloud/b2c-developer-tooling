@@ -13,7 +13,7 @@
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {findAmbientClassType} from './ambient-index';
-import {getReferenceNameNode} from './call-sites';
+import {getReferenceNameNode} from './value-flow';
 import type {InferenceContext} from './context';
 
 interface FrameworkContract {
