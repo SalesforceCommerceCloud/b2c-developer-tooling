@@ -112,6 +112,19 @@ function invokedCallbackTypes(ctx, call, argIndex, paramIndex, depth) {
     ]);
 }
 /**
+ * The checker's type of `expr`. Inside a class or a constructor function the
+ * checker types `this` as an open `this` type; what it holds is the instance
+ * that type stands for (`helper(this)` in `function Basket() {…}` passes a
+ * `Basket`).
+ */
+function checkerTypeOf(ctx, expr) {
+    const { ts, checker } = ctx;
+    const type = checker.getTypeAtLocation(expr);
+    if (expr.kind !== ts.SyntaxKind.ThisKeyword || !(type.flags & ts.TypeFlags.TypeParameter))
+        return type;
+    return checker.getBaseConstraintOfType(type) ?? type;
+}
+/**
  * Resolves the candidate type(s) of `expr`: the checker's own type when it is
  * informative, otherwise a type recovered through whatever `expr` is built
  * from (an undocumented callee's returns, a receiver's real members, a
@@ -136,7 +149,7 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
     const superAccess = (0, super_module_1.traceSuperModuleAccess)(ts, checker, expr);
     if (superAccess)
         return (0, super_module_1.resolveSuperModuleTypes)(ctx, superAccess, nextHop(ctx, depth, chainHops));
-    const direct = (0, type_helpers_1.informativeParts)(ctx, checker.getTypeAtLocation(expr));
+    const direct = (0, type_helpers_1.informativeParts)(ctx, checkerTypeOf(ctx, expr));
     const bound = ctx.bindings.size > 0 ? resolveBoundTypes(ctx, expr, direct, depth, chainHops) : undefined;
     if (bound)
         return bound;

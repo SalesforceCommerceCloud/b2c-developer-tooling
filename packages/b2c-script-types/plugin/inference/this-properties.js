@@ -6,6 +6,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.thisMembersStoring = thisMembersStoring;
+exports.isMemberDefinedOnThis = isMemberDefinedOnThis;
 exports.isStoredMemberRead = isStoredMemberRead;
 const ast_helpers_1 = require("./ast-helpers");
 /** `this.x = value`: a plain assignment to a member of `this`. */
@@ -44,6 +45,62 @@ function thisMembersStoring(ctx, param) {
     };
     ts.forEachChild(body, visit);
     return members;
+}
+/** True when `callee` is `Object.defineProperty`. */
+function isObjectDefineProperty(ts, callee) {
+    return (ts.isPropertyAccessExpression(callee) &&
+        ts.isIdentifier(callee.expression) &&
+        callee.expression.text === 'Object' &&
+        callee.name.text === 'defineProperty');
+}
+/** `Object.defineProperty(this, 'name', …)`: the name of the member the call defines on `this`. */
+function memberDefinedOnThisBy(ts, node) {
+    if (!ts.isCallExpression(node) || !isObjectDefineProperty(ts, node.expression))
+        return undefined;
+    const [target, key] = node.arguments;
+    if (target?.kind !== ts.SyntaxKind.ThisKeyword || !key || !ts.isStringLiteralLike(key))
+        return undefined;
+    return key.text;
+}
+/** The body that builds an instance: a constructor function's own, or a class's constructor. */
+function constructorBody(ts, declaration) {
+    const constructor = ts.isVariableDeclaration(declaration) ? declaration.initializer : declaration;
+    if (constructor && (ts.isFunctionDeclaration(constructor) || ts.isFunctionExpression(constructor))) {
+        return constructor.body;
+    }
+    return ts.isClassLike(declaration) ? declaration.members.find(ts.isConstructorDeclaration)?.body : undefined;
+}
+// Keyed by declaration node: a syntax tree never changes, and tsserver reuses
+// it across Programs for as long as its file is unchanged.
+const membersDefinedByDeclaration = new WeakMap();
+/** The members the constructor `declaration` declares defines on its own `this` (not a nested function's). */
+function membersDefinedIn(ts, declaration) {
+    const cached = membersDefinedByDeclaration.get(declaration);
+    if (cached)
+        return cached;
+    const members = new Set();
+    const visit = (node) => {
+        const member = memberDefinedOnThisBy(ts, node);
+        if (member !== undefined)
+            members.add(member);
+        if (!hasOwnThis(ts, node))
+            ts.forEachChild(node, visit);
+    };
+    const body = constructorBody(ts, declaration);
+    if (body)
+        ts.forEachChild(body, visit);
+    membersDefinedByDeclaration.set(declaration, members);
+    return members;
+}
+/**
+ * True when `type`'s constructor defines `name` with
+ * `Object.defineProperty(this, 'name', …)` (SFRA's request model defines most
+ * of its members this way). The checker binds such calls on exports and
+ * prototypes but not on `this`, so the instance type lacks these members.
+ */
+function isMemberDefinedOnThis(ts, type, name) {
+    const declarations = type.getSymbol()?.declarations ?? [];
+    return declarations.some((declaration) => membersDefinedIn(ts, declaration).has(name));
 }
 /** True when `node` reads one of `members` off `this` (`this.refinementValue`, not `this.refinementValue = x`). */
 function isStoredMemberRead(ctx, members, node) {

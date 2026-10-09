@@ -48,7 +48,7 @@ import {
 } from './constants';
 import type {InferenceContext} from './context';
 import {pickByName} from './naming';
-import {dedupeTypes, getMemberOfType, hasAllMembers, informativeParts, typeDisplayString} from './type-helpers';
+import {dedupeTypes, hasAllMembers, hasMember, informativeParts, typeDisplayString} from './type-helpers';
 import type {UsageProfile} from './usage-profile';
 
 const NO_MEMBERS: ReadonlySet<string> = new Set();
@@ -154,7 +154,7 @@ function withoutStandIns(ctx: InferenceContext, types: readonly tsserver.Type[])
   if (classes.length === 0) return [...types];
   const standsIn = (literal: tsserver.Type): boolean => {
     const names = new Set(checker.getPropertiesOfType(literal).map((property) => property.name));
-    return classes.some((candidateClass) => hasAllMembers(checker, candidateClass, names));
+    return classes.some((candidateClass) => hasAllMembers(ctx, candidateClass, names));
   };
   return types.filter((type) => !isObjectLiteralType(ctx, type) || !standsIn(type));
 }
@@ -177,7 +177,7 @@ function closestCommonAncestor(
     (ancestor) =>
       !UNINFORMATIVE_ANCESTORS.has(ancestor.symbol?.name ?? '') &&
       restAncestors.every((ancestors) => ancestors.includes(ancestor)) &&
-      hasAllMembers(ctx.checker, ancestor, memberNames),
+      hasAllMembers(ctx, ancestor, memberNames),
   );
 }
 
@@ -233,9 +233,7 @@ export function limitUnion(
  * `LineItemCtnr` is expected is a `Basket`). Conflicting uses decide nothing.
  */
 function mostSpecificUse(ctx: InferenceContext, profile: UsageProfile, required: ReadonlySet<string>): tsserver.Type[] {
-  const uses = normalizeCandidates(ctx, profile.contextualTypes).filter((type) =>
-    hasAllMembers(ctx.checker, type, required),
-  );
+  const uses = normalizeCandidates(ctx, profile.contextualTypes).filter((type) => hasAllMembers(ctx, type, required));
   const mostSpecific = uses.filter((type) => uses.every((other) => other === type || isAncestorOf(ctx, other, type)));
   return mostSpecific.length === 1 ? mostSpecific : [];
 }
@@ -258,7 +256,7 @@ function resolveMatches(ctx: InferenceContext, classes: readonly AmbientClass[])
 
 /** True when a JavaScript built-in (`String`, `Array`, ...) has every member in `memberNames`. */
 function fitsBuiltin(ctx: InferenceContext, memberNames: ReadonlySet<string>): boolean {
-  return builtinValueTypes(ctx).some((builtin) => hasAllMembers(ctx.checker, builtin, memberNames));
+  return builtinValueTypes(ctx).some((builtin) => hasAllMembers(ctx, builtin, memberNames));
 }
 
 /**
@@ -337,9 +335,8 @@ function checkableMembers(
   required: ReadonlySet<string>,
   candidates: readonly tsserver.Type[],
 ): ReadonlySet<string> {
-  const {checker} = ctx;
   const declaredBy = (types: readonly tsserver.Type[], name: string): boolean =>
-    types.some((type) => getMemberOfType(checker, type, name) !== undefined);
+    types.some((type) => hasMember(ctx, type, name));
   const declared = (name: string): boolean =>
     declaredBy(candidates, name) ||
     getAmbientClasses(ctx).some((ambientClass) => ambientClass.memberNames.has(name)) ||
@@ -371,7 +368,7 @@ export function decideType(
   const uses = constrainingUses(ctx, profile);
   const fit = (type: tsserver.Type): tsserver.Type[] => {
     if (guardKeys.has(typeDisplayString(ctx, type))) return [type];
-    const fitted = hasAllMembers(ctx.checker, type, checkable) ? [type] : downcastOf(ctx, type, checkable);
+    const fitted = hasAllMembers(ctx, type, checkable) ? [type] : downcastOf(ctx, type, checkable);
     return fitted.filter((fittedType) => fitsEveryUse(ctx, fittedType, uses));
   };
   const fitting = fitUsage ? dedupeTypes(ctx, candidates.flatMap(fit)) : candidates;

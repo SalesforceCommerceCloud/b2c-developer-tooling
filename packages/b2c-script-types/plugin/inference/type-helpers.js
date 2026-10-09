@@ -12,6 +12,7 @@ exports.typeDisplayString = typeDisplayString;
 exports.dedupeTypes = dedupeTypes;
 exports.dedupeKnownTypes = dedupeKnownTypes;
 exports.getMemberOfType = getMemberOfType;
+exports.hasMember = hasMember;
 exports.hasAllMembers = hasAllMembers;
 exports.elementTypeOf = elementTypeOf;
 exports.arrayTypeOf = arrayTypeOf;
@@ -19,6 +20,7 @@ exports.describeTypes = describeTypes;
 exports.inferredCompletionEntry = inferredCompletionEntry;
 exports.typesToCompletionEntries = typesToCompletionEntries;
 const constants_1 = require("./constants");
+const this_properties_1 = require("./this-properties");
 /** True when `type` is (or includes) `any` — the signal that the checker gave up and usage inference should try to help. */
 function isAnyType(ts, type) {
     return (type.flags & ts.TypeFlags.Any) !== 0;
@@ -225,10 +227,18 @@ function getNonNullableApparentType(checker, type) {
 function getMemberOfType(checker, type, name) {
     return checker.getPropertyOfType(getNonNullableApparentType(checker, type), name);
 }
-/** True when `type` exposes every member name in `memberNames` (vacuously true for none). */
-function hasAllMembers(checker, type, memberNames) {
+/**
+ * True when `type` has a member called `name`: one the checker knows, or one
+ * its constructor defines on `this` with `Object.defineProperty` (see
+ * {@link isMemberDefinedOnThis}).
+ */
+function hasMember(ctx, type, name) {
+    return getMemberOfType(ctx.checker, type, name) !== undefined || (0, this_properties_1.isMemberDefinedOnThis)(ctx.ts, type, name);
+}
+/** True when `type` has every member in `memberNames` (vacuously true for none); see {@link hasMember}. */
+function hasAllMembers(ctx, type, memberNames) {
     for (const name of memberNames) {
-        if (!getMemberOfType(checker, type, name))
+        if (!hasMember(ctx, type, name))
             return false;
     }
     return true;

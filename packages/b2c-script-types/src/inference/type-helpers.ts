@@ -17,6 +17,7 @@ import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {INFERRED_COMPLETION_SOURCE} from './constants';
 import type {InferenceContext} from './context';
+import {isMemberDefinedOnThis} from './this-properties';
 
 /** True when `type` is (or includes) `any` — the signal that the checker gave up and usage inference should try to help. */
 export function isAnyType(ts: typeof tsserver, type: tsserver.Type): boolean {
@@ -238,14 +239,19 @@ export function getMemberOfType(
   return checker.getPropertyOfType(getNonNullableApparentType(checker, type), name);
 }
 
-/** True when `type` exposes every member name in `memberNames` (vacuously true for none). */
-export function hasAllMembers(
-  checker: tsserver.TypeChecker,
-  type: tsserver.Type,
-  memberNames: ReadonlySet<string>,
-): boolean {
+/**
+ * True when `type` has a member called `name`: one the checker knows, or one
+ * its constructor defines on `this` with `Object.defineProperty` (see
+ * {@link isMemberDefinedOnThis}).
+ */
+export function hasMember(ctx: InferenceContext, type: tsserver.Type, name: string): boolean {
+  return getMemberOfType(ctx.checker, type, name) !== undefined || isMemberDefinedOnThis(ctx.ts, type, name);
+}
+
+/** True when `type` has every member in `memberNames` (vacuously true for none); see {@link hasMember}. */
+export function hasAllMembers(ctx: InferenceContext, type: tsserver.Type, memberNames: ReadonlySet<string>): boolean {
   for (const name of memberNames) {
-    if (!getMemberOfType(checker, type, name)) return false;
+    if (!hasMember(ctx, type, name)) return false;
   }
   return true;
 }

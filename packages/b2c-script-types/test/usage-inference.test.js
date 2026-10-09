@@ -100,6 +100,70 @@ describe('usage-inference', () => {
       assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; } | { quantity: number; }');
     });
 
+    it('infers a constructor function or class instance from a `this` argument', () => {
+      // The checker types `this` in a constructor as an open `this` type;
+      // the value passed is the instance under construction.
+      const files = {
+        '/helper.js': `
+          function store(target, key, value) {
+            return target[key] ? [target[key], value] : value;
+          }
+          function label(model) {
+            return model.id;
+          }
+          var Params = function (raw) {
+            var pair = raw.split('=');
+            this.raw = raw;
+            this[pair[0]] = store(this, pair[0], pair[1]);
+          };
+          class Model {
+            constructor(id) {
+              this.id = id;
+            }
+            describe() {
+              return label(this);
+            }
+          }
+          module.exports = {Params: Params, Model: Model};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+
+      const target = findFunctionDeclaration(sourceFile, 'store').parameters[0];
+      const model = findFunctionDeclaration(sourceFile, 'label').parameters[0];
+
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, target)), 'Params');
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, model)), 'Model');
+    });
+
+    it('stays silent on a `this` argument outside a constructor', () => {
+      const files = {
+        '/helper.js': `
+          function label(model) {
+            return model.id;
+          }
+          function plain() {
+            return label(this);
+          }
+          function Model(ids) {
+            this.id = ids[0];
+            ids.forEach(function () {
+              label(this);
+            }, this);
+          }
+          module.exports = {plain: plain, Model: Model};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const model = findFunctionDeclaration(sourceFile, 'label').parameters[0];
+
+      assert.equal(inferParameterType(ctx, model).length, 0);
+    });
+
     it('infers through a mix of plain-call and `new` when every site passes the same type', () => {
       const files = {
         '/types.d.ts': AMBIENT_TYPES,
@@ -498,6 +562,38 @@ module.exports = getLineItems;
       };
 
       assert.equal(inferHelperParam(files, 'unitPrice'), '{ ID: string; name: string; }');
+    });
+
+    it('counts the members a constructor defines with Object.defineProperty(this, ...)', () => {
+      // `locale` and `currency` are members a Script API class declares, so
+      // the body's use of them is checked against the argument's type.
+      const files = {
+        '/types.d.ts': 'declare class SiteLocale { locale: string; currency: string; }',
+        '/helper.js': `
+          function Request(raw) {
+            this.path = raw.path;
+            Object.defineProperty(this, 'locale', {
+              get: function () {
+                Object.defineProperty(this, 'currency', {value: raw.currency});
+                return raw.locale;
+              },
+            });
+          }
+          function pageTitle(req) {
+            return req.path + req.locale;
+          }
+          function priceLabel(req) {
+            return req.path + req.currency;
+          }
+          pageTitle(new Request({path: '/', locale: 'en'}));
+          priceLabel(new Request({path: '/', currency: 'EUR'}));
+          module.exports = Request;
+        `,
+      };
+
+      assert.equal(inferHelperParam(files, 'pageTitle'), 'Request');
+      // A nested function's `this` is another value.
+      assert.equal(inferHelperParam(files, 'priceLabel'), '');
     });
 
     it('keeps a call-site argument whose use only a branch that narrowed it constrains', () => {

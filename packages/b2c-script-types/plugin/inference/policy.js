@@ -103,7 +103,7 @@ function withoutStandIns(ctx, types) {
         return [...types];
     const standsIn = (literal) => {
         const names = new Set(checker.getPropertiesOfType(literal).map((property) => property.name));
-        return classes.some((candidateClass) => (0, type_helpers_1.hasAllMembers)(checker, candidateClass, names));
+        return classes.some((candidateClass) => (0, type_helpers_1.hasAllMembers)(ctx, candidateClass, names));
     };
     return types.filter((type) => !isObjectLiteralType(ctx, type) || !standsIn(type));
 }
@@ -118,7 +118,7 @@ function closestCommonAncestor(ctx, types, memberNames) {
     const restAncestors = rest.map((type) => ancestorsOf(ctx, type));
     return ancestorsOf(ctx, first).find((ancestor) => !constants_1.UNINFORMATIVE_ANCESTORS.has(ancestor.symbol?.name ?? '') &&
         restAncestors.every((ancestors) => ancestors.includes(ancestor)) &&
-        (0, type_helpers_1.hasAllMembers)(ctx.checker, ancestor, memberNames));
+        (0, type_helpers_1.hasAllMembers)(ctx, ancestor, memberNames));
 }
 /**
  * The generic class `type` instantiates, when its declared type reads as the
@@ -168,7 +168,7 @@ function limitUnion(ctx, types, memberNames = NO_MEMBERS) {
  * `LineItemCtnr` is expected is a `Basket`). Conflicting uses decide nothing.
  */
 function mostSpecificUse(ctx, profile, required) {
-    const uses = normalizeCandidates(ctx, profile.contextualTypes).filter((type) => (0, type_helpers_1.hasAllMembers)(ctx.checker, type, required));
+    const uses = normalizeCandidates(ctx, profile.contextualTypes).filter((type) => (0, type_helpers_1.hasAllMembers)(ctx, type, required));
     const mostSpecific = uses.filter((type) => uses.every((other) => other === type || isAncestorOf(ctx, other, type)));
     return mostSpecific.length === 1 ? mostSpecific : [];
 }
@@ -185,7 +185,7 @@ function resolveMatches(ctx, classes) {
 }
 /** True when a JavaScript built-in (`String`, `Array`, ...) has every member in `memberNames`. */
 function fitsBuiltin(ctx, memberNames) {
-    return (0, ambient_index_1.builtinValueTypes)(ctx).some((builtin) => (0, type_helpers_1.hasAllMembers)(ctx.checker, builtin, memberNames));
+    return (0, ambient_index_1.builtinValueTypes)(ctx).some((builtin) => (0, type_helpers_1.hasAllMembers)(ctx, builtin, memberNames));
 }
 /**
  * Step 4b: matches a usage signature against every ambient class (see
@@ -249,8 +249,7 @@ function downcastOf(ctx, type, memberNames) {
  * would otherwise drop every candidate, the right one included.
  */
 function checkableMembers(ctx, required, candidates) {
-    const { checker } = ctx;
-    const declaredBy = (types, name) => types.some((type) => (0, type_helpers_1.getMemberOfType)(checker, type, name) !== undefined);
+    const declaredBy = (types, name) => types.some((type) => (0, type_helpers_1.hasMember)(ctx, type, name));
     const declared = (name) => declaredBy(candidates, name) ||
         (0, ambient_index_1.getAmbientClasses)(ctx).some((ambientClass) => ambientClass.memberNames.has(name)) ||
         declaredBy((0, ambient_index_1.builtinValueTypes)(ctx), name);
@@ -275,7 +274,7 @@ function decideType(ctx, evidence, profile, name, fitUsage) {
     const fit = (type) => {
         if (guardKeys.has((0, type_helpers_1.typeDisplayString)(ctx, type)))
             return [type];
-        const fitted = (0, type_helpers_1.hasAllMembers)(ctx.checker, type, checkable) ? [type] : downcastOf(ctx, type, checkable);
+        const fitted = (0, type_helpers_1.hasAllMembers)(ctx, type, checkable) ? [type] : downcastOf(ctx, type, checkable);
         return fitted.filter((fittedType) => fitsEveryUse(ctx, fittedType, uses));
     };
     const fitting = fitUsage ? (0, type_helpers_1.dedupeTypes)(ctx, candidates.flatMap(fit)) : candidates;
