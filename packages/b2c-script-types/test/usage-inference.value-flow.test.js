@@ -838,6 +838,27 @@ describe('usage-inference — hooks', () => {
       expected: 'Basket',
     },
     {
+      title: 'an extension point held in a local variable is read through it',
+      ...handleBasket(`
+        function handlePayment(processorId) {
+          var hookName = 'app.payment.processor.' + processorId.toLowerCase();
+          return HookManager.callHook(hookName, 'Handle', getBasket());
+        }
+      `),
+      expected: 'Basket',
+    },
+    {
+      title: 'a variable assigned again may hold any extension point, so it reaches none',
+      ...handleBasket(`
+        function handlePayment(processorId, fallback) {
+          var hookName = 'app.payment.processor.' + processorId;
+          if (fallback) hookName = fallback;
+          return HookManager.callHook(hookName, 'Handle', getBasket());
+        }
+      `),
+      expected: '',
+    },
+    {
       title: 'a call naming another function of the same hook passes this one nothing',
       ...handleBasket(`HookManager.callHook('app.payment.processor.basic_credit', 'Authorize', getBasket());`),
       expected: '',

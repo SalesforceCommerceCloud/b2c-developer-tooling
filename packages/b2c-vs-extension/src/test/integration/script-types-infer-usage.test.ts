@@ -852,3 +852,72 @@ suite('scriptTypesInferUsage — .call() inheritance, typed API uses, and union 
     assert.ok(/Product \| Category/.test(text), `expected the Product | Category union, got: ${text}`);
   });
 });
+
+suite('scriptTypesInferUsage — factory-returned models, call-specific helpers, and hooks', () => {
+  let flowDoc: vscode.TextDocument;
+  let hookDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    flowDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'scripts', 'helpers', 'valueFlowHelpers.js'),
+      ),
+    );
+    hookDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'scripts', 'hooks', 'payment', 'basicCredit.js'),
+      ),
+    );
+    await vscode.window.showTextDocument(flowDoc);
+  });
+
+  test('infers Product for a constructor reached only through the factory that returns it', async () => {
+    // Nothing calls ProductTileModel by name: `getTileModel()` returns it and
+    // `new TileModel(product)` constructs it.
+    const text = await hoverTextMatching(
+      flowDoc,
+      offsetPosition(flowDoc, 'function ProductTileModel(source', 'function ProductTileModel('.length),
+      /Product/,
+      true,
+    );
+    assert.ok(/Product/.test(text), `expected Product through the factory, got: ${text}`);
+  });
+
+  test('infers Shipment for what collections.find returns for the collection this call passes', async () => {
+    // Across its callers `find` returns a Shipment or a ProductLineItem; for
+    // getShipmentByUUID's call with `basket.shipments` it is a Shipment.
+    const text = await hoverTextMatching(
+      flowDoc,
+      offsetPosition(flowDoc, 'var shipment = getShipmentByUUID', 'var '.length),
+      /Shipment/,
+      true,
+    );
+    assert.ok(/Shipment/.test(text), `expected Shipment for this call, got: ${text}`);
+    assert.ok(!/ProductLineItem/.test(text), `the other caller's element type must not leak in: ${text}`);
+  });
+
+  test("infers Basket for a hook function's parameter from the HookMgr.callHook call hooks.json routes to it", async () => {
+    // Its own usage fits any LineItemCtnr; only the prefixed callHook call in
+    // scripts/checkout/paymentHelpers.js, matched through the cartridge's
+    // package.json -> hooks.json, says it is a Basket.
+    const text = await hoverTextMatching(
+      hookDoc,
+      offsetPosition(hookDoc, 'function Handle(container', 'function Handle('.length),
+      /Basket/,
+      true,
+    );
+    assert.ok(/Basket/.test(text), `expected Basket from the callHook call site, got: ${text}`);
+  });
+});

@@ -67,6 +67,14 @@ propagates to every caller. Passing `inferUsage: true` in the plugin config
 way IntelliJ does: from call-site arguments (including `new`, `.call`/`.apply`
 and callbacks), return values, the typed Script API calls a value is passed
 to, and the members and `instanceof`/`typeof` checks in the helper's own body.
+Values are followed where they go — into object members, `this.x`, pushed
+arrays, factory returns and `module.exports` — and a generic helper such as
+`collections.find(basket.shipments, ...)` is inferred again for the call at
+hand. Hook scripts registered in a cartridge's `hooks.json` take the arguments
+of the `HookMgr.callHook(...)` calls that reach them, literal or prefixed
+(`'app.payment.processor.' + id`), and those calls return what the hooks return
+([src/resolver/hook-registry.ts](./src/resolver/hook-registry.ts) reads the
+registrations, as JSON only).
 The result is surfaced as an "Inferred from usage" hover note plus synthesized
 member completions; call sites that disagree show a union of up to three
 types. It only kicks in where the checker has already given up (`any`, or a

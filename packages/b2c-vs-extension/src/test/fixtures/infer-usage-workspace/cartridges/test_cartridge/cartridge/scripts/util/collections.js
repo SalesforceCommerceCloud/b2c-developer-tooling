@@ -18,7 +18,23 @@ function first(collection) {
   return iterator.hasNext() ? iterator.next() : null;
 }
 
+// Stock SFRA shape: the matching element, or null. Its result depends on the
+// collection each call passes, so inference re-reads it per call.
+function find(collection, match) {
+  var result = null;
+  var iterator = collection.iterator();
+  while (iterator.hasNext()) {
+    var item = iterator.next();
+    if (match(item)) {
+      result = item;
+      break;
+    }
+  }
+  return result;
+}
+
 module.exports = {
   forEach: forEach,
   first: first,
+  find: find,
 };

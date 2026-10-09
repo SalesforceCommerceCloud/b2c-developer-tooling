@@ -21,6 +21,8 @@ import {MAX_REFERENCES_PER_CALL} from './constants';
 import type {InferenceContext} from './context';
 import {exportsObjectWrittenBy, getNodeAtPosition, propertyAccessNamedBy} from './ast-helpers';
 import {findReferences} from './call-sites';
+import {valueDeclarationOf} from './member-values';
+import {usageProfileOf} from './usage-profile';
 import type {CallSite} from './value-flow';
 
 // Where the Script API declares `HookMgr.callHook`, whichever copy of the dw
@@ -81,10 +83,20 @@ function literalPrefix(ctx: InferenceContext, expr: tsserver.Expression): string
   return stringValue(ctx, expr.left) || literalPrefix(ctx, expr.left);
 }
 
+/** What a local variable `expr` names always holds: its initializer, when nothing else is assigned to it. */
+function soleValue(ctx: InferenceContext, expr: tsserver.Expression): tsserver.Expression | undefined {
+  const {ts} = ctx;
+  const declaration = ts.isIdentifier(expr) ? valueDeclarationOf(ctx, expr) : undefined;
+  if (!declaration || !ts.isVariableDeclaration(declaration) || !declaration.initializer) return undefined;
+  return usageProfileOf(ctx, declaration).assignedValues.length === 0 ? declaration.initializer : undefined;
+}
+
+/** The extension points `expr` names, read through one local variable (`var hookName = 'app.payment.' + id`). */
 function extensionPointPattern(ctx: InferenceContext, expr: tsserver.Expression): ExtensionPointPattern | undefined {
-  const name = stringValue(ctx, expr);
+  const value = soleValue(ctx, expr) ?? expr;
+  const name = stringValue(ctx, expr) ?? stringValue(ctx, value);
   if (name !== undefined) return {text: name, isPrefix: false};
-  const prefix = literalPrefix(ctx, expr);
+  const prefix = literalPrefix(ctx, value);
   return prefix ? {text: prefix, isPrefix: true} : undefined;
 }
 

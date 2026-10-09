@@ -10,6 +10,8 @@ exports.hookImplementations = hookImplementations;
 const constants_1 = require("./constants");
 const ast_helpers_1 = require("./ast-helpers");
 const call_sites_1 = require("./call-sites");
+const member_values_1 = require("./member-values");
+const usage_profile_1 = require("./usage-profile");
 // Where the Script API declares `HookMgr.callHook`, whichever copy of the dw
 // types a project loads.
 const HOOK_MANAGER_FILE = '/dw/system/HookMgr.d.ts';
@@ -54,11 +56,21 @@ function literalPrefix(ctx, expr) {
         return undefined;
     return stringValue(ctx, expr.left) || literalPrefix(ctx, expr.left);
 }
+/** What a local variable `expr` names always holds: its initializer, when nothing else is assigned to it. */
+function soleValue(ctx, expr) {
+    const { ts } = ctx;
+    const declaration = ts.isIdentifier(expr) ? (0, member_values_1.valueDeclarationOf)(ctx, expr) : undefined;
+    if (!declaration || !ts.isVariableDeclaration(declaration) || !declaration.initializer)
+        return undefined;
+    return (0, usage_profile_1.usageProfileOf)(ctx, declaration).assignedValues.length === 0 ? declaration.initializer : undefined;
+}
+/** The extension points `expr` names, read through one local variable (`var hookName = 'app.payment.' + id`). */
 function extensionPointPattern(ctx, expr) {
-    const name = stringValue(ctx, expr);
+    const value = soleValue(ctx, expr) ?? expr;
+    const name = stringValue(ctx, expr) ?? stringValue(ctx, value);
     if (name !== undefined)
         return { text: name, isPrefix: false };
-    const prefix = literalPrefix(ctx, expr);
+    const prefix = literalPrefix(ctx, value);
     return prefix ? { text: prefix, isPrefix: true } : undefined;
 }
 /** True when `call` invokes the Script API's `HookMgr.callHook`, through whatever name it is required as. */

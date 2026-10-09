@@ -1,0 +1,4 @@
+{
+  "name": "test_cartridge",
+  "hooks": "./cartridge/scripts/hooks.json"
+}

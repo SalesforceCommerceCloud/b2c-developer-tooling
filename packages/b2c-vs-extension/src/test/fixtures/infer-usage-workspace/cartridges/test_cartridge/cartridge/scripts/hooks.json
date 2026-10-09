@@ -1,0 +1,8 @@
+{
+  "hooks": [
+    {
+      "name": "app.payment.processor.basic_credit",
+      "script": "./hooks/payment/basicCredit"
+    }
+  ]
+}
