@@ -3,186 +3,142 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+
 import {expect} from 'chai';
-import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
+import {Config} from '@oclif/core';
 import MrtRedirectClone from '../../../../../src/commands/mrt/env/redirect/clone.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../../../helpers/test-setup.js';
+import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
+import {stubParse} from '../../../../helpers/stub-parse.js';
 
 describe('mrt env redirect clone', () => {
-  const hooks = createIsolatedConfigHooks();
+  let config: Config;
 
   beforeEach(async () => {
-    await hooks.beforeEach();
+    isolateConfig();
+    config = await Config.load();
   });
 
   afterEach(() => {
-    hooks.afterEach();
+    sinon.restore();
+    restoreConfig();
   });
 
-  async function createCommand(flags: Record<string, unknown>): Promise<any> {
-    return createTestCommand(MrtRedirectClone, hooks.getConfig(), flags, {});
+  function createCommand(): any {
+    return new MrtRedirectClone([], config);
   }
 
-  it('throws error when project is missing', async () => {
-    const command = await createCommand({from: 'staging', to: 'production', force: true});
+  function stubErrorToThrow(command: any): sinon.SinonStub {
+    return sinon.stub(command, 'error').throws(new Error('Expected error'));
+  }
 
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
+  function stubBackendContext(
+    command: any,
+    ctx: {preference?: string; scapiConnection?: unknown; legacyAuth?: unknown} = {},
+  ): void {
+    sinon.stub(command, 'getMrtBackendContext').returns({
+      preference: ctx.preference ?? 'auto',
+      scapiConnection: ctx.scapiConnection,
+      legacyAuth: 'legacyAuth' in ctx ? ctx.legacyAuth : {},
+    } as any);
+  }
+
+  it('calls command.error when project is missing', async () => {
+    const command = createCommand();
+
+    stubParse(command, {from: 'staging', to: 'production', force: true}, {});
+    await command.init();
+
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined}}));
 
-    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+    const errorStub = stubErrorToThrow(command);
 
     try {
       await command.run();
-      expect.fail('Should have thrown');
+      expect.fail('Expected error');
     } catch {
-      expect(errorStub.called).to.be.true;
-      expect(errorStub.firstCall.args[0]).to.include('MRT project is required');
+      expect(errorStub.calledOnce).to.equal(true);
     }
   });
 
-  it('clones redirects with force flag', async () => {
-    const command = await createCommand({
-      json: true,
-      project: 'my-storefront',
-      from: 'staging',
-      to: 'production',
-      force: true,
-    });
+  it('rejects a same-source clone before touching the backend', async () => {
+    const command = createCommand();
 
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtOrigin: 'https://example.com'},
-    }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
+    stubParse(command, {from: 'staging', to: 'staging', force: true}, {});
+    await command.init();
 
-    const mockResult = {
-      count: 5,
-      redirects: [{from: '/old-path', to: '/new-path', status: 301}],
-    };
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
 
-    const cloneStub = sinon.stub().resolves(mockResult);
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      this.log('Cloning redirects...');
-      return cloneStub();
-    };
-
-    const result = await command.run();
-
-    expect(result.count).to.equal(5);
-    expect(result.redirects).to.have.lengthOf(1);
-  });
-
-  it('clones redirects in non-JSON mode', async () => {
-    const command = await createCommand({
-      project: 'my-storefront',
-      from: 'dev',
-      to: 'staging',
-      force: true,
-    });
-
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtOrigin: 'https://example.com'},
-    }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
-
-    const mockResult = {count: 3, redirects: []};
-
-    const cloneStub = sinon.stub().resolves(mockResult);
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      this.log('Cloning redirects...');
-      return cloneStub();
-    };
-
-    const result = await command.run();
-
-    expect(result.count).to.equal(3);
-  });
-
-  it('handles API errors', async () => {
-    const command = await createCommand({
-      project: 'my-storefront',
-      from: 'staging',
-      to: 'production',
-      force: true,
-    });
-
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtOrigin: 'https://example.com'},
-    }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
-
-    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      this.log('Cloning redirects...');
-      this.error('Failed to clone redirects: API error');
-    };
+    const errorStub = stubErrorToThrow(command);
+    const cloneStub = sinon.stub().resolves({backend: 'legacy', count: 1, raw: {count: 1}});
+    command.operations = {...command.operations, cloneRedirectsWithBackend: cloneStub};
 
     try {
       await command.run();
-      expect.fail('Should have thrown');
+      expect.fail('Expected error');
     } catch {
-      expect(errorStub.called).to.be.true;
-      expect(errorStub.firstCall.args[0]).to.include('Failed to clone redirects');
+      expect(errorStub.calledOnce).to.equal(true);
+      expect(errorStub.firstCall.args[0]).to.include('must differ');
     }
+    expect(cloneStub.called).to.equal(false);
   });
 
-  it('handles empty result', async () => {
-    const command = await createCommand({
-      json: true,
-      project: 'my-storefront',
-      from: 'staging',
-      to: 'production',
-      force: true,
-    });
+  it('clones via the backend wrapper and returns raw under --json (legacy)', async () => {
+    const command = createCommand();
 
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
+    stubParse(command, {from: 'staging', to: 'production', force: true}, {});
+    await command.init();
+
+    stubBackendContext(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({
-      values: {mrtProject: 'my-storefront', mrtOrigin: 'https://example.com'},
+      values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'},
     }));
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
 
-    const mockResult = {count: 0, redirects: []};
-
-    const cloneStub = sinon.stub().resolves(mockResult);
-    (command as any).run = async function () {
-      this.requireMrtCredentials();
-      const {mrtProject: project} = this.resolvedConfig.values;
-      if (!project) {
-        this.error('MRT project is required');
-      }
-      this.log('Cloning redirects...');
-      return cloneStub();
-    };
+    const raw = {count: 5, results: []};
+    const cloneStub = sinon.stub().resolves({backend: 'legacy', count: 5, raw});
+    command.operations = {...command.operations, cloneRedirectsWithBackend: cloneStub};
 
     const result = await command.run();
 
-    expect(result.count).to.equal(0);
-    expect(result.redirects).to.deep.equal([]);
+    expect(cloneStub.calledOnce).to.equal(true);
+    const [input] = cloneStub.firstCall.args;
+    expect(input.preference).to.equal('auto');
+    expect(input.projectSlug).to.equal('my-project');
+    expect(input.sourceEnvironment).to.equal('staging');
+    expect(input.targetEnvironment).to.equal('production');
+    expect(result).to.deep.equal(raw);
+  });
+
+  it('forwards the resolved SCAPI backend context and synthesizes a stable --json object', async () => {
+    const command = createCommand();
+
+    stubParse(command, {from: 'staging', to: 'production', force: true, 'mrt-backend': 'scapi'}, {});
+    await command.init();
+
+    const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
+    stubBackendContext(command, {preference: 'scapi', scapiConnection, legacyAuth: undefined});
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project', mrtBackend: 'scapi'}}));
+
+    const cloneStub = sinon.stub().resolves({backend: 'scapi', count: null, raw: null});
+    command.operations = {...command.operations, cloneRedirectsWithBackend: cloneStub};
+
+    const result = await command.run();
+
+    const [input] = cloneStub.firstCall.args;
+    expect(input.preference).to.equal('scapi');
+    expect(input.scapiConnection).to.equal(scapiConnection);
+    // SCAPI returns an empty 201 (no body); the command synthesizes a stable
+    // object rather than emitting a bare `null`. `count` is null since SCAPI
+    // reports no cloned count.
+    expect(result).to.deep.equal({from: 'staging', to: 'production', count: null});
+  });
+
+  it('supports the SCAPI MRT backend', () => {
+    const command = createCommand();
+    expect(command.supportsScapiMrt()).to.equal(true);
   });
 });

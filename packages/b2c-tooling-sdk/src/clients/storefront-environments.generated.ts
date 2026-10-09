@@ -4,6 +4,118 @@
  */
 
 export interface paths {
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get environments for a storefront.
+         * @description Retrieves the list of environments belonging to the specified storefront, ordered by creation date in ascending order.
+         */
+        get: operations["getEnvironmentsForStorefront"];
+        put?: never;
+        /**
+         * Create an environment for a storefront.
+         * @description Queues creation of a new environment for the specified storefront. Returns immediately with the environment resource in the `building` status. Poll the environment by ID to track provisioning progress.
+         */
+        post: operations["createEnvironmentForStorefront"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/clone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clone an environment for a storefront.
+         * @description Queues creation of a new environment for the specified storefront by cloning an existing environment. Returns immediately with the environment resource in the `building` status. Poll the environment by ID to track provisioning progress. The clone always starts as a non-primary environment.
+         */
+        post: operations["cloneEnvironmentForStorefront"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an environment by ID.
+         * @description Retrieves the details of a specific environment, including its current status.
+         */
+        get: operations["getEnvironmentById"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an environment.
+         * @description Queues deletion of the environment. Returns immediately with the environment resource in the `deleting` status. Poll the environment by ID to track deletion progress.
+         */
+        delete: operations["deleteEnvironment"];
+        options?: never;
+        head?: never;
+        /**
+         * Update an environment.
+         * @description Partially updates the specified environment. Only the supplied fields are changed; at least one field must be provided.
+         */
+        patch: operations["updateEnvironment"];
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/primary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set an environment as the storefront's primary environment.
+         * @description Marks the specified environment as the storefront's primary environment. The environment must have a status of `ready` or `build_failed`. Idempotent — setting an already-primary environment as primary again has no effect.
+         */
+        put: operations["setPrimaryEnvironment"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/cache-invalidations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger a cache invalidation.
+         * @description Triggers a CDN cache invalidation on the environment for the supplied path prefix. Invalidation is always a wildcard operation — every cached path beginning with the prefix is cleared. The request is fire-and-forget: it returns `202 Accepted` with an empty body and no invalidation id to poll, and the invalidation itself is performed asynchronously. The environment must have an SSR bundle deployed.
+         */
+        post: operations["createCacheInvalidation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/environment-variables": {
         parameters: {
             query?: never;
@@ -28,6 +140,126 @@ export interface paths {
         patch: operations["updateEnvironmentVariables"];
         trace?: never;
     };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/access-control-headers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get access control headers.
+         * @description Retrieves a paginated list of access control headers on the environment. Header values are returned masked and cannot be read back in plaintext.
+         */
+        get: operations["getAccessControlHeaders"];
+        put?: never;
+        /**
+         * Create an access control header.
+         * @description Creates a header-based access control rule on the environment. The created value is returned masked in the response.
+         */
+        post: operations["createAccessControlHeader"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/access-control-headers/{accessControlHeaderId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an access control header by ID.
+         * @description Retrieves a single access control header by its identifier. The value is returned masked.
+         */
+        get: operations["getAccessControlHeader"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an access control header.
+         * @description Deletes an access control header by its identifier. Returns 204 No Content on success.
+         */
+        delete: operations["deleteAccessControlHeader"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/redirects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get redirects.
+         * @description Retrieves a paginated, orderable list of redirects on the environment.
+         */
+        get: operations["getRedirects"];
+        put?: never;
+        /**
+         * Create a redirect.
+         * @description Creates a redirect on the environment. Returns the created redirect.
+         */
+        post: operations["createRedirect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/redirects/{redirectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a redirect by ID.
+         * @description Retrieves a single redirect by its identifier.
+         */
+        get: operations["getRedirect"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a redirect.
+         * @description Deletes a redirect by its identifier. Returns 204 No Content on success.
+         */
+        delete: operations["deleteRedirect"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a redirect.
+         * @description Partially updates a redirect by its identifier. Only the supplied fields are changed.
+         */
+        patch: operations["updateRedirect"];
+        trace?: never;
+    };
+    "/organizations/{organizationId}/storefronts/{storefrontId}/environments/{environmentId}/redirects/actions/clone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clone redirects from a source environment.
+         * @description Copies all redirects from a source environment into the environment in the request path. The source environment must differ from the destination environment. Returns 201 Created with no response body.
+         */
+        post: operations["cloneRedirects"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -39,6 +271,295 @@ export interface components {
             instance?: string;
         } & {
             [key: string]: unknown;
+        };
+        /**
+         * @description The current provisioning or lifecycle status of the environment.
+         * @example ready
+         * @enum {string}
+         */
+        EnvironmentStatus: "building" | "ready" | "build_failed" | "deleting" | "deleted" | "delete_failed";
+        /**
+         * @description The AWS region for the server-side rendering function of the environment. Each value corresponds to the AWS region of the same name with underscores substituted for hyphens (for example, `us_east_2` is the AWS region `us-east-2`).
+         * @example us_east_2
+         * @enum {string}
+         */
+        SsrRegion: "us_east_1" | "us_east_2" | "us_west_1" | "us_west_2" | "ap_south_1" | "ap_south_2" | "ap_northeast_2" | "ap_southeast_1" | "ap_southeast_2" | "ap_southeast_3" | "ap_northeast_1" | "ap_northeast_3" | "ca_central_1" | "eu_central_1" | "eu_central_2" | "eu_west_1" | "eu_west_2" | "eu_west_3" | "eu_north_1" | "eu_south_1" | "sa_east_1";
+        /** @description A single proxy configuration entry for the environment, defined by its `path`, `host`, and `protocol`. */
+        SsrProxyConfig: {
+            /**
+             * @description The request path prefix routed to the proxy origin.
+             * @example /api
+             */
+            path?: string;
+            /**
+             * @description The proxy origin host.
+             * @example api.example.com
+             */
+            host?: string;
+            /**
+             * @description The protocol used to reach the proxy origin. Only `https` is supported.
+             * @example https
+             * @enum {string}
+             */
+            protocol?: "https";
+        };
+        /** @description An environment within Managed Runtime (MRT) where storefronts are deployed to separate phases of the development lifecycle, such as development, staging, or production. */
+        Environment: {
+            /**
+             * @description The generated environment identifier. Unique within the storefront, with an auto-generated hash suffix.
+             * @example production-a1b2c3d4
+             */
+            environmentId: string;
+            /**
+             * @description The display name of the environment.
+             * @example Production
+             */
+            displayName: string;
+            status: components["schemas"]["EnvironmentStatus"];
+            /**
+             * @description Indicates whether the environment is the storefront's primary environment. Only one environment per storefront can be primary.
+             * @example true
+             */
+            isPrimary: boolean;
+            /**
+             * @description The subdomain assigned to this environment. Available after the environment finishes building and null before then.
+             * @example production
+             */
+            subdomain?: string | null;
+            /**
+             * @description The Managed Runtime origin URL that backs this environment. Available after the environment finishes building and null before then.
+             * @example https://production-my-storefront.exp-delivery.com
+             */
+            mrtOrigin?: string | null;
+            /**
+             * @description The eCDN hostname for the environment's default domain zone, used by the preview link. Available after the environment finishes building and null before then.
+             * @example marketstreetb82739d375a9270f.zzzz-001.my.cc.salesforce.com
+             */
+            defaultEcdnHostname?: string | null;
+            /**
+             * Format: date-time
+             * @description The timestamp when the environment was created.
+             * @example 2026-04-08T21:47:28.188965Z
+             */
+            creationDate?: string;
+            /**
+             * Format: date-time
+             * @description The timestamp when the environment was last modified.
+             * @example 2026-04-08T21:47:31.307595Z
+             */
+            lastModified?: string;
+            ssrRegion?: components["schemas"]["SsrRegion"];
+            /**
+             * @description The architecture for the environment's server-side rendering function. Null when no architecture default is configured.
+             * @example arm64
+             * @enum {string|null}
+             */
+            ssrArchitecture?: "x86" | "arm64" | null;
+            /**
+             * @description The full custom hostname used by the environment (e.g. www.customer.com). Null when not configured.
+             * @example www.customer.com
+             */
+            ssrExternalHostname?: string | null;
+            /**
+             * @description The external domain for the ssrExternalHostname (e.g. customer.com). When omitted it is derived from ssrExternalHostname. Null when not configured.
+             * @example customer.com
+             */
+            ssrExternalDomain?: string | null;
+            /**
+             * @description A space-separated list of IPv4 or IPv6 CIDR blocks permitted to access the environment. Null or empty allows all IPs.
+             * @example 192.0.2.0/24 198.51.100.0/24
+             */
+            ssrWhitelistedIps?: string | null;
+            /** @description The proxy configurations for the environment. Null when none are configured. */
+            ssrProxyConfigs?: components["schemas"]["SsrProxyConfig"][] | null;
+            /**
+             * @description Whether the environment is provisioned with production-tier capacity.
+             * @example false
+             */
+            isProduction?: boolean;
+            /**
+             * @description Whether cookies are forwarded to and respected from the environment's origin.
+             * @example true
+             */
+            allowCookies?: boolean;
+            /**
+             * @description Whether the end-user's User-Agent header is preserved on requests forwarded through the environment's configured proxies.
+             * @example false
+             */
+            preserveProxyUserAgent?: boolean;
+            /**
+             * @description Whether source maps are enabled for the environment's server-side rendering bundle.
+             * @example false
+             */
+            enableSourceMaps?: boolean;
+            /**
+             * @description The minimum log level emitted by the environment's server-side rendering function. Null when inherited from the default.
+             * @example warn
+             * @enum {string|null}
+             */
+            logLevel?: "trace" | "debug" | "info" | "warn" | "error" | "fatal" | null;
+            /**
+             * @description Whether distributed tracing is enabled for the environment.
+             * @example false
+             */
+            distributedTracing?: boolean;
+            /**
+             * Format: double
+             * @description The fraction of requests sampled for distributed tracing.
+             * @example 0.1
+             */
+            distributedTracingSamplingRate?: number;
+            /**
+             * Format: int32
+             * @description The identifier of the certificate associated with the environment's custom domain. Null when using the default Managed Runtime domain.
+             * @example 42
+             */
+            certificateId?: number | null;
+        };
+        /** @description Paginated result containing a list of environments. */
+        EnvironmentResult: {
+            /**
+             * Format: int32
+             * @description Maximum number of records returned per request.
+             * @example 25
+             */
+            limit: number;
+            /**
+             * Format: int32
+             * @description Zero-based index of the first record included in the result.
+             * @example 0
+             */
+            offset: number;
+            /**
+             * Format: int32
+             * @description Total number of environments matching the request.
+             * @example 3
+             */
+            total: number;
+            /** @description The list of environments belonging to the storefront. May be empty. */
+            data: components["schemas"]["Environment"][];
+        };
+        /** @description Request body to create an environment for a storefront. */
+        EnvironmentCreateRequest: {
+            /**
+             * @description The display name for the new environment.
+             * @example Production
+             */
+            displayName: string;
+        };
+        /** @description Request body to update an environment. Every field is optional and only the supplied fields are changed; at least one field must be provided. */
+        EnvironmentUpdateRequest: {
+            /**
+             * @description The new display name for the environment.
+             * @example Production
+             */
+            displayName?: string;
+            ssrRegion?: components["schemas"]["SsrRegion"];
+            /**
+             * @description The architecture for the environment's server-side rendering function. Set to null to inherit the storefront default.
+             * @example arm64
+             * @enum {string|null}
+             */
+            ssrArchitecture?: "x86" | "arm64" | null;
+            /**
+             * @description The full custom hostname used by the environment (e.g. www.customer.com). Set to null to clear it.
+             * @example www.customer.com
+             */
+            ssrExternalHostname?: string | null;
+            /**
+             * @description The external domain for the ssrExternalHostname (e.g. customer.com). When omitted it is derived from ssrExternalHostname. Set to null to clear it.
+             * @example customer.com
+             */
+            ssrExternalDomain?: string | null;
+            /**
+             * @description A space-separated list of IPv4 or IPv6 CIDR blocks permitted to access the environment. Set to null or empty to allow all IPs.
+             * @example 192.0.2.0/24 198.51.100.0/24
+             */
+            ssrWhitelistedIps?: string | null;
+            /** @description The proxy configurations for the environment. Set to null to clear them. */
+            ssrProxyConfigs?: components["schemas"]["SsrProxyConfig"][] | null;
+            /**
+             * @description Whether the environment is provisioned with production-tier capacity.
+             * @example false
+             */
+            isProduction?: boolean;
+            /**
+             * @description Whether cookies are forwarded to and respected from the environment's origin.
+             * @example true
+             */
+            allowCookies?: boolean;
+            /**
+             * @description Whether the end-user's User-Agent header is preserved on requests forwarded through the environment's configured proxies.
+             * @example false
+             */
+            preserveProxyUserAgent?: boolean;
+            /**
+             * @description Whether source maps are enabled for the environment's server-side rendering bundle.
+             * @example false
+             */
+            enableSourceMaps?: boolean;
+            /**
+             * @description The minimum log level emitted by the environment's server-side rendering function. Set to null to inherit the default.
+             * @example warn
+             * @enum {string|null}
+             */
+            logLevel?: "trace" | "debug" | "info" | "warn" | "error" | "fatal" | null;
+            /**
+             * @description Whether distributed tracing is enabled for the environment.
+             * @example false
+             */
+            distributedTracing?: boolean;
+            /**
+             * Format: double
+             * @description The fraction of requests sampled for distributed tracing.
+             * @example 0.1
+             */
+            distributedTracingSamplingRate?: number;
+            /**
+             * Format: int32
+             * @description The identifier of the certificate to associate with the environment's custom domain. Set to null to remove the certificate association. Not permitted when using the default Managed Runtime domain.
+             * @example 42
+             */
+            certificateId?: number | null;
+        };
+        /** @description Request body to create an environment by cloning an existing one. */
+        EnvironmentCloneRequest: {
+            /**
+             * @description The identifier of the environment to clone.
+             * @example production-a1b2c3d4
+             */
+            sourceEnvironmentId: string;
+            /**
+             * @description The display name for the new environment.
+             * @example Production (EU)
+             */
+            displayName: string;
+            /**
+             * @description Whether to copy the source environment's environment variables to the new environment.
+             * @default false
+             * @example true
+             */
+            cloneEnvironmentVariables: boolean;
+            /**
+             * @description Whether to copy the source environment's redirects to the new environment.
+             * @default false
+             * @example true
+             */
+            cloneRedirects: boolean;
+            /**
+             * @description Whether to copy the source environment's B2C Commerce target information to the new environment.
+             * @default true
+             * @example true
+             */
+            cloneB2cTargetInfo: boolean;
+        };
+        /** @description Request body to trigger a CDN cache invalidation on the environment. */
+        CacheInvalidationRequest: {
+            /**
+             * @description The path prefix to invalidate. Must start with `/`. Cache invalidation is always a wildcard operation: the CDN clears every cached path that begins with this value (a trailing `*` is always implied), so `/products` and `/products*` invalidate the same paths. If the value contains a `*`, only the portion before the first `*` is used as the prefix and the remainder is ignored. The invalidation is performed asynchronously.
+             * @example /products/*
+             */
+            pattern: string;
         };
         /**
          * @description The publishing status of an environment variable.
@@ -90,6 +611,205 @@ export interface components {
         EnvironmentVariablesUpdateRequest: {
             [key: string]: components["schemas"]["EnvironmentVariableUpdateEntry"];
         };
+        /** @description A header-based access control rule on the environment. */
+        AccessControlHeader: {
+            /**
+             * Format: uuid
+             * @description The unique identifier of the access control header, in UUID format.
+             * @example ff832a9e-0e55-11ef-8f23-0242ac110002
+             */
+            id?: string;
+            /**
+             * @description The masked header value. Actual values are never returned in clear text.
+             * @example ****************by0z
+             */
+            value?: string;
+            /**
+             * @description The email address of the user who created the header. Null if no user is associated.
+             * @example dev@example.com
+             */
+            createdBy?: string | null;
+            /**
+             * Format: date-time
+             * @description The timestamp when the header was created.
+             * @example 2026-08-24T09:23:28.872916Z
+             */
+            creationDate?: string;
+            publishingStatus?: components["schemas"]["PublishingStatus"];
+        };
+        /** @description Paginated result containing a list of access control headers. */
+        AccessControlHeaderResult: {
+            /**
+             * Format: int32
+             * @description Maximum number of records returned per request.
+             * @example 25
+             */
+            limit: number;
+            /**
+             * Format: int32
+             * @description Zero-based index of the first record included in the result.
+             * @example 0
+             */
+            offset: number;
+            /**
+             * Format: int32
+             * @description Total number of access control headers matching the request.
+             * @example 3
+             */
+            total: number;
+            /** @description The list of access control headers. May be empty. */
+            data: components["schemas"]["AccessControlHeader"][];
+        };
+        /** @description Request body to create an access control header. */
+        AccessControlHeaderCreateRequest: {
+            /**
+             * @description The header value.
+             * @example jfoWikeaby0z
+             */
+            value: string;
+        };
+        /**
+         * Format: int32
+         * @description The HTTP status code returned for the redirect.
+         * @default 301
+         * @example 301
+         * @enum {integer}
+         */
+        RedirectHttpStatusCode: 301 | 302;
+        /** @description A URL redirect rule on the environment. */
+        Redirect: {
+            /**
+             * Format: uuid
+             * @description The unique identifier of the redirect, in UUID format.
+             * @example 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d
+             */
+            redirectId?: string;
+            /**
+             * @description The source path that triggers the redirect.
+             * @example /spring
+             */
+            source?: string;
+            /**
+             * @description The destination path or URL the request is redirected to.
+             * @example /summer-newbranding
+             */
+            destination?: string;
+            httpStatusCode?: components["schemas"]["RedirectHttpStatusCode"];
+            /**
+             * @description Whether the incoming query string is forwarded to the destination.
+             * @example false
+             */
+            forwardQuerystring?: boolean;
+            /**
+             * @description Whether a trailing wildcard match on the source is forwarded to the destination.
+             * @example false
+             */
+            forwardWildcard?: boolean;
+            publishingStatus?: components["schemas"]["PublishingStatus"];
+            /**
+             * @description The email address of the user who created the redirect. Null if no user is associated.
+             * @example dev@example.com
+             */
+            createdBy?: string | null;
+            /**
+             * @description The email address of the user who last modified the redirect. Null if no user is associated.
+             * @example dev@example.com
+             */
+            lastModifiedBy?: string | null;
+            /**
+             * Format: date-time
+             * @description The timestamp when the redirect was created.
+             * @example 2026-08-24T00:00:00.000Z
+             */
+            creationDate?: string;
+            /**
+             * Format: date-time
+             * @description The timestamp when the redirect was last modified.
+             * @example 2026-08-24T00:00:00.000Z
+             */
+            lastModified?: string;
+        };
+        /** @description Paginated result containing a list of redirects. */
+        RedirectResult: {
+            /**
+             * Format: int32
+             * @description Maximum number of records returned per request.
+             * @example 25
+             */
+            limit: number;
+            /**
+             * Format: int32
+             * @description Zero-based index of the first record included in the result.
+             * @example 0
+             */
+            offset: number;
+            /**
+             * Format: int32
+             * @description Total number of redirects matching the request.
+             * @example 3
+             */
+            total: number;
+            /** @description The list of redirects. May be empty. */
+            data: components["schemas"]["Redirect"][];
+        };
+        /** @description Request body to create a single redirect. */
+        RedirectCreateRequest: {
+            /**
+             * @description The source path that triggers the redirect.
+             * @example /spring
+             */
+            source: string;
+            /**
+             * @description The destination path or URL the request is redirected to.
+             * @example /summer-newbranding
+             */
+            destination: string;
+            httpStatusCode?: components["schemas"]["RedirectHttpStatusCode"];
+            /**
+             * @description Whether the incoming query string is forwarded to the destination.
+             * @default false
+             * @example false
+             */
+            forwardQuerystring: boolean;
+            /**
+             * @description Whether a trailing wildcard match on the source is forwarded to the destination.
+             * @default false
+             * @example false
+             */
+            forwardWildcard: boolean;
+        };
+        /** @description Request body to partially update a redirect. Only the supplied fields are changed. */
+        RedirectUpdateRequest: {
+            /**
+             * @description The source path that triggers the redirect.
+             * @example /spring
+             */
+            source?: string;
+            /**
+             * @description The destination path or URL the request is redirected to.
+             * @example /summer-2027
+             */
+            destination?: string;
+            httpStatusCode?: components["schemas"]["RedirectHttpStatusCode"];
+            /**
+             * @description Whether the incoming query string is forwarded to the destination.
+             * @example false
+             */
+            forwardQuerystring?: boolean;
+            /**
+             * @description Whether a trailing wildcard match on the source is forwarded to the destination.
+             * @example false
+             */
+            forwardWildcard?: boolean;
+        };
+        /** @description Request body to clone all redirects from a source environment into this environment. */
+        RedirectCloneRequest: {
+            /**
+             * @description The identifier of the environment to copy redirects from. Must differ from the environment in the request path.
+             * @example staging
+             */
+            sourceEnvironmentId: string;
+        };
     };
     responses: {
         /** @description Your access token is invalid or expired and can't be used to identify a user. */
@@ -128,6 +848,24 @@ export interface components {
                 "application/problem+json": components["schemas"]["ErrorResponse"];
             };
         };
+        /** @description The request conflicts with the current state of the resource (for example, deleting the primary environment, or setting an environment that is not `ready`/`build_failed` as primary). */
+        "409Conflict": {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The request was throttled by the backend rate limits. Retry later. */
+        "429TooManyRequests": {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ErrorResponse"];
+            };
+        };
     };
     parameters: {
         /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
@@ -136,6 +874,14 @@ export interface components {
         storefrontId: string;
         /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
         environmentId: string;
+        /** @description The access control header identifier, in UUID format. */
+        accessControlHeaderId: string;
+        /** @description Attributes to order the returned access control headers by, in priority order (applied left to right). Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `id`, `publishing_status`. */
+        accessControlHeaderOrderBy: string[];
+        /** @description The redirect identifier, in UUID format. */
+        redirectId: string;
+        /** @description Attributes to order the returned redirects by, in priority order (applied left to right). Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `last_modified`, `source`, `destination`, `last_modified_by`, `http_status_code`, `publishing_status`. */
+        redirectOrderBy: string[];
     };
     requestBodies: never;
     headers: never;
@@ -143,6 +889,266 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getEnvironmentsForStorefront: {
+        parameters: {
+            query?: {
+                /** @description Number of records to retrieve per request. Must be between 1 and 200. Defaults to 25. */
+                limit?: number;
+                /** @description Zero-based index of the first record to include in the result. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of environments successfully retrieved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvironmentResult"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    createEnvironmentForStorefront: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnvironmentCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Environment creation successfully queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Environment"];
+                };
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    cloneEnvironmentForStorefront: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnvironmentCloneRequest"];
+            };
+        };
+        responses: {
+            /** @description Environment clone successfully queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Environment"];
+                };
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    getEnvironmentById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Environment successfully retrieved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Environment"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    deleteEnvironment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Environment deletion successfully queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Environment"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+            409: components["responses"]["409Conflict"];
+        };
+    };
+    updateEnvironment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnvironmentUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Environment successfully updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Environment"];
+                };
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    setPrimaryEnvironment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Environment successfully set as primary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Environment"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+            409: components["responses"]["409Conflict"];
+        };
+    };
+    createCacheInvalidation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CacheInvalidationRequest"];
+            };
+        };
+        responses: {
+            /** @description Cache invalidation accepted. The invalidation is processed asynchronously; no body is returned. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+            429: components["responses"]["429TooManyRequests"];
+        };
+    };
     getEnvironmentVariables: {
         parameters: {
             query?: never;
@@ -195,6 +1201,344 @@ export interface operations {
         responses: {
             /** @description Environment variables successfully updated. */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    getAccessControlHeaders: {
+        parameters: {
+            query?: {
+                /** @description Attributes to order the returned access control headers by, in priority order (applied left to right). Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `id`, `publishing_status`. */
+                orderBy?: components["parameters"]["accessControlHeaderOrderBy"];
+                /** @description Number of records to retrieve per request. Must be between 1 and 200. Defaults to 25. */
+                limit?: number;
+                /** @description Zero-based index of the first record to include in the result. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of access control headers successfully retrieved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessControlHeaderResult"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    createAccessControlHeader: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessControlHeaderCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Access control header successfully created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessControlHeader"];
+                };
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    getAccessControlHeader: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+                /** @description The access control header identifier, in UUID format. */
+                accessControlHeaderId: components["parameters"]["accessControlHeaderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Access control header successfully retrieved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessControlHeader"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    deleteAccessControlHeader: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+                /** @description The access control header identifier, in UUID format. */
+                accessControlHeaderId: components["parameters"]["accessControlHeaderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Access control header successfully deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    getRedirects: {
+        parameters: {
+            query?: {
+                /** @description Attributes to order the returned redirects by, in priority order (applied left to right). Append `:asc` or `:desc` to set the direction; when omitted, `:asc` is assumed. Sortable attributes: `creation_date`, `last_modified`, `source`, `destination`, `last_modified_by`, `http_status_code`, `publishing_status`. */
+                orderBy?: components["parameters"]["redirectOrderBy"];
+                /** @description Number of records to retrieve per request. Must be between 1 and 200. Defaults to 25. */
+                limit?: number;
+                /** @description Zero-based index of the first record to include in the result. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of redirects successfully retrieved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RedirectResult"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    createRedirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedirectCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Redirect successfully created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Redirect"];
+                };
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    getRedirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+                /** @description The redirect identifier, in UUID format. */
+                redirectId: components["parameters"]["redirectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect successfully retrieved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Redirect"];
+                };
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    deleteRedirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+                /** @description The redirect identifier, in UUID format. */
+                redirectId: components["parameters"]["redirectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect successfully deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    updateRedirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+                /** @description The redirect identifier, in UUID format. */
+                redirectId: components["parameters"]["redirectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedirectUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Redirect successfully updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Redirect"];
+                };
+            };
+            400: components["responses"]["400BadRequest"];
+            401: components["responses"]["401Unauthorized"];
+            403: components["responses"]["403Forbidden"];
+            404: components["responses"]["404NotFound"];
+        };
+    };
+    cloneRedirects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */
+                organizationId: components["parameters"]["organizationId"];
+                /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                storefrontId: components["parameters"]["storefrontId"];
+                /** @description The environment identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
+                environmentId: components["parameters"]["environmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedirectCloneRequest"];
+            };
+        };
+        responses: {
+            /** @description Redirects successfully cloned into the destination environment. */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

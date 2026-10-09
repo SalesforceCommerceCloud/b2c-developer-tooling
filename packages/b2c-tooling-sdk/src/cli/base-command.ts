@@ -101,6 +101,24 @@ export function classifyError(err: unknown): ErrorCategory {
 }
 
 /**
+ * Render an error's `cause` for the `--json` error envelope. A plain `String()`
+ * turns the common case — an object `cause` such as a parsed SCAPI error body —
+ * into the useless `"[object Object]"`. Preserve structure instead: expose an
+ * `Error` cause as `{name, message}` and a plain object/array cause as itself
+ * (the outer `JSON.stringify` serializes it), falling back to `String()` only
+ * for primitives.
+ */
+export function serializeErrorCause(cause: unknown): unknown {
+  if (cause instanceof Error) {
+    return {name: cause.name, message: cause.message};
+  }
+  if (cause !== null && typeof cause === 'object') {
+    return cause;
+  }
+  return String(cause);
+}
+
+/**
  * oclif throws `Flag --<name> can only be specified once` when a non-multiple
  * flag is passed more than once — including when the duplicate arrived through
  * an alias (e.g. `-p my-store -s other`, where `-s` / `--storefront` are aliases
@@ -765,7 +783,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
         error: {
           message: err.message,
           code: exitCode,
-          ...(err.cause ? {cause: String(err.cause)} : {}),
+          ...(err.cause ? {cause: serializeErrorCause(err.cause)} : {}),
         },
       };
       process.stderr.write(JSON.stringify(errorOutput) + '\n');

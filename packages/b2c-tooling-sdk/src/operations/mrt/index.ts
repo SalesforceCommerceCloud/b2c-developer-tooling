@@ -140,7 +140,34 @@ export type {
 } from './env-var.js';
 
 // Environment (target) operations
-export {cloneEnv, createEnv, deleteEnv, getEnv, waitForEnv, listEnvs, updateEnv} from './env.js';
+export {
+  cloneEnv,
+  createEnv,
+  deleteEnv,
+  getEnv,
+  waitForEnv,
+  listEnvs,
+  updateEnv,
+  getEnvironmentsScapi,
+  createEnvironmentScapi,
+  cloneEnvironmentScapi,
+  getEnvironmentByIdScapi,
+  waitForEnvironmentScapi,
+  updateEnvironmentScapi,
+  deleteEnvironmentScapi,
+  setPrimaryEnvironmentScapi,
+  createCacheInvalidationScapi,
+  listEnvironmentsWithBackend,
+  createEnvironmentWithBackend,
+  cloneEnvironmentWithBackend,
+  getEnvironmentWithBackend,
+  updateEnvironmentWithBackend,
+  deleteEnvironmentWithBackend,
+  setPrimaryEnvironmentWithBackend,
+  invalidateCacheWithBackend,
+  normalizeLegacyEnv,
+  normalizeEnvironmentScapi,
+} from './env.js';
 export type {
   CloneEnvOptions,
   CreateEnvOptions,
@@ -155,6 +182,23 @@ export type {
   MrtEnvironmentState,
   MrtEnvironmentUpdate,
   PatchedMrtEnvironment,
+  MrtEnvironmentView,
+  MrtEnvironmentsView,
+  MrtEnvironmentResult,
+  MrtEnvironmentWriteResult,
+  MrtCacheInvalidationResult,
+  CloneEnvironmentFlagsScapi,
+  EnvironmentScapiPollInfo,
+  WaitForEnvironmentScapiOptions,
+  EnvBackendOptions,
+  ListEnvironmentsBackendOptions,
+  CreateEnvironmentBackendOptions,
+  CloneEnvironmentBackendOptions,
+  GetEnvironmentBackendOptions,
+  UpdateEnvironmentBackendOptions,
+  DeleteEnvironmentBackendOptions,
+  SetPrimaryEnvironmentBackendOptions,
+  InvalidateCacheBackendOptions,
 } from './env.js';
 
 // Deployment operations
@@ -250,7 +294,25 @@ export type {
 } from './organization-member.js';
 
 // Project operations
-export {listProjects, createProject, getProject, updateProject, deleteProject} from './project.js';
+export {
+  listProjects,
+  createProject,
+  getProject,
+  updateProject,
+  deleteProject,
+  getStorefrontsScapi,
+  createStorefrontScapi,
+  getStorefrontByIdScapi,
+  updateStorefrontScapi,
+  deleteStorefrontScapi,
+  listProjectsWithBackend,
+  createProjectWithBackend,
+  getProjectWithBackend,
+  updateProjectWithBackend,
+  deleteProjectWithBackend,
+  normalizeLegacyProject,
+  normalizeProjectScapi,
+} from './project.js';
 export type {
   ListProjectsOptions,
   ListProjectsResult,
@@ -262,6 +324,16 @@ export type {
   MrtProjectUpdate,
   PatchedMrtProject,
   SsrRegion,
+  MrtProjectView,
+  MrtProjectsView,
+  MrtProjectResult,
+  MrtProjectWriteResult,
+  ProjectBackendOptions,
+  ListProjectsBackendOptions,
+  CreateProjectBackendOptions,
+  GetProjectBackendOptions,
+  UpdateProjectBackendOptions,
+  DeleteProjectBackendOptions,
 } from './project.js';
 
 // Member operations
@@ -306,6 +378,20 @@ export {
   updateRedirect,
   deleteRedirect,
   cloneRedirects,
+  getRedirectsScapi,
+  createRedirectScapi,
+  getRedirectScapi,
+  updateRedirectScapi,
+  deleteRedirectScapi,
+  cloneRedirectsScapi,
+  listRedirectsWithBackend,
+  createRedirectWithBackend,
+  getRedirectWithBackend,
+  updateRedirectWithBackend,
+  deleteRedirectWithBackend,
+  cloneRedirectsWithBackend,
+  normalizeLegacyRedirect,
+  normalizeRedirectScapi,
 } from './redirect.js';
 export type {
   ListRedirectsOptions,
@@ -319,6 +405,19 @@ export type {
   MrtRedirect,
   PatchedMrtRedirect,
   RedirectHttpStatusCode,
+  ScapiRedirectInput,
+  MrtRedirectView,
+  MrtRedirectsView,
+  MrtRedirectResult,
+  MrtRedirectWriteResult,
+  MrtRedirectCloneResult,
+  RedirectBackendOptions,
+  ListRedirectsBackendOptions,
+  CreateRedirectBackendOptions,
+  GetRedirectBackendOptions,
+  UpdateRedirectBackendOptions,
+  DeleteRedirectBackendOptions,
+  CloneRedirectsBackendOptions,
 } from './redirect.js';
 
 // Access control header operations
@@ -327,6 +426,16 @@ export {
   createAccessControlHeader,
   getAccessControlHeader,
   deleteAccessControlHeader,
+  getAccessControlHeadersScapi,
+  createAccessControlHeaderScapi,
+  getAccessControlHeaderScapi,
+  deleteAccessControlHeaderScapi,
+  listAccessControlHeadersWithBackend,
+  createAccessControlHeaderWithBackend,
+  getAccessControlHeaderWithBackend,
+  deleteAccessControlHeaderWithBackend,
+  normalizeLegacyAccessControlHeader,
+  normalizeAccessControlHeaderScapi,
 } from './access-control.js';
 export type {
   ListAccessControlHeadersOptions,
@@ -335,6 +444,15 @@ export type {
   GetAccessControlHeaderOptions,
   DeleteAccessControlHeaderOptions,
   MrtAccessControlHeader,
+  MrtAccessControlHeaderView,
+  MrtAccessControlHeadersView,
+  MrtAccessControlHeaderResult,
+  MrtAccessControlWriteResult,
+  AccessControlBackendOptions,
+  ListAccessControlHeadersBackendOptions,
+  CreateAccessControlHeaderBackendOptions,
+  GetAccessControlHeaderBackendOptions,
+  DeleteAccessControlHeaderBackendOptions,
 } from './access-control.js';
 
 // Cache operations

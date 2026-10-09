@@ -97,7 +97,13 @@ export {BackendDispatcher} from '../compat/dispatcher.js';
 export type {ApiBackendPreference, ResolvedBackend, DispatchBranches} from '../compat/dispatcher.js';
 
 // Base command classes
-export {BaseCommand, ERROR_CODE, augmentDuplicateFlagError, classifyError} from './base-command.js';
+export {
+  BaseCommand,
+  ERROR_CODE,
+  augmentDuplicateFlagError,
+  classifyError,
+  serializeErrorCause,
+} from './base-command.js';
 export type {Flags, Args, ErrorCategory} from './base-command.js';
 export {OAuthCommand} from './oauth-command.js';
 export {InstanceCommand} from './instance-command.js';
