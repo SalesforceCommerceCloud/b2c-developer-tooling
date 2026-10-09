@@ -8,7 +8,8 @@
 // node under the cursor, skipping the subtrees a walk for a name can't find
 // it in, the property access a member name or completion belongs to,
 // checking whether a parameter/return/variable already has an explicit type,
-// and collecting a function's return expressions. Everything here depends
+// whether a value is only tested, and collecting a function's return
+// expressions. Everything here depends
 // only on the `ts` namespace — no checker, no inference context — so it's
 // the safest, most reusable layer to read first.
 
@@ -260,6 +261,45 @@ export function invocationOf(call: tsserver.CallExpression, ts: typeof tsserver)
   if (!ts.isPropertyAccessExpression(callee)) return {callee, args: call.arguments};
   if (callee.name.text === 'call') return {callee: callee.expression, args: call.arguments.slice(1)};
   return callee.name.text === 'apply' ? {callee: callee.expression, args: []} : undefined;
+}
+
+/** True when `node` is the right side of `a && node`, which evaluates to it whenever it is reached. */
+function isRightOfAnd(node: tsserver.Node, ts: typeof tsserver): boolean {
+  const parent = node.parent;
+  return (
+    ts.isBinaryExpression(parent) &&
+    parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+    parent.right === node
+  );
+}
+
+/** True when `operator` offers its operands as alternatives: `a || b`, `a ?? b`. */
+function isAlternativeOperator(operator: tsserver.SyntaxKind, ts: typeof tsserver): boolean {
+  return operator === ts.SyntaxKind.BarBarToken || operator === ts.SyntaxKind.QuestionQuestionToken;
+}
+
+/**
+ * True when the value `expr` evaluates to is only tested, or offered as one
+ * of several alternatives: the condition of an `if`, a loop or a `?:`, the
+ * operand of `!` or `typeof`, the left side of `&&`, or either side of `||` /
+ * `??` (`if (res.setStatusCode)`, `(res && res.statusCode) || res.errorCode`).
+ * Code that reads a member only this way expects values that lack it.
+ */
+export function isTestedOrAlternative(expr: tsserver.Expression, ts: typeof tsserver): boolean {
+  let value: tsserver.Node = expr;
+  while (ts.isParenthesizedExpression(value.parent) || isRightOfAnd(value, ts)) value = value.parent;
+  const parent = value.parent;
+  if (ts.isBinaryExpression(parent)) {
+    const operator = parent.operatorToken.kind;
+    return (
+      isAlternativeOperator(operator, ts) ||
+      (operator === ts.SyntaxKind.AmpersandAmpersandToken && parent.left === value)
+    );
+  }
+  if (ts.isPrefixUnaryExpression(parent)) return parent.operator === ts.SyntaxKind.ExclamationToken;
+  if (ts.isConditionalExpression(parent)) return parent.condition === value;
+  const tests = ts.isIfStatement(parent) || ts.isWhileStatement(parent) || ts.isDoStatement(parent);
+  return ts.isTypeOfExpression(parent) || (tests && parent.expression === value);
 }
 
 /**

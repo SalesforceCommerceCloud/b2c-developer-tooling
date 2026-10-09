@@ -14,7 +14,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import {hasExplicitParameterType, spellingFilter} from './ast-helpers';
+import {hasExplicitParameterType, isTestedOrAlternative, spellingFilter} from './ast-helpers';
 import type {SpellingFilter} from './ast-helpers';
 import {MAX_USAGE_FORWARDING_HOPS} from './constants';
 import type {InferenceContext} from './context';
@@ -43,9 +43,10 @@ export interface UsageProfile {
   readonly memberNames: ReadonlySet<string>;
   /**
    * Members the code tests for before relying on them (`'ID' in x`,
-   * `x.hasOwnProperty('ID')`, `Object.hasOwnProperty.call(x, 'ID')`), and
-   * members used only in a branch such a test picks: a hint at what the
-   * value is, but not a member every value passed in must have.
+   * `x.hasOwnProperty('ID')`, `Object.hasOwnProperty.call(x, 'ID')`),
+   * members used only in a branch such a test picks, and members only ever
+   * read as a test or an alternative (`if (x.m)`, `x.a || x.b`): a hint at
+   * what the value is, but not a member every value passed in must have.
    */
   readonly optionalMemberNames: ReadonlySet<string>;
   /** Types the value is tested against: `x instanceof dw.order.ProductLineItem`, `typeof x === 'string'`. */
@@ -65,6 +66,8 @@ export interface UsageProfile {
 interface ProfileBuilder {
   readonly memberNames: Set<string>;
   readonly optionalMemberNames: Set<string>;
+  /** Members some access relies on: reads them other than as a test or an alternative. */
+  readonly reliedOnMemberNames: Set<string>;
   readonly guardTypes: tsserver.Type[];
   readonly contextualTypes: tsserver.Type[];
   readonly assignedValues: tsserver.Expression[];
@@ -77,6 +80,7 @@ function emptyProfile(): ProfileBuilder {
   return {
     memberNames: new Set(),
     optionalMemberNames: new Set(),
+    reliedOnMemberNames: new Set(),
     guardTypes: [],
     contextualTypes: [],
     assignedValues: [],
@@ -415,6 +419,7 @@ function recordMemberAccess({ctx, reference, inVariantBranch}: ReferenceUse, pro
   if (!isAccess || access.expression !== reference) return false;
   const member = accessedMemberName(ctx, access);
   if (member !== undefined) recordMember(profile, member, inVariantBranch);
+  if (member !== undefined && !isTestedOrAlternative(access, ts)) profile.reliedOnMemberNames.add(member);
   recordWrite(ctx, access, member, profile);
   return true;
 }
@@ -491,6 +496,9 @@ function collectProfile(ctx: InferenceContext, target: ProfileTarget, scope: tss
     ctx.ts.forEachChild(node, (child) => visit(child, inVariantBranch || branches.includes(child)));
   };
   visit(scope, false);
+  for (const name of profile.memberNames) {
+    if (!profile.reliedOnMemberNames.has(name)) profile.optionalMemberNames.add(name);
+  }
   return profile;
 }
 

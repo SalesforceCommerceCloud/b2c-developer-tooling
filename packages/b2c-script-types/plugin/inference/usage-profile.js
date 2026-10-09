@@ -16,6 +16,7 @@ function emptyProfile() {
     return {
         memberNames: new Set(),
         optionalMemberNames: new Set(),
+        reliedOnMemberNames: new Set(),
         guardTypes: [],
         contextualTypes: [],
         assignedValues: [],
@@ -275,6 +276,8 @@ function recordMemberAccess({ ctx, reference, inVariantBranch }, profile) {
     const member = accessedMemberName(ctx, access);
     if (member !== undefined)
         recordMember(profile, member, inVariantBranch);
+    if (member !== undefined && !(0, ast_helpers_1.isTestedOrAlternative)(access, ts))
+        profile.reliedOnMemberNames.add(member);
     recordWrite(ctx, access, member, profile);
     return true;
 }
@@ -348,6 +351,10 @@ function collectProfile(ctx, target, scope) {
         ctx.ts.forEachChild(node, (child) => visit(child, inVariantBranch || branches.includes(child)));
     };
     visit(scope, false);
+    for (const name of profile.memberNames) {
+        if (!profile.reliedOnMemberNames.has(name))
+            profile.optionalMemberNames.add(name);
+    }
     return profile;
 }
 /** Walks up from `node` to the body of the nearest enclosing function, if any. */

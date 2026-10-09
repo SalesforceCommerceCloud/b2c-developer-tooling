@@ -478,6 +478,40 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       });
     });
 
+    describe('members read only as a test or an alternative', () => {
+      const BASKET_TYPES = realTypesPrelude(['Order', 'Basket'], '  function getSomeBasket(): Basket;');
+
+      function inferContainerOf(body) {
+        const files = {
+          '/types.d.ts': BASKET_TYPES,
+          '/consumer.js': `
+            function describeContainer(container) {
+              ${body}
+              return container.getTotalGrossPrice();
+            }
+            describeContainer(getSomeBasket());
+          `,
+        };
+        const {ctx, fn} = setupInference(files, '/consumer.js', 'describeContainer');
+        return describeTypes(ctx, inferParameterType(ctx, fn.parameters[0]));
+      }
+
+      for (const [title, body] of [
+        ['an alternative of `||`', 'var id = container.orderNo || container.UUID;'],
+        ['a guarded alternative', 'var id = (container && container.orderNo) || container.UUID;'],
+        ['an `if` condition', "if (container.orderNo) { log('order'); }"],
+        ['a negated test', "if (!container.orderNo) { log('basket'); }"],
+      ]) {
+        it(`keeps a Basket whose body reads orderNo only as ${title}`, () => {
+          assert.equal(inferContainerOf(body), 'Basket');
+        });
+      }
+
+      it('drops the Basket once the body relies on orderNo, leaving the class that has it', () => {
+        assert.equal(inferContainerOf('var id = container.orderNo.toUpperCase();'), 'Order');
+      });
+    });
+
     it('drops a call-site argument of a different kind than the Product the body passes the parameter on as', () => {
       // SFRA's product bonusUnitPrice decorator is called once with the
       // discount line item UUID in the product slot; the body hands the

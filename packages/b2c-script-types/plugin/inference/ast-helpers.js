@@ -17,6 +17,7 @@ exports.isExportsObject = isExportsObject;
 exports.isModuleExports = isModuleExports;
 exports.exportsObjectWrittenBy = exportsObjectWrittenBy;
 exports.invocationOf = invocationOf;
+exports.isTestedOrAlternative = isTestedOrAlternative;
 exports.collectReturnExpressions = collectReturnExpressions;
 /**
  * Finds the most specific node whose span contains `pos`. Standard technique
@@ -235,6 +236,41 @@ function invocationOf(call, ts) {
     if (callee.name.text === 'call')
         return { callee: callee.expression, args: call.arguments.slice(1) };
     return callee.name.text === 'apply' ? { callee: callee.expression, args: [] } : undefined;
+}
+/** True when `node` is the right side of `a && node`, which evaluates to it whenever it is reached. */
+function isRightOfAnd(node, ts) {
+    const parent = node.parent;
+    return (ts.isBinaryExpression(parent) &&
+        parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+        parent.right === node);
+}
+/** True when `operator` offers its operands as alternatives: `a || b`, `a ?? b`. */
+function isAlternativeOperator(operator, ts) {
+    return operator === ts.SyntaxKind.BarBarToken || operator === ts.SyntaxKind.QuestionQuestionToken;
+}
+/**
+ * True when the value `expr` evaluates to is only tested, or offered as one
+ * of several alternatives: the condition of an `if`, a loop or a `?:`, the
+ * operand of `!` or `typeof`, the left side of `&&`, or either side of `||` /
+ * `??` (`if (res.setStatusCode)`, `(res && res.statusCode) || res.errorCode`).
+ * Code that reads a member only this way expects values that lack it.
+ */
+function isTestedOrAlternative(expr, ts) {
+    let value = expr;
+    while (ts.isParenthesizedExpression(value.parent) || isRightOfAnd(value, ts))
+        value = value.parent;
+    const parent = value.parent;
+    if (ts.isBinaryExpression(parent)) {
+        const operator = parent.operatorToken.kind;
+        return (isAlternativeOperator(operator, ts) ||
+            (operator === ts.SyntaxKind.AmpersandAmpersandToken && parent.left === value));
+    }
+    if (ts.isPrefixUnaryExpression(parent))
+        return parent.operator === ts.SyntaxKind.ExclamationToken;
+    if (ts.isConditionalExpression(parent))
+        return parent.condition === value;
+    const tests = ts.isIfStatement(parent) || ts.isWhileStatement(parent) || ts.isDoStatement(parent);
+    return ts.isTypeOfExpression(parent) || (tests && parent.expression === value);
 }
 /**
  * Recursively walks a function body collecting `return` expressions, without
