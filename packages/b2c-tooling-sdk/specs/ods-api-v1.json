@@ -3261,7 +3261,8 @@
                             "start",
                             "stop",
                             "restart",
-                            "reset"
+                            "reset",
+                            "upgrade"
                         ]
                     }
                 }

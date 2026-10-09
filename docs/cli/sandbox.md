@@ -12,7 +12,7 @@ These commands were previously available as `b2c ods <command>`. The `ods` prefi
 
 ## Sandbox ID Formats
 
-Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `delete`, `operations list`, `operations get`) accept two ID formats:
+Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `upgrade`, `delete`, `operations list`, `operations get`) accept two ID formats:
 
 | Format | Example | Description |
 |--------|---------|-------------|
@@ -430,11 +430,58 @@ b2c sandbox restart zzzv_123 --json
 
 ---
 
+## b2c sandbox upgrade
+
+Upgrade an on-demand sandbox to the latest supported platform version. This maps to the ODS API `POST /sandboxes/{sandboxId}/operations` endpoint with `operation: upgrade` and will cause the sandbox to restart as part of the upgrade.
+
+### Usage
+
+```bash
+b2c sandbox upgrade <SANDBOXID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--wait`, `-w` | Wait for the sandbox to reach `started` state after upgrade | `false` |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
+| `--timeout` | Maximum time to wait in seconds when using `--wait` (`0` for no timeout) | `1800` |
+
+### Examples
+
+```bash
+# Trigger an upgrade and return immediately
+b2c sandbox upgrade zzzv-123
+
+# Upgrade and wait for the sandbox to return to started state
+b2c sandbox upgrade zzzv-123 --wait
+
+# Upgrade with a custom polling interval and timeout
+b2c sandbox upgrade zzzv-123 --wait --poll-interval 15 --timeout 2400
+
+# Output operation details as JSON
+b2c sandbox upgrade zzzv-123 --json
+```
+
+### Notes
+
+- Upgrades move the sandbox to the latest supported platform version and typically take longer than a restart; the default `--timeout` is accordingly higher (`1800s`).
+- When `--wait` is used, the command periodically polls the sandbox and logs state transitions as `[<elapsed>s] State: <state>` until it reaches `started` or the timeout is hit.
+
+---
+
 ## b2c sandbox operations list {#b2c-sandbox-operations-list}
 
 List past and current **operations** on a sandbox (for example start, stop, restart, reset, create, delete, upgrade). This maps to the ODS API `GET /sandboxes/{sandboxId}/operations` endpoint.
 
-To **request** a lifecycle operation (`start`, `stop`, `restart`, `reset`), use `b2c sandbox start|stop|restart|reset` instead; those commands call `POST /sandboxes/{sandboxId}/operations`.
+To **request** a lifecycle operation (`start`, `stop`, `restart`, `reset`, `upgrade`), use `b2c sandbox start|stop|restart|reset|upgrade` instead; those commands call `POST /sandboxes/{sandboxId}/operations`.
 
 ### Usage
 

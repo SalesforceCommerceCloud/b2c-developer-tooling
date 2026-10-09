@@ -69,7 +69,7 @@ b2c sandbox create --realm zzpq --start-scheduler '{"weekdays":["MONDAY","TUESDA
 b2c sandbox create --realm zzpq --log-level trace
 ```
 
-### Get/Start/Stop/Restart/Delete Sandbox
+### Get/Start/Stop/Restart/Upgrade/Delete Sandbox
 
 Commands that operate on a specific sandbox support both UUID and realm-instance formats:
 
@@ -84,6 +84,7 @@ b2c sandbox get zzzv-123
 b2c sandbox start zzzv_123
 b2c sandbox stop zzzv-123
 b2c sandbox restart zzzv-123
+b2c sandbox upgrade zzzv-123
 b2c sandbox delete zzzv-123 --force
 ```
 
