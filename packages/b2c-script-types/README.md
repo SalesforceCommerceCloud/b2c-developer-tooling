@@ -82,7 +82,9 @@ the `HookMgr.callHook(...)` calls that reach them, literal or prefixed
 registrations, as JSON only).
 The result is surfaced as an "Inferred from usage" hover note plus synthesized
 member completions; call sites that disagree show a union of up to three
-types. It only kicks in where the checker has already given up (`any`, or a
+types, not counting object literals that only stand in for one of them (a
+unit test's `{httpHeaders: ...}` passed where production code passes a
+`Request`). It only kicks in where the checker has already given up (`any`, or a
 placeholder SFRA JSDoc such as `@param {Object}`), never overriding a real
 type from TypeScript or JSDoc.
 

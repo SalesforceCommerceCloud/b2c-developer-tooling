@@ -443,6 +443,41 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       assert.equal(describeTypes(ctx, types), 'Product | Category');
     });
 
+    describe('object literals standing in for a class', () => {
+      const STAND_IN_TYPES = realTypesPrelude(['Order'], '  function getSomeOrder(): Order;');
+
+      function inferTotalOf(callers) {
+        const files = {
+          '/types.d.ts': STAND_IN_TYPES,
+          '/consumer.js': `
+            function totalOf(container) {
+              return container.getTotalGrossPrice();
+            }
+            totalOf(getSomeOrder());
+            ${callers}
+          `,
+        };
+        const {ctx, fn} = setupInference(files, '/consumer.js', 'totalOf');
+        return describeTypes(ctx, inferParameterType(ctx, fn.parameters[0]));
+      }
+
+      it('drops a test double that has only members of the class another call site passes', () => {
+        const types = inferTotalOf(`
+          totalOf({getTotalGrossPrice: function () { return null; }});
+          var order = {orderNo: '00001', getTotalGrossPrice: function () { return null; }};
+          totalOf(order);
+        `);
+
+        assert.equal(types, 'Order');
+      });
+
+      it('keeps an object literal with a member the class lacks', () => {
+        const types = inferTotalOf('totalOf({getTotalGrossPrice: function () { return null; }, giftWrap: true});');
+
+        assert.equal(types, 'Order | { getTotalGrossPrice: () => null; giftWrap: boolean; }');
+      });
+    });
+
     it('drops a call-site argument of a different kind than the Product the body passes the parameter on as', () => {
       // SFRA's product bonusUnitPrice decorator is called once with the
       // discount line item UUID in the product slot; the body hands the

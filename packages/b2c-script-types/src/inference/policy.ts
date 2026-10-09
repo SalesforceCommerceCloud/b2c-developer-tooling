@@ -22,7 +22,9 @@
 //    only its subclasses have is a downcast: it narrows to the one subclass
 //    that has them, or stays itself when several do.
 // 3. Union like IntelliJ: up to MAX_UNION_TYPES, after dropping any candidate
-//    whose superclass is also a candidate (`Variant | Product` is `Product`).
+//    whose superclass is also a candidate (`Variant | Product` is `Product`)
+//    and any object literal standing in for a candidate class (a test
+//    double's `{httpHeaders: ...}` next to the `Request` it mimics).
 //    Wider evidence first reads instantiations of one generic class as the
 //    class (`Collection<Shipment>`, `Collection<Category>` -> `Collection`),
 //    then collapses to the closest shared superclass that still fits, or
@@ -132,6 +134,31 @@ function fitsEveryUse(ctx: InferenceContext, type: tsserver.Type, uses: readonly
   return uses.every((alternatives) => alternatives.some(fits));
 }
 
+/**
+ * True when `type` is an object literal's (`{ID: 'x'}`), as opposed to a
+ * declared class's. Read from its symbol: the widened type of a literal (what
+ * a variable holding it has) no longer carries the literal's object flag.
+ */
+function isObjectLiteralType(ctx: InferenceContext, type: tsserver.Type): boolean {
+  return ((type.getSymbol()?.flags ?? 0) & ctx.ts.SymbolFlags.ObjectLiteral) !== 0;
+}
+
+/**
+ * Drops every object literal a candidate class has all the properties of: a
+ * stand-in for that class (a test double, `{httpHeaders: {get: ...}}` for a
+ * `Request`, or a partial default), which offers nothing the class doesn't.
+ */
+function withoutStandIns(ctx: InferenceContext, types: readonly tsserver.Type[]): tsserver.Type[] {
+  const {checker} = ctx;
+  const classes = types.filter((type) => classOf(ctx, type) !== undefined);
+  if (classes.length === 0) return [...types];
+  const standsIn = (literal: tsserver.Type): boolean => {
+    const names = new Set(checker.getPropertiesOfType(literal).map((property) => property.name));
+    return classes.some((candidateClass) => hasAllMembers(checker, candidateClass, names));
+  };
+  return types.filter((type) => !isObjectLiteralType(ctx, type) || !standsIn(type));
+}
+
 /** Drops every candidate whose superclass (or implemented interface) is also a candidate. */
 function mostGeneral(ctx: InferenceContext, types: readonly tsserver.Type[]): tsserver.Type[] {
   const candidateClasses = new Set(types.map((type) => classOf(ctx, type)));
@@ -183,15 +210,16 @@ function mergeInstantiations(ctx: InferenceContext, types: readonly tsserver.Typ
 }
 
 /**
- * Step 3: an IntelliJ-style union of at most MAX_UNION_TYPES; wider evidence
- * merged by generic class, else the closest shared superclass, else silence.
+ * Step 3: an IntelliJ-style union of at most MAX_UNION_TYPES, stand-ins
+ * aside; wider evidence merged by generic class, else the closest shared
+ * superclass, else silence.
  */
 export function limitUnion(
   ctx: InferenceContext,
   types: readonly tsserver.Type[],
   memberNames: ReadonlySet<string> = NO_MEMBERS,
 ): tsserver.Type[] {
-  const general = mostGeneral(ctx, types);
+  const general = mostGeneral(ctx, withoutStandIns(ctx, types));
   if (general.length <= MAX_UNION_TYPES) return general;
   const merged = mostGeneral(ctx, mergeInstantiations(ctx, general));
   if (merged.length <= MAX_UNION_TYPES) return merged;
@@ -239,11 +267,12 @@ function fitsBuiltin(ctx: InferenceContext, memberNames: ReadonlySet<string>): b
  * Silent when no class has every member; when only ubiquitous members
  * (`.custom`, `.UUID`) were used and several classes fit; when a single
  * member fits several classes the identifier name can't choose between; and
- * when a JavaScript built-in fits as well and the name doesn't pick a class. A name that denotes a class the usage does *not* fit
- * never falls back to a vaguer reading of the same name
- * (`bonusDiscountLineItem.getQuantity()` is not a ProductLineItem hint), and
- * silences a single-member signature outright: `lineItem.preorderable`
- * uniquely matching ProductInventoryRecord is a coincidence, not a hint.
+ * when a JavaScript built-in fits as well and the name doesn't pick a class.
+ * A name that denotes a class the usage does *not* fit never falls back to a
+ * vaguer reading of the same name (`bonusDiscountLineItem.getQuantity()` is
+ * not a ProductLineItem hint), and silences a single-member signature
+ * outright: `lineItem.preorderable` uniquely matching ProductInventoryRecord
+ * is a coincidence, not a hint.
  *
  * @param identifierName - the parameter's or variable's own name, used only
  * to pick among classes the usage already fits (see ./naming).

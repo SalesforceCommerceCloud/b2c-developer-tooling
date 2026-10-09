@@ -156,7 +156,7 @@ Inferred results are heuristic and clearly labeled:
 
 - Hover text gets an appended `Inferred from usage: <type>` line.
 - Member completions synthesized this way are still offered alongside (not instead of) whatever TypeScript already resolved.
-- Call sites that pass different types show their union, as IntelliJ does (`Product | Category`), up to three types. Different element types of one collection class read as that class (`Collection<Shipment>` and `Collection<ProductLineItem>` show `Collection`). Wider evidence collapses to the closest shared superclass that still fits the body, or the hover stays silent.
+- Call sites that pass different types show their union, as IntelliJ does (`Product | Category`), up to three types. Different element types of one collection class read as that class (`Collection<Shipment>` and `Collection<ProductLineItem>` show `Collection`). An object literal with only members of a class another call site passes, such as a unit test's `{httpHeaders: {get: ...}}` stand-in for a `Request`, isn't counted as a type of its own. Wider evidence collapses to the closest shared superclass that still fits the body, or the hover stays silent.
 - Usage that a JavaScript built-in fits as well (`value.replace(...)` could be a `String`) and the TopLevel classes describing `module` and `arguments` never produce a Script API guess on their own.
 - Names never add a type of their own; they only break a tie when the usage fits several classes equally well. A `profile` parameter picks `dw.customer.Profile` over `ProductListRegistrant`, `lineItem` / `pli` pick `ProductLineItem`, and qualified names such as `apiProduct`, `currentBasket` or `resettingCustomer` resolve to the class they end in.
 

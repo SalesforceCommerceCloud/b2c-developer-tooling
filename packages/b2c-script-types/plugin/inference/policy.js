@@ -83,6 +83,30 @@ function fitsEveryUse(ctx, type, uses) {
     const fits = (use) => checker.isTypeAssignableTo(type, use) || lineageOf(ctx, use).some((useClass) => lineage.includes(useClass));
     return uses.every((alternatives) => alternatives.some(fits));
 }
+/**
+ * True when `type` is an object literal's (`{ID: 'x'}`), as opposed to a
+ * declared class's. Read from its symbol: the widened type of a literal (what
+ * a variable holding it has) no longer carries the literal's object flag.
+ */
+function isObjectLiteralType(ctx, type) {
+    return ((type.getSymbol()?.flags ?? 0) & ctx.ts.SymbolFlags.ObjectLiteral) !== 0;
+}
+/**
+ * Drops every object literal a candidate class has all the properties of: a
+ * stand-in for that class (a test double, `{httpHeaders: {get: ...}}` for a
+ * `Request`, or a partial default), which offers nothing the class doesn't.
+ */
+function withoutStandIns(ctx, types) {
+    const { checker } = ctx;
+    const classes = types.filter((type) => classOf(ctx, type) !== undefined);
+    if (classes.length === 0)
+        return [...types];
+    const standsIn = (literal) => {
+        const names = new Set(checker.getPropertiesOfType(literal).map((property) => property.name));
+        return classes.some((candidateClass) => (0, type_helpers_1.hasAllMembers)(checker, candidateClass, names));
+    };
+    return types.filter((type) => !isObjectLiteralType(ctx, type) || !standsIn(type));
+}
 /** Drops every candidate whose superclass (or implemented interface) is also a candidate. */
 function mostGeneral(ctx, types) {
     const candidateClasses = new Set(types.map((type) => classOf(ctx, type)));
@@ -124,11 +148,12 @@ function mergeInstantiations(ctx, types) {
     return (0, type_helpers_1.dedupeTypes)(ctx, merged);
 }
 /**
- * Step 3: an IntelliJ-style union of at most MAX_UNION_TYPES; wider evidence
- * merged by generic class, else the closest shared superclass, else silence.
+ * Step 3: an IntelliJ-style union of at most MAX_UNION_TYPES, stand-ins
+ * aside; wider evidence merged by generic class, else the closest shared
+ * superclass, else silence.
  */
 function limitUnion(ctx, types, memberNames = NO_MEMBERS) {
-    const general = mostGeneral(ctx, types);
+    const general = mostGeneral(ctx, withoutStandIns(ctx, types));
     if (general.length <= constants_1.MAX_UNION_TYPES)
         return general;
     const merged = mostGeneral(ctx, mergeInstantiations(ctx, general));
@@ -168,11 +193,12 @@ function fitsBuiltin(ctx, memberNames) {
  * Silent when no class has every member; when only ubiquitous members
  * (`.custom`, `.UUID`) were used and several classes fit; when a single
  * member fits several classes the identifier name can't choose between; and
- * when a JavaScript built-in fits as well and the name doesn't pick a class. A name that denotes a class the usage does *not* fit
- * never falls back to a vaguer reading of the same name
- * (`bonusDiscountLineItem.getQuantity()` is not a ProductLineItem hint), and
- * silences a single-member signature outright: `lineItem.preorderable`
- * uniquely matching ProductInventoryRecord is a coincidence, not a hint.
+ * when a JavaScript built-in fits as well and the name doesn't pick a class.
+ * A name that denotes a class the usage does *not* fit never falls back to a
+ * vaguer reading of the same name (`bonusDiscountLineItem.getQuantity()` is
+ * not a ProductLineItem hint), and silences a single-member signature
+ * outright: `lineItem.preorderable` uniquely matching ProductInventoryRecord
+ * is a coincidence, not a hint.
  *
  * @param identifierName - the parameter's or variable's own name, used only
  * to pick among classes the usage already fits (see ./naming).
