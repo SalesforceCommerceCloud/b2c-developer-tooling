@@ -77,6 +77,10 @@ class TestMrtCommand extends MrtCommand<typeof TestMrtCommand> {
     return this.getScapiMrtConfig();
   }
 
+  public testResolvedScopes() {
+    return this.resolvedConfig.values.scopes;
+  }
+
   public testGetMrtBackendContext() {
     return this.getMrtBackendContext();
   }
@@ -403,6 +407,16 @@ describe('cli/mrt-command', () => {
         expect(scapi!.tenantId).to.equal('zzxy_prd');
         expect(scapi!.auth).to.be.instanceOf(StatefulOAuthStrategy);
       });
+    });
+
+    it('accepts scopes from an unsplit SFCC_OAUTH_SCOPES value', async () => {
+      // oclif hands env values for multiple flags through as one string; this used to
+      // throw inside OAuthStrategy and surface as "SCAPI auth missing".
+      stubParse(command, {...SCAPI_FLAGS, 'client-id': 'client', 'client-secret': 'secret', 'auth-scope': 'a,b'});
+      await command.init();
+
+      expect(command.testGetScapiMrtConfig()).to.not.equal(undefined);
+      expect(command.testResolvedScopes()).to.deep.equal(['a', 'b']);
     });
 
     describe('returns undefined (not SCAPI eligible)', () => {

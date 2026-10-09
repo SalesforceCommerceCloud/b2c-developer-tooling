@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
+import {BaseCommand, listFromEnv, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   saveAuthSession,
   decodeJWT,
@@ -61,8 +61,8 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
       helpGroup: 'AUTH',
     })(),
     'auth-scope': Flags.string({
-      description: 'OAuth scopes to request (comma-separated)',
-      env: 'SFCC_OAUTH_SCOPES',
+      description: 'OAuth scopes to request (comma-separated; env: SFCC_OAUTH_SCOPES)',
+      default: listFromEnv('SFCC_OAUTH_SCOPES'),
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',

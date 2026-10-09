@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {JobCommand, listFromEnv} from '@salesforce/b2c-tooling-sdk/cli';
 import path from 'node:path';
 import {
   siteArchiveImportSet,
@@ -64,8 +64,9 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
       default: true,
     }),
     'import-set-exclude': Flags.string({
-      description: 'Exclude a project-relative directory recursively from import-set source discovery',
-      env: 'SFCC_IMPORT_SET_EXCLUDE',
+      description:
+        'Exclude a project-relative directory recursively from import-set source discovery (env: SFCC_IMPORT_SET_EXCLUDE)',
+      default: listFromEnv('SFCC_IMPORT_SET_EXCLUDE'),
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',

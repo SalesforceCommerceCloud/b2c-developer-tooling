@@ -174,6 +174,8 @@ export class ConfigResolver {
     const origins: ConfigOrigin[] = [];
     const sourceWarnings: ConfigWarning[] = [];
     const baseConfig: NormalizedConfig = {};
+    // Which source supplied each baseConfig field, for mismatch warnings.
+    const baseOrigins: Partial<Record<keyof NormalizedConfig, string>> = {};
     const hostnameProtection = options.hostnameProtection !== false;
     // Name of the source that set baseConfig.hostname (for mismatch messages)
     let hostnameSourceName: string | undefined;
@@ -237,10 +239,12 @@ export class ConfigResolver {
             sourceConfig.hostname &&
             !isSameHostname(sourceConfig.hostname, establishedHostname)
           ) {
+            const sourceLabel = location ? `${source.name} (${location})` : source.name;
             sourceWarnings.push({
               code: 'HOSTNAME_MISMATCH',
               message: overrides.hostname
-                ? `Server override "${overrides.hostname}" differs from config file "${sourceConfig.hostname}". Config file values ignored.`
+                ? `Server "${overrides.hostname}" from ${options.overrideOrigins?.hostname ?? 'override'} differs from ` +
+                  `"${sourceConfig.hostname}" in ${sourceLabel}. Ignoring values from ${sourceLabel}.`
                 : `Hostname "${establishedHostname}" from ${hostnameSourceName} differs from ${source.name} hostname "${sourceConfig.hostname}". ${source.name} values ignored.`,
               details: {
                 providedHostname: establishedHostname,
@@ -297,6 +301,7 @@ export class ConfigResolver {
             }
 
             (baseConfig as Record<string, unknown>)[key] = value;
+            baseOrigins[fieldKey] = location ? `${source.name} (${location})` : source.name;
             if (fieldKey === 'hostname') hostnameSourceName = source.name;
           }
 
@@ -345,6 +350,8 @@ export class ConfigResolver {
     const {config, warnings: mergeWarnings} = mergeConfigsWithProtection(overrides, baseConfig, {
       hostnameProtection: options.hostnameProtection,
       clientIdProtection: options.clientIdProtection,
+      baseOrigins,
+      overrideOrigins: options.overrideOrigins,
     });
 
     // Normalize mrtOrigin to ensure it always has an https:// prefix.
