@@ -30,10 +30,13 @@
 // Precision = (exact + union + related) / fired, recall = the same / total.
 // Parameters that carry no type at all in the original source are hovered
 // too, to measure how often inference fires on genuinely undocumented code.
+// Cost is reported as wall time and as reference searches per request; the
+// search count is the same on every machine and run, so compare that one.
 //
 // Optional: B2C_INFERENCE_CARTRIDGE_PATH (colon-separated cartridge names)
 // sets the cartridge order, B2C_INFERENCE_REPORT writes the full JSON report
-// (mismatches, timings, undocumented samples) to that file.
+// (mismatches, timings, searches, slowest requests, undocumented samples) to
+// that file.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -114,6 +117,15 @@ function createCorpusHost(fileNames, currentDirectory) {
 function createCorpusPlugin(cartridges, fileNames) {
   const {host, setOverride} = createCorpusHost(fileNames, cartridges[0]?.src ?? '/');
   const languageService = ts.createLanguageService(host);
+  // Reference searches are what an inference request spends its time on;
+  // counting them gives a cost measure that, unlike wall time, is the same
+  // on every machine and run.
+  const searches = {count: 0};
+  const getReferencesAtPosition = languageService.getReferencesAtPosition.bind(languageService);
+  languageService.getReferencesAtPosition = (fileName, position) => {
+    searches.count++;
+    return getReferencesAtPosition(fileName, position);
+  };
   const proxy = init({typescript: ts}).create({
     languageService,
     languageServiceHost: host,
@@ -124,7 +136,7 @@ function createCorpusPlugin(cartridges, fileNames) {
     },
     config: {enabled: true, autoDiscover: false, inferUsage: true, cartridges},
   });
-  return {languageService, proxy, setOverride};
+  return {languageService, proxy, setOverride, searches};
 }
 
 // ---------------------------------------------------------------------------
@@ -264,13 +276,23 @@ function inferredReturn(languageService, fileName, position) {
   };
   visit(sourceFile);
   const types = fn ? inferReturnType(ctx, fn) : [];
-  return types.length > 0 ? describeTypes(ctx.checker, types) : undefined;
+  return types.length > 0 ? describeTypes(ctx, types) : undefined;
 }
 
-function timed(timings, compute) {
+const SLOWEST_REPORTED = 20;
+// The live reference-search counter, kept under a symbol so the JSON report leaves it out.
+const SEARCH_COUNTER = Symbol('searchCounter');
+
+function timed(report, label, compute) {
+  const searchesBefore = report[SEARCH_COUNTER].count;
   const start = process.hrtime.bigint();
   const result = compute();
-  timings.push(Number(process.hrtime.bigint() - start) / 1e6);
+  const ms = Number(process.hrtime.bigint() - start) / 1e6;
+  const searches = report[SEARCH_COUNTER].count - searchesBefore;
+  report.timings.push(ms);
+  report.searches.push(searches);
+  report.slowest.push({target: label, ms, searches});
+  report.slowest.sort((a, b) => b.ms - a.ms).splice(SLOWEST_REPORTED);
   return result;
 }
 
@@ -291,11 +313,13 @@ function evaluateFile(plugin, ancestry, targets, report) {
   setOverride(targets.fileName, blankSpans(ts.sys.readFile(targets.fileName), targets.blanks));
   try {
     for (const target of targets.params) {
-      const inferred = timed(report.timings, () => inferredFromHover(proxy, targets.fileName, target.position));
+      const inferred = timed(report, target.label, () => inferredFromHover(proxy, targets.fileName, target.position));
       scoreTarget(report, ancestry, 'params', target, inferred);
     }
     for (const target of targets.returns) {
-      const inferred = timed(report.timings, () => inferredReturn(languageService, targets.fileName, target.position));
+      const inferred = timed(report, target.label, () =>
+        inferredReturn(languageService, targets.fileName, target.position),
+      );
       scoreTarget(report, ancestry, 'returns', target, inferred);
     }
   } finally {
@@ -306,7 +330,7 @@ function evaluateFile(plugin, ancestry, targets, report) {
 function evaluateUndocumented(proxy, allTargets, report) {
   for (const targets of allTargets) {
     for (const target of targets.undocumented) {
-      const inferred = timed(report.timings, () => inferredFromHover(proxy, targets.fileName, target.position));
+      const inferred = timed(report, target.label, () => inferredFromHover(proxy, targets.fileName, target.position));
       report.undocumented.total++;
       if (!inferred) continue;
       report.undocumented.fired++;
@@ -333,6 +357,7 @@ function summarize(report) {
     );
   };
   const sorted = [...report.timings].sort((a, b) => a - b);
+  const searches = [...report.searches].sort((a, b) => a - b);
   const u = report.undocumented;
   return [
     line('params'),
@@ -340,6 +365,8 @@ function summarize(report) {
     `undocumented params fired on ${u.fired}/${u.total}`,
     `latency ms p50=${percentile(sorted, 50).toFixed(1)} p95=${percentile(sorted, 95).toFixed(1)} ` +
       `max=${(sorted.at(-1) ?? 0).toFixed(1)} over ${sorted.length} requests`,
+    `reference searches p50=${percentile(searches, 50)} p95=${percentile(searches, 95)} ` +
+      `max=${searches.at(-1) ?? 0} total=${searches.reduce((sum, n) => sum + n, 0)}`,
   ].join('\n');
 }
 
@@ -359,6 +386,9 @@ function summarize(report) {
       undocumented: {total: 0, fired: 0, samples: []},
       mismatches: [],
       timings: [],
+      searches: [],
+      slowest: [],
+      [SEARCH_COUNTER]: plugin.searches,
     };
 
     evaluateUndocumented(plugin.proxy, allTargets, report);
