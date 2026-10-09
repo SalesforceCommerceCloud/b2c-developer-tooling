@@ -158,8 +158,11 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
     const direct = (0, type_helpers_1.informativeParts)(ctx, checker.getTypeAtLocation(expr));
     if (direct.length > 0)
         return direct;
-    if (chainHops >= constants_1.MAX_CHAIN_HOPS)
-        return [];
+    return chainHops < constants_1.MAX_CHAIN_HOPS ? resolveFromParts(ctx, expr, depth, chainHops) : [];
+}
+/** Recovers `expr`'s type(s) through what it is built from, once the checker's own type said nothing. */
+function resolveFromParts(ctx, expr, depth, chainHops) {
+    const { ts } = ctx;
     if (ts.isCallExpression(expr))
         return resolveCallResultTypes(ctx, expr, depth, chainHops);
     if (ts.isPropertyAccessExpression(expr))
@@ -170,11 +173,10 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
         return resolveExpressionTypes(ctx, expr.expression, depth, chainHops);
     // `it.hasNext() ? it.next() : null` (the body of SFRA's collections.first)
     // and `a || b` / `a ?? b` can each evaluate to either side.
-    if (ts.isConditionalExpression(expr))
+    if (ts.isConditionalExpression(expr)) {
         return resolveAlternatives(ctx, [expr.whenTrue, expr.whenFalse], depth, chainHops);
-    if (ts.isBinaryExpression(expr))
-        return resolveLogicalTypes(ctx, expr, depth, chainHops);
-    return [];
+    }
+    return ts.isBinaryExpression(expr) ? resolveLogicalTypes(ctx, expr, depth, chainHops) : [];
 }
 function resolveAlternatives(ctx, alternatives, depth, chainHops) {
     return (0, type_helpers_1.dedupeTypes)(ctx, alternatives.flatMap((alternative) => resolveExpressionTypes(ctx, alternative, depth, chainHops + 1)));

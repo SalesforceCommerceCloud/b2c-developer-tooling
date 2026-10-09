@@ -83,7 +83,7 @@ export function ownerCartridge(
   return cartridges.find((c) => f.startsWith(c.root));
 }
 
-export function reorderForContainingFile(
+function reorderForContainingFile(
   cartridges: NormalizedCartridge[],
   normalize: (p: string) => string,
   containingFile: string,
@@ -97,6 +97,63 @@ export interface ModuleResolutionDeps {
   normalize: (p: string) => string;
   isWithinRoot: (candidate: string, rootDir: string) => boolean;
   fileExists: (p: string) => boolean;
+}
+
+type ResolvedModule = {resolved: string; source: string};
+
+/** Which cartridges a cartridge-style specifier may resolve in (in order), and the path inside them. */
+interface CartridgeLookup {
+  order: NormalizedCartridge[];
+  subpath: string;
+}
+
+function cartridgeLookup(
+  cartridges: NormalizedCartridge[],
+  moduleName: string,
+  containingFile: string,
+  normalize: (p: string) => string,
+): CartridgeLookup | undefined {
+  if (moduleName.startsWith('~/')) {
+    // ~ is the current cartridge — restrict to the cartridge that owns the
+    // calling file. If the containing file isn't inside any known cartridge,
+    // there is no current cartridge, so the require can't be resolved.
+    const owner = ownerCartridge(cartridges, normalize, containingFile);
+    return owner ? {order: [owner], subpath: moduleName.slice(2)} : undefined;
+  }
+  if (moduleName.startsWith('*/')) {
+    // * walks the cartridge path. Owner-first matches SFRA-style overrides
+    // (the requesting cartridge wins before falling through to others).
+    return {order: reorderForContainingFile(cartridges, normalize, containingFile), subpath: moduleName.slice(2)};
+  }
+  // <cartridgeName>/cartridge/... — only treat as a cartridge require if the
+  // first segment matches a known cartridge name. Otherwise pass through so
+  // node_modules and other resolutions still work.
+  const slash = moduleName.indexOf('/');
+  if (slash <= 0) return undefined;
+  const head = moduleName.slice(0, slash);
+  const known = cartridges.find((c) => c.name === head);
+  return known ? {order: [known], subpath: moduleName.slice(slash + 1)} : undefined;
+}
+
+/**
+ * The first `<cartridge>/<subpath><ext>` that exists and stays inside the
+ * cartridge. `subpath` comes straight from the import specifier, so a `..`
+ * segment (or an absolute/symlinked target) can point outside the cartridge —
+ * every candidate is resolved and contained before it is accepted.
+ */
+function firstContainedCandidate(
+  cartridge: NormalizedCartridge,
+  subpath: string,
+  deps: Pick<ModuleResolutionDeps, 'isWithinRoot' | 'fileExists'>,
+): ResolvedModule | undefined {
+  const baseAbs = cartridge.rawRoot + subpath;
+  for (const ext of CANDIDATE_EXTENSIONS) {
+    const candidate = baseAbs + ext;
+    if (deps.fileExists(candidate) && deps.isWithinRoot(candidate, cartridge.root)) {
+      return {resolved: candidate, source: cartridge.name};
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -113,53 +170,46 @@ export function resolveCartridgeModule(
   moduleName: string,
   containingFile: string,
   deps: ModuleResolutionDeps,
-): {resolved: string; source: string} | undefined {
-  if (cartridges.length === 0) return undefined;
-
-  let subpath: string | undefined;
-  let order: NormalizedCartridge[] | undefined;
-
-  if (moduleName.startsWith('~/')) {
-    // ~ is the current cartridge — restrict to the cartridge that owns the
-    // calling file. If the containing file isn't inside any known cartridge,
-    // there is no current cartridge, so the require can't be resolved.
-    subpath = moduleName.slice(2);
-    const owner = ownerCartridge(cartridges, deps.normalize, containingFile);
-    if (!owner) return undefined;
-    order = [owner];
-  } else if (moduleName.startsWith('*/')) {
-    // * walks the cartridge path. Owner-first matches SFRA-style overrides
-    // (the requesting cartridge wins before falling through to others).
-    subpath = moduleName.slice(2);
-    order = reorderForContainingFile(cartridges, deps.normalize, containingFile);
-  } else {
-    // <cartridgeName>/cartridge/... — only treat as a cartridge require if the
-    // first segment matches a known cartridge name. Otherwise pass through so
-    // node_modules and other resolutions still work.
-    const slash = moduleName.indexOf('/');
-    if (slash <= 0) return undefined;
-    const head = moduleName.slice(0, slash);
-    const known = cartridges.find((c) => c.name === head);
-    if (!known) return undefined;
-    subpath = moduleName.slice(slash + 1);
-    order = [known];
-  }
-
-  if (!subpath) return undefined;
-
-  for (const c of order) {
-    const baseAbs = c.rawRoot + subpath;
-    for (const ext of CANDIDATE_EXTENSIONS) {
-      const candidate = baseAbs + ext;
-      // `subpath` comes straight from the import specifier, so a `..`
-      // segment (or an absolute/symlinked target) can point outside the
-      // cartridge — resolve and contain before accepting it.
-      if (deps.fileExists(candidate) && deps.isWithinRoot(candidate, c.root)) {
-        return {resolved: candidate, source: c.name};
-      }
-    }
+): ResolvedModule | undefined {
+  const lookup =
+    cartridges.length > 0 ? cartridgeLookup(cartridges, moduleName, containingFile, deps.normalize) : undefined;
+  if (!lookup?.subpath) return undefined;
+  for (const cartridge of lookup.order) {
+    const found = firstContainedCandidate(cartridge, lookup.subpath, deps);
+    if (found) return found;
   }
   return undefined;
+}
+
+const NON_MODULES_PREFIXES = ['.', '/', '~/', '*/', 'dw/'];
+
+/** True for a bare specifier (`server`, `server/middleware`) the `modules` cartridge may own. */
+function isModulesCartridgeSpecifier(moduleName: string): boolean {
+  if (NON_MODULES_PREFIXES.some((prefix) => moduleName.startsWith(prefix))) return false;
+  // Let the bundled SFRA ambient declarations win for these names. If we
+  // resolved them to the .js file here, TS would infer types from the JS
+  // (which misses dynamic property assignments in modules/server.js) and
+  // ignore the ambient `declare module 'server' { ... }` shape.
+  return !SFRA_AMBIENT_MODULES.has(moduleName);
+}
+
+/** package.json `main` fallback for a `modules` directory without an index.js. */
+function packageMainCandidate(
+  ts: typeof tsserver,
+  modulesCart: NormalizedCartridge,
+  moduleName: string,
+  deps: Pick<ModuleResolutionDeps, 'isWithinRoot' | 'fileExists'>,
+): ResolvedModule | undefined {
+  const pkgPath = modulesCart.rawRoot + moduleName + '/package.json';
+  if (!deps.fileExists(pkgPath) || !deps.isWithinRoot(pkgPath, modulesCart.root)) return undefined;
+  const main = (readJsonFile(ts, pkgPath) as {main?: string} | undefined)?.main;
+  if (typeof main !== 'string' || main.length === 0) return undefined;
+  const resolved = (modulesCart.rawRoot + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
+  // `main` is attacker-controlled JSON content flowing into a path
+  // join — a `../../..` or absolute value must not escape the root.
+  return deps.fileExists(resolved) && deps.isWithinRoot(resolved, modulesCart.root)
+    ? {resolved, source: modulesCart.name}
+    : undefined;
 }
 
 /**
@@ -169,46 +219,20 @@ export function resolveCartridgeModule(
  * at the root, so `require('server')` -> `<modules>/server[.js|/index.js]`
  * and `require('server/middleware')` -> `<modules>/server/middleware[.js]`.
  * Falls through unless a cartridge literally named `modules` is in the list.
+ * `moduleName` may carry `..` after its first segment (it only can't *start*
+ * with `.`/`/`), so every candidate is contained against the modules root.
  */
 export function resolveModulesCartridge(
   ts: typeof tsserver,
   cartridges: NormalizedCartridge[],
   moduleName: string,
   deps: Pick<ModuleResolutionDeps, 'isWithinRoot' | 'fileExists'>,
-): {resolved: string; source: string} | undefined {
-  if (cartridges.length === 0) return undefined;
-  if (moduleName.startsWith('.') || moduleName.startsWith('/')) return undefined;
-  if (moduleName.startsWith('~/') || moduleName.startsWith('*/') || moduleName.startsWith('dw/')) return undefined;
-  // Let the bundled SFRA ambient declarations win for these names. If we
-  // resolved them to the .js file here, TS would infer types from the JS
-  // (which misses dynamic property assignments in modules/server.js) and
-  // ignore the ambient `declare module 'server' { ... }` shape.
-  if (SFRA_AMBIENT_MODULES.has(moduleName)) return undefined;
-  const modulesCart = cartridges.find((c) => c.name === 'modules');
+): ResolvedModule | undefined {
+  const modulesCart = isModulesCartridgeSpecifier(moduleName)
+    ? cartridges.find((c) => c.name === 'modules')
+    : undefined;
   if (!modulesCart) return undefined;
-
-  const baseAbs = modulesCart.rawRoot + moduleName;
-  for (const ext of CANDIDATE_EXTENSIONS) {
-    const candidate = baseAbs + ext;
-    // `moduleName` may carry `..` after its first segment (it only can't
-    // *start* with `.`/`/`); contain it against the modules root.
-    if (deps.fileExists(candidate) && deps.isWithinRoot(candidate, modulesCart.root)) {
-      return {resolved: candidate, source: modulesCart.name};
-    }
-  }
-
-  // package.json `main` fallback for directories without an index.js.
-  const pkgPath = baseAbs + '/package.json';
-  if (deps.fileExists(pkgPath) && deps.isWithinRoot(pkgPath, modulesCart.root)) {
-    const main = (readJsonFile(ts, pkgPath) as {main?: string} | undefined)?.main;
-    if (typeof main === 'string' && main.length > 0) {
-      const resolved = (modulesCart.rawRoot + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
-      // `main` is attacker-controlled JSON content flowing into a path
-      // join — a `../../..` or absolute value must not escape the root.
-      if (deps.fileExists(resolved) && deps.isWithinRoot(resolved, modulesCart.root)) {
-        return {resolved, source: modulesCart.name};
-      }
-    }
-  }
-  return undefined;
+  return (
+    firstContainedCandidate(modulesCart, moduleName, deps) ?? packageMainCandidate(ts, modulesCart, moduleName, deps)
+  );
 }

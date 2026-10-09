@@ -137,6 +137,38 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
   const ownerCartridge = (containingFile: string): NormalizedCartridge | undefined =>
     ownerCartridgeImpl(cartridges, normalize, containingFile);
 
+  // Fallback for hosts that don't push cartridges (plain LSP usage, e.g.
+  // Neovim with typescript-language-server). Walks the project root for
+  // `.project` markers and honors dw.json's `cartridges` field for ordering.
+  const needsAutoDiscovery = (): boolean =>
+    enabled && autoDiscoverEnabled && !cartridgesFromHost && cartridges.length === 0;
+  const autoDiscoverCartridges = (projectRoot: string, log: (msg: string) => void): void => {
+    if (!projectRoot) return;
+    try {
+      const discovered = discoverCartridgesOnDisk(ts, projectRoot, fileExists);
+      const configured = readDwJsonCartridges(ts, projectRoot, fileExists);
+      setCartridges(orderCartridges(discovered, configured));
+      log(
+        `auto-discovered ${cartridges.length} cartridge(s) from ${projectRoot}` +
+          (configured ? ` (ordered by dw.json cartridges)` : ''),
+      );
+    } catch (e) {
+      log(`auto-discovery failed: ${(e as Error).message}`);
+    }
+  };
+
+  // The ambient declarations a project with cartridge files needs and its
+  // file list doesn't already include (dedup by normalized path):
+  //   - global.d.ts: SFCC platform globals (session, request, response,
+  //     customer, empty(), the ambient `dw` namespace).
+  //   - sfra/server.d.ts: SFRA `modules` cartridge typings (server, route,
+  //     middleware, etc.) — only when a `modules` cartridge is configured.
+  const missingAmbientDeclarations = (list: readonly string[]): string[] => {
+    const present = new Set(list.map((f) => normalize(f)));
+    const wanted = cartridges.some((c) => c.name === 'modules') ? [GLOBAL_DTS, SFRA_SERVER_DTS] : [GLOBAL_DTS];
+    return wanted.filter((dts) => fileExists(dts) && !present.has(normalize(dts)));
+  };
+
   // Cached map of byte ranges in types/sfra/server.d.ts to the SFRA module
   // declared by their enclosing `declare module 'X' { ... }` block. Used to
   // map go-to-definition results back to the matching modules/<X>.js file.
@@ -157,26 +189,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
 
     applyConfig(info.config);
 
-    // Fallback for hosts that don't push cartridges (plain LSP usage, e.g.
-    // Neovim with typescript-language-server). Walks the project root for
-    // `.project` markers and honors dw.json's `cartridges` field for ordering.
-    if (enabled && autoDiscoverEnabled && !cartridgesFromHost && cartridges.length === 0) {
-      const projectRoot = info.project.getCurrentDirectory();
-      if (projectRoot) {
-        try {
-          const discovered = discoverCartridgesOnDisk(ts, projectRoot, fileExists);
-          const configured = readDwJsonCartridges(ts, projectRoot, fileExists);
-          const ordered = orderCartridges(discovered, configured);
-          setCartridges(ordered);
-          log(
-            `auto-discovered ${cartridges.length} cartridge(s) from ${projectRoot}` +
-              (configured ? ` (ordered by dw.json cartridges)` : ''),
-          );
-        } catch (e) {
-          log(`auto-discovery failed: ${(e as Error).message}`);
-        }
-      }
-    }
+    if (needsAutoDiscovery()) autoDiscoverCartridges(info.project.getCurrentDirectory(), log);
 
     const host = info.languageServiceHost;
 
@@ -230,28 +243,15 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       return undefined;
     };
 
-    // Inject ambient declarations into the TS program when the project
-    // contains at least one cartridge file:
-    //   - global.d.ts: SFCC platform globals (session, request, response,
-    //     customer, empty(), the ambient `dw` namespace).
-    //   - sfra/server.d.ts: SFRA `modules` cartridge typings (server, route,
-    //     middleware, etc.) — only injected when a `modules` cartridge is
-    //     configured. Configured projects that already include either via a
-    //     jsconfig include glob are unaffected (dedup by normalized path).
+    // Inject the ambient declarations into the TS program when the project
+    // contains at least one cartridge file (isCartridgeFile is false while the
+    // plugin is disabled or no cartridge is known). Projects that already
+    // include them via a jsconfig include glob are unaffected.
     const origGetScriptFileNames = host.getScriptFileNames.bind(host);
     host.getScriptFileNames = () => {
       const list = origGetScriptFileNames();
-      if (!enabled || cartridges.length === 0) return list;
       if (!list.some((f) => isCartridgeFile(f))) return list;
-      const additions: string[] = [];
-      const present = new Set(list.map((f) => normalize(f)));
-      if (fileExists(GLOBAL_DTS) && !present.has(normalize(GLOBAL_DTS))) {
-        additions.push(GLOBAL_DTS);
-      }
-      const hasModules = cartridges.some((c) => c.name === 'modules');
-      if (hasModules && fileExists(SFRA_SERVER_DTS) && !present.has(normalize(SFRA_SERVER_DTS))) {
-        additions.push(SFRA_SERVER_DTS);
-      }
+      const additions = missingAmbientDeclarations(list);
       return additions.length > 0 ? [...list, ...additions] : list;
     };
 
@@ -270,23 +270,13 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       if (dw && fileExists(dw)) {
         return {resolvedFileName: dw, extension: ts.Extension.Dts, isExternalLibraryImport: true};
       }
-      const cart = resolveCartridgeModuleOnHost(text, containingFile);
-      if (cart) {
-        return {
-          resolvedFileName: cart.resolved,
-          extension: cart.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-          isExternalLibraryImport: false,
-        };
-      }
-      const mod = resolveModulesCartridgeOnHost(text);
-      if (mod) {
-        return {
-          resolvedFileName: mod.resolved,
-          extension: mod.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-          isExternalLibraryImport: false,
-        };
-      }
-      return undefined;
+      const local = resolveCartridgeModuleOnHost(text, containingFile) ?? resolveModulesCartridgeOnHost(text);
+      if (!local) return undefined;
+      return {
+        resolvedFileName: local.resolved,
+        extension: local.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
+        isExternalLibraryImport: false,
+      };
     };
 
     // TS derives a file's ScriptKind from its extension and falls back to TS

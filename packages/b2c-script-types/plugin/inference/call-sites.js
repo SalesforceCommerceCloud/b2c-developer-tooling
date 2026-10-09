@@ -31,37 +31,39 @@ function findReferences(ctx, name) {
     }
     return references;
 }
+/** The name a function declaration or method declares itself by. */
+function ownName(fn, ts) {
+    const declaresName = ts.isFunctionDeclaration(fn) || ts.isMethodDeclaration(fn);
+    return declaresName && fn.name && ts.isIdentifier(fn.name) ? fn.name : undefined;
+}
+/**
+ * The name `fn` is assigned to: `exports.foo = function(){}` or
+ * `module.exports = function(){}`. The `.name` identifier (`foo` or
+ * `exports`) is what findReferences can actually track; for the bare
+ * `module.exports` case this resolves to the whole module's value, so callers
+ * reach it through collectCallSites()'s require() indirection rather than a
+ * direct property-access call.
+ */
+function assignedName(fn, ts) {
+    const assignment = fn.parent;
+    if (!ts.isBinaryExpression(assignment) || assignment.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+        return undefined;
+    }
+    const { left } = assignment;
+    if (ts.isPropertyAccessExpression(left))
+        return ts.isIdentifier(left.name) ? left.name : undefined;
+    return ts.isIdentifier(left) ? left : undefined;
+}
 /**
  * Identifies the name to run findReferences on for a function-like
- * declaration that itself has no `name` (the common CommonJS shapes:
- * `const foo = function(){}`, `{foo: function(){}}`, `{foo(){}}`,
- * `exports.foo = function(){}`, `module.exports = function(){}`).
+ * declaration: its own name, or for one that has none, the name it is bound
+ * to (the common CommonJS shapes: `const foo = function(){}`,
+ * `{foo: function(){}}`, `{foo(){}}`, `exports.foo = function(){}`,
+ * `module.exports = function(){}`).
  */
 function getReferenceNameNode(fn, ts) {
-    if (ts.isFunctionDeclaration(fn) && fn.name)
-        return fn.name;
-    if (ts.isMethodDeclaration(fn) && ts.isIdentifier(fn.name))
-        return fn.name;
-    const parent = fn.parent;
-    if (!parent)
-        return undefined;
-    if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name))
-        return parent.name;
-    if (ts.isPropertyAssignment(parent) && ts.isIdentifier(parent.name))
-        return parent.name;
-    if (ts.isBinaryExpression(parent) && parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
-        const left = parent.left;
-        // `module.exports = function(){}` / `exports.foo = function(){}` — the
-        // `.name` identifier (`exports` or `foo`) is what findReferences can
-        // actually track; for the bare `module.exports` case this resolves to
-        // the whole module's value, so callers reach it via collectCallSites()'s
-        // require() indirection rather than a direct property-access call.
-        if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.name))
-            return left.name;
-        if (ts.isIdentifier(left))
-            return left;
-    }
-    return undefined;
+    const boundName = ts.isExpression(fn) ? bindingNameOf(fn, ts) : undefined;
+    return ownName(fn, ts) ?? boundName ?? assignedName(fn, ts);
 }
 /** The function enclosing `node`, if any. */
 function enclosingFunction(node, ts) {
@@ -89,6 +91,29 @@ function applyArguments(call, ts) {
     const forwarding = enclosingFunction(call, ts);
     return forwarding ? forwarding.parameters.map((parameter) => parameter.name).filter(ts.isIdentifier) : [];
 }
+/** What a reference invokes when called: the reference itself, or for a member name (`obj.helper`), the whole access. */
+function calleeOf(node, ts) {
+    const { parent } = node;
+    return ts.isPropertyAccessExpression(parent) && parent.name === node ? parent : node;
+}
+/** `callee(x)` / `new Callee(x)`: the call `callee` is invoked by directly. */
+function directCall(callee, ts) {
+    const call = callee.parent;
+    const isCall = (ts.isCallExpression(call) || ts.isNewExpression(call)) && call.expression === callee;
+    return isCall ? { node: call, args: call.arguments ?? [] } : undefined;
+}
+/** `callee.call(thisArg, x)` / `callee.apply(thisArg, [x])`: the call `callee` is invoked through. */
+function borrowedCall(callee, ts) {
+    const access = callee.parent;
+    if (!ts.isPropertyAccessExpression(access) || access.expression !== callee)
+        return undefined;
+    const call = access.parent;
+    if (!ts.isCallExpression(call) || call.expression !== access)
+        return undefined;
+    if (access.name.text === 'call')
+        return { node: call, args: call.arguments.slice(1) };
+    return access.name.text === 'apply' ? { node: call, args: applyArguments(call, ts) } : undefined;
+}
 /**
  * Given a reference identifier (`helper` in `helper(x)`, `new Helper(x)`,
  * `exports.helper(x)`, `helper.call(this, x)`), finds the call site it
@@ -96,23 +121,8 @@ function applyArguments(call, ts) {
  * (`obj.helper`) is treated as the whole access.
  */
 function findCallInCalleePosition(node, ts) {
-    const callee = node.parent && ts.isPropertyAccessExpression(node.parent) && node.parent.name === node ? node.parent : node;
-    const parent = callee.parent;
-    if (!parent)
-        return undefined;
-    if ((ts.isCallExpression(parent) || ts.isNewExpression(parent)) && parent.expression === callee) {
-        return { node: parent, args: parent.arguments ?? [] };
-    }
-    if (!ts.isPropertyAccessExpression(parent) || parent.expression !== callee)
-        return undefined;
-    const call = parent.parent;
-    if (!call || !ts.isCallExpression(call) || call.expression !== parent)
-        return undefined;
-    if (parent.name.text === 'call')
-        return { node: call, args: call.arguments.slice(1) };
-    if (parent.name.text === 'apply')
-        return { node: call, args: applyArguments(call, ts) };
-    return undefined;
+    const callee = calleeOf(node, ts);
+    return directCall(callee, ts) ?? borrowedCall(callee, ts);
 }
 /**
  * A `require('specifier')` call, identified structurally (only public
@@ -137,6 +147,11 @@ function bindingNameOf(expression, ts) {
         return undefined;
     return parent.initializer === expression && ts.isIdentifier(parent.name) ? parent.name : undefined;
 }
+/** The `require('…')` call whose module specifier `node` is. */
+function requireCallOf(node, ts) {
+    const call = node.parent;
+    return isRequireCallExpression(call, ts) && call.arguments[0] === node ? call : undefined;
+}
 /**
  * When a reference to our function's name doesn't sit directly in callee
  * position, it may still be one hop away from a real call site through a
@@ -158,20 +173,17 @@ function bindingNameOf(expression, ts) {
  * immediately-invoked require (`require('./helper')(x)`) — the call site itself.
  */
 function resolveIndirectReferenceTarget(node, ts) {
-    const parent = node.parent;
-    if (!parent)
-        return undefined;
+    const { parent } = node;
     if (ts.isBindingElement(parent) && ts.isIdentifier(parent.name)) {
         // Covers both `{helper}` (shorthand — name and propertyName are the same
         // node) and `{helper: local}` (renamed — redirect to the local binding).
         return { kind: 'name', name: parent.name };
     }
-    const isRequireSpecifier = ts.isCallExpression(parent) && parent.arguments[0] === node && isRequireCallExpression(parent, ts);
-    const value = isRequireSpecifier ? parent : node;
-    const invocation = value.parent;
-    if (isRequireSpecifier && invocation && ts.isCallExpression(invocation) && invocation.expression === value) {
-        return { kind: 'call', call: { node: invocation, args: invocation.arguments } }; // require('./helper')(x)
-    }
+    const required = requireCallOf(node, ts);
+    const invocation = required && directCall(required, ts);
+    if (invocation)
+        return { kind: 'call', call: invocation }; // require('./helper')(x)
+    const value = required ?? node;
     const name = ts.isExpression(value) ? bindingNameOf(value, ts) : undefined;
     return name && { kind: 'name', name };
 }
@@ -219,31 +231,32 @@ function collectCallSites(ctx, nameNode) {
  * fanning out once it's exhausted.
  */
 function collectCallsFromName(ctx, name, calls, nextFrontier, localBudget) {
-    const { ts, program } = ctx;
     ctx.searchBudget--;
-    for (const ref of findReferences(ctx, name)) {
+    for (const reference of findReferences(ctx, name)) {
         if (localBudget <= 0)
             break;
         localBudget--;
         ctx.referenceBudget--;
-        const refFile = program.getSourceFile(ref.fileName);
-        if (!refFile)
-            continue;
-        const node = (0, ast_helpers_1.getNodeAtPosition)(refFile, ts, ref.textSpan.start);
-        if (!node)
-            continue;
-        // Definition sites (the declaration itself) never sit in callee
-        // position, so this also naturally excludes them.
-        const call = findCallInCalleePosition(node, ts);
-        if (call) {
-            calls.push(call);
-            continue;
-        }
-        const indirect = resolveIndirectReferenceTarget(node, ts);
-        if (indirect?.kind === 'call')
-            calls.push(indirect.call);
-        else if (indirect?.kind === 'name')
-            nextFrontier.push(indirect.name);
+        const target = referenceTarget(ctx, reference);
+        if (target?.kind === 'call')
+            calls.push(target.call);
+        else if (target?.kind === 'name')
+            nextFrontier.push(target.name);
     }
     return localBudget;
+}
+/**
+ * Where one reference search hit leads. Definition sites (the declaration
+ * itself) never sit in callee position, so they lead nowhere new; neither
+ * does a hit on a whole module (the source file itself, which has no parent
+ * — e.g. a `module.exports` reference landing in a file's leading comment).
+ */
+function referenceTarget(ctx, reference) {
+    const { ts, program } = ctx;
+    const file = program.getSourceFile(reference.fileName);
+    const node = file && (0, ast_helpers_1.getNodeAtPosition)(file, ts, reference.textSpan.start);
+    if (!node?.parent)
+        return undefined;
+    const call = findCallInCalleePosition(node, ts);
+    return call ? { kind: 'call', call } : resolveIndirectReferenceTarget(node, ts);
 }

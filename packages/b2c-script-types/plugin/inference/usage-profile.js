@@ -55,29 +55,42 @@ function primitiveOfTypeofCheck(ctx, typeOf) {
 function literalText(ctx, node) {
     return node && ctx.ts.isStringLiteralLike(node) ? node.text : undefined;
 }
+/** `'m' in x`: the member an `in` test on `reference` names. */
+function inOperatorMember(ctx, reference) {
+    const { ts } = ctx;
+    const test = reference.parent;
+    const isInTest = ts.isBinaryExpression(test) && test.operatorToken.kind === ts.SyntaxKind.InKeyword && test.right === reference;
+    return isInTest ? literalText(ctx, test.left) : undefined;
+}
+/** `x.hasOwnProperty('m')`: the member an own-property method call on `reference` names. */
+function ownPropertyMethodMember(ctx, reference) {
+    const { ts } = ctx;
+    const access = reference.parent;
+    const isHasOwn = ts.isPropertyAccessExpression(access) && access.expression === reference && access.name.text === 'hasOwnProperty';
+    const call = access.parent;
+    return isHasOwn && ts.isCallExpression(call) && call.expression === access
+        ? literalText(ctx, call.arguments[0])
+        : undefined;
+}
+/** `Object[.prototype].hasOwnProperty.call(x, 'm')`: the member a borrowed own-property call on `reference` names. */
+function ownPropertyCallMember(ctx, reference) {
+    const { ts } = ctx;
+    const call = reference.parent;
+    if (!ts.isCallExpression(call) || call.arguments[0] !== reference)
+        return undefined;
+    const callee = call.expression;
+    const isHasOwnCall = ts.isPropertyAccessExpression(callee) &&
+        callee.name.text === 'call' &&
+        ts.isPropertyAccessExpression(callee.expression) &&
+        callee.expression.name.text === 'hasOwnProperty';
+    return isHasOwnCall ? literalText(ctx, call.arguments[1]) : undefined;
+}
 /**
  * The member a presence test on `reference` checks for: `'m' in x`,
  * `x.hasOwnProperty('m')`, or `Object[.prototype].hasOwnProperty.call(x, 'm')`.
  */
 function presenceTestedMember(ctx, reference) {
-    const { ts } = ctx;
-    const parent = reference.parent;
-    if (ts.isBinaryExpression(parent) && parent.operatorToken.kind === ts.SyntaxKind.InKeyword) {
-        return parent.right === reference ? literalText(ctx, parent.left) : undefined;
-    }
-    const isOwnReceiver = ts.isPropertyAccessExpression(parent) && parent.expression === reference && parent.name.text === 'hasOwnProperty';
-    const call = isOwnReceiver ? parent.parent : parent;
-    if (!ts.isCallExpression(call))
-        return undefined;
-    if (isOwnReceiver)
-        return call.expression === parent ? literalText(ctx, call.arguments[0]) : undefined;
-    const callee = call.expression;
-    const isHasOwnCall = call.arguments[0] === reference &&
-        ts.isPropertyAccessExpression(callee) &&
-        callee.name.text === 'call' &&
-        ts.isPropertyAccessExpression(callee.expression) &&
-        callee.expression.name.text === 'hasOwnProperty';
-    return isHasOwnCall ? literalText(ctx, call.arguments[1]) : undefined;
+    return (inOperatorMember(ctx, reference) ?? ownPropertyMethodMember(ctx, reference) ?? ownPropertyCallMember(ctx, reference));
 }
 /**
  * True when `access` is the member access the current request's own cursor
@@ -109,28 +122,31 @@ function acceptsArgumentCount(ctx, signature, count) {
     return count >= required && (count <= parameters.length || ts.hasRestParameter(declaration));
 }
 /**
- * The type `reference` is used as. An argument to an overloaded function
- * counts only when every overload taking that many arguments agrees on it
+ * The type argument `index` of `call` is passed as. For an overloaded callee
+ * it counts only when every overload taking that many arguments agrees on it
  * (`parseInt(s)` / `parseInt(s, radix)`): for an argument of no known type
  * the checker settles on the first such overload, which says nothing about
  * the one the code means (`variationModel.getAllValues(attribute)` would
  * make `attribute` an `ObjectAttributeDefinition`).
  */
-function usedAsType(ctx, reference) {
+function argumentType(ctx, call, reference, index) {
     const { ts, checker } = ctx;
-    const call = reference.parent;
-    const isCall = ts.isCallExpression(call) || ts.isNewExpression(call);
-    const args = (isCall && call.arguments) || [];
-    const index = args.indexOf(reference);
-    if (!isCall || index < 0)
-        return checker.getContextualType(reference);
+    const argumentCount = call.arguments?.length ?? 0;
     const callee = checker.getTypeAtLocation(call.expression);
     const signatures = ts.isNewExpression(call) ? callee.getConstructSignatures() : callee.getCallSignatures();
-    const overloads = signatures.filter((signature) => acceptsArgumentCount(ctx, signature, args.length));
+    const overloads = signatures.filter((signature) => acceptsArgumentCount(ctx, signature, argumentCount));
     if (overloads.length <= 1)
         return checker.getContextualType(reference);
     const [first, ...rest] = overloads.map((signature) => declaredArgumentType(ctx, signature, index, call));
     return first && rest.every((type) => type === first) ? first : undefined;
+}
+/** The type `reference` is used as: what its context expects, or the argument type of the call it is passed to. */
+function usedAsType(ctx, reference) {
+    const { ts, checker } = ctx;
+    const call = reference.parent;
+    const isCall = ts.isCallExpression(call) || ts.isNewExpression(call);
+    const index = isCall ? (call.arguments?.indexOf(reference) ?? -1) : -1;
+    return isCall && index >= 0 ? argumentType(ctx, call, reference, index) : checker.getContextualType(reference);
 }
 function isReferenceTo(ctx, target, node) {
     return (ctx.ts.isIdentifier(node) &&
@@ -159,6 +175,17 @@ function statementsAfterPresenceExit(ctx, target, statements) {
         testsPresence(ctx, target, statement.expression));
     return guard < 0 ? [] : statements.slice(guard + 1);
 }
+/** What a branching `node` tests and the branches it picks between, for `if`, `?:` and `&&`. */
+function branchingOf(ts, node) {
+    if (ts.isIfStatement(node)) {
+        const branches = node.elseStatement ? [node.thenStatement, node.elseStatement] : [node.thenStatement];
+        return { condition: node.expression, branches };
+    }
+    if (ts.isConditionalExpression(node))
+        return { condition: node.condition, branches: [node.whenTrue, node.whenFalse] };
+    const isAnd = ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken;
+    return isAnd ? { condition: node.left, branches: [node.right] } : undefined;
+}
 /**
  * The branches of `node` that only run for some variants of the value: both
  * branches of an `if`/`?:` that tests it for a member first (an early
@@ -169,19 +196,10 @@ function statementsAfterPresenceExit(ctx, target, statements) {
  */
 function variantBranches(ctx, target, node) {
     const { ts } = ctx;
-    if (ts.isIfStatement(node)) {
-        if (!testsPresence(ctx, target, node.expression))
-            return [];
-        return node.elseStatement ? [node.thenStatement, node.elseStatement] : [node.thenStatement];
-    }
-    if (ts.isConditionalExpression(node)) {
-        return testsPresence(ctx, target, node.condition) ? [node.whenTrue, node.whenFalse] : [];
-    }
-    if (ts.isBinaryExpression(node)) {
-        const isGuardedAnd = node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken;
-        return isGuardedAnd && testsPresence(ctx, target, node.left) ? [node.right] : [];
-    }
-    return ts.isBlock(node) || ts.isSourceFile(node) ? statementsAfterPresenceExit(ctx, target, node.statements) : [];
+    if (ts.isBlock(node) || ts.isSourceFile(node))
+        return statementsAfterPresenceExit(ctx, target, node.statements);
+    const branching = branchingOf(ts, node);
+    return branching && testsPresence(ctx, target, branching.condition) ? branching.branches : [];
 }
 /** Records one member the value is accessed by; `optional` when only some variants of the value need it. */
 function recordMember(profile, name, optional) {
@@ -189,56 +207,87 @@ function recordMember(profile, name, optional) {
     if (optional)
         profile.optionalMemberNames.add(name);
 }
-/**
- * Records what one reference to the profiled value says about it.
- * `inVariantBranch` marks a reference inside a branch only some variants of
- * the value reach (see {@link variantBranches}). A reference the checker
- * narrowed (inside `if (typeof x === 'string')`) is used as what that one
- * branch holds, which says nothing about every value.
- */
-function recordReference(ctx, target, reference, inVariantBranch, profile) {
-    const { ts, checker } = ctx;
+function pushDefined(list, value) {
+    if (value !== undefined)
+        list.push(value);
+}
+/** The binary expression `reference` is the left operand of, when its operator is `operator`. */
+function leftOperandOf(ctx, reference, operator) {
     const parent = reference.parent;
-    const tested = presenceTestedMember(ctx, reference);
-    if (tested !== undefined) {
-        recordMember(profile, tested, true);
-        return;
+    const matches = ctx.ts.isBinaryExpression(parent) && parent.left === reference;
+    return matches && parent.operatorToken.kind === operator ? parent : undefined;
+}
+/** The member name a `x.m` / `x['m']` access reads, except the one the cursor is still typing. */
+function accessedMemberName(ctx, access) {
+    if (!ctx.ts.isPropertyAccessExpression(access))
+        return literalText(ctx, access.argumentExpression);
+    return isTriggerAccess(ctx, access) ? undefined : access.name.text;
+}
+// Each recorder recognizes one role a reference can play and records it,
+// returning true when the reference played that role.
+/** `'m' in x`, `x.hasOwnProperty('m')`, ...: a member only some variants of the value have. */
+function recordPresenceTest({ ctx, reference }, profile) {
+    const member = presenceTestedMember(ctx, reference);
+    if (member !== undefined)
+        recordMember(profile, member, true);
+    return member !== undefined;
+}
+/** `x.m` / `x['m']`: a member the value is accessed by. */
+function recordMemberAccess({ ctx, reference, inVariantBranch }, profile) {
+    const { ts } = ctx;
+    const access = reference.parent;
+    const isAccess = ts.isPropertyAccessExpression(access) || ts.isElementAccessExpression(access);
+    if (!isAccess || access.expression !== reference)
+        return false;
+    const member = accessedMemberName(ctx, access);
+    if (member !== undefined)
+        recordMember(profile, member, inVariantBranch);
+    return true;
+}
+/** `typeof x === 'string'`: a primitive the value is tested against. */
+function recordTypeofTest({ ctx, reference }, profile) {
+    const typeOf = reference.parent;
+    if (!ctx.ts.isTypeOfExpression(typeOf))
+        return false;
+    pushDefined(profile.guardTypes, primitiveOfTypeofCheck(ctx, typeOf));
+    return true;
+}
+/** `x instanceof C`: a class the value is tested against. */
+function recordInstanceofTest({ ctx, reference }, profile) {
+    const test = leftOperandOf(ctx, reference, ctx.ts.SyntaxKind.InstanceOfKeyword);
+    if (test)
+        pushDefined(profile.guardTypes, instanceTypeOf(ctx, test.right));
+    return test !== undefined;
+}
+/** `x = value`: a value the variable is reassigned. */
+function recordAssignment({ ctx, reference }, profile) {
+    const assignment = leftOperandOf(ctx, reference, ctx.ts.SyntaxKind.EqualsToken);
+    if (assignment)
+        profile.assignedValues.push(assignment.right);
+    return assignment !== undefined;
+}
+/**
+ * Any other use: the type the code uses the value as. A reference the
+ * checker narrowed (inside `if (typeof x === 'string')`) is used as what that
+ * one branch holds, which says nothing about every value.
+ */
+function recordContextualUse({ ctx, target, reference }, profile) {
+    if (ctx.checker.getTypeAtLocation(reference) === target.declaredType) {
+        pushDefined(profile.contextualTypes, usedAsType(ctx, reference));
     }
-    if (ts.isPropertyAccessExpression(parent) && parent.expression === reference) {
-        if (!isTriggerAccess(ctx, parent))
-            recordMember(profile, parent.name.text, inVariantBranch);
-        return;
-    }
-    if (ts.isElementAccessExpression(parent) && parent.expression === reference) {
-        const member = literalText(ctx, parent.argumentExpression);
-        if (member !== undefined)
-            recordMember(profile, member, inVariantBranch);
-        return;
-    }
-    if (ts.isTypeOfExpression(parent)) {
-        const primitive = primitiveOfTypeofCheck(ctx, parent);
-        if (primitive)
-            profile.guardTypes.push(primitive);
-        return;
-    }
-    if (ts.isBinaryExpression(parent)) {
-        const operator = parent.operatorToken.kind;
-        if (operator === ts.SyntaxKind.InstanceOfKeyword && parent.left === reference) {
-            const instance = instanceTypeOf(ctx, parent.right);
-            if (instance)
-                profile.guardTypes.push(instance);
-            return;
-        }
-        if (operator === ts.SyntaxKind.EqualsToken && parent.left === reference) {
-            profile.assignedValues.push(parent.right);
-            return;
-        }
-    }
-    if (checker.getTypeAtLocation(reference) !== target.declaredType)
-        return;
-    const used = usedAsType(ctx, reference);
-    if (used)
-        profile.contextualTypes.push(used);
+    return true;
+}
+const REFERENCE_RECORDERS = [
+    recordPresenceTest,
+    recordMemberAccess,
+    recordTypeofTest,
+    recordInstanceofTest,
+    recordAssignment,
+    recordContextualUse,
+];
+/** Records what one reference to the profiled value says about it: the first role it plays wins. */
+function recordReference(use, profile) {
+    REFERENCE_RECORDERS.some((record) => record(use, profile));
 }
 function collectProfile(ctx, symbol, declarationName, scope) {
     const declaredType = ctx.checker.getTypeOfSymbolAtLocation(symbol, declarationName);
@@ -246,7 +295,7 @@ function collectProfile(ctx, symbol, declarationName, scope) {
     const profile = emptyProfile();
     const visit = (node, inVariantBranch) => {
         if (isReferenceTo(ctx, target, node))
-            recordReference(ctx, target, node, inVariantBranch, profile);
+            recordReference({ ctx, target, reference: node, inVariantBranch }, profile);
         const branches = inVariantBranch ? [] : variantBranches(ctx, target, node);
         ctx.ts.forEachChild(node, (child) => visit(child, inVariantBranch || branches.includes(child)));
     };

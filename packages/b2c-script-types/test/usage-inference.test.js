@@ -147,6 +147,41 @@ describe('usage-inference', () => {
       assert.equal(describeTypes(ctx, types), '');
     });
 
+    it('skips a reference that sits in a top-level JSDoc comment (SFRA shipping model shape)', () => {
+      // A constructor with an expando member can be used as a JSDoc type, so
+      // its references include `{ProductLineItemsModel}` inside the doc
+      // comment — a position the AST walk resolves to the source file itself,
+      // which has no parent to inspect. The `new` call after it must still count.
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/productLineItems.js': `
+          function ProductLineItems(items) {
+            this.id = items.ID;
+          }
+          ProductLineItems.count = function () { return 0; };
+          module.exports = ProductLineItems;
+        `,
+        '/shipping.js': `var ProductLineItemsModel = require('./productLineItems');
+
+/**
+ * @returns {ProductLineItemsModel} the shipment's line items
+ */
+function getLineItems() {
+  return new ProductLineItemsModel(getProduct());
+}
+module.exports = getLineItems;
+`,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/productLineItems.js');
+      const fn = findFunctionDeclaration(sourceFile, 'ProductLineItems');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
+    });
+
     it('keeps only the call-site types that have every member the body uses', () => {
       // One call site passes a look-alike the body can't actually use: the
       // body reads `.quantity`, which only the inventory shape has.

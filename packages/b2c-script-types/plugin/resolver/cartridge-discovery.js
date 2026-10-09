@@ -102,42 +102,28 @@ function readDwJsonCartridges(ts, projectRoot, fileExists) {
     }
     return undefined;
 }
+/** The configured cartridges that exist, in configured order, then every other discovered one in discovery order. */
+function namedFirst(discovered, configured) {
+    const byName = new Map(discovered.map((c) => [c.name, c]));
+    const named = [...new Set(configured)].flatMap((name) => byName.get(name) ?? []);
+    const namedNames = new Set(named.map((c) => c.name));
+    return [...named, ...discovered.filter((c) => !namedNames.has(c.name))];
+}
+/** Discovery order with the known base cartridges moved last (the sort is stable). */
+function baseCartridgesLast(discovered) {
+    // hasOwn guard so a cartridge directory literally named `__proto__` or
+    // `constructor` can't read an inherited Object.prototype value here (which
+    // would make the rank a non-number and corrupt the sort comparator).
+    const rankOf = (name) => Object.prototype.hasOwnProperty.call(constants_1.BASE_CARTRIDGE_RANK, name) ? constants_1.BASE_CARTRIDGE_RANK[name] : 0;
+    return [...discovered].sort((a, b) => rankOf(a.name) - rankOf(b.name));
+}
 /**
  * Applies cartridge ordering: if `configured` is set, named-first then any
  * remaining discovered cartridges in their original order; otherwise
  * discovery order with the known base cartridges sorted last.
  */
 function orderCartridges(discovered, configured) {
-    if (configured && configured.length > 0) {
-        const byName = new Map(discovered.map((c) => [c.name, c]));
-        const ordered = [];
-        const seen = new Set();
-        for (const name of configured) {
-            const found = byName.get(name);
-            if (found && !seen.has(name)) {
-                ordered.push(found);
-                seen.add(name);
-            }
-        }
-        for (const c of discovered) {
-            if (!seen.has(c.name))
-                ordered.push(c);
-        }
-        return ordered;
-    }
-    const indexed = discovered.map((c, i) => ({ c, i }));
-    // hasOwn guard so a cartridge directory literally named `__proto__` or
-    // `constructor` can't read an inherited Object.prototype value here (which
-    // would make the rank a non-number and corrupt the sort comparator).
-    const rankOf = (name) => Object.prototype.hasOwnProperty.call(constants_1.BASE_CARTRIDGE_RANK, name) ? constants_1.BASE_CARTRIDGE_RANK[name] : 0;
-    indexed.sort((a, b) => {
-        const ar = rankOf(a.c.name);
-        const br = rankOf(b.c.name);
-        if (ar !== br)
-            return ar - br;
-        return a.i - b.i;
-    });
-    return indexed.map((x) => x.c);
+    return configured && configured.length > 0 ? namedFirst(discovered, configured) : baseCartridgesLast(discovered);
 }
 /**
  * Finds the byte ranges of each `declare module 'X' { ... }` block in a .d.ts
