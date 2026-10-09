@@ -12,12 +12,12 @@ const path = require('node:path');
 const ts = require('typescript');
 
 const {
-  collectParameterMemberUsage,
+  usageProfileOf,
   createInferenceContext,
   describeTypes,
   inferParameterType,
   inferTypeForNode,
-} = require('../../plugin/usage-inference');
+} = require('../../src/usage-inference');
 const {createFixtureLanguageService, findFunctionDeclaration} = require('../helpers/fixture-language-service');
 const {realTypesPrelude} = require('../helpers/real-dw-types');
 
@@ -84,7 +84,7 @@ describe('usage-inference golden corpus (real-storefront shapes)', () => {
 
       if (corpusCase.expectMembers) {
         assert.equal(target.kind, 'param', `${corpusCase.id}: expectMembers requires a parameter target`);
-        const members = [...collectParameterMemberUsage(ctx, target.node)].sort();
+        const members = [...usageProfileOf(ctx, target.node).memberNames].sort();
         assert.deepEqual(members, [...corpusCase.expectMembers].sort());
         return;
       }
@@ -95,19 +95,11 @@ describe('usage-inference golden corpus (real-storefront shapes)', () => {
         // Assert length, never `deepEqual(types, [])`: on an unexpected
         // non-empty result `types` holds TS Type objects whose circular
         // internal structure makes deepEqual hang instead of failing.
-        assert.equal(
-          types.length,
-          0,
-          `expected silence for ${corpusCase.id}, got: ${describeTypes(ctx.checker, types)}`,
-        );
+        assert.equal(types.length, 0, `expected silence for ${corpusCase.id}, got: ${describeTypes(ctx, types)}`);
         return;
       }
 
-      const described = describeTypes(ctx.checker, types);
-      assert.ok(
-        described.includes(corpusCase.expect),
-        `expected type mentioning ${corpusCase.expect}, got: ${described || '(empty)'}`,
-      );
+      assert.equal(describeTypes(ctx, types), corpusCase.expect);
     });
   }
 });

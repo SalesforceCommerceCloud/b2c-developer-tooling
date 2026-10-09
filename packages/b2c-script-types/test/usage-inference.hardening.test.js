@@ -9,8 +9,13 @@ const assert = require('node:assert/strict');
 
 const ts = require('typescript');
 
-const init = require('../plugin/index');
-const {createInferenceContext, inferParameterType, matchAmbientTypesByUsage} = require('../plugin/usage-inference');
+const init = require('../src/index');
+const {
+  createInferenceContext,
+  describeTypes,
+  inferParameterType,
+  matchAmbientTypesByUsage,
+} = require('../src/usage-inference');
 const {assertInferredHover, assertNoInferredHover, positionOf} = require('./helpers/assert-inference');
 const {absoluteCartridgePath, createCartridgeFixture} = require('./helpers/cartridge-fixture');
 const {
@@ -114,7 +119,7 @@ describe('usage-inference hardening', () => {
       const languageService = createFixtureLanguageService(files);
       const ctx = createInferenceContext(ts, languageService);
       const types = matchAmbientTypesByUsage(ctx, new Set(['custom', 'UUID']));
-      assert.deepEqual(types, []);
+      assert.equal(describeTypes(ctx, types), '');
     });
 
     it('does not let an identifier-name match rescue a signature that matches zero classes', () => {
@@ -124,7 +129,7 @@ describe('usage-inference hardening', () => {
       });
       const ctx = createInferenceContext(ts, languageService);
       const types = matchAmbientTypesByUsage(ctx, new Set(['notARealMember']), 'profile');
-      assert.deepEqual(types, []);
+      assert.equal(describeTypes(ctx, types), '');
     });
 
     it('stays silent when a duck-typed Store model call site resolves but the body also uses address-only fields (a storefront cartridge copyCustomerAddressToShipment)', () => {

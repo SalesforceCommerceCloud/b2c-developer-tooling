@@ -466,7 +466,7 @@ function init({ typescript: ts }) {
                 // re-deriving "nothing" costs the same reference searches as
                 // re-deriving something.
                 const inferred = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, program, () => {
-                    const ctx = (0, usage_inference_1.createInferenceContext)(ts, info.languageService, resolveSuperModulePath, position);
+                    const ctx = (0, usage_inference_1.createInferenceContext)(ts, info.languageService, resolveSuperModulePath);
                     if (!ctx)
                         return undefined;
                     // Hovering the member name of a property access
@@ -481,7 +481,7 @@ function init({ typescript: ts }) {
                     const types = isMemberName ? (0, usage_inference_1.inferTypeForExpression)(ctx, propAccess) : (0, usage_inference_1.inferTypeForNode)(ctx, node);
                     if (types.length === 0)
                         return undefined;
-                    const description = (0, usage_inference_1.describeTypes)(checker, types);
+                    const description = (0, usage_inference_1.describeTypes)(ctx, types);
                     // The receiver's type was undocumented, but the *member itself*
                     // (or the inferred type's own declaration) is real and usually
                     // documented — borrow its doc comment/tags so hover reads like a
@@ -554,13 +554,7 @@ function init({ typescript: ts }) {
                 // carried by any candidate type — collect them separately. Cheap
                 // (statement scans only, no reference search), so uncached.
                 const augmentedCtx = (0, usage_inference_1.createInferenceContext)(ts, info.languageService, resolveSuperModulePath);
-                const augmentedEntries = (augmentedCtx ? (0, usage_inference_1.collectSuperModuleAugmentedMembers)(augmentedCtx, baseNode) : []).map((m) => ({
-                    name: m.name,
-                    kind: m.isMethod ? ts.ScriptElementKind.memberFunctionElement : ts.ScriptElementKind.memberVariableElement,
-                    kindModifiers: '',
-                    sortText: '11',
-                    source: usage_inference_1.INFERRED_COMPLETION_SOURCE,
-                }));
+                const augmentedEntries = (augmentedCtx ? (0, usage_inference_1.collectSuperModuleAugmentedMembers)(augmentedCtx, baseNode) : []).map((m) => (0, usage_inference_1.inferredCompletionEntry)(ts, m.name, m.isMethod));
                 const inferredEntries = [...typeEntries, ...augmentedEntries];
                 if (inferredEntries.length === 0)
                     return original;

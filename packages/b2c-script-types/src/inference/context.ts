@@ -13,9 +13,10 @@
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import type {CallSite} from './call-sites';
-import {MAX_REFERENCES_PER_REQUEST, MAX_SEARCHES_PER_REQUEST} from './constants';
+import {MAX_INFERENCE_DEPTH, MAX_REFERENCES_PER_REQUEST, MAX_SEARCHES_PER_REQUEST} from './constants';
+import type {UsageProfile} from './usage-profile';
 
-export interface MemoEntry {
+interface MemoEntry {
   /**
    * The `depth` this was computed at — i.e. how much of the recursion budget
    * had already been spent getting here. A result computed at an equal-or-
@@ -80,11 +81,18 @@ export interface InferenceContext {
    */
   readonly typeDisplayStrings: Map<tsserver.Type, string>;
   /**
+   * Request-scoped memo of usage profiles (see ./usage-profile), keyed by the
+   * parameter's or variable's symbol. Every consumer of a profile (the
+   * body-usage filter, contextual constraints, ambient matching, reassigned
+   * values) reads the same single walk of the declaring scope.
+   */
+  readonly profiles: Map<tsserver.Symbol, UsageProfile>;
+  /**
    * Mutable, shared across the whole request — incremented every time a
    * cycle guard fires (a `visiting` hit). A result computed while this moved
    * is potentially incomplete *for this call stack only* (the cycle member it
    * skipped could resolve fine from a different entry point later in the same
-   * request), so such results must not be memoized — see inferReturnType.
+   * request), so such results must not be memoized — see withInferenceGuards.
    */
   cycleHits: number;
   /**
@@ -95,10 +103,11 @@ export interface InferenceContext {
    */
   readonly resolveSuperModulePath?: (containingFile: string) => string | undefined;
   /**
-   * The hover/completion request's own cursor position, when there is one.
-   * Exists so usage-based matching (see ./usage-match) can exclude the
-   * property access the request is itself sitting inside of from its own
-   * evidence: a dangling `shipment.` immediately followed (after a line
+   * A completion request's cursor position. Exists so usage profiling (see
+   * ./usage-profile) can exclude the property access the completion is
+   * itself sitting inside of from its own evidence. A member name still
+   * being typed (`shipment.pro|`) is not a member anything has, and a
+   * dangling `shipment.` immediately followed (after a line
    * break) by more code doesn't get automatic semicolon insertion — `.`
    * always demands a following identifier — so the parser merges it with
    * whatever statement comes next (`shipment.\n\nTransaction.wrap(...)`
@@ -133,8 +142,56 @@ export function createInferenceContext(
     searchBudget: MAX_SEARCHES_PER_REQUEST,
     callSiteMemo: new Map(),
     typeDisplayStrings: new Map(),
+    profiles: new Map(),
     cycleHits: 0,
     resolveSuperModulePath,
     triggerPosition,
   };
+}
+
+/**
+ * Runs `compute` with `node` marked as in progress, so a cycle that leads
+ * back to the same node (`var a = b; var b = a;`, or two helpers returning
+ * each other's result) gets `fallback` instead of recursing forever. Each hit
+ * is counted in ctx.cycleHits; see {@link withInferenceGuards}.
+ */
+export function withCycleGuard<T>(ctx: InferenceContext, node: tsserver.Node, fallback: T, compute: () => T): T {
+  if (ctx.visiting.has(node)) {
+    ctx.cycleHits++;
+    return fallback;
+  }
+  ctx.visiting.add(node);
+  try {
+    return compute();
+  } finally {
+    ctx.visiting.delete(node);
+  }
+}
+
+/**
+ * The shared preamble for every memoized inference entry point: serve a memo
+ * hit, enforce MAX_INFERENCE_DEPTH, break cycles, and memoize the result.
+ *
+ * The memo is consulted before the depth cap: a result computed at an equal
+ * or shallower depth had at least as much budget as this call would, so it is
+ * reusable however deep the current path is. A result whose computation hit
+ * a cycle guard is not memoized: it was cut short by what happened to be on
+ * the current call stack, and the same node reached later from outside the
+ * cycle could resolve more.
+ */
+export function withInferenceGuards(
+  ctx: InferenceContext,
+  node: tsserver.Node,
+  depth: number,
+  compute: () => tsserver.Type[],
+): tsserver.Type[] {
+  const cached = ctx.memo.get(node);
+  if (cached && cached.atDepth <= depth) return cached.types;
+  if (depth > MAX_INFERENCE_DEPTH) return [];
+  return withCycleGuard(ctx, node, [], () => {
+    const cycleHitsBefore = ctx.cycleHits;
+    const types = compute();
+    if (ctx.cycleHits === cycleHitsBefore) ctx.memo.set(node, {atDepth: depth, types});
+    return types;
+  });
 }

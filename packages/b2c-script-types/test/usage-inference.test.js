@@ -18,7 +18,7 @@ const {
   inferReturnType,
   inferTypeForNode,
   typesToCompletionEntries,
-} = require('../plugin/usage-inference');
+} = require('../src/usage-inference');
 const {createFixtureLanguageService, findFunctionDeclaration} = require('./helpers/fixture-language-service');
 const {realTypesPrelude} = require('./helpers/real-dw-types');
 
@@ -48,7 +48,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('infers a parameter type from a `new Helper(x)` constructor call site (SFRA constructor-function model pattern)', () => {
@@ -75,10 +75,10 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
-    it('stays silent when plain-call and `new` constructor call sites disagree on the argument type', () => {
+    it('infers a union when plain-call and `new` constructor call sites pass different types', () => {
       const files = {
         '/types.d.ts': AMBIENT_TYPES,
         '/helper.js': `
@@ -98,7 +98,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.deepEqual(types, []);
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; } | { quantity: number; }');
     });
 
     it('infers through a mix of plain-call and `new` when every site passes the same type', () => {
@@ -121,7 +121,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('does not throw on a bare `new Helper` constructor call with no parentheses/arguments', () => {
@@ -145,15 +145,17 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.deepEqual(types, []);
+      assert.equal(describeTypes(ctx, types), '');
     });
 
-    it('stays silent when call-site argument types conflict (no noisy union)', () => {
+    it('keeps only the call-site types that have every member the body uses', () => {
+      // One call site passes a look-alike the body can't actually use: the
+      // body reads `.quantity`, which only the inventory shape has.
       const files = {
         '/types.d.ts': AMBIENT_TYPES,
         '/helper.js': `
           function helper(input) {
-            return input;
+            return input.quantity;
           }
           helper(getProduct());
           helper(getInventory());
@@ -168,7 +170,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.deepEqual(types, []);
+      assert.equal(describeTypes(ctx, types), '{ quantity: number; }');
     });
 
     it('keeps a single converged type when every call site agrees', () => {
@@ -191,7 +193,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('resolves references through CommonJS `exports.foo = function(){}` assignment', () => {
@@ -219,7 +221,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('returns no candidates when the function is never called', () => {
@@ -282,7 +284,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('resolves an immediately-invoked `require(...)(x)` call', () => {
@@ -297,7 +299,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('resolves a destructured `const {helper} = require(...)` call site', () => {
@@ -312,7 +314,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('resolves a renamed destructure `const {helper: h} = require(...)`', () => {
@@ -327,7 +329,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('resolves the SFRA-canonical alias-map export (`module.exports = {helper: helper}`) called from another file', () => {
@@ -353,7 +355,45 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
+    });
+
+    it('resolves a module required into an export map (`{images: require(...)}`) and called through it', () => {
+      // SFRA's decorators/index.js shape: each decorator module is required
+      // into one object and consumers call `decorators.images(...)`.
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/images.js': `module.exports = function (product) { return product.ID; };`,
+        '/index.js': `module.exports = { images: require('./images') };`,
+        '/consumer.js': `var decorators = require('./index'); decorators.images(getProduct());`,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const param = findFunctionExpressionParam(ctx.program.getSourceFile('/images.js'));
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
+    });
+
+    it('resolves a call through a local alias of the function (`var run = helper`)', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function helper(product) {
+            return product.ID;
+          }
+          var run = helper;
+          run(getProduct());
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const fn = findFunctionDeclaration(ctx.program.getSourceFile('/helper.js'), 'helper');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('resolves an ES6 method-shorthand export called via property access', () => {
@@ -368,7 +408,145 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
+    });
+  });
+
+  describe('inferParameterType — fitting call sites to how the body uses the value', () => {
+    // Infers the first parameter of `fnName` in /helper.js.
+    function inferHelperParam(files, fnName) {
+      const ctx = createInferenceContext(ts, createFixtureLanguageService(files));
+      const fn = findFunctionDeclaration(ctx.program.getSourceFile('/helper.js'), fnName);
+      return describeTypes(ctx, inferParameterType(ctx, fn.parameters[0]));
+    }
+
+    it('drops a call-site argument the body could not pass on to the typed helper it calls', () => {
+      const files = {
+        '/types.d.ts': `${AMBIENT_TYPES}declare function priceOf(product: {ID: string; name: string}): number;`,
+        '/helper.js': `
+          function unitPrice(product) {
+            return priceOf(product);
+          }
+          unitPrice(getProduct());
+          unitPrice('a-line-item-uuid');
+        `,
+      };
+
+      assert.equal(inferHelperParam(files, 'unitPrice'), '{ ID: string; name: string; }');
+    });
+
+    it('keeps a call-site argument whose use only a branch that narrowed it constrains', () => {
+      const files = {
+        '/types.d.ts': `${AMBIENT_TYPES}declare function lookup(id: string): {ID: string; name: string};`,
+        '/helper.js': `
+          function resolve(productOrId) {
+            return typeof productOrId === 'string' ? lookup(productOrId) : productOrId;
+          }
+          resolve(getProduct());
+          resolve('some-id');
+        `,
+      };
+
+      assert.equal(inferHelperParam(files, 'resolve'), '{ ID: string; name: string; } | string');
+    });
+
+    it('uses an argument to an overloaded function only when every overload of that arity agrees on it', () => {
+      const files = {
+        '/types.d.ts': `
+          declare function parse(text: string): number;
+          declare function parse(text: string, radix: number): number;
+          declare function show(value: string): string;
+          declare function show(value: number): string;
+          declare function render(id: string, params: string): string;
+          declare function render(id: string, attributes: {size: number}, params: string): string;
+        `,
+        '/helper.js': `
+          function parsed(text) { return parse(text); }
+          function shown(value) { return show(value); }
+          function rendered(attributes) { return render('page', attributes, '{}'); }
+        `,
+      };
+
+      assert.equal(inferHelperParam(files, 'parsed'), 'string');
+      assert.equal(inferHelperParam(files, 'shown'), '');
+      assert.equal(inferHelperParam(files, 'rendered'), '{ size: number; }');
+    });
+
+    it('does not require a member the body tests for before using it', () => {
+      const files = {
+        '/types.d.ts': `
+          declare function getOrderAddress(): {city: string};
+          declare function getCustomerAddress(): {ID: string; city: string};
+        `,
+        '/helper.js': `
+          function label(address) {
+            var id = Object.prototype.hasOwnProperty.call(address, 'ID') ? address.ID : '';
+            return id + address.city;
+          }
+          label(getOrderAddress());
+          label(getCustomerAddress());
+        `,
+      };
+
+      assert.equal(inferHelperParam(files, 'label'), '{ city: string; } | { ID: string; city: string; }');
+    });
+
+    it('does not require a member used only in one branch of a presence test (`if ("m" in x) … else …`)', () => {
+      // SFRA's SearchPhraseSuggestions takes either a suggestions object or a
+      // bare phrase iterator and tells them apart with an `in` test.
+      const files = {
+        '/types.d.ts': `
+          declare function getPhraseIterator(): {hasNext(): boolean};
+          declare function getBrandSuggestions(): {searchPhraseSuggestions: {hasNext(): boolean}};
+        `,
+        '/helper.js': `
+          function available(suggestions) {
+            if ('searchPhraseSuggestions' in suggestions) {
+              return suggestions.searchPhraseSuggestions.hasNext();
+            }
+            return suggestions.hasNext();
+          }
+          available(getPhraseIterator());
+          available(getBrandSuggestions());
+        `,
+      };
+
+      assert.equal(
+        inferHelperParam(files, 'available'),
+        '{ hasNext(): boolean; } | { searchPhraseSuggestions: { hasNext(): boolean; }; }',
+      );
+    });
+
+    it('still requires a member used outside the branches of a presence test', () => {
+      const files = {
+        '/types.d.ts': `
+          declare function getOrderAddress(): {city: string};
+          declare function getLookAlike(): {ID: string};
+        `,
+        '/helper.js': `
+          function label(address) {
+            var id = 'ID' in address && address.ID;
+            return id + address.city;
+          }
+          label(getOrderAddress());
+          label(getLookAlike());
+        `,
+      };
+
+      assert.equal(inferHelperParam(files, 'label'), '{ city: string; }');
+    });
+
+    it('treats `x instanceof Object` as no evidence of what x is', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function valueOf(field) {
+            return field instanceof Object ? field.value : field;
+          }
+        `,
+      };
+
+      assert.equal(inferHelperParam(files, 'valueOf'), '');
     });
   });
 
@@ -439,7 +617,7 @@ describe('usage-inference', () => {
         const sourceFile = ctx.program.getSourceFile('/helper.js');
         const fn = findFunctionDeclaration(sourceFile, 'getPasswordResetToken');
 
-        assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'Customer');
+        assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), 'Customer');
       });
     }
 
@@ -542,7 +720,7 @@ describe('usage-inference', () => {
 
       const types = inferReturnType(ctx, caller);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('chases both branches of a ternary return (collections.first shape)', () => {
@@ -577,7 +755,7 @@ describe('usage-inference', () => {
       const sourceFile = ctx.program.getSourceFile('/collections.js');
       const caller = findFunctionDeclaration(sourceFile, 'caller');
 
-      const described = describeTypes(ctx.checker, inferReturnType(ctx, caller));
+      const described = describeTypes(ctx, inferReturnType(ctx, caller));
       assert.ok(described.includes('{ ID: string; }'), `expected element type, got: ${described}`);
     });
 
@@ -624,7 +802,7 @@ describe('usage-inference', () => {
 
       const types = inferReturnType(ctx, caller);
 
-      assert.equal(describeTypes(ctx.checker, types), 'string');
+      assert.equal(describeTypes(ctx, types), 'string');
     });
 
     it('chases a method-chain (`x.next().next()...`) within MAX_CHAIN_HOPS', () => {
@@ -652,7 +830,7 @@ describe('usage-inference', () => {
 
       const types = inferReturnType(ctx, fn);
 
-      assert.equal(describeTypes(ctx.checker, types), 'string');
+      assert.equal(describeTypes(ctx, types), 'string');
     });
 
     it('gives up (without hanging) on a method-chain longer than MAX_CHAIN_HOPS, rather than chasing it unbounded', () => {
@@ -715,10 +893,10 @@ describe('usage-inference', () => {
       const topFn = findFunctionDeclaration(sourceFile, 'top');
 
       const shortTypes = inferReturnType(ctx, shortFn);
-      assert.equal(describeTypes(ctx.checker, shortTypes), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, shortTypes), '{ ID: string; name: string; }');
 
       const topTypes = inferReturnType(ctx, topFn);
-      assert.equal(describeTypes(ctx.checker, topTypes), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, topTypes), '{ ID: string; name: string; }');
     });
   });
 
@@ -747,7 +925,7 @@ describe('usage-inference', () => {
 
       const types = inferReturnType(ctx, fn);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('infers the type of a variable initialized from a property access on an undocumented parameter', () => {
@@ -777,7 +955,7 @@ describe('usage-inference', () => {
 
       const types = inferTypeForNode(ctx, idIdentifier);
 
-      assert.equal(describeTypes(ctx.checker, types), 'string');
+      assert.equal(describeTypes(ctx, types), 'string');
     });
 
     it('leaves a variable with an explicit `@type {any}` JSDoc annotation alone', () => {
@@ -913,7 +1091,7 @@ describe('usage-inference', () => {
 
       const types = inferReturnType(ctx, wrapped);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('returns no candidates when no lower cartridge provides the module', () => {
@@ -1028,7 +1206,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('infers the element type for collections.first(coll, function (item) …) predicates', () => {
@@ -1048,7 +1226,7 @@ describe('usage-inference', () => {
       const sourceFile = ctx.program.getSourceFile('/consumer.js');
       const param = findCallbackParam(sourceFile);
 
-      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, param)), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, param)), '{ ID: string; name: string; }');
     });
 
     it('resolves the collection argument through inference when it is itself undocumented', () => {
@@ -1075,7 +1253,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('does not apply the element heuristic to reduce-style callbacks (accumulator comes first)', () => {
@@ -1130,7 +1308,7 @@ describe('usage-inference', () => {
         const sourceFile = ctx.program.getSourceFile('/consumer.js');
         const param = findCallbackParam(sourceFile);
 
-        assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, param)), '{ ID: string; name: string; }');
+        assert.equal(describeTypes(ctx, inferParameterType(ctx, param)), '{ ID: string; name: string; }');
       });
     }
 
@@ -1225,7 +1403,7 @@ describe('usage-inference', () => {
 
       const types = inferTypeForNode(ctx, findVarUse(top, 'memberPrice'));
 
-      assert.equal(describeTypes(ctx.checker, types), 'string');
+      assert.equal(describeTypes(ctx, types), 'string');
     });
 
     it('still resolves a deep base member through the pass-through levels (base getSalePrice from top)', () => {
@@ -1235,11 +1413,11 @@ describe('usage-inference', () => {
 
       const types = inferTypeForNode(ctx, findVarUse(top, 'salePrice'));
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
 
     it('lists augmented members from every pass-through level for completions', () => {
-      const {collectSuperModuleAugmentedMembers} = require('../plugin/usage-inference');
+      const {collectSuperModuleAugmentedMembers} = require('../src/usage-inference');
       const languageService = createFixtureLanguageService(STACK_FILES);
       const ctx = createInferenceContext(ts, languageService, (f) => STACK_ORDER[f]);
       const top = ctx.program.getSourceFile('/top/x.js');
@@ -1334,7 +1512,7 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.equal(describeTypes(ctx.checker, types), 'string');
+      assert.equal(describeTypes(ctx, types), 'string');
     });
 
     it('does not hang on a self-forwarding helper called with itself as an argument', () => {
@@ -1388,7 +1566,7 @@ describe('usage-inference', () => {
 
       const types = inferTypeForNode(ctx, resultIdentifier);
 
-      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+      assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
   });
 

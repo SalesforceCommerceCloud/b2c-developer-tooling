@@ -70,35 +70,26 @@ export const MAX_SEARCHES_PER_REQUEST = 12;
 // apart. Purely a label — it carries no path or other data.
 export const INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
 
-// Last-resort fallback when call-site/return-expression inference (the whole
-// rest of the engine) comes up empty: match the member names a parameter is
-// actually accessed by (`shipment.custom`, `shipment.productLineItems`, ...)
-// against every ambient class/interface visible in the program, and accept
-// the most specific one(s) that expose all of them. A single accessed member
-// name (e.g. just `.custom`) is carried by dozens of unrelated business
-// objects, so it's too weak a signal on its own to guess from — UNLESS that
-// single member happens to be globally unique across every ambient class
-// (e.g. `.addresses`, which only `dw.customer.AddressBook` declares), in
-// which case there's no ambiguity to be weak about. See
-// matchAmbientTypesByUsage's unambiguous-single-member exception.
+// Ambient usage matching (see ./ambient-index): a usage signature with fewer
+// distinct member names than this is only trusted when exactly one ambient
+// class declares it (`.addresses` is AddressBook's alone) or when the
+// identifier name picks one of the matches (`customer` + `.profile`).
 export const MIN_USAGE_SIGNATURE_MEMBERS = 2;
 
-// If the member-name signature still ties across more candidates than this
-// after ranking by specificity (distinctiveness, then fewest total members),
-// the match is too ambiguous to be a useful hint — silence beats a wall of
-// unrelated candidates in the hover text.
-export const MAX_USAGE_MATCH_CANDIDATES = 5;
+// Most distinct types a hover or completion list shows as a union, IntelliJ
+// style (`Product | Order`). More than this collapses to the candidates'
+// closest shared ancestor class when one fits, and otherwise stays silent: a
+// longer union is noise rather than a hint.
+export const MAX_UNION_TYPES = 3;
 
-// When call-site arguments don't converge on a single distinct type, silence
-// rather than union a noisy hover like `Product | Order`. A two-type union is
-// already usually wrong for any given call site; ambient usage-matching is
-// also skipped in that case — conflicting evidence is not "no call sites".
-export const MAX_CALL_SITE_CANDIDATES = 1;
+// Root classes nearly every Script API class inherits from. Offering them as
+// the "common ancestor" of unrelated candidates tells the reader nothing.
+export const UNINFORMATIVE_ANCESTORS: ReadonlySet<string> = new Set(['Object', 'ExtensibleObject', 'PersistentObject']);
 
 // Member names so common across dw.* that they barely discriminate a class
 // on their own (nearly every ExtensibleObject exposes `.custom` / `.UUID`).
-// They still count as usage evidence for matching, but contribute far less
-// to the distinctiveness score used to rank ambient candidates.
+// They still narrow an ambient match, but a signature made only of these
+// never picks one class out of several.
 export const WEAK_USAGE_MEMBERS: ReadonlySet<string> = new Set(['custom', 'UUID', 'toString', 'valueOf']);
 
 // Callee names whose callbacks lead with the collection element
@@ -112,7 +103,7 @@ export const ELEMENT_FIRST_CALLBACK_CALLEES: ReadonlySet<string> = new Set([
   'every',
   'some',
   // SFRA `collections.find(coll, function (item) {...})` — same element-first
-  // shape; used heavily for address-book / line-item lookups (a storefront cartridge).
+  // shape; used heavily for address-book and line-item lookups.
   'find',
   // Stock SFRA `collections.first` takes only the collection, but several
   // storefronts (and common calculate.js ports) call it with a predicate
@@ -120,102 +111,3 @@ export const ELEMENT_FIRST_CALLBACK_CALLEES: ReadonlySet<string> = new Set([
   // when present so the predicate parameter still gets a type.
   'first',
 ]);
-
-/**
- * SFRA/storefront parameter names that conventionally hold a Script API class
- * whose declared name does not equal the identifier (case-insensitive). Used
- * by ambient usage-matching's identifier short-circuit — `lineItem` must map
- * to `ProductLineItem`, not look for a nonexistent ambient class named
- * `LineItem`. Keys are lowercase; values are ambient class simple names.
- *
- * Keep this list conservative: only aliases that are unambiguous in real
- * cartridges. Bare `address` is deliberately omitted (CustomerAddress vs
- * OrderAddress vs Store address models). Prefer adding PascalCase suffixes to
- * {@link CONVENTIONAL_IDENTIFIER_PASCAL_SUFFIXES} for `resettingCustomer`-style
- * names; this map is for short / all-lowercase tokens (`pli`, `pricemodel`).
- */
-export const CONVENTIONAL_IDENTIFIER_ALIASES: ReadonlyMap<string, string> = new Map([
-  ['lineitem', 'ProductLineItem'],
-  ['pli', 'ProductLineItem'],
-  ['productlineitem', 'ProductLineItem'],
-  ['pricemodel', 'ProductPriceModel'],
-  ['availabilitymodel', 'ProductAvailabilityModel'],
-  ['shippingaddress', 'OrderAddress'],
-  ['billingaddress', 'OrderAddress'],
-  ['paymentinstrument', 'OrderPaymentInstrument'],
-  ['shippingmethod', 'ShippingMethod'],
-  ['shippinglineitem', 'ShippingLineItem'],
-  ['priceadjustment', 'PriceAdjustment'],
-  ['giftcertificatelineitem', 'GiftCertificateLineItem'],
-  ['couponlineitem', 'CouponLineItem'],
-  // Other concrete dw.order line-item subclasses. Without these, the bare
-  // `LineItem` PascalCase suffix (below) would force an all-lowercase
-  // `bonusdiscountlineitem` / `productshippinglineitem` to ProductLineItem —
-  // a wrong guess for a differently-named sibling class (see the matching
-  // PascalCase suffixes and the *LineItem note there).
-  ['bonusdiscountlineitem', 'BonusDiscountLineItem'],
-  ['productshippinglineitem', 'ProductShippingLineItem'],
-  ['customeraddress', 'CustomerAddress'],
-  ['orderaddress', 'OrderAddress'],
-  // High-frequency all-lowercase / compound forms seen across storefronts
-  // (when authors don't camelCase the class token).
-  ['currentbasket', 'Basket'],
-  ['currentcustomer', 'Customer'],
-  ['currentorder', 'Order'],
-  ['apiproduct', 'Product'],
-  ['apiorder', 'Order'],
-  ['apilineitem', 'ProductLineItem'],
-]);
-
-/**
- * Trailing PascalCase class tokens → ambient class simple name. Matched with
- * `identifierName.endsWith(pascalSuffix)` (case-sensitive on the original
- * identifier) so `resettingCustomer` / `apiProduct` / `currentBasket` resolve
- * while all-lowercase noise like `border` / `emailaddress` does not.
- *
- * Ordered longest-first so `productLineItem` hits ProductLineItem rather than
- * Product. Generic `Address` is omitted — too many false friends
- * (`emailAddress`, `ipAddress`, store address models).
- *
- * The *LineItem subclasses (`ProductLineItem`, `BonusDiscountLineItem`,
- * `CouponLineItem`, `GiftCertificateLineItem`, `ShippingLineItem`,
- * `ProductShippingLineItem`) must ALL precede the bare `LineItem` →
- * ProductLineItem fallback, and each longer name must precede any shorter one
- * it ends with (`ProductShippingLineItem` before `ShippingLineItem`), because
- * the matcher stops at the first `endsWith` hit in array order. Without the
- * specific entries, a `bonusDiscountLineItem` / `productShippingLineItem`
- * parameter would resolve to the wrong sibling class (ProductLineItem /
- * ShippingLineItem) whenever its body only touches members shared through the
- * common `LineItem` base — the classic silence-vs-wrong-guess trap.
- */
-export const CONVENTIONAL_IDENTIFIER_PASCAL_SUFFIXES: ReadonlyArray<readonly [string, string]> = [
-  ['GiftCertificateLineItem', 'GiftCertificateLineItem'],
-  ['BonusDiscountLineItem', 'BonusDiscountLineItem'],
-  ['CouponLineItem', 'CouponLineItem'],
-  ['ProductShippingLineItem', 'ProductShippingLineItem'],
-  ['ProductLineItem', 'ProductLineItem'],
-  ['ShippingLineItem', 'ShippingLineItem'],
-  ['OrderPaymentInstrument', 'OrderPaymentInstrument'],
-  ['PaymentInstrument', 'OrderPaymentInstrument'],
-  ['ProductAvailabilityModel', 'ProductAvailabilityModel'],
-  ['AvailabilityModel', 'ProductAvailabilityModel'],
-  ['ProductPriceModel', 'ProductPriceModel'],
-  ['PriceModel', 'ProductPriceModel'],
-  ['ShippingAddress', 'OrderAddress'],
-  ['BillingAddress', 'OrderAddress'],
-  ['CustomerAddress', 'CustomerAddress'],
-  ['OrderAddress', 'OrderAddress'],
-  ['ShippingMethod', 'ShippingMethod'],
-  ['PriceAdjustment', 'PriceAdjustment'],
-  ['LineItem', 'ProductLineItem'],
-  ['Customer', 'Customer'],
-  ['Profile', 'Profile'],
-  ['Product', 'Product'],
-  ['Basket', 'Basket'],
-  ['Shipment', 'Shipment'],
-  ['Category', 'Category'],
-  ['Order', 'Order'],
-  ['Store', 'Store'],
-  ['Variant', 'Variant'],
-  ['Money', 'Money'],
-];

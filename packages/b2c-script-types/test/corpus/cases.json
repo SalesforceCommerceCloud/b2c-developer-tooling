@@ -189,15 +189,15 @@
     "expect": "Category"
   },
   {
-    "id": "order-address-setter-surface",
+    "id": "address-setter-surface-union",
     "source": "storefront checkoutHelpers.escapeAddress / copyAddress",
-    "description": "OrderAddress inferred from dense setter + getter surface",
+    "description": "A dense setter + getter surface both address classes share infers their union",
     "dwTypes": ["OrderAddress", "CustomerAddress", "Shipment"],
     "files": {
       "/helpers.js": "function escapeAddress(address) {\n  address.setFirstName(address.firstName);\n  address.setLastName(address.lastName);\n  address.setAddress1(address.address1);\n  address.setAddress2(address.address2);\n  address.setCity(address.city);\n  address.setPostalCode(address.postalCode);\n  address.setCompanyName(address.companyName);\n  return address.suite;\n}\n"
     },
     "target": {"file": "/helpers.js", "function": "escapeAddress", "param": 0},
-    "expect": "OrderAddress"
+    "expect": "OrderAddress | CustomerAddress"
   },
   {
     "id": "profile-getter-methods",
@@ -230,7 +230,7 @@
       "/helpers.js": "function getLineItemOptionNames(optionProductLineItems) {\n  return map(optionProductLineItems, function (item) {\n    return item.optionID;\n  });\n}\ngetLineItemOptionNames(getOptionItems());\n"
     },
     "target": {"file": "/helpers.js", "kind": "callbackParam", "param": 0},
-    "expect": "optionID"
+    "expect": "{ optionID: string; optionValueID: string; }"
   },
   {
     "id": "new-helper-constructor-callsite",
@@ -256,16 +256,16 @@
     "expectMembers": ["custom"]
   },
   {
-    "id": "silence-conflicting-call-sites",
+    "id": "union-conflicting-call-sites",
     "source": "synthetic — conflicting Product vs Order call sites",
-    "description": "Must stay silent when call-site argument types do not converge",
+    "description": "Call sites passing unrelated classes infer their union, like IntelliJ",
     "dwTypes": ["Product", "Order"],
     "files": {
       "/helpers.js": "function describeThing(thing) {\n  return thing;\n}\ndescribeThing(getSomeProduct());\ndescribeThing(getSomeOrder());\n"
     },
     "globals": "  function getSomeProduct(): Product<any>;\n  function getSomeOrder(): Order;",
     "target": {"file": "/helpers.js", "function": "describeThing", "param": 0},
-    "expect": null
+    "expect": "Product | Order"
   },
   {
     "id": "silence-weak-custom-uuid-only",
@@ -305,16 +305,16 @@
     "expect": null
   },
   {
-    "id": "silence-string-or-product-call-sites",
+    "id": "union-string-or-product-call-sites",
     "source": "storefront productHelpers getProductType-style helper",
-    "description": "Call sites passing string IDs and Product objects must stay silent",
+    "description": "Call sites passing string IDs and Product objects (with a typeof guard) infer string | Product",
     "dwTypes": ["Product"],
     "files": {
       "/helpers.js": "function resolveProductKey(product) {\n  if (typeof product === 'string') return product;\n  return product.ID;\n}\nresolveProductKey('sku-1');\nresolveProductKey(getSomeProduct());\n"
     },
     "globals": "  function getSomeProduct(): Product<any>;",
     "target": {"file": "/helpers.js", "function": "resolveProductKey", "param": 0},
-    "expect": null
+    "expect": "string | Product"
   },
   {
     "id": "silence-unnamed-shared-strong-member",

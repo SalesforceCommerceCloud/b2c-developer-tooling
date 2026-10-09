@@ -22,7 +22,7 @@ const path = require('node:path');
 
 const ts = require('typescript');
 
-const init = require('../plugin/index');
+const init = require('../src/index');
 
 const TYPES_DIR = path.resolve(__dirname, '..', 'types');
 

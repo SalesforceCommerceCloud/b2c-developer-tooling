@@ -15,7 +15,7 @@ import {
   findEnclosingPropertyAccess,
   getMemberOfType,
   getNodeAtPosition,
-  INFERRED_COMPLETION_SOURCE,
+  inferredCompletionEntry,
   inferTypeForExpression,
   inferTypeForNode,
   isOpenForUsageInference,
@@ -548,7 +548,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           // re-deriving "nothing" costs the same reference searches as
           // re-deriving something.
           const inferred = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, program, () => {
-            const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath, position);
+            const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
             if (!ctx) return undefined;
             // Hovering the member name of a property access
             // (`shipment.productLineItems`, cursor on `productLineItems`) has
@@ -561,7 +561,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
             const isMemberName = !!propAccess && propAccess.name === node;
             const types = isMemberName ? inferTypeForExpression(ctx, propAccess) : inferTypeForNode(ctx, node);
             if (types.length === 0) return undefined;
-            const description = describeTypes(checker, types);
+            const description = describeTypes(ctx, types);
             // The receiver's type was undocumented, but the *member itself*
             // (or the inferred type's own declaration) is real and usually
             // documented — borrow its doc comment/tags so hover reads like a
@@ -640,13 +640,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           const augmentedCtx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
           const augmentedEntries: tsserver.CompletionEntry[] = (
             augmentedCtx ? collectSuperModuleAugmentedMembers(augmentedCtx, baseNode) : []
-          ).map((m) => ({
-            name: m.name,
-            kind: m.isMethod ? ts.ScriptElementKind.memberFunctionElement : ts.ScriptElementKind.memberVariableElement,
-            kindModifiers: '',
-            sortText: '11',
-            source: INFERRED_COMPLETION_SOURCE,
-          }));
+          ).map((m) => inferredCompletionEntry(ts, m.name, m.isMethod));
           const inferredEntries = [...typeEntries, ...augmentedEntries];
           if (inferredEntries.length === 0) return original;
           // Dedupe against the original entries AND within the inferred set

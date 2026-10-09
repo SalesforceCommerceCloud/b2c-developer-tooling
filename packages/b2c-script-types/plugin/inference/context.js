@@ -6,6 +6,8 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createInferenceContext = createInferenceContext;
+exports.withCycleGuard = withCycleGuard;
+exports.withInferenceGuards = withInferenceGuards;
 const constants_1 = require("./constants");
 /**
  * Builds a fresh inference context for one top-level hover/completion
@@ -26,8 +28,53 @@ function createInferenceContext(ts, languageService, resolveSuperModulePath, tri
         searchBudget: constants_1.MAX_SEARCHES_PER_REQUEST,
         callSiteMemo: new Map(),
         typeDisplayStrings: new Map(),
+        profiles: new Map(),
         cycleHits: 0,
         resolveSuperModulePath,
         triggerPosition,
     };
+}
+/**
+ * Runs `compute` with `node` marked as in progress, so a cycle that leads
+ * back to the same node (`var a = b; var b = a;`, or two helpers returning
+ * each other's result) gets `fallback` instead of recursing forever. Each hit
+ * is counted in ctx.cycleHits; see {@link withInferenceGuards}.
+ */
+function withCycleGuard(ctx, node, fallback, compute) {
+    if (ctx.visiting.has(node)) {
+        ctx.cycleHits++;
+        return fallback;
+    }
+    ctx.visiting.add(node);
+    try {
+        return compute();
+    }
+    finally {
+        ctx.visiting.delete(node);
+    }
+}
+/**
+ * The shared preamble for every memoized inference entry point: serve a memo
+ * hit, enforce MAX_INFERENCE_DEPTH, break cycles, and memoize the result.
+ *
+ * The memo is consulted before the depth cap: a result computed at an equal
+ * or shallower depth had at least as much budget as this call would, so it is
+ * reusable however deep the current path is. A result whose computation hit
+ * a cycle guard is not memoized: it was cut short by what happened to be on
+ * the current call stack, and the same node reached later from outside the
+ * cycle could resolve more.
+ */
+function withInferenceGuards(ctx, node, depth, compute) {
+    const cached = ctx.memo.get(node);
+    if (cached && cached.atDepth <= depth)
+        return cached.types;
+    if (depth > constants_1.MAX_INFERENCE_DEPTH)
+        return [];
+    return withCycleGuard(ctx, node, [], () => {
+        const cycleHitsBefore = ctx.cycleHits;
+        const types = compute();
+        if (ctx.cycleHits === cycleHitsBefore)
+            ctx.memo.set(node, { atDepth: depth, types });
+        return types;
+    });
 }

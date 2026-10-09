@@ -16,7 +16,7 @@ const {
   inferReturnType,
   inferTypeForNode,
   typesToCompletionEntries,
-} = require('../plugin/usage-inference');
+} = require('../src/usage-inference');
 const {createFixtureLanguageService, findFunctionDeclaration} = require('./helpers/fixture-language-service');
 const {REAL_DW_TYPES, realTypesPrelude} = require('./helpers/real-dw-types');
 
@@ -65,7 +65,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Product<any>');
+      assert.equal(describeTypes(ctx, types), 'Product');
     });
 
     it('offers real dw.catalog.Product members (getID, getName, getPriceModel) as synthesized completions', () => {
@@ -104,7 +104,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Product<any>');
+      assert.equal(describeTypes(ctx, types), 'Product');
     });
 
     it('infers dw.order.Order for an undocumented parameter from an OrderMgr.getOrder() call site', () => {
@@ -124,7 +124,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Order');
+      assert.equal(describeTypes(ctx, types), 'Order');
     });
   });
 
@@ -147,7 +147,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferReturnType(ctx, fn);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Money');
+      assert.equal(describeTypes(ctx, types), 'Money');
     });
 
     it('offers real dw.value.Money members for the deep-chain-inferred return type', () => {
@@ -183,7 +183,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferReturnType(ctx, fn);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Money');
+      assert.equal(describeTypes(ctx, types), 'Money');
     });
 
     it('resolves the same chain split across an intermediate local variable — the idiomatic SFCC style', () => {
@@ -208,7 +208,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferReturnType(ctx, fn);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Money');
+      assert.equal(describeTypes(ctx, types), 'Money');
     });
 
     it('resolves a three-hop chain (order.getCustomer().getProfile().getEmail()) through an undocumented helper', () => {
@@ -228,7 +228,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferReturnType(ctx, fn);
 
-      assert.equal(describeTypes(ctx.checker, types), 'string');
+      assert.equal(describeTypes(ctx, types), 'string');
     });
 
     it('chases a chain through two forwarding undocumented helpers before reaching the real method call', () => {
@@ -251,7 +251,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferReturnType(ctx, fn);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Money');
+      assert.equal(describeTypes(ctx, types), 'Money');
     });
   });
 
@@ -325,7 +325,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       const types = inferParameterType(ctx, cbParam);
       const names = completionNames(ts, ctx.checker, types);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Variant');
+      assert.equal(describeTypes(ctx, types), 'Variant');
       assert.ok(names.includes('getID'));
       assert.ok(names.includes('getUPC'));
     });
@@ -336,11 +336,11 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       const sourceFile = ctx.program.getSourceFile('/variantHelpers.js');
 
       const iterTypes = inferTypeForNode(ctx, findIdentifierUse(sourceFile, 'iter'));
-      assert.equal(describeTypes(ctx.checker, iterTypes), 'Iterator<Variant>');
+      assert.equal(describeTypes(ctx, iterTypes), 'Iterator<Variant>');
 
       const ctx2 = createInferenceContext(ts, languageService);
       const candidateTypes = inferTypeForNode(ctx2, findIdentifierUse(sourceFile, 'candidate'));
-      assert.equal(describeTypes(ctx2.checker, candidateTypes), 'Variant');
+      assert.equal(describeTypes(ctx2, candidateTypes), 'Variant');
     });
   });
 
@@ -391,7 +391,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferReturnType(ctx, fn);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Money');
+      assert.equal(describeTypes(ctx, types), 'Money');
     });
   });
 
@@ -422,7 +422,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       assert.ok(names.includes('getName'));
     });
 
-    it('stays silent when call sites pass different real dw.* classes (Product vs Category)', () => {
+    it('infers a union when call sites pass different real dw.* classes (Product | Category)', () => {
       const files = {
         '/types.d.ts': realTypesPrelude(
           ['Product', 'ProductMgr', 'Category'],
@@ -440,11 +440,58 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.deepEqual(types, []);
+      assert.equal(describeTypes(ctx, types), 'Product | Category');
+    });
+
+    it('drops a call-site argument of a different kind than the Product the body passes the parameter on as', () => {
+      // SFRA's product bonusUnitPrice decorator is called once with the
+      // discount line item UUID in the product slot; the body hands the
+      // parameter to BonusDiscountLineItem.getBonusProductPrice(Product).
+      const files = {
+        '/types.d.ts': realTypesPrelude(
+          ['Product', 'BonusDiscountLineItem'],
+          '  function getSomeProduct(): Product<any>;\n  function getBonusLineItem(): BonusDiscountLineItem;',
+        ),
+        '/consumer.js': `
+          function getBonusUnitPrice(apiProduct) {
+            return getBonusLineItem().getBonusProductPrice(apiProduct);
+          }
+          getBonusUnitPrice(getSomeProduct());
+          getBonusUnitPrice('discount-line-item-uuid');
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/consumer.js', 'getBonusUnitPrice');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(describeTypes(ctx, types), 'Product');
+    });
+
+    it('keeps a sibling class passed to a helper documented with a narrower class of the same family (Order | Basket)', () => {
+      // SFRA documents many LineItemCtnr helpers as taking a Basket; an Order
+      // passed to one is a too-narrow JSDoc, not a reason to drop the Order.
+      const files = {
+        '/types.d.ts': realTypesPrelude(
+          ['Order', 'Basket'],
+          '  function getSomeOrder(): Order;\n  function getSomeBasket(): Basket;\n  function ensureValidShipments(basket: Basket): boolean;',
+        ),
+        '/consumer.js': `
+          function getCheckoutStepInformation(lineItemContainer) {
+            return ensureValidShipments(lineItemContainer);
+          }
+          getCheckoutStepInformation(getSomeOrder());
+          getCheckoutStepInformation(getSomeBasket());
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/consumer.js', 'getCheckoutStepInformation');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(describeTypes(ctx, types), 'Order | Basket');
     });
 
     it('infers Product from ambient usage when a never-called helper is named product and uses Product API methods', () => {
-      // Generic Product is indexed for ambient matching (hover shows Product<any>).
+      // Generic Product is indexed for ambient matching (hover shows Product).
       // A parameter conventionally named `product` plus a Product-only method is
       // exactly the IntelliJ/JSDoc-less case storefront helpers hit constantly.
       const files = {
@@ -459,7 +506,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Product<any>');
+      assert.equal(describeTypes(ctx, types), 'Product');
     });
 
     it('chases a var-of-var deep property chain with a real nullable middle step (availabilityModel.inventoryRecord)', () => {
@@ -501,7 +548,9 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferTypeForNode(ctx, recordIdentifier);
 
-      assert.equal(describeTypes(ctx.checker, types), 'ProductInventoryRecord | null');
+      // `| null` is dropped like any other uninformative part: the hover names
+      // the class, the way TypeScript shows it without strictNullChecks.
+      assert.equal(describeTypes(ctx, types), 'ProductInventoryRecord');
     });
 
     it('synthesizes real members for a generic collection candidate type (Collection<Variant>) without special-casing generics', () => {
@@ -525,7 +574,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       const types = inferParameterType(ctx, fn.parameters[0]);
       const names = completionNames(ts, ctx.checker, types);
 
-      assert.ok(describeTypes(ctx.checker, types).startsWith('Collection<'));
+      assert.ok(describeTypes(ctx, types).startsWith('Collection<'));
       assert.ok(names.includes('getLength'));
       assert.ok(names.includes('toArray'));
     });

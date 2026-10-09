@@ -49,6 +49,12 @@ export function findSuperModuleFile(ctx: InferenceContext, fromFileName: string)
   return program.getSourceFiles().find((sf) => sf.fileName.toLowerCase() === target);
 }
 
+/** A module's top-level export assignments — see {@link collectExportAssignments}. */
+export interface ExportAssignments {
+  readonly full: readonly tsserver.BinaryExpression[];
+  readonly members: ReadonlyArray<{readonly name: string; readonly expr: tsserver.Expression}>;
+}
+
 /**
  * A module's top-level export assignments, gathered structurally:
  * `full` — every `module.exports = X` right-hand side;
@@ -56,35 +62,31 @@ export function findSuperModuleFile(ctx: InferenceContext, fromFileName: string)
  * augmentation, the shape SFRA plugin overlays use to add helpers on top of
  * a re-exported base (`module.exports = base; module.exports.extra = extra;`).
  */
-export function collectExportAssignments(
-  sf: tsserver.SourceFile,
-  ts: typeof tsserver,
-): {full: tsserver.BinaryExpression[]; members: Array<{name: string; expr: tsserver.Expression}>} {
+export function collectExportAssignments(sf: tsserver.SourceFile, ts: typeof tsserver): ExportAssignments {
   const full: tsserver.BinaryExpression[] = [];
   const members: Array<{name: string; expr: tsserver.Expression}> = [];
   for (const stmt of sf.statements) {
     if (!ts.isExpressionStatement(stmt) || !ts.isBinaryExpression(stmt.expression)) continue;
     const bin = stmt.expression;
-    if (bin.operatorToken.kind !== ts.SyntaxKind.EqualsToken) continue;
-    const left = bin.left;
-    if (!ts.isPropertyAccessExpression(left)) continue;
-    const base = left.expression;
-    if (ts.isIdentifier(base) && base.text === 'module' && left.name.text === 'exports') {
-      full.push(bin);
-    } else if (ts.isIdentifier(base) && base.text === 'exports') {
-      members.push({name: left.name.text, expr: bin.right});
-    } else if (
-      ts.isPropertyAccessExpression(base) &&
-      ts.isIdentifier(base.expression) &&
-      base.expression.text === 'module' &&
-      base.name.text === 'exports'
-    ) {
-      members.push({name: left.name.text, expr: bin.right});
-    }
+    if (bin.operatorToken.kind !== ts.SyntaxKind.EqualsToken || !ts.isPropertyAccessExpression(bin.left)) continue;
+    const base = bin.left.expression;
+    if (isModuleExports(base, ts)) members.push({name: bin.left.name.text, expr: bin.right});
+    else if (ts.isIdentifier(base) && base.text === 'exports')
+      members.push({name: bin.left.name.text, expr: bin.right});
+    else if (isModuleExports(bin.left, ts)) full.push(bin);
   }
   return {full, members};
 }
 
+/** `module.exports`, identified structurally. */
+function isModuleExports(expr: tsserver.Expression, ts: typeof tsserver): boolean {
+  return (
+    ts.isPropertyAccessExpression(expr) &&
+    ts.isIdentifier(expr.expression) &&
+    expr.expression.text === 'module' &&
+    expr.name.text === 'exports'
+  );
+}
 /**
  * True when a `module.exports = X` assignment gives the checker a genuinely
  * usable exports type: not `any`, and actually exposing members. A
@@ -130,13 +132,44 @@ export function traceSuperModuleAccess(
   return undefined;
 }
 
+/** True when a level re-exports what is below it (`module.exports = base`) rather than replacing it. */
+function passesThrough(ctx: InferenceContext, exports: ExportAssignments): boolean {
+  const {ts, checker} = ctx;
+  return exports.full.some(
+    (bin) => !isConcreteExportAssignment(ctx, bin) || traceSuperModuleAccess(ts, checker, bin.right) !== undefined,
+  );
+}
+
+/**
+ * Walks the superModule chain below the file containing `superAccess`, one
+ * cartridge level at a time, yielding each level's export assignments. The
+ * walk continues downward only through a pass-through level
+ * (`module.exports = base`): a level with a concrete `module.exports`
+ * replaces everything below it at runtime, unless it carries the base along.
+ */
+export function* superModuleLevels(
+  ctx: InferenceContext,
+  superAccess: tsserver.PropertyAccessExpression,
+): Generator<ExportAssignments> {
+  const seen = new Set<tsserver.SourceFile>();
+  let fromFileName = superAccess.getSourceFile().fileName;
+  for (let hop = 0; hop < MAX_SUPERMODULE_HOPS; hop++) {
+    const superFile = findSuperModuleFile(ctx, fromFileName);
+    if (!superFile || seen.has(superFile)) return;
+    seen.add(superFile);
+    const exports = collectExportAssignments(superFile, ctx.ts);
+    yield exports;
+    if (!passesThrough(ctx, exports)) return;
+    fromFileName = superFile.fileName;
+  }
+}
+
 /**
  * Collects every member the superModule chain reachable from `expr`
  * contributes through export augmentations (`module.exports.name = fn`) at
- * pass-through levels — the members {@link resolveSuperModuleTypes}'s
- * candidate types cannot carry. Used to complete after `base.` in an
- * overlay; the first (highest) level defining a name wins, matching runtime
- * override order.
+ * pass-through levels — the members the superModule's export types cannot
+ * carry. Used to complete after `base.` in an overlay; the first (highest)
+ * level defining a name wins, matching runtime override order.
  */
 export function collectSuperModuleAugmentedMembers(
   ctx: InferenceContext,
@@ -147,24 +180,12 @@ export function collectSuperModuleAugmentedMembers(
   if (!superAccess) return [];
   const out: Array<{name: string; isMethod: boolean}> = [];
   const seenNames = new Set<string>();
-  const seenFiles = new Set<tsserver.SourceFile>();
-  let fromFileName = superAccess.getSourceFile().fileName;
-  for (let hop = 0; hop < MAX_SUPERMODULE_HOPS; hop++) {
-    const superFile = findSuperModuleFile(ctx, fromFileName);
-    if (!superFile || seenFiles.has(superFile)) break;
-    seenFiles.add(superFile);
-    const {full, members} = collectExportAssignments(superFile, ts);
-    for (const m of members) {
-      if (seenNames.has(m.name)) continue;
-      seenNames.add(m.name);
-      const type = checker.getTypeAtLocation(m.expr);
-      out.push({name: m.name, isMethod: type.getCallSignatures().length > 0});
+  for (const {members} of superModuleLevels(ctx, superAccess)) {
+    for (const member of members) {
+      if (seenNames.has(member.name)) continue;
+      seenNames.add(member.name);
+      out.push({name: member.name, isMethod: checker.getTypeAtLocation(member.expr).getCallSignatures().length > 0});
     }
-    const passesThrough = full.some(
-      (bin) => !isConcreteExportAssignment(ctx, bin) || traceSuperModuleAccess(ts, checker, bin.right) !== undefined,
-    );
-    if (!passesThrough) break;
-    fromFileName = superFile.fileName;
   }
   return out;
 }

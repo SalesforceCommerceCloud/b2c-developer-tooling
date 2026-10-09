@@ -9,13 +9,8 @@ const assert = require('node:assert/strict');
 
 const ts = require('typescript');
 
-const {
-  createInferenceContext,
-  describeTypes,
-  inferParameterType,
-  inferReturnType,
-} = require('../plugin/usage-inference');
-const init = require('../plugin/index');
+const {createInferenceContext, describeTypes, inferParameterType, inferReturnType} = require('../src/usage-inference');
+const init = require('../src/index');
 const {
   createFixtureHost,
   createFixtureLanguageService,
@@ -78,6 +73,10 @@ const BASELINE = {
   // reference-search set (the request-scoped call-site memo), not re-run the
   // identical searches once per parameter.
   multiParamHelper: 2,
+  // A later request on the same, unchanged Program (hovering one parameter
+  // after another while reading code) re-runs none of the reference searches
+  // an earlier request already ran.
+  repeatedRequestSameProgram: 0,
   // Thousands of call sites packed into one generated file: one scan, and
   // the per-call result budget must bound how many of its hits get processed.
   hugeGeneratedFile: 2,
@@ -92,10 +91,11 @@ const BASELINE = {
   // scenario stringifies each candidate once per level (4x, 120 calls).
   nestedForwardingStringifications: 32,
   // The no-call-site usage-match fallback's ambient-class index (every
-  // dw.* class's member-name set) is built once per LanguageService and
-  // cached — a second hover/completion request against the same project
-  // must add zero further getPropertiesOfType calls, not rebuild the index.
-  ambientClassIndexRebuildOnRepeatedRequest: 0,
+  // dw.* class's member-name set) is cached per declaration SourceFile,
+  // which tsserver reuses across Programs while the file is unchanged — so
+  // a request after an edit to a cartridge .js file (a new Program) must add
+  // zero getPropertiesOfType calls, not re-index the Script API.
+  ambientClassIndexRebuildAfterJsEdit: 0,
 };
 
 /**
@@ -120,11 +120,11 @@ function withReferenceCounter(languageService) {
 }
 
 /**
- * Counts calls to `checker.getPropertiesOfType` — the per-candidate cost of
+ * Counts calls to `checker.getPropertiesOfType` — the per-class cost of
  * building the ambient-class index the no-call-site usage-match fallback
  * (matchAmbientTypesByUsage) matches against. That index is cached per
- * LanguageService (see buildAmbientClassIndex's WeakMap), so a warm cache
- * must add zero further calls on a repeated request.
+ * declaration SourceFile (see ./src/inference/ambient-index), so a warm
+ * cache must add zero further calls.
  */
 function withPropertiesOfTypeCounter(checker) {
   let count = 0;
@@ -165,7 +165,7 @@ describe('usage-inference — performance baselines', () => {
 
     // Correctness must survive the cap: the first <=50 processed references
     // are more than enough to type this parameter.
-    assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     assert.ok(
       counter.referenceSearches() <= BASELINE.widelyReferencedHelper,
       `expected <= ${BASELINE.widelyReferencedHelper} reference searches, got ${counter.referenceSearches()}`,
@@ -230,7 +230,7 @@ describe('usage-inference — performance baselines', () => {
 
     const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
 
-    assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     assert.equal(counter.referenceSearches(), BASELINE.nativeHelperChain);
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
@@ -302,7 +302,7 @@ describe('usage-inference — performance baselines', () => {
 
     const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
 
-    assert.ok(describeTypes(ctx.checker, types).includes('ID'), 'fan-out must still infer the shared type');
+    assert.ok(describeTypes(ctx, types).includes('ID'), 'fan-out must still infer the shared type');
     assert.ok(
       counter.referenceSearches() <= BASELINE.wideFanOutMemoized,
       `expected the request memo to collapse 20 branches into <= ${BASELINE.wideFanOutMemoized} searches, got ${counter.referenceSearches()}`,
@@ -386,7 +386,7 @@ describe('usage-inference — performance baselines', () => {
 
     // Correctness must survive the cap: the first in-budget sub-helpers are
     // enough to resolve the parameter's type.
-    assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     assert.ok(
       counter.referenceSearches() <= BASELINE.distinctSubHelperTree,
       `expected the search budget to bound project scans at <= ${BASELINE.distinctSubHelperTree}, got ${counter.referenceSearches()}`,
@@ -421,12 +421,44 @@ describe('usage-inference — performance baselines', () => {
 
     const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
 
-    assert.equal(describeTypes(ctx.checker, types), '{ ID: string; } | { displayName: string; }');
+    assert.equal(describeTypes(ctx, types), '{ ID: string; } | { displayName: string; }');
     assert.ok(
       counter.referenceSearches() <= BASELINE.multiParamHelper,
       `expected the call-site memo to dedupe sibling-parameter searches to <= ${BASELINE.multiParamHelper}, got ${counter.referenceSearches()}`,
     );
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
+  });
+
+  it(`reuses reference searches across requests on an unchanged Program, with the same answer and budget (${BASELINE.repeatedRequestSameProgram} new searches)`, () => {
+    const files = {
+      '/types.d.ts': 'declare function getProduct(): {ID: string};',
+      '/helper.js': `
+        function helper(product) {
+          return product.ID;
+        }
+        module.exports = {helper: helper};
+      `,
+      '/consumer.js': `var helpers = require('./helper'); helpers.helper(getProduct());`,
+    };
+    const counter = withReferenceCounter(createFixtureLanguageService(files));
+    const infer = () => {
+      const ctx = createInferenceContext(ts, counter.languageService);
+      const fn = findFunctionDeclaration(ctx.program.getSourceFile('/helper.js'), 'helper');
+      return {ctx, description: describeTypes(ctx, inferParameterType(ctx, fn.parameters[0]))};
+    };
+
+    const cold = infer();
+    const coldSearches = counter.referenceSearches();
+    counter.reset();
+    const warm = infer();
+
+    assert.ok(coldSearches > 0, 'the first request must search for call sites');
+    assert.equal(counter.referenceSearches(), BASELINE.repeatedRequestSameProgram);
+    assert.equal(warm.description, '{ ID: string; }');
+    assert.equal(warm.description, cold.description);
+    // A cached search still spends budget, so a warm request reaches exactly
+    // the call sites a cold one would.
+    assert.equal(warm.ctx.searchBudget, cold.ctx.searchBudget);
   });
 
   it(`bounds a helper with thousands of call sites in one generated file (<= ${BASELINE.hugeGeneratedFile} searches, <= 50 hits processed)`, () => {
@@ -455,7 +487,7 @@ describe('usage-inference — performance baselines', () => {
 
     const {result: types, elapsedMs} = timed(() => inferParameterType(ctx, fn.parameters[0]));
 
-    assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     assert.ok(
       counter.referenceSearches() <= BASELINE.hugeGeneratedFile,
       `expected <= ${BASELINE.hugeGeneratedFile} searches, got ${counter.referenceSearches()}`,
@@ -514,10 +546,12 @@ describe('usage-inference — performance baselines', () => {
 
   it(`stringifies each unique candidate type at most once per request (<= ${BASELINE.nestedForwardingStringifications} typeToString calls)`, () => {
     // fmtOpts forwards its parameter; wrap1/wrap2 forward through it. Hover
-    // on wrap2 pulls all 30 distinct large object-literal candidates up
-    // through three dedupe levels — each level re-rendered every type before
-    // the typeToString memo existed (120 calls, measured at 13ms of a 34ms
-    // request with 50x150-property literals).
+    // on wrap2 pulls all 30 distinct large object-literal candidates into
+    // fmtOpts's parameter, where they are deduped by display string and then,
+    // being more than MAX_UNION_TYPES unrelated shapes, collapse to silence.
+    // Before the per-request typeToString memo every dedupe level re-rendered
+    // every type (120 calls, measured at 13ms of a 34ms request with
+    // 50x150-property literals).
     const N = 30;
     const literal = (i) => '{' + Array.from({length: 40}, (_, p) => `k${i}_${p}: ${p}`).join(', ') + '}';
     const calls = Array.from({length: N}, (_, i) => `fmtOpts(${literal(i)});`).join('\n');
@@ -547,7 +581,7 @@ describe('usage-inference — performance baselines', () => {
 
     const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
 
-    assert.equal(types.length, N, 'all candidate object-literal types must survive dedupe');
+    assert.equal(types.length, 0, 'more than MAX_UNION_TYPES unrelated shapes must collapse to silence');
     assert.ok(
       stringifications <= BASELINE.nestedForwardingStringifications,
       `expected the typeToString memo to bound stringifications at <= ${BASELINE.nestedForwardingStringifications}, got ${stringifications}`,
@@ -577,7 +611,7 @@ describe('usage-inference — performance baselines', () => {
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
 
-  it('caches the ambient-class index across repeated hovers on a real dw.* no-call-site parameter (addressBook.addresses)', () => {
+  it('reuses the ambient-class index across Programs when only a cartridge .js file changes (addressBook.addresses)', () => {
     // Real-world shape from a storefront cartridge's addressHelpers.js: an uncalled
     // (from this file's perspective) helper whose only parameter usage is a
     // single, globally-unique member access — the ambient-class matching
@@ -595,26 +629,32 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const languageService = createFixtureLanguageService(files, {strict: true});
-    const ctx = createInferenceContext(ts, languageService);
-    const fn = findFunctionDeclaration(ctx.program.getSourceFile('/addressHelpers.js'), 'getAddressBookAddressByForm');
-    const counter = withPropertiesOfTypeCounter(ctx.checker);
-
-    const first = timed(() => inferParameterType(ctx, fn.parameters[0]));
-    assert.equal(describeTypes(ctx.checker, first.result), 'AddressBook');
-    const scansAfterFirstHover = counter.count();
-    assert.ok(scansAfterFirstHover > 0, 'expected the cold ambient-class index build to scan at least one candidate');
-    assert.ok(first.elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(first.elapsedMs)}ms`);
-
-    // A second hover at the same position (the cursor lingering, or a
-    // completion request right after the hover) must reuse the cached index
-    // instead of re-scanning every ambient class's property list.
-    const second = timed(() => inferParameterType(ctx, fn.parameters[0]));
-    assert.equal(describeTypes(ctx.checker, second.result), 'AddressBook');
-    assert.equal(
-      counter.count() - scansAfterFirstHover,
-      BASELINE.ambientClassIndexRebuildOnRepeatedRequest,
-      `expected the warm ambient-class index to add ${BASELINE.ambientClassIndexRebuildOnRepeatedRequest} getPropertiesOfType calls, got ${counter.count() - scansAfterFirstHover}`,
+    const before = createInferenceContext(ts, languageService);
+    const fnBefore = findFunctionDeclaration(
+      before.program.getSourceFile('/addressHelpers.js'),
+      'getAddressBookAddressByForm',
     );
-    assert.ok(second.elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(second.elapsedMs)}ms`);
+    assert.equal(describeTypes(before, inferParameterType(before, fnBefore.parameters[0])), 'AddressBook');
+
+    // Typing in the cartridge file produces a new Program over the same,
+    // unchanged declaration SourceFiles.
+    files['/addressHelpers.js'] += '\n// edited\n';
+    const after = createInferenceContext(ts, languageService);
+    assert.notEqual(after.program, before.program, 'expected the edit to produce a new Program');
+    const counter = withPropertiesOfTypeCounter(after.checker);
+    const fnAfter = findFunctionDeclaration(
+      after.program.getSourceFile('/addressHelpers.js'),
+      'getAddressBookAddressByForm',
+    );
+
+    const {result, elapsedMs} = timed(() => inferParameterType(after, fnAfter.parameters[0]));
+
+    assert.equal(describeTypes(after, result), 'AddressBook');
+    assert.equal(
+      counter.count(),
+      BASELINE.ambientClassIndexRebuildAfterJsEdit,
+      `expected the warm ambient-class index to add ${BASELINE.ambientClassIndexRebuildAfterJsEdit} getPropertiesOfType calls, got ${counter.count()}`,
+    );
+    assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
 });

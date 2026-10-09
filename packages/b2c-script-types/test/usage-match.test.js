@@ -15,8 +15,8 @@ const {
   inferParameterType,
   inferTypeForNode,
   matchAmbientTypesByUsage,
-  collectParameterMemberUsage,
-} = require('../plugin/usage-inference');
+  usageProfileOf,
+} = require('../src/usage-inference');
 const {createFixtureLanguageService, findFunctionDeclaration} = require('./helpers/fixture-language-service');
 const {realTypesPrelude} = require('./helpers/real-dw-types');
 
@@ -51,10 +51,10 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     const types = inferParameterType(ctx, fn.parameters[0]);
 
-    assert.equal(describeTypes(ctx.checker, types), 'Shipment');
+    assert.equal(describeTypes(ctx, types), 'Shipment');
   });
 
-  it('collectParameterMemberUsage sees a member accessed only inside a nested closure', () => {
+  it('usageProfileOf sees a member accessed only inside a nested closure', () => {
     const files = {
       '/types.d.ts': realTypesPrelude(['Shipment'], ''),
       '/shippingHelpers.js': `
@@ -68,7 +68,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     };
     const {ctx, fn} = setupInference(files, '/shippingHelpers.js', 'markShipmentForShipping');
 
-    const members = collectParameterMemberUsage(ctx, fn.parameters[0]);
+    const members = usageProfileOf(ctx, fn.parameters[0]).memberNames;
 
     assert.deepEqual([...members].sort(), ['custom', 'setShippingMethod']);
   });
@@ -90,7 +90,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     const types = inferParameterType(ctx, fn.parameters[0]);
 
-    assert.deepEqual(types, []);
+    assert.equal(describeTypes(ctx, types), '');
   });
 
   it('does not let an identifier-name match rescue a weak-only custom+UUID signature', () => {
@@ -125,7 +125,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     };
     const {ctx, fn} = setupInference(files, '/accountHelpers.js', 'getPasswordResetToken');
 
-    assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'Customer');
+    assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), 'Customer');
   });
 
   it('stays silent for a single strong member shared by multiple classes when the identifier name does not disambiguate', () => {
@@ -165,7 +165,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     const types = inferParameterType(ctx, fn.parameters[0]);
 
-    assert.equal(describeTypes(ctx.checker, types), 'AddressBook');
+    assert.equal(describeTypes(ctx, types), 'AddressBook');
   });
 
   it('matchAmbientTypesByUsage returns [] for a single member name that ties across multiple ambient classes', () => {
@@ -177,7 +177,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     // above.
     const types = matchAmbientTypesByUsage(ctx, new Set(['custom']));
 
-    assert.deepEqual(types, []);
+    assert.equal(describeTypes(ctx, types), '');
   });
 
   it('matchAmbientTypesByUsage returns [] for a usage signature no ambient class satisfies', () => {
@@ -185,7 +185,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     const types = matchAmbientTypesByUsage(ctx, new Set(['thisMemberDoesNotExistAnywhere', 'norDoesThisOne']));
 
-    assert.deepEqual(types, []);
+    assert.equal(describeTypes(ctx, types), '');
   });
 
   it("infers a manual-indexing loop variable's type from its own usage (var item = items[i])", () => {
@@ -221,7 +221,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     const types = inferTypeForNode(ctx, lineItemDecl.name);
 
-    assert.equal(describeTypes(ctx.checker, types), 'ProductLineItem');
+    assert.equal(describeTypes(ctx, types), 'ProductLineItem');
   });
 
   it('stays quiet for a real-world single-member loop variable (hasPreorderableLineItem shape)', () => {
@@ -257,7 +257,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     // Prefer length over deepEqual: Type objects are circular and hang
     // assert.deepEqual when a regression accidentally returns a candidate.
-    assert.equal(types.length, 0, `expected silence, got: ${describeTypes(ctx.checker, types)}`);
+    assert.equal(types.length, 0, `expected silence, got: ${describeTypes(ctx, types)}`);
   });
 
   it('still prefers call-site inference over usage matching when a real call site exists', () => {
@@ -278,7 +278,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     const types = inferParameterType(ctx, fn.parameters[0]);
 
-    assert.equal(describeTypes(ctx.checker, types), 'Shipment');
+    assert.equal(describeTypes(ctx, types), 'Shipment');
   });
 
   describe("the `'member' in x` existence-check idiom as usage evidence", () => {
@@ -289,7 +289,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     // `'appliedPromotions' in this` with the read happening only on a later,
     // unrelated code path). collectMemberUsageInScope must count this
     // idiom, not just direct `x.member` reads.
-    it("collectParameterMemberUsage counts a bare `'member' in param` check", () => {
+    it("usageProfileOf counts a bare `'member' in param` check", () => {
       const files = {
         '/types.d.ts': realTypesPrelude(['Shipment'], ''),
         '/shippingHelpers.js': `
@@ -303,7 +303,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/shippingHelpers.js', 'describeShipment');
 
-      const members = collectParameterMemberUsage(ctx, fn.parameters[0]);
+      const members = usageProfileOf(ctx, fn.parameters[0]).memberNames;
 
       assert.deepEqual([...members], ['custom']);
     });
@@ -328,7 +328,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Shipment');
+      assert.equal(describeTypes(ctx, types), 'Shipment');
     });
 
     it('combines an `in` check with a direct property-access read on the same member without double-counting (category.parent tree-walk shape)', () => {
@@ -347,11 +347,11 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/shippingHelpers.js', 'walkUp');
 
-      const members = collectParameterMemberUsage(ctx, fn.parameters[0]);
+      const members = usageProfileOf(ctx, fn.parameters[0]).memberNames;
       assert.deepEqual([...members].sort(), ['custom', 'productLineItems']);
 
       const types = inferParameterType(ctx, fn.parameters[0]);
-      assert.equal(describeTypes(ctx.checker, types), 'Shipment');
+      assert.equal(describeTypes(ctx, types), 'Shipment');
     });
 
     it("attributes a chained `'member' in x.y` check to x.y's own one-hop access (`y`), not the checked name itself", () => {
@@ -371,7 +371,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/shippingHelpers.js', 'describeShipment');
 
-      const members = collectParameterMemberUsage(ctx, fn.parameters[0]);
+      const members = usageProfileOf(ctx, fn.parameters[0]).memberNames;
 
       assert.deepEqual([...members], ['custom']);
     });
@@ -412,7 +412,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     const types = inferParameterType(ctx, fn.parameters[0]);
 
-    assert.equal(describeTypes(ctx.checker, types), 'Category');
+    assert.equal(describeTypes(ctx, types), 'Category');
   });
 
   it('infers a parameter from a member-built object literal passed to a call argument, not returned (pushReview shape)', () => {
@@ -438,7 +438,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     const types = inferParameterType(ctx, fn.parameters[1]);
 
-    assert.equal(describeTypes(ctx.checker, types), 'ProductLineItem');
+    assert.equal(describeTypes(ctx, types), 'ProductLineItem');
   });
 
   describe('identifier-name tiebreak (prefers the class matching the variable/parameter name)', () => {
@@ -471,7 +471,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/accountHelpers.js', 'sentAccountActivationEmail');
 
-      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'Customer');
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), 'Customer');
 
       let profileDecl;
       const visit = (n) => {
@@ -482,13 +482,13 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
       const types = inferTypeForNode(ctx, profileDecl.name);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Profile');
+      assert.equal(describeTypes(ctx, types), 'Profile');
     });
 
-    it('still returns the smallest-total-members candidate when no candidate name matches the identifier', () => {
+    it('returns the union of every fitting class when no candidate name matches the identifier', () => {
       // Same ambiguous member signature, different (unrelated) variable
-      // name — the size-based tiebreak from before this fix must still
-      // apply exactly as it did, since there's no name match to prefer.
+      // name: with no name to break the tie, every class the usage fits is
+      // shown, the way IntelliJ lists each candidate.
       // Deliberate `@param {any}` (not the weak `{obj}` placeholder) blocks
       // inference on `resettingCustomer`: without it, the parameter's own
       // single-member usage (`.profile`) uniquely matches Customer in this
@@ -524,7 +524,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
       const types = inferTypeForNode(ctx, contactInfoDecl.name);
 
-      assert.equal(describeTypes(ctx.checker, types), 'ProductListRegistrant');
+      assert.equal(describeTypes(ctx, types), 'ProductListRegistrant | Profile');
     });
 
     it('does not let an identifier-name match rescue a signature that matches zero ambient classes', () => {
@@ -536,7 +536,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
         'shipment',
       );
 
-      assert.deepEqual(types, []);
+      assert.equal(describeTypes(ctx, types), '');
     });
 
     it('maps SFRA alias lineItem → ProductLineItem for a single strong member', () => {
@@ -553,7 +553,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/priceTotal.js', 'getTotalPrice');
 
-      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
     });
 
     it('maps short alias pli → ProductLineItem', () => {
@@ -567,7 +567,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/order.js', 'handlePliAttributes');
 
-      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
     });
 
     it('maps PascalCase suffix resettingCustomer → Customer (SFRA accountHelpers)', () => {
@@ -584,7 +584,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/accountHelpers.js', 'sendPasswordResetEmail');
 
-      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[1])), 'Customer');
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[1])), 'Customer');
     });
 
     it('maps paymentInstrument alias → OrderPaymentInstrument', () => {
@@ -597,9 +597,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
         `,
       };
       const {ctx, fn} = setupInference(files, '/helpers.js', 'amountOf');
-      assert.ok(
-        describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])).includes('OrderPaymentInstrument'),
-      );
+      assert.ok(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])).includes('OrderPaymentInstrument'));
     });
 
     it('maps PascalCase Profile suffix registeredCustomerProfile → Profile', () => {
@@ -612,7 +610,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
         `,
       };
       const {ctx, fn} = setupInference(files, '/helpers.js', 'greet');
-      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'Profile');
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), 'Profile');
     });
 
     it('maps PascalCase suffixes apiProduct / currentBasket / defaultShipment', () => {
@@ -631,7 +629,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
         };
         const {ctx, fn} = setupInference(files, '/helpers.js', fnName);
         assert.ok(
-          describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])).includes(expect),
+          describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])).includes(expect),
           `${param} should infer ${expect}`,
         );
       }
@@ -686,10 +684,10 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/lineItemHelper.js', 'isProductLine');
 
-      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
     });
 
-    it('stays silent when the body instanceof-checks multiple unrelated classes', () => {
+    it('infers the union of the classes the body instanceof-checks', () => {
       const files = {
         '/types.d.ts': realTypesPrelude(
           ['ProductLineItem', 'ShippingLineItem', 'PriceAdjustment'],
@@ -710,7 +708,63 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/lineItemHelper.js', 'describeLine');
 
-      assert.equal(inferParameterType(ctx, fn.parameters[0]).length, 0);
+      assert.equal(
+        describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])),
+        'ProductLineItem | ShippingLineItem | PriceAdjustment',
+      );
     });
+
+    it('collapses more than three instanceof-checked classes to their closest shared superclass', () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(
+          ['ProductLineItem', 'ShippingLineItem', 'PriceAdjustment', 'ProductShippingLineItem'],
+          `
+          const ProductLineItem: { new (): ProductLineItem };
+          const ShippingLineItem: { new (): ShippingLineItem };
+          const PriceAdjustment: { new (): PriceAdjustment };
+          const ProductShippingLineItem: { new (): ProductShippingLineItem };
+        `,
+        ),
+        '/lineItemHelper.js': `
+          function describeLine(lineItem) {
+            if (lineItem instanceof ProductLineItem) return 'product';
+            if (lineItem instanceof ShippingLineItem) return 'shipping';
+            if (lineItem instanceof PriceAdjustment) return 'adjustment';
+            if (lineItem instanceof ProductShippingLineItem) return 'product shipping';
+            return lineItem.lineItemText;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/lineItemHelper.js', 'describeLine');
+
+      assert.equal(describeTypes(ctx, inferParameterType(ctx, fn.parameters[0])), 'LineItem');
+    });
+  });
+});
+
+describe('usage-inference — ambient-class index', () => {
+  it('sees a declaration file added after an earlier request (no index pinned to the first Program)', () => {
+    const files = {
+      '/types.d.ts': 'interface Gadget { sprocket: string; widgetize(): void; }\n',
+      '/helpers.js': 'function noop() {}\n',
+    };
+    const languageService = createFixtureLanguageService(files, {strict: true});
+    const before = createInferenceContext(ts, languageService);
+    assert.equal(describeTypes(before, matchAmbientTypesByUsage(before, new Set(['sprocket', 'widgetize']))), 'Gadget');
+    assert.equal(describeTypes(before, matchAmbientTypesByUsage(before, new Set(['cog', 'spin']))), '');
+
+    files['/more.d.ts'] = 'interface Gizmo { cog: number; spin(): void; }\n';
+    const after = createInferenceContext(ts, languageService);
+
+    assert.equal(describeTypes(after, matchAmbientTypesByUsage(after, new Set(['cog', 'spin']))), 'Gizmo');
+  });
+
+  it("never matches TypeScript's own library classes (ES / DOM)", () => {
+    const {ctx} = setupInference({'/helpers.js': 'function noop() {}\n'}, '/helpers.js', 'noop');
+
+    // Only lib.es*.d.ts's Date has both members.
+    const types = matchAmbientTypesByUsage(ctx, new Set(['getUTCFullYear', 'toISOString']));
+
+    assert.equal(describeTypes(ctx, types), '');
   });
 });

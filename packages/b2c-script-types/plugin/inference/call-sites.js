@@ -9,6 +9,28 @@ exports.getReferenceNameNode = getReferenceNameNode;
 exports.collectCallSites = collectCallSites;
 const constants_1 = require("./constants");
 const ast_helpers_1 = require("./ast-helpers");
+// Reference searches are what an inference request spends its time on, and
+// a Program never changes, so their results are kept for as long as the
+// Program lives: hovering one parameter after another in an unchanged
+// project runs each search once. Entries are plain file names and spans, so
+// they pin no checker. A search served from here still spends the request's
+// search budget, so a request reaches the same call sites, and the same
+// answer, whether or not an earlier request warmed the cache.
+const referencesByProgram = new WeakMap();
+function findReferences(ctx, name) {
+    let cache = referencesByProgram.get(ctx.program);
+    if (!cache) {
+        cache = new Map();
+        referencesByProgram.set(ctx.program, cache);
+    }
+    let references = cache.get(name);
+    if (!references) {
+        const sourceFile = name.getSourceFile();
+        references = ctx.languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
+        cache.set(name, references);
+    }
+    return references;
+}
 /**
  * Identifies the name to run findReferences on for a function-like
  * declaration that itself has no `name` (the common CommonJS shapes:
@@ -41,27 +63,55 @@ function getReferenceNameNode(fn, ts) {
     }
     return undefined;
 }
+/** The function enclosing `node`, if any. */
+function enclosingFunction(node, ts) {
+    for (let current = node.parent; current; current = current.parent) {
+        if (ts.isFunctionLike(current))
+            return current;
+    }
+    return undefined;
+}
 /**
- * Given a reference identifier (`helper` in `helper(x)`, `new Helper(x)`, or
- * `exports.helper(x)`/`obj.helper(x)`), finds the enclosing call site if the
- * identifier sits in callee/constructor position — one parent up for a
- * direct call or `new` expression, two parents up when the identifier is the
- * `.name` of a property access.
+ * The arguments `fn.apply(thisArg, list)` passes: the elements of an array
+ * literal, or — for the forwarding idiom `fn.apply(this, arguments)` — the
+ * enclosing function's own parameters, which inference then resolves from
+ * that function's call sites in turn.
+ */
+function applyArguments(call, ts) {
+    const list = call.arguments[1];
+    if (!list)
+        return [];
+    if (ts.isArrayLiteralExpression(list)) {
+        return list.elements.filter((element) => !ts.isSpreadElement(element) && !ts.isOmittedExpression(element));
+    }
+    if (!ts.isIdentifier(list) || list.text !== 'arguments')
+        return [];
+    const forwarding = enclosingFunction(call, ts);
+    return forwarding ? forwarding.parameters.map((parameter) => parameter.name).filter(ts.isIdentifier) : [];
+}
+/**
+ * Given a reference identifier (`helper` in `helper(x)`, `new Helper(x)`,
+ * `exports.helper(x)`, `helper.call(this, x)`), finds the call site it
+ * invokes, if it sits in callee position. The name of a property access
+ * (`obj.helper`) is treated as the whole access.
  */
 function findCallInCalleePosition(node, ts) {
-    const parent = node.parent;
+    const callee = node.parent && ts.isPropertyAccessExpression(node.parent) && node.parent.name === node ? node.parent : node;
+    const parent = callee.parent;
     if (!parent)
         return undefined;
-    if ((ts.isCallExpression(parent) || ts.isNewExpression(parent)) && parent.expression === node)
-        return parent;
-    if (ts.isPropertyAccessExpression(parent) && parent.name === node) {
-        const grandparent = parent.parent;
-        if (grandparent &&
-            (ts.isCallExpression(grandparent) || ts.isNewExpression(grandparent)) &&
-            grandparent.expression === parent) {
-            return grandparent;
-        }
+    if ((ts.isCallExpression(parent) || ts.isNewExpression(parent)) && parent.expression === callee) {
+        return { node: parent, args: parent.arguments ?? [] };
     }
+    if (!ts.isPropertyAccessExpression(parent) || parent.expression !== callee)
+        return undefined;
+    const call = parent.parent;
+    if (!call || !ts.isCallExpression(call) || call.expression !== parent)
+        return undefined;
+    if (parent.name.text === 'call')
+        return { node: call, args: call.arguments.slice(1) };
+    if (parent.name.text === 'apply')
+        return { node: call, args: applyArguments(call, ts) };
     return undefined;
 }
 /**
@@ -77,12 +127,32 @@ function isRequireCallExpression(node, ts) {
         ts.isStringLiteralLike(node.arguments[0]));
 }
 /**
+ * The name a value is bound to when `expression` initializes a variable
+ * (`var helper = …`) or an object property (`{helper: …}`) — the next name
+ * to search references for when the value's own references dead-end there.
+ */
+function bindingNameOf(expression, ts) {
+    const parent = expression.parent;
+    if (!parent || !(ts.isVariableDeclaration(parent) || ts.isPropertyAssignment(parent)))
+        return undefined;
+    return parent.initializer === expression && ts.isIdentifier(parent.name) ? parent.name : undefined;
+}
+/**
  * When a reference to our function's name doesn't sit directly in callee
  * position, it may still be one hop away from a real call site through a
- * binding indirection: the module specifier of a `require(...)` call whose
- * result is assigned to a variable (`var helper = require('./helper')`), or
- * a destructuring binding element (`const {helper} = require(...)` or
- * `const {helper: local} = someObject`).
+ * binding indirection:
+ *
+ * - the module specifier of a `require(...)` whose result is bound to a
+ *   variable (`var helper = require('./helper')`) or to a property of an
+ *   export map (SFRA's `decorators/index.js`:
+ *   `{images: require('./images')}`, called as `decorators.images(...)`);
+ * - a destructuring binding element (`const {helper} = require(...)` or
+ *   `const {helper: local} = someObject`);
+ * - an alias of the function itself (`var run = helper`, or SFRA's canonical
+ *   `module.exports = {getSalePrice: getSalePrice}` export shape): a search
+ *   on the function name dead-ends at the alias, while the consumers
+ *   (`productHelpers.getSalePrice(x)` in another file) are references of the
+ *   alias name.
  *
  * @returns Either the further name to search references for, or — for an
  * immediately-invoked require (`require('./helper')(x)`) — the call site itself.
@@ -91,34 +161,19 @@ function resolveIndirectReferenceTarget(node, ts) {
     const parent = node.parent;
     if (!parent)
         return undefined;
-    if (ts.isCallExpression(parent) && parent.arguments[0] === node && isRequireCallExpression(parent, ts)) {
-        const requireCall = parent;
-        const outer = requireCall.parent;
-        if (outer && ts.isCallExpression(outer) && outer.expression === requireCall) {
-            return { kind: 'call', call: outer }; // require('./helper')(x)
-        }
-        if (outer && ts.isVariableDeclaration(outer) && outer.initializer === requireCall && ts.isIdentifier(outer.name)) {
-            return { kind: 'name', name: outer.name }; // var helper = require('./helper')
-        }
-        return undefined;
-    }
     if (ts.isBindingElement(parent) && ts.isIdentifier(parent.name)) {
         // Covers both `{helper}` (shorthand — name and propertyName are the same
         // node) and `{helper: local}` (renamed — redirect to the local binding).
         return { kind: 'name', name: parent.name };
     }
-    // `module.exports = {getSalePrice: getSalePrice}` — SFRA's canonical export
-    // shape, an alias map from property name to a separately-declared function.
-    // A reference search on the *function* name dead-ends at the alias-map
-    // initializer; the actual consumers (`productHelpers.getSalePrice(x)` in
-    // another file) are references of the property *name*, so redirect the
-    // search there. Not scoped to module.exports specifically: any
-    // `{run: helper}` alias whose property is later called is a genuine call
-    // site of the aliased function.
-    if (ts.isPropertyAssignment(parent) && parent.initializer === node && ts.isIdentifier(parent.name)) {
-        return { kind: 'name', name: parent.name };
+    const isRequireSpecifier = ts.isCallExpression(parent) && parent.arguments[0] === node && isRequireCallExpression(parent, ts);
+    const value = isRequireSpecifier ? parent : node;
+    const invocation = value.parent;
+    if (isRequireSpecifier && invocation && ts.isCallExpression(invocation) && invocation.expression === value) {
+        return { kind: 'call', call: { node: invocation, args: invocation.arguments } }; // require('./helper')(x)
     }
-    return undefined;
+    const name = ts.isExpression(value) ? bindingNameOf(value, ts) : undefined;
+    return name && { kind: 'name', name };
 }
 /**
  * Finds actual call sites for `nameNode`, following up to
@@ -164,11 +219,9 @@ function collectCallSites(ctx, nameNode) {
  * fanning out once it's exhausted.
  */
 function collectCallsFromName(ctx, name, calls, nextFrontier, localBudget) {
-    const { ts, languageService, program } = ctx;
-    const sourceFile = name.getSourceFile();
+    const { ts, program } = ctx;
     ctx.searchBudget--;
-    const refs = languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
-    for (const ref of refs) {
+    for (const ref of findReferences(ctx, name)) {
         if (localBudget <= 0)
             break;
         localBudget--;

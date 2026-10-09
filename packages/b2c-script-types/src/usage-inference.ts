@@ -8,15 +8,21 @@
 // split across the ./inference/ modules by responsibility; this barrel just
 // re-exports the pieces the tsserver plugin (and the test suite) consume, so
 // callers have one stable import path and don't need to know the internal
-// layout. Read the modules in this order to understand the engine:
-//   inference/constants     - the tunable limits that keep a request bounded
-//   inference/context       - the per-request scratchpad (program, budgets, memo)
-//   inference/ast-helpers   - pure AST navigation (find node, return exprs, ...)
-//   inference/call-sites    - find where a function is called across the project
-//   inference/type-helpers  - Type utilities + hover text / completion entries
-//   inference/super-module  - module.superModule detection and export scanning
-//   inference/core          - the recursive engine that ties it all together
-//   inference/usage-match   - last-resort ambient-class matching from member usage
+// layout. The engine gathers evidence (./inference/core) and then applies one
+// decision policy (./inference/policy) at every parameter, return value and
+// variable. Read the modules in this order to understand it:
+//   inference/constants           - the tunable limits that keep a request bounded
+//   inference/context             - the per-request scratchpad (program, budgets, memo, guards)
+//   inference/ast-helpers         - pure AST navigation (find node, return exprs, ...)
+//   inference/type-helpers        - Type utilities + hover text / completion entries
+//   inference/call-sites          - find where a function is called across the project
+//   inference/super-module        - module.superModule detection and export scanning
+//   inference/usage-profile       - what a value's own scope says about it (members, guards, uses)
+//   inference/ambient-index       - every ambient class by member names
+//   inference/naming              - identifier-name tiebreak between usage matches
+//   inference/framework-contracts - parameters the platform itself passes (Page Designer)
+//   inference/policy              - turning evidence into the type(s) shown
+//   inference/core                - the recursive evidence-gathering engine
 
 export {INFERRED_COMPLETION_SOURCE} from './inference/constants';
 export {createInferenceContext} from './inference/context';
@@ -24,16 +30,13 @@ export {getNodeAtPosition, findEnclosingPropertyAccess} from './inference/ast-he
 export {
   describeTypes,
   getMemberOfType,
-  isAnyType,
+  inferredCompletionEntry,
   isOpenForUsageInference,
   typesToCompletionEntries,
 } from './inference/type-helpers';
 export {collectSuperModuleAugmentedMembers, traceSuperModuleAccess} from './inference/super-module';
 export {inferParameterType, inferReturnType, inferTypeForExpression, inferTypeForNode} from './inference/core';
-export {
-  collectParameterMemberUsage,
-  collectVariableMemberUsage,
-  matchAmbientTypesByUsage,
-} from './inference/usage-match';
+export {usageProfileOf} from './inference/usage-profile';
+export {matchAmbientTypesByUsage} from './inference/policy';
 
 export type {InferenceContext} from './inference/context';
