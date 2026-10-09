@@ -52,10 +52,12 @@ const BASELINE = {
   // engine's direct-type check returns it without any search.
   nativeHelperChain: 0,
   // Return-direction chasing of a parameter-forwarding chain is bounded by
-  // the depth cap without any search; parameter-direction chasing performs
-  // one small search cluster per in-cap level.
+  // the depth cap without any search. Parameter-direction chasing follows a
+  // parameter passed on as is at no depth cost (it is the same value all the
+  // way down), one search per level, so the request's search budget
+  // (MAX_SEARCHES_PER_REQUEST) is what stops it.
   deepForwardingChainReturns: 0,
-  deepForwardingChainParam: 6,
+  deepForwardingChainParam: 12,
   // Twenty sibling branches through the same sub-helper must share ONE
   // memoized search set, not repeat it per branch.
   wideFanOutMemoized: 4,
@@ -235,7 +237,7 @@ describe('usage-inference — performance baselines', () => {
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
 
-  it('bounds a 12-level parameter-forwarding chain by the depth cap, in both directions', () => {
+  it('bounds a 12-level parameter-forwarding chain by the depth cap and the search budget', () => {
     // f1(x) -> f2(x) -> ... -> f12(x) -> x: parameters are implicit any, so
     // TypeScript can't resolve this natively — the engine's own caps are all
     // that bounds the cost, and it must stay flat no matter how deep the
@@ -263,8 +265,9 @@ describe('usage-inference — performance baselines', () => {
     assert.equal(counter.referenceSearches(), BASELINE.deepForwardingChainReturns);
     assert.ok(returnMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(returnMs)}ms`);
 
-    // Parameter direction (hover on f12's x): each in-cap level costs one
-    // small reference-search cluster, then the depth cap stops the climb.
+    // Parameter direction (hover on f12's x): each level passes `x` on as is,
+    // which costs no depth, so one search per level until the search budget
+    // stops the climb.
     counter.reset();
     const ctx2 = createInferenceContext(ts, counter.languageService);
     const {elapsedMs: paramMs} = timed(() =>

@@ -695,3 +695,85 @@ describe('usage-inference — call-specific returns', () => {
     assert.equal(ctx.bindings.size, 0, 'bindings are released after each call');
   });
 });
+
+describe('usage-inference — values handed down a chain of helpers', () => {
+  // SFRA's cart helpers pass the basket's line items down four functions
+  // unchanged before one iterates them with an inline callback. Neither hop
+  // adds uncertainty, so neither costs inference depth.
+  const CART_CHAIN = {
+    '/collections.js': `
+      function forEach(collection, callback) {
+        var iterator = collection.iterator();
+        while (iterator.hasNext()) {
+          callback(iterator.next());
+        }
+      }
+      module.exports = {forEach: forEach};
+    `,
+    '/cartHelpers.js': `
+      var collections = require('./collections');
+      function getMatchingProducts(productId, productLineItems) {
+        var matchingProducts = [];
+        collections.forEach(productLineItems, function (item) {
+          if (item.productID === productId) matchingProducts.push(item);
+        });
+        return {matchingProducts: matchingProducts};
+      }
+      function getExistingProductLineItemsInCart(product, productId, productLineItems) {
+        var matchingProducts = getMatchingProducts(productId, productLineItems).matchingProducts;
+        return matchingProducts.filter(function (matchingProduct) {
+          return product.bundle ? matchingProduct.bundledProductLineItems.length > 0 : true;
+        });
+      }
+      function getExistingProductLineItemInCart(product, productId, productLineItems) {
+        return getExistingProductLineItemsInCart(product, productId, productLineItems)[0];
+      }
+      function addProductToCart(currentBasket, productId) {
+        var productLineItems = currentBasket.productLineItems;
+        return getExistingProductLineItemInCart(getProduct(), productId, productLineItems);
+      }
+      addProductToCart(getBasket(), 'id');
+    `,
+  };
+
+  runCases([
+    {
+      title: 'the filtered line items of a parameter forwarded three times',
+      files: CART_CHAIN,
+      file: '/cartHelpers.js',
+      kind: 'return',
+      name: 'getExistingProductLineItemsInCart',
+      expected: 'ProductLineItem[]',
+    },
+    {
+      title: 'the first of them, one more helper up',
+      files: CART_CHAIN,
+      file: '/cartHelpers.js',
+      kind: 'return',
+      name: 'getExistingProductLineItemInCart',
+      expected: 'ProductLineItem',
+    },
+    {
+      title: 'the inline callback at the far end of the chain',
+      files: CART_CHAIN,
+      file: '/cartHelpers.js',
+      kind: 'param',
+      name: 'item',
+      expected: 'ProductLineItem',
+    },
+    {
+      title: 'a forwarded parameter documented with a real type keeps that type',
+      files: {
+        '/helper.js': `
+          function show(product) { return product.name; }
+          /** @param {Product} product */
+          function render(product) { return show(product); }
+          render(getProduct());
+        `,
+      },
+      kind: 'param',
+      name: 'product',
+      expected: 'Product',
+    },
+  ]);
+});

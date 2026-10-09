@@ -6,8 +6,12 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.collectCallSites = collectCallSites;
+exports.forwardedParameter = forwardedParameter;
 const constants_1 = require("./constants");
 const ast_helpers_1 = require("./ast-helpers");
+const bindings_1 = require("./bindings");
+const member_values_1 = require("./member-values");
+const type_helpers_1 = require("./type-helpers");
 const value_flow_1 = require("./value-flow");
 // Reference searches are what an inference request spends its time on, and
 // a Program never changes, so their results are kept for as long as the
@@ -119,4 +123,22 @@ function referenceTarget(ctx, reference, role) {
     const file = ctx.program.getSourceFile(reference.fileName);
     const node = file && (0, ast_helpers_1.getNodeAtPosition)(file, ctx.ts, reference.textSpan.start);
     return node?.parent ? (0, value_flow_1.valueTarget)(ctx, node, role) : undefined;
+}
+/**
+ * The caller's own parameter an argument passes on as is (`items` in
+ * `getMatchingProducts(productId, items)` inside a function taking `items`),
+ * when only that parameter's call sites can say what it holds: the checker
+ * has no type for it, it has no default value and no type of its own, and it
+ * is not bound to a call being resolved (see ./bindings).
+ */
+function forwardedParameter(ctx, argument) {
+    const { ts, checker } = ctx;
+    if (!ts.isIdentifier(argument) || (0, bindings_1.boundArgument)(ctx, argument))
+        return undefined;
+    const declaration = (0, member_values_1.valueDeclarationOf)(ctx, argument);
+    if (!declaration || !ts.isParameter(declaration) || declaration.initializer)
+        return undefined;
+    if ((0, ast_helpers_1.hasExplicitParameterType)(declaration, ts))
+        return undefined;
+    return (0, type_helpers_1.informativeParts)(ctx, checker.getTypeAtLocation(argument)).length === 0 ? declaration : undefined;
 }

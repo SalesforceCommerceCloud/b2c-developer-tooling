@@ -311,8 +311,11 @@ function resolveMemberValueTypes(ctx, types) {
 function resolveIdentifierTypes(ctx, expr, depth, chainHops) {
     const { ts } = ctx;
     const decl = (0, member_values_1.valueDeclarationOf)(ctx, expr);
-    if (decl && ts.isParameter(decl))
-        return inferParameterType(ctx, decl, depth + 1);
+    // Only a search of another function's call sites costs depth: an anonymous
+    // callback's parameter is read off the call it is passed to, in this body.
+    if (decl && ts.isParameter(decl)) {
+        return inferParameterType(ctx, decl, (0, value_flow_1.getReferenceNameNode)(decl.parent, ts) ? depth + 1 : depth);
+    }
     if (decl && ts.isVariableDeclaration(decl))
         return resolveVariableTypes(ctx, decl, depth, chainHops + 1);
     return [];
@@ -329,8 +332,20 @@ function parameterEvidence(ctx, fn, paramIndex, depth) {
         return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
     return (0, call_sites_1.collectCallSites)(ctx, nameNode).flatMap((site) => {
         const arg = site.args[paramIndex];
-        return arg ? resolveExpressionTypes(ctx, arg, depth) : [];
+        return arg ? argumentEvidence(ctx, arg, depth) : [];
     });
+}
+/**
+ * The types one call-site argument passes. A caller's own untyped parameter
+ * passed on as is (see {@link forwardedParameter}) is the same value, so its
+ * call sites are searched at the same depth: a chain of helpers handing a
+ * value down (`addProductToCart` -> `getExistingProductLineItemInCart` ->
+ * `getExistingProductLineItemsInCart` -> `getMatchingProducts`) costs one
+ * level, not one per helper. The search budget still bounds the chain.
+ */
+function argumentEvidence(ctx, arg, depth) {
+    const forwarded = (0, call_sites_1.forwardedParameter)(ctx, arg);
+    return forwarded ? inferParameterType(ctx, forwarded, depth) : resolveExpressionTypes(ctx, arg, depth);
 }
 /**
  * Infers a parameter's type(s): from a platform contract when the function

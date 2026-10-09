@@ -12,12 +12,18 @@
 // follows a bounded number of those hops to reach the real call expressions.
 // "Call" includes `new Helper(x)` and `Helper.call(this, x)` — the shapes
 // SFRA's constructor-function "class" models are invoked and inherited with.
+// An argument that is the caller's own untyped parameter is recognized here
+// too, so ./core can follow a value handed down a chain of helpers to where
+// it really comes from.
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {MAX_REFERENCE_HOPS, MAX_REFERENCES_PER_CALL} from './constants';
 import type {InferenceContext} from './context';
-import {getNodeAtPosition} from './ast-helpers';
+import {getNodeAtPosition, hasExplicitParameterType} from './ast-helpers';
+import {boundArgument} from './bindings';
+import {valueDeclarationOf} from './member-values';
+import {informativeParts} from './type-helpers';
 import {enclosingFunction, valueTarget} from './value-flow';
 import type {CallSite, ReferenceTarget, ValueRole} from './value-flow';
 
@@ -150,4 +156,23 @@ function referenceTarget(
   const file = ctx.program.getSourceFile(reference.fileName);
   const node = file && getNodeAtPosition(file, ctx.ts, reference.textSpan.start);
   return node?.parent ? valueTarget(ctx, node, role) : undefined;
+}
+
+/**
+ * The caller's own parameter an argument passes on as is (`items` in
+ * `getMatchingProducts(productId, items)` inside a function taking `items`),
+ * when only that parameter's call sites can say what it holds: the checker
+ * has no type for it, it has no default value and no type of its own, and it
+ * is not bound to a call being resolved (see ./bindings).
+ */
+export function forwardedParameter(
+  ctx: InferenceContext,
+  argument: tsserver.Expression,
+): tsserver.ParameterDeclaration | undefined {
+  const {ts, checker} = ctx;
+  if (!ts.isIdentifier(argument) || boundArgument(ctx, argument)) return undefined;
+  const declaration = valueDeclarationOf(ctx, argument);
+  if (!declaration || !ts.isParameter(declaration) || declaration.initializer) return undefined;
+  if (hasExplicitParameterType(declaration, ts)) return undefined;
+  return informativeParts(ctx, checker.getTypeAtLocation(argument)).length === 0 ? declaration : undefined;
 }

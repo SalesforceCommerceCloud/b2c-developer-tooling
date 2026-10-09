@@ -27,7 +27,7 @@ import {
 } from './ast-helpers';
 import {NO_BINDINGS, argumentBindings, boundArgument, hasAnyTypeArgument, narrows, withBindings} from './bindings';
 import type {ArgumentBinding} from './bindings';
-import {collectCallSites} from './call-sites';
+import {collectCallSites, forwardedParameter} from './call-sites';
 import {getReferenceNameNode} from './value-flow';
 import {frameworkParameterTypes} from './framework-contracts';
 import {genericResultSource} from './generic-calls';
@@ -447,7 +447,11 @@ function resolveIdentifierTypes(
 ): tsserver.Type[] {
   const {ts} = ctx;
   const decl = valueDeclarationOf(ctx, expr);
-  if (decl && ts.isParameter(decl)) return inferParameterType(ctx, decl, depth + 1);
+  // Only a search of another function's call sites costs depth: an anonymous
+  // callback's parameter is read off the call it is passed to, in this body.
+  if (decl && ts.isParameter(decl)) {
+    return inferParameterType(ctx, decl, getReferenceNameNode(decl.parent, ts) ? depth + 1 : depth);
+  }
   if (decl && ts.isVariableDeclaration(decl)) return resolveVariableTypes(ctx, decl, depth, chainHops + 1);
   return [];
 }
@@ -468,8 +472,21 @@ function parameterEvidence(
   if (!nameNode) return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
   return collectCallSites(ctx, nameNode).flatMap((site) => {
     const arg = site.args[paramIndex];
-    return arg ? resolveExpressionTypes(ctx, arg, depth) : [];
+    return arg ? argumentEvidence(ctx, arg, depth) : [];
   });
+}
+
+/**
+ * The types one call-site argument passes. A caller's own untyped parameter
+ * passed on as is (see {@link forwardedParameter}) is the same value, so its
+ * call sites are searched at the same depth: a chain of helpers handing a
+ * value down (`addProductToCart` -> `getExistingProductLineItemInCart` ->
+ * `getExistingProductLineItemsInCart` -> `getMatchingProducts`) costs one
+ * level, not one per helper. The search budget still bounds the chain.
+ */
+function argumentEvidence(ctx: InferenceContext, arg: tsserver.Expression, depth: number): tsserver.Type[] {
+  const forwarded = forwardedParameter(ctx, arg);
+  return forwarded ? inferParameterType(ctx, forwarded, depth) : resolveExpressionTypes(ctx, arg, depth);
 }
 
 /**
