@@ -9,8 +9,8 @@ exports.hookCallSites = hookCallSites;
 exports.hookImplementations = hookImplementations;
 const constants_1 = require("./constants");
 const ast_helpers_1 = require("./ast-helpers");
-const call_sites_1 = require("./call-sites");
 const member_values_1 = require("./member-values");
+const reference_search_1 = require("./reference-search");
 const usage_profile_1 = require("./usage-profile");
 // Where the Script API declares `HookMgr.callHook`, whichever copy of the dw
 // types a project loads.
@@ -109,9 +109,7 @@ function callHookName(ctx) {
 /** The callHook call a reference to `callHook` is the callee of. */
 function hookCallAt(ctx, reference) {
     const { ts } = ctx;
-    const file = ctx.program.getSourceFile(reference.fileName);
-    const node = file && !file.isDeclarationFile ? (0, ast_helpers_1.getNodeAtPosition)(file, ts, reference.textSpan.start) : undefined;
-    const access = node && (0, ast_helpers_1.propertyAccessNamedBy)(node, ts);
+    const access = (0, ast_helpers_1.propertyAccessNamedBy)(reference, ts);
     const call = access?.parent;
     return call && ts.isCallExpression(call) && call.expression === access ? hookCallOf(ctx, call) : undefined;
 }
@@ -123,7 +121,7 @@ function hookCalls(ctx) {
         const searchable = name !== undefined && ctx.searchBudget > 0;
         if (searchable)
             ctx.searchBudget--;
-        calls = searchable ? (0, call_sites_1.findReferences)(ctx, name).flatMap((reference) => hookCallAt(ctx, reference) ?? []) : [];
+        calls = searchable ? (0, reference_search_1.searchReferences)(ctx, name).flatMap((reference) => hookCallAt(ctx, reference) ?? []) : [];
         hookCallsByRequest.set(ctx, calls);
     }
     return calls;

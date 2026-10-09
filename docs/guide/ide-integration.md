@@ -150,6 +150,8 @@ Two more SFRA idioms are covered:
 
 Cross-file inference (call sites in other files, `module.superModule`) needs those files in the same TypeScript project. A `jsconfig.json` that includes all cartridge sources — like the one `b2c setup ide vscode-types` generates — provides that; without one, each open file gets its own inferred project and only same-file usage is visible.
 
+Inference stays cheap on large cartridge stacks. A request reads only the files that can name the value it follows: a helper local to one file is looked up in that file, and a module's exports in that module and the files that `require()` it. Each hover or completion runs a bounded number of such searches, and is dropped as soon as the editor cancels it (for example, when you keep typing).
+
 Inferred results are heuristic and clearly labeled:
 
 - Hover text gets an appended `Inferred from usage: <type>` line.

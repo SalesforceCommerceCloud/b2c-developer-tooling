@@ -19,9 +19,10 @@ import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {MAX_REFERENCES_PER_CALL} from './constants';
 import type {InferenceContext} from './context';
-import {exportsObjectWrittenBy, getNodeAtPosition, propertyAccessNamedBy} from './ast-helpers';
-import {findReferences} from './call-sites';
+import {exportsObjectWrittenBy, propertyAccessNamedBy} from './ast-helpers';
 import {valueDeclarationOf} from './member-values';
+import {searchReferences} from './reference-search';
+import type {Reference} from './reference-search';
 import {usageProfileOf} from './usage-profile';
 import type {CallSite} from './value-flow';
 
@@ -133,11 +134,9 @@ function callHookName(ctx: InferenceContext): tsserver.Identifier | undefined {
 }
 
 /** The callHook call a reference to `callHook` is the callee of. */
-function hookCallAt(ctx: InferenceContext, reference: tsserver.ReferenceEntry): HookCall | undefined {
+function hookCallAt(ctx: InferenceContext, reference: Reference): HookCall | undefined {
   const {ts} = ctx;
-  const file = ctx.program.getSourceFile(reference.fileName);
-  const node = file && !file.isDeclarationFile ? getNodeAtPosition(file, ts, reference.textSpan.start) : undefined;
-  const access = node && propertyAccessNamedBy(node, ts);
+  const access = propertyAccessNamedBy(reference, ts);
   const call = access?.parent;
   return call && ts.isCallExpression(call) && call.expression === access ? hookCallOf(ctx, call) : undefined;
 }
@@ -149,7 +148,7 @@ function hookCalls(ctx: InferenceContext): readonly HookCall[] {
     const name = callHookName(ctx);
     const searchable = name !== undefined && ctx.searchBudget > 0;
     if (searchable) ctx.searchBudget--;
-    calls = searchable ? findReferences(ctx, name).flatMap((reference) => hookCallAt(ctx, reference) ?? []) : [];
+    calls = searchable ? searchReferences(ctx, name).flatMap((reference) => hookCallAt(ctx, reference) ?? []) : [];
     hookCallsByRequest.set(ctx, calls);
   }
   return calls;

@@ -25,6 +25,7 @@ const {
 } = require('../src/usage-inference');
 const {createFixtureLanguageService} = require('./helpers/fixture-language-service');
 const {REAL_DW_TYPES, realTypesPrelude} = require('./helpers/real-dw-types');
+const {countReferenceSearches} = require('./helpers/reference-searches');
 
 const CART_TYPES = realTypesPrelude(
   ['Basket', 'Collection', 'Product', 'ProductLineItem'],
@@ -498,20 +499,19 @@ describe('usage-inference — constructors as values', () => {
         function run() { var render = show; render(getProduct()); }
       `,
     });
-    let searches = 0;
-    const getReferencesAtPosition = languageService.getReferencesAtPosition.bind(languageService);
-    languageService.getReferencesAtPosition = (fileName, position) => {
-      searches++;
-      return getReferencesAtPosition(fileName, position);
-    };
+    const searches = countReferenceSearches();
     const ctx = createInferenceContext(ts, languageService);
     ctx.searchBudget = 1;
 
-    const types = inferParameterType(ctx, findTarget(ctx, '/helper.js', 'param', 'product'));
+    try {
+      const types = inferParameterType(ctx, findTarget(ctx, '/helper.js', 'param', 'product'));
 
-    assert.equal(describeTypes(ctx, types), 'Product');
-    assert.equal(searches, 2, 'one search for show, one for the local render');
-    assert.equal(ctx.searchBudget, 0, 'only the search for show is charged');
+      assert.equal(describeTypes(ctx, types), 'Product');
+      assert.equal(searches.total(), 2, 'one search for show, one for the local render');
+      assert.equal(ctx.searchBudget, 0, 'only the search for show is charged');
+    } finally {
+      searches.stop();
+    }
   });
 });
 

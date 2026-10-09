@@ -28,7 +28,7 @@ const {realTypesPrelude} = require('./helpers/real-dw-types');
 
 describe('usage-inference hardening', () => {
   describe('mid-inference cancellation', () => {
-    it('rethrows OperationCanceledException raised inside getReferencesAtPosition', () => {
+    it('throws OperationCanceledException once the host cancels the request mid-search', () => {
       const files = {
         '/types.d.ts': 'declare function getProduct(): {ID: string};',
         '/helper.js': `
@@ -38,25 +38,14 @@ describe('usage-inference hardening', () => {
           module.exports = {helper: helper};
         `,
       };
-      const base = createFixtureLanguageService(files);
-      let searches = 0;
-      const languageService = new Proxy(base, {
-        get(target, prop, receiver) {
-          if (prop === 'getReferencesAtPosition') {
-            return (fileName, position) => {
-              searches++;
-              if (searches >= 1) throw new ts.OperationCanceledException();
-              return target.getReferencesAtPosition(fileName, position);
-            };
-          }
-          const value = Reflect.get(target, prop, receiver);
-          return typeof value === 'function' ? value.bind(target) : value;
-        },
-      });
-      const ctx = createInferenceContext(ts, languageService);
+      let polls = 0;
+      // Cancelled from the second poll on: the search has started.
+      const host = {isCancellationRequested: () => ++polls > 1};
+      const ctx = createInferenceContext(ts, createFixtureLanguageService(files), host);
       const fn = findFunctionDeclaration(ctx.program.getSourceFile('/helper.js'), 'helper');
 
       assert.throws(() => inferParameterType(ctx, fn.parameters[0]), ts.OperationCanceledException);
+      assert.ok(polls > 1, 'the search polls the host while it runs');
     });
 
     it('plugin guarded() rethrows cancellation from inference (does not degrade to empty hover)', () => {
@@ -69,21 +58,9 @@ describe('usage-inference hardening', () => {
         `,
       };
       const host = createFixtureHost(files);
-      const base = ts.createLanguageService(host, sharedDocumentRegistry);
-      let searches = 0;
-      const languageService = new Proxy(base, {
-        get(target, prop, receiver) {
-          if (prop === 'getReferencesAtPosition') {
-            return (fileName, position) => {
-              searches++;
-              if (searches >= 1) throw new ts.OperationCanceledException();
-              return target.getReferencesAtPosition(fileName, position);
-            };
-          }
-          const value = Reflect.get(target, prop, receiver);
-          return typeof value === 'function' ? value.bind(target) : value;
-        },
-      });
+      const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
+      const source = files['/helper.js'];
+      const paramPos = positionOf(source, 'product)');
       const {proxy} = createPluginProxy({
         host,
         languageService,
@@ -93,8 +70,9 @@ describe('usage-inference hardening', () => {
           cartridges: [{name: 'test_cartridge', src: '/'}],
         },
       });
-      const source = files['/helper.js'];
-      const paramPos = positionOf(source, 'product)');
+      // TypeScript read the host's token when the service was created, so the
+      // plain hover underneath still completes; inference polls it itself.
+      host.getCancellationToken = () => ({isCancellationRequested: () => true});
 
       assert.throws(() => proxy.getQuickInfoAtPosition('/helper.js', paramPos), ts.OperationCanceledException);
     });

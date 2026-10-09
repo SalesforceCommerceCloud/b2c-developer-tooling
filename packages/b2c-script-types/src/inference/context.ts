@@ -37,6 +37,12 @@ export interface InferenceHost {
    * the answer per Program.
    */
   readonly hookRegistrations?: (program: tsserver.Program) => readonly HookRegistration[];
+  /**
+   * True once the editor has cancelled the request (the user kept typing).
+   * Reference searches poll it between files and throw TypeScript's
+   * OperationCanceledException, the way TypeScript's own searches do.
+   */
+  readonly isCancellationRequested?: () => boolean;
 }
 
 interface MemoEntry {
@@ -76,9 +82,9 @@ export interface InferenceContext {
   referenceBudget: number;
   /**
    * Mutable, shared across the whole request — decremented by
-   * collectCallSites() every time it issues a getReferencesAtPosition call
-   * (a full project scan each). See MAX_SEARCHES_PER_REQUEST for why this
-   * needs its own budget alongside the result-count one.
+   * collectCallSites() for every reference search it runs, except one for a
+   * name declared inside a function. See MAX_SEARCHES_PER_REQUEST for why
+   * this needs its own budget alongside the result-count one.
    */
   searchBudget: number;
   /**

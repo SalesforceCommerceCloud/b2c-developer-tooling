@@ -36,9 +36,8 @@
 // Parameters that carry no type at all in the original source are hovered
 // too, to measure how often inference fires on genuinely undocumented code.
 // Cost is reported as wall time and as reference searches per request,
-// project-wide (budgeted by MAX_SEARCHES_PER_REQUEST) and single-file ones
-// apart; the search count is the same on every machine and run, so compare
-// that one.
+// project-wide and single-file ones apart; the search count is the same on
+// every machine and run, so compare that one.
 //
 // Optional: B2C_INFERENCE_CARTRIDGE_PATH (colon-separated cartridge names)
 // sets the cartridge order, B2C_INFERENCE_REPORT writes the full JSON report
@@ -56,6 +55,7 @@ const {getReferenceNameNode} = require('../../src/inference/value-flow');
 const {inferTypeForExpression} = require('../../src/inference/core');
 const {createInferenceContext, describeTypes, inferReturnType, inferTypeForNode} = require('../../src/usage-inference');
 const {createPluginProxy} = require('../helpers/plugin-proxy');
+const {countReferenceSearches} = require('../helpers/reference-searches');
 
 const CORPUS = process.env.B2C_INFERENCE_CORPUS;
 const INFERRED_NOTE = 'Inferred from usage: ';
@@ -124,42 +124,14 @@ function createCorpusHost(fileNames, currentDirectory) {
   return {host, setOverride};
 }
 
-/** The innermost node of `sourceFile` spanning `position`. */
-function nodeAt(sourceFile, position) {
-  let found = sourceFile;
-  const visit = (node) => {
-    if (node.getStart(sourceFile) <= position && position < node.getEnd()) {
-      found = node;
-      ts.forEachChild(node, visit);
-    }
-  };
-  ts.forEachChild(sourceFile, visit);
-  return found;
-}
-
-/** True when the name searched at `position` is a parameter or a variable declared inside a function (the plugin's own rule). */
-function isFunctionLocalAt(sourceFile, position) {
-  const declaration = sourceFile ? nodeAt(sourceFile, position).parent : undefined;
-  if (!declaration) return false;
-  if (ts.isParameter(declaration)) return true;
-  if (!ts.isVariableDeclaration(declaration) && !ts.isBindingElement(declaration)) return false;
-  return ts.findAncestor(declaration, ts.isFunctionLike) !== undefined;
-}
-
 function createCorpusPlugin(cartridges, fileNames) {
   const {host, setOverride} = createCorpusHost(fileNames, cartridges[0]?.src ?? '/');
   const languageService = ts.createLanguageService(host);
   // Reference searches are what an inference request spends its time on;
   // counting them gives a cost measure that, unlike wall time, is the same
-  // on every machine and run. Searches for a name declared inside a function
-  // scan one file only and spend no search budget, so they are counted apart.
-  const searches = {count: 0, local: 0};
-  const getReferencesAtPosition = languageService.getReferencesAtPosition.bind(languageService);
-  languageService.getReferencesAtPosition = (fileName, position) => {
-    if (isFunctionLocalAt(languageService.getProgram().getSourceFile(fileName), position)) searches.local++;
-    else searches.count++;
-    return getReferencesAtPosition(fileName, position);
-  };
+  // on every machine and run. A search confined to the one file that can
+  // refer to its name is counted apart from one that reads the project.
+  const searches = countReferenceSearches();
   const {proxy} = createPluginProxy({
     host,
     languageService,
@@ -394,13 +366,13 @@ const SEARCH_COUNTER = Symbol('searchCounter');
 
 function timed(report, label, compute) {
   const counter = report[SEARCH_COUNTER];
-  const searchesBefore = counter.count;
-  const localBefore = counter.local;
+  const searchesBefore = counter.projectWide();
+  const localBefore = counter.local();
   const start = process.hrtime.bigint();
   const result = compute();
   const ms = Number(process.hrtime.bigint() - start) / 1e6;
-  const searches = counter.count - searchesBefore;
-  const localSearches = counter.local - localBefore;
+  const searches = counter.projectWide() - searchesBefore;
+  const localSearches = counter.local() - localBefore;
   report.timings.push(ms);
   report.searches.push(searches);
   report.localSearches.push(localSearches);
@@ -525,9 +497,13 @@ function summarize(report) {
       [SEARCH_COUNTER]: plugin.searches,
     };
 
-    evaluateUndocumented(plugin.proxy, allTargets, report);
-    for (const targets of allTargets) {
-      if (targets.params.length > 0 || targets.returns.length > 0) evaluateFile(plugin, ancestry, targets, report);
+    try {
+      evaluateUndocumented(plugin.proxy, allTargets, report);
+      for (const targets of allTargets) {
+        if (targets.params.length > 0 || targets.returns.length > 0) evaluateFile(plugin, ancestry, targets, report);
+      }
+    } finally {
+      plugin.searches.stop();
     }
 
     const summary = summarize(report);

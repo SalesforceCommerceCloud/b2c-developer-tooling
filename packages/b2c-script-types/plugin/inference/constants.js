@@ -33,11 +33,12 @@ exports.MAX_REFERENCE_HOPS = 4;
 // complementing MAX_INFERENCE_DEPTH's cap on recursion depth. Generous enough
 // to cover realistic cartridge helper usage without being effectively
 // unlimited. Note what this does and doesn't bound: it caps how many results
-// get processed and how far the search fans out, but a single
-// getReferencesAtPosition call still scans the whole program regardless — on
-// a large project the dominant cost is that first search, and the real bound
-// on it is TS's own cooperative cancellation (rethrown, never swallowed, by
-// the plugin's `guarded` wrapper).
+// get processed and how far the search fans out, but a single search still
+// checks every occurrence of the name in the files that can refer to it —
+// on a large project the dominant cost is that first search, and the real
+// bound on it is cancellation: the search polls the host's cancellation
+// token between files and throws TypeScript's OperationCanceledException,
+// which the plugin's `guarded` wrapper rethrows, never swallows.
 exports.MAX_REFERENCES_PER_REQUEST = 200;
 // Caps how much of that shared request-wide budget a *single* collectCallSites
 // call can spend, so one widely-referenced sub-helper (e.g. reached from the
@@ -57,16 +58,18 @@ exports.MAX_CHAIN_HOPS = 10;
 // -> mid overlay -> ... -> base). Real cartridge paths rarely stack more than
 // three or four overlays of the same module.
 exports.MAX_SUPERMODULE_HOPS = 8;
-// Hard cap on how many getReferencesAtPosition SEARCHES one top-level request
-// may issue. This is a different axis from MAX_REFERENCES_PER_REQUEST, which
-// only bounds how many search *results* get processed: every search is a full
-// project scan even when it returns almost nothing, so a helper whose call
-// sites feed it results of many DISTINCT sub-helpers (each searched once,
-// each contributing only 2-3 results) drains the result budget at ~2-3 per
-// search — measured at 76 scans ≈ 115ms for a single hover on an SFRA-sized
-// program (~1,900 cartridge files) before this cap existed. Legitimate
-// scenarios in the perf baseline suite need at most 6 searches; 12 doubles
-// that headroom while keeping the worst case at ~12 scans per request.
+// Hard cap on how many reference SEARCHES one top-level request may issue
+// (one for a name declared inside a function is not counted: it reads that
+// function only). This is a different axis from MAX_REFERENCES_PER_REQUEST,
+// which only bounds how many search *results* get processed: every search
+// costs its reads and checks even when it returns almost nothing, so a
+// helper whose call sites feed it results of many DISTINCT sub-helpers (each
+// searched once, each contributing only 2-3 results) drains the result
+// budget at ~2-3 per search — measured at 76 searches ≈ 115ms for a single
+// hover on an SFRA-sized program (~1,900 cartridge files) before this cap
+// existed. Legitimate scenarios in the perf baseline suite need at most 6
+// searches; 12 doubles that headroom while keeping the worst case at ~12
+// searches per request.
 exports.MAX_SEARCHES_PER_REQUEST = 12;
 // Bounds the editor's per-Program cache of finished hovers and completion
 // lists during a long session without edits (hours of hovering around one

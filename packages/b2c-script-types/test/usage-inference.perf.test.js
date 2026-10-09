@@ -17,6 +17,7 @@ const {
   sharedDocumentRegistry,
 } = require('./helpers/fixture-language-service');
 const {createPluginProxy} = require('./helpers/plugin-proxy');
+const {countReferenceSearches} = require('./helpers/reference-searches');
 const {realTypesPrelude} = require('./helpers/real-dw-types');
 
 // ---------------------------------------------------------------------------
@@ -24,9 +25,10 @@ const {realTypesPrelude} = require('./helpers/real-dw-types');
 //
 // The engine runs synchronously inside tsserver on every hover/completion
 // keystroke, so its worst-case cost has to stay bounded. The dominant cost by
-// far is languageService.getReferencesAtPosition — a project-wide scan per
-// call — so the STRICT baselines below are deterministic *counters* of how
-// many such searches a pathological input may trigger. Counters don't flake
+// far is reference searches (each checks every occurrence of a name across
+// the files that can refer to it), so the STRICT baselines below are
+// deterministic *counters* of how many searches a pathological input may
+// trigger, read off the engine's diagnostics channel. Counters don't flake
 // on slow CI runners and pinpoint exactly which cap stopped working.
 //
 // The wall-clock ceilings are deliberately generous (they'd pass on a very
@@ -104,25 +106,14 @@ const BASELINE = {
   hookParameters: 3,
 };
 
-/**
- * Wraps a LanguageService so every getReferencesAtPosition call is counted —
- * the deterministic cost proxy the baselines assert on.
- */
-function withReferenceCounter(languageService) {
-  let count = 0;
-  const proxy = new Proxy(languageService, {
-    get(target, prop) {
-      if (prop === 'getReferencesAtPosition') {
-        return (...args) => {
-          count++;
-          return target.getReferencesAtPosition(...args);
-        };
-      }
-      const value = target[prop];
-      return typeof value === 'function' ? value.bind(target) : value;
-    },
-  });
-  return {languageService: proxy, referenceSearches: () => count, reset: () => (count = 0)};
+// Every reference-search counter a test starts, stopped when it finishes.
+const searchCounters = [];
+
+/** Counts the reference searches run from here on (see ./helpers/reference-searches). */
+function countSearches() {
+  const counter = countReferenceSearches();
+  searchCounters.push(counter);
+  return counter;
 }
 
 /**
@@ -150,6 +141,10 @@ function timed(fn) {
 }
 
 describe('usage-inference — performance baselines', () => {
+  afterEach(() => {
+    for (const counter of searchCounters.splice(0)) counter.stop();
+  });
+
   it(`caps the cost of a widely-referenced helper (300 call sites, <= ${BASELINE.widelyReferencedHelper} searches)`, () => {
     const callSites = Array.from({length: 300}, () => 'helper(getProduct());').join('\n');
     const files = {
@@ -163,8 +158,8 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const base = createFixtureLanguageService(files);
-    const counter = withReferenceCounter(base);
-    const ctx = createInferenceContext(ts, counter.languageService);
+    const counter = countSearches();
+    const ctx = createInferenceContext(ts, base);
     const fn = findFunctionDeclaration(ctx.program.getSourceFile('/helper.js'), 'helper');
 
     const {result: types, elapsedMs} = timed(() => inferParameterType(ctx, fn.parameters[0]));
@@ -173,17 +168,14 @@ describe('usage-inference — performance baselines', () => {
     // are more than enough to type this parameter.
     assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     assert.ok(
-      counter.referenceSearches() <= BASELINE.widelyReferencedHelper,
-      `expected <= ${BASELINE.widelyReferencedHelper} reference searches, got ${counter.referenceSearches()}`,
+      counter.total() <= BASELINE.widelyReferencedHelper,
+      `expected <= ${BASELINE.widelyReferencedHelper} reference searches, got ${counter.total()}`,
     );
     // The per-call reference budget must actually engage (not short-circuit to
     // 0 searches / 0 hits while still somehow typing the parameter).
     const spent = 200 - ctx.referenceBudget;
     assert.equal(spent, 50, `expected the per-call cap (50) to fully engage on 300 call sites, spent ${spent}`);
-    assert.ok(
-      counter.referenceSearches() >= 1,
-      'expected at least one project-wide reference search for a named helper',
-    );
+    assert.ok(counter.total() >= 1, 'expected at least one reference search for a named helper');
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
 
@@ -202,15 +194,15 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const base = createFixtureLanguageService(files);
-    const counter = withReferenceCounter(base);
-    const ctx = createInferenceContext(ts, counter.languageService);
+    const counter = countSearches();
+    const ctx = createInferenceContext(ts, base);
     const fn = findFunctionDeclaration(ctx.program.getSourceFile('/chain.js'), 'resolveChain');
 
     const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
 
     assert.equal(types.length, 0);
     assert.equal(
-      counter.referenceSearches(),
+      counter.total(),
       BASELINE.overlongMethodChain,
       'the chain cap must fire before the receiver parameter is ever reference-searched',
     );
@@ -230,14 +222,14 @@ describe('usage-inference — performance baselines', () => {
       '/deep.js': `${helpers}\nmodule.exports = {h1};`,
     };
     const base = createFixtureLanguageService(files);
-    const counter = withReferenceCounter(base);
-    const ctx = createInferenceContext(ts, counter.languageService);
+    const counter = countSearches();
+    const ctx = createInferenceContext(ts, base);
     const fn = findFunctionDeclaration(ctx.program.getSourceFile('/deep.js'), 'h1');
 
     const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
 
     assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
-    assert.equal(counter.referenceSearches(), BASELINE.nativeHelperChain);
+    assert.equal(counter.total(), BASELINE.nativeHelperChain);
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
 
@@ -256,30 +248,30 @@ describe('usage-inference — performance baselines', () => {
       '/deep.js': `${helpers}\nf1(getProduct());\nmodule.exports = {f1};`,
     };
     const base = createFixtureLanguageService(files);
-    const counter = withReferenceCounter(base);
+    const counter = countSearches();
 
     // Return direction (hover on f1): the depth cap truncates before the
     // chain's deep end ever resolves a parameter, so no search happens.
-    const ctx = createInferenceContext(ts, counter.languageService);
+    const ctx = createInferenceContext(ts, base);
     const sourceFile = ctx.program.getSourceFile('/deep.js');
     const {result: returnTypes, elapsedMs: returnMs} = timed(() =>
       inferReturnType(ctx, findFunctionDeclaration(sourceFile, 'f1')),
     );
     assert.equal(returnTypes.length, 0, 'truncated by the depth cap — flat cost regardless of chain length');
-    assert.equal(counter.referenceSearches(), BASELINE.deepForwardingChainReturns);
+    assert.equal(counter.total(), BASELINE.deepForwardingChainReturns);
     assert.ok(returnMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(returnMs)}ms`);
 
     // Parameter direction (hover on f12's x): each level passes `x` on as is,
     // which costs no depth, so one search per level until the search budget
     // stops the climb.
     counter.reset();
-    const ctx2 = createInferenceContext(ts, counter.languageService);
+    const ctx2 = createInferenceContext(ts, base);
     const {elapsedMs: paramMs} = timed(() =>
       inferParameterType(ctx2, findFunctionDeclaration(sourceFile, 'f12').parameters[0]),
     );
     assert.ok(
-      counter.referenceSearches() <= BASELINE.deepForwardingChainParam,
-      `expected <= ${BASELINE.deepForwardingChainParam} searches from the deep end, got ${counter.referenceSearches()}`,
+      counter.total() <= BASELINE.deepForwardingChainParam,
+      `expected <= ${BASELINE.deepForwardingChainParam} searches from the deep end, got ${counter.total()}`,
     );
     assert.ok(paramMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(paramMs)}ms`);
   });
@@ -303,16 +295,16 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const base = createFixtureLanguageService(files);
-    const counter = withReferenceCounter(base);
-    const ctx = createInferenceContext(ts, counter.languageService);
+    const counter = countSearches();
+    const ctx = createInferenceContext(ts, base);
     const fn = findFunctionDeclaration(ctx.program.getSourceFile('/fanout.js'), 'caller');
 
     const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
 
     assert.ok(describeTypes(ctx, types).includes('ID'), 'fan-out must still infer the shared type');
     assert.ok(
-      counter.referenceSearches() <= BASELINE.wideFanOutMemoized,
-      `expected the request memo to collapse 20 branches into <= ${BASELINE.wideFanOutMemoized} searches, got ${counter.referenceSearches()}`,
+      counter.total() <= BASELINE.wideFanOutMemoized,
+      `expected the request memo to collapse 20 branches into <= ${BASELINE.wideFanOutMemoized} searches, got ${counter.total()}`,
     );
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
@@ -330,10 +322,10 @@ describe('usage-inference — performance baselines', () => {
     };
     const host = createFixtureHost(files);
     const baseLs = ts.createLanguageService(host, sharedDocumentRegistry);
-    const counter = withReferenceCounter(baseLs);
+    const counter = countSearches();
     const {proxy} = createPluginProxy({
       host,
-      languageService: counter.languageService,
+      languageService: baseLs,
       config: {enabled: true, autoDiscover: false, cartridges: [{name: 'c', src: '/'}], inferUsage: true},
     });
     const paramPos = files['/helper.js'].indexOf('product)');
@@ -346,7 +338,7 @@ describe('usage-inference — performance baselines', () => {
 
     assert.ok((second?.documentation ?? []).some((p) => p.text.includes('Inferred from usage')));
     assert.equal(
-      counter.referenceSearches(),
+      counter.total(),
       BASELINE.repeatedHoverCached,
       'an unchanged project version must be served from the inference cache without re-searching',
     );
@@ -379,8 +371,8 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const base = createFixtureLanguageService(files);
-    const counter = withReferenceCounter(base);
-    const ctx = createInferenceContext(ts, counter.languageService);
+    const counter = countSearches();
+    const ctx = createInferenceContext(ts, base);
     const fn = findFunctionDeclaration(ctx.program.getSourceFile('/tree.js'), 'hot');
 
     const {result: types, elapsedMs} = timed(() => inferParameterType(ctx, fn.parameters[0]));
@@ -389,8 +381,8 @@ describe('usage-inference — performance baselines', () => {
     // enough to resolve the parameter's type.
     assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     assert.ok(
-      counter.referenceSearches() <= BASELINE.distinctSubHelperTree,
-      `expected the search budget to bound project scans at <= ${BASELINE.distinctSubHelperTree}, got ${counter.referenceSearches()}`,
+      counter.total() <= BASELINE.distinctSubHelperTree,
+      `expected the search budget to bound project scans at <= ${BASELINE.distinctSubHelperTree}, got ${counter.total()}`,
     );
     // The scenario must genuinely pressure the cap — if it stops needing to,
     // it no longer guards anything and needs rebuilding.
@@ -416,16 +408,16 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const base = createFixtureLanguageService(files);
-    const counter = withReferenceCounter(base);
-    const ctx = createInferenceContext(ts, counter.languageService);
+    const counter = countSearches();
+    const ctx = createInferenceContext(ts, base);
     const fn = findFunctionDeclaration(ctx.program.getSourceFile('/pick.js'), 'pick');
 
     const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
 
     assert.equal(describeTypes(ctx, types), '{ ID: string; } | { displayName: string; }');
     assert.ok(
-      counter.referenceSearches() <= BASELINE.multiParamHelper,
-      `expected the call-site memo to dedupe sibling-parameter searches to <= ${BASELINE.multiParamHelper}, got ${counter.referenceSearches()}`,
+      counter.total() <= BASELINE.multiParamHelper,
+      `expected the call-site memo to dedupe sibling-parameter searches to <= ${BASELINE.multiParamHelper}, got ${counter.total()}`,
     );
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
@@ -441,20 +433,21 @@ describe('usage-inference — performance baselines', () => {
       `,
       '/consumer.js': `var helpers = require('./helper'); helpers.helper(getProduct());`,
     };
-    const counter = withReferenceCounter(createFixtureLanguageService(files));
+    const languageService = createFixtureLanguageService(files);
+    const counter = countSearches();
     const infer = () => {
-      const ctx = createInferenceContext(ts, counter.languageService);
+      const ctx = createInferenceContext(ts, languageService);
       const fn = findFunctionDeclaration(ctx.program.getSourceFile('/helper.js'), 'helper');
       return {ctx, description: describeTypes(ctx, inferParameterType(ctx, fn.parameters[0]))};
     };
 
     const cold = infer();
-    const coldSearches = counter.referenceSearches();
+    const coldSearches = counter.total();
     counter.reset();
     const warm = infer();
 
     assert.ok(coldSearches > 0, 'the first request must search for call sites');
-    assert.equal(counter.referenceSearches(), BASELINE.repeatedRequestSameProgram);
+    assert.equal(counter.total(), BASELINE.repeatedRequestSameProgram);
     assert.equal(warm.description, '{ ID: string; }');
     assert.equal(warm.description, cold.description);
     // A cached search still spends budget, so a warm request reaches exactly
@@ -482,16 +475,16 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const base = createFixtureLanguageService(files);
-    const counter = withReferenceCounter(base);
-    const ctx = createInferenceContext(ts, counter.languageService);
+    const counter = countSearches();
+    const ctx = createInferenceContext(ts, base);
     const fn = findFunctionDeclaration(ctx.program.getSourceFile('/huge.js'), 'hotPrice');
 
     const {result: types, elapsedMs} = timed(() => inferParameterType(ctx, fn.parameters[0]));
 
     assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     assert.ok(
-      counter.referenceSearches() <= BASELINE.hugeGeneratedFile,
-      `expected <= ${BASELINE.hugeGeneratedFile} searches, got ${counter.referenceSearches()}`,
+      counter.total() <= BASELINE.hugeGeneratedFile,
+      `expected <= ${BASELINE.hugeGeneratedFile} searches, got ${counter.total()}`,
     );
     const spent = 200 - ctx.referenceBudget;
     assert.ok(spent <= 50, `expected the per-call cap (50) to bound processed hits, spent ${spent}`);
@@ -514,11 +507,11 @@ describe('usage-inference — performance baselines', () => {
     };
     const host = createFixtureHost(files);
     const baseLs = ts.createLanguageService(host, sharedDocumentRegistry);
-    const counter = withReferenceCounter(baseLs);
+    const counter = countSearches();
     let projectVersion = 1;
     const {proxy} = createPluginProxy({
       host,
-      languageService: counter.languageService,
+      languageService: baseLs,
       projectVersion: () => String(projectVersion),
       config: {enabled: true, autoDiscover: false, cartridges: [{name: 'c', src: '/'}], inferUsage: true},
     });
@@ -533,7 +526,7 @@ describe('usage-inference — performance baselines', () => {
 
     assert.ok((second?.documentation ?? []).some((p) => p.text.includes('Inferred from usage')));
     assert.equal(
-      counter.referenceSearches(),
+      counter.total(),
       BASELINE.versionBumpSameProgram,
       'a version bump with an unchanged program must be served from the inference cache',
     );
@@ -597,8 +590,7 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const base = createFixtureLanguageService(files);
-    const counter = withReferenceCounter(base);
-    const ctx = createInferenceContext(ts, counter.languageService);
+    const ctx = createInferenceContext(ts, base);
     const fn = findFunctionDeclaration(ctx.program.getSourceFile('/recursive.js'), 'a');
 
     const {elapsedMs} = timed(() => inferReturnType(ctx, fn));
@@ -675,9 +667,10 @@ describe('usage-inference — performance baselines', () => {
       extensionPoint: `app.payment.processor.p${i}`,
       script: '/hooks/payment.js',
     }));
-    const counter = withReferenceCounter(createFixtureLanguageService(files));
+    const languageService = createFixtureLanguageService(files);
+    const counter = countSearches();
     let hostCalls = 0;
-    const ctx = createInferenceContext(ts, counter.languageService, {
+    const ctx = createInferenceContext(ts, languageService, {
       hookRegistrations: () => {
         hostCalls++;
         return registrations;
@@ -692,8 +685,8 @@ describe('usage-inference — performance baselines', () => {
       ['Basket', 'Customer'],
     );
     assert.ok(
-      counter.referenceSearches() <= BASELINE.hookParameters,
-      `expected <= ${BASELINE.hookParameters} reference searches, got ${counter.referenceSearches()}`,
+      counter.total() <= BASELINE.hookParameters,
+      `expected <= ${BASELINE.hookParameters} reference searches, got ${counter.total()}`,
     );
     assert.equal(hostCalls, 1, 'the host is asked for its registrations once per request');
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);

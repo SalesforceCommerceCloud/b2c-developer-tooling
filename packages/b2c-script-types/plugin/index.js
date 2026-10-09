@@ -360,6 +360,9 @@ function init({ typescript: ts }) {
             languageService: info.languageService,
             resolveSuperModulePath,
             hookRegistrations,
+            // The project's own token: tsserver flags it when the editor cancels
+            // the request this hover or completion belongs to.
+            isCancellationRequested: () => host.getCancellationToken?.().isCancellationRequested() ?? false,
             log,
         });
         usageInferenceResets.add(usageInference.reset);

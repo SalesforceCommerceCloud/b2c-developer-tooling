@@ -86,3 +86,9 @@ and applies one decision policy ([src/inference/policy.ts](./src/inference/polic
 everywhere, so parameter, member and chain hovers and completions always
 agree. [src/usage-inference.ts](./src/usage-inference.ts) is the barrel and
 lists the modules in reading order.
+
+A request reads only the files that can name the value it follows
+([src/inference/reference-search.ts](./src/inference/reference-search.ts)):
+the declaring file for a file-local helper, and the module plus the files that
+`require()` it for an export. It runs a bounded number of searches and stops
+when the editor cancels it.

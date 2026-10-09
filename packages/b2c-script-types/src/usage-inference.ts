@@ -16,6 +16,7 @@
 //   inference/ast-helpers         - pure AST navigation (find node, return exprs, ...)
 //   inference/type-helpers        - Type utilities + hover text / completion entries
 //   inference/value-flow          - where a function value goes: calls, exports, factories, parameters
+//   inference/reference-search    - where a name is used, read from the files that can name it
 //   inference/call-sites          - find where a function is called across the project
 //   inference/signatures          - the function a call invokes and its declared callback types
 //   inference/generic-calls       - generic calls whose result is an argument or a callback's return
