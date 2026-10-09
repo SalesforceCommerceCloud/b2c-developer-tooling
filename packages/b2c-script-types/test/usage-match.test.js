@@ -76,8 +76,8 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   it('returns no candidates when the usage signature is a single, too-generic member name', () => {
     // Include several ExtensibleObject-like classes so `.custom` is ambiguous
     // across the ambient index — and name the parameter `shipment` so the
-    // identifier-name short-circuit would otherwise rescue Shipment despite
-    // the weak evidence.
+    // identifier-name tiebreak would otherwise rescue Shipment despite the
+    // weak evidence.
     const files = {
       '/types.d.ts': realTypesPrelude(['Shipment', 'ProductLineItem', 'Profile', 'Customer'], ''),
       '/shippingHelpers.js': `
@@ -113,8 +113,8 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     // One-hop usage collection only sees `.profile`, which Customer shares
     // with ServiceConfig — below MIN_USAGE_SIGNATURE_MEMBERS and ambiguous —
     // but the parameter name uniquely picks Customer. Contrast the weak-only
-    // custom+UUID case above: `.profile` is a strong member, so the name
-    // short-circuit is allowed.
+    // custom+UUID case above: `.profile` is a strong member, so the name may
+    // break the tie.
     const files = {
       '/types.d.ts': realTypesPrelude(['Customer', 'ServiceConfig'], ''),
       '/accountHelpers.js': `
@@ -446,8 +446,8 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     // ever read via email/firstName/lastName/custom — a field subset shared
     // by both dw.customer.Profile and the much smaller
     // dw.customer.ProductListRegistrant. "Fewest total members" alone used to
-    // pick ProductListRegistrant; the identifier `profile` short-circuits to
-    // Profile. The parameter itself is also recoverable now via the
+    // pick ProductListRegistrant; the identifier `profile` breaks the tie in
+    // favour of Profile. The parameter itself is also recoverable now via the
     // PascalCase suffix `resettingCustomer` → Customer (even with weak
     // `@param {obj}`), so `.profile` can resolve through Customer's declared
     // property as well.
@@ -542,7 +542,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     it('maps SFRA alias lineItem → ProductLineItem for a single strong member', () => {
       // Real storefront shape: productLineItem decorators name the parameter
       // `lineItem` / `pli`, never `productLineItem` — exact name matching alone
-      // cannot short-circuit to ProductLineItem.
+      // cannot break the tie in favour of ProductLineItem.
       const files = {
         '/types.d.ts': realTypesPrelude(['ProductLineItem', 'ShippingLineItem'], ''),
         '/priceTotal.js': `

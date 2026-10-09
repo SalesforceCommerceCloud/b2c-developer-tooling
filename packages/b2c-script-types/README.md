@@ -63,11 +63,18 @@ See [src/index.ts](./src/index.ts) for the implementation.
 An undocumented helper function (no JSDoc) gets its parameters and return
 value widened to `any` by plain TypeScript inference, and that `any`
 propagates to every caller. Passing `inferUsage: true` in the plugin config
-(off by default) makes the plugin infer a plausible type for these cases from
-how the value is actually used elsewhere in the project — see
-[src/usage-inference.ts](./src/usage-inference.ts) (barrel) and the engine
-modules under [src/inference/](./src/inference/) — and surface it as an
-"Inferred from usage" hover note plus synthesized member completions. It's
-heuristic and intentionally conservative: it only kicks in where the checker
-has already given up with `any`, never overriding a type TypeScript or JSDoc
-already resolved.
+(off by default) makes the plugin infer a plausible type for these cases the
+way IntelliJ does: from call-site arguments (including `new`, `.call`/`.apply`
+and callbacks), return values, the typed Script API calls a value is passed
+to, and the members and `instanceof`/`typeof` checks in the helper's own body.
+The result is surfaced as an "Inferred from usage" hover note plus synthesized
+member completions; call sites that disagree show a union of up to three
+types. It only kicks in where the checker has already given up (`any`, or a
+placeholder SFRA JSDoc such as `@param {Object}`), never overriding a real
+type from TypeScript or JSDoc.
+
+The engine gathers evidence ([src/inference/core.ts](./src/inference/core.ts))
+and applies one decision policy ([src/inference/policy.ts](./src/inference/policy.ts))
+everywhere, so parameter, member and chain hovers and completions always
+agree. [src/usage-inference.ts](./src/usage-inference.ts) is the barrel and
+lists the modules in reading order.

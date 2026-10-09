@@ -129,15 +129,20 @@ If your editor's LSP client is launched outside the repo root (for example, open
 
 JSDoc-documented functions get full hover/completion support when the annotation names a real Script API type (`@param {dw.customer.Customer}` / `@param {Customer}`), because TypeScript reads those directly — the same happy path the IntelliJ SFCC plugin relies on. Plain, undocumented helpers don't, and neither do the placeholder SFRA annotations that show up constantly in real cartridges (`@param {Object}`, `{obj}`, `{*}`, `{}`): those widen to an uninformative type and silence completion for everything downstream.
 
-Enable the `b2c-dx.features.scriptTypesInferUsage` setting (default: `false`) or pass `inferUsage: true` in the plugin config (`init_options.plugins` for other LSP hosts) to have the plugin infer a plausible type for these cases from how the value is actually used elsewhere in the project — call-site arguments for parameters, return statements for return values — chasing through undocumented call chains (a helper calling a helper calling a helper), multi-hop method chains (`product.getPriceModel().getPrice()`), and intermediate local variables (`var priceModel = product.getPriceModel(); return priceModel.getPrice();`) rather than stopping at the first `any` or placeholder `Object`. Deliberate `@param {any}` / `: any` annotations are still respected and never second-guessed; real `dw.*` JSDoc is left alone too.
+Enable the `b2c-dx.features.scriptTypesInferUsage` setting (default: `false`) or pass `inferUsage: true` in the plugin config (`init_options.plugins` for other LSP hosts) to have the plugin infer a plausible type for these cases the way IntelliJ does: from how the value is actually used across the project, not from what it is called. Deliberate `@param {any}` / `: any` annotations are still respected and never second-guessed; real `dw.*` JSDoc is left alone too.
+
+The evidence it weighs:
+
+- **Call sites** — the arguments a helper receives anywhere in the project: plain calls, `new Model(x)` (constructor functions and ES6 classes alike), SFRA model inheritance through `BaseModel.call(this, x)` and `helper.apply(this, arguments)`, calls through export maps and aliases (`module.exports = {helper: helper}`, `var run = helper`), and named functions passed as callbacks (`collections.forEach(items, handleItem)`).
+- **Return values and chains** — return statements, followed through undocumented call chains (a helper calling a helper calling a helper), multi-hop method chains (`product.getPriceModel().getPrice()`) and intermediate local variables (`var priceModel = product.getPriceModel();`), including variables assigned in several branches and `lineItemContainer || {}` fallbacks.
+- **Typed Script API uses** — a value handed to a documented API takes that API's parameter type, even when the helper is never called: `ShippingMgr.applyShippingCost(basket)` makes `basket` a `LineItemCtnr`, and `ProductMgr.getProduct(pid)` makes `pid` a `string`.
+- **The helper's own body** — the members it reads (`shipment.shippingAddress`), its `'member' in value` checks, and its `instanceof` / `typeof` tests. A call-site type that lacks a member the body relies on is dropped, so a duck-typed view model can't pass for the Script API class the body needs; with no call site at all, the members are matched against every Script API class.
 
 `module.superModule` is understood too: in an overlay cartridge that extends a base module (`var base = module.superModule;`), hover and completions on `base` and on values derived from it resolve against the same-path module in the next cartridge down the cartridge path — including recursing into the base module's own undocumented helpers, and across multi-cartridge plugin stacks where intermediate levels re-export the base and add members (`module.exports = base; module.exports.extra = extra;`).
 
 Two more SFRA idioms are covered:
 
 - **Iteration callbacks** — `collections.forEach` / `map` / `filter` / `every` / `some` / `find` / `first` (element-first callback when a predicate is passed; `reduce` and unknown callees are skipped), e.g. `collections.forEach(product.getVariants(), function (variant) {...})`. A callback in argument position has no name to search references for, so `variant` is typed from the element type of the collection travelling alongside it (anything with `iterator()`/`next()`, i.e. `dw.util.Collection` and friends). Manual iterator loops (`var iter = coll.iterator(); while (iter.hasNext()) { var item = iter.next(); }`) and ternary returns like stock `collections.first` (`return it.hasNext() ? it.next() : null`) resolve through the same chain machinery.
-- **SFRA naming aliases** — parameters conventionally named `lineItem` / `pli`, `priceModel`, `shippingAddress` / `billingAddress`, `paymentInstrument`, etc. short-circuit ambient matching to the Script API class they hold even when the identifier is not the class's own simple name. CamelCase suffixes are recognized too (`resettingCustomer` → `Customer`, `apiProduct` → `Product`, `currentBasket` → `Basket`), matching the naming style SFRA controllers and helpers use constantly.
-- **`instanceof` checks** — a single `param instanceof ProductLineItem` (or `dw.order.ProductLineItem`) in the helper body is treated as concrete class evidence when call sites don't resolve.
 - **Controller middleware** — `server.append('Show', function (req, res, next) {...})` needs no inference at all: when a `modules` cartridge is present, the plugin injects its bundled SFRA ambient declarations and TypeScript types `req`/`res`/`next` contextually from the typed `append` signature. Inference deliberately stays out of the way there.
 
 Cross-file inference (call sites in other files, `module.superModule`) needs those files in the same TypeScript project. A `jsconfig.json` that includes all cartridge sources — like the one `b2c setup ide vscode-types` generates — provides that; without one, each open file gets its own inferred project and only same-file usage is visible.
@@ -146,16 +151,18 @@ Inferred results are heuristic and clearly labeled:
 
 - Hover text gets an appended `Inferred from usage: <type>` line.
 - Member completions synthesized this way are still offered alongside (not instead of) whatever TypeScript already resolved.
-- Conflicting call-site argument types cause inference to stay silent rather than union a noisy hover.
+- Call sites that pass different types show their union, as IntelliJ does (`Product | Category`), up to three types. Wider evidence collapses to the closest shared superclass that still fits the body, or the hover stays silent.
+- Names never add a type of their own; they only break a tie when the usage fits several classes equally well. A `profile` parameter picks `dw.customer.Profile` over `ProductListRegistrant`, `lineItem` / `pli` pick `ProductLineItem`, and qualified names such as `apiProduct`, `currentBasket` or `resettingCustomer` resolve to the class they end in.
 
 This won't recover types TypeScript genuinely can't infer — for example, values that are never called with a consistent, well-typed argument anywhere in the project — and it's off by default because it's new and heuristic.
 
 **Known limitations** — intentionally deferred patterns:
 
-- ES6 `class` syntax / arrow-function module exports
 - Destructured function parameters (`function f({a, b})`)
 - Destructured return values (`var {a, b} = undocumentedFn()`)
 - Constructor inheritance via `Foo.prototype = Base.prototype`
+- Hook implementations reached only through `HookMgr.callHook` (the `hooks.json` mapping isn't followed)
+- Values ISML templates read from `pdict`
 - Guessing individual custom attribute names on `.custom` (only `.custom` itself is usage evidence)
 
 ### Notes
