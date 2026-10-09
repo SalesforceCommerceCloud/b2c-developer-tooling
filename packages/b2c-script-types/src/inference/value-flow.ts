@@ -10,10 +10,12 @@
 // `module.exports = Model` (consumers reach it through `require()`), a
 // factory that picks a model (`return require('…/boolean')`, then
 // `var Model = getModel(definition); new Model(...)`), and a model passed on
-// as an argument (`createRefinement(search, definition, Model)`).
-// valueTarget() says where one such position leads: to a call that invokes
-// the value, or to the next name that holds it. ./call-sites runs the
-// reference searches and follows those names, a bounded number of hops.
+// as an argument (`createRefinement(search, definition, Model)`), or to a
+// callee outside the project that calls it (`server.get('Show',
+// cache.applyDefaultCache)`). valueTarget() says where one such position
+// leads: to a call that invokes the value, to a call handing it to such a
+// callee, or to the next name that holds it. ./call-sites runs the reference
+// searches and follows those names, a bounded number of hops.
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
@@ -36,9 +38,28 @@ export interface CallSite {
 /** How a searched name holds the function: as the function itself, or as a factory whose calls return it. */
 export type ValueRole = 'factory' | 'value';
 
-/** Where a reference leads: a call site, or a further name whose references lead on. */
+/**
+ * A call handing the function as an argument to a callee that is not a
+ * project function receiving it in a parameter: a Script API or SFRA
+ * declaration (`server.get('Show', cache.applyDefaultCache)`,
+ * `lineItems.forEach(addLineItem)`). The callee calls it, with what its
+ * declaration says the callback at `argIndex` receives.
+ */
+export interface Handoff {
+  readonly call: tsserver.CallExpression;
+  readonly argIndex: number;
+}
+
+/** Where a function is called: its call sites, and the calls handing it to a declared callee that calls it. */
+export interface CallSites {
+  readonly calls: CallSite[];
+  readonly handoffs: Handoff[];
+}
+
+/** Where a reference leads: a call site, a handoff, or a further name whose references lead on. */
 export type ReferenceTarget =
   | {readonly kind: 'call'; readonly call: CallSite}
+  | {readonly kind: 'handoff'; readonly handoff: Handoff}
   | {readonly kind: 'name'; readonly name: tsserver.Identifier; readonly role: ValueRole};
 
 /** A function-like declaration, or the class a constructor is invoked through. */
@@ -242,12 +263,21 @@ function returnedBy(ctx: InferenceContext, value: tsserver.Node): ReferenceTarge
   return name && {kind: 'name', name, role: 'factory'};
 }
 
+/** The call `value` is an argument of, as a {@link Handoff}: what {@link receivingParameter} leaves over. */
+function handedOff(ctx: InferenceContext, value: tsserver.Node): ReferenceTarget | undefined {
+  const call = value.parent;
+  if (!ctx.ts.isCallExpression(call)) return undefined;
+  const argIndex = call.arguments.indexOf(value as tsserver.Expression);
+  return argIndex >= 0 ? {kind: 'handoff', handoff: {call, argIndex}} : undefined;
+}
+
 /**
  * Where one reference to the function leads. In the `value` role the
  * reference is the function itself: a call invoking it
  * (`helper(x)`, `new Helper(x)`, `Helper.call(this, x)`,
  * `require('./helper')(x)`) is a call site; a binding, an assignment, an
- * argument or a `return` leads on to the next name holding it. In the
+ * argument a project function receives or a `return` leads on to the next
+ * name holding it; any other argument is a handoff. In the
  * `factory` role the reference names a function returning it, so a call of
  * that reference evaluates to the function and is followed as a value in
  * turn.
@@ -265,5 +295,6 @@ export function valueTarget(
     return invoked ? valueTarget(ctx, call, 'value') : heldBy(ctx, value, 'factory');
   }
   const call = directCall(value, ts) ?? borrowedCall(value, ts);
-  return call ? {kind: 'call', call} : (heldBy(ctx, value, 'value') ?? returnedBy(ctx, value));
+  if (call) return {kind: 'call', call};
+  return heldBy(ctx, value, 'value') ?? returnedBy(ctx, value) ?? handedOff(ctx, value);
 }

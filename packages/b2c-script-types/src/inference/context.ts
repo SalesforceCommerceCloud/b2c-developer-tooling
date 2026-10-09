@@ -14,7 +14,7 @@ import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {NO_BINDINGS} from './bindings';
 import type {Bindings} from './bindings';
-import type {CallSite} from './value-flow';
+import type {CallSites} from './value-flow';
 import {MAX_INFERENCE_DEPTH, MAX_REFERENCES_PER_REQUEST, MAX_SEARCHES_PER_REQUEST} from './constants';
 import type {UsageProfile} from './usage-profile';
 import type {HookRegistration} from '../resolver/hook-registry';
@@ -95,7 +95,7 @@ export interface InferenceContext {
    * computed with at least as much budget as any later call would have had,
    * so it can only be equally or more complete.
    */
-  readonly callSiteMemo: Map<tsserver.Identifier, CallSite[]>;
+  readonly callSiteMemo: Map<tsserver.Identifier, CallSites>;
   /**
    * Request-scoped memo of checker.typeToString() results, used by
    * dedupeTypes(). Candidate types propagate up through every recursion

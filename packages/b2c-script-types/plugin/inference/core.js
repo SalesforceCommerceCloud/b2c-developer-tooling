@@ -361,17 +361,21 @@ function resolveIdentifierTypes(ctx, expr, depth, chainHops) {
  * The argument types a parameter receives: at every call site of its
  * function across the project (`helper(x)`, `new Helper(x)`,
  * `Helper.call(this, x)`, and for a hook script's export, the
- * `HookMgr.callHook(...)` calls dispatched to it), or — for an anonymous
- * callback with no name to search for — from the collection it iterates.
+ * `HookMgr.callHook(...)` calls dispatched to it), from the declared APIs it
+ * is handed to (`server.get('Show', cache.applyDefaultCache)`), or — for an
+ * anonymous callback with no name to search for — from the collection it
+ * iterates.
  */
 function parameterEvidence(ctx, fn, paramIndex, depth) {
     const nameNode = (0, value_flow_1.getReferenceNameNode)(fn, ctx.ts);
     if (!nameNode)
         return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
-    return [...(0, call_sites_1.collectCallSites)(ctx, nameNode), ...(0, hook_calls_1.hookCallSites)(ctx, fn)].flatMap((site) => {
+    const { calls, handoffs } = (0, call_sites_1.collectCallSites)(ctx, nameNode);
+    const passed = [...calls, ...(0, hook_calls_1.hookCallSites)(ctx, fn)].flatMap((site) => {
         const arg = site.args[paramIndex];
         return arg ? argumentEvidence(ctx, arg, depth) : [];
     });
+    return [...passed, ...handoffs.flatMap((handoff) => (0, signatures_1.handedOffParameterTypes)(ctx, handoff, paramIndex))];
 }
 /**
  * The types one call-site argument passes. A caller's own untyped parameter

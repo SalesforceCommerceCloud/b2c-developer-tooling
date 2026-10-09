@@ -65,8 +65,10 @@ value widened to `any` by plain TypeScript inference, and that `any`
 propagates to every caller. Passing `inferUsage: true` in the plugin config
 (off by default) makes the plugin infer a plausible type for these cases the
 way IntelliJ does: from call-site arguments (including `new`, `.call`/`.apply`
-and callbacks), return values, the typed Script API calls a value is passed
-to, and the members and `instanceof`/`typeof` checks in the helper's own body.
+and callbacks), the callback types of the declared APIs a function is handed to
+(`server.get('Show', cache.applyDefaultCache)`), return values, the typed Script
+API calls a value is passed to, and the members and `instanceof`/`typeof`
+checks in the helper's own body.
 Values are followed where they go — into object members, `this.x`, pushed
 arrays, factory returns and `module.exports` — and a generic helper such as
 `collections.find(basket.shipments, ...)` is inferred again for the call at

@@ -10,13 +10,16 @@
 // (`items` built by `items.push(lineItem)`) gets no contextual typing from the
 // checker, so `items.filter(function (item) {...})` leaves `item` untyped;
 // the method's own declaration on the inferred type still says what `item`
-// is, exactly as IntelliJ reads it.
+// is, exactly as IntelliJ reads it. A named function handed to a declared
+// API (`server.get('Show', cache.applyDefaultCache)`) is not contextually
+// typed either, and is read the same way.
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {ELEMENT_FIRST_CALLBACK_CALLEES} from './constants';
 import type {InferenceContext} from './context';
 import {typeDisplayString} from './type-helpers';
+import type {Handoff} from './value-flow';
 
 /**
  * Resolves the function-like declaration a call expression's callee refers
@@ -81,6 +84,30 @@ export function acceptsArgumentCount(ctx: InferenceContext, signature: tsserver.
   return count >= required && (count <= parameters.length || ts.hasRestParameter(declaration));
 }
 
+/**
+ * The type `signature` gives the argument at `argIndex`: its parameter's
+ * type, or for an argument a rest parameter collects (`...middleware:
+ * Middleware[]`), the element type of that parameter's array.
+ */
+function argumentTypeAt(
+  ctx: InferenceContext,
+  signature: tsserver.Signature,
+  argIndex: number,
+  location: tsserver.Node,
+): tsserver.Type | undefined {
+  const {ts, checker} = ctx;
+  const parameters = signature.getParameters();
+  const last = parameters[parameters.length - 1];
+  const rest =
+    last?.valueDeclaration && ts.isParameter(last.valueDeclaration) && ts.isRestParameter(last.valueDeclaration);
+  if (argIndex < parameters.length - (rest ? 1 : 0)) {
+    return checker.getTypeOfSymbolAtLocation(parameters[argIndex], location);
+  }
+  return rest
+    ? checker.getIndexTypeOfType(checker.getTypeOfSymbolAtLocation(last, location), ts.IndexKind.Number)
+    : undefined;
+}
+
 /** The type `signature` gives parameter `paramIndex` of the callback it takes as argument `argIndex`. */
 function callbackParameterType(
   ctx: InferenceContext,
@@ -90,9 +117,9 @@ function callbackParameterType(
   paramIndex: number,
 ): tsserver.Type | undefined {
   const {checker} = ctx;
-  const parameter = signature.getParameters()[argIndex];
-  const callbackType = parameter && checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(parameter, call));
-  const callbackParameter = callbackType?.getCallSignatures()[0]?.getParameters()[paramIndex];
+  const callbackType = argumentTypeAt(ctx, signature, argIndex, call);
+  const callbackParameter =
+    callbackType && checker.getNonNullableType(callbackType).getCallSignatures()[0]?.getParameters()[paramIndex];
   return callbackParameter && checker.getTypeOfSymbolAtLocation(callbackParameter, call);
 }
 
@@ -120,4 +147,14 @@ export function callbackParameterTypes(
     const key = first && typeDisplayString(ctx, first);
     return first && rest.every((type) => type && typeDisplayString(ctx, type) === key) ? [first] : [];
   });
+}
+
+/**
+ * What the callee of `handoff` declares it passes parameter `paramIndex` of
+ * the function it is handed: `Request` for `req` of the middleware step in
+ * `server.get('Show', cache.applyDefaultCache)`.
+ */
+export function handedOffParameterTypes(ctx: InferenceContext, handoff: Handoff, paramIndex: number): tsserver.Type[] {
+  const callee = ctx.checker.getTypeAtLocation(handoff.call.expression);
+  return callbackParameterTypes(ctx, [callee], handoff.call, handoff.argIndex, paramIndex);
 }

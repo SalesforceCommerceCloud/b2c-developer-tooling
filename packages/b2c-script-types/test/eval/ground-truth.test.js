@@ -352,12 +352,12 @@ function silentReason(languageService, fileName, position) {
 
 /** Classifies a silent parameter of a named function by what its call sites gave. */
 function callSiteSilence(ctx, nameNode, param) {
-  const sites = collectCallSites(ctx, nameNode);
+  const {calls, handoffs} = collectCallSites(ctx, nameNode);
   const index = param.parent.parameters.indexOf(param);
-  const evidence = sites.flatMap((site) => (site.args[index] ? inferTypeForExpression(ctx, site.args[index]) : []));
+  const evidence = calls.flatMap((site) => (site.args[index] ? inferTypeForExpression(ctx, site.args[index]) : []));
   if (evidence.length > 0) return 'dropped-by-policy';
   if (ctx.searchBudget <= 0 || ctx.referenceBudget <= 0) return 'budget';
-  return sites.length === 0 ? 'no-call-sites' : 'no-evidence';
+  return calls.length + handoffs.length === 0 ? 'no-call-sites' : 'no-evidence';
 }
 
 const SLOWEST_REPORTED = 20;

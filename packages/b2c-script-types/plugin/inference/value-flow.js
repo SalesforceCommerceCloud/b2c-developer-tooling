@@ -190,12 +190,21 @@ function returnedBy(ctx, value) {
     const name = factory && getReferenceNameNode(factory, ctx.ts);
     return name && { kind: 'name', name, role: 'factory' };
 }
+/** The call `value` is an argument of, as a {@link Handoff}: what {@link receivingParameter} leaves over. */
+function handedOff(ctx, value) {
+    const call = value.parent;
+    if (!ctx.ts.isCallExpression(call))
+        return undefined;
+    const argIndex = call.arguments.indexOf(value);
+    return argIndex >= 0 ? { kind: 'handoff', handoff: { call, argIndex } } : undefined;
+}
 /**
  * Where one reference to the function leads. In the `value` role the
  * reference is the function itself: a call invoking it
  * (`helper(x)`, `new Helper(x)`, `Helper.call(this, x)`,
  * `require('./helper')(x)`) is a call site; a binding, an assignment, an
- * argument or a `return` leads on to the next name holding it. In the
+ * argument a project function receives or a `return` leads on to the next
+ * name holding it; any other argument is a handoff. In the
  * `factory` role the reference names a function returning it, so a call of
  * that reference evaluates to the function and is followed as a value in
  * turn.
@@ -209,5 +218,7 @@ function valueTarget(ctx, reference, role) {
         return invoked ? valueTarget(ctx, call, 'value') : heldBy(ctx, value, 'factory');
     }
     const call = directCall(value, ts) ?? borrowedCall(value, ts);
-    return call ? { kind: 'call', call } : (heldBy(ctx, value, 'value') ?? returnedBy(ctx, value));
+    if (call)
+        return { kind: 'call', call };
+    return heldBy(ctx, value, 'value') ?? returnedBy(ctx, value) ?? handedOff(ctx, value);
 }

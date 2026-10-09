@@ -43,7 +43,12 @@ import {genericResultSource} from './generic-calls';
 import {hookCallSites, hookImplementations} from './hook-calls';
 import {localMemberValues, memberValueExpressions, valueDeclarationOf} from './member-values';
 import {decideType, limitUnion, normalizeCandidates} from './policy';
-import {callbackParameterTypes, isElementFirstCallbackCall, resolveCalleeDeclaration} from './signatures';
+import {
+  callbackParameterTypes,
+  handedOffParameterTypes,
+  isElementFirstCallbackCall,
+  resolveCalleeDeclaration,
+} from './signatures';
 import type {ExpressionResolver} from './super-module';
 import {resolveSuperModuleMemberTypes, resolveSuperModuleTypes, traceSuperModuleAccess} from './super-module';
 import {
@@ -512,8 +517,10 @@ function resolveIdentifierTypes(
  * The argument types a parameter receives: at every call site of its
  * function across the project (`helper(x)`, `new Helper(x)`,
  * `Helper.call(this, x)`, and for a hook script's export, the
- * `HookMgr.callHook(...)` calls dispatched to it), or — for an anonymous
- * callback with no name to search for — from the collection it iterates.
+ * `HookMgr.callHook(...)` calls dispatched to it), from the declared APIs it
+ * is handed to (`server.get('Show', cache.applyDefaultCache)`), or — for an
+ * anonymous callback with no name to search for — from the collection it
+ * iterates.
  */
 function parameterEvidence(
   ctx: InferenceContext,
@@ -523,10 +530,12 @@ function parameterEvidence(
 ): tsserver.Type[] {
   const nameNode = getReferenceNameNode(fn, ctx.ts);
   if (!nameNode) return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
-  return [...collectCallSites(ctx, nameNode), ...hookCallSites(ctx, fn)].flatMap((site) => {
+  const {calls, handoffs} = collectCallSites(ctx, nameNode);
+  const passed = [...calls, ...hookCallSites(ctx, fn)].flatMap((site) => {
     const arg = site.args[paramIndex];
     return arg ? argumentEvidence(ctx, arg, depth) : [];
   });
+  return [...passed, ...handoffs.flatMap((handoff) => handedOffParameterTypes(ctx, handoff, paramIndex))];
 }
 
 /**

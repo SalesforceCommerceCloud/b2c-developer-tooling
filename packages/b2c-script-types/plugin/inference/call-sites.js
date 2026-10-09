@@ -50,22 +50,22 @@ function claimSearch(ctx, next, searched) {
     return true;
 }
 /**
- * Finds actual call sites for `nameNode`, following up to
- * MAX_REFERENCE_HOPS names the function value flows into (see ./value-flow:
- * require() bindings, exports, aliases, factories returning it, parameters
- * it is passed to) when a reference doesn't sit directly in callee
- * position. Stops early once ctx.referenceBudget (result count) or
- * ctx.searchBudget (searches) runs out, returning whatever call sites
- * were already found rather than continuing to fan out — an under-inferred
- * (but still heuristic, clearly-labeled) result beats hanging on a
- * widely-referenced helper. Results are memoized per name node for the
+ * Finds actual call sites for `nameNode`, and the handoffs to declared
+ * callees, following up to MAX_REFERENCE_HOPS names the function value flows
+ * into (see ./value-flow: require() bindings, exports, aliases, factories
+ * returning it, parameters it is passed to) when a reference doesn't sit
+ * directly in callee position. Stops early once ctx.referenceBudget (result
+ * count) or ctx.searchBudget (searches) runs out, returning whatever call
+ * sites were already found rather than continuing to fan out — an
+ * under-inferred (but still heuristic, clearly-labeled) result beats hanging
+ * on a widely-referenced helper. Results are memoized per name node for the
  * duration of the request.
  */
 function collectCallSites(ctx, nameNode) {
     const memoized = ctx.callSiteMemo.get(nameNode);
     if (memoized)
         return memoized;
-    const calls = [];
+    const found = { calls: [], handoffs: [] };
     const searched = new Set();
     let frontier = [{ name: nameNode, role: 'value' }];
     let localBudget = Math.min(constants_1.MAX_REFERENCES_PER_CALL, ctx.referenceBudget);
@@ -75,22 +75,22 @@ function collectCallSites(ctx, nameNode) {
             if (localBudget <= 0)
                 break;
             if (claimSearch(ctx, next, searched)) {
-                localBudget = collectCallsFromName(ctx, next, calls, nextFrontier, localBudget);
+                localBudget = collectCallsFromName(ctx, next, found, nextFrontier, localBudget);
             }
         }
         frontier = nextFrontier;
     }
-    ctx.callSiteMemo.set(nameNode, calls);
-    return calls;
+    ctx.callSiteMemo.set(nameNode, found);
+    return found;
 }
 /**
- * Runs one reference search for `next.name` and sorts each hit into either a
- * resolved call site (pushed to `calls`, once per call) or a further name to
- * chase on the next hop (pushed to `nextFrontier`). Consumes up to
- * `localBudget` result slots, returning the remaining local budget so the
- * caller can stop fanning out once it's exhausted.
+ * Runs one reference search for `next.name` and sorts each hit into a
+ * resolved call site or handoff (recorded in `found`, once per call) or a
+ * further name to chase on the next hop (pushed to `nextFrontier`). Consumes
+ * up to `localBudget` result slots, returning the remaining local budget so
+ * the caller can stop fanning out once it's exhausted.
  */
-function collectCallsFromName(ctx, next, calls, nextFrontier, localBudget) {
+function collectCallsFromName(ctx, next, found, nextFrontier, localBudget) {
     for (const reference of (0, reference_search_1.searchReferences)(ctx, next.name)) {
         if (localBudget <= 0)
             break;
@@ -99,10 +99,20 @@ function collectCallsFromName(ctx, next, calls, nextFrontier, localBudget) {
         const target = (0, value_flow_1.valueTarget)(ctx, reference, next.role);
         if (target?.kind === 'name')
             nextFrontier.push(target);
-        else if (target && !calls.some((site) => site.node === target.call.node))
-            calls.push(target.call);
+        else if (target)
+            record(found, target);
     }
     return localBudget;
+}
+/** Records a call site or handoff in `found`, unless a reference found earlier already led to the same call. */
+function record(found, target) {
+    if (target.kind === 'call') {
+        if (!found.calls.some((site) => site.node === target.call.node))
+            found.calls.push(target.call);
+    }
+    else if (!found.handoffs.some((handoff) => handoff.call === target.handoff.call)) {
+        found.handoffs.push(target.handoff);
+    }
 }
 /**
  * The caller's own parameter an argument passes on as is (`items` in

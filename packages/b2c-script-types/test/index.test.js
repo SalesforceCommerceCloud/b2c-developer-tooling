@@ -689,6 +689,49 @@ describe('create() proxy — usage inference wiring', () => {
     assert.ok(names.includes('geolocation'), `expected geolocation among completions, got: ${names.join(', ')}`);
   });
 
+  it('types a middleware module function from the server.get() routes it is handed to', () => {
+    // SFRA's own middleware (cache.applyDefaultCache, csrf.validateRequest,
+    // ...) is written as plain exported functions and only ever handed to
+    // server.get/post/use by reference, where nothing types its parameters
+    // contextually; the Middleware type those take still says what they get.
+    const files = {
+      '/c/cartridge/scripts/middleware/cache.js': `
+        function applyDefaultCache(req, res, next) {
+          res.cachePeriod = 24;
+          next();
+        }
+        module.exports = {applyDefaultCache: applyDefaultCache};
+      `,
+      '/c/cartridge/controllers/Home.js': `
+        var server = require('server');
+        var cache = require('*/cartridge/scripts/middleware/cache');
+        server.get('Show', cache.applyDefaultCache, function (req, res, next) {
+          next();
+        });
+        module.exports = server.exports();
+      `,
+    };
+    const {proxy} = createPluginProxy({
+      files,
+      config: {
+        enabled: true,
+        autoDiscover: false,
+        cartridges: [
+          {name: 'c', src: '/c/'},
+          {name: 'modules', src: '/modules/'},
+        ],
+        inferUsage: true,
+      },
+    });
+    const middlewareFile = '/c/cartridge/scripts/middleware/cache.js';
+    const source = files[middlewareFile];
+
+    const hover = proxy.getQuickInfoAtPosition(middlewareFile, source.indexOf('res, next'));
+    const hoverText = [...(hover?.displayParts ?? []), ...(hover?.documentation ?? [])].map((p) => p.text).join('');
+    assert.match(hoverText, /res: Response/);
+    assert.match(hoverText, /Inferred from usage: Response/);
+  });
+
   it("types a route event listener's parameters through the route a middleware step runs on", () => {
     // SFRA calls each middleware step with the route as `this`, so the
     // listeners a step registers with `this.on(...)` are typed by Route.on.

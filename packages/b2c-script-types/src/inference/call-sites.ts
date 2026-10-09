@@ -11,7 +11,9 @@
 // function, a parameter it is passed to — see ./value-flow), so this layer
 // follows a bounded number of those hops to reach the real call expressions.
 // "Call" includes `new Helper(x)` and `Helper.call(this, x)` — the shapes
-// SFRA's constructor-function "class" models are invoked and inherited with.
+// SFRA's constructor-function "class" models are invoked and inherited with
+// — and a function handed to a declared API that calls it (`server.get(
+// 'Show', cache.applyDefaultCache)`), whose declaration types the arguments.
 // An argument that is the caller's own untyped parameter is recognized here
 // too, so ./core can follow a value handed down a chain of helpers to where
 // it really comes from.
@@ -26,7 +28,7 @@ import {valueDeclarationOf} from './member-values';
 import {searchReferences} from './reference-search';
 import {informativeParts} from './type-helpers';
 import {enclosingFunction, valueTarget} from './value-flow';
-import type {CallSite, ValueRole} from './value-flow';
+import type {CallSites, ReferenceTarget, ValueRole} from './value-flow';
 
 /** A name whose references are searched next, and how it holds the function. */
 interface FrontierName {
@@ -70,21 +72,21 @@ function claimSearch(ctx: InferenceContext, next: FrontierName, searched: Set<st
 }
 
 /**
- * Finds actual call sites for `nameNode`, following up to
- * MAX_REFERENCE_HOPS names the function value flows into (see ./value-flow:
- * require() bindings, exports, aliases, factories returning it, parameters
- * it is passed to) when a reference doesn't sit directly in callee
- * position. Stops early once ctx.referenceBudget (result count) or
- * ctx.searchBudget (searches) runs out, returning whatever call sites
- * were already found rather than continuing to fan out — an under-inferred
- * (but still heuristic, clearly-labeled) result beats hanging on a
- * widely-referenced helper. Results are memoized per name node for the
+ * Finds actual call sites for `nameNode`, and the handoffs to declared
+ * callees, following up to MAX_REFERENCE_HOPS names the function value flows
+ * into (see ./value-flow: require() bindings, exports, aliases, factories
+ * returning it, parameters it is passed to) when a reference doesn't sit
+ * directly in callee position. Stops early once ctx.referenceBudget (result
+ * count) or ctx.searchBudget (searches) runs out, returning whatever call
+ * sites were already found rather than continuing to fan out — an
+ * under-inferred (but still heuristic, clearly-labeled) result beats hanging
+ * on a widely-referenced helper. Results are memoized per name node for the
  * duration of the request.
  */
-export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): CallSite[] {
+export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): CallSites {
   const memoized = ctx.callSiteMemo.get(nameNode);
   if (memoized) return memoized;
-  const calls: CallSite[] = [];
+  const found: CallSites = {calls: [], handoffs: []};
   const searched = new Set<string>();
   let frontier: FrontierName[] = [{name: nameNode, role: 'value'}];
   let localBudget = Math.min(MAX_REFERENCES_PER_CALL, ctx.referenceBudget);
@@ -94,27 +96,27 @@ export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Ident
     for (const next of frontier) {
       if (localBudget <= 0) break;
       if (claimSearch(ctx, next, searched)) {
-        localBudget = collectCallsFromName(ctx, next, calls, nextFrontier, localBudget);
+        localBudget = collectCallsFromName(ctx, next, found, nextFrontier, localBudget);
       }
     }
     frontier = nextFrontier;
   }
 
-  ctx.callSiteMemo.set(nameNode, calls);
-  return calls;
+  ctx.callSiteMemo.set(nameNode, found);
+  return found;
 }
 
 /**
- * Runs one reference search for `next.name` and sorts each hit into either a
- * resolved call site (pushed to `calls`, once per call) or a further name to
- * chase on the next hop (pushed to `nextFrontier`). Consumes up to
- * `localBudget` result slots, returning the remaining local budget so the
- * caller can stop fanning out once it's exhausted.
+ * Runs one reference search for `next.name` and sorts each hit into a
+ * resolved call site or handoff (recorded in `found`, once per call) or a
+ * further name to chase on the next hop (pushed to `nextFrontier`). Consumes
+ * up to `localBudget` result slots, returning the remaining local budget so
+ * the caller can stop fanning out once it's exhausted.
  */
 function collectCallsFromName(
   ctx: InferenceContext,
   next: FrontierName,
-  calls: CallSite[],
+  found: CallSites,
   nextFrontier: FrontierName[],
   localBudget: number,
 ): number {
@@ -124,9 +126,18 @@ function collectCallsFromName(
     ctx.referenceBudget--;
     const target = valueTarget(ctx, reference, next.role);
     if (target?.kind === 'name') nextFrontier.push(target);
-    else if (target && !calls.some((site) => site.node === target.call.node)) calls.push(target.call);
+    else if (target) record(found, target);
   }
   return localBudget;
+}
+
+/** Records a call site or handoff in `found`, unless a reference found earlier already led to the same call. */
+function record(found: CallSites, target: Exclude<ReferenceTarget, {kind: 'name'}>): void {
+  if (target.kind === 'call') {
+    if (!found.calls.some((site) => site.node === target.call.node)) found.calls.push(target.call);
+  } else if (!found.handoffs.some((handoff) => handoff.call === target.handoff.call)) {
+    found.handoffs.push(target.handoff);
+  }
 }
 
 /**

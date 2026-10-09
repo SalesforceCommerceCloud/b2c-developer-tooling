@@ -10,6 +10,7 @@ exports.functionOf = functionOf;
 exports.isElementFirstCallbackCall = isElementFirstCallbackCall;
 exports.acceptsArgumentCount = acceptsArgumentCount;
 exports.callbackParameterTypes = callbackParameterTypes;
+exports.handedOffParameterTypes = handedOffParameterTypes;
 const constants_1 = require("./constants");
 const type_helpers_1 = require("./type-helpers");
 /**
@@ -64,12 +65,28 @@ function acceptsArgumentCount(ctx, signature, count) {
     const required = parameters.filter((parameter) => !checker.isOptionalParameter(parameter)).length;
     return count >= required && (count <= parameters.length || ts.hasRestParameter(declaration));
 }
+/**
+ * The type `signature` gives the argument at `argIndex`: its parameter's
+ * type, or for an argument a rest parameter collects (`...middleware:
+ * Middleware[]`), the element type of that parameter's array.
+ */
+function argumentTypeAt(ctx, signature, argIndex, location) {
+    const { ts, checker } = ctx;
+    const parameters = signature.getParameters();
+    const last = parameters[parameters.length - 1];
+    const rest = last?.valueDeclaration && ts.isParameter(last.valueDeclaration) && ts.isRestParameter(last.valueDeclaration);
+    if (argIndex < parameters.length - (rest ? 1 : 0)) {
+        return checker.getTypeOfSymbolAtLocation(parameters[argIndex], location);
+    }
+    return rest
+        ? checker.getIndexTypeOfType(checker.getTypeOfSymbolAtLocation(last, location), ts.IndexKind.Number)
+        : undefined;
+}
 /** The type `signature` gives parameter `paramIndex` of the callback it takes as argument `argIndex`. */
 function callbackParameterType(ctx, signature, call, argIndex, paramIndex) {
     const { checker } = ctx;
-    const parameter = signature.getParameters()[argIndex];
-    const callbackType = parameter && checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(parameter, call));
-    const callbackParameter = callbackType?.getCallSignatures()[0]?.getParameters()[paramIndex];
+    const callbackType = argumentTypeAt(ctx, signature, argIndex, call);
+    const callbackParameter = callbackType && checker.getNonNullableType(callbackType).getCallSignatures()[0]?.getParameters()[paramIndex];
     return callbackParameter && checker.getTypeOfSymbolAtLocation(callbackParameter, call);
 }
 /**
@@ -88,4 +105,13 @@ function callbackParameterTypes(ctx, methodTypes, call, argIndex, paramIndex) {
         const key = first && (0, type_helpers_1.typeDisplayString)(ctx, first);
         return first && rest.every((type) => type && (0, type_helpers_1.typeDisplayString)(ctx, type) === key) ? [first] : [];
     });
+}
+/**
+ * What the callee of `handoff` declares it passes parameter `paramIndex` of
+ * the function it is handed: `Request` for `req` of the middleware step in
+ * `server.get('Show', cache.applyDefaultCache)`.
+ */
+function handedOffParameterTypes(ctx, handoff, paramIndex) {
+    const callee = ctx.checker.getTypeAtLocation(handoff.call.expression);
+    return callbackParameterTypes(ctx, [callee], handoff.call, handoff.argIndex, paramIndex);
 }

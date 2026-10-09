@@ -553,6 +553,70 @@ describe('usage-inference — constructors as values', () => {
   });
 });
 
+describe('usage-inference — functions handed to declared APIs', () => {
+  // A named function handed to a declared API is not contextually typed the
+  // way an inline function expression there is; the API's declared callback
+  // type still says what the function is called with. The parameters below
+  // have names and usage that say nothing on their own.
+  const HANDOFF_TYPES = realTypesPrelude(
+    ['Basket', 'Product'],
+    `
+    function getBasket(): Basket;
+    function onBasketChange(name: string, ...listeners: Array<(container: Basket, changed: Product) => void>): void;
+    function later(task: Function): void;
+  `,
+  );
+  const LISTENER = `
+    function recalculate(container, changed) {
+      return container.getProductLineItems();
+    }
+    module.exports = {recalculate: recalculate};
+  `;
+  const LISTENER_USE = {
+    '/listeners.js': "var helper = require('./helper'); onBasketChange('cart', helper.recalculate);",
+  };
+
+  runCases([
+    {
+      title: "an exported function handed to a declared API's rest parameter receives what its callback type declares",
+      types: HANDOFF_TYPES,
+      source: LISTENER,
+      files: LISTENER_USE,
+      kind: 'param',
+      name: 'container',
+      expected: 'Basket',
+    },
+    {
+      title: 'a parameter the body never uses is typed by the callback declaration alone',
+      types: HANDOFF_TYPES,
+      source: LISTENER,
+      files: LISTENER_USE,
+      kind: 'param',
+      name: 'changed',
+      expected: 'Product',
+    },
+    {
+      title: "a function handed to a native array method receives the array's elements",
+      types: HANDOFF_TYPES,
+      source: `
+        function keep(entry) { return entry; }
+        getBasket().getProductLineItems().toArray().forEach(keep);
+      `,
+      kind: 'param',
+      name: 'entry',
+      expected: 'ProductLineItem',
+    },
+    {
+      title: 'a callback type that declares no parameters says nothing',
+      types: HANDOFF_TYPES,
+      source: 'function task(entry) { return entry; } later(task);',
+      kind: 'param',
+      name: 'entry',
+      expected: '',
+    },
+  ]);
+});
+
 describe('usage-inference — call-specific returns', () => {
   // `{dw.util.Collection}` the way SFRA's JSDoc writes it: no type argument,
   // so the checker reads every element as `any`.
